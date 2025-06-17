@@ -37,8 +37,8 @@ function setupChat(supabase) {
             .from('conversations')
             .select('*')
             .eq('listing_id', listing.id)
-            .eq('sender_id', currentUser.id)
-            .eq('receiver_id', listing.user_id);
+            .eq('sender_email', currentUser.email)
+            .eq('receiver_email', listing.user_email);
 
         if (error) {
             console.error('Error checking conversation:', error);
@@ -54,8 +54,9 @@ function setupChat(supabase) {
                 .from('conversations')
                 .insert({
                     listing_id: listing.id,
-                    sender_id: currentUser.id,
-                    receiver_id: listing.user_id
+                    sender_email: currentUser.email,
+                    receiver_email: listing.user_email,
+                    created_at: new Date().toISOString()
                 })
                 .select()
                 .single();
@@ -92,7 +93,7 @@ function setupChat(supabase) {
 
         messages.forEach(message => {
             const messageElement = document.createElement('div');
-            messageElement.className = `message ${message.sender_id === currentUser.id ? 'sent' : 'received'}`;
+            messageElement.className = `message ${message.sender_email === currentUser.email ? 'sent' : 'received'}`;
             messageElement.innerHTML = `
                 <p>${sanitizeInput(message.content)}</p>
                 <div class="message-timestamp">${new Date(message.created_at).toLocaleTimeString()}</div>
@@ -113,8 +114,9 @@ function setupChat(supabase) {
             .from('messages')
             .insert({
                 conversation_id: currentConversationId,
-                sender_id: currentUser.id,
-                content: messageContent
+                sender_email: currentUser.email,
+                content: messageContent,
+                created_at: new Date().toISOString()
             });
 
         if (error) {
