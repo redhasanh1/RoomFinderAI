@@ -1784,9 +1784,34 @@
                     return;
                 }
 
+                // Get unread counts for each conversation
+                const conversationsWithUnread = [];
+                for (const conv of conversations || []) {
+                    // Get last read time for this user
+                    const { data: readData } = await supabase
+                        .from('conversation_reads')
+                        .select('last_read_at')
+                        .eq('conversation_id', conv.id)
+                        .eq('user_email', currentUser.email)
+                        .single();
+
+                    const lastReadAt = readData?.last_read_at || '1970-01-01T00:00:00Z';
+
+                    // Count unread messages
+                    const { count: unreadCount } = await supabase
+                        .from('messages')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('conversation_id', conv.id)
+                        .neq('sender_email', currentUser.email)
+                        .gt('created_at', lastReadAt);
+
+                    conv.unread_count = unreadCount || 0;
+                    conversationsWithUnread.push(conv);
+                }
+
                 // Filter conversations to only include those between registered users
                 const filteredConversations = [];
-                for (const conv of conversations || []) {
+                for (const conv of conversationsWithUnread) {
                     // Check if both sender and receiver are in profiles database
                     const { data: senderProfile } = await supabase
                         .from('profiles')
@@ -1824,12 +1849,22 @@
                     const otherUserEmail = conv.sender_email === currentUser.email ? conv.receiver_email : conv.sender_email;
                     const listingTitle = conv.listings ? conv.listings.title : 'Unknown Listing';
                     
+                    // Extract username from email (part before @)
+                    const otherUserName = otherUserEmail.split('@')[0];
+                    
+                    // Check if conversation has unread messages
+                    const hasUnread = conv.unread_count > 0;
+                    const unreadBadge = hasUnread ? `<span class="bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center ml-2">${conv.unread_count}</span>` : '';
+                    
                     return `
-                        <div class="border-b hover:bg-gray-50 cursor-pointer" onclick="openConversationInModal('${conv.id}', '${listingTitle}', '${conv.listing_id}')">
+                        <div class="border-b hover:bg-gray-50 cursor-pointer ${hasUnread ? 'bg-blue-50' : ''}" onclick="openConversationInModal('${conv.id}', '${listingTitle}', '${conv.listing_id}', '${otherUserEmail}')">
                             <div class="p-3">
                                 <div class="flex justify-between items-start">
                                     <div class="flex-1">
-                                        <div class="font-medium text-sm text-gray-900">${otherUserEmail}</div>
+                                        <div class="font-medium text-sm text-gray-900 flex items-center">
+                                            ${otherUserName}
+                                            ${unreadBadge}
+                                        </div>
                                         <div class="text-xs text-gray-600">${listingTitle}</div>
                                         <div class="text-xs text-gray-400 mt-1">
                                             ${new Date(conv.created_at).toLocaleDateString()}
@@ -1847,9 +1882,8 @@
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 if (!currentUser) return;
 
-                // For now, just show conversation count as notification
-                // In a real app, you'd track unread messages
-                unreadCount = userConversations.length;
+                // Calculate total unread messages across all conversations
+                unreadCount = userConversations.reduce((total, conv) => total + (conv.unread_count || 0), 0);
                 
                 if (unreadCount > 0) {
                     messageNotificationBadge.textContent = unreadCount;
@@ -1860,6 +1894,8 @@
                     messageNotificationBadge.classList.add('hidden');
                     profileNotificationBadge.classList.add('hidden');
                 }
+                
+                console.log('🔔 Total unread messages:', unreadCount);
             }
 
             // SIMPLIFIED Messaging panel real-time updates
@@ -1892,6 +1928,17 @@
                         loadUserConversations();
                     }
                 })
+                .on('postgres_changes', { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'conversation_reads' 
+                }, (payload) => {
+                    console.log('👀 READ STATUS UPDATE:', payload);
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                    
+                    // Refresh conversations when read status changes
+                    loadUserConversations();
+                })
                 .subscribe((status) => {
                     console.log('📱 PANEL SUBSCRIPTION STATUS:', status);
                 });
@@ -1921,15 +1968,32 @@
         }
 
         // Global function to open conversation in modal
-        window.openConversationInModal = async function(conversationId, listingTitle, listingId) {
+        window.openConversationInModal = async function(conversationId, listingTitle, listingId, otherUserEmail) {
             // Close messaging panel
             document.getElementById('messagePanel').classList.add('hidden');
             
             // Set up chat modal with existing conversation
             currentConversationId = conversationId;
-            document.getElementById('chatTitle').textContent = `Chat about ${listingTitle}`;
+            const otherUserName = otherUserEmail ? otherUserEmail.split('@')[0] : 'User';
+            document.getElementById('chatTitle').textContent = `Chat with ${otherUserName} about ${listingTitle}`;
+            
+            // Mark conversation as read
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            await supabase
+                .from('conversation_reads')
+                .upsert({
+                    conversation_id: conversationId,
+                    user_email: currentUser.email,
+                    last_read_at: new Date().toISOString()
+                });
+            
             await loadMessages(conversationId);
             document.getElementById('chatModal').style.display = 'block';
+            
+            // Refresh conversations to update unread counts
+            if (typeof loadUserConversations === 'function') {
+                loadUserConversations();
+            }
         };
 
         // Real-time subscription to listings
