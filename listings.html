@@ -1420,45 +1420,88 @@
                 }
             });
 
-            chatSendBtn.addEventListener('click', async () => {
+            // Function to send message (used by both click and Enter key)
+            async function sendMessage() {
                 const messageContent = chatInput.value.trim();
                 if (!messageContent || !currentConversationId) {
                     console.warn('No message content or conversation ID:', { messageContent, currentConversationId });
                     return;
                 }
 
-                console.log('Sending message:', messageContent);
+                console.log('📤 Sending message:', messageContent);
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const timestamp = new Date().toISOString();
+                
+                // Instant UI update - add message immediately
+                const chatMessagesContainer = document.getElementById('chatMessages');
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message sent';
+                messageElement.innerHTML = `
+                    <p>${sanitizeInput(messageContent)}</p>
+                    <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
+                `;
+                chatMessagesContainer.appendChild(messageElement);
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                chatInput.value = '';
+                
+                // Send to database
                 const { error } = await supabase
                     .from('messages')
                     .insert({
                         conversation_id: currentConversationId,
                         sender_email: currentUser.email,
                         content: messageContent,
-                        created_at: new Date().toISOString()
+                        created_at: timestamp
                     });
 
                 if (error) {
-                    console.error('Error sending message:', error);
+                    console.error('❌ Error sending message:', error);
+                    // Remove the message from UI if it failed to send
+                    messageElement.remove();
+                    chatInput.value = messageContent; // Restore message
                     alert('Failed to send message: ' + error.message);
                     return;
                 }
 
-                chatInput.value = '';
-                await loadMessages(currentConversationId);
-                console.log('Message sent successfully');
+                console.log('✅ Message sent successfully!');
+            }
+
+            // Send button click
+            chatSendBtn.addEventListener('click', sendMessage);
+
+            // Enter key support for instant messaging
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
             });
 
             supabase
                 .channel('public:messages')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
                     if (currentConversationId && currentConversationId === payload.new.conversation_id) {
-                        console.log('New message received:', payload.new);
-                        loadMessages(currentConversationId);
+                        console.log('🚀 INSTANT: New message received:', payload.new);
+                        
+                        // Instant message append without full reload for better UX
+                        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                        const chatMessagesContainer = document.getElementById('chatMessages');
+                        
+                        if (chatMessagesContainer && payload.new.sender_email !== currentUser.email) {
+                            // Add new message instantly
+                            const messageElement = document.createElement('div');
+                            messageElement.className = `message received`;
+                            messageElement.innerHTML = `
+                                <p>${sanitizeInput(payload.new.content)}</p>
+                                <div class="message-timestamp">${new Date(payload.new.created_at).toLocaleTimeString()}</div>
+                            `;
+                            chatMessagesContainer.appendChild(messageElement);
+                            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                        }
                     }
                 })
                 .subscribe((status) => {
-                    console.log('Supabase channel subscription status:', status);
+                    console.log('💬 Chat subscription status:', status);
                 });
         }
 
@@ -1799,9 +1842,9 @@
                 }
             }
 
-            // Real-time subscription for new messages
+            // Real-time subscription for new messages and conversations - INSTANT UPDATES
             supabase
-                .channel('user_messages')
+                .channel('user_messages_panel')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
                     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                     
@@ -1811,6 +1854,16 @@
                     );
                     
                     if (isForCurrentUser && payload.new.sender_email !== currentUser.email) {
+                        console.log('🔔 INSTANT: New message for user, refreshing panel');
+                        loadUserConversations(); // Refresh conversations
+                    }
+                })
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations' }, (payload) => {
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                    
+                    // Check if this conversation involves current user
+                    if (payload.new.sender_email === currentUser.email || payload.new.receiver_email === currentUser.email) {
+                        console.log('💬 INSTANT: New conversation created, refreshing panel');
                         loadUserConversations(); // Refresh conversations
                     }
                 })
