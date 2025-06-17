@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Finder - Profile</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -151,12 +152,17 @@
             return gk_fileData[filename] || "";
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             if (!currentUser) {
                 window.location.href = '/login';
                 return;
             }
+
+            // Initialize Supabase
+            const SUPABASE_URL = 'https://fkktwhjybuflxqzopaex.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
             // Update profile info
             document.getElementById('profileLogo').src = currentUser.profileImage;
@@ -224,35 +230,76 @@
                 });
             }
 
-            // Display user listings
-            const userListings = document.getElementById('userListings');
-            if (!currentUser.listings || currentUser.listings.length === 0) {
-                userListings.innerHTML = '<p class="text-gray-600 text-center">No listings yet.</p>';
-            } else {
-                currentUser.listings.forEach(listing => {
-                    const listingCard = document.createElement('div');
-                    listingCard.className = 'listing-card bg-white p-6 rounded-xl shadow-xl';
-                    const mediaHtml = listing.media && listing.media.length > 0
-                        ? `<div class="listing-media flex flex-wrap">${listing.media.map(file => 
-                            file.type.startsWith('image/')
-                                ? `<img src="${file.data}" alt="${file.name}">`
-                                : `<video src="${file.data}" controls></video>`
-                        ).join('')}</div>`
-                        : '';
-                    listingCard.innerHTML = `
-                        <h3 class="text-xl font-semibold text-gray-800">${listing.title}</h3>
-                        <p class="text-gray-600">Price: $${listing.price.toLocaleString()}/month</p>
-                        <p class="text-gray-600">Location: ${listing.location}</p>
-                        <p class="text-gray-600">Address: ${listing.streetAddress || 'Not specified'}</p>
-                        <p class="text-gray-600">Type: ${listing.houseType}</p>
-                        <p class="text-gray-600">Bedrooms: ${listing.bedrooms}</p>
-                        <p class="text-gray-600">Utilities: ${listing.utilities || 'Not specified'}</p>
-                        <p class="text-gray-600">${listing.description || 'No description provided'}</p>
-                        ${mediaHtml}
-                    `;
-                    userListings.appendChild(listingCard);
-                });
+            // Display user listings from Supabase
+            await displayUserListings();
+
+            async function displayUserListings() {
+                const userListings = document.getElementById('userListings');
+                
+                try {
+                    // Fetch user's listings from Supabase
+                    const { data: listings, error } = await supabase
+                        .from('listings')
+                        .select('*')
+                        .eq('user_email', currentUser.email)
+                        .order('created_at', { ascending: false });
+
+                    if (error) {
+                        console.error('Error fetching user listings:', error);
+                        userListings.innerHTML = '<p class="text-red-600 text-center">Error loading listings.</p>';
+                        return;
+                    }
+
+                    if (!listings || listings.length === 0) {
+                        userListings.innerHTML = '<p class="text-gray-600 text-center">No listings yet. <a href="/listings" class="text-blue-600 hover:underline">Create your first listing!</a></p>';
+                        return;
+                    }
+
+                    userListings.innerHTML = '';
+                    listings.forEach(listing => {
+                        const listingCard = document.createElement('div');
+                        listingCard.className = 'listing-card bg-white p-6 rounded-xl shadow-xl';
+                        
+                        const mediaHtml = listing.media && listing.media.length > 0
+                            ? `<div class="listing-media flex flex-wrap mt-4">${listing.media.map(file => 
+                                file.type && file.type.startsWith('image/')
+                                    ? `<img src="${file.url}" alt="${file.name}" class="w-32 h-32 object-cover rounded">`
+                                    : file.type && file.type.startsWith('video/')
+                                    ? `<video src="${file.url}" controls class="w-32 h-32 object-cover rounded"></video>`
+                                    : `<img src="${file.url}" alt="${file.name}" class="w-32 h-32 object-cover rounded">`
+                            ).join('')}</div>`
+                            : '';
+                        
+                        listingCard.innerHTML = `
+                            <div class="flex justify-between items-start mb-4">
+                                <h3 class="text-xl font-semibold text-gray-800">${listing.title}</h3>
+                                <button onclick="viewListing('${listing.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium">
+                                    View Listing
+                                </button>
+                            </div>
+                            <p class="text-gray-600">Price: $${listing.price ? listing.price.toLocaleString() : 'N/A'}/month</p>
+                            <p class="text-gray-600">Location: ${listing.city || 'Not specified'}</p>
+                            <p class="text-gray-600">Address: ${listing.street || 'Not specified'}</p>
+                            <p class="text-gray-600">Postal Code: ${listing.postalCode || 'Not specified'}</p>
+                            <p class="text-gray-600">Type: ${listing.house_type || 'Not specified'}</p>
+                            <p class="text-gray-600">Bedrooms: ${listing.bedrooms || 'Not specified'}</p>
+                            <p class="text-gray-600">Utilities: ${listing.utilities || 'Not specified'}</p>
+                            <p class="text-gray-600 mt-2">${listing.description || 'No description provided'}</p>
+                            <p class="text-gray-500 text-sm mt-2">Created: ${new Date(listing.created_at).toLocaleDateString()}</p>
+                            ${mediaHtml}
+                        `;
+                        userListings.appendChild(listingCard);
+                    });
+                } catch (err) {
+                    console.error('Error displaying listings:', err);
+                    userListings.innerHTML = '<p class="text-red-600 text-center">Error loading listings.</p>';
+                }
             }
+
+            // Function to view listing details
+            window.viewListing = function(listingId) {
+                window.location.href = `/listing_details?id=${listingId}`;
+            };
 
             // Logout
             document.getElementById('logoutButton').addEventListener('click', () => {
