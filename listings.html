@@ -1555,6 +1555,30 @@
                 return;
             }
 
+            // Verify both users are registered in profiles database
+            const { data: currentUserProfile, error: currentUserError } = await supabase
+                .from('profiles')
+                .select('email')
+                .eq('email', currentUser.email)
+                .single();
+
+            const { data: listingOwnerProfile, error: listingOwnerError } = await supabase
+                .from('profiles')
+                .select('email')
+                .eq('email', listing.user_email)
+                .single();
+
+            if (currentUserError || !currentUserProfile) {
+                alert('You must be registered to send messages. Please register first.');
+                window.location.href = '/login';
+                return;
+            }
+
+            if (listingOwnerError || !listingOwnerProfile) {
+                alert('Cannot start chat: The listing owner is not registered in our system.');
+                return;
+            }
+
             currentListing = listing;
             document.getElementById('chatTitle').textContent = `Chat about ${listing.title}`;
 
@@ -1669,6 +1693,20 @@
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 if (!currentUser) return;
 
+                // First verify current user is registered in profiles
+                const { data: currentProfile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('email')
+                    .eq('email', currentUser.email)
+                    .single();
+
+                if (profileError || !currentProfile) {
+                    console.error('Current user not found in profiles database:', profileError);
+                    const conversationTabs = document.getElementById('conversationTabs');
+                    conversationTabs.innerHTML = '<div class="p-4 text-red-500 text-center">Please register to access messaging</div>';
+                    return;
+                }
+
                 const { data: conversations, error } = await supabase
                     .from('conversations')
                     .select(`
@@ -1683,7 +1721,28 @@
                     return;
                 }
 
-                userConversations = conversations || [];
+                // Filter conversations to only include those between registered users
+                const filteredConversations = [];
+                for (const conv of conversations || []) {
+                    // Check if both sender and receiver are in profiles database
+                    const { data: senderProfile } = await supabase
+                        .from('profiles')
+                        .select('email')
+                        .eq('email', conv.sender_email)
+                        .single();
+                    
+                    const { data: receiverProfile } = await supabase
+                        .from('profiles')
+                        .select('email')
+                        .eq('email', conv.receiver_email)
+                        .single();
+
+                    if (senderProfile && receiverProfile) {
+                        filteredConversations.push(conv);
+                    }
+                }
+
+                userConversations = filteredConversations;
                 displayConversations();
                 await updateUnreadCount();
             }
