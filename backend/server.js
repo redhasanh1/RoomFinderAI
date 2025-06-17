@@ -1,17 +1,24 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const { v4: uuidv4 } = require('uuid');
+const bcrypt = require('bcryptjs');
 const app = express();
 const port = 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Google Maps API key
 const GOOGLE_API_KEY = 'AIzaSyBzE8cPfeO5YkmpJFc8SLtVsz_eGB-wYYM'; // Replace with your valid key
 
-// Override map for problematic North American cities
+// In-memory database (replace with MongoDB/PostgreSQL in production)
+const listings = [];
+const users = [];
+
+// Location overrides for problematic North American cities
 const locationOverrides = {
     'los angeles': 'la',
     'los angeles, ca': 'la',
@@ -35,16 +42,16 @@ const locationOverrides = {
     'fort st john, bc': 'fort-st-john',
 };
 
-// Helper function to normalize city name to Marketplace slug
+// Helper: Normalize city name to slug
 function normalizeCityToSlug(city) {
     if (!city) return '';
     const lowerCity = city.toLowerCase();
     return locationOverrides[lowerCity] || lowerCity
-        .replace(/[^a-z0-9\s]/g, '') // Remove special characters
-        .replace(/\s+/g, ''); // Remove spaces
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, '');
 }
 
-// Helper function to get city slug via Google Maps Geocoding API
+// Helper: Get city slug via Google Maps Geocoding API
 async function getCitySlug(location) {
     try {
         const response = await axios.get(
@@ -64,7 +71,7 @@ async function getCitySlug(location) {
     }
 }
 
-// Helper function to normalize city and province for Kijiji URL
+// Helper: Normalize city and province for Kijiji
 function normalizeForKijiji(city, province) {
     if (!city) return { normalizedCity: '', normalizedProvince: '' };
     const normalizedCity = city.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -72,7 +79,7 @@ function normalizeForKijiji(city, province) {
     return { normalizedCity, normalizedProvince };
 }
 
-// Helper function to get city and province for Kijiji (Canada only)
+// Helper: Get city and province for Kijiji (Canada only)
 async function getCityDetails(location) {
     try {
         const response = await axios.get(
@@ -90,11 +97,11 @@ async function getCityDetails(location) {
         return { city: normalizedCity, province: normalizedProvince };
     } catch (error) {
         console.error('Geocoding error in getCityDetails:', error.message);
-        return { city: '', province: '' }; // Kijiji will fall back to Canada-wide search
+        return { city: '', province: '' };
     }
 }
 
-// Helper function to generate Kijiji search URL
+// Helper: Generate Kijiji search URL
 async function generateKijijiUrl({ location, price, size, amenities, roomType }) {
     const { city, province } = await getCityDetails(location);
     const priceNum = parseInt(price);
@@ -122,12 +129,11 @@ async function generateKijijiUrl({ location, price, size, amenities, roomType })
     return kijijiUrl;
 }
 
-// Helper function to generate Facebook Marketplace URL
+// Helper: Generate Facebook Marketplace URL
 async function generateMarketplaceUrl({ location, price, size, amenities, roomType }) {
     const normalizedLocation = await getCitySlug(location);
     console.log(`Input location: ${location}, Normalized: ${normalizedLocation || 'none'}`);
 
-    const encodedLocation = encodeURIComponent(normalizedLocation);
     const priceNum = parseInt(price);
     const sizeNum = size ? parseInt(size) : null;
 
@@ -150,7 +156,152 @@ async function generateMarketplaceUrl({ location, price, size, amenities, roomTy
     return marketplaceUrl;
 }
 
-// API Endpoint for Kijiji URL
+// Validate listing input
+function validateListingInput(data) {
+    const errors = [];
+    if (!data.city) errors.push('City is required');
+    if (!data.street) errors.push('Street is required');
+    if (!data.postalCode) errors.push('Postal Code is required');
+    if (!data.title) errors.push('Title is required');
+    if (!data.price || isNaN(data.price)) errors.push('Valid price is required');
+    if (!data.houseType) errors.push('House type is required');
+    if (!data.bedrooms || isNaN(data.bedrooms)) errors.push('Valid number of bedrooms is required');
+    if (!['included', 'not included'].includes(data.utilities?.toLowerCase())) errors.push('Utilities must be "included" or "not included"');
+    return errors;
+}
+
+// API: Add a new listing
+app.post('/api/listings', (req, res) => {
+    try {
+        console.log('Received listing request:', req.body);
+        const { city, street, postalCode, title, price, houseType, bedrooms, utilities, description, media } = req.body;
+        
+        const errors = validateListingInput(req.body);
+        if (errors.length > 0) {
+            return res.status(400).json({ errors });
+        }
+
+        const listing = {
+            id: uuidv4(),
+            city,
+            street,
+            postalCode,
+            title,
+            price: parseFloat(price),
+            houseType,
+            bedrooms: parseInt(bedrooms),
+            utilities,
+            description,
+            media: media || [],
+            createdAt: new Date().toISOString(),
+        };
+
+        listings.push(listing);
+        res.status(201).json({ message: 'Listing added successfully', listing });
+    } catch (error) {
+        console.error('Error in /api/listings:', error.message);
+        res.status(500).json({ error: 'Failed to add listing' });
+    }
+});
+
+// API: Get all listings
+app.get('/api/listings', (req, res) => {
+    try {
+        res.json({ listings });
+    } catch (error) {
+        console.error('Error in /api/listings:', error.message);
+        res.status(500).json({ error: 'Failed to retrieve listings' });
+    }
+});
+
+// API: Get listing by ID
+app.get('/api/listings/:id', (req, res) => {
+    try {
+        const listing = listings.find(l => l.id === req.params.id);
+        if (!listing) {
+            return res.status(404).json({ error: 'Listing not found' });
+        }
+        res.json({ listing });
+    } catch (error) {
+        console.error('Error in /api/listings/:id:', error.message);
+        res.status(500).json({ error: 'Failed to retrieve listing' });
+    }
+});
+
+// API: User registration
+app.post('/api/register', async (req, res) => {
+    try {
+        const { firstName, lastName, email, password } = req.body;
+        if (!firstName || !lastName || !email || !password) {
+            return res.status(400).json({ error: 'All fields are required' });
+        }
+
+        const existingUser = users.find(u => u.email === email);
+        if (existingUser) {
+            return res.status(400).json({ error: 'Email already registered' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = {
+            id: uuidv4(),
+            firstName,
+            lastName,
+            email,
+            password: hashedPassword,
+            createdAt: new Date().toISOString(),
+        };
+
+        users.push(user);
+        res.status(201).json({ message: 'User registered successfully' });
+    } catch (error) {
+        console.error('Error in /api/register:', error.message);
+        res.status(500).json({ error: 'Failed to register user' });
+    }
+});
+
+// API: User login
+app.post('/api/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email and password are required' });
+        }
+
+        const user = users.find(u => u.email === email);
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        res.json({ message: 'Login successful', userId: user.id });
+    } catch (error) {
+        console.error('Error in /api/login:', error.message);
+        res.status(500).json({ error: 'Failed to login' });
+    }
+});
+
+// API: AI Negotiator chat (placeholder)
+app.post('/api/ai-negotiator', (req, res) => {
+    try {
+        const { message } = req.body;
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+
+        // Placeholder: In production, integrate with an AI model
+        const response = `AI Negotiator: I received your message: "${message}". How can I assist you with pricing tips, negotiation strategies, or adding a listing?`;
+        res.json({ response });
+    } catch (error) {
+        console.error('Error in /api/ai-negotiator:', error.message);
+        res.status(500).json({ error: 'Failed to process AI request' });
+    }
+});
+
+// API: Generate Kijiji URL
 app.post('/api/predict/kijiji', async (req, res) => {
     try {
         console.log('Received Kijiji request:', req.body);
@@ -160,9 +311,6 @@ app.post('/api/predict/kijiji', async (req, res) => {
         }
 
         const kijijiUrl = await generateKijijiUrl({ location, price, size, amenities, roomType });
-        if (!kijijiUrl) {
-            throw new Error('Failed to generate Kijiji URL');
-        }
         res.json({ url: kijijiUrl });
     } catch (error) {
         console.error('Error in /api/predict/kijiji:', error.message);
@@ -170,7 +318,7 @@ app.post('/api/predict/kijiji', async (req, res) => {
     }
 });
 
-// API Endpoint for Facebook Marketplace URL
+// API: Generate Facebook Marketplace URL
 app.post('/api/predict/marketplace', async (req, res) => {
     try {
         console.log('Received Marketplace request:', req.body);
@@ -180,9 +328,6 @@ app.post('/api/predict/marketplace', async (req, res) => {
         }
 
         const marketplaceUrl = await generateMarketplaceUrl({ location, price, size, amenities, roomType });
-        if (!marketplaceUrl) {
-            throw new Error('Failed to generate Marketplace URL');
-        }
         res.json({ url: marketplaceUrl });
     } catch (error) {
         console.error('Error in /api/predict/marketplace:', error.message);
