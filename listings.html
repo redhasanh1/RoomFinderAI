@@ -410,7 +410,10 @@
         <div id="messagePanel" class="hidden absolute bottom-20 right-0 w-80 bg-white rounded-lg shadow-xl border">
             <div class="p-4 border-b bg-blue-600 text-white rounded-t-lg flex justify-between items-center">
                 <h3 class="font-semibold">Messages</h3>
-                <button id="refreshMessagesBtn" class="text-xs bg-blue-700 hover:bg-blue-800 px-2 py-1 rounded" title="Refresh conversations">🔄</button>
+                <div class="flex gap-1">
+                    <button id="clearNotificationsBtn" class="text-xs bg-red-600 hover:bg-red-700 px-2 py-1 rounded" title="Clear all notifications">🔕</button>
+                    <button id="refreshMessagesBtn" class="text-xs bg-blue-700 hover:bg-blue-800 px-2 py-1 rounded" title="Refresh conversations">🔄</button>
+                </div>
             </div>
             <div id="conversationTabs" class="max-h-96 overflow-y-auto">
                 <div id="noConversations" class="p-4 text-gray-500 text-center">
@@ -1713,6 +1716,28 @@
 
             chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
             console.log('Messages loaded:', messages.length);
+            
+            // Mark conversation as read when loading messages
+            if (conversationId) {
+                console.log('📖 Auto-marking conversation as read during loadMessages');
+                const { error: readError } = await supabase
+                    .from('conversation_reads')
+                    .upsert({
+                        conversation_id: conversationId,
+                        user_email: currentUser.email,
+                        last_read_at: new Date().toISOString()
+                    });
+                
+                if (readError) {
+                    console.error('❌ Error auto-marking as read:', readError);
+                } else {
+                    console.log('✅ Auto-marked as read');
+                    // Refresh notifications after marking as read
+                    if (window.refreshConversations) {
+                        window.refreshConversations();
+                    }
+                }
+            }
         }
 
         // Setup Messaging Panel
@@ -1741,6 +1766,26 @@
             document.getElementById('refreshMessagesBtn').addEventListener('click', async () => {
                 console.log('🔄 Manual refresh triggered');
                 await loadUserConversations();
+            });
+
+            // Clear all notifications button for testing
+            document.getElementById('clearNotificationsBtn').addEventListener('click', async () => {
+                console.log('🔕 Clearing all notifications');
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                
+                // Mark all conversations as read
+                for (const conv of userConversations) {
+                    await supabase
+                        .from('conversation_reads')
+                        .upsert({
+                            conversation_id: conv.id,
+                            user_email: currentUser.email,
+                            last_read_at: new Date().toISOString()
+                        });
+                }
+                
+                // Refresh after clearing
+                setTimeout(() => loadUserConversations(), 1000);
             });
 
             // Close panel when clicking outside
@@ -1936,8 +1981,12 @@
                     console.log('👀 READ STATUS UPDATE:', payload);
                     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                     
-                    // Refresh conversations when read status changes
-                    loadUserConversations();
+                    // Only refresh if this read status affects current user
+                    if (payload.new?.user_email === currentUser.email || 
+                        payload.old?.user_email === currentUser.email) {
+                        console.log('🔄 Refreshing conversations due to read status change');
+                        loadUserConversations();
+                    }
                 })
                 .subscribe((status) => {
                     console.log('📱 PANEL SUBSCRIPTION STATUS:', status);
@@ -1945,6 +1994,9 @@
 
             // Initialize
             loadUserConversations();
+            
+            // Expose function globally for external access
+            window.refreshConversations = loadUserConversations;
 
             // FALLBACK: Polling for updates if real-time fails
             let pollingInterval;
@@ -1979,7 +2031,9 @@
             
             // Mark conversation as read
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            await supabase
+            console.log('📖 Marking conversation as read:', conversationId);
+            
+            const { error: readError } = await supabase
                 .from('conversation_reads')
                 .upsert({
                     conversation_id: conversationId,
@@ -1987,13 +2041,22 @@
                     last_read_at: new Date().toISOString()
                 });
             
+            if (readError) {
+                console.error('❌ Error marking as read:', readError);
+            } else {
+                console.log('✅ Successfully marked as read');
+            }
+            
             await loadMessages(conversationId);
             document.getElementById('chatModal').style.display = 'block';
             
-            // Refresh conversations to update unread counts
-            if (typeof loadUserConversations === 'function') {
-                loadUserConversations();
-            }
+            // Force refresh conversations and notifications
+            console.log('🔄 Refreshing notifications after marking as read');
+            setTimeout(async () => {
+                if (window.refreshConversations) {
+                    await window.refreshConversations();
+                }
+            }, 500);
         };
 
         // Real-time subscription to listings
