@@ -1,0 +1,9 @@
+{
+  "name": "RoomFinderAI Claude Code Dev Container",
+  "image": "node:20",
+  "workspaceFolder": "/app",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/app,type=bind"
+  ],
+  "postCreateCommand": "npm install -g @anthropic-ai/claude-code"
+}

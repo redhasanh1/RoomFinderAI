@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Finder - Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7fafc;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .listing-card, .chat-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .listing-card:hover, .chat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .listing-media img, .listing-media video {
+            max-width: 200px;
+            max-height: 200px;
+            object-fit: cover;
+            margin: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        .profile-upload-label {
+            cursor: pointer;
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: #2563eb;
+            color: white;
+            border-radius: 0.25rem;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .profile-upload-label:hover {
+            background-color: #1e40af;
+        }
+        .profile-upload-input {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 bg-white shadow-md z-10">
+        <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-6">
+                <div class="text-2xl font-bold text-blue-600">Room Finder</div>
+                <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
+                <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
+                <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
+                <a href="/ai-negotiator" class="text-gray-700 hover:text-blue-600 transition font-medium">AI Negotiator</a>
+                <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
+                <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
+            </div>
+            <div>
+                <a href="/profile">
+                    <img id="profileLogo" src="https://via.placeholder.com/40" alt="Profile" class="w-10 h-10 rounded-full transition transform hover:scale-110">
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Profile Info -->
+        <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">User Profile</h2>
+            <div class="text-center">
+                <img id="profileImage" src="https://via.placeholder.com/100" alt="Profile" class="w-24 h-24 rounded-full mx-auto mb-4">
+                <label for="profileUpload" class="profile-upload-label mb-4">Upload Profile Photo</label>
+                <input type="file" id="profileUpload" class="profile-upload-input" accept="image/jpeg,image/png">
+                <h3 id="userName" class="text-xl font-semibold text-gray-800"></h3>
+                <p id="userEmail" class="text-gray-600"></p>
+                <button id="logoutButton" class="mt-4 bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 transition font-semibold">Logout</button>
+            </div>
+        </section>
+
+        <!-- AI Chat History -->
+        <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">AI Chat History</h2>
+            <div id="chatHistory" class="space-y-4"></div>
+        </section>
+
+        <!-- User Listings -->
+        <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Your Listings</h2>
+            <div id="userListings" class="space-y-4"></div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-sm">© 2025 Room Finder. All rights reserved.</p>
+            <div class="mt-4 flex justify-center space-x-4">
+                <a href="/index" class="hover:text-blue-400">Home</a>
+                <a href="/index#about" class="hover:text-blue-400">About</a>
+                <a href="/sublease" class="hover:text-blue-400">Sublease</a>
+                <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
+                <a href="/listings" class="hover:text-blue-400">Listings</a>
+                <a href="/index#contact" class="hover:text-blue-400">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // Update profile info
+            document.getElementById('profileLogo').src = currentUser.profileImage;
+            document.getElementById('profileImage').src = currentUser.profileImage;
+            document.getElementById('userName').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+            document.getElementById('userEmail').textContent = currentUser.email;
+
+            // Profile photo upload
+            const profileUpload = document.getElementById('profileUpload');
+            profileUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // Validate file type
+                if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                    alert('Please upload a JPEG or PNG image.');
+                    profileUpload.value = '';
+                    return;
+                }
+
+                // Validate file size (e.g., max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Image size must be less than 5MB.');
+                    profileUpload.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const imageDataUrl = event.target.result;
+
+                    // Update currentUser in localStorage
+                    currentUser.profileImage = imageDataUrl;
+                    let users = JSON.parse(localStorage.getItem('users')) || [];
+                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                    localStorage.setItem('users', JSON.stringify(users));
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                    // Update displayed images
+                    document.getElementById('profileLogo').src = imageDataUrl;
+                    document.getElementById('profileImage').src = imageDataUrl;
+
+                    alert('Profile photo updated successfully!');
+                };
+                reader.onerror = () => {
+                    alert('Failed to read the image file.');
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Display AI chat history
+            const chatHistory = document.getElementById('chatHistory');
+            if (!currentUser.aiChats || currentUser.aiChats.length === 0) {
+                chatHistory.innerHTML = '<p class="text-gray-600 text-center">No AI chats yet.</p>';
+            } else {
+                currentUser.aiChats.forEach(chat => {
+                    const chatCard = document.createElement('div');
+                    chatCard.className = 'chat-card bg-white p-6 rounded-lg shadow-md';
+                    chatCard.innerHTML = `
+                        <p class="text-gray-600"><strong>User:</strong> ${chat.userMessage}</p>
+                        <p class="text-gray-600"><strong>AI:</strong> ${chat.aiResponse}</p>
+                        <p class="text-gray-500 text-sm">Date: ${new Date(chat.timestamp).toLocaleString()}</p>
+                    `;
+                    chatHistory.appendChild(chatCard);
+                });
+            }
+
+            // Display user listings
+            const userListings = document.getElementById('userListings');
+            if (!currentUser.listings || currentUser.listings.length === 0) {
+                userListings.innerHTML = '<p class="text-gray-600 text-center">No listings yet.</p>';
+            } else {
+                currentUser.listings.forEach(listing => {
+                    const listingCard = document.createElement('div');
+                    listingCard.className = 'listing-card bg-white p-6 rounded-lg shadow-md';
+                    const mediaHtml = listing.media && listing.media.length > 0
+                        ? `<div class="listing-media flex flex-wrap">${listing.media.map(file => 
+                            file.type.startsWith('image/')
+                                ? `<img src="${file.data}" alt="${file.name}">`
+                                : `<video src="${file.data}" controls></video>`
+                        ).join('')}</div>`
+                        : '';
+                    listingCard.innerHTML = `
+                        <h3 class="text-xl font-semibold text-gray-800">${listing.title}</h3>
+                        <p class="text-gray-600">Price: $${listing.price.toLocaleString()}/month</p>
+                        <p class="text-gray-600">Location: ${listing.location}</p>
+                        <p class="text-gray-600">Address: ${listing.streetAddress || 'Not specified'}</p>
+                        <p class="text-gray-600">Type: ${listing.houseType}</p>
+                        <p class="text-gray-600">Bedrooms: ${listing.bedrooms}</p>
+                        <p class="text-gray-600">Utilities: ${listing.utilities || 'Not specified'}</p>
+                        <p class="text-gray-600">${listing.description || 'No description provided'}</p>
+                        ${mediaHtml}
+                    `;
+                    userListings.appendChild(listingCard);
+                });
+            }
+
+            // Logout
+            document.getElementById('logoutButton').addEventListener('click', () => {
+                localStorage.removeItem('currentUser');
+                window.location.href = '/login';
+            });
+        });
+    </script>
+</body>
+</html>
