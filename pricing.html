@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - Room Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .pricing-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .pricing-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .login-link {
+            transition: color 0.2s ease-in-out;
+        }
+        .login-link:hover {
+            color: #2563eb;
+        }
+        .profile-logo {
+            transition: transform 0.2s ease-in-out;
+        }
+        .profile-logo:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-blue-50 flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 bg-white shadow-md z-10">
+        <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-6">
+                <div class="text-2xl font-bold text-blue-600">Room Finder</div>
+                <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
+                <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
+                <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
+                <a href="/ai-negotiator" class="text-gray-700 hover:text-blue-600 transition font-medium">AI Negotiator</a>
+                <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
+                <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition font-medium">Pricing</a>
+                <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
+            </div>
+            <div id="authSection">
+                <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Pricing Section -->
+    <section class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h1 class="text-4xl font-extrabold text-gray-800 text-center mb-8">Choose Your Plan</h1>
+        <p class="text-lg text-gray-600 text-center mb-12">Select the perfect subscription plan to unlock the full potential of RoomFinderAI, tailored to your needs.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Basic Plan -->
+            <div class="pricing-card bg-white rounded-xl shadow-xl p-6 text-center">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Basic</h2>
+                <p class="text-4xl font-extrabold text-blue-600 mb-4">$9.99<span class="text-lg font-normal text-gray-600">/mo</span></p>
+                <p class="text-gray-600 mb-6">Perfect for individuals starting their room search.</p>
+                <ul class="text-gray-600 text-left mb-6 space-y-2">
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Up to 5 listings per month</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Basic search filters</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Email support</li>
+                </ul>
+                <a href="/payment?plan=basic&price=9.99" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Choose Basic</a>
+            </div>
+            <!-- Pro Plan -->
+            <div class="pricing-card bg-white rounded-xl shadow-xl p-6 text-center border-2 border-blue-600">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Pro</h2>
+                <p class="text-4xl font-extrabold text-blue-600 mb-4">$19.99<span class="text-lg font-normal text-gray-600">/mo</span></p>
+                <p class="text-gray-600 mb-6">Ideal for active searchers with advanced needs.</p>
+                <ul class="text-gray-600 text-left mb-6 space-y-2">
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Up to 20 listings per month</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Access to AI Negotiator (5 sessions/mo)</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Sublease management tools</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Advanced search filters</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Priority email support</li>
+                </ul>
+                <a href="/payment?plan=pro&price=19.99" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Choose Pro</a>
+            </div>
+            <!-- Premium Plan -->
+            <div class="pricing-card bg-white rounded-xl shadow-xl p-6 text-center">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Premium</h2>
+                <p class="text-4xl font-extrabold text-blue-600 mb-4">$39.99<span class="text-lg font-normal text-gray-600">/mo</span></p>
+                <p class="text-gray-600 mb-6">Ultimate plan for power users and landlords.</p>
+                <ul class="text-gray-600 text-left mb-6 space-y-2">
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Unlimited listings</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Unlimited AI Negotiator sessions</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Advanced sublease management</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Premium search filters</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Priority phone & email support</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Analytics dashboard</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Dedicated account manager</li>
+                </ul>
+                <a href="/payment?plan=premium&price=39.99" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Choose Premium</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-sm">© 2025 Room Finder. All rights reserved.</p>
+            <div class="mt-4 flex justify-center space-x-4">
+                <a href="/index" class="hover:text-blue-400">Home</a>
+                <a href="/index#about" class="hover:text-blue-400">About</a>
+                <a href="/sublease" class="hover:text-blue-400">Sublease</a>
+                <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
+                <a href="/listings" class="hover:text-blue-400">Listings</a>
+                <a href="/pricing" class="hover:text-blue-400">Pricing</a>
+                <a href="/index#contact" class="hover:text-blue-400">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Update authentication section based on login status
+        document.addEventListener('DOMContentLoaded', () => {
+            const profileImages = [
+                'https://via.placeholder.com/40/FF6B6B',
+                'https://via.placeholder.com/40/4ECDC4',
+                'https://via.placeholder.com/40/FFE66D',
+                'https://via.placeholder.com/40/6B7280',
+                'https://via.placeholder.com/40/FF9F1C'
+            ];
+            let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const authSection = document.getElementById('authSection');
+
+            if (currentUser) {
+                if (!currentUser.profileImage) {
+                    currentUser.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
+                    let users = JSON.parse(localStorage.getItem('users')) || [];
+                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                    localStorage.setItem('users', JSON.stringify(users));
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                }
+                authSection.innerHTML = `
+                    <a href="/profile">
+                        <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
+                    </a>
+                `;
+            } else {
+                authSection.innerHTML = `
+                    <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

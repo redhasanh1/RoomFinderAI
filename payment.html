@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - Room Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://pay.google.com/gp/p/js/pay.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .login-link {
+            transition: color 0.2s ease-in-out;
+        }
+        .login-link:hover {
+            color: #2563eb;
+        }
+        .profile-logo {
+            transition: transform 0.2s ease-in-out;
+        }
+        .profile-logo:hover {
+            transform: scale(1.1);
+        }
+        .payment-toggle {
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        }
+        .payment-toggle:hover {
+            background-color: #e5e7eb;
+        }
+        .apple-pay-button {
+            display: inline-block;
+            -webkit-appearance: -apple-pay-button;
+            -apple-pay-button-type: plain;
+            -apple-pay-button-style: black;
+            width: 100%;
+            height: 40px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="bg-blue-50 flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 bg-white shadow-md z-10">
+        <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-6">
+                <div class="text-2xl font-bold text-blue-600">Room Finder</div>
+                <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
+                <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
+                <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
+                <a href="/ai-negotiator" class="text-gray-700 hover:text-blue-600 transition font-medium">AI Negotiator</a>
+                <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
+                <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition font-medium">Pricing</a>
+                <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
+            </div>
+            <div id="authSection">
+                <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Payment Section -->
+    <section class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h1 class="text-4xl font-extrabold text-gray-800 text-center mb-8">Complete Your Subscription</h1>
+        <div class="bg-white rounded-xl shadow-xl p-6 sm:p-8 max-w-lg mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Payment Details</h2>
+            <p id="planInfo" class="text-gray-600 mb-6">Selected Plan: <span id="planName">Loading...</span> - $<span id="planPrice">0.00</span>/mo</p>
+            <div class="flex justify-center mb-6 space-x-2">
+                <button id="cardToggle" class="payment-toggle bg-blue-600 text-white px-4 py-2 rounded-l-lg font-semibold" onclick="togglePaymentMethod('card')">Pay with Card</button>
+                <button id="cryptoToggle" class="payment-toggle bg-gray-200 text-gray-800 px-4 py-2 font-semibold" onclick="togglePaymentMethod('crypto')">Pay with Crypto</button>
+                <button id="googleToggle" class="payment-toggle bg-gray-200 text-gray-800 px-4 py-2 font-semibold" onclick="togglePaymentMethod('google')">Google Pay</button>
+                <button id="appleToggle" class="payment-toggle bg-gray-200 text-gray-800 px-4 py-2 rounded-r-lg font-semibold" onclick="togglePaymentMethod('apple')">Apple Pay</button>
+            </div>
+            <div id="cardPayment" class="space-y-6">
+                <div>
+                    <label for="card-element" class="block text-sm font-medium text-gray-700">Card Details</label>
+                    <div id="card-element" class="mt-1 w-full p-3 border border-gray-200 rounded-lg"></div>
+                    <div id="card-errors" class="text-red-600 text-sm mt-1"></div>
+                </div>
+                <div>
+                    <label for="cardholder" class="block text-sm font-medium text-gray-700">Cardholder Name</label>
+                    <input type="text" id="cardholder" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="John Doe" required>
+                </div>
+            </div>
+            <div id="cryptoPayment" class="space-y-6 hidden">
+                <p class="text-gray-600">Scan the QR code or send the equivalent of $<span id="cryptoPrice">0.00</span> to the wallet address below:</p>
+                <div class="flex justify-center">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa" alt="QR Code" class="w-32 h-32">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Wallet Address</label>
+                    <input type="text" id="walletAddress" class="mt-1 w-full p-3 border border-gray-200 rounded-lg bg-gray-100" value="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa" readonly>
+                    <button onclick="copyWalletAddress()" class="mt-4 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition font-semibold">Copy Address</button>
+                </div>
+            </div>
+            <div id="googlePayment" class="space-y-6 hidden">
+                <div id="google-pay-button" class="text-center"></div>
+            </div>
+            <div id="applePayment" class="space-y-6 hidden">
+                <div id="apple-pay-button" class="apple-pay-button"></div>
+            </div>
+            <div class="flex justify-center mt-6">
+                <button id="payButton" onclick="processPayment()" class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Pay Now</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-sm">© 2025 Room Finder. All rights reserved.</p>
+            <div class="mt-4 flex justify-center space-x-4">
+                <a href="/index" class="hover:text-blue-400">Home</a>
+                <a href="/index#about" class="hover:text-blue-400">About</a>
+                <a href="/sublease" class="hover:text-blue-400">Sublease</a>
+                <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
+                <a href="/listings" class="hover:text-blue-400">Listings</a>
+                <a href="/pricing" class="hover:text-blue-400">Pricing</a>
+                <a href="#contact" class="hover:text-blue-400">Contact</a>
+            </div>
+        </div>
+    <script type="text/javascript">
+        // XLSX Processing
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+
+        // Stripe Initialization
+        const stripe = Stripe('pk_test_51YOUR_STRIPE_PUBLISHABLE_KEY'); // Replace with your Stripe publishable key
+        const elements = stripe.elements();
+        const cardElement = elements.create('card', {
+            style: {
+                base: {
+                    fontSize: '16px',
+                    color: '#32325d',
+                    '::placeholder': {
+                        color: '#aab7c4'
+                    }
+                }
+            }
+        });
+        cardElement.mount('#card-element');
+
+        // Google Pay Initialization
+        const googlePayClient = new google.payments.api.PaymentsClient({ environment: 'TEST' });
+        const paymentRequest = {
+            apiVersion: 2,
+            apiVersionMinor: 0,
+            allowedPaymentMethods: [{
+                type: 'CARD',
+                parameters: {
+                    allowedAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'],
+                    allowedCardNetworks: ['AMEX', 'DISCOVER', 'MASTERCARD', 'VISA']
+                },
+                tokenizationSpecification: {
+                    type: 'PAYMENT_GATEWAY',
+                    parameters: {
+                        gateway: 'stripe',
+                        'stripe:apiKey': 'pk_test_51YOUR_STRIPE_PUBLISHABLE_KEY' // Replace with your Stripe key
+                    }
+                }
+            }],
+            merchantInfo: {
+                merchantId: 'YOUR_MERCHANT_ID', // Replace with your Google Pay merchant ID
+                merchantName: 'Room Finder'
+            },
+            transactionInfo: {
+                totalPriceStatus: 'FINAL',
+                totalPrice: '0.00',
+                currencyCode: 'USD',
+                countryCode: 'US'
+            }
+        };
+
+        // Apple Pay Setup
+        function setupApplePay() {
+            if (window.ApplePaySession && ApplePaySession.canMakePayments()) {
+                document.getElementById('apple-pay-button').style.display = 'block';
+            } else {
+                document.getElementById('apple-pay-button').innerHTML = '<p>Apple Pay not available</p>';
+            }
+        }
+
+        // Authentication and Plan Setup
+        document.addEventListener('DOMContentLoaded', () => {
+            const profileImages = [
+                'https://via.placeholder.com/40/FF6B6B',
+                'https://via.placeholder.com/40/4ECDC4',
+                'https://via.placeholder.com/40/FFE66D',
+                'https://via.placeholder.com/40/6B7280',
+                'https://via.placeholder.com/40/FF9F1C'
+            ];
+            let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const authSection = document.getElementById('authSection');
+
+            if (currentUser) {
+                if (!currentUser.profileImage) {
+                    currentUser.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
+                    let users = JSON.parse(localStorage.getItem('users')) || [];
+                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                    localStorage.setItem('users', JSON.stringify(users));
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                }
+                authSection.innerHTML = `
+                    <a href="/profile">
+                        <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
+                    </a>
+                `;
+            } else {
+                authSection.innerHTML = `
+                    <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
+                `;
+                window.location.href = '/login';
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const plan = urlParams.get('plan') || 'Unknown';
+            const price = urlParams.get('price') || '0.00';
+            document.getElementById('planName').textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
+            document.getElementById('planPrice').textContent = price;
+            document.getElementById('cryptoPrice').textContent = price;
+            paymentRequest.transactionInfo.totalPrice = price;
+
+            // Initialize Google Pay
+            googlePayClient.isReadyToPay({
+                apiVersion: 2,
+                apiVersionMinor: 0,
+                allowedPaymentMethods: paymentRequest.allowedPaymentMethods
+            }).then(response => {
+                if (response.result) {
+                    document.getElementById('google-pay-button').innerHTML = '<div class="gpay-button black"></div>';
+                } else {
+                    document.getElementById('google-pay-button').innerHTML = '<p>Google Pay not available</p>';
+                }
+            }).catch(err => {
+                console.error('Google Pay check error:', err);
+                document.getElementById('google-pay-button').innerHTML = '<p>Google Pay not available</p>';
+            });
+
+            // Initialize Apple Pay
+            setupApplePay();
+        });
+
+        function togglePaymentMethod(method) {
+            const cardPayment = document.getElementById('cardPayment');
+            const cryptoPayment = document.getElementById('cryptoPayment');
+            const googlePayment = document.getElementById('googlePayment');
+            const applePayment = document.getElementById('applePayment');
+            const cardToggle = document.getElementById('cardToggle');
+            const cryptoToggle = document.getElementById('cryptoToggle');
+            const googleToggle = document.getElementById('googleToggle');
+            const appleToggle = document.getElementById('appleToggle');
+            const payButton = document.getElementById('payButton');
+
+            cardPayment.classList.add('hidden');
+            cryptoPayment.classList.add('hidden');
+            googlePayment.classList.add('hidden');
+            applePayment.classList.add('hidden');
+            cardToggle.classList.add('bg-gray-200', 'text-gray-800');
+            cryptoToggle.classList.add('bg-gray-200', 'text-gray-800');
+            document.getElementById('text-gray-800');
+            googleToggle.classList.add('bg-gray-200', 'text-gray-800');
+            appleToggle.classList.add('bg-gray-200', 'text-gray-800');
+            cardToggle.classList.remove('bg-blue-600', 'text-white');
+            cryptoToggle.classList.remove('bg-blue-600', 'text-white');
+            googleToggle.classList.remove('bg-blue-600', 'text-white');
+            appleToggle.classList.remove('bg-blue-600', 'text-white');
+
+            if (method === 'card') {
+                cardPayment.classList.remove('hidden');
+                cardToggle.classList.add('bg-blue-600', 'text-white');
+                payButton.textContent = 'Pay Now';
+            } else if (method === 'crypto') {
+                cryptoPayment.classList.remove('hidden');
+                cryptoToggle.classList.add('bg-blue-600', 'text-white');
+                payButton.textContent = 'Confirm Crypto Payment';
+            } else if (method === 'google') {
+                googlePayment.classList.remove('hidden');
+                googleToggle.classList.add('bg-blue-600', 'text-white');
+                payButton.textContent = 'Pay with Google Pay';
+            } else if (method === 'apple') {
+                applePayment.classList.remove('hidden');
+                appleToggle.classList.add('bg-blue-600', 'text-white');
+                payButton.textContent = 'Pay with Apple Pay';
+            }
+        }
+
+        function copyWalletAddress() {
+            const walletAddress = document.getElementById('walletAddress');
+            walletAddress.select();
+            document.execCommand('copy');
+            alert('Wallet address copied to clipboard!');
+        }
+
+        function processPayment() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                alert('Please log in to complete the payment.');
+                window.location.href = '/login';
+                return;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const plan = urlParams.get('plan');
+            const price = urlParams.get('price');
+            const isCrypto = !document.getElementById('cryptoPayment').classList.contains('hidden');
+            const isGoogle = !document.getElementById('googlePayment').classList.contains('hidden');
+            const isApple = !document.getElementById('applePayment').classList.contains('hidden');
+
+            if (isCrypto) {
+                alert(`Processing crypto payment for ${plan} plan ($${price}/mo). Send the equivalent amount to the provided wallet address.`);
+                console.log('Crypto payment attempt:', { plan, price });
+            } else if (isGoogle) {
+                googlePayClient.loadPaymentData(paymentRequest).then(paymentData => {
+                    // Send paymentData to your backend for processing with Stripe
+                    fetch('/api/process-google-pay', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ paymentData, plan, price })
+                    }).then(response => response.json()).then(data => {
+                        if (data.success) {
+                            window.location.href = '/subscription-success';
+                        } else {
+                            alert('Google Pay payment failed: ' + data.error);
+                        }
+                    });
+                }).catch(err => {
+                    console.error('Google Pay error:', err);
+                    alert('Google Pay payment failed.');
+                });
+            } else if (isApple) {
+                if (window.ApplePaySession && ApplePaySession.canMakePayments()) {
+                    const applePaymentRequest = {
+                        countryCode: 'US',
+                        currencyCode: 'USD',
+                        supportedNetworks: ['visa', 'masterCard', 'amex', 'discover'],
+                        merchantCapabilities: ['supports3DS'],
+                        total: {
+                            label: 'Room Finder Subscription',
+                            amount: price
+                        }
+                    };
+                    const session = new ApplePaySession(4, applePaymentRequest);
+                    session.onvalidatemerchant = event => {
+                        fetch('/api/apple-pay/validate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ validationURL: event.validationURL })
+                        }).then(response => response.json()).then(merchantSession => {
+                            session.completeMerchantValidation(merchantSession);
+                        });
+                    };
+                    session.onpaymentauthorized = event => {
+                        fetch('/api/process-apple-pay', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ paymentToken: event.payment.token, plan, price })
+                        }).then(response => response.json()).then(data => {
+                            if (data.success) {
+                                session.completePayment(ApplePaySession.STATUS_SUCCESS);
+                                window.location.href = '/subscription-success';
+                            } else {
+                                session.completePayment(ApplePaySession.STATUS_FAILURE);
+                                alert('Apple Pay payment failed: ' + data.error);
+                            }
+                        });
+                    };
+                    session.begin();
+                } else {
+                    alert('Apple Pay is not available on this device.');
+                }
+            } else {
+                // Stripe Card Payment
+                const cardholder = document.getElementById('cardholder').value;
+                if (!cardholder || cardholder.trim().length < 2) {
+                    document.getElementById('card-errors').textContent = 'Please enter a valid cardholder name.';
+                    return;
+                }
+                stripe.createPaymentMethod({
+                    type: 'card',
+                    card: cardElement,
+                    billing_details: { name: cardholder }
+                }).then(result => {
+                    if (result.error) {
+                        document.getElementById('card-errors').textContent = result.error.message;
+                    } else {
+                        fetch('/api/process-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                paymentMethodId: result.paymentMethod.id,
+                                plan,
+                                price
+                            })
+                        }).then(response => response.json()).then(data => {
+                            if (data.success) {
+                                window.location.href = '/subscription-success';
+                            } else {
+                                document.getElementById('card-errors').textContent = 'Payment failed: ' + data.error;
+                            }
+                        });
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

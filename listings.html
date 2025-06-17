@@ -12,10 +12,6 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f7fafc;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
         }
         .listing-card {
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
@@ -82,6 +78,16 @@
             width: 100%;
             border-radius: 0.5rem;
             margin-top: 1.5rem;
+            background-color: #f0f0f0;
+            visibility: visible !important;
+            display: block !important;
+        }
+        #map-error {
+            display: none;
+            color: #dc2626;
+            text-align: center;
+            margin-top: 1rem;
+            font-weight: 500;
         }
         .modal {
             display: none;
@@ -222,7 +228,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
+<body class="bg-blue-50 flex flex-col min-h-screen">
     <!-- Header -->
     <header class="sticky top-0 bg-white shadow-md z-10">
         <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -310,7 +316,7 @@
                     <div id="mediaPreview" class="media-preview flex flex-wrap mt-2"></div>
                 </div>
                 <div>
-                    <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold">Add Listing</button>
+                    <button type="submit" class="w-full bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Add Listing</button>
                 </div>
             </form>
         </section>
@@ -318,9 +324,10 @@
         <!-- Listings Display -->
         <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Available Listings</h2>
-            <button onclick="displayListings()" class="mb-4 bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition">Refresh Listings</button>
+            <button onclick="displayListings()" class="mb-4 bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Refresh Listings</button>
             <div id="listingsContainer" class="listing-grid"></div>
             <div id="map"></div>
+            <p id="map-error">Failed to load map. Please check your connection or try again later.</p>
         </section>
 
         <!-- Modal for Listing Overview -->
@@ -334,7 +341,7 @@
                 <div id="modalDetails" class="text-gray-600 mb-4"></div>
                 <p id="modalDescription" class="text-gray-600 mb-4"></p>
                 <div id="modalMedia" class="modal-media flex flex-wrap mb-4"></div>
-                <a id="modalViewDetails" href="#" class="inline-block bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold text-center w-full">View Details</a>
+                <a id="modalViewDetails" href="#" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg text-center w-full">View Details</a>
             </div>
         </div>
 
@@ -379,8 +386,159 @@
     </div>
 
     <script type="text/javascript">
+        // Map Variables
+        let map;
+        let markers = [];
+
+        // Initialize Map with Retry Logic
+        function initMap() {
+            console.log('Attempting to initialize map');
+            const mapElement = document.getElementById('map');
+            const mapError = document.getElementById('map-error');
+
+            if (!mapElement) {
+                console.error('Map container not found');
+                if (mapError) mapError.style.display = 'block';
+                return false;
+            }
+
+            try {
+                map = L.map('map').setView([0, 0], 2); // Global view
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 18,
+                    minZoom: 2
+                }).addTo(map);
+
+                // Ensure map renders correctly
+                setTimeout(() => {
+                    map.invalidateSize();
+                    console.log('Map size invalidated');
+                }, 100);
+
+                if (mapError) mapError.style.display = 'none';
+                console.log('Map initialized successfully');
+                return true;
+            } catch (error) {
+                console.error('Failed to initialize map:', error);
+                if (mapError) mapError.style.display = 'block';
+                return false;
+            }
+        }
+
+        // Geocode Location with Retry Logic
+        async function geocodeLocation(location, retries = 3, delay = 1000) {
+            console.log('Geocoding location:', location);
+            for (let attempt = 1; attempt <= retries; attempt++) {
+                try {
+                    const query = encodeURIComponent(location);
+                    const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
+                        headers: {
+                            'User-Agent': 'RoomFinder/1.0 (contact: support@roomfinder.com)'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Geocoding request failed with status ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    console.log('Geocode response for', location, ':', data);
+
+                    if (data && data.length > 0) {
+                        const coords = {
+                            lat: parseFloat(data[0].lat),
+                            lon: parseFloat(data[0].lon)
+                        };
+                        console.log('Geocoded coordinates:', coords);
+                        return coords;
+                    }
+                    console.warn(`No coordinates found for location (attempt ${attempt}):`, location);
+                } catch (error) {
+                    console.error(`Error geocoding location (attempt ${attempt}):`, location, error);
+                }
+
+                if (attempt < retries) {
+                    console.log(`Retrying geocode after ${delay}ms`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+            console.error('Geocoding failed after all retries:', location);
+            return null;
+        }
+
+        // Update Map with Listings
+        async function updateMap(listings) {
+            console.log('Updating map with listings:', listings.length);
+            if (!map) {
+                console.warn('Map not initialized, attempting to initialize');
+                if (!initMap()) {
+                    console.error('Failed to initialize map during update');
+                    return;
+                }
+            }
+
+            // Clear existing markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            const validCoordinates = [];
+            let geocodeRequests = 0;
+
+            for (const listing of listings) {
+                const location = `${listing.street}, ${listing.city}, ${listing.postalCode}`;
+                if (!listing.street || !listing.city || !listing.postalCode) {
+                    console.warn('Listing missing address components:', listing);
+                    continue;
+                }
+
+                // Rate limit geocoding requests
+                if (geocodeRequests > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                geocodeRequests++;
+
+                const coords = await geocodeLocation(location);
+                if (coords && !isNaN(coords.lat) && !isNaN(coords.lon)) {
+                    const marker = L.marker([coords.lat, coords.lon], {
+                        title: listing.title
+                    })
+                        .addTo(map)
+                        .bindPopup(`
+                            <b>${listing.title}</b><br>
+                            $${listing.price.toLocaleString()}/mo<br>
+                            ${location}<br>
+                            <a href="/listing_details?id=${listing.id}" class="text-blue-600 hover:underline">View Details</a>
+                        `);
+                    markers.push(marker);
+                    validCoordinates.push([coords.lat, coords.lon]);
+                    console.log('Added marker for', location, 'at', coords);
+                } else {
+                    console.warn('Failed to geocode listing:', listing.title, location);
+                }
+            }
+
+            // Adjust map view
+            if (validCoordinates.length > 0) {
+                const bounds = L.latLngBounds(validCoordinates);
+                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+                console.log('Map zoomed to bounds:', validCoordinates);
+            } else {
+                console.log('No valid coordinates, setting to global view');
+                map.setView([0, 0], 2);
+            }
+
+            // Ensure map renders
+            setTimeout(() => {
+                map.invalidateSize();
+                console.log('Map size invalidated after update');
+            }, 100);
+
+            console.log('Map updated with', markers.length, 'markers');
+        }
+
         // Authentication check and header update
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log('DOMContentLoaded event fired');
             const profileImages = [
                 'https://via.placeholder.com/40/FF6B6B',
                 'https://via.placeholder.com/40/4ECDC4',
@@ -389,9 +547,11 @@
                 'https://via.placeholder.com/40/FF9F1C'
             ];
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            console.log('Current user:', currentUser);
             const authSection = document.getElementById('authSection');
 
             if (!currentUser) {
+                console.log('No current user, redirecting to login');
                 window.location.href = '/login';
                 return;
             }
@@ -399,9 +559,10 @@
             // Set current user email for RLS
             try {
                 const { error } = await supabase.rpc('set_current_user_email', { email: currentUser.email });
+                console.log('RPC set_current_user_email response:', { error });
                 if (error) {
                     console.error('Error setting current user email:', error);
-                    alert('Failed to initialize session. Please try again.');
+                    alert('Failed to initialize session: ' + error.message);
                     return;
                 }
                 console.log('Current user email set for RLS:', currentUser.email);
@@ -423,6 +584,8 @@
                     <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
                 </a>
             `;
+
+            // Initialize map
             initMap();
             setupChat();
             await displayListings();
@@ -432,12 +595,8 @@
         const SUPABASE_URL = 'https://fkktwhjybuflxqzopaex.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-            db: {
-                schema: 'public'
-            },
-            global: {
-                headers: { 'Content-Type': 'application/json' }
-            }
+            db: { schema: 'public' },
+            global: { headers: { 'Content-Type': 'application/json' } }
         });
 
         // Initialize Typo.js for autocorrect
@@ -702,7 +861,6 @@
                     }
 
                     console.log('Uploaded media:', { name: file.name, type: contentType, url: publicUrl });
-
                     uploadedMedia.push({
                         name: file.name,
                         type: contentType,
@@ -714,90 +872,19 @@
                     throw err;
                 }
             }
-
             return uploadedMedia;
-        }
-
-        // Initialize map
-        let map;
-        let markers = [];
-
-        function initMap() {
-            map = L.map('map').setView([43.6532, -79.3832], 10);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 18
-            }).addTo(map);
-            console.log('Map initialized');
-        }
-
-        // Geocode location using Nominatim API with street, city, and postal code
-        async function geocodeLocation(street, city, postalCode) {
-            try {
-                // Construct a detailed query for precise geocoding
-                const queryParts = [];
-                if (street) queryParts.push(street);
-                if (city) queryParts.push(city);
-                if (postalCode) queryParts.push(postalCode);
-                const query = encodeURIComponent(queryParts.join(', '));
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`);
-                const data = await response.json();
-                console.log('Geocode response for', queryParts.join(', '), ':', data);
-                if (data && data.length > 0) {
-                    return {
-                        lat: parseFloat(data[0].lat),
-                        lon: parseFloat(data[0].lon)
-                    };
-                }
-                console.warn('No coordinates found for address:', queryParts.join(', '));
-                return null;
-            } catch (error) {
-                console.error('Error geocoding address:', queryParts.join(', '), error);
-                return null;
-            }
-        }
-
-        // Update map with listings
-        async function updateMap(listings) {
-            markers.forEach(marker => map.removeLayer(marker));
-            markers = [];
-            const validCoordinates = [];
-
-            for (const listing of listings) {
-                if (!listing.street || !listing.city || !listing.postalCode) {
-                    console.warn('Listing missing address components:', listing);
-                    continue;
-                }
-
-                const coords = await geocodeLocation(listing.street, listing.city, listing.postalCode);
-                if (coords) {
-                    const marker = L.marker([coords.lat, coords.lon])
-                        .addTo(map)
-                        .bindPopup(`<b>${listing.title}</b><br>$${listing.price.toLocaleString()}/mo<br>${listing.street}, ${listing.city}, ${listing.postalCode}`);
-                    markers.push(marker);
-                    validCoordinates.push([coords.lat, coords.lon]);
-                    console.log('Added marker for', `${listing.street}, ${listing.city}, ${listing.postalCode}`, 'at', coords);
-                }
-            }
-
-            if (validCoordinates.length > 0) {
-                const bounds = L.latLngBounds(validCoordinates);
-                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-            } else {
-                map.setView([43.6532, -79.3832], 10);
-            }
-            console.log('Map updated with', markers.length, 'markers');
         }
 
         // Fetch listings from Supabase
         async function fetchListings() {
+            console.log('Fetching listings from Supabase');
             try {
                 const { data, error } = await supabase
                     .from('listings')
                     .select('*')
                     .order('created_at', { ascending: false })
                     .range(0, 19);
-                console.log('Fetched listings:', data);
+                console.log('Fetch result:', { data, error });
                 if (error) throw error;
                 return data || [];
             } catch (error) {
@@ -809,19 +896,45 @@
 
         // Display listings
         async function displayListings() {
-            const listings = await fetchListings();
+            console.log('Displaying listings');
+            let listings = await fetchListings();
             const container = document.getElementById('listingsContainer');
             container.innerHTML = '';
 
             if (listings.length === 0) {
-                container.innerHTML = '<p class="text-gray-600 text-center">No listings available.</p>';
-                updateMap([]);
-                return;
+                console.warn('No listings returned from Supabase, using test data');
+                listings = [{
+                    id: 1,
+                    title: 'Test Apartment',
+                    price: 1200,
+                    city: 'Toronto',
+                    street: '456 Yonge Street',
+                    postalCode: 'M4Y 1X9',
+                    house_type: 'Apartment',
+                    bedrooms: 2,
+                    utilities: 'Included',
+                    description: 'Test description',
+                    media: [{ url: 'https://via.placeholder.com/300x200', type: 'image/jpeg', name: 'test.jpg' }],
+                    user_email: 'test@example.com'
+                }, {
+                    id: 2,
+                    title: 'Cozy London Flat',
+                    price: 1500,
+                    city: 'London',
+                    street: '221B Baker Street',
+                    postalCode: 'NW1 6XE',
+                    house_type: 'Apartment',
+                    bedrooms: 1,
+                    utilities: 'Not included',
+                    description: 'A cozy flat in central London',
+                    media: [{ url: 'https://via.placeholder.com/300x200', type: 'image/jpeg', name: 'london.jpg' }],
+                    user_email: 'test2@example.com'
+                }];
+                container.innerHTML = '<p class="text-gray-600 text-center">No listings available in database, showing test listings.</p>';
             }
 
             listings.forEach(listing => {
-                console.log('Rendering listing:', listing);
-
+                console.log('Processing listing:', listing.id, listing.title);
                 let media = listing.media || [];
                 if (!Array.isArray(media)) {
                     console.warn('Media is not an array, resetting to empty array:', media);
@@ -888,8 +1001,8 @@
                         </div>
                         <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
                         <div class="flex space-x-2 mt-4">
-                            <button class="view-details-btn w-1/2 bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                            <button class="chat-btn w-1/2 bg-green-600 text-white p-2 rounded-lg transition ${hasOwner ? 'hover:bg-green-700' : ''}" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
+                            <button class="view-details-btn w-1/2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
+                            <button class="chat-btn w-1/2 bg-green-600 text-white px-4 py-2 rounded-lg transition ${hasOwner ? 'hover:bg-green-700' : ''} font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
                         </div>
                     </div>
                 `;
@@ -1207,7 +1320,9 @@
                 console.log('New listing added:', payload.new);
                 displayListings();
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log('Listings channel status:', status);
+            });
     </script>
 </body>
 </html>

@@ -7,6 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
         .room-card {
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
@@ -62,7 +65,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
+<body class="bg-blue-50 flex flex-col min-h-screen">
     <!-- Header -->
     <header class="sticky top-0 bg-white shadow-md z-10">
         <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -73,6 +76,7 @@
                 <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
                 <a href="/ai-negotiator" class="text-gray-700 hover:text-blue-600 transition font-medium">AI Negotiator</a>
                 <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
+                <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition font-medium">Pricing</a>
                 <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
             </div>
             <div id="authSection">
@@ -127,11 +131,11 @@
                     <textarea id="amenities" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="e.g., Wi-Fi, Parking, Gym" rows="4"></textarea>
                 </div>
                 <div class="flex space-x-4">
-                    <button onclick="addRoom()" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold">Add Room</button>
-                    <button onclick="searchRooms()" class="flex-1 bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition font-semibold">Search All Sites</button>
+                    <button onclick="addRoom()" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Add Room</button>
+                    <button onclick="searchRooms()" class="flex-1 bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition font-semibold shadow-md hover:shadow-lg">Search All Sites</button>
                 </div>
                 <div class="flex justify-center">
-                    <button onclick="askAI()" class="w-full max-w-xs bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition font-semibold">Ask AI</button>
+                    <button onclick="askAI()" class="w-full max-w-xs bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition font-semibold shadow-md hover:shadow-lg">Ask AI</button>
                 </div>
             </div>
         </section>
@@ -156,7 +160,7 @@
             <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Contact Us</h2>
             <p class="text-lg text-gray-600 text-center mb-6">Have questions or need assistance? Reach out to our team!</p>
             <div class="flex justify-center">
-                <a href="mailto:support@roomfinder.com" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-full hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Email Us</a>
+                <a href="mailto:support@roomfinder.com" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Email Us</a>
             </div>
         </section>
 
@@ -170,6 +174,7 @@
                 <a href="/sublease" class="hover:text-blue-400">Sublease</a>
                 <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
                 <a href="/listings" class="hover:text-blue-400">Listings</a>
+                <a href="/pricing" class="hover:text-blue-400">Pricing</a>
                 <a href="/index#contact" class="hover:text-blue-400">Contact</a>
             </div>
         </div>
@@ -524,3 +529,5 @@
             }
         }
     </script>
+</body>
+</html>

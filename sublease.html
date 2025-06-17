@@ -3,62 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Room Finder - Sublease Your Space</title>
+    <meta name="description" content="Sublease your room or apartment easily with Room Finder. Create a listing and connect with potential subtenants.">
+    <meta name="keywords" content="sublease, room rental, apartment sublease, housing">
+    <title>Sublease Your Space - Room Finder</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f7fafc;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        main {
-            flex-grow: 1;
-            margin: 0 auto;
-            padding: 20px;
-            width: 80%;
-        }
-        section {
-            background-color: white;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
-            margin-bottom: 3rem;
-        }
-        h2 {
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: #1a202c;
-            margin-bottom: 1.5rem;
-            text-align: center;
-        }
-        p {
-            font-size: 1.125rem;
-            color: #4a5568;
-            margin-bottom: 1.5rem;
-            text-align: center;
-        }
-        input, button {
-            width: 100%;
-            padding: 0.75rem;
-            margin-top: 0.75rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.5rem;
-        }
-        button {
-            background-color: #2563eb;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #1d4ed8;
-        }
-        .custom-blue {
-            background-color: #1e40af;
-        }
-        .custom-blue:hover {
-            background-color: #1e3a8a;
         }
         .profile-logo {
             transition: transform 0.2s ease-in-out;
@@ -72,9 +24,23 @@
         .login-link:hover {
             color: #2563eb;
         }
+        #aiButton {
+            transition: transform 0.3s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        #aiButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .listing-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .listing-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
+<body class="bg-blue-50 flex flex-col min-h-screen">
     <!-- Header -->
     <header class="sticky top-0 bg-white shadow-md z-10">
         <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -96,13 +62,77 @@
     <!-- Main Content -->
     <main class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <!-- Sublease Section -->
-        <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Sublease Your Space</h2>
-            <p class="text-lg text-gray-600 mb-6">Looking to sublease your room or apartment? Room Finder makes it easy to list your space and connect with potential subtenants. Create a listing, set your terms, and reach a wide audience effortlessly.</p>
-            <div class="flex justify-center">
-                <a href="/listings" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-full hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg" onclick="checkLoginForSublease(event)">Get Started</a>
-            </div>
+        <section id="subleaseSection" class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Sublease Your Space</h2>
+            <p class="text-lg text-gray-600 mb-6 text-center">Fill out the details below or upload a contract to create your sublease listing.</p>
+            <form id="subleaseForm" class="space-y-6">
+                <div>
+                    <label for="contractImage" class="block text-sm font-medium text-gray-700">Upload Contract Image</label>
+                    <input type="file" id="contractImage" name="contractImage" class="mt-1 w-full p-3 border border-gray-200 rounded-lg" accept="image/*" aria-describedby="contractHelp">
+                    <p id="contractHelp" class="text-sm text-gray-500 mt-1">Upload a contract image to auto-fill the form (JPEG, PNG).</p>
+                    <button type="button" id="extractButton" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Extract Details</button>
+                </div>
+                <div>
+                    <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+                    <input type="text" id="address" name="address" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Enter full address" required aria-required="true">
+                </div>
+                <div>
+                    <label for="rent" class="block text-sm font-medium text-gray-700">Monthly Rent ($)</label>
+                    <input type="number" id="rent" name="rent" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="e.g., 1200" required aria-required="true">
+                </div>
+                <div>
+                    <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="date" id="startDate" name="startDate" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" required aria-required="true">
+                </div>
+                <div>
+                    <label for="endDate" class="block text-sm font-medium text-gray-700">End Date</label>
+                    <input type="date" id="endDate" name="endDate" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" required aria-required="true">
+                </div>
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="description" name="description" rows="4" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Describe your space..." required aria-required="true"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Amenities</label>
+                    <div class="mt-2 grid grid-cols-2 ap-2">
+                        <label><input type="checkbox" name="amenities" value="wifi" class="mr-2"> Wi-Fi</label>
+                        <label><input type="checkbox" name="amenities" value="parking" class="mr-2"> Parking</label>
+                        <label><input type="checkbox" name="amenities" value="furnished" class="mr-2"> Furnished</label>
+                        <label><input type="checkbox" name="amenities" value="pets" class="mr-2"> Pets Allowed</label>
+                    </div>
+                </div>
+                <div>
+                    <label for="images" class="block text-sm font-medium text-gray-700">Upload Images</label>
+                    <input type="file" id="images" name="images" multiple class="mt-1 w-full p-3 border border-gray-200 rounded-lg" accept="image/*" aria-describedby="imageHelp">
+                    <p id="imageHelp" class="text-sm text-gray-500 mt-1">Upload up to 5 images (JPEG, PNG).</p>
+                    <div id="imagePreview" class="mt-4 flex space-x-4 flex-wrap"></div>
+                </div>
+                <div class="flex space-x-4">
+                    <button type="button" onclick="showPreview()" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Preview Listing</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Submit Listing</button>
+                </div>
+            </form>
         </section>
+
+        <!-- All Subleases Section -->
+        <section id="allSubleases" class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Your Sublease Listings</h2>
+            <div id="subleaseList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- Preview Modal -->
+        <div id="previewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" role="dialog" aria-labelledby="previewModalTitle" aria-modal="true">
+            <div class="bg-white p-6 rounded-lg max-w-lg w-full">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Listing Preview</h3>
+                <div id="previewContent" class="space-y-4"></div>
+                <button onclick="closeModal()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Close</button>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+        </div>
     </main>
 
     <!-- Footer -->
@@ -112,7 +142,7 @@
             <div class="mt-4 flex justify-center space-x-4">
                 <a href="/index" class="hover:text-blue-400">Home</a>
                 <a href="/index#about" class="hover:text-blue-400">About</a>
-                <a href="/sublease" class="hover:text-blue-400">Sublease</a>
+                <a href="/sublease" class="hovertext-blue-400">Sublease</a>
                 <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
                 <a href="/listings" class="hover:text-blue-400">Listings</a>
                 <a href="/index#contact" class="hover:text-blue-400">Contact</a>
@@ -130,41 +160,303 @@
     </div>
 
     <script>
-        // Update authentication section
+        // Update authentication section and sublease form
         document.addEventListener('DOMContentLoaded', () => {
-            const profileImages = [
-                'https://via.placeholder.com/40/FF6B6B',
-                'https://via.placeholder.com/40/4ECDC4',
-                'https://via.placeholder.com/40/FFE66D',
-                'https://via.placeholder.com/40/6B7280',
-                'https://via.placeholder.com/40/FF9F1C'
-            ];
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            const authSection = document.getElementById('authSection');
+            try {
+                const profileImages = [
+                    'https://via.placeholder.com/40/FF6B6B',
+                    'https://via.placeholder.com/40/4ECDC4',
+                    'https://via.placeholder.com/40/FFE66D',
+                    'https://via.placeholder.com/40/6B7280',
+                    'https://via.placeholder.com/40/FF9F1C'
+                ];
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const authSection = document.getElementById('authSection');
+                const subleaseSection = document.getElementById('subleaseSection');
 
-            if (currentUser) {
-                if (!currentUser.profileImage) {
-                    currentUser.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
-                    let users = JSON.parse(localStorage.getItem('users')) || [];
-                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                    localStorage.setItem('users', JSON.stringify(users));
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                if (currentUser) {
+                    if (!currentUser.profileImage) {
+                        currentUser.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
+                        let users = JSON.parse(localStorage.getItem('users')) || [];
+                        users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                        localStorage.setItem('users', JSON.stringify(users));
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    }
+                    authSection.innerHTML = `
+                        <a href="/profile" aria-label="View user profile">
+                            <img id="profileLogo" src="${currentUser.profileImage}" alt="User's profile image" class="w-10 h-10 rounded-full profile-logo">
+                        </a>
+                    `;
+                    subleaseSection.innerHTML = `
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Sublease Your Space</h2>
+                        <p class="text-lg text-gray-600 mb-6 text-center">Fill out the details below or upload a contract to create your sublease listing.</p>
+                        <form id="subleaseForm" class="space-y-6">
+                            <div>
+                                <label for="contractImage" class="block text-sm font-medium text-gray-700">Upload Contract Image</label>
+                                <input type="file" id="contractImage" name="contractImage" class="mt-1 w-full p-3 border border-gray-200 rounded-lg" accept="image/*" aria-describedby="contractHelp">
+                                <p id="contractHelp" class="text-sm text-gray-500 mt-1">Upload a contract image to auto-fill the form (JPEG, PNG).</p>
+                                <button type="button" id="extractButton" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Extract Details</button>
+                            </div>
+                            <div>
+                                <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+                                <input type="text" id="address" name="address" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Enter full address" required aria-required="true">
+                            </div>
+                            <div>
+                                <label for="rent" class="block text-sm font-medium text-gray-700">Monthly Rent ($)</label>
+                                <input type="number" id="rent" name="rent" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="e.g., 1200" required aria-required="true">
+                            </div>
+                            <div>
+                                <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+                                <input type="date" id="startDate" name="startDate" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" required aria-required="true">
+                            </div>
+                            <div>
+                                <label for="endDate" class="block text-sm font-medium text-gray-700">End Date</label>
+                                <input type="date" id="endDate" name="endDate" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" required aria-required="true">
+                            </div>
+                            <div>
+                                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                                <textarea id="description" name="description" rows="4" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Describe your space..." required aria-required="true"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Amenities</label>
+                                <div class="mt-2 grid grid-cols-2 gap-2">
+                                    <label><input type="checkbox" name="amenities" value="wifi" class="mr-2"> Wi-Fi</label>
+                                    <label><input type="checkbox" name="amenities" value="parking" class="mr-2"> Parking</label>
+                                    <label><input type="checkbox" name="amenities" value="furnished" class="mr-2"> Furnished</label>
+                                    <label><input type="checkbox" name="amenities" value="pets" class="mr-2"> Pets Allowed</label>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="images" class="block text-sm font-medium text-gray-700">Upload Images</label>
+                                <input type="file" id="images" name="images" multiple class="mt-1 w-full p-3 border border-gray-200 rounded-lg" accept="image/*" aria-describedby="imageHelp">
+                                <p id="imageHelp" class="text-sm text-gray-500 mt-1">Upload up to 5 images (JPEG, PNG).</p>
+                                <div id="imagePreview" class="mt-4 flex space-x-4 flex-wrap"></div>
+                            </div>
+                            <div class="flex space-x-4">
+                                <button type="button" onclick="showPreview()" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Preview Listing</button>
+                                <button type="submit" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Submit Listing</button>
+                            </div>
+                        </form>
+                    `;
+                } else {
+                    subleaseSection.innerHTML = `
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Sublease Your Space</h2>
+                        <p class="text-lg text-gray-600 mb-6 text-center">Looking to sublease your room or apartment? Log in to create your listing!</p>
+                        <div class="flex justify-center">
+                            <a href="/login" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Log In to Create Listing</a>
+                        </div>
+                    `;
                 }
+
+                // Load and display sublease listings
+                loadSubleases();
+            } catch (error) {
+                console.error('Authentication error:', error);
                 authSection.innerHTML = `
-                    <a href="/profile">
-                        <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
-                    </a>
+                    <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
                 `;
             }
+
+            // Image preview
+            document.getElementById('images')?.addEventListener('change', function(event) {
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = '';
+                const files = event.target.files;
+                if (files.length > 5) {
+                    alert('You can upload a maximum of 5 images.');
+                    event.target.value = '';
+                    return;
+                }
+                for (let file of files) {
+                    if (!file.type.startsWith('image/')) continue;
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.classList.add('w-24', 'h-24', 'object-cover', 'rounded-lg');
+                    preview.appendChild(img);
+                }
+            });
+
+            // Contract image extraction
+            document.getElementById('extractButton')?.addEventListener('click', async () => {
+                const contractImage = document.getElementById('contractImage').files[0];
+                if (!contractImage) {
+                    alert('Please upload a contract image.');
+                    return;
+                }
+                showLoading();
+                try {
+                    const { data: { text } } = await Tesseract.recognize(contractImage, 'eng', {
+                        logger: m => console.log(m)
+                    });
+                    extractContractDetails(text);
+                    hideLoading();
+                } catch (error) {
+                    console.error('OCR error:', error);
+                    alert('Failed to extract text from the image. Please try again.');
+                    hideLoading();
+                }
+            });
+
+            // Form validation and submission
+            document.getElementById('subleaseForm')?.addEventListener('submit', function(event) {
+                event.preventDefault();
+                showLoading();
+                const rent = document.getElementById('rent').value;
+                const startDate = new Date(document.getElementById('startDate').value);
+                const endDate = new Date(document.getElementById('endDate').value);
+                const today = new Date();
+                const images = document.getElementById('images').files;
+
+                if (rent <= 0) {
+                    alert('Please enter a valid rent amount.');
+                    hideLoading();
+                    return;
+                }
+                if (startDate < today) {
+                    alert('Start date must be in the future.');
+                    hideLoading();
+                    return;
+                }
+                if (endDate <= startDate) {
+                    alert('End date must be after start date.');
+                    hideLoading();
+                    return;
+                }
+                if (images.length === 0) {
+                    alert('Please upload at least one image.');
+                    hideLoading();
+                    return;
+                }
+
+                // Save listing to localStorage
+                const listing = {
+                    address: document.getElementById('address').value,
+                    rent: rent,
+                    startDate: document.getElementById('startDate').value,
+                    endDate: document.getElementById('endDate').value,
+                    description: document.getElementById('description').value,
+                    amenities: Array.from(document.querySelectorAll('input[name="amenities"]:checked')).map(cb => cb.value),
+                    images: Array.from(images).map(file => URL.createObjectURL(file)),
+                    createdAt: new Date().toISOString()
+                };
+                let listings = JSON.parse(localStorage.getItem('subleaseListings')) || [];
+                listings.push(listing);
+                localStorage.setItem('subleaseListings', JSON.stringify(listings));
+
+                // Simulate form submission
+                setTimeout(() => {
+                    hideLoading();
+                    alert('Listing submitted successfully!');
+                    document.getElementById('subleaseForm').reset();
+                    document.getElementById('imagePreview').innerHTML = '';
+                    loadSubleases();
+                }, 1000);
+            });
         });
 
-        // Check login for sublease action
-        function checkLoginForSublease(event) {
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            if (!currentUser) {
-                event.preventDefault();
-                alert('Please log in to create a sublease listing.');
-                window.location.href = '/login';
+        // Extract contract details using regex
+        function extractContractDetails(text) {
+            const addressRegex = /\d+\s+[A-Za-z\s]+,\s*[A-Za-z\s]+,\s*[A-Z]{2}\s*\d{5}/;
+            const rentRegex = /rent\s*[:\s]*\$?\s*(\d{3,5}(\.\d{2})?)/i;
+            const dateRegex = /\b(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{4}-\d{2}-\d{2})\b/g;
+            const descriptionRegex = /(?:description|details|property\s+description)[\s\S]*?(?=\n\n|\n$|$)/i;
+
+            const addressMatch = text.match(addressRegex);
+            const rentMatch = text.match(rentRegex);
+            const dateMatches = text.match(dateRegex);
+            const descriptionMatch = text.match(descriptionRegex);
+
+            if (addressMatch) document.getElementById('address').value = addressMatch[0];
+            if (rentMatch) document.getElementById('rent').value = parseFloat(rentMatch[1]);
+            if (dateMatches && dateMatches.length >= 2) {
+                document.getElementById('startDate').value = normalizeDate(dateMatches[0]);
+                document.getElementById('endDate').value = normalizeDate(dateMatches[1]);
             }
+            if (descriptionMatch) document.getElementById('description').value = descriptionMatch[0].replace(/(description|details|property\s+description)[:\s]*/i, '').trim();
+
+            // Auto-check amenities based on keywords
+            const amenities = ['wifi', 'parking', 'furnished', 'pets'];
+            amenities.forEach(amenity => {
+                if (text.toLowerCase().includes(amenity)) {
+                    document.querySelector(`input[name="amenities"][value="${amenity}"]`).checked = true;
+                }
+            });
+        }
+
+        // Normalize date format to YYYY-MM-DD
+        function normalizeDate(dateStr) {
+            const parts = dateStr.includes('/') ? dateStr.split('/') : dateStr.split('-');
+            if (parts.length === 3) {
+                let [month, day, year] = parts;
+                if (month.length <= 2 && day.length <= 2 && year.length === 2) {
+                    year = `20${year}`;
+                }
+                return `${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            }
+            return dateStr;
+        }
+
+        // Load and display sublease listings
+        function loadSubleases() {
+            const subleaseList = document.getElementById('subleaseList');
+            const listings = JSON.parse(localStorage.getItem('subleaseListings')) || [];
+            subleaseList.innerHTML = '';
+            if (listings.length === 0) {
+                subleaseList.innerHTML = '<p class="text-gray-600 text-center">No listings yet. Create your first sublease!</p>';
+                return;
+            }
+            listings.forEach(listing => {
+                const card = document.createElement('div');
+                card.className = 'listing-card bg-gray-50 rounded-lg p-4 shadow-md';
+                card.innerHTML = `
+                    <h3 class="text-lg font-semibold text-gray-800">${listing.address}</h3>
+                    <p class="text-gray-600">$${listing.rent}/month</p>
+                    <p class="text-gray-600">From ${listing.startDate} to ${listing.endDate}</p>
+                    <p class="text-gray-600">${listing.description}</p>
+                    ${listing.amenities.length ? `<p class="text-gray-600"><strong>Amenities:</strong> ${listing.amenities.join(', ')}</p>` : ''}
+                    <div class="mt-2 flex space-x-2 flex-wrap">
+                        ${listing.images.map(src => `<img src="${src}" alt="Listing image" class="w-16 h-16 object-cover rounded-lg">`).join('')}
+                    </div>
+                `;
+                subleaseList.appendChild(card);
+            });
+        }
+
+        // Preview listing
+        function showPreview() {
+            const address = document.getElementById('address')?.value;
+            const rent = document.getElementById('rent')?.value;
+            const description = document.getElementById('description')?.value;
+            const amenities = Array.from(document.querySelectorAll('input[name="amenities"]:checked')).map(cb => cb.value);
+            const previewContent = document.getElementById('previewContent');
+
+            if (!address || !rent || !description) {
+                alert('Please fill out all required fields before previewing.');
+                return;
+            }
+
+            previewContent.innerHTML = `
+                <h4 class="text-xl font-semibold text-gray-800">${address}</h4>
+                <p class="text-gray-600">$${rent}/month</p>
+                <p class="text-gray-600">${description}</p>
+                ${amenities.length ? `<p class="text-gray-600"><strong>Amenities:</strong> ${amenities.join(', ')}</p>` : ''}
+                <div class="mt-2 flex space-x-2 flex-wrap">${document.getElementById('imagePreview')?.innerHTML || ''}</div>
+            `;
+            document.getElementById('previewModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('previewModal').classList.add('hidden');
+        }
+
+        // Loading state
+        function showLoading() {
+            document.getElementById('loading').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
         }
     </script>
+</body>
+</html>

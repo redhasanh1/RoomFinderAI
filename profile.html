@@ -8,10 +8,6 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f7fafc;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
         }
         .listing-card, .chat-card {
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
@@ -34,17 +30,32 @@
             background-color: #2563eb;
             color: white;
             border-radius: 0.25rem;
-            transition: background-color 0.2s ease-in-out;
+            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
         .profile-upload-label:hover {
             background-color: #1e40af;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         .profile-upload-input {
             display: none;
         }
+        .profile-logo {
+            transition: transform 0.2s ease-in-out;
+        }
+        .profile-logo:hover {
+            transform: scale(1.1);
+        }
+        #aiButton {
+            transition: transform 0.3s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        #aiButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
+<body class="bg-blue-50 flex flex-col min-h-screen">
     <!-- Header -->
     <header class="sticky top-0 bg-white shadow-md z-10">
         <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -58,8 +69,8 @@
                 <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
             </div>
             <div>
-                <a href="/profile">
-                    <img id="profileLogo" src="https://via.placeholder.com/40" alt="Profile" class="w-10 h-10 rounded-full transition transform hover:scale-110">
+                <a href="/profile" aria-label="View user profile">
+                    <img id="profileLogo" src="https://via.placeholder.com/40" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
                 </a>
             </div>
         </nav>
@@ -72,11 +83,11 @@
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">User Profile</h2>
             <div class="text-center">
                 <img id="profileImage" src="https://via.placeholder.com/100" alt="Profile" class="w-24 h-24 rounded-full mx-auto mb-4">
-                <label for="profileUpload" class="profile-upload-label mb-4">Upload Profile Photo</label>
+                <label for="profileUpload" class="profile-upload-label mb-4 shadow-md hover:shadow-lg">Upload Profile Photo</label>
                 <input type="file" id="profileUpload" class="profile-upload-input" accept="image/jpeg,image/png">
                 <h3 id="userName" class="text-xl font-semibold text-gray-800"></h3>
                 <p id="userEmail" class="text-gray-600"></p>
-                <button id="logoutButton" class="mt-4 bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 transition font-semibold">Logout</button>
+                <button id="logoutButton" class="mt-4 bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 transition font-semibold shadow-md hover:shadow-lg">Logout</button>
             </div>
         </section>
 
@@ -107,6 +118,15 @@
             </div>
         </div>
     </footer>
+
+    <!-- AI Negotiator Button -->
+    <div class="fixed bottom-4 right-4 z-50">
+        <button id="aiButton" aria-label="Navigate to AI Negotiator page" onclick="window.location.href='/ai-negotiator'" class="bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition flex items-center justify-center w-16 h-16">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+        </button>
+    </div>
 
     <script>
         var gk_isXlsx = false;
@@ -203,7 +223,7 @@
             } else {
                 currentUser.aiChats.forEach(chat => {
                     const chatCard = document.createElement('div');
-                    chatCard.className = 'chat-card bg-white p-6 rounded-lg shadow-md';
+                    chatCard.className = 'chat-card bg-white p-6 rounded-xl shadow-xl';
                     chatCard.innerHTML = `
                         <p class="text-gray-600"><strong>User:</strong> ${chat.userMessage}</p>
                         <p class="text-gray-600"><strong>AI:</strong> ${chat.aiResponse}</p>
@@ -220,7 +240,7 @@
             } else {
                 currentUser.listings.forEach(listing => {
                     const listingCard = document.createElement('div');
-                    listingCard.className = 'listing-card bg-white p-6 rounded-lg shadow-md';
+                    listingCard.className = 'listing-card bg-white p-6 rounded-xl shadow-xl';
                     const mediaHtml = listing.media && listing.media.length > 0
                         ? `<div class="listing-media flex flex-wrap">${listing.media.map(file => 
                             file.type.startsWith('image/')
