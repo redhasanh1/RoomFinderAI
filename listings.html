@@ -408,12 +408,8 @@
         
         <!-- Message Panel -->
         <div id="messagePanel" class="hidden absolute bottom-20 right-0 w-80 bg-white rounded-lg shadow-xl border">
-            <div class="p-4 border-b bg-blue-600 text-white rounded-t-lg flex justify-between items-center">
+            <div class="p-4 border-b bg-blue-600 text-white rounded-t-lg">
                 <h3 class="font-semibold">Messages</h3>
-                <div class="flex gap-1">
-                    <button id="clearNotificationsBtn" class="text-xs bg-red-600 hover:bg-red-700 px-2 py-1 rounded" title="Clear all notifications">🔕</button>
-                    <button id="refreshMessagesBtn" class="text-xs bg-blue-700 hover:bg-blue-800 px-2 py-1 rounded" title="Refresh conversations">🔄</button>
-                </div>
             </div>
             <div id="conversationTabs" class="max-h-96 overflow-y-auto">
                 <div id="noConversations" class="p-4 text-gray-500 text-center">
@@ -1716,29 +1712,11 @@
 
             chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
             console.log('Messages loaded:', messages.length);
-            
-            // Mark conversation as read when loading messages
-            if (conversationId) {
-                console.log('📖 Auto-marking conversation as read during loadMessages');
-                const { error: readError } = await supabase
-                    .from('conversation_reads')
-                    .upsert({
-                        conversation_id: conversationId,
-                        user_email: currentUser.email,
-                        last_read_at: new Date().toISOString()
-                    });
-                
-                if (readError) {
-                    console.error('❌ Error auto-marking as read:', readError);
-                } else {
-                    console.log('✅ Auto-marked as read');
-                    // Refresh notifications after marking as read
-                    if (window.refreshConversations) {
-                        window.refreshConversations();
-                    }
-                }
-            }
         }
+
+        // Global variables for messaging
+        let globalUserConversations = [];
+        let globalUnreadCount = 0;
 
         // Setup Messaging Panel
         function setupMessagingPanel() {
@@ -1748,8 +1726,6 @@
             const messageNotificationBadge = document.getElementById('messageNotificationBadge');
             
             let isMessagingPanelOpen = false;
-            let userConversations = [];
-            let unreadCount = 0;
 
             // Toggle message panel
             messageToggleBtn.addEventListener('click', async () => {
@@ -1762,31 +1738,6 @@
                 }
             });
 
-            // Manual refresh button for testing
-            document.getElementById('refreshMessagesBtn').addEventListener('click', async () => {
-                console.log('🔄 Manual refresh triggered');
-                await loadUserConversations();
-            });
-
-            // Clear all notifications button for testing
-            document.getElementById('clearNotificationsBtn').addEventListener('click', async () => {
-                console.log('🔕 Clearing all notifications');
-                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                
-                // Mark all conversations as read
-                for (const conv of userConversations) {
-                    await supabase
-                        .from('conversation_reads')
-                        .upsert({
-                            conversation_id: conv.id,
-                            user_email: currentUser.email,
-                            last_read_at: new Date().toISOString()
-                        });
-                }
-                
-                // Refresh after clearing
-                setTimeout(() => loadUserConversations(), 1000);
-            });
 
             // Close panel when clicking outside
             document.addEventListener('click', (event) => {
@@ -1875,9 +1826,10 @@
                     }
                 }
 
-                userConversations = filteredConversations;
+                globalUserConversations = filteredConversations;
+                window.globalUserConversations = globalUserConversations; // Keep global reference updated
                 displayConversations();
-                await updateUnreadCount();
+                await window.updateUnreadCount();
             }
 
             // Display conversations in tabs
@@ -1885,12 +1837,12 @@
                 const conversationTabs = document.getElementById('conversationTabs');
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 
-                if (userConversations.length === 0) {
+                if (globalUserConversations.length === 0) {
                     conversationTabs.innerHTML = '<div id="noConversations" class="p-4 text-gray-500 text-center">No conversations yet</div>';
                     return;
                 }
 
-                conversationTabs.innerHTML = userConversations.map(conv => {
+                conversationTabs.innerHTML = globalUserConversations.map(conv => {
                     const otherUserEmail = conv.sender_email === currentUser.email ? conv.receiver_email : conv.sender_email;
                     const listingTitle = conv.listings ? conv.listings.title : 'Unknown Listing';
                     
@@ -1922,26 +1874,42 @@
                 }).join('');
             }
 
-            // Update unread message count
-            async function updateUnreadCount() {
+            // Update unread message count (now accessible globally)
+            window.updateUnreadCount = async function() {
+                const messageNotificationBadge = document.getElementById('messageNotificationBadge');
+                const profileNotificationBadge = document.getElementById('profileNotificationBadge');
+                
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 if (!currentUser) return;
 
                 // Calculate total unread messages across all conversations
-                unreadCount = userConversations.reduce((total, conv) => total + (conv.unread_count || 0), 0);
+                let totalUnread = 0;
+                for (const conv of globalUserConversations) {
+                    if (conv.unread_count && conv.unread_count > 0) {
+                        totalUnread += conv.unread_count;
+                    }
+                }
                 
-                if (unreadCount > 0) {
-                    messageNotificationBadge.textContent = unreadCount;
+                console.log('🔔 Calculating unread:', {
+                    conversations: globalUserConversations.length,
+                    totalUnread: totalUnread,
+                    conversationsWithUnread: globalUserConversations.filter(c => c.unread_count > 0).length
+                });
+                
+                if (totalUnread > 0) {
+                    messageNotificationBadge.textContent = totalUnread;
                     messageNotificationBadge.classList.remove('hidden');
-                    profileNotificationBadge.textContent = unreadCount;
+                    profileNotificationBadge.textContent = totalUnread;
                     profileNotificationBadge.classList.remove('hidden');
+                    console.log('✅ Showing notifications:', totalUnread);
                 } else {
                     messageNotificationBadge.classList.add('hidden');
                     profileNotificationBadge.classList.add('hidden');
+                    console.log('✅ Hiding notifications (no unread messages)');
                 }
                 
-                console.log('🔔 Total unread messages:', unreadCount);
-            }
+                globalUnreadCount = totalUnread;
+            };
 
             // SIMPLIFIED Messaging panel real-time updates
             const panelChannel = supabase
@@ -1954,11 +1922,20 @@
                     console.log('🔔 PANEL: New message event:', payload);
                     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                     
-                    // Refresh panel for any new message (will be filtered by loadUserConversations)
-                    if (payload.new.sender_email !== currentUser.email) {
-                        console.log('🔄 Refreshing conversations panel');
-                        loadUserConversations();
+                    // If message is for current user (not sent by them), instantly update UI
+                    if (payload.new.sender_email !== currentUser.email && window.globalUserConversations) {
+                        const convIndex = window.globalUserConversations.findIndex(c => c.id === payload.new.conversation_id);
+                        if (convIndex !== -1) {
+                            console.log('⚡ INSTANTLY updating unread count for new message');
+                            window.globalUserConversations[convIndex].unread_count = (window.globalUserConversations[convIndex].unread_count || 0) + 1;
+                            if (window.updateUnreadCount) {
+                                window.updateUnreadCount();
+                            }
+                        }
                     }
+                    
+                    // Also refresh from database after delay
+                    setTimeout(() => loadUserConversations(), 2000);
                 })
                 .on('postgres_changes', { 
                     event: 'INSERT', 
@@ -1981,12 +1958,9 @@
                     console.log('👀 READ STATUS UPDATE:', payload);
                     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                     
-                    // Only refresh if this read status affects current user
-                    if (payload.new?.user_email === currentUser.email || 
-                        payload.old?.user_email === currentUser.email) {
-                        console.log('🔄 Refreshing conversations due to read status change');
-                        loadUserConversations();
-                    }
+                    // Always refresh when read status changes
+                    console.log('🔄 Refreshing conversations due to read status change');
+                    setTimeout(() => loadUserConversations(), 500);
                 })
                 .subscribe((status) => {
                     console.log('📱 PANEL SUBSCRIPTION STATUS:', status);
@@ -1997,6 +1971,9 @@
             
             // Expose function globally for external access
             window.refreshConversations = loadUserConversations;
+            
+            // Update global reference when conversations are loaded
+            window.globalUserConversations = globalUserConversations;
 
             // FALLBACK: Polling for updates if real-time fails
             let pollingInterval;
@@ -2024,39 +2001,47 @@
             // Close messaging panel
             document.getElementById('messagePanel').classList.add('hidden');
             
+            // INSTANTLY clear notifications - don't wait for database
+            console.log('⚡ INSTANTLY clearing notifications for conversation:', conversationId);
+            
+            // Find and update the conversation in local array
+            if (window.globalUserConversations) {
+                const convIndex = window.globalUserConversations.findIndex(c => c.id === conversationId);
+                if (convIndex !== -1) {
+                    window.globalUserConversations[convIndex].unread_count = 0;
+                    console.log('✅ Locally marked conversation as read');
+                }
+            }
+            
+            // Immediately update notification badges
+            if (window.updateUnreadCount) {
+                window.updateUnreadCount();
+            }
+            
             // Set up chat modal with existing conversation
             currentConversationId = conversationId;
             const otherUserName = otherUserEmail ? otherUserEmail.split('@')[0] : 'User';
             document.getElementById('chatTitle').textContent = `Chat with ${otherUserName} about ${listingTitle}`;
             
-            // Mark conversation as read
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            console.log('📖 Marking conversation as read:', conversationId);
+            await loadMessages(conversationId);
+            document.getElementById('chatModal').style.display = 'block';
             
-            const { error: readError } = await supabase
+            // Update database in background (don't wait)
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            supabase
                 .from('conversation_reads')
                 .upsert({
                     conversation_id: conversationId,
                     user_email: currentUser.email,
                     last_read_at: new Date().toISOString()
+                })
+                .then(({ error }) => {
+                    if (error) {
+                        console.error('❌ Background database update failed:', error);
+                    } else {
+                        console.log('✅ Background database update successful');
+                    }
                 });
-            
-            if (readError) {
-                console.error('❌ Error marking as read:', readError);
-            } else {
-                console.log('✅ Successfully marked as read');
-            }
-            
-            await loadMessages(conversationId);
-            document.getElementById('chatModal').style.display = 'block';
-            
-            // Force refresh conversations and notifications
-            console.log('🔄 Refreshing notifications after marking as read');
-            setTimeout(async () => {
-                if (window.refreshConversations) {
-                    await window.refreshConversations();
-                }
-            }, 500);
         };
 
         // Real-time subscription to listings
