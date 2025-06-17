@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Finder - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -130,6 +131,11 @@
         }
     </script>
     <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://fkktwhjybuflxqzopaex.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         const form = document.getElementById('authForm');
         const formTitle = document.getElementById('formTitle');
         const submitButton = document.getElementById('submitButton');
@@ -145,13 +151,40 @@
             nameFields.classList.toggle('hidden', isLogin);
         });
 
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
-            let users = JSON.parse(localStorage.getItem('users')) || [];
 
             if (isLogin) {
+                // Login logic - check Supabase first, then localStorage as fallback
+                try {
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('email', email)
+                        .single();
+                    
+                    if (data && data.password === password) {
+                        const user = {
+                            firstName: data.first_name,
+                            lastName: data.last_name,
+                            email: data.email,
+                            password: data.password,
+                            profileImage: data.profile_image || 'https://via.placeholder.com/40',
+                            aiChats: [],
+                            listings: []
+                        };
+                        localStorage.setItem('currentUser', JSON.stringify(user));
+                        window.location.href = '/index';
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Supabase login error:', err);
+                }
+
+                // Fallback to localStorage
+                let users = JSON.parse(localStorage.getItem('users')) || [];
                 const user = users.find(u => u.email === email && u.password === password);
                 if (user) {
                     localStorage.setItem('currentUser', JSON.stringify(user));
@@ -160,29 +193,69 @@
                     alert('Invalid email or password.');
                 }
             } else {
+                // Registration logic
                 const firstName = document.getElementById('firstName').value.trim();
                 const lastName = document.getElementById('lastName').value.trim();
                 if (!firstName || !lastName) {
                     alert('Please fill in all fields.');
                     return;
                 }
-                if (users.some(u => u.email === email)) {
-                    alert('Email already registered.');
-                    return;
+
+                try {
+                    // Check if user already exists in Supabase
+                    const { data: existingUser } = await supabase
+                        .from('profiles')
+                        .select('email')
+                        .eq('email', email)
+                        .single();
+                    
+                    if (existingUser) {
+                        alert('Email already registered.');
+                        return;
+                    }
+
+                    // Insert new user into Supabase
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .insert([{
+                            email: email,
+                            password: password,
+                            first_name: firstName,
+                            last_name: lastName,
+                            profile_image: 'https://via.placeholder.com/40'
+                        }])
+                        .select()
+                        .single();
+
+                    if (error) {
+                        console.error('Supabase registration error:', error);
+                        alert('Registration failed: ' + error.message);
+                        return;
+                    }
+
+                    // Create user object for localStorage
+                    const user = {
+                        firstName,
+                        lastName,
+                        email,
+                        password,
+                        profileImage: 'https://via.placeholder.com/40',
+                        aiChats: [],
+                        listings: []
+                    };
+
+                    // Also save to localStorage for compatibility
+                    let users = JSON.parse(localStorage.getItem('users')) || [];
+                    users.push(user);
+                    localStorage.setItem('users', JSON.stringify(users));
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+
+                    alert('Registration successful!');
+                    window.location.href = '/index';
+                } catch (err) {
+                    console.error('Registration error:', err);
+                    alert('Registration failed. Please try again.');
                 }
-                const user = {
-                    firstName,
-                    lastName,
-                    email,
-                    password,
-                    profileImage: 'https://via.placeholder.com/40',
-                    aiChats: [],
-                    listings: []
-                };
-                users.push(user);
-                localStorage.setItem('users', JSON.stringify(users));
-                localStorage.setItem('currentUser', JSON.stringify(user));
-                window.location.href = '/index';
             }
         });
     </script>
