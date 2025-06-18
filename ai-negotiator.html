@@ -6,6 +6,7 @@
     <title>Room Finder - AI Negotiator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         #chatMessages {
             height: 500px;
@@ -85,8 +86,8 @@
                     <p class="text-gray-600">Hello! I'm here to help you negotiate your rental or add a listing. Provide details like price, bedrooms, and house type, or say "add a listing" to create one.</p>
                 </div>
                 <div class="p-4">
-                    <input id="chatInput" type="text" class="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Type your message...">
-                    <button onclick="sendChatMessage()" class="mt-3 w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Send</button>
+                    <input id="chatInput" type="text" class="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Type your message..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+                    <button id="sendButton" onclick="sendChatMessage()" class="mt-3 w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Send</button>
                 </div>
             </div>
         </section>
@@ -114,7 +115,7 @@
     </div>
     <script>
         // Authentication check and header update
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const profileImages = [
                 'https://via.placeholder.com/40/FF6B6B',
                 'https://via.placeholder.com/40/4ECDC4',
@@ -122,7 +123,9 @@
                 'https://via.placeholder.com/40/6B7280',
                 'https://via.placeholder.com/40/FF9F1C'
             ];
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            
+            // Store current user globally
+            currentUser = JSON.parse(localStorage.getItem('currentUser'));
             const authSection = document.getElementById('authSection');
 
             if (!currentUser) {
@@ -142,9 +145,18 @@
                     <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
                 </a>
             `;
-
-            // Initialize chat
-            appendMessage('AI', 'Hello! I\'m here to help you negotiate your rental or add a listing. Provide details like price, bedrooms, and house type, or say "add a listing" to create one.', 'left');
+            
+            // Initialize chat first
+            appendMessage('AI', 'Hello! I\'m your AI Negotiator. Tell me what you\'re looking for (e.g., "I need a 2-bedroom apartment under $1500 in Toronto") and I\'ll find matching listings and negotiate with landlords for you automatically!', 'left');
+            
+            // Initialize AI user account asynchronously
+            setupAIUser().catch(error => {
+                console.error('Error setting up AI user:', error);
+                appendMessage('AI', 'Note: AI user setup encountered an issue. Basic functionality may be limited.', 'left');
+            });
+            
+            // Initialize real-time message monitoring
+            setupMessageListener();
         });
 
         // Initialize Typo.js for autocorrect
@@ -169,9 +181,23 @@
             console.warn('Typo.js library not loaded. Autocorrect will be disabled.');
         }
 
-        const WIT_AI_TOKEN = '63RZTB2OMCSOSAUVLQFOGU6OYVQXD5JA';
-        const OPENAI_API_KEY = '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';
+        const WIT_AI_TOKEN = '';
+        const OPENAI_API_KEY = 'sk-pro';
+        const OPENAI_ORG_ID = 'org';
         const OPENAI_MODEL = 'gpt-3.5-turbo';
+
+        // Initialize Supabase
+        const SUPABASE_URL = 'https:/.supabase.co';
+        const SUPABASE_KEY = '..';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // AI user configuration
+        const AI_USER = {
+            email: 'ai-negotiator@roomfinder.com',
+            firstName: 'AI',
+            lastName: 'Negotiator',
+            profileImage: 'https://via.placeholder.com/40/4F46E5/FFFFFF?text=AI'
+        };
 
         // State variables
         let isTyping = false;
@@ -187,11 +213,24 @@
             firstLastMonth: null,
             contract: null
         };
+        let userNeeds = {
+            maxPrice: null,
+            minPrice: null,
+            preferredLocation: null,
+            houseType: null,
+            bedrooms: null,
+            utilities: null,
+            pets: null
+        };
         let priceHistory = [];
-        let negotiationState = 'idle'; // idle, offered, finalized
+        let negotiationState = 'idle'; // idle, offered, finalized, searching, messaging
         let lastOffer = null;
         let conversationHistory = [];
         let lastMessageTime = 0; // Track last message timestamp for debouncing
+        let matchingListings = [];
+        let currentUser = null;
+        let activeNegotiations = new Map(); // Track ongoing negotiations by conversation_id
+        let messageListener = null; // Real-time message listener
 
         // Append message to chat and update history
         function appendMessage(sender, message, align, isTypingIndicator = false) {
@@ -244,6 +283,581 @@
             console.log('displayListings called (stub for Listings page)');
             // Actual implementation should be in listings.html
         }
+
+        // Find matching listings based on user needs
+        async function findMatchingListings() {
+    try {
+        let query = supabase.from('listings').select('id, title, price, city, house_type, bedrooms, user_email, postalCode, street, location');
+        
+        if (userNeeds.maxPrice) {
+            query = query.lte('price', userNeeds.maxPrice);
+        }
+        if (userNeeds.minPrice) {
+            query = query.gte('price', userNeeds.minPrice);
+        }
+        if (userNeeds.preferredLocation) {
+            query = query.ilike('city', `%${userNeeds.preferredLocation}%`);
+        }
+        if (userNeeds.houseType) {
+            query = query.eq('house_type', userNeeds.houseType);
+        }
+        if (userNeeds.bedrooms) {
+            query = query.eq('bedrooms', userNeeds.bedrooms);
+        }
+        if (currentUser && currentUser.email) {
+            query = query.neq('user_email', currentUser.email);
+        }
+        
+        const { data: listings, error } = await query.order('created_at', { ascending: false }).limit(20);
+        
+        if (error) {
+            console.error('Error finding listings:', error.message);
+            throw new Error(`Database error: ${error.message}`);
+        }
+        
+        return listings || [];
+    } catch (error) {
+        console.error('Error in findMatchingListings:', error.message);
+        throw error;
+    }
+}
+
+        // Get market data for pricing research
+        async function getMarketData(location, houseType, bedrooms) {
+            try {
+                let query = supabase.from('listings').select('price, title');
+                
+                if (location) {
+                    query = query.ilike('city', `%${location}%`);
+                }
+                
+                if (houseType) {
+                    query = query.eq('house_type', houseType);
+                }
+                
+                if (bedrooms) {
+                    query = query.eq('bedrooms', bedrooms);
+                }
+                
+                const { data: listings, error } = await query.order('price', { ascending: true });
+                
+                if (error || !listings || listings.length === 0) {
+                    return null;
+                }
+                
+                const prices = listings.map(l => l.price).filter(p => p && p > 0);
+                if (prices.length === 0) return null;
+                
+                const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+                const min = Math.min(...prices);
+                const max = Math.max(...prices);
+                
+                return {
+                    average: Math.round(avg),
+                    minimum: min,
+                    maximum: max,
+                    count: prices.length,
+                    recentListings: listings.slice(0, 3)
+                };
+            } catch (error) {
+                console.error('Error getting market data:', error);
+                return null;
+            }
+        }
+
+        // Main function to search listings and message owners
+        async function searchAndMessageOwners(userMessage) {
+    try {
+        negotiationState = 'searching';
+        appendMessage('AI', 'Searching database for matching listings...', 'left', true);
+
+        // Find matching listings
+        matchingListings = await findMatchingListings();
+
+        removeTypingIndicator();
+
+        if (matchingListings.length === 0) {
+            appendMessage('AI', 'No matching listings found. The database may be empty or no listings match your criteria.', 'left');
+            negotiationState = 'idle';
+            return;
+        }
+
+        // Filter valid listings
+        const validListings = matchingListings.filter(listing => listing.user_email && listing.id);
+        if (validListings.length === 0) {
+            appendMessage('AI', 'Found listings, but none have valid owner emails or IDs.', 'left');
+            negotiationState = 'idle';
+            return;
+        }
+
+        appendMessage('AI', `Found ${validListings.length} valid listing(s)! Sending messages...`, 'left');
+
+        // Get market data
+        const marketData = await getMarketData(userNeeds.preferredLocation, userNeeds.houseType, userNeeds.bedrooms);
+
+        negotiationState = 'messaging';
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const listing of validListings) {
+            try {
+                const negotiationMessage = await generateNegotiationMessage(listing, marketData, userNeeds);
+                const success = await sendAutomatedMessage(listing, negotiationMessage);
+
+                if (success) {
+                    successCount++;
+                    appendMessage('AI', `✓ Messaged owner of "${listing.title}" ($${listing.price}/month)`, 'left');
+                } else {
+                    failCount++;
+                }
+            } catch (error) {
+                failCount++;
+                appendMessage('AI', `✗ Error messaging "${listing.title}": ${error.message}`, 'left');
+            }
+            await delay(1000);
+        }
+
+        if (successCount > 0) {
+            appendMessage('AI', `Sent ${successCount} message(s)! Check your messages tab for landlord responses.`, 'left');
+        } else {
+            appendMessage('AI', `Failed to send any messages (${failCount} failed). Check database setup or listing data.`, 'left');
+        }
+
+        // Verify messages in database
+        const { data: sentMessages, error: verifyError } = await supabase
+            .from('messages')
+            .select('id, content')
+            .eq('sender_email', AI_USER.email)
+            .gte('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+        if (verifyError) {
+            appendMessage('AI', `Error verifying messages: ${verifyError.message}`, 'left');
+        } else if (sentMessages.length === 0 && successCount > 0) {
+            appendMessage('AI', 'Warning: Messages reported as sent but not found in database.', 'left');
+        }
+
+        negotiationState = 'idle';
+    } catch (error) {
+        console.error('Error in searchAndMessageOwners:', error.message);
+        removeTypingIndicator();
+        appendMessage('AI', `Error searching listings: ${error.message}`, 'left');
+        negotiationState = 'idle';
+    }
+}
+
+        // Generate intelligent negotiation message using AI
+        async function generateNegotiationMessage(listing, marketData, userNeeds) {
+    const marketInfo = marketData ? 
+        `Market data: average $${marketData.average}/month (range: $${marketData.minimum}-$${marketData.maximum}, ${marketData.count} listings)` :
+        'Limited market data available';
+        
+    const prompt = `
+    You are an expert rental negotiator. Generate a professional, friendly negotiation message for this rental listing.
+    
+    LISTING DETAILS:
+    - Title: ${listing.title || 'Untitled'}
+    - Price: $${listing.price || 'Not specified'}/month
+    - Location: ${listing.city || 'Not specified'} (${listing.location || ''}, ${listing.postalCode || ''})
+    - Type: ${listing.house_type || 'Not specified'}
+    - Bedrooms: ${listing.bedrooms || 'Not specified'}
+    
+    USER REQUIREMENTS:
+    - Max Budget: $${userNeeds.maxPrice || 'Not specified'}
+    - Preferred Location: ${userNeeds.preferredLocation || 'Flexible'}
+    - House Type: ${userNeeds.houseType || 'Any'}
+    - Bedrooms: ${userNeeds.bedrooms || 'Any'}
+    
+    MARKET RESEARCH:
+    ${marketInfo}
+    
+    NEGOTIATION STRATEGY:
+    1. Express interest in the property
+    2. Mention you're a serious tenant
+    3. Suggest a lower price if above market average or budget, using market data
+    4. Offer quick decision-making
+    5. Keep tone professional, warm, 2-3 sentences
+    
+    Generate ONLY the message content:
+    `;
+    
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                'OpenAI-Organization': OPENAI_ORG_ID
+            },
+            body: JSON.stringify({
+                model: OPENAI_MODEL,
+                messages: [{ role: 'system', content: prompt }],
+                max_tokens: 150,
+                temperature: 0.7
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`OpenAI API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data.choices[0].message.content.trim();
+    } catch (error) {
+        console.error('Error generating negotiation message:', error.message);
+        return `Hi! I'm interested in your ${listing.house_type || 'property'} "${listing.title || 'listing'}" in ${listing.city || 'the area'}. I'm a qualified tenant ready to move quickly. Would you consider a slight discount based on market rates?`;
+    }
+}
+
+        // Setup AI user account in database
+        async function setupAIUser() {
+            try {
+                // Check if AI user already exists
+                const { data: existingUser, error: checkError } = await supabase
+                    .from('users')
+                    .select('email')
+                    .eq('email', AI_USER.email)
+                    .single();
+
+                if (checkError && checkError.code === 'PGRST116') {
+                    // User doesn't exist, create it
+                    const { error } = await supabase
+                        .from('users')
+                        .insert({
+                            first_name: AI_USER.firstName,
+                            last_name: AI_USER.lastName,
+                            email: AI_USER.email,
+                            password_hash: 'ai_user_no_login',
+                            profile_image: AI_USER.profileImage
+                        });
+
+                    if (error) {
+                        console.error('Error creating AI user:', error);
+                    } else {
+                        console.log('AI user account created successfully');
+                    }
+                } else if (existingUser) {
+                    console.log('AI user already exists');
+                } else if (checkError) {
+                    console.error('Error checking AI user:', checkError);
+                }
+            } catch (error) {
+                console.error('Error setting up AI user:', error);
+            }
+        }
+
+        // Set authentication context for database operations
+    async function setAuthContext(userEmail) {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user.email === userEmail) {
+            console.log('AI user already authenticated');
+            return true;
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: 'ai-negotiator@roomfinder.com',
+            password: 'RoomFinderAI2025!' // Replace with your secure password
+        });
+
+        if (error) {
+            console.error('Error signing in AI user:', error.message);
+            appendMessage('AI', `Failed to authenticate AI user: ${error.message}`, 'left');
+            return false;
+        }
+
+        console.log('AI user signed in successfully:', data.user.email);
+        return true;
+    } catch (error) {
+        console.error('Error in setAuthContext:', error.message);
+        appendMessage('AI', `Authentication error: ${error.message}`, 'left');
+        return false;
+    }
+}
+
+        // Setup real-time message listener for incoming replies
+        function setupMessageListener() {
+            if (!currentUser) {
+                console.log('No current user, skipping message listener setup');
+                return;
+            }
+            
+            try {
+                // Listen for new messages where current user is the receiver
+                messageListener = supabase
+                    .channel('ai_negotiator_messages')
+                    .on('postgres_changes', 
+                        { 
+                            event: 'INSERT', 
+                            schema: 'public', 
+                            table: 'messages'
+                        }, 
+                        async (payload) => {
+                            try {
+                                const newMessage = payload.new;
+                                
+                                // Check if this message is a reply to AI negotiator messages
+                                const { data: conversation } = await supabase
+                                    .from('conversations')
+                                    .select('*')
+                                    .eq('id', newMessage.conversation_id)
+                                    .eq('sender_email', AI_USER.email)  // AI is the sender (conversation starter)
+                                    .single();
+                                    
+                                // Only handle replies to AI messages (not messages FROM AI)
+                                if (conversation && newMessage.sender_email !== AI_USER.email && activeNegotiations.has(newMessage.conversation_id)) {
+                                    await handleIncomingNegotiationReply(newMessage, conversation);
+                                }
+                            } catch (error) {
+                                console.error('Error handling incoming message:', error);
+                            }
+                        }
+                    )
+                    .subscribe();
+                    
+                console.log('Message listener setup complete');
+            } catch (error) {
+                console.error('Error setting up message listener:', error);
+            }
+        }
+
+        // Handle incoming replies to our negotiations
+        async function handleIncomingNegotiationReply(message, conversation) {
+            try {
+                const negotiationInfo = activeNegotiations.get(message.conversation_id);
+                if (!negotiationInfo) return;
+                
+                appendMessage('AI', `📨 Received reply from landlord about "${negotiationInfo.listingTitle}": "${message.content}"`, 'left');
+                
+                // Analyze the reply and generate appropriate response
+                const response = await analyzeAndRespondToReply(message.content, negotiationInfo);
+                
+                if (response.shouldRespond) {
+                    // Set auth context for AI user to send reply
+                    await setAuthContext(AI_USER.email);
+                    
+                    // Send automated reply as AI user
+                    const aiReply = `🤖 AI Negotiator on behalf of ${negotiationInfo.userEmail}:\n\n${response.message}`;
+                    const { error } = await supabase
+                        .from('messages')
+                        .insert({
+                            conversation_id: message.conversation_id,
+                            sender_email: AI_USER.email,
+                            content: aiReply
+                        });
+                        
+                    if (!error) {
+                        appendMessage('AI', `📤 Auto-replied: "${response.message}"`, 'left');
+                        
+                        if (response.isFinalized) {
+                            appendMessage('AI', `✅ Negotiation finalized for "${negotiationInfo.listingTitle}"!`, 'left');
+                            activeNegotiations.delete(message.conversation_id);
+                        }
+                    } else {
+                        appendMessage('AI', `❌ Failed to send auto-reply: ${error.message}`, 'left');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error handling incoming message:', error);
+                appendMessage('AI', `❌ Error processing landlord reply: ${error.message}`, 'left');
+            }
+        }
+
+        // Analyze landlord reply and generate appropriate response
+        async function analyzeAndRespondToReply(replyContent, negotiationInfo) {
+            const prompt = `
+            You are an AI negotiator. A landlord replied to your rental inquiry. Analyze their response and decide how to proceed.
+            
+            LANDLORD REPLY: "${replyContent}"
+            
+            CURRENT NEGOTIATION:
+            - Listing: ${negotiationInfo.listingTitle}
+            - Original price: $${negotiationInfo.originalPrice}
+            - Your offer: $${negotiationInfo.lastOffer || negotiationInfo.originalPrice}
+            
+            ANALYSIS NEEDED:
+            1. Does the landlord accept your offer? (yes/no/maybe)
+            2. Do they make a counter-offer? (extract price if mentioned)
+            3. Do they reject or want to negotiate more?
+            4. Is this a final deal or should negotiation continue?
+            
+            RESPOND WITH JSON:
+            {
+                "shouldRespond": true/false,
+                "message": "your response message if shouldRespond is true",
+                "isFinalized": true/false,
+                "analysis": "brief analysis of their reply"
+            }
+            
+            RESPONSE GUIDELINES:
+            - If they accept: Confirm and finalize
+            - If they counter-offer: Evaluate if reasonable, accept or counter again
+            - If they reject: Thank them and end politely
+            - Keep responses professional and concise
+            - Don't respond to unrelated messages
+            `;
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                        'OpenAI-Organization': OPENAI_ORG_ID
+                    },
+                    body: JSON.stringify({
+                        model: OPENAI_MODEL,
+                        messages: [{ role: 'system', content: prompt }],
+                        max_tokens: 200,
+                        temperature: 0.7
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`OpenAI API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const aiResponse = JSON.parse(data.choices[0].message.content.trim());
+                
+                return aiResponse;
+                
+            } catch (error) {
+                console.error('Error analyzing reply:', error);
+                return {
+                    shouldRespond: false,
+                    message: "",
+                    isFinalized: false,
+                    analysis: "Error analyzing reply"
+                };
+            }
+        }
+
+        // Send automated message to listing owner
+        async function sendAutomatedMessage(listing, negotiationMessage) {
+    try {
+        if (!listing.user_email) {
+            console.error(`Missing user_email for listing "${listing.title}" (ID: ${listing.id})`);
+            appendMessage('AI', `✗ Failed to message "${listing.title}": Missing owner email`, 'left');
+            return false;
+        }
+
+        if (!listing.id) {
+            console.error(`Missing listing_id for listing "${listing.title}"`);
+            appendMessage('AI', `✗ Failed to message "${listing.title}": Missing listing ID`, 'left');
+            return false;
+        }
+
+        // Verify listing user exists in auth.users
+        const { data: userExists, error: userError } = await supabase
+            .from('auth.users')
+            .select('id')
+            .eq('email', listing.user_email)
+            .single();
+
+        if (userError || !userExists) {
+            console.error(`Listing owner ${listing.user_email} not found in auth.users`);
+            appendMessage('AI', `✗ Failed to message "${listing.title}": Owner email not registered`, 'left');
+            return false;
+        }
+
+        // Authenticate as AI user
+        const authSuccess = await setAuthContext(AI_USER.email);
+        if (!authSuccess) {
+            appendMessage('AI', `✗ Failed to message "${listing.title}": AI authentication failed`, 'left');
+            return false;
+        }
+
+        // Prepend AI identification to message
+        const aiMessage = `🤖 AI Negotiator on behalf of ${currentUser.firstName} ${currentUser.lastName}:\n\n${negotiationMessage}`;
+
+        // Check for existing conversation
+        const { data: existingConversation, error: convError } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('listing_id', listing.id)
+            .eq('sender_email', AI_USER.email)
+            .eq('receiver_email', listing.user_email)
+            .single();
+
+        let conversationId;
+
+        if (existingConversation) {
+            conversationId = existingConversation.id;
+            console.log(`Found existing conversation (ID: ${conversationId}) for listing "${listing.title}"`);
+        } else if (convError && convError.code !== 'PGRST116') {
+            console.error('Error checking existing conversation:', convError.message);
+            appendMessage('AI', `✗ Failed to message "${listing.title}": Conversation check error - ${convError.message}`, 'left');
+            return false;
+        } else {
+            // Create new conversation
+            const { data: newConversation, error: createError } = await supabase
+                .from('conversations')
+                .insert({
+                    listing_id: listing.id,
+                    sender_email: AI_USER.email,
+                    receiver_email: listing.user_email,
+                    created_at: new Date().toISOString()
+                })
+                .select('id')
+                .single();
+
+            if (createError) {
+                console.error('Error creating conversation:', createError.message);
+                appendMessage('AI', `✗ Failed to message "${listing.title}": Failed to create conversation - ${createError.message}`, 'left');
+                return false;
+            }
+
+            conversationId = newConversation.id;
+            console.log(`Created new conversation (ID: ${conversationId}) for listing "${listing.title}"`);
+        }
+
+        // Send the message
+        const { data: newMessage, error: messageError } = await supabase
+            .from('messages')
+            .insert({
+                conversation_id: conversationId,
+                sender_email: AI_USER.email,
+                content: aiMessage,
+                created_at: new Date().toISOString()
+            })
+            .select('id')
+            .single();
+
+        if (messageError) {
+            console.error('Error sending message:', messageError.message);
+            appendMessage('AI', `✗ Failed to message "${listing.title}": Message send error - ${messageError.message}`, 'left');
+            return false;
+        }
+
+        if (!newMessage || !newMessage.id) {
+            console.error('Message insert returned no data');
+            appendMessage('AI', `✗ Failed to message "${listing.title}": No message ID returned`, 'left');
+            return false;
+        }
+
+        console.log(`Message sent successfully (Message ID: ${newMessage.id})`);
+
+        // Track negotiation
+        activeNegotiations.set(conversationId, {
+            listingTitle: listing.title,
+            originalPrice: listing.price,
+            lastOffer: listing.price,
+            listingId: listing.id,
+            landlordEmail: listing.user_email,
+            userEmail: currentUser.email,
+            startTime: new Date().toISOString()
+        });
+
+        return true;
+    } catch (error) {
+        console.error(`Error in sendAutomatedMessage for listing "${listing.title}":`, error.message);
+        appendMessage('AI', `✗ Failed to message "${listing.title}": Unexpected error - ${error.message}`, 'left');
+        return false;
+    }
+}
 
         // Function to add listing via AI
         async function addListingViaAI(message) {
@@ -338,14 +952,16 @@
 
         // Step 1: Parse user message with Wit.ai
         async function parseWithWitAI(message, retryCount = 0) {
+            console.log('parseWithWitAI called with message:', message);
+            
             const correctedMessage = autocorrectInput(message);
             appendMessage('User', correctedMessage, 'right');
             appendMessage('AI', 'Processing your request...', 'left', true);
 
             const now = Date.now();
-            if (now - lastMessageTime < 5000) { // Debounce: 5 seconds
+            if (now - lastMessageTime < 3000) { // Debounce: 3 seconds
                 removeTypingIndicator();
-                appendMessage('AI', 'Please wait 5 seconds before sending another message.', 'left');
+                appendMessage('AI', 'Please wait 3 seconds before sending another message.', 'left');
                 return;
             }
             lastMessageTime = now;
@@ -361,6 +977,21 @@
                     appendMessage('AI', `Failed to add listing: ${result.error}. Please provide more details and try again.`, 'left');
                 }
                 return;
+            }
+
+            // Check if user is expressing their rental needs (trigger automated search)
+            const needsKeywords = ['looking for', 'need', 'want', 'searching for', 'find me', 'help me find'];
+            const isExpressingNeeds = needsKeywords.some(keyword => correctedMessage.toLowerCase().includes(keyword));
+            
+            if (isExpressingNeeds) {
+                negotiationState = 'searching';
+                removeTypingIndicator();
+                appendMessage('AI', 'I understand you\'re looking for a rental! Let me extract your requirements and find matching listings...', 'left');
+                
+                // Trigger automated search and messaging after parsing
+                setTimeout(async () => {
+                    await searchAndMessageOwners(correctedMessage);
+                }, 2000);
             }
 
             try {
@@ -384,22 +1015,51 @@
                 const entities = data.entities || {};
                 let intent = data.intents && data.intents.length > 0 ? data.intents[0].name : null;
 
-                // Extract entities
+                // Extract price information
                 if (entities['wit$amount_of_money:amount_of_money']) {
                     const priceEntity = entities['wit$amount_of_money:amount_of_money'].find(e => e.role === 'price') || entities['wit$amount_of_money:amount_of_money'][0];
-                    rentalData.price = Number(priceEntity.value);
-                    priceHistory.push(rentalData.price);
+                    const priceValue = Number(priceEntity.value);
+                    rentalData.price = priceValue;
+                    priceHistory.push(priceValue);
+                    
+                    // Always treat as max price for user needs when they're looking for something
+                    userNeeds.maxPrice = priceValue;
+                    console.log('Extracted max price:', priceValue);
                 }
+                
+                // Also extract price from simple text patterns like "$1500", "1500", "under 1500"
+                const priceMatch = correctedMessage.match(/(?:under|below|max|up to)?\s*\$?(\d{1,5})/i);
+                if (priceMatch && !userNeeds.maxPrice) {
+                    const extractedPrice = Number(priceMatch[1]);
+                    if (extractedPrice > 100) { // Reasonable rent price
+                        userNeeds.maxPrice = extractedPrice;
+                        console.log('Extracted price from text:', extractedPrice);
+                    }
+                }
+                // Extract location
                 if (entities['wit$location:location']) {
                     rentalData.location = entities['wit$location:location'][0].value;
+                    userNeeds.preferredLocation = entities['wit$location:location'][0].value;
+                    console.log('Extracted location:', entities['wit$location:location'][0].value);
+                }
+                
+                // Also extract location from common city names
+                const locationMatch = correctedMessage.match(/\b(toronto|vancouver|montreal|calgary|ottawa|edmonton|winnipeg|hamilton|quebec|saskatoon|regina|halifax|london|kitchener|waterloo|windsor|markham|mississauga|brampton|scarborough|north york|etobicoke|york|downtown|midtown|uptown)\b/i);
+                if (locationMatch && !userNeeds.preferredLocation) {
+                    userNeeds.preferredLocation = locationMatch[1];
+                    console.log('Extracted location from text:', locationMatch[1]);
                 }
                 if (entities['property_type:house_type']) {
                     rentalData.houseType = entities['property_type:house_type'][0].value;
+                    userNeeds.houseType = entities['property_type:house_type'][0].value;
                 } else if (correctedMessage.toLowerCase().includes('condo') || correctedMessage.toLowerCase().includes('apartment')) {
-                    rentalData.houseType = correctedMessage.toLowerCase().includes('condo') ? 'Condo' : 'Apartment';
+                    const houseType = correctedMessage.toLowerCase().includes('condo') ? 'Condo' : 'Apartment';
+                    rentalData.houseType = houseType;
+                    userNeeds.houseType = houseType;
                 }
                 if (entities['bedrooms:bedrooms']) {
                     rentalData.bedrooms = entities['bedrooms:bedrooms'][0].value;
+                    userNeeds.bedrooms = entities['bedrooms:bedrooms'][0].value;
                 }
                 if (entities['utilities:utilities']) {
                     rentalData.utilities = entities['utilities:utilities'][0].value === 'included' ? 'Included' : 'Not included';
@@ -432,22 +1092,24 @@
         // Step 2: Negotiate with OpenAI
         async function negotiateWithOpenAI(message, intent, retryCount = 0) {
             const prompt = `
-            You are an AI negotiator assisting a user in renting a property. Use the parsed rental details and manage the negotiation. Current state:
+            You are an AI negotiator that helps users find and negotiate rental properties automatically. Current state:
             - Negotiation state: ${negotiationState}
+            - User needs: ${JSON.stringify(userNeeds)}
             - Rental data: ${JSON.stringify(rentalData)}
+            - Matching listings found: ${matchingListings.length}
             - Price history: ${priceHistory.join(', ')}
             - Last offer: $${lastOffer || 'none'}
-            - Conversation history: ${conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')}
+            - Conversation history: ${conversationHistory.slice(-5).map(msg => `${msg.role}: ${msg.content}`).join('\n')}
             - Intent: ${intent || 'none'}
             - User message: ${message}
 
             ### Instructions:
-            1. Manage negotiation:
-               - If state is 'idle' and intent is 'request_negotiation' or message contains "negotiate", suggest a 5% lower offer and set state to 'offered'.
-               - If state is 'offered' and user/landlord accepts (e.g., "Yes", "Can you do $${lastOffer}?"), finalize with last offer and set state to 'finalized'.
-               - If a new price is offered (e.g., "Can you do $1400?"), update price, set state to 'finalized', and confirm.
-               - If unclear, ask for clarification.
-            2. Respond with "AI:" followed by a concise, conversational message (1-2 sentences).
+            1. If user expresses rental needs (looking for, need, want), acknowledge and explain that you'll find matching listings and message owners automatically
+            2. If negotiationState is 'searching' or 'messaging', provide status updates about the automated process
+            3. For traditional negotiations, manage price discussions and offers
+            4. Provide helpful advice about rental searching and negotiation strategies
+            5. Be encouraging and professional
+            6. Respond with concise, helpful messages (1-2 sentences)
             `;
 
             try {
@@ -468,10 +1130,19 @@
                 if (!response.ok) {
                     if (response.status === 429 && retryCount < 3) {
                         const waitTime = Math.pow(2, retryCount + 1) * 1000; // 2s, 4s, 8s
+                        removeTypingIndicator();
                         appendMessage('AI', `OpenAI rate limit hit, retrying in ${waitTime/1000} seconds...`, 'left', true);
                         await delay(waitTime);
                         return negotiateWithOpenAI(message, intent, retryCount + 1);
                     }
+                    
+                    // Handle rate limiting by providing a fallback response
+                    removeTypingIndicator();
+                    if (response.status === 429) {
+                        appendMessage('AI', 'I\'m experiencing high traffic right now. I\'ve processed your request and will find matching listings. Please check back in a moment for negotiation updates.', 'left');
+                        return;
+                    }
+                    
                     throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
                 }
 
@@ -506,15 +1177,37 @@
 
         // Send user message to Wit.ai for parsing, then OpenAI for negotiation
         async function sendChatMessage() {
+            console.log('sendChatMessage called');
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
-            if (!message) return;
+            
+            if (!message) {
+                console.log('No message to send');
+                return;
+            }
 
-            removeTypingIndicator();
-            isTyping = false;
-            await parseWithWitAI(message);
-            input.value = '';
+            console.log('Sending message:', message);
+            
+            try {
+                removeTypingIndicator();
+                isTyping = false;
+                await parseWithWitAI(message);
+                input.value = '';
+            } catch (error) {
+                console.error('Error in sendChatMessage:', error);
+                appendMessage('AI', 'Sorry, there was an error processing your message. Please try again.', 'left');
+            }
         }
+
+        // Make sendChatMessage globally available
+        window.sendChatMessage = sendChatMessage;
+
+        // Cleanup when page unloads
+        window.addEventListener('beforeunload', () => {
+            if (messageListener) {
+                supabase.removeChannel(messageListener);
+            }
+        });
     </script>
 </body>
 </html>
