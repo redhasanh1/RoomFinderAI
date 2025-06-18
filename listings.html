@@ -2037,7 +2037,7 @@
 
             // Start polling if real-time doesn't work after 10 seconds
             setTimeout(() => {
-                if (!messageChannel.state || messageChannel.state !== 'joined') {
+                if (!messageChannel || !messageChannel.state || messageChannel.state !== 'joined') {
                     console.log('⚠️ Real-time not working, falling back to polling');
                     startPolling();
                 }
