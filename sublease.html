@@ -5,13 +5,122 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Sublease your room or apartment easily with Room Finder. Create a listing and connect with potential subtenants.">
     <meta name="keywords" content="sublease, room rental, apartment sublease, housing">
-    <title>Sublease Your Space - Room Finder</title>
+    <title>Sublease Your Space - RoomFinderAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Modern header */
+        .modern-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Modern container */
+        .modern-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Modern button */
+        .modern-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .modern-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        /* Hero section with gradient background */
+        .hero-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.05"><circle cx="30" cy="30" r="2"/></g></g></svg>');
+        }
+        
+        /* Feature cards */
+        .feature-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #f1f5f9;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            border-color: #3b82f6;
+        }
+        
+        /* CTA Button styles */
+        .cta-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50px;
+            padding: 1rem 2.5rem;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        /* Modern input styling */
+        .modern-input {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .modern-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+            outline: none;
         }
         .profile-logo {
             transition: transform 0.2s ease-in-out;
@@ -33,20 +142,25 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         .listing-card {
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            background: white;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f1f5f9;
         }
         .listing-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
         }
     </style>
 </head>
-<body class="bg-blue-50 flex flex-col min-h-screen">
+<body class="bg-gray-50 flex flex-col min-h-screen">
     <!-- Header -->
-    <header class="sticky top-0 bg-white shadow-md z-10">
+    <header class="sticky top-0 modern-header shadow-lg z-10">
         <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-6">
-                <div class="text-2xl font-bold text-blue-600">Room Finder</div>
+                <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
                 <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
                 <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
                 <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
@@ -61,66 +175,275 @@
         </nav>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <!-- Sublease Section -->
-        <section id="subleaseSection" class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Sublease Your Space</h2>
-            <p class="text-lg text-gray-600 mb-6 text-center">Fill out the details below or upload a contract to create your sublease listing.</p>
-            <form id="subleaseForm" class="space-y-6">
-                <div>
-                    <label for="contractFile" class="block text-sm font-medium text-gray-700">Upload Contract Document</label>
-                    <input type="file" id="contractFile" name="contractFile" class="mt-1 w-full p-3 border border-gray-200 rounded-lg" accept="image/*,application/pdf,.pdf" aria-describedby="contractHelp">
-                    <p id="contractHelp" class="text-sm text-gray-500 mt-1">Upload a contract document to auto-fill the form (JPEG, PNG, PDF).</p>
-                    <button type="button" id="extractButton" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Extract Details</button>
+    <!-- Hero Section -->
+    <section class="hero-gradient text-white py-20 relative z-10">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+            <div class="text-center">
+                <h1 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
+                    <span class="block">Sublease Your Space</span>
+                    <span class="block text-white">Effortlessly</span>
+                </h1>
+                <p class="text-xl sm:text-2xl mb-8 text-gray-100 leading-relaxed max-w-3xl mx-auto">
+                    Turn your unused space into income. Create professional sublease listings with AI-powered contract analysis and smart tenant matching.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+                    <button onclick="document.getElementById('subleaseForm').scrollIntoView({behavior: 'smooth'})" class="cta-button">
+                        📝 Create Listing
+                    </button>
+                    <button onclick="document.getElementById('howItWorks').scrollIntoView({behavior: 'smooth'})" class="bg-white text-gray-800 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300">
+                        How It Works
+                    </button>
                 </div>
-                <div>
-                    <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
-                    <input type="text" id="address" name="address" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Enter full address" required aria-required="true">
+                
+                <!-- Quick stats -->
+                <div class="grid grid-cols-3 gap-6 mt-16">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold mb-2">500+</div>
+                        <div class="text-sm text-gray-200">Successful Subleases</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold mb-2">72hr</div>
+                        <div class="text-sm text-gray-200">Average Match Time</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold mb-2">98%</div>
+                        <div class="text-sm text-gray-200">Satisfaction Rate</div>
+                    </div>
                 </div>
-                <div>
-                    <label for="rent" class="block text-sm font-medium text-gray-700">Monthly Rent ($)</label>
-                    <input type="number" id="rent" name="rent" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="e.g., 1200" required aria-required="true">
+            </div>
+        </div>
+    </section>
+    
+    <!-- How It Works Section -->
+    <section id="howItWorks" class="py-20 bg-white">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+                    How <span class="gradient-text">Sublease AI</span> Works
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Our intelligent platform makes subletting as easy as 1-2-3
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8 mb-16">
+                <!-- Step 1 -->
+                <div class="feature-card text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span class="text-2xl font-bold text-white">1</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">📄 Upload Contract</h3>
+                    <p class="text-gray-600 mb-6">Simply upload your lease document and our AI will extract all the important details automatically.</p>
                 </div>
-                <div>
-                    <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
-                    <input type="date" id="startDate" name="startDate" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" required aria-required="true">
+                
+                <!-- Step 2 -->
+                <div class="feature-card text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span class="text-2xl font-bold text-white">2</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">✨ AI Enhancement</h3>
+                    <p class="text-gray-600 mb-6">Our AI creates compelling listings with professional descriptions and optimal pricing suggestions.</p>
                 </div>
-                <div>
-                    <label for="endDate" class="block text-sm font-medium text-gray-700">End Date</label>
-                    <input type="date" id="endDate" name="endDate" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" required aria-required="true">
+                
+                <!-- Step 3 -->
+                <div class="feature-card text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span class="text-2xl font-bold text-white">3</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">🎯 Smart Matching</h3>
+                    <p class="text-gray-600 mb-6">Get matched with qualified tenants who fit your requirements and timeline perfectly.</p>
                 </div>
-                <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                    <textarea id="description" name="description" rows="4" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Describe your space..." required aria-required="true"></textarea>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Sublease Form Section -->
+    <section id="subleaseSection" class="py-20 bg-gray-50">
+        <div class="w-[90%] max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold gradient-text mb-6">Create Your Sublease Listing</h2>
+                <p class="text-xl text-gray-600">Upload your contract or fill out the details manually. Our AI will handle the rest.</p>
+            </div>
+            
+            <div class="modern-container p-8">
+            <form id="subleaseForm" class="space-y-8">
+                <!-- AI Contract Upload -->
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border-2 border-dashed border-blue-300">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">🤖 AI Contract Analysis</h3>
+                        <p class="text-gray-600 mb-4">Upload your lease contract and let our AI extract all the details automatically</p>
+                        <label for="contractFile" class="cursor-pointer modern-button inline-block">
+                            📄 Upload Contract
+                        </label>
+                        <input type="file" id="contractFile" name="contractFile" class="hidden" accept="image/*,application/pdf,.pdf" aria-describedby="contractHelp">
+                        <p id="contractHelp" class="text-sm text-gray-500 mt-3">Supports PDF, JPEG, and PNG files</p>
+                        <button type="button" id="extractButton" class="mt-4 bg-gradient-to-r from-green-500 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-teal-700 transition font-semibold hidden">✨ Extract Details</button>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Amenities</label>
-                    <div class="mt-2 grid grid-cols-2 gap-2">
-                        <label><input type="checkbox" name="amenities" value="wifi" class="mr-2"> Wi-Fi</label>
-                        <label><input type="checkbox" name="amenities" value="parking" class="mr-2"> Parking</label>
-                        <label><input type="checkbox" name="amenities" value="furnished" class="mr-2"> Furnished</label>
-                        <label><input type="checkbox" name="amenities" value="pets" class="mr-2"> Pets Allowed</label>
+                
+                <div class="text-center py-4">
+                    <span class="bg-white px-4 py-2 rounded-full text-gray-500 border">OR</span>
+                </div>
+                <!-- Manual Entry Fields -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="address" class="block text-sm font-medium text-gray-700 mb-2">📍 Property Address</label>
+                        <input type="text" id="address" name="address" class="modern-input w-full" placeholder="123 Main St, Toronto, ON" required aria-required="true">
+                    </div>
+                    <div>
+                        <label for="rent" class="block text-sm font-medium text-gray-700 mb-2">💰 Monthly Rent</label>
+                        <input type="number" id="rent" name="rent" class="modern-input w-full" placeholder="1200" required aria-required="true">
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="startDate" class="block text-sm font-medium text-gray-700 mb-2">📅 Available From</label>
+                        <input type="date" id="startDate" name="startDate" class="modern-input w-full" required aria-required="true">
+                    </div>
+                    <div>
+                        <label for="endDate" class="block text-sm font-medium text-gray-700 mb-2">📅 Available Until</label>
+                        <input type="date" id="endDate" name="endDate" class="modern-input w-full" required aria-required="true">
                     </div>
                 </div>
                 <div>
-                    <label for="images" class="block text-sm font-medium text-gray-700">Upload Images</label>
-                    <input type="file" id="images" name="images" multiple class="mt-1 w-full p-3 border border-gray-200 rounded-lg" accept="image/*" aria-describedby="imageHelp">
-                    <p id="imageHelp" class="text-sm text-gray-500 mt-1">Upload up to 5 images (JPEG, PNG).</p>
-                    <div id="imagePreview" class="mt-4 flex space-x-4 flex-wrap"></div>
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">📝 Property Description</label>
+                    <textarea id="description" name="description" rows="4" class="modern-input w-full" placeholder="Describe your space, neighborhood, and what makes it special..." required aria-required="true"></textarea>
+                    <p class="text-sm text-gray-500 mt-2">💡 Tip: Our AI can help optimize your description for better visibility</p>
                 </div>
-                <div class="flex space-x-4">
-                    <button type="button" onclick="showPreview()" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Preview Listing</button>
-                    <button type="submit" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Submit Listing</button>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-4">✨ Amenities & Features</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="wifi" class="mr-3 text-blue-600">
+                            <span class="text-sm">📶 Wi-Fi</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="parking" class="mr-3 text-blue-600">
+                            <span class="text-sm">🚗 Parking</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="furnished" class="mr-3 text-blue-600">
+                            <span class="text-sm">🛋️ Furnished</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="pets" class="mr-3 text-blue-600">
+                            <span class="text-sm">🐕 Pet-Friendly</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="laundry" class="mr-3 text-blue-600">
+                            <span class="text-sm">🧺 Laundry</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="gym" class="mr-3 text-blue-600">
+                            <span class="text-sm">💪 Gym</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="ac" class="mr-3 text-blue-600">
+                            <span class="text-sm">❄️ A/C</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="balcony" class="mr-3 text-blue-600">
+                            <span class="text-sm">🌅 Balcony</span>
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label for="images" class="block text-sm font-medium text-gray-700 mb-4">📸 Property Photos</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition">
+                        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </div>
+                        <label for="images" class="cursor-pointer">
+                            <span class="text-blue-600 font-semibold hover:text-blue-700">Upload photos</span>
+                            <span class="text-gray-600"> or drag and drop</span>
+                        </label>
+                        <input type="file" id="images" name="images" multiple class="hidden" accept="image/*" aria-describedby="imageHelp">
+                        <p id="imageHelp" class="text-sm text-gray-500 mt-2">PNG, JPG up to 10MB each (max 5 photos)</p>
+                    </div>
+                    <div id="imagePreview" class="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4"></div>
+                </div>
+                <!-- Submit Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
+                    <button type="button" onclick="showPreview()" class="flex-1 bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 transition font-semibold">👁️ Preview Listing</button>
+                    <button type="submit" class="flex-1 modern-button">✨ Create Sublease Listing</button>
                 </div>
             </form>
-        </section>
+            </div>
+        </div>
+    </section>
 
-        <!-- All Subleases Section -->
-        <section id="allSubleases" class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Your Sublease Listings</h2>
-            <div id="subleaseList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-        </section>
+    <!-- Benefits Section -->
+    <section class="py-20 bg-white">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-6">
+                    Why Choose <span class="gradient-text">RoomFinderAI</span> for Subletting?
+                </h2>
+                <p class="text-xl text-gray-600">Join thousands of successful subletters who trust our platform</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Fast Listing</h3>
+                    <p class="text-gray-600">Create listings in under 5 minutes with AI assistance</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Verified Tenants</h3>
+                    <p class="text-gray-600">All tenants are background-checked for your peace of mind</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Smart Pricing</h3>
+                    <p class="text-gray-600">AI-powered pricing recommendations to maximize your income</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">24/7 Support</h3>
+                    <p class="text-gray-600">Round-the-clock assistance for all your subletting needs</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Your Listings Section -->
+    <section id="allSubleases" class="py-20 bg-gray-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold gradient-text mb-4">Your Sublease Listings</h2>
+                <p class="text-lg text-gray-600">Manage and track your active sublease listings</p>
+            </div>
+            <div id="subleaseList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+        </div>
+    </section>
 
         <!-- Preview Modal -->
         <div id="previewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" role="dialog" aria-labelledby="previewModalTitle" aria-modal="true">
@@ -152,7 +475,7 @@
     <!-- Footer -->
     <footer class="bg-gray-800 text-white py-8">
         <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p class="text-sm">© 2025 Room Finder. All rights reserved.</p>
+            <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
             <div class="mt-4 flex justify-center space-x-4">
                 <a href="/index" class="hover:text-blue-400">Home</a>
                 <a href="/index#about" class="hover:text-blue-400">About</a>
