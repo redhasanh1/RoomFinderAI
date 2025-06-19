@@ -3,13 +3,25 @@ const cors = require('cors');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
+
+const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const port = 3000;
 
+ 
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from parent directory
+app.use(express.static('../'));
 
 // Google Maps API key
 const GOOGLE_API_KEY = 'AIzaSyBzE8cPfeO5YkmpJFc8SLtVsz_eGB-wYYM'; // Replace with your valid key
@@ -332,6 +344,181 @@ app.post('/api/predict/marketplace', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/predict/marketplace:', error.message);
         res.status(500).json({ error: `Failed to generate Marketplace URL: ${error.message}` });
+    }
+});
+
+// API: Process Stripe payment
+app.post('/api/process-payment', async (req, res) => {
+    try {
+        console.log('Payment request received:', req.body);
+        const { token, email, name, plan, price } = req.body;
+        
+        if (!token || !email || !name || !plan || !price) {
+            console.log('Missing required fields:', { token: !!token, email: !!email, name: !!name, plan: !!plan, price: !!price });
+            return res.status(400).json({ error: 'Missing required payment information' });
+        }
+
+        // Convert price to cents (Stripe expects amounts in smallest currency unit)
+        const amount = Math.round(parseFloat(price) * 100);
+        console.log('Processing charge for amount:', amount, 'cents');
+
+        // Create a charge using the token
+        const charge = await stripe.charges.create({
+            amount: amount,
+            currency: 'usd',
+            description: `Room Finder ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan Subscription`,
+            source: token.id,
+            receipt_email: email,
+            metadata: {
+                customer_name: name,
+                plan_type: plan,
+                monthly_price: price
+            }
+        });
+
+        // If charge is successful, store subscription info in Supabase
+        console.log('Payment successful:', charge.id);
+
+        // Get profile ID from email
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', email)
+            .single();
+
+        if (profileError) {
+            console.error('Error finding profile:', profileError);
+            // Continue without profile_id if profile not found
+        }
+
+        // Insert subscription into Supabase
+        const subscriptionData = {
+            email: email,
+            profile_id: profile?.id || null,
+            plan_type: plan,
+            plan_price: parseFloat(price),
+            status: 'active',
+            stripe_charge_id: charge.id,
+            payment_method: 'card',
+            start_date: new Date().toISOString()
+        };
+
+        console.log('Attempting to save subscription:', subscriptionData);
+
+        const { data: subscription, error: subError } = await supabase
+            .from('subscriptions')
+            .insert([subscriptionData])
+            .select()
+            .single();
+
+        console.log('Supabase insert result:', { subscription, subError });
+
+        if (subError) {
+            console.error('Error saving subscription to Supabase:', subError);
+            // Payment succeeded but subscription save failed - could handle this differently
+        } else {
+            console.log('Subscription saved to Supabase:', subscription?.id);
+        }
+
+        res.json({ 
+            success: true, 
+            chargeId: charge.id,
+            subscriptionId: subscription?.id,
+            message: 'Payment processed successfully' 
+        });
+
+    } catch (error) {
+        console.error('Payment processing error:', error);
+        res.status(400).json({ 
+            error: 'Payment failed', 
+            details: error.message 
+        });
+    }
+});
+
+// API: Get user subscription
+app.get('/api/subscription/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        console.log('Fetching subscription for email:', email);
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        const { data: subscription, error } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('email', email)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        console.log('Supabase subscription query result:', { subscription, error });
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+            console.error('Error fetching subscription:', error);
+            return res.status(500).json({ error: 'Failed to fetch subscription', details: error.message });
+        }
+
+        res.json({ subscription: subscription || null });
+
+    } catch (error) {
+        console.error('Error in /api/subscription:', error);
+        res.status(500).json({ error: 'Failed to fetch subscription', details: error.message });
+    }
+});
+
+// Test endpoint for Supabase connection
+app.get('/api/test-supabase', async (req, res) => {
+    try {
+        console.log('Testing Supabase connection...');
+        
+        // Test 1: Try to query profiles table
+        const { data: profiles, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .limit(1);
+        
+        console.log('Profiles test:', { profiles, profileError });
+        
+        // Test 2: Try to query subscriptions table
+        const { data: subscriptions, error: subError } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .limit(1);
+        
+        console.log('Subscriptions test:', { subscriptions, subError });
+        
+        // Test 3: Try to insert a test subscription
+        const testSub = {
+            email: 'test@example.com',
+            plan_type: 'basic',
+            plan_price: 9.99,
+            status: 'active',
+            stripe_charge_id: 'test_charge',
+            payment_method: 'card',
+            start_date: new Date().toISOString()
+        };
+        
+        const { data: insertResult, error: insertError } = await supabase
+            .from('subscriptions')
+            .insert([testSub])
+            .select()
+            .single();
+        
+        console.log('Insert test:', { insertResult, insertError });
+        
+        res.json({ 
+            profilesTest: { data: profiles, error: profileError },
+            subscriptionsTest: { data: subscriptions, error: subError },
+            insertTest: { data: insertResult, error: insertError }
+        });
+        
+    } catch (error) {
+        console.error('Supabase test error:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
