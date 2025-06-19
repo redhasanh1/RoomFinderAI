@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RoomFinderAI - Sign Up</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -236,8 +235,10 @@
     </div>
 
     <script>
-        // Supabase configuration is now in config.js
-        const supabase = Supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+        // Initialize Supabase client
+        const supabaseUrl = 'https://fkktwhjybuflxqzopaex.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs';
+        const supabase = Supabase.createClient(supabaseUrl, supabaseKey);
 
         const form = document.getElementById('authForm');
         const formTitle = document.getElementById('formTitle');
@@ -259,8 +260,6 @@
 
         // Handle form submission
         form.addEventListener('submit', async (e) => {
-        // Basic form validation and submission
-        document.getElementById('signupForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const firstName = document.getElementById('firstName').value;
