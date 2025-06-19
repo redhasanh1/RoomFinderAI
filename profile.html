@@ -65,7 +65,9 @@
                 <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
                 <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
                 <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
+                <a href="/ai-negotiator" class="text-gray-700 hover:text-blue-600 transition font-medium">AI Negotiator</a>
                 <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
+                <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition font-medium">Pricing</a>
                 <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
             </div>
             <div>
@@ -171,8 +173,8 @@
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
             // Update profile info
-            document.getElementById('profileLogo').src = currentUser.profileImage;
-            document.getElementById('profileImage').src = currentUser.profileImage;
+            document.getElementById('profileLogo').src = currentUser.profileImage || 'https://via.placeholder.com/40';
+            document.getElementById('profileImage').src = currentUser.profileImage || 'https://via.placeholder.com/100';
             document.getElementById('userName').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
             document.getElementById('userEmail').textContent = currentUser.email;
 
@@ -180,10 +182,15 @@
             const profileUpload = document.getElementById('profileUpload');
             profileUpload.addEventListener('change', (e) => {
                 const file = e.target.files[0];
-                if (!file) return;
+                if (!file) {
+                    console.log('No file selected');
+                    return;
+                }
+
+                console.log('File selected:', file.name, file.type, file.size);
 
                 // Validate file type
-                if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
                     alert('Please upload a JPEG or PNG image.');
                     profileUpload.value = '';
                     return;
@@ -198,22 +205,39 @@
 
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    const imageDataUrl = event.target.result;
+                    try {
+                        const imageDataUrl = event.target.result;
+                        console.log('Image loaded successfully, data URL length:', imageDataUrl.length);
 
-                    // Update currentUser in localStorage
-                    currentUser.profileImage = imageDataUrl;
-                    let users = JSON.parse(localStorage.getItem('users')) || [];
-                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                    localStorage.setItem('users', JSON.stringify(users));
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        // Update currentUser in localStorage
+                        currentUser.profileImage = imageDataUrl;
+                        let users = JSON.parse(localStorage.getItem('users')) || [];
+                        users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                        localStorage.setItem('users', JSON.stringify(users));
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
-                    // Update displayed images
-                    document.getElementById('profileLogo').src = imageDataUrl;
-                    document.getElementById('profileImage').src = imageDataUrl;
+                        // Update displayed images
+                        const profileLogo = document.getElementById('profileLogo');
+                        const profileImage = document.getElementById('profileImage');
+                        
+                        if (profileLogo) {
+                            profileLogo.src = imageDataUrl;
+                            console.log('Updated header profile image');
+                        }
+                        
+                        if (profileImage) {
+                            profileImage.src = imageDataUrl;
+                            console.log('Updated main profile image');
+                        }
 
-                    alert('Profile photo updated successfully!');
+                        alert('Profile photo updated successfully!');
+                    } catch (error) {
+                        console.error('Error updating profile image:', error);
+                        alert('Error updating profile photo. Please try again.');
+                    }
                 };
-                reader.onerror = () => {
+                reader.onerror = (error) => {
+                    console.error('FileReader error:', error);
                     alert('Failed to read the image file.');
                 };
                 reader.readAsDataURL(file);
