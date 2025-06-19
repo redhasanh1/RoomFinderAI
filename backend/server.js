@@ -8,8 +8,7 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const port = 3000;
 
- 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+//Paste stripe and supabase keys here
 
 // Middleware
 app.use(cors({
