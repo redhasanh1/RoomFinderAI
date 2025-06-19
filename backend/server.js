@@ -3,12 +3,17 @@ const cors = require('cors');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
+const config = require('../config-loader');
 
 const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const port = 3000;
 
-//Paste stripe and supabase keys here
+// Initialize Stripe with API key from config
+const stripe = require('stripe')(config.STRIPE_SECRET_KEY);
+
+// Initialize Supabase client with config keys
+const supabase = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
 
 // Middleware
 app.use(cors({
@@ -22,8 +27,8 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from parent directory
 app.use(express.static('../'));
 
-// Google Maps API key
-const GOOGLE_API_KEY = 'AIzaSyBzE8cPfeO5YkmpJFc8SLtVsz_eGB-wYYM'; // Replace with your valid key
+// Google Maps API key from config
+const GOOGLE_API_KEY = config.GOOGLE_API_KEY;
 
 // In-memory database (replace with MongoDB/PostgreSQL in production)
 const listings = [];

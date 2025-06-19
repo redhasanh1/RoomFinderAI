@@ -3,18 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pricing - Room Finder</title>
+    <title>Pricing - RoomFinderAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
         }
-        .pricing-card {
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        .pricing-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        
+        /* Modern header */
+        .modern-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Modern pricing card */
+        .modern-pricing-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .modern-pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+        
+        /* Featured card */
+        .featured-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: 2px solid #667eea;
+        }
+        
+        .featured-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 30px 60px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Modern button */
+        .pricing-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .pricing-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        .pricing-button-secondary {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .pricing-button-secondary:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
         }
         .login-link {
             transition: color 0.2s ease-in-out;
@@ -30,12 +100,12 @@
         }
     </style>
 </head>
-<body class="bg-blue-50 flex flex-col min-h-screen">
+<body class="bg-gray-50 flex flex-col min-h-screen">
     <!-- Header -->
-    <header class="sticky top-0 bg-white shadow-md z-10">
+    <header class="sticky top-0 modern-header shadow-lg z-10">
         <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-6">
-                <div class="text-2xl font-bold text-blue-600">Room Finder</div>
+                <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
                 <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
                 <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
                 <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
@@ -52,11 +122,11 @@
 
     <!-- Pricing Section -->
     <section class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 class="text-4xl font-extrabold text-gray-800 text-center mb-8">Choose Your Plan</h1>
-        <p class="text-lg text-gray-600 text-center mb-12">Select the perfect subscription plan to unlock the full potential of RoomFinderAI, tailored to your needs.</p>
+        <h1 class="text-5xl font-extrabold gradient-text text-center mb-8">Choose Your Plan</h1>
+        <p class="text-xl text-gray-600 text-center mb-16">Select the perfect subscription plan to unlock the full potential of RoomFinderAI, tailored to your needs.</p>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- Basic Plan -->
-            <div class="pricing-card bg-white rounded-xl shadow-xl p-6 text-center">
+            <div class="modern-pricing-card p-8 text-center">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Basic</h2>
                 <p class="text-4xl font-extrabold text-blue-600 mb-4">$9.99<span class="text-lg font-normal text-gray-600">/mo</span></p>
                 <p class="text-gray-600 mb-6">Perfect for individuals starting their room search.</p>
@@ -68,7 +138,7 @@
                 <a href="/payment?plan=basic&price=9.99" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Choose Basic</a>
             </div>
             <!-- Pro Plan -->
-            <div class="pricing-card bg-white rounded-xl shadow-xl p-6 text-center border-2 border-blue-600">
+            <div class="modern-pricing-card featured-card p-8 text-center">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Pro</h2>
                 <p class="text-4xl font-extrabold text-blue-600 mb-4">$19.99<span class="text-lg font-normal text-gray-600">/mo</span></p>
                 <p class="text-gray-600 mb-6">Ideal for active searchers with advanced needs.</p>
@@ -82,7 +152,7 @@
                 <a href="/payment?plan=pro&price=19.99" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Choose Pro</a>
             </div>
             <!-- Premium Plan -->
-            <div class="pricing-card bg-white rounded-xl shadow-xl p-6 text-center">
+            <div class="modern-pricing-card p-8 text-center">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Premium</h2>
                 <p class="text-4xl font-extrabold text-blue-600 mb-4">$39.99<span class="text-lg font-normal text-gray-600">/mo</span></p>
                 <p class="text-gray-600 mb-6">Ultimate plan for power users and landlords.</p>
@@ -103,7 +173,7 @@
     <!-- Footer -->
     <footer class="bg-gray-800 text-white py-8">
         <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p class="text-sm">© 2025 Room Finder. All rights reserved.</p>
+            <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
             <div class="mt-4 flex justify-center space-x-4">
                 <a href="/index" class="hover:text-blue-400">Home</a>
                 <a href="/index#about" class="hover:text-blue-400">About</a>

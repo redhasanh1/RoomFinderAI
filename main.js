@@ -3,10 +3,10 @@ import { displayListings, setupListingForm, showListingModal } from './listings.
 import { setupChat } from './chat.js';
 import { initMap } from './map.js';
 import { setupAutocomplete } from './autocomplete.js';
+import { config } from './config.mjs';
 
-const SUPABASE_URL = 'https://fkktwhjybuflxqzopaex.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+// Initialize Supabase with config
+const supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY, {
     db: {
         schema: 'public'
     },
