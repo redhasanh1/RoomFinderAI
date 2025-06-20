@@ -526,6 +526,253 @@ app.get('/api/test-supabase', async (req, res) => {
     }
 });
 
+// User Verification Endpoints
+
+// Onfido webhook handler
+app.post('/api/onfido/webhook', async (req, res) => {
+    try {
+        const webhookData = req.body;
+        const signature = req.headers['x-sha2-signature'];
+        const webhookSecret = process.env.ONFIDO_WEBHOOK_SECRET || config.ONFIDO_WEBHOOK_SECRET;
+        
+        // Verify webhook signature
+        const crypto = require('crypto');
+        const expectedSignature = crypto
+            .createHmac('sha256', webhookSecret)
+            .update(JSON.stringify(webhookData))
+            .digest('hex');
+            
+        if (signature !== expectedSignature) {
+            return res.status(401).json({ error: 'Invalid webhook signature' });
+        }
+        
+        const { resource_type, action, object } = webhookData.payload;
+        
+        if (resource_type === 'check' && action === 'check.completed') {
+            // Update verification status based on Onfido check results
+            const { data: verification, error } = await supabase
+                .from('user_verifications')
+                .update({
+                    verification_status: object.result === 'clear' ? 'approved' : 'rejected',
+                    processed_at: new Date().toISOString(),
+                    verified_at: object.result === 'clear' ? new Date().toISOString() : null,
+                    processed_by: 'onfido_webhook',
+                    third_party_verification_data: {
+                        ...object,
+                        provider: 'onfido',
+                        webhook_received_at: new Date().toISOString()
+                    }
+                })
+                .eq('onfido_check_id', object.id)
+                .select()
+                .single();
+                
+            if (error) {
+                console.error('Error updating verification from Onfido webhook:', error);
+                return res.status(500).json({ error: 'Database update failed' });
+            }
+            
+            console.log('Onfido verification updated:', verification);
+        }
+        
+        res.json({ received: true });
+    } catch (error) {
+        console.error('Onfido webhook error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Jumio webhook handler
+app.post('/api/jumio/callback', async (req, res) => {
+    try {
+        const callbackData = req.body;
+        console.log('Jumio callback received:', callbackData);
+        
+        const { scanReference, verificationStatus, idScanStatus } = callbackData;
+        
+        // Determine verification status
+        const isApproved = verificationStatus === 'APPROVED_VERIFIED' && idScanStatus === 'SUCCESS';
+        const status = isApproved ? 'approved' : 'rejected';
+        
+        // Extract rejection reasons
+        const rejectionReasons = [];
+        if (!isApproved) {
+            if (callbackData.rejectReason) {
+                rejectionReasons.push(callbackData.rejectReason.detailsCode);
+            }
+            if (callbackData.idScanRejectReason) {
+                rejectionReasons.push(callbackData.idScanRejectReason.detailsCode);
+            }
+        }
+        
+        // Update verification status
+        const { data: verification, error } = await supabase
+            .from('user_verifications')
+            .update({
+                verification_status: status,
+                processed_at: new Date().toISOString(),
+                verified_at: isApproved ? new Date().toISOString() : null,
+                processed_by: 'jumio_webhook',
+                rejection_reason: rejectionReasons.join(', ') || null,
+                third_party_verification_data: {
+                    ...callbackData,
+                    provider: 'jumio',
+                    callback_received_at: new Date().toISOString()
+                }
+            })
+            .eq('jumio_scan_reference', scanReference)
+            .select()
+            .single();
+            
+        if (error) {
+            console.error('Error updating verification from Jumio callback:', error);
+            return res.status(500).json({ error: 'Database update failed' });
+        }
+        
+        console.log('Jumio verification updated:', verification);
+        res.json({ received: true });
+    } catch (error) {
+        console.error('Jumio callback error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get user verification status
+app.get('/api/verification/status/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        
+        // Get user verification status
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('is_verified, verification_badge_earned_at')
+            .eq('email', email)
+            .single();
+            
+        if (userError) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Get latest verification request
+        const { data: verification, error: verifyError } = await supabase
+            .from('user_verifications')
+            .select('*')
+            .eq('user_email', email)
+            .order('created_at', { ascending: false })
+            .limit(1);
+            
+        res.json({
+            isVerified: user.is_verified,
+            verificationBadgeEarnedAt: user.verification_badge_earned_at,
+            latestVerification: verification.length > 0 ? verification[0] : null
+        });
+        
+    } catch (error) {
+        console.error('Verification status error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Submit verification request
+app.post('/api/verification/submit', async (req, res) => {
+    try {
+        const {
+            user_email,
+            id_document_url,
+            id_document_type,
+            face_scan_data,
+            face_verification_score,
+            ip_address,
+            user_agent
+        } = req.body;
+        
+        // Validate required fields
+        if (!user_email || !id_document_url || !face_scan_data) {
+            return res.status(400).json({ error: 'Missing required verification data' });
+        }
+        
+        const verificationData = {
+            user_email,
+            id_document_url,
+            id_document_type: id_document_type || 'other',
+            face_scan_data,
+            face_verification_score: face_verification_score || 0.85,
+            ip_address,
+            user_agent,
+            verification_status: 'pending'
+        };
+        
+        const { data, error } = await supabase
+            .from('user_verifications')
+            .insert([verificationData])
+            .select()
+            .single();
+            
+        if (error) {
+            throw error;
+        }
+        
+        res.json({ 
+            success: true, 
+            verification: data,
+            message: 'Verification request submitted successfully'
+        });
+        
+    } catch (error) {
+        console.error('Verification submission error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Admin endpoint to approve/reject verification (for testing)
+app.post('/api/verification/admin/:id/:action', async (req, res) => {
+    try {
+        const { id, action } = req.params;
+        const { rejection_reason } = req.body;
+        
+        if (!['approve', 'reject'].includes(action)) {
+            return res.status(400).json({ error: 'Invalid action' });
+        }
+        
+        const updateData = {
+            verification_status: action === 'approve' ? 'approved' : 'rejected',
+            processed_at: new Date().toISOString(),
+            processed_by: 'admin'
+        };
+        
+        if (action === 'approve') {
+            updateData.verified_at = new Date().toISOString();
+            // Set expiry to 1 year from now
+            const expiryDate = new Date();
+            expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+            updateData.expires_at = expiryDate.toISOString();
+        } else if (rejection_reason) {
+            updateData.rejection_reason = rejection_reason;
+        }
+        
+        const { data, error } = await supabase
+            .from('user_verifications')
+            .update(updateData)
+            .eq('id', id)
+            .select()
+            .single();
+            
+        if (error) {
+            throw error;
+        }
+        
+        res.json({ 
+            success: true, 
+            verification: data,
+            message: `Verification ${action}d successfully`
+        });
+        
+    } catch (error) {
+        console.error('Verification admin action error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
