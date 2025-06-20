@@ -683,7 +683,8 @@ app.post('/api/verification/submit', async (req, res) => {
             face_scan_data,
             face_verification_score,
             ip_address,
-            user_agent
+            user_agent,
+            verification_method
         } = req.body;
         
         // Validate required fields
@@ -691,16 +692,49 @@ app.post('/api/verification/submit', async (req, res) => {
             return res.status(400).json({ error: 'Missing required verification data' });
         }
         
+        // Determine verification method and adjust processing accordingly
+        const method = verification_method || 'standard';
+        let enhancedScore = face_verification_score || 0.85;
+        let verificationStatus = 'pending';
+        
+        // Enhanced processing for FaceOnLive/professional verification
+        if (method === 'enhanced_guided_scanning' || method === 'faceonlive') {
+            // Higher confidence threshold for professional verification
+            if (face_scan_data.verification_type === 'multi_pose') {
+                // Multi-pose verification gets higher trust level
+                enhancedScore = Math.min(face_scan_data.average_confidence * 1.1, 1.0);
+                
+                // Auto-approve high-confidence professional verifications (in production, you might still want manual review)
+                if (enhancedScore > 0.95 && face_scan_data.total_poses >= 5) {
+                    verificationStatus = 'approved';
+                }
+            }
+        }
+        
         const verificationData = {
             user_email,
             id_document_url,
             id_document_type: id_document_type || 'other',
             face_scan_data,
-            face_verification_score: face_verification_score || 0.85,
+            face_verification_score: enhancedScore,
             ip_address,
             user_agent,
-            verification_status: 'pending'
+            verification_status: verificationStatus,
+            verification_method: method,
+            created_at: new Date().toISOString()
         };
+        
+        // Add auto-approval timestamp if approved
+        if (verificationStatus === 'approved') {
+            verificationData.verified_at = new Date().toISOString();
+            verificationData.processed_at = new Date().toISOString();
+            verificationData.processed_by = 'auto_approval_system';
+            
+            // Set expiry to 1 year from now
+            const expiryDate = new Date();
+            expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+            verificationData.expires_at = expiryDate.toISOString();
+        }
         
         const { data, error } = await supabase
             .from('user_verifications')
@@ -712,10 +746,24 @@ app.post('/api/verification/submit', async (req, res) => {
             throw error;
         }
         
+        // Update user verification status if auto-approved
+        if (verificationStatus === 'approved') {
+            await supabase
+                .from('profiles')
+                .update({
+                    is_verified: true,
+                    verification_badge_earned_at: new Date().toISOString()
+                })
+                .eq('email', user_email);
+        }
+        
         res.json({ 
             success: true, 
             verification: data,
-            message: 'Verification request submitted successfully'
+            message: verificationStatus === 'approved' 
+                ? 'Verification completed successfully!'
+                : 'Verification request submitted successfully',
+            autoApproved: verificationStatus === 'approved'
         });
         
     } catch (error) {
