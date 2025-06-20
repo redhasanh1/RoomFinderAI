@@ -180,18 +180,45 @@ class VerificationSystem {
     // Submit verification request
     async submitVerificationRequest(userEmail, idDocumentData, faceData) {
         try {
+            // Handle both old single-capture format and new multi-pose format
+            let faceVerificationData;
+            let faceVerificationScore;
+            
+            if (faceData.poses && Array.isArray(faceData.poses)) {
+                // New multi-pose format
+                faceVerificationData = {
+                    poses: faceData.poses.map(pose => ({
+                        pose_type: pose.pose,
+                        image_url: pose.data.dataUrl,
+                        confidence: pose.confidence,
+                        captured_at: pose.timestamp
+                    })),
+                    average_confidence: faceData.confidence,
+                    total_poses: faceData.poses.length,
+                    verification_type: 'multi_pose',
+                    completed_at: faceData.completedAt
+                };
+                faceVerificationScore = faceData.confidence;
+            } else {
+                // Legacy single-capture format (fallback)
+                faceVerificationData = {
+                    image_url: faceData.dataUrl || faceData.image_url,
+                    confidence: faceData.confidence || 0.85,
+                    verification_type: 'single_capture',
+                    captured_at: new Date().toISOString()
+                };
+                faceVerificationScore = faceData.confidence || 0.85;
+            }
+
             const verificationData = {
                 user_email: userEmail,
                 id_document_url: idDocumentData.url,
                 id_document_type: this.detectIDType(idDocumentData.filename),
-                face_scan_data: {
-                    image_url: faceData.dataUrl,
-                    confidence: faceData.confidence || 0.85,
-                    captured_at: new Date().toISOString()
-                },
-                face_verification_score: faceData.confidence || 0.85,
+                face_scan_data: faceVerificationData,
+                face_verification_score: faceVerificationScore,
                 ip_address: await this.getUserIP(),
-                user_agent: navigator.userAgent
+                user_agent: navigator.userAgent,
+                verification_method: 'enhanced_guided_scanning'
             };
 
             const response = await fetch('http://localhost:3000/api/verification/submit', {
@@ -494,23 +521,86 @@ class VerificationUI {
             <div>
                 <div class="mb-6">
                     <h3 class="text-xl font-semibold text-gray-800 mb-2">Face Verification</h3>
-                    <p class="text-gray-600">Please position your face in the camera and click capture when ready.</p>
+                    <p class="text-gray-600">Follow the guided steps to complete your face verification.</p>
+                </div>
+                
+                <!-- Progress Indicator -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-600">Step <span id="currentStepNumber">1</span> of 6</span>
+                        <span class="text-sm text-gray-500"><span id="completedSteps">0</span> completed</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <!-- Instructions Panel -->
+                <div id="instructionPanel" class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-center">
+                        <div class="bg-blue-100 rounded-full p-2 mr-3">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p id="instructionText" class="font-medium text-blue-800">Position your face in the center of the circle and look directly at the camera</p>
+                            <p id="instructionSubtext" class="text-sm text-blue-600 mt-1">Make sure your face is well-lit and clearly visible</p>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="relative mb-6">
                     <video id="faceVideo" class="w-full max-w-md mx-auto rounded-lg bg-gray-200" autoplay playsinline></video>
                     <div id="faceOverlay" class="absolute inset-0 pointer-events-none">
                         <div class="w-full h-full flex items-center justify-center">
-                            <div class="border-2 border-blue-500 rounded-full w-48 h-48 opacity-50"></div>
+                            <div id="faceGuideCircle" class="border-2 border-blue-500 rounded-full w-48 h-48 opacity-50 transition-all duration-300"></div>
+                            <!-- Direction Indicators -->
+                            <div id="directionIndicators" class="absolute inset-0">
+                                <div id="upArrow" class="absolute top-8 left-1/2 transform -translate-x-1/2 hidden">
+                                    <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path>
+                                    </svg>
+                                </div>
+                                <div id="leftArrow" class="absolute top-1/2 left-8 transform -translate-y-1/2 hidden">
+                                    <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path>
+                                    </svg>
+                                </div>
+                                <div id="downArrow" class="absolute bottom-8 left-1/2 transform -translate-x-1/2 hidden">
+                                    <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                                <div id="rightArrow" class="absolute top-1/2 right-8 transform -translate-y-1/2 hidden">
+                                    <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </div>
+                                <div id="centerDot" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                                    <div class="w-4 h-4 bg-green-500 rounded-full opacity-75"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
+                <!-- Pose Detection Status -->
+                <div id="poseStatus" class="text-center mb-4">
+                    <div id="poseIndicator" class="inline-flex items-center px-3 py-1 rounded-full text-sm">
+                        <span id="poseStatusText">Position your face in the circle</span>
+                    </div>
+                </div>
+                
                 <div id="faceCapture" class="hidden mb-6">
-                    <img id="capturedFace" class="w-full max-w-md mx-auto rounded-lg" alt="Captured face">
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <div id="capturedPoses">
+                            <!-- Captured poses will be shown here -->
+                        </div>
+                    </div>
                     <div class="text-center mt-4">
-                        <p class="text-green-600 font-semibold">Face captured successfully!</p>
-                        <button id="retakeFaceBtn" class="mt-2 text-blue-600 text-sm hover:underline">Retake photo</button>
+                        <p class="text-green-600 font-semibold">All poses captured successfully!</p>
+                        <button id="retakeFaceBtn" class="mt-2 text-blue-600 text-sm hover:underline">Retake verification</button>
                     </div>
                 </div>
                 
@@ -518,8 +608,11 @@ class VerificationUI {
                     <button id="backToIDBtn" class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400 transition">
                         Back
                     </button>
-                    <button id="captureFaceBtn" class="flex-1 modern-button">
-                        Capture Face
+                    <button id="capturePoseBtn" class="flex-1 modern-button">
+                        Capture Pose
+                    </button>
+                    <button id="skipPoseBtn" class="flex-1 bg-yellow-500 text-white py-3 rounded-lg hover:bg-yellow-600 transition hidden">
+                        Skip This Pose
                     </button>
                     <button id="submitVerificationBtn" class="flex-1 modern-button hidden">
                         Submit Verification
@@ -528,8 +621,8 @@ class VerificationUI {
             </div>
         `;
 
-        // Initialize camera
-        this.initializeCamera();
+        // Initialize guided face scanning
+        this.initializeGuidedFaceScanning();
 
         // Setup event listeners
         document.getElementById('backToIDBtn').addEventListener('click', () => {
@@ -537,12 +630,45 @@ class VerificationUI {
             this.showIDUploadScreen();
         });
 
-        document.getElementById('captureFaceBtn').addEventListener('click', () => {
-            this.captureFacePhoto();
+        document.getElementById('capturePoseBtn').addEventListener('click', () => {
+            this.captureCurrentPose();
+        });
+
+        document.getElementById('skipPoseBtn').addEventListener('click', () => {
+            this.skipCurrentPose();
         });
 
         document.getElementById('submitVerificationBtn').addEventListener('click', () => {
             this.submitVerification();
+        });
+    }
+
+    // Initialize guided face scanning
+    async initializeGuidedFaceScanning() {
+        // Initialize scanning state
+        this.scanningState = {
+            currentPose: 0,
+            poses: [
+                { name: 'center', instruction: 'Look directly at the camera', subtext: 'Keep your face centered in the circle', arrow: 'centerDot' },
+                { name: 'up', instruction: 'Look up while keeping your face in the circle', subtext: 'Tilt your head slightly upward', arrow: 'upArrow' },
+                { name: 'left', instruction: 'Turn your head to the left', subtext: 'Look toward the left side while staying in frame', arrow: 'leftArrow' },
+                { name: 'down', instruction: 'Look down while keeping your face visible', subtext: 'Tilt your head slightly downward', arrow: 'downArrow' },
+                { name: 'right', instruction: 'Turn your head to the right', subtext: 'Look toward the right side while staying in frame', arrow: 'rightArrow' },
+                { name: 'center_final', instruction: 'Look directly at the camera again', subtext: 'Return to center position for final capture', arrow: 'centerDot' }
+            ],
+            capturedPoses: [],
+            completedCount: 0
+        };
+
+        // Initialize camera
+        await this.initializeCamera();
+        
+        // Start pose guidance
+        this.updatePoseInstructions();
+        
+        // Setup retake functionality
+        document.getElementById('retakeFaceBtn').addEventListener('click', () => {
+            this.resetGuidedScanning();
         });
     }
 
@@ -559,8 +685,81 @@ class VerificationUI {
         }
     }
 
-    // Capture face photo
-    async captureFacePhoto() {
+    // Update pose instructions and UI
+    updatePoseInstructions() {
+        const currentPose = this.scanningState.poses[this.scanningState.currentPose];
+        const progress = (this.scanningState.completedCount / this.scanningState.poses.length) * 100;
+        
+        // Update progress indicators
+        document.getElementById('currentStepNumber').textContent = this.scanningState.currentPose + 1;
+        document.getElementById('completedSteps').textContent = this.scanningState.completedCount;
+        document.getElementById('progressBar').style.width = `${progress}%`;
+        
+        // Update instructions
+        document.getElementById('instructionText').textContent = currentPose.instruction;
+        document.getElementById('instructionSubtext').textContent = currentPose.subtext;
+        
+        // Update visual indicators
+        this.updateDirectionIndicators(currentPose.arrow);
+        
+        // Update pose status
+        this.updatePoseStatus('waiting');
+        
+        // Show skip button for optional poses (not center poses)
+        const skipBtn = document.getElementById('skipPoseBtn');
+        if (currentPose.name !== 'center' && currentPose.name !== 'center_final') {
+            skipBtn.classList.remove('hidden');
+        } else {
+            skipBtn.classList.add('hidden');
+        }
+    }
+
+    // Update direction indicators
+    updateDirectionIndicators(activeArrow) {
+        const indicators = ['upArrow', 'leftArrow', 'downArrow', 'rightArrow', 'centerDot'];
+        
+        indicators.forEach(indicator => {
+            const element = document.getElementById(indicator);
+            if (indicator === activeArrow) {
+                element.classList.remove('hidden');
+                element.classList.add('animate-pulse');
+            } else {
+                element.classList.add('hidden');
+                element.classList.remove('animate-pulse');
+            }
+        });
+    }
+
+    // Update pose status indicator
+    updatePoseStatus(status) {
+        const indicator = document.getElementById('poseIndicator');
+        const text = document.getElementById('poseStatusText');
+        
+        // Reset classes
+        indicator.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm';
+        
+        switch (status) {
+            case 'waiting':
+                indicator.classList.add('bg-gray-100', 'text-gray-800');
+                text.textContent = 'Position yourself as instructed';
+                break;
+            case 'ready':
+                indicator.classList.add('bg-green-100', 'text-green-800');
+                text.textContent = 'Good! Ready to capture';
+                break;
+            case 'captured':
+                indicator.classList.add('bg-blue-100', 'text-blue-800');
+                text.textContent = 'Pose captured successfully';
+                break;
+            case 'error':
+                indicator.classList.add('bg-red-100', 'text-red-800');
+                text.textContent = 'Please adjust your position';
+                break;
+        }
+    }
+
+    // Capture current pose
+    async captureCurrentPose() {
         try {
             const video = document.getElementById('faceVideo');
             const faceData = await this.verification.captureFace(video);
@@ -569,35 +768,144 @@ class VerificationUI {
             const detection = await this.verification.detectFace(faceData.dataUrl);
             
             if (detection.faceDetected && detection.confidence > 0.7) {
-                this.capturedFaceData = {
-                    ...faceData,
-                    confidence: detection.confidence
+                const currentPose = this.scanningState.poses[this.scanningState.currentPose];
+                
+                // Store captured pose data
+                const poseData = {
+                    pose: currentPose.name,
+                    data: faceData,
+                    confidence: detection.confidence,
+                    timestamp: new Date().toISOString()
                 };
                 
-                // Show captured image
-                document.getElementById('capturedFace').src = faceData.dataUrl;
-                document.getElementById('faceCapture').classList.remove('hidden');
-                document.getElementById('captureFaceBtn').classList.add('hidden');
-                document.getElementById('submitVerificationBtn').classList.remove('hidden');
+                this.scanningState.capturedPoses.push(poseData);
+                this.scanningState.completedCount++;
                 
-                // Stop video
-                this.stopCamera();
+                // Update status
+                this.updatePoseStatus('captured');
                 
-                // Setup retake button
-                document.getElementById('retakeFaceBtn').addEventListener('click', () => {
-                    document.getElementById('faceCapture').classList.add('hidden');
-                    document.getElementById('captureFaceBtn').classList.remove('hidden');
-                    document.getElementById('submitVerificationBtn').classList.add('hidden');
-                    this.initializeCamera();
-                });
+                // Add visual feedback
+                this.flashSuccessIndicator();
+                
+                // Move to next pose after a short delay
+                setTimeout(() => {
+                    this.moveToNextPose();
+                }, 1000);
                 
             } else {
-                alert('Face not detected clearly. Please ensure good lighting and position your face in the center.');
+                this.updatePoseStatus('error');
+                alert('Face not detected clearly. Please ensure good lighting and position your face as instructed.');
             }
         } catch (error) {
-            console.error('Face capture error:', error);
-            alert('Failed to capture face. Please try again.');
+            console.error('Pose capture error:', error);
+            this.updatePoseStatus('error');
+            alert('Failed to capture pose. Please try again.');
         }
+    }
+
+    // Skip current pose (for optional poses only)
+    skipCurrentPose() {
+        const currentPose = this.scanningState.poses[this.scanningState.currentPose];
+        
+        // Only allow skipping non-essential poses
+        if (currentPose.name !== 'center' && currentPose.name !== 'center_final') {
+            this.moveToNextPose();
+        }
+    }
+
+    // Move to next pose or complete scanning
+    moveToNextPose() {
+        this.scanningState.currentPose++;
+        
+        if (this.scanningState.currentPose >= this.scanningState.poses.length) {
+            // All poses completed
+            this.completeFaceScanning();
+        } else {
+            // Move to next pose
+            this.updatePoseInstructions();
+        }
+    }
+
+    // Complete face scanning process
+    completeFaceScanning() {
+        // Combine all captured poses into verification data
+        this.capturedFaceData = {
+            poses: this.scanningState.capturedPoses,
+            confidence: this.calculateAverageConfidence(),
+            completedAt: new Date().toISOString()
+        };
+        
+        // Show captured poses grid
+        this.showCapturedPoses();
+        
+        // Hide pose controls and show submit button
+        document.getElementById('capturePoseBtn').classList.add('hidden');
+        document.getElementById('skipPoseBtn').classList.add('hidden');
+        document.getElementById('submitVerificationBtn').classList.remove('hidden');
+        document.getElementById('faceCapture').classList.remove('hidden');
+        
+        // Stop camera
+        this.stopCamera();
+        
+        // Update final status
+        this.updatePoseStatus('captured');
+        document.getElementById('instructionText').textContent = 'Face verification completed successfully!';
+        document.getElementById('instructionSubtext').textContent = 'Review your captured poses and submit when ready';
+    }
+
+    // Calculate average confidence from all poses
+    calculateAverageConfidence() {
+        if (this.scanningState.capturedPoses.length === 0) return 0;
+        
+        const totalConfidence = this.scanningState.capturedPoses.reduce((sum, pose) => sum + pose.confidence, 0);
+        return totalConfidence / this.scanningState.capturedPoses.length;
+    }
+
+    // Show captured poses in a grid
+    showCapturedPoses() {
+        const container = document.getElementById('capturedPoses');
+        container.innerHTML = '';
+        
+        this.scanningState.capturedPoses.forEach((poseData, index) => {
+            const poseElement = document.createElement('div');
+            poseElement.className = 'relative';
+            poseElement.innerHTML = `
+                <img src="${poseData.data.dataUrl}" alt="${poseData.pose}" class="w-full h-20 object-cover rounded-lg">
+                <div class="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
+                    ${poseData.pose}
+                </div>
+            `;
+            container.appendChild(poseElement);
+        });
+    }
+
+    // Reset guided scanning process
+    resetGuidedScanning() {
+        // Reset state
+        this.scanningState.currentPose = 0;
+        this.scanningState.capturedPoses = [];
+        this.scanningState.completedCount = 0;
+        
+        // Reset UI
+        document.getElementById('faceCapture').classList.add('hidden');
+        document.getElementById('capturePoseBtn').classList.remove('hidden');
+        document.getElementById('submitVerificationBtn').classList.add('hidden');
+        
+        // Restart camera and instructions
+        this.initializeCamera();
+        this.updatePoseInstructions();
+    }
+
+    // Flash success indicator
+    flashSuccessIndicator() {
+        const circle = document.getElementById('faceGuideCircle');
+        circle.classList.remove('border-blue-500');
+        circle.classList.add('border-green-500', 'bg-green-100');
+        
+        setTimeout(() => {
+            circle.classList.remove('border-green-500', 'bg-green-100');
+            circle.classList.add('border-blue-500');
+        }, 500);
     }
 
     // Stop camera stream
@@ -618,7 +926,7 @@ class VerificationUI {
 
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             
-            // Submit verification
+            // Submit verification with enhanced face data
             const result = await this.verification.submitVerificationRequest(
                 currentUser.email,
                 this.uploadedIDData,
