@@ -8,6 +8,17 @@
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="config.js"></script>
+    <script>
+        // Load API keys from config
+        const SUPABASE_URL = window.config?.SUPABASE_URL || config?.SUPABASE_URL;
+        const SUPABASE_ANON_KEY = window.config?.SUPABASE_ANON_KEY || config?.SUPABASE_ANON_KEY;
+        
+        // Debug config loading
+        console.log('Listings config loaded:', {
+            hasSupabaseURL: !!SUPABASE_URL,
+            hasSupabaseKey: !!SUPABASE_ANON_KEY
+        });
+    </script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
@@ -808,8 +819,8 @@
             await displayListings();
         });
 
-        // Supabase configuration is now in config.js
-        const supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY, {
+        // Supabase configuration loaded from config.js
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             db: { schema: 'public' },
             global: { headers: { 'Content-Type': 'application/json' } }
         });

@@ -7,8 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="./config.js"></script>
-    <script src="./ai-chat.js?v=8"></script>
-    <script src="./ai-negotiation.js?v=1"></script>
+    <script src="./ai-chat.js"></script>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -134,7 +133,6 @@
     <script>
         // Global variables
         let aiNegotiator;
-        let aiNegotiationEngine;
         let currentUser;
 
         // Initialize the application
@@ -169,27 +167,9 @@
             // Initialize Supabase
             const supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
 
-            // Check if AINegotiator class is available
-            if (typeof AINegotiator === 'undefined') {
-                console.error('❌ AINegotiator class not found! ai-chat.js not loaded properly');
-                alert('Error: AI Chat module not loaded. Please refresh the page.');
-                return;
-            }
-
             // Initialize AI Negotiator
-            console.log('🔧 Creating AINegotiator instance...');
             aiNegotiator = new AINegotiator(supabase, configData);
             aiNegotiator.init(currentUser);
-
-            // Initialize AI Negotiation Engine
-            console.log('🔧 Creating AINegotatior (negotiation engine) instance...');
-            if (typeof AINegotatior !== 'undefined') {
-                aiNegotiationEngine = new AINegotatior(supabase, configData);
-                aiNegotiator.setNegotiationEngine(aiNegotiationEngine);
-                console.log('✅ AI Negotiation Engine initialized');
-            } else {
-                console.warn('⚠️ AINegotatior class not found - negotiation features disabled');
-            }
 
             console.log('✅ AI Negotiator initialized successfully');
         });

@@ -3,7 +3,7 @@ const cors = require('cors');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
-const config = require('../config-loader');
+const config = require('../config.js');
 
 const { createClient } = require('@supabase/supabase-js');
 const app = express();
