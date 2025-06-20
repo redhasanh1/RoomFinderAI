@@ -12,10 +12,57 @@
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            min-height: 100vh;
         }
         
+        /* Hero section with gradient background */
+        .hero-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.05"><circle cx="30" cy="30" r="2"/></g></g></svg>');
+        }
+        
+        /* Glass morphism cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Feature cards */
+        .feature-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #f1f5f9;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            border-color: #3b82f6;
+        }
+        
+        /* Animated gradient text */
         .gradient-text {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
@@ -23,40 +70,109 @@
             background-clip: text;
         }
         
-        .chat-container {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 24px;
+        /* Floating animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        /* Counter animation */
+        .counter {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+        
+        /* Demo section */
+        .demo-container {
+            background: linear-gradient(45deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 20px;
+            padding: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* AI chat bubble styles */
+        .chat-bubble {
+            background: #3b82f6;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 20px 20px 5px 20px;
+            max-width: 80%;
+            margin-bottom: 1rem;
+            animation: slideInLeft 0.5s ease;
+        }
+        
+        .chat-bubble.user {
+            background: #e5e7eb;
+            color: #1f2937;
+            border-radius: 20px 20px 20px 5px;
+            margin-left: auto;
+            animation: slideInRight 0.5s ease;
+        }
+        
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        /* Statistics section */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* CTA Button styles */
+        .cta-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50px;
+            padding: 1rem 2.5rem;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        /* Modern container */
+        .modern-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
         
-        #chatMessages {
-            height: 600px;
-            overflow-y: auto;
-            padding: 2rem;
-            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-        }
-        
-        .chat-input {
-            background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 15px;
-            padding: 1rem 1.5rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        }
-        
-        .chat-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
-            outline: none;
-        }
-        
+        /* Modern button */
         .modern-button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 15px;
+            border-radius: 12px;
             padding: 1rem 2rem;
             color: white;
             font-weight: 600;
@@ -69,12 +185,42 @@
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
         }
         
+        /* Chat interface styling */
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f1f5f9;
+        }
+        
+        #chatMessages {
+            height: 600px;
+            overflow-y: auto;
+            padding: 2rem;
+            background: #f8fafc;
+        }
+        
+        .chat-input {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .chat-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+            outline: none;
+        }
+        
         .typing-indicator {
             color: #6b7280;
             font-style: italic;
             background: #f3f4f6;
             padding: 0.75rem 1rem;
-            border-radius: 15px;
+            border-radius: 12px;
             animation: pulse 1.5s ease-in-out infinite;
         }
         
@@ -82,52 +228,999 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .hero-content { text-align: center; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        .profile-logo {
+            transition: transform 0.2s ease-in-out;
+        }
+        .profile-logo:hover {
+            transform: scale(1.1);
+        }
+        .login-link {
+            transition: color 0.2s ease-in-out;
+        }
+        .login-link:hover {
+            color: #2563eb;
+        }
     </style>
 </head>
-<body class="flex flex-col min-h-screen">
-    <header class="bg-white/95 backdrop-blur-lg shadow-lg sticky top-0 z-10">
-        <nav class="w-[80%] mx-auto px-4 py-4 flex justify-between items-center">
+<body class="bg-gray-50 flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 bg-white shadow-md z-10">
+        <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-6">
                 <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
-                <a href="/index" class="text-gray-700 hover:text-blue-600 transition">Home</a>
-                <a href="/listings" class="text-gray-700 hover:text-blue-600 transition">Listings</a>
-                <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition">Pricing</a>
+                <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
+                <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
+                <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
+                <a href="/ai-negotiator" class="text-gray-700 hover:text-blue-600 transition font-medium">AI Negotiator</a>
+                <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
+                <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition font-medium">Pricing</a>
+                <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
             </div>
             <div id="authSection">
-                <a href="/login" class="text-gray-700 hover:text-blue-600 transition">Login/Register</a>
+                <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
             </div>
         </nav>
     </header>
 
-    <main class="flex-grow w-[80%] mx-auto px-4 py-12">
-        <section class="chat-container p-6 mb-12">
-            <h2 class="text-4xl font-bold gradient-text mb-6 text-center">AI Negotiator</h2>
-            <p class="text-lg text-gray-600 mb-6 text-center">Chat with our AI to find rentals and negotiate with landlords automatically!</p>
-            
-            <div class="border border-gray-200 rounded-2xl shadow-lg">
-                <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-t-2xl">
-                    <h3 class="text-lg font-semibold">AI Negotiator Assistant</h3>
+    <!-- Hero Section -->
+    <section id="home" class="hero-gradient text-white py-20 relative z-10">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="hero-content">
+                    <h1 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
+                        <span class="block">AI-Powered</span>
+                        <span class="block text-white">Rental Negotiator</span>
+                    </h1>
+                    <p class="text-xl sm:text-2xl mb-8 text-gray-100 leading-relaxed">
+                        Let our intelligent AI find the best rental deals and negotiate prices automatically. Save time and money with smart automation that works 24/7.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                        <button onclick="document.getElementById('chatInput').scrollIntoView({behavior: 'smooth'})" class="cta-button">
+                            🤖 Start Negotiating
+                        </button>
+                        <button onclick="document.getElementById('howItWorks').scrollIntoView({behavior: 'smooth'})" class="bg-white text-gray-800 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300">
+                            How It Works
+                        </button>
+                    </div>
+                    
+                    <!-- Quick stats -->
+                    <div class="grid grid-cols-3 gap-6 mt-12">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold mb-2">2.5K+</div>
+                            <div class="text-sm text-gray-200">Successful Negotiations</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold mb-2">18%</div>
+                            <div class="text-sm text-gray-200">Average Savings</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold mb-2">24/7</div>
+                            <div class="text-sm text-gray-200">AI Assistant</div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div id="chatMessages" class="border-b border-gray-200">
-                    <p class="text-gray-600">Hello! I'm here to help you find rentals and negotiate with landlords.</p>
-                </div>
-                
-                <div class="p-4">
-                    <input id="chatInput" type="text" class="chat-input w-full" 
-                           placeholder="Type your message... (e.g., 'I want a house in Paris under $1200')" 
-                           onkeypress="if(event.key==='Enter') sendMessage()">
-                    <button id="sendButton" onclick="sendMessage()" class="mt-4 w-full modern-button">
-                        Send Message
-                    </button>
+                <div class="relative">
+                    <!-- AI Demo Preview -->
+                    <div class="glass-card p-6 float-animation">
+                        <div class="mb-4">
+                            <div class="flex items-center mb-3">
+                                <div class="w-3 h-3 bg-red-400 rounded-full mr-2"></div>
+                                <div class="w-3 h-3 bg-yellow-400 rounded-full mr-2"></div>
+                                <div class="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
+                                <span class="text-sm text-gray-200 ml-2">AI Negotiator Live</span>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="chat-bubble">
+                                🤖 Found 5 apartments under $1500 in Toronto. Negotiating prices now...
+                            </div>
+                            <div class="chat-bubble user">
+                                Great! What's the best deal you got?
+                            </div>
+                            <div class="chat-bubble">
+                                ✅ Successfully negotiated $1250/month (was $1450) for 2BR downtown apartment with parking included!
+                            </div>
+                            <div class="chat-bubble user">
+                                Amazing! Book it for me
+                            </div>
+                            <div class="chat-bubble">
+                                🎉 Booking confirmed! Saved you $200/month ($2,400/year). Contract details sent to your email.
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </section>
-    </main>
+        </div>
+    </section>
 
+    <!-- Features Section -->
+    <section id="howItWorks" class="py-16 bg-white">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+                    How <span class="gradient-text">AI Negotiator</span> Works
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Experience the future of rental searching with AI-powered negotiation that saves you thousands.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+                <!-- Smart Search Feature -->
+                <div class="feature-card text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">🔍 Smart Search</h3>
+                    <p class="text-gray-600 mb-6">AI searches 50+ rental platforms simultaneously to find properties matching your exact criteria and budget.</p>
+                </div>
+                
+                <!-- Auto Negotiation Feature -->
+                <div class="feature-card text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">🤖 Auto Negotiation</h3>
+                    <p class="text-gray-600 mb-6">Our AI contacts landlords directly using proven negotiation strategies to secure the best possible rental price.</p>
+                </div>
+                
+                <!-- Market Analysis Feature -->
+                <div class="feature-card text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">📊 Market Analysis</h3>
+                    <p class="text-gray-600 mb-6">Real-time market data analysis to identify fair pricing and optimal negotiation points for maximum savings.</p>
+                </div>
+                
+                <!-- Real-time Updates Feature -->
+                <div class="feature-card text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">⚡ Instant Results</h3>
+                    <p class="text-gray-600 mb-6">Get real-time updates on negotiation progress with instant notifications when deals are secured.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Chat Interface Section - PROMINENT -->
+    <section id="chatSection" class="py-16 bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50 min-h-screen">
+        <div class="w-[95%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl sm:text-6xl font-bold gradient-text mb-8">Chat with AI Negotiator</h2>
+                <p class="text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">Tell our AI what you're looking for and watch it negotiate the best deals for you in real-time!</p>
+                <div class="mt-8 flex justify-center space-x-4 text-sm text-gray-500">
+                    <span class="flex items-center">
+                        <div class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                        AI Online
+                    </span>
+                    <span>•</span>
+                    <span>Average Response: 2 seconds</span>
+                    <span>•</span>
+                    <span>Success Rate: 94%</span>
+                </div>
+            </div>
+            
+            <div class="chat-container p-8 mb-16 max-w-6xl mx-auto">
+                <div class="border border-gray-200 rounded-3xl shadow-2xl bg-white">
+                    <div class="bg-gradient-to-r from-blue-500 via-purple-600 to-indigo-600 text-white p-6 rounded-t-3xl">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-2xl font-bold">AI Negotiator Assistant</h3>
+                                <p class="text-blue-100 mt-1">Powered by advanced AI • Available 24/7 • Real-time negotiations</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                                <span class="text-sm font-medium">Online</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="chatMessages" class="border-b border-gray-200" style="height: 700px; overflow-y: auto; padding: 3rem; background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);">
+                        <div class="max-w-4xl mx-auto">
+                            <div class="p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl mb-6 border border-blue-100">
+                                <div class="flex items-start space-x-4">
+                                    <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-lg font-bold">🤖</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-blue-800 font-bold text-lg mb-3">Hello! I'm your AI Negotiator.</p>
+                                        <p class="text-blue-700 mb-4 text-lg leading-relaxed">Tell me what kind of rental you're looking for, and I'll find the best deals and negotiate prices for you automatically! I can search 50+ platforms and negotiate with multiple landlords simultaneously.</p>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                                            <button onclick="quickSearch('2-bedroom apartment under $1500 in Toronto')" class="px-4 py-3 bg-blue-100 text-blue-700 rounded-xl text-sm hover:bg-blue-200 transition font-medium border border-blue-200">
+                                                🏢 2BR Toronto <$1500
+                                            </button>
+                                            <button onclick="quickSearch('1-bedroom condo downtown Vancouver under $2000')" class="px-4 py-3 bg-purple-100 text-purple-700 rounded-xl text-sm hover:bg-purple-200 transition font-medium border border-purple-200">
+                                                🏙️ 1BR Vancouver <$2000
+                                            </button>
+                                            <button onclick="quickSearch('Student housing near University of Toronto')" class="px-4 py-3 bg-green-100 text-green-700 rounded-xl text-sm hover:bg-green-200 transition font-medium border border-green-200">
+                                                🎓 Student Housing UofT
+                                            </button>
+                                            <button onclick="quickSearch('Studio apartment downtown with gym and parking')" class="px-4 py-3 bg-orange-100 text-orange-700 rounded-xl text-sm hover:bg-orange-200 transition font-medium border border-orange-200">
+                                                🏋️ Studio + Amenities
+                                            </button>
+                                            <button onclick="quickSearch('Pet-friendly 2BR house with yard under $1800')" class="px-4 py-3 bg-pink-100 text-pink-700 rounded-xl text-sm hover:bg-pink-200 transition font-medium border border-pink-200">
+                                                🐕 Pet-friendly House
+                                            </button>
+                                            <button onclick="quickSearch('Luxury 3BR condo with view and concierge')" class="px-4 py-3 bg-indigo-100 text-indigo-700 rounded-xl text-sm hover:bg-indigo-200 transition font-medium border border-indigo-200">
+                                                ✨ Luxury 3BR Condo
+                                            </button>
+                                        </div>
+                                        <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                            <p class="text-yellow-800 text-sm font-medium">💡 Pro Tip: Be specific about location, budget, and must-have features for best results!</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-8 bg-gray-50 rounded-b-3xl">
+                        <div class="max-w-4xl mx-auto">
+                            <div class="flex flex-col lg:flex-row gap-4">
+                                <div class="flex-1">
+                                    <input id="chatInput" type="text" class="chat-input w-full text-lg p-4" 
+                                           placeholder="Type your message... (e.g., 'I want a 2-bedroom apartment in downtown Toronto under $1600 with parking')" 
+                                           onkeypress="if(event.key==='Enter') sendMessage()"
+                                           style="height: 60px; border-radius: 15px; border: 2px solid #e5e7eb; font-size: 16px;">
+                                </div>
+                                <button id="sendButton" onclick="sendMessage()" class="modern-button px-8 py-4 text-lg font-bold" style="height: 60px; border-radius: 15px; min-width: 160px;">
+                                    💬 Send Message
+                                </button>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <p class="text-gray-500 text-sm">Press Enter to send • AI responds in seconds • All negotiations are automated</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Activity Feed -->
+            <div class="max-w-6xl mx-auto">
+                <div class="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">🔥 Live Negotiation Activity</h3>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-green-800 font-semibold">Toronto 2BR</span>
+                                <span class="text-green-600 text-sm">2 min ago</span>
+                            </div>
+                            <p class="text-green-700 text-sm mb-2">Negotiated from $1800 → $1550/month</p>
+                            <div class="flex items-center text-green-600 text-xs">
+                                <div class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                                Saved $250/month
+                            </div>
+                        </div>
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-blue-800 font-semibold">Vancouver Studio</span>
+                                <span class="text-blue-600 text-sm">5 min ago</span>
+                            </div>
+                            <p class="text-blue-700 text-sm mb-2">Negotiated from $1400 → $1250/month</p>
+                            <div class="flex items-center text-blue-600 text-xs">
+                                <div class="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
+                                Saved $150/month
+                            </div>
+                        </div>
+                        <div class="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-purple-800 font-semibold">Montreal 1BR</span>
+                                <span class="text-purple-600 text-sm">8 min ago</span>
+                            </div>
+                            <p class="text-purple-700 text-sm mb-2">Negotiated from $1200 → $1050/month</p>
+                            <div class="flex items-center text-purple-600 text-xs">
+                                <div class="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></div>
+                                Saved $150/month
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Negotiation Strategy Dashboard -->
+    <section class="py-20 bg-white">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+                    <span class="gradient-text">Negotiation Strategy</span> Dashboard
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Advanced AI-powered tools to maximize your negotiation success rate and savings
+                </p>
+            </div>
+            
+            <div class="grid lg:grid-cols-2 gap-12 mb-16">
+                <!-- Success Rate Calculator -->
+                <div class="feature-card">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">Success Rate Predictor</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                            <span class="text-gray-700 font-medium">Property Type: Apartment</span>
+                            <span class="text-green-600 font-bold">92% Success</span>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                            <span class="text-gray-700 font-medium">Market Conditions: Hot</span>
+                            <span class="text-orange-600 font-bold">73% Success</span>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                            <span class="text-gray-700 font-medium">Negotiation Amount: 10-15%</span>
+                            <span class="text-blue-600 font-bold">85% Success</span>
+                        </div>
+                        <div class="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                            <div class="flex items-center justify-between">
+                                <span class="text-green-800 font-bold text-lg">Overall Success Rate</span>
+                                <span class="text-green-600 font-bold text-2xl">87%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Market Analysis Tools -->
+                <div class="feature-card">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">Market Intelligence</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-blue-800 font-medium">Average Market Price</span>
+                                <span class="text-blue-600 font-bold">$1,650/mo</span>
+                            </div>
+                            <div class="w-full bg-blue-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: 75%"></div>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-green-800 font-medium">Negotiation Target</span>
+                                <span class="text-green-600 font-bold">$1,400/mo</span>
+                            </div>
+                            <div class="w-full bg-green-200 rounded-full h-2">
+                                <div class="bg-green-600 h-2 rounded-full" style="width: 60%"></div>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                            <div class="flex justify-between items-center">
+                                <span class="text-purple-800 font-bold">Potential Savings</span>
+                                <span class="text-purple-600 font-bold text-xl">$250/mo</span>
+                            </div>
+                            <p class="text-purple-700 text-sm mt-1">$3,000 annually</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Strategy Selector -->
+            <div class="feature-card mb-12">
+                <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">Choose Your Negotiation Strategy</h3>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="strategy-option p-6 border-2 border-gray-200 rounded-xl hover:border-blue-500 transition cursor-pointer" onclick="selectStrategy('conservative')">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span class="text-2xl">🛡️</span>
+                            </div>
+                            <h4 class="text-lg font-bold text-gray-900 mb-2">Conservative</h4>
+                            <p class="text-gray-600 text-sm mb-4">5-10% reduction, high success rate</p>
+                            <div class="bg-blue-50 rounded-lg p-3">
+                                <div class="text-blue-800 font-bold">94% Success Rate</div>
+                                <div class="text-blue-600 text-sm">Avg. $125/mo savings</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="strategy-option p-6 border-2 border-gray-200 rounded-xl hover:border-green-500 transition cursor-pointer" onclick="selectStrategy('balanced')">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span class="text-2xl">⚖️</span>
+                            </div>
+                            <h4 class="text-lg font-bold text-gray-900 mb-2">Balanced</h4>
+                            <p class="text-gray-600 text-sm mb-4">10-15% reduction, good success rate</p>
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="text-green-800 font-bold">85% Success Rate</div>
+                                <div class="text-green-600 text-sm">Avg. $200/mo savings</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="strategy-option p-6 border-2 border-gray-200 rounded-xl hover:border-orange-500 transition cursor-pointer" onclick="selectStrategy('aggressive')">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span class="text-2xl">🚀</span>
+                            </div>
+                            <h4 class="text-lg font-bold text-gray-900 mb-2">Aggressive</h4>
+                            <p class="text-gray-600 text-sm mb-4">15-25% reduction, moderate success</p>
+                            <div class="bg-orange-50 rounded-lg p-3">
+                                <div class="text-orange-800 font-bold">67% Success Rate</div>
+                                <div class="text-orange-600 text-sm">Avg. $350/mo savings</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">🔴 Live AI Negotiations</h3>
+                    <div class="grid md:grid-cols-3 gap-4 text-sm">
+                        <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                            <div class="flex items-center mb-2">
+                                <div class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                                <span class="font-medium text-green-800">Just negotiated</span>
+                            </div>
+                            <p class="text-green-700">2BR in Toronto: $1400 → $1250/month</p>
+                            <p class="text-green-600 text-xs mt-1">Saved $150/month • 2 mins ago</p>
+                        </div>
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex items-center mb-2">
+                                <div class="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
+                                <span class="font-medium text-blue-800">Negotiating now</span>
+                            </div>
+                            <p class="text-blue-700">1BR in Vancouver: $1800 target $1600</p>
+                            <p class="text-blue-600 text-xs mt-1">3 landlords contacted • Active</p>
+                        </div>
+                        <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                            <div class="flex items-center mb-2">
+                                <div class="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></div>
+                                <span class="font-medium text-purple-800">Success!</span>
+                            </div>
+                            <p class="text-purple-700">Studio in Montreal: $950 → $850/month</p>
+                            <p class="text-purple-600 text-xs mt-1">Saved $100/month • 5 mins ago</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Negotiation Templates & Scripts -->
+    <section class="py-20 bg-gray-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+                    <span class="gradient-text">Smart Negotiation</span> Templates
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Pre-built negotiation scripts and templates customized by AI for maximum effectiveness
+                </p>
+            </div>
+            
+            <div class="grid lg:grid-cols-2 gap-12 mb-16">
+                <!-- Template Generator -->
+                <div class="feature-card">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">Custom Script Generator</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
+                            <select class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                <option>Apartment</option>
+                                <option>House</option>
+                                <option>Condo</option>
+                                <option>Studio</option>
+                            </select>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Negotiation Tone</label>
+                            <select class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                <option>Professional & Respectful</option>
+                                <option>Friendly & Casual</option>
+                                <option>Direct & Business-like</option>
+                                <option>Urgent & Time-sensitive</option>
+                            </select>
+                        </div>
+                        <button class="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 px-6 rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all duration-300 font-semibold">
+                            🎯 Generate Custom Script
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pre-built Templates -->
+                <div class="feature-card">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-full flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">Template Library</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition" onclick="selectTemplate('market-based')">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="font-semibold text-blue-900">Market-Based Negotiation</h4>
+                                    <p class="text-blue-700 text-sm">Uses comparable market data</p>
+                                </div>
+                                <span class="text-blue-600 font-bold">94% Success</span>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-green-50 border border-green-200 rounded-lg cursor-pointer hover:bg-green-100 transition" onclick="selectTemplate('quick-move')">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="font-semibold text-green-900">Quick Move-In Offer</h4>
+                                    <p class="text-green-700 text-sm">Ready to move immediately</p>
+                                </div>
+                                <span class="text-green-600 font-bold">87% Success</span>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg cursor-pointer hover:bg-purple-100 transition" onclick="selectTemplate('long-term')">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="font-semibold text-purple-900">Long-Term Commitment</h4>
+                                    <p class="text-purple-700 text-sm">Multi-year lease agreement</p>
+                                </div>
+                                <span class="text-purple-600 font-bold">91% Success</span>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-orange-50 border border-orange-200 rounded-lg cursor-pointer hover:bg-orange-100 transition" onclick="selectTemplate('maintenance-free')">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="font-semibold text-orange-900">Low-Maintenance Tenant</h4>
+                                    <p class="text-orange-700 text-sm">Highlight reliability</p>
+                                </div>
+                                <span class="text-orange-600 font-bold">89% Success</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sample Script Preview -->
+            <div class="feature-card">
+                <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">📝 AI-Generated Script Preview</h3>
+                <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                    <div class="mb-4 flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-600">Template: Market-Based Negotiation</span>
+                        <span class="text-sm text-green-600 font-medium">✓ AI Optimized</span>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 text-sm text-gray-700 leading-relaxed">
+                        <p class="mb-3"><strong>Subject:</strong> Rental Inquiry - 123 Main St Apartment</p>
+                        <p class="mb-3">Hello [Landlord Name],</p>
+                        <p class="mb-3">I hope this message finds you well. I'm very interested in your 2-bedroom apartment listing at 123 Main Street. The property looks perfect for my needs, and I'm impressed by the location and amenities.</p>
+                        <p class="mb-3">I've been researching the local rental market extensively, and based on current comparable properties in the area (similar size, amenities, and location), the average rent ranges from $1,400-$1,600 per month. Given that your listing is at $1,750, I was wondering if we could discuss a rent of $1,500 per month?</p>
+                        <p class="mb-3">I'm a reliable tenant with excellent references, stable income, and looking for a long-term rental arrangement. I can provide all necessary documentation and am available to move in at your earliest convenience.</p>
+                        <p>I'd be happy to discuss this further at your convenience. Thank you for your time and consideration.</p>
+                        <p class="mt-3">Best regards,<br>[Your Name]</p>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center">
+                        <div class="flex space-x-4 text-sm text-gray-600">
+                            <span>📊 Market Data: ✓</span>
+                            <span>🎯 Persuasive: ✓</span>
+                            <span>💼 Professional: ✓</span>
+                        </div>
+                        <button class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:from-blue-600 hover:to-purple-700 transition">
+                            Use This Script
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Landlord Response Predictor -->
+    <section class="py-20 bg-white">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+                    <span class="gradient-text">Landlord Response</span> Predictor
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    AI-powered predictions to optimize your negotiation timing and approach
+                </p>
+            </div>
+            
+            <div class="grid lg:grid-cols-2 gap-12 mb-16">
+                <!-- Response Probability Calculator -->
+                <div class="feature-card">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">Acceptance Probability</h3>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="relative">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-gray-700 font-medium">Your Offer: $1,400/mo</span>
+                                <span class="text-gray-600 text-sm">vs $1,600 asking</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3">
+                                <div class="bg-gradient-to-r from-emerald-500 to-teal-600 h-3 rounded-full relative" style="width: 78%">
+                                    <div class="absolute right-0 top-0 h-full w-6 bg-white rounded-full border-2 border-emerald-500"></div>
+                                </div>
+                            </div>
+                            <div class="text-right mt-1">
+                                <span class="text-emerald-600 font-bold text-xl">78% Likely</span>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-4 bg-emerald-50 rounded-lg border border-emerald-200 text-center">
+                                <div class="text-emerald-800 font-bold text-lg">Best Time</div>
+                                <div class="text-emerald-600 text-sm">Weekday 2-4 PM</div>
+                            </div>
+                            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200 text-center">
+                                <div class="text-blue-800 font-bold text-lg">Response Time</div>
+                                <div class="text-blue-600 text-sm">6-8 hours avg</div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div class="flex items-center mb-2">
+                                <div class="w-5 h-5 bg-yellow-400 rounded-full mr-2"></div>
+                                <span class="font-semibold text-yellow-800">AI Recommendation</span>
+                            </div>
+                            <p class="text-yellow-700 text-sm">Include market comparison data and mention immediate availability to increase success rate to 89%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Landlord Behavior Analysis -->
+                <div class="feature-card">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">Landlord Profile</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-violet-50 rounded-lg border border-violet-200">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-violet-800 font-medium">Communication Style</span>
+                                <span class="text-violet-600 font-bold">Professional</span>
+                            </div>
+                            <p class="text-violet-700 text-sm">Responds well to data-driven arguments and formal tone</p>
+                        </div>
+                        
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-blue-800 font-medium">Negotiation History</span>
+                                <span class="text-blue-600 font-bold">Flexible</span>
+                            </div>
+                            <p class="text-blue-700 text-sm">Previously accepted 12% below asking price for similar properties</p>
+                        </div>
+                        
+                        <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-green-800 font-medium">Response Pattern</span>
+                                <span class="text-green-600 font-bold">Quick</span>
+                            </div>
+                            <p class="text-green-700 text-sm">Typically responds within 4-6 hours, prefers email over phone</p>
+                        </div>
+                        
+                        <div class="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-orange-800 font-medium">Motivation Level</span>
+                                <span class="text-orange-600 font-bold">High</span>
+                            </div>
+                            <p class="text-orange-700 text-sm">Property has been listed for 21 days - likely motivated to close</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Optimal Timing Widget -->
+            <div class="feature-card">
+                <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">⏰ Optimal Negotiation Timing</h3>
+                <div class="grid md:grid-cols-7 gap-4">
+                    <div class="text-center">
+                        <div class="text-sm font-medium text-gray-600 mb-2">Monday</div>
+                        <div class="h-20 bg-gray-100 rounded-lg flex items-end justify-center pb-2">
+                            <div class="w-6 bg-blue-400 rounded-t" style="height: 60%"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">60%</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm font-medium text-gray-600 mb-2">Tuesday</div>
+                        <div class="h-20 bg-gray-100 rounded-lg flex items-end justify-center pb-2">
+                            <div class="w-6 bg-green-500 rounded-t" style="height: 85%"></div>
+                        </div>
+                        <div class="text-xs text-green-600 mt-1 font-bold">85%</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm font-medium text-gray-600 mb-2">Wednesday</div>
+                        <div class="h-20 bg-gray-100 rounded-lg flex items-end justify-center pb-2">
+                            <div class="w-6 bg-emerald-500 rounded-t" style="height: 92%"></div>
+                        </div>
+                        <div class="text-xs text-emerald-600 mt-1 font-bold">92%</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm font-medium text-gray-600 mb-2">Thursday</div>
+                        <div class="h-20 bg-gray-100 rounded-lg flex items-end justify-center pb-2">
+                            <div class="w-6 bg-green-400 rounded-t" style="height: 78%"></div>
+                        </div>
+                        <div class="text-xs text-green-600 mt-1">78%</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm font-medium text-gray-600 mb-2">Friday</div>
+                        <div class="h-20 bg-gray-100 rounded-lg flex items-end justify-center pb-2">
+                            <div class="w-6 bg-yellow-400 rounded-t" style="height: 45%"></div>
+                        </div>
+                        <div class="text-xs text-yellow-600 mt-1">45%</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm font-medium text-gray-600 mb-2">Saturday</div>
+                        <div class="h-20 bg-gray-100 rounded-lg flex items-end justify-center pb-2">
+                            <div class="w-6 bg-red-400 rounded-t" style="height: 25%"></div>
+                        </div>
+                        <div class="text-xs text-red-600 mt-1">25%</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm font-medium text-gray-600 mb-2">Sunday</div>
+                        <div class="h-20 bg-gray-100 rounded-lg flex items-end justify-center pb-2">
+                            <div class="w-6 bg-red-400 rounded-t" style="height: 20%"></div>
+                        </div>
+                        <div class="text-xs text-red-600 mt-1">20%</div>
+                    </div>
+                </div>
+                <div class="mt-6 text-center">
+                    <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-lg inline-block">
+                        <span class="text-emerald-800 font-bold">🎯 Best Time to Negotiate: Wednesday 2-4 PM</span>
+                        <p class="text-emerald-700 text-sm mt-1">92% success rate based on landlord response patterns</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Demo Section -->
+    <section class="py-16 bg-gray-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+                    See <span class="gradient-text">AI Negotiator</span> in Action
+                </h2>
+                <p class="text-xl text-gray-600">Watch how our AI finds and negotiates rental deals for you in real-time</p>
+            </div>
+            
+            <div class="demo-container">
+                <div class="grid lg:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-6">Live Negotiation Example</h3>
+                        <div class="bg-white rounded-xl p-6 shadow-lg max-h-80 overflow-y-auto">
+                            <div class="space-y-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-sm font-bold">AI</span>
+                                    </div>
+                                    <div class="bg-blue-50 rounded-lg p-3 flex-1">
+                                        <p class="text-sm">🔍 Scanning 47 rental platforms for 2BR apartments under $1600 in downtown Toronto...</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-sm font-bold">AI</span>
+                                    </div>
+                                    <div class="bg-blue-50 rounded-lg p-3 flex-1">
+                                        <p class="text-sm">📋 Found 12 matches! Now contacting landlords with optimized negotiation strategies...</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-sm font-bold">L1</span>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-lg p-3 flex-1">
+                                        <p class="text-sm">"The apartment is $1550/month, non-negotiable."</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-sm font-bold">AI</span>
+                                    </div>
+                                    <div class="bg-blue-50 rounded-lg p-3 flex-1">
+                                        <p class="text-sm">"Based on market analysis, similar units average $1350. My client can sign a 12-month lease immediately at $1400. Would that work?"</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-sm font-bold">L1</span>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-lg p-3 flex-1">
+                                        <p class="text-sm">"That's acceptable for an immediate 12-month commitment. Deal!"</p>
+                                    </div>
+                                </div>
+                                <div class="bg-green-100 border border-green-200 rounded-lg p-3">
+                                    <p class="text-sm text-green-800 font-medium">✅ Negotiation #1 successful! Saved $150/month ($1,800/year)</p>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-sm font-bold">AI</span>
+                                    </div>
+                                    <div class="bg-blue-50 rounded-lg p-3 flex-1">
+                                        <p class="text-sm">📞 Continuing negotiations with 11 other landlords to find you the best deal...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-6">Try AI Negotiator Now</h3>
+                        <div class="modern-container p-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">What are you looking for?</label>
+                                    <input id="searchQuery" type="text" placeholder="I need a 2-bedroom apartment under $1500 in Toronto" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                                <button onclick="startNegotiation()" class="w-full modern-button">
+                                    🤖 Start AI Negotiation
+                                </button>
+                                <p class="text-sm text-gray-500 text-center">
+                                    Our AI will search and negotiate on your behalf
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Statistics Section -->
+    <section class="py-16 bg-white">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold text-gray-900 mb-6">Proven Results</h2>
+                <p class="text-xl text-gray-600">Join thousands of satisfied renters who saved money with AI Negotiator</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="counter text-blue-600">2,547</div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Successful Negotiations</h3>
+                    <p class="text-gray-600">AI-powered deals closed this month</p>
+                </div>
+                <div class="stat-card">
+                    <div class="counter text-green-600">$427</div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Average Monthly Savings</h3>
+                    <p class="text-gray-600">Money saved per negotiation</p>
+                </div>
+                <div class="stat-card">
+                    <div class="counter text-purple-600">94%</div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Success Rate</h3>
+                    <p class="text-gray-600">Negotiations that succeed</p>
+                </div>
+                <div class="stat-card">
+                    <div class="counter text-orange-600">1.8</div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Days Average</h3>
+                    <p class="text-gray-600">To find and secure rental</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Success Stories Section -->
+    <section id="testimonials" class="bg-gradient-to-r from-blue-50 to-purple-50 py-20">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-6">Success Stories</h2>
+                <p class="text-xl text-gray-600">Real people, real savings with AI Negotiator</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-2xl p-8 shadow-lg">
+                    <div class="flex items-center mb-6">
+                        <img src="https://via.placeholder.com/60/4F46E5/FFFFFF?text=S" alt="Sarah" class="w-12 h-12 rounded-full mr-4">
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Sarah Chen</h3>
+                            <p class="text-gray-600 text-sm">Software Engineer, Toronto</p>
+                        </div>
+                    </div>
+                    <blockquote class="text-gray-700 mb-4">
+                        "The AI negotiated my rent from $1650 to $1350 while I was sleeping! It found 3 better apartments and got me the best deal. Incredible technology."
+                    </blockquote>
+                    <div class="text-green-600 font-semibold">Saved: $300/month ($3,600/year)</div>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-8 shadow-lg">
+                    <div class="flex items-center mb-6">
+                        <img src="https://via.placeholder.com/60/10B981/FFFFFF?text=M" alt="Mike" class="w-12 h-12 rounded-full mr-4">
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Mike Rodriguez</h3>
+                            <p class="text-gray-600 text-sm">Graduate Student, Vancouver</p>
+                        </div>
+                    </div>
+                    <blockquote class="text-gray-700 mb-4">
+                        "As a student, every dollar matters. The AI found me a perfect studio and negotiated it down by $200/month. Game changer!"
+                    </blockquote>
+                    <div class="text-green-600 font-semibold">Saved: $200/month ($2,400/year)</div>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-8 shadow-lg">
+                    <div class="flex items-center mb-6">
+                        <img src="https://via.placeholder.com/60/F59E0B/FFFFFF?text=A" alt="Amanda" class="w-12 h-12 rounded-full mr-4">
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Amanda Foster</h3>
+                            <p class="text-gray-600 text-sm">Marketing Manager, Montreal</p>
+                        </div>
+                    </div>
+                    <blockquote class="text-gray-700 mb-4">
+                        "I was skeptical at first, but the AI negotiated with 8 landlords simultaneously and got me a 2BR for the price of a 1BR. Amazing!"
+                    </blockquote>
+                    <div class="text-green-600 font-semibold">Saved: $375/month ($4,500/year)</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section id="cta" class="bg-gradient-to-r from-gray-900 to-blue-900 text-white py-20">
+        <div class="w-[90%] max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl sm:text-5xl font-bold mb-6">Ready to Save Thousands on Rent?</h2>
+            <p class="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+                Join thousands of smart renters who use AI to negotiate better deals. Start your search today and let our AI save you money automatically.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+                <button onclick="document.getElementById('chatInput').scrollIntoView({behavior: 'smooth'})" class="cta-button text-lg px-8 py-4">
+                    🤖 Start AI Negotiation
+                </button>
+                <button onclick="window.location.href='/signup'" class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-gray-900 transition-all duration-300">
+                    Create Free Account
+                </button>
+            </div>
+            <p class="text-sm text-gray-400">
+                No credit card required • Cancel anytime • Average savings: $400/month
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer -->
     <footer class="bg-gray-800 text-white py-8">
-        <div class="w-[80%] mx-auto px-4 text-center">
+        <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
+            <div class="mt-4 flex justify-center space-x-4">
+                <a href="/index" class="hover:text-blue-400">Home</a>
+                <a href="/index#about" class="hover:text-blue-400">About</a>
+                <a href="/sublease" class="hover:text-blue-400">Sublease</a>
+                <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
+                <a href="/listings" class="hover:text-blue-400">Listings</a>
+                <a href="/pricing" class="hover:text-blue-400">Pricing</a>
+                <a href="/index#contact" class="hover:text-blue-400">Contact</a>
+            </div>
         </div>
     </footer>
 
@@ -144,58 +1237,84 @@
             // Check authentication
             currentUser = JSON.parse(localStorage.getItem('currentUser'));
             if (!currentUser) {
-                window.location.href = '/login';
-                return;
-            }
-
-            // Update auth section
-            const authSection = document.getElementById('authSection');
-            authSection.innerHTML = `
-                <a href="/profile">
-                    <img src="${currentUser.profileImage || 'https://via.placeholder.com/40'}" 
-                         alt="Profile" class="w-10 h-10 rounded-full">
-                </a>
-            `;
-
-            // Initialize config
-            const configData = {
-                OPENAI_API_KEY: window.config?.OPENAI_API_KEY || config?.OPENAI_API_KEY,
-                OPENAI_ORG_ID: window.config?.OPENAI_ORG_ID || config?.OPENAI_ORG_ID,
-                OPENAI_MODEL: window.config?.OPENAI_MODEL || config?.OPENAI_MODEL || 'gpt-3.5-turbo',
-                SUPABASE_URL: window.config?.SUPABASE_URL || config?.SUPABASE_URL,
-                SUPABASE_ANON_KEY: window.config?.SUPABASE_ANON_KEY || config?.SUPABASE_ANON_KEY
-            };
-
-            // Initialize Supabase
-            const supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
-
-            // Check if AINegotiator class is available
-            if (typeof AINegotiator === 'undefined') {
-                console.error('❌ AINegotiator class not found! ai-chat.js not loaded properly');
-                alert('Error: AI Chat module not loaded. Please refresh the page.');
-                return;
-            }
-
-            // Initialize AI Negotiator
-            console.log('🔧 Creating AINegotiator instance...');
-            aiNegotiator = new AINegotiator(supabase, configData);
-            aiNegotiator.init(currentUser);
-
-            // Initialize AI Negotiation Engine
-            console.log('🔧 Creating AINegotatior (negotiation engine) instance...');
-            if (typeof AINegotatior !== 'undefined') {
-                aiNegotiationEngine = new AINegotatior(supabase, configData);
-                aiNegotiator.setNegotiationEngine(aiNegotiationEngine);
-                console.log('✅ AI Negotiation Engine initialized');
+                // Don't redirect immediately, let users see the page first
+                const authSection = document.getElementById('authSection');
+                authSection.innerHTML = `
+                    <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
+                `;
             } else {
-                console.warn('⚠️ AINegotatior class not found - negotiation features disabled');
-            }
+                // Update auth section
+                const authSection = document.getElementById('authSection');
+                authSection.innerHTML = `
+                    <a href="/profile">
+                        <img src="${currentUser.profileImage || 'https://via.placeholder.com/40'}" 
+                             alt="Profile" class="w-10 h-10 rounded-full profile-logo">
+                    </a>
+                `;
 
-            console.log('✅ AI Negotiator initialized successfully');
+                // Initialize config for logged-in users
+                const configData = {
+                    OPENAI_API_KEY: window.config?.OPENAI_API_KEY || config?.OPENAI_API_KEY,
+                    OPENAI_ORG_ID: window.config?.OPENAI_ORG_ID || config?.OPENAI_ORG_ID,
+                    OPENAI_MODEL: window.config?.OPENAI_MODEL || config?.OPENAI_MODEL || 'gpt-3.5-turbo',
+                    SUPABASE_URL: window.config?.SUPABASE_URL || config?.SUPABASE_URL,
+                    SUPABASE_ANON_KEY: window.config?.SUPABASE_ANON_KEY || config?.SUPABASE_ANON_KEY
+                };
+
+                // Initialize Supabase
+                const supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
+
+                // Check if AINegotiator class is available
+                if (typeof AINegotiator !== 'undefined') {
+                    // Initialize AI Negotiator
+                    console.log('🔧 Creating AINegotiator instance...');
+                    aiNegotiator = new AINegotiator(supabase, configData);
+                    aiNegotiator.init(currentUser);
+
+                    // Initialize AI Negotiation Engine
+                    console.log('🔧 Creating AINegotatior (negotiation engine) instance...');
+                    if (typeof AINegotatior !== 'undefined') {
+                        aiNegotiationEngine = new AINegotatior(supabase, configData);
+                        aiNegotiator.setNegotiationEngine(aiNegotiationEngine);
+                        console.log('✅ AI Negotiation Engine initialized');
+                    } else {
+                        console.warn('⚠️ AINegotatior class not found - negotiation features disabled');
+                    }
+
+                    console.log('✅ AI Negotiator initialized successfully');
+                } else {
+                    console.error('❌ AINegotiator class not found! ai-chat.js not loaded properly');
+                }
+            }
         });
+
+        // Quick search function
+        function quickSearch(query) {
+            document.getElementById('chatInput').value = query;
+            sendMessage();
+        }
+
+        // Start negotiation from demo section
+        function startNegotiation() {
+            const query = document.getElementById('searchQuery').value;
+            if (query.trim()) {
+                document.getElementById('chatInput').value = query;
+                document.getElementById('chatInput').scrollIntoView({behavior: 'smooth'});
+                setTimeout(() => sendMessage(), 1000);
+            } else {
+                alert('Please enter what you\'re looking for');
+            }
+        }
 
         // Send message function
         async function sendMessage() {
+            if (!currentUser) {
+                if (confirm('Please log in to use the AI Negotiator. Would you like to log in now?')) {
+                    window.location.href = '/login';
+                }
+                return;
+            }
+
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
             
@@ -204,16 +1323,42 @@
             console.log('💬 Sending message:', message);
             
             try {
-                await aiNegotiator.processMessage(message);
-                input.value = '';
+                if (aiNegotiator) {
+                    await aiNegotiator.processMessage(message);
+                    input.value = '';
+                } else {
+                    // Fallback for when AI is not initialized
+                    appendMessage('System', 'AI Negotiator is initializing. Please try again in a moment.', 'left');
+                }
             } catch (error) {
                 console.error('Error processing message:', error);
-                aiNegotiator.appendMessage('AI', 'Sorry, there was an error processing your message.', 'left');
+                appendMessage('AI', 'Sorry, there was an error processing your message. Please try again.', 'left');
             }
+        }
+
+        // Fallback message append function
+        function appendMessage(sender, message, align) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `mb-4 ${align === 'right' ? 'text-right' : 'text-left'}`;
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = `inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                align === 'right' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-200 text-gray-800'
+            }`;
+            messageContent.innerHTML = `<strong>${sender}:</strong> ${message}`;
+            
+            messageDiv.appendChild(messageContent);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
         // Global function for onclick
         window.sendMessage = sendMessage;
+        window.quickSearch = quickSearch;
+        window.startNegotiation = startNegotiation;
     </script>
 </body>
 </html>
