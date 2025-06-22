@@ -3036,20 +3036,34 @@
         async function fetchListings() {
             console.log('Fetching listings from Supabase');
             try {
-                const { data, error } = await supabase
+                // First get listings
+                const { data: listings, error: listingsError } = await supabase
                     .from('listings')
-                    .select(`
-                        *,
-                        users!listings_user_email_fkey (
-                            is_verified,
-                            verification_badge_earned_at
-                        )
-                    `)
+                    .select('*')
                     .order('created_at', { ascending: false })
                     .range(0, 19);
-                console.log('Fetch result:', { data, error });
-                if (error) throw error;
-                return data || [];
+                
+                if (listingsError) throw listingsError;
+                
+                // Get unique user emails from listings
+                const userEmails = [...new Set(listings.map(listing => listing.user_email))];
+                
+                // Get user verification data
+                const { data: users, error: usersError } = await supabase
+                    .from('users')
+                    .select('email, is_verified, verification_badge_earned_at')
+                    .in('email', userEmails);
+                
+                if (usersError) throw usersError;
+                
+                // Merge the data
+                const listingsWithUsers = listings.map(listing => ({
+                    ...listing,
+                    users: users.find(user => user.email === listing.user_email) || null
+                }));
+                
+                console.log('Fetch result:', { data: listingsWithUsers });
+                return listingsWithUsers || [];
             } catch (error) {
                 console.error('Error fetching listings:', error);
                 alert('Failed to load listings: ' + error.message);
@@ -4160,6 +4174,8 @@
             })
             .subscribe((status) => {
                 console.log('Listings channel status:', status);
+
+                
             });
     </script>
 </body>
