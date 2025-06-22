@@ -135,6 +135,110 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Digital Wallet Buttons */
+        .payment-divider {
+            position: relative;
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .payment-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+        }
+        
+        .payment-divider span {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0 1rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .wallet-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .wallet-button {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .wallet-button:hover {
+            border-color: #d1d5db;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .wallet-button:active {
+            transform: translateY(0);
+        }
+
+        .wallet-button.google-pay {
+            border-color: #4285f4;
+            color: #4285f4;
+        }
+
+        .wallet-button.google-pay:hover {
+            background: #4285f4;
+            color: white;
+        }
+
+        .wallet-button.apple-pay {
+            border-color: #000;
+            color: #000;
+        }
+
+        .wallet-button.apple-pay:hover {
+            background: #000;
+            color: white;
+        }
+
+        .wallet-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 0.5rem;
+        }
+
+        /* Enhanced Payment Request Button */
+        #payment-request-button {
+            margin-bottom: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        #payment-request-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .payment-methods-container {
+            background: rgba(248, 250, 252, 0.8);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(226, 232, 240, 0.6);
+        }
     </style>
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen">
@@ -170,6 +274,33 @@
 
             <!-- Payment Form -->
             <form id="payment-form">
+                <!-- Payment Request Button (Apple Pay / Google Pay) -->
+                <div id="payment-request-button" class="mb-6" style="display: none;">
+                    <!-- Stripe Payment Request Button will be inserted here -->
+                </div>
+
+                <!-- Alternative Payment Methods -->
+                <div id="wallet-container" class="payment-methods-container" style="display: none;">
+                    <div class="wallet-buttons">
+                        <button type="button" id="google-pay-btn" class="wallet-button google-pay" style="display: none;">
+                            <svg class="wallet-icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12.5 8.5c-.4-.4-1-.7-1.8-.7-1.4 0-2.5 1.1-2.5 2.5s1.1 2.5 2.5 2.5c.8 0 1.4-.3 1.8-.7l1.4 1.4c-.8.8-1.9 1.3-3.2 1.3-2.5 0-4.5-2-4.5-4.5s2-4.5 4.5-4.5c1.3 0 2.4.5 3.2 1.3l-1.4 1.4zm7.5 0c-.4-.4-1-.7-1.8-.7-1.4 0-2.5 1.1-2.5 2.5s1.1 2.5 2.5 2.5c.8 0 1.4-.3 1.8-.7l1.4 1.4c-.8.8-1.9 1.3-3.2 1.3-2.5 0-4.5-2-4.5-4.5s2-4.5 4.5-4.5c1.3 0 2.4.5 3.2 1.3l-1.4 1.4z"/>
+                            </svg>
+                            Google Pay
+                        </button>
+                        <button type="button" id="apple-pay-btn" class="wallet-button apple-pay" style="display: none;">
+                            <svg class="wallet-icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.377 0-2.332-1.26-3.428-2.8-1.287-1.82-2.323-4.63-2.323-7.28 0-4.28 2.797-6.55 5.552-6.55 1.448 0 2.675.95 3.6.95.865 0 2.222-.95 3.902-.95.613 0 2.886.06 4.374 2.19-.13.09-2.383 1.37-2.383 4.19 0 3.26 2.854 4.42 2.966 4.475z"/>
+                            </svg>
+                            Apple Pay
+                        </button>
+                    </div>
+                </div>
+
+                <div class="payment-divider">
+                    <span>or pay with card</span>
+                </div>
+
                 <div class="mb-6">
                     <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                     <input type="email" id="email" required class="modern-input w-full" placeholder="your.email@example.com">
@@ -236,6 +367,80 @@
             loader: 'auto'
         });
 
+        // Get plan details from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const plan = urlParams.get('plan') || 'basic';
+        const price = urlParams.get('price') || '9.99';
+        const priceInCents = Math.round(parseFloat(price) * 100);
+
+        // Create Payment Request for Apple Pay/Google Pay
+        const paymentRequest = stripe.paymentRequest({
+            country: 'US',
+            currency: 'usd',
+            total: {
+                label: `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan`,
+                amount: priceInCents,
+            },
+            requestPayerName: true,
+            requestPayerEmail: true,
+        });
+
+        // Create and mount Payment Request Button
+        const prButton = elements.create('paymentRequestButton', {
+            paymentRequest,
+            style: {
+                paymentRequestButton: {
+                    type: 'default',
+                    theme: 'dark',
+                    height: '48px',
+                },
+            },
+        });
+
+        // Check the availability of the Payment Request API
+        paymentRequest.canMakePayment().then(function(result) {
+            console.log('Payment Request availability:', result);
+            
+            if (result) {
+                // Show the native Stripe Payment Request button (this handles Google Pay/Apple Pay automatically)
+                document.getElementById('payment-request-button').style.display = 'block';
+                prButton.mount('#payment-request-button');
+                console.log('Payment Request button mounted successfully');
+                
+                // Hide our custom wallet buttons since Stripe handles them natively
+                document.getElementById('wallet-container').style.display = 'none';
+            } else {
+                console.log('No payment methods available - hiding payment request section');
+                // Hide both the Stripe button and our custom buttons
+                document.getElementById('payment-request-button').style.display = 'none';
+                document.getElementById('wallet-container').style.display = 'none';
+            }
+        }).catch(function(error) {
+            console.error('Payment Request API error:', error);
+            // Hide all wallet payment options on error
+            document.getElementById('payment-request-button').style.display = 'none';
+            document.getElementById('wallet-container').style.display = 'none';
+        });
+
+        // Handle payment request token
+        paymentRequest.on('token', function(ev) {
+            // Send the token to your server to charge the customer
+            processWalletPayment(ev.token, ev.complete);
+        });
+
+        // Individual wallet button handlers
+        document.getElementById('google-pay-btn').addEventListener('click', function() {
+            if (paymentRequest) {
+                paymentRequest.show();
+            }
+        });
+
+        document.getElementById('apple-pay-btn').addEventListener('click', function() {
+            if (paymentRequest) {
+                paymentRequest.show();
+            }
+        });
+
         // Create card element
         const cardElement = elements.create('card', {
             hidePostalCode: true,
@@ -265,11 +470,6 @@
                 displayError.textContent = '';
             }
         });
-
-        // Get plan details from URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const plan = urlParams.get('plan') || 'basic';
-        const price = urlParams.get('price') || '9.99';
 
         // Update plan details
         document.getElementById('planName').textContent = plan.charAt(0).toUpperCase() + plan.slice(1) + ' Plan';
@@ -307,6 +507,78 @@
                 submitToken(token);
             }
         });
+
+        async function processWalletPayment(token, complete) {
+            try {
+                // Extract email and name from various token sources
+                const walletEmail = token.email || 
+                                  token.paymentMethod?.billing_details?.email || 
+                                  token.card?.name || 
+                                  document.getElementById('email')?.value || 
+                                  'wallet-payment@example.com';
+                
+                const walletName = token.paymentMethod?.billing_details?.name || 
+                                 token.card?.name || 
+                                 document.getElementById('name')?.value || 
+                                 'Wallet User';
+
+                console.log('Processing wallet payment with:', { walletEmail, walletName, token });
+
+                // Send payment to backend for processing
+                const response = await fetch('http://localhost:3000/api/process-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        token: token,
+                        email: walletEmail,
+                        name: walletName,
+                        plan: plan,
+                        price: price,
+                        paymentMethod: 'wallet'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Payment successful
+                    complete('success');
+                    console.log('Wallet payment successful:', result.chargeId);
+                    
+                    // Show success message
+                    showSuccessMessage();
+
+                    // Store subscription in localStorage
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                    currentUser.subscription = {
+                        plan: plan,
+                        price: price,
+                        status: 'active',
+                        startDate: new Date().toISOString(),
+                        paymentMethod: 'wallet',
+                        chargeId: result.chargeId
+                    };
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                    // Redirect to success page or dashboard
+                    setTimeout(() => {
+                        window.location.href = '/index?payment=success';
+                    }, 3000);
+
+                } else {
+                    // Payment failed
+                    complete('fail');
+                    throw new Error(result.error || 'Payment processing failed');
+                }
+
+            } catch (error) {
+                complete('fail');
+                console.error('Wallet payment failed:', error);
+                showErrorMessage(error.message || 'Payment failed. Please try again.');
+            }
+        }
 
         async function submitToken(token) {
             const email = document.getElementById('email').value;
@@ -445,6 +717,11 @@
         - 4000000000009995 (Insufficient funds)
         
         Use any future date for expiry, any 3-digit CVC, and any ZIP code.
+        
+        💳 DIGITAL WALLET TESTING:
+        - Apple Pay: Only works on Apple devices with Safari
+        - Google Pay: Works on Chrome and supported Android devices
+        - In test mode, these may show as regular buttons for testing
         `);
     </script>
 </body>

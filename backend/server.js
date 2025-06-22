@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 const config = require('../config.js');
@@ -26,6 +27,69 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from parent directory
 app.use(express.static('../'));
+
+// Add explicit routes for your HTML pages
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
+});
+
+app.get('/pricing', (req, res) => {
+    res.sendFile(path.join(__dirname, '../pricing.html'));
+});
+
+app.get('/payment', (req, res) => {
+    res.sendFile(path.join(__dirname, '../payment.html'));
+});
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '../login.html'));
+});
+
+app.get('/signup', (req, res) => {
+    res.sendFile(path.join(__dirname, '../signup.html'));
+});
+
+app.get('/listings', (req, res) => {
+    res.sendFile(path.join(__dirname, '../listings.html'));
+});
+
+app.get('/sublease', (req, res) => {
+    res.sendFile(path.join(__dirname, '../sublease.html'));
+});
+
+app.get('/ai-negotiator', (req, res) => {
+    res.sendFile(path.join(__dirname, '../ai-negotiator.html'));
+});
+
+app.get('/profile', (req, res) => {
+    res.sendFile(path.join(__dirname, '../profile.html'));
+});
+
+app.get('/listing_details', (req, res) => {
+    res.sendFile(path.join(__dirname, '../listing_details.html'));
+});
+
+// Add routes for navigation links that go to index with anchors
+app.get('/index', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
+});
+
+app.get('/index/:section', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
+});
+
+// Handle anchor navigation routes
+app.get('/about', (req, res) => {
+    res.redirect('/#about');
+});
+
+app.get('/contact', (req, res) => {
+    res.redirect('/#contact');
+});
+
+app.get('/home', (req, res) => {
+    res.redirect('/');
+});
 
 // Google Maps API key from config
 const GOOGLE_API_KEY = config.GOOGLE_API_KEY;
@@ -355,12 +419,16 @@ app.post('/api/predict/marketplace', async (req, res) => {
 app.post('/api/process-payment', async (req, res) => {
     try {
         console.log('Payment request received:', req.body);
-        const { token, email, name, plan, price } = req.body;
+        const { token, email, name, plan, price, paymentMethod } = req.body;
         
-        if (!token || !email || !name || !plan || !price) {
-            console.log('Missing required fields:', { token: !!token, email: !!email, name: !!name, plan: !!plan, price: !!price });
+        if (!token || !plan || !price) {
+            console.log('Missing required fields:', { token: !!token, plan: !!plan, price: !!price });
             return res.status(400).json({ error: 'Missing required payment information' });
         }
+
+        // For wallet payments, email and name might come from the token
+        const customerEmail = email || token.email || 'no-email@provided.com';
+        const customerName = name || token.card?.name || 'No Name Provided';
 
         // Convert price to cents (Stripe expects amounts in smallest currency unit)
         const amount = Math.round(parseFloat(price) * 100);
@@ -372,11 +440,12 @@ app.post('/api/process-payment', async (req, res) => {
             currency: 'usd',
             description: `Room Finder ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan Subscription`,
             source: token.id,
-            receipt_email: email,
+            receipt_email: customerEmail,
             metadata: {
-                customer_name: name,
+                customer_name: customerName,
                 plan_type: plan,
-                monthly_price: price
+                monthly_price: price,
+                payment_method: paymentMethod || 'card'
             }
         });
 
@@ -387,7 +456,7 @@ app.post('/api/process-payment', async (req, res) => {
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('id')
-            .eq('email', email)
+            .eq('email', customerEmail)
             .single();
 
         if (profileError) {
@@ -397,13 +466,13 @@ app.post('/api/process-payment', async (req, res) => {
 
         // Insert subscription into Supabase
         const subscriptionData = {
-            email: email,
+            email: customerEmail,
             profile_id: profile?.id || null,
             plan_type: plan,
             plan_price: parseFloat(price),
             status: 'active',
             stripe_charge_id: charge.id,
-            payment_method: 'card',
+            payment_method: paymentMethod || 'card',
             start_date: new Date().toISOString()
         };
 
