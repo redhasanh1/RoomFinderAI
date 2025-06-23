@@ -65,6 +65,10 @@ app.get('/profile', (req, res) => {
     res.sendFile(path.join(__dirname, '../profile.html'));
 });
 
+app.get('/manage-subscription', (req, res) => {
+    res.sendFile(path.join(__dirname, '../manage-subscription.html'));
+});
+
 app.get('/listing_details', (req, res) => {
     res.sendFile(path.join(__dirname, '../listing_details.html'));
 });
@@ -540,6 +544,339 @@ app.get('/api/subscription/:email', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/subscription:', error);
         res.status(500).json({ error: 'Failed to fetch subscription', details: error.message });
+    }
+});
+
+// API: Cancel subscription
+app.post('/api/subscription/cancel', async (req, res) => {
+    try {
+        const { email, subscription_id, cancellation_reason } = req.body;
+        
+        if (!email || !subscription_id) {
+            return res.status(400).json({ error: 'Email and subscription ID are required' });
+        }
+        
+        console.log('Scheduling subscription cancellation:', { email, subscription_id, cancellation_reason });
+        
+        // Get the current subscription to calculate next billing date
+        const { data: currentSub, error: fetchError } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('id', subscription_id)
+            .eq('email', email)
+            .single();
+            
+        if (fetchError || !currentSub) {
+            return res.status(404).json({ error: 'Subscription not found' });
+        }
+        
+        // Calculate the end of current billing period (when cancellation takes effect)
+        const startDate = new Date(currentSub.start_date);
+        const cancelEffectiveDate = new Date(startDate);
+        cancelEffectiveDate.setMonth(cancelEffectiveDate.getMonth() + 1);
+        
+        // Update subscription to be cancelled at end of billing period
+        const { data: subscription, error } = await supabase
+            .from('subscriptions')
+            .update({
+                status: 'pending_cancellation',
+                cancellation_requested_at: new Date().toISOString(),
+                cancellation_effective_date: cancelEffectiveDate.toISOString(),
+                cancellation_reason: cancellation_reason || null
+            })
+            .eq('id', subscription_id)
+            .eq('email', email)
+            .select()
+            .single();
+            
+        if (error) {
+            console.error('Error scheduling subscription cancellation:', error);
+            return res.status(500).json({ error: 'Failed to schedule subscription cancellation', details: error.message });
+        }
+        
+        console.log('Subscription cancellation scheduled successfully:', subscription.id, 'effective date:', cancelEffectiveDate.toISOString());
+        
+        const responseData = { 
+            success: true, 
+            message: `Subscription will be cancelled at the end of your current billing period (${cancelEffectiveDate.toLocaleDateString()})`,
+            subscription: subscription,
+            cancellation_effective_date: cancelEffectiveDate.toISOString()
+        };
+        
+        console.log('Sending response:', responseData);
+        res.json(responseData);
+        
+    } catch (error) {
+        console.error('Error in /api/subscription/cancel:', error);
+        res.status(500).json({ error: 'Failed to schedule subscription cancellation', details: error.message });
+    }
+});
+
+// API: Reactivate subscription
+app.post('/api/subscription/reactivate', async (req, res) => {
+    try {
+        const { email, subscription_id } = req.body;
+        
+        if (!email || !subscription_id) {
+            return res.status(400).json({ error: 'Email and subscription ID are required' });
+        }
+        
+        console.log('Reactivating subscription:', { email, subscription_id });
+        
+        // Update subscription to remove cancellation
+        const { data: subscription, error } = await supabase
+            .from('subscriptions')
+            .update({
+                status: 'active',
+                cancellation_requested_at: null,
+                cancellation_effective_date: null,
+                cancellation_reason: null,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', subscription_id)
+            .eq('email', email)
+            .eq('status', 'pending_cancellation')
+            .select()
+            .single();
+            
+        if (error) {
+            console.error('Error reactivating subscription:', error);
+            return res.status(500).json({ error: 'Failed to reactivate subscription', details: error.message });
+        }
+        
+        if (!subscription) {
+            return res.status(404).json({ error: 'Subscription not found or not eligible for reactivation' });
+        }
+        
+        console.log('Subscription reactivated successfully:', subscription.id);
+        
+        res.json({ 
+            success: true, 
+            message: 'Subscription reactivated successfully',
+            subscription: subscription
+        });
+        
+    } catch (error) {
+        console.error('Error in /api/subscription/reactivate:', error);
+        res.status(500).json({ error: 'Failed to reactivate subscription', details: error.message });
+    }
+});
+
+// API: Update subscription plan
+app.post('/api/subscription/change-plan', async (req, res) => {
+    try {
+        const { email, new_plan_type, new_plan_price, token } = req.body;
+        
+        if (!email || !new_plan_type || !new_plan_price) {
+            return res.status(400).json({ error: 'Email, plan type, and price are required' });
+        }
+        
+        console.log('Changing subscription plan:', { email, new_plan_type, new_plan_price });
+        
+        // Get current subscription
+        const { data: currentSub, error: fetchError } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('email', email)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+            
+        if (fetchError || !currentSub) {
+            return res.status(404).json({ error: 'No active subscription found' });
+        }
+        
+        // If a payment token is provided, process payment for immediate upgrade
+        if (token) {
+            const amount = Math.round(parseFloat(new_plan_price) * 100);
+            
+            const charge = await stripe.charges.create({
+                amount: amount,
+                currency: 'usd',
+                description: `Plan change to ${new_plan_type.charAt(0).toUpperCase() + new_plan_type.slice(1)}`,
+                source: token.id,
+                receipt_email: email,
+                metadata: {
+                    plan_change: 'true',
+                    old_plan: currentSub.plan_type,
+                    new_plan: new_plan_type,
+                    customer_email: email
+                }
+            });
+            
+            console.log('Plan change payment successful:', charge.id);
+        }
+        
+        // Update subscription in database
+        const { data: updatedSub, error: updateError } = await supabase
+            .from('subscriptions')
+            .update({
+                plan_type: new_plan_type,
+                plan_price: parseFloat(new_plan_price),
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', currentSub.id)
+            .select()
+            .single();
+            
+        if (updateError) {
+            console.error('Error updating subscription plan:', updateError);
+            return res.status(500).json({ error: 'Failed to update subscription plan', details: updateError.message });
+        }
+        
+        console.log('Subscription plan updated successfully:', updatedSub.id);
+        
+        res.json({ 
+            success: true, 
+            message: 'Subscription plan updated successfully',
+            subscription: updatedSub
+        });
+        
+    } catch (error) {
+        console.error('Error in /api/subscription/change-plan:', error);
+        res.status(500).json({ error: 'Failed to change subscription plan', details: error.message });
+    }
+});
+
+// API: Update payment method
+app.post('/api/subscription/update-payment-method', async (req, res) => {
+    try {
+        const { email, token } = req.body;
+        
+        if (!email || !token) {
+            return res.status(400).json({ error: 'Email and payment token are required' });
+        }
+        
+        console.log('Updating payment method for:', email);
+        
+        // Get current subscription
+        const { data: subscription, error: fetchError } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('email', email)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+            
+        if (fetchError || !subscription) {
+            return res.status(404).json({ error: 'No active subscription found' });
+        }
+        
+        // Update payment method in database (store last 4 digits for reference)
+        const last4 = token.card ? token.card.last4 : 'Unknown';
+        const { data: updatedSub, error: updateError } = await supabase
+            .from('subscriptions')
+            .update({
+                payment_method: 'card',
+                payment_method_details: {
+                    last4: last4,
+                    brand: token.card?.brand || 'Unknown',
+                    updated_at: new Date().toISOString()
+                },
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', subscription.id)
+            .select()
+            .single();
+            
+        if (updateError) {
+            console.error('Error updating payment method:', updateError);
+            return res.status(500).json({ error: 'Failed to update payment method', details: updateError.message });
+        }
+        
+        console.log('Payment method updated successfully for subscription:', updatedSub.id);
+        
+        res.json({ 
+            success: true, 
+            message: 'Payment method updated successfully',
+            subscription: updatedSub
+        });
+        
+    } catch (error) {
+        console.error('Error in /api/subscription/update-payment-method:', error);
+        res.status(500).json({ error: 'Failed to update payment method', details: error.message });
+    }
+});
+
+// API: Get billing history
+app.get('/api/subscription/billing-history/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+        
+        console.log('Fetching billing history for:', email);
+        
+        // Get all subscriptions for this email (including cancelled ones)
+        const { data: subscriptions, error } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('email', email)
+            .order('created_at', { ascending: false });
+            
+        if (error) {
+            console.error('Error fetching billing history:', error);
+            return res.status(500).json({ error: 'Failed to fetch billing history', details: error.message });
+        }
+        
+        // Format billing history
+        const billingHistory = subscriptions.map(sub => ({
+            id: sub.id,
+            date: sub.start_date,
+            plan: sub.plan_type,
+            amount: sub.plan_price,
+            status: sub.status,
+            payment_method: sub.payment_method,
+            stripe_charge_id: sub.stripe_charge_id
+        }));
+        
+        res.json({ 
+            success: true, 
+            billingHistory: billingHistory
+        });
+        
+    } catch (error) {
+        console.error('Error in /api/subscription/billing-history:', error);
+        res.status(500).json({ error: 'Failed to fetch billing history', details: error.message });
+    }
+});
+
+// API: Submit support request
+app.post('/api/support/submit', async (req, res) => {
+    try {
+        const { email, subject, message, user_name } = req.body;
+        
+        if (!email || !subject || !message) {
+            return res.status(400).json({ error: 'Email, subject, and message are required' });
+        }
+        
+        console.log('Support request received:', { email, subject });
+        
+        const supportRequest = {
+            email,
+            subject,
+            message,
+            user_name: user_name || 'Unknown',
+            created_at: new Date().toISOString(),
+            status: 'open'
+        };
+        
+        // Log the support request (you could save this to a database)
+        console.log('Support request details:', supportRequest);
+        
+        res.json({ 
+            success: true, 
+            message: 'Support request submitted successfully. We\'ll get back to you within 24 hours.',
+            request_id: Date.now() // Simple ID for demo
+        });
+        
+    } catch (error) {
+        console.error('Error in /api/support/submit:', error);
+        res.status(500).json({ error: 'Failed to submit support request', details: error.message });
     }
 });
 

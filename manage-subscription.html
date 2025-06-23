@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Subscription - RoomFinderAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="config.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Modern header */
+        .modern-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Modern container */
+        .modern-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Modern button */
+        .modern-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .modern-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .modern-button-secondary {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .modern-button-secondary:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .modern-button-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+        
+        .modern-button-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.6);
+        }
+
+        .subscription-card {
+            background: white;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f1f5f9;
+        }
+        
+        .subscription-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .profile-logo {
+            transition: transform 0.2s ease-in-out;
+        }
+        .profile-logo:hover {
+            transform: scale(1.1);
+        }
+
+        .feature-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.5rem;
+            color: #10b981;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 modern-header shadow-lg z-10">
+        <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-6">
+                <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
+                <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
+                <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
+                <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
+                <a href="/ai-negotiator" class="text-gray-700 hover:text-blue-600 transition font-medium">AI Negotiator</a>
+                <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
+                <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition font-medium">Pricing</a>
+                <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
+            </div>
+            <div>
+                <a href="/profile" aria-label="View user profile">
+                    <img id="profileLogo" src="https://via.placeholder.com/40" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="max-w-4xl mx-auto">
+            <!-- Page Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-extrabold gradient-text mb-4">Manage Your Subscription</h1>
+                <p class="text-xl text-gray-600">Control your subscription, billing, and account settings</p>
+            </div>
+
+            <!-- Current Subscription Overview -->
+            <section class="modern-container p-8 mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Current Subscription</h2>
+                <div id="currentSubscription" class="text-center">
+                    <div class="spinner"></div>
+                    <p>Loading subscription details...</p>
+                </div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Change Plan -->
+                <div class="subscription-card p-6 text-center">
+                    <div class="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Change Plan</h3>
+                    <p class="text-gray-600 text-sm mb-4">Upgrade or downgrade your subscription plan</p>
+                    <button onclick="showChangePlanModal()" class="modern-button-secondary text-sm px-4 py-2">
+                        View Plans
+                    </button>
+                </div>
+
+                <!-- Update Payment Method -->
+                <div class="subscription-card p-6 text-center">
+                    <div class="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Payment Method</h3>
+                    <p class="text-gray-600 text-sm mb-4">Update your billing information</p>
+                    <button onclick="showPaymentMethodModal()" class="modern-button-secondary text-sm px-4 py-2">
+                        Update
+                    </button>
+                </div>
+
+                <!-- View Billing History -->
+                <div class="subscription-card p-6 text-center">
+                    <div class="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Billing History</h3>
+                    <p class="text-gray-600 text-sm mb-4">View your payment history</p>
+                    <button onclick="showBillingHistory()" class="modern-button-secondary text-sm px-4 py-2">
+                        View History
+                    </button>
+                </div>
+            </section>
+
+            <!-- Subscription Details -->
+            <section class="modern-container p-8 mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Subscription Details</h2>
+                <div id="subscriptionDetails" class="space-y-4">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Support Section -->
+            <section class="modern-container p-8 mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Need Help?</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="text-center">
+                        <div class="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">FAQ</h3>
+                        <p class="text-gray-600 text-sm mb-4">Find answers to common questions</p>
+                        <a href="#" class="text-blue-600 hover:text-blue-700 font-medium">View FAQ</a>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Contact Support</h3>
+                        <p class="text-gray-600 text-sm mb-4">Get help from our support team</p>
+                        <button onclick="showContactSupportModal()" class="text-blue-600 hover:text-blue-700 font-medium">
+                            Contact Us
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Cancel Subscription -->
+            <section class="modern-container p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Cancel Subscription</h2>
+                <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-red-600 mt-1 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L4.316 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <div class="flex-grow">
+                            <h3 class="text-lg font-semibold text-red-800 mb-2">Cancel Your Subscription</h3>
+                            <p class="text-red-700 text-sm mb-4">
+                                Canceling your subscription will remove access to premium features at the end of your current billing period. 
+                                You'll continue to have access until then.
+                            </p>
+                            <button onclick="showCancelModal()" class="modern-button-danger text-sm px-4 py-2">
+                                Cancel Subscription
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
+            <div class="mt-4 flex justify-center space-x-4">
+                <a href="/index" class="hover:text-blue-400">Home</a>
+                <a href="/index#about" class="hover:text-blue-400">About</a>
+                <a href="/sublease" class="hover:text-blue-400">Sublease</a>
+                <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
+                <a href="/listings" class="hover:text-blue-400">Listings</a>
+                <a href="/index#contact" class="hover:text-blue-400">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modals -->
+    
+    <!-- Change Plan Modal -->
+    <div id="changePlanModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('changePlanModal')">&times;</span>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Change Your Plan</h2>
+            <div id="planOptions" class="space-y-4">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Method Modal -->
+    <div id="paymentMethodModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('paymentMethodModal')">&times;</span>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Update Payment Method</h2>
+            <div class="space-y-4">
+                <p class="text-gray-600">Update your payment information for future billing cycles.</p>
+                <div id="card-element" class="p-3 border border-gray-300 rounded-lg">
+                    <!-- Stripe Elements will create form elements here -->
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="updatePaymentMethod()" class="modern-button text-sm px-4 py-2">
+                        Update Payment Method
+                    </button>
+                    <button onclick="closeModal('paymentMethodModal')" class="modern-button-secondary text-sm px-4 py-2">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Billing History Modal -->
+    <div id="billingHistoryModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('billingHistoryModal')">&times;</span>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Billing History</h2>
+            <div id="billingHistoryContent" class="space-y-4">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Support Modal -->
+    <div id="contactSupportModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('contactSupportModal')">&times;</span>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Contact Support</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                    <select id="supportSubject" class="w-full p-3 border border-gray-300 rounded-lg">
+                        <option value="">Select a topic</option>
+                        <option value="billing">Billing Question</option>
+                        <option value="technical">Technical Issue</option>
+                        <option value="account">Account Management</option>
+                        <option value="general">General Inquiry</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                    <textarea id="supportMessage" rows="4" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Describe your issue or question..."></textarea>
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="submitSupportRequest()" class="modern-button text-sm px-4 py-2">
+                        Send Message
+                    </button>
+                    <button onclick="closeModal('contactSupportModal')" class="modern-button-secondary text-sm px-4 py-2">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Subscription Modal -->
+    <div id="cancelModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('cancelModal')">&times;</span>
+            <h2 class="text-2xl font-bold text-red-800 mb-6">Cancel Subscription</h2>
+            <div class="space-y-4">
+                <p class="text-gray-600">Are you sure you want to cancel your subscription? This action cannot be undone.</p>
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p class="text-yellow-800 text-sm">
+                        <strong>What happens when you cancel:</strong><br>
+                        • You'll continue to have access until the end of your current billing period<br>
+                        • No further charges will be made<br>
+                        • You can resubscribe at any time
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Reason for canceling (optional)</label>
+                    <select id="cancelReason" class="w-full p-3 border border-gray-300 rounded-lg">
+                        <option value="">Select a reason</option>
+                        <option value="too-expensive">Too expensive</option>
+                        <option value="not-using">Not using enough</option>
+                        <option value="missing-features">Missing features</option>
+                        <option value="technical-issues">Technical issues</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="confirmCancelSubscription()" class="modern-button-danger text-sm px-4 py-2">
+                        Confirm Cancellation
+                    </button>
+                    <button onclick="closeModal('cancelModal')" class="modern-button-secondary text-sm px-4 py-2">
+                        Keep Subscription
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading">
+        <div class="spinner"></div>
+        <p class="text-center text-gray-600">Processing...</p>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let userSubscription = null;
+        let stripe = null;
+        let cardElement = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check authentication
+            currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // Initialize Stripe
+            stripe = Stripe(config.STRIPE_PUBLISHABLE_KEY);
+            const elements = stripe.elements();
+            cardElement = elements.create('card');
+            cardElement.mount('#card-element');
+
+            // Update header
+            document.getElementById('profileLogo').src = currentUser.profileImage || 'https://via.placeholder.com/40';
+
+            // Load subscription data
+            await loadSubscriptionData();
+        });
+
+        async function loadSubscriptionData() {
+            try {
+                const response = await fetch(`http://localhost:3000/api/subscription/${encodeURIComponent(currentUser.email)}`);
+                const result = await response.json();
+                
+                if (response.ok && result.subscription) {
+                    userSubscription = result.subscription;
+                    displayCurrentSubscription();
+                    displaySubscriptionDetails();
+                } else {
+                    displayNoSubscription();
+                }
+            } catch (error) {
+                console.error('Error loading subscription:', error);
+                displayError();
+            }
+        }
+
+        function displayCurrentSubscription() {
+            const container = document.getElementById('currentSubscription');
+            const sub = userSubscription;
+            const startDate = new Date(sub.start_date).toLocaleDateString();
+            const nextBilling = new Date(sub.start_date);
+            nextBilling.setMonth(nextBilling.getMonth() + 1);
+            
+            // Check if subscription is pending cancellation
+            const isPendingCancellation = sub.status === 'pending_cancellation';
+            const effectiveDate = isPendingCancellation && sub.cancellation_effective_date 
+                ? new Date(sub.cancellation_effective_date).toLocaleDateString()
+                : nextBilling.toLocaleDateString();
+            
+            const bgColor = isPendingCancellation ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200';
+            const textColor = isPendingCancellation ? 'text-yellow-800' : 'text-green-800';
+            const iconColor = isPendingCancellation ? 'text-yellow-600' : 'text-green-600';
+            const statusColor = isPendingCancellation ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
+            
+            container.innerHTML = `
+                <div class="${bgColor} rounded-lg p-6 max-w-2xl mx-auto">
+                    <div class="flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8 ${iconColor} mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            ${isPendingCancellation ? 
+                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>' :
+                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+                            }
+                        </svg>
+                        <h3 class="text-2xl font-semibold ${textColor}">${sub.plan_type.charAt(0).toUpperCase() + sub.plan_type.slice(1)} Plan</h3>
+                    </div>
+                    ${isPendingCancellation ? `
+                        <div class="text-center mb-4">
+                            <div class="bg-yellow-100 border border-yellow-300 rounded-lg p-4 mb-4">
+                                <p class="text-yellow-800 font-semibold mb-2">⚠️ Cancellation Scheduled</p>
+                                <p class="text-yellow-700 text-sm">Your subscription will be cancelled on <strong>${effectiveDate}</strong></p>
+                                <p class="text-yellow-700 text-sm">You'll continue to have access until then.</p>
+                            </div>
+                        </div>
+                    ` : ''}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div class="text-center">
+                            <p class="${textColor}"><strong>Monthly Price:</strong></p>
+                            <p class="text-2xl font-bold ${textColor}">$${sub.plan_price}/month</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="${textColor}"><strong>${isPendingCancellation ? 'Ends On:' : 'Next Billing:'}:</strong></p>
+                            <p class="text-lg font-semibold ${textColor}">${effectiveDate}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <span class="${statusColor} px-3 py-1 rounded-full font-medium">
+                            ${isPendingCancellation ? 'Pending Cancellation' : sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displaySubscriptionDetails() {
+            const container = document.getElementById('subscriptionDetails');
+            const sub = userSubscription;
+            
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Plan Information</h4>
+                        <div class="space-y-1 text-sm text-gray-600">
+                            <p><strong>Plan:</strong> ${sub.plan_type.charAt(0).toUpperCase() + sub.plan_type.slice(1)}</p>
+                            <p><strong>Price:</strong> $${sub.plan_price}/month</p>
+                            <p><strong>Status:</strong> ${sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}</p>
+                            <p><strong>Started:</strong> ${new Date(sub.start_date).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Billing Information</h4>
+                        <div class="space-y-1 text-sm text-gray-600">
+                            <p><strong>Payment Method:</strong> ${sub.payment_method === 'card' ? 'Credit Card' : 'E-Transfer'}</p>
+                            <p><strong>Email:</strong> ${sub.email}</p>
+                            ${sub.stripe_charge_id ? `<p><strong>Last Charge:</strong> ${sub.stripe_charge_id}</p>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayNoSubscription() {
+            const container = document.getElementById('currentSubscription');
+            container.innerHTML = `
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 max-w-2xl mx-auto">
+                    <div class="text-center">
+                        <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-600 mb-2">No Active Subscription</h3>
+                        <p class="text-gray-500 mb-4">You don't have an active subscription. Subscribe to access premium features.</p>
+                        <a href="/pricing" class="modern-button text-sm px-6 py-3">
+                            View Plans
+                        </a>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('subscriptionDetails').innerHTML = `
+                <div class="text-center text-gray-500">
+                    <p>No subscription details available.</p>
+                </div>
+            `;
+        }
+
+        function displayError() {
+            const container = document.getElementById('currentSubscription');
+            container.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
+                    <div class="text-center">
+                        <svg class="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h3 class="text-xl font-semibold text-red-600 mb-2">Error Loading Subscription</h3>
+                        <p class="text-red-500 mb-4">We couldn't load your subscription information. Please try again later.</p>
+                        <button onclick="loadSubscriptionData()" class="modern-button text-sm px-6 py-3">
+                            Retry
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showChangePlanModal() {
+            const modal = document.getElementById('changePlanModal');
+            const planOptions = document.getElementById('planOptions');
+            
+            const plans = [
+                { name: 'Basic', price: 9.99, features: ['Up to 5 listings per month', 'Basic search filters', 'Email support'] },
+                { name: 'Pro', price: 19.99, features: ['Up to 20 listings per month', 'AI Negotiator (5 sessions/mo)', 'Advanced search filters', 'Priority email support'] },
+                { name: 'Premium', price: 39.99, features: ['Unlimited listings', 'Unlimited AI Negotiator sessions', 'Premium search filters', 'Priority phone & email support', 'Analytics dashboard'] }
+            ];
+            
+            planOptions.innerHTML = plans.map(plan => `
+                <div class="border border-gray-200 rounded-lg p-4 ${userSubscription && userSubscription.plan_type === plan.name.toLowerCase() ? 'bg-blue-50 border-blue-300' : ''}">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="font-semibold text-gray-800">${plan.name}</h4>
+                            <p class="text-2xl font-bold text-blue-600">$${plan.price}/mo</p>
+                        </div>
+                        ${userSubscription && userSubscription.plan_type === plan.name.toLowerCase() ? 
+                            '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">Current Plan</span>' :
+                            `<button onclick="changePlan('${plan.name.toLowerCase()}', ${plan.price})" class="modern-button-secondary text-sm px-3 py-1">Select</button>`
+                        }
+                    </div>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        ${plan.features.map(feature => `<li class="flex items-center"><svg class="feature-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>${feature}</li>`).join('')}
+                    </ul>
+                </div>
+            `).join('');
+            
+            modal.style.display = 'block';
+        }
+
+        function showPaymentMethodModal() {
+            document.getElementById('paymentMethodModal').style.display = 'block';
+        }
+
+        function showBillingHistory() {
+            const modal = document.getElementById('billingHistoryModal');
+            const content = document.getElementById('billingHistoryContent');
+            
+            if (userSubscription) {
+                content.innerHTML = `
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="font-semibold text-gray-800">${userSubscription.plan_type.charAt(0).toUpperCase() + userSubscription.plan_type.slice(1)} Plan</h4>
+                                <p class="text-sm text-gray-600">${new Date(userSubscription.start_date).toLocaleDateString()}</p>
+                            </div>
+                            <span class="text-green-600 font-semibold">$${userSubscription.plan_price}</span>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <p>Payment Method: ${userSubscription.payment_method === 'card' ? 'Credit Card' : 'E-Transfer'}</p>
+                            ${userSubscription.stripe_charge_id ? `<p>Charge ID: ${userSubscription.stripe_charge_id}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="text-center text-gray-500 text-sm">
+                        <p>Additional billing history will appear here as you make more payments.</p>
+                    </div>
+                `;
+            } else {
+                content.innerHTML = '<p class="text-center text-gray-500">No billing history available.</p>';
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        function showContactSupportModal() {
+            document.getElementById('contactSupportModal').style.display = 'block';
+        }
+
+        function showCancelModal() {
+            const modal = document.getElementById('cancelModal');
+            const modalContent = modal.querySelector('.modal-content');
+            
+            // Check if subscription is already pending cancellation
+            if (userSubscription && userSubscription.status === 'pending_cancellation') {
+                const effectiveDate = new Date(userSubscription.cancellation_effective_date).toLocaleDateString();
+                modalContent.innerHTML = `
+                    <span class="close" onclick="closeModal('cancelModal')">&times;</span>
+                    <h2 class="text-2xl font-bold text-yellow-800 mb-6">Cancellation Already Scheduled</h2>
+                    <div class="space-y-4">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <p class="text-yellow-800 mb-2">
+                                <strong>Your subscription is already scheduled for cancellation.</strong>
+                            </p>
+                            <p class="text-yellow-700 text-sm mb-2">
+                                Cancellation Date: <strong>${effectiveDate}</strong>
+                            </p>
+                            <p class="text-yellow-700 text-sm">
+                                You'll continue to have access until then.
+                            </p>
+                        </div>
+                        <div class="flex space-x-4">
+                            <button onclick="reactivateSubscription()" class="modern-button text-sm px-4 py-2">
+                                Reactivate Subscription
+                            </button>
+                            <button onclick="closeModal('cancelModal')" class="modern-button-secondary text-sm px-4 py-2">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Original cancel modal content
+                modalContent.innerHTML = `
+                    <span class="close" onclick="closeModal('cancelModal')">&times;</span>
+                    <h2 class="text-2xl font-bold text-red-800 mb-6">Cancel Subscription</h2>
+                    <div class="space-y-4">
+                        <p class="text-gray-600">Are you sure you want to cancel your subscription? This action cannot be undone.</p>
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <p class="text-yellow-800 text-sm">
+                                <strong>What happens when you cancel:</strong><br>
+                                • You'll continue to have access until the end of your current billing period<br>
+                                • No further charges will be made<br>
+                                • You can resubscribe at any time
+                            </p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Reason for canceling (optional)</label>
+                            <select id="cancelReason" class="w-full p-3 border border-gray-300 rounded-lg">
+                                <option value="">Select a reason</option>
+                                <option value="too-expensive">Too expensive</option>
+                                <option value="not-using">Not using enough</option>
+                                <option value="missing-features">Missing features</option>
+                                <option value="technical-issues">Technical issues</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="flex space-x-4">
+                            <button onclick="confirmCancelSubscription()" class="modern-button-danger text-sm px-4 py-2">
+                                Confirm Cancellation
+                            </button>
+                            <button onclick="closeModal('cancelModal')" class="modern-button-secondary text-sm px-4 py-2">
+                                Keep Subscription
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        async function changePlan(planType, price) {
+            if (!userSubscription) {
+                window.location.href = `/payment?plan=${planType}&price=${price}`;
+                return;
+            }
+            
+            showLoading();
+            try {
+                // Here you would implement plan change logic
+                // For now, redirect to payment page
+                window.location.href = `/payment?plan=${planType}&price=${price}&upgrade=true`;
+            } catch (error) {
+                console.error('Error changing plan:', error);
+                alert('Error changing plan. Please try again.');
+            }
+            hideLoading();
+        }
+
+        async function updatePaymentMethod() {
+            if (!userSubscription) {
+                alert('No active subscription found.');
+                return;
+            }
+            
+            showLoading();
+            try {
+                // Create payment method with Stripe
+                const {token, error} = await stripe.createToken(cardElement);
+                
+                if (error) {
+                    throw new Error(error.message);
+                }
+                
+                // Here you would send the token to your backend to update the payment method
+                // For now, just show success message
+                alert('Payment method updated successfully!');
+                closeModal('paymentMethodModal');
+            } catch (error) {
+                console.error('Error updating payment method:', error);
+                alert('Error updating payment method: ' + error.message);
+            }
+            hideLoading();
+        }
+
+        async function submitSupportRequest() {
+            const subject = document.getElementById('supportSubject').value;
+            const message = document.getElementById('supportMessage').value;
+            
+            if (!subject || !message) {
+                alert('Please fill in all fields.');
+                return;
+            }
+            
+            showLoading();
+            try {
+                const response = await fetch('http://localhost:3000/api/support/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: currentUser.email,
+                        subject: subject,
+                        message: message,
+                        user_name: `${currentUser.firstName} ${currentUser.lastName}`
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Support request submitted successfully! We\'ll get back to you within 24 hours.');
+                    closeModal('contactSupportModal');
+                    
+                    // Reset form
+                    document.getElementById('supportSubject').value = '';
+                    document.getElementById('supportMessage').value = '';
+                } else {
+                    throw new Error(result.error || 'Failed to submit support request');
+                }
+            } catch (error) {
+                console.error('Error submitting support request:', error);
+                alert('Error submitting support request: ' + error.message);
+            }
+            hideLoading();
+        }
+
+        async function confirmCancelSubscription() {
+            if (!userSubscription) {
+                alert('No active subscription found.');
+                return;
+            }
+            
+            const reason = document.getElementById('cancelReason').value;
+            
+            showLoading();
+            try {
+                console.log('Cancelling subscription for:', currentUser.email, 'subscription ID:', userSubscription.id);
+                
+                const response = await fetch(`http://localhost:3000/api/subscription/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: currentUser.email,
+                        subscription_id: userSubscription.id,
+                        cancellation_reason: reason
+                    })
+                });
+                
+                const result = await response.json();
+                console.log('Cancel response:', result);
+                
+                if (response.ok && result.success) {
+                    alert(result.message || 'Subscription cancellation scheduled successfully. You\'ll continue to have access until the end of your current billing period.');
+                    closeModal('cancelModal');
+                    await loadSubscriptionData(); // Refresh subscription data
+                } else {
+                    throw new Error(result.error || 'Failed to cancel subscription');
+                }
+            } catch (error) {
+                console.error('Error cancelling subscription:', error);
+                alert('Error cancelling subscription: ' + error.message);
+            }
+            hideLoading();
+        }
+
+        async function reactivateSubscription() {
+            if (!userSubscription) {
+                alert('No subscription found.');
+                return;
+            }
+            
+            showLoading();
+            try {
+                const response = await fetch(`http://localhost:3000/api/subscription/reactivate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: currentUser.email,
+                        subscription_id: userSubscription.id
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Subscription reactivated successfully!');
+                    closeModal('cancelModal');
+                    await loadSubscriptionData(); // Refresh subscription data
+                } else {
+                    throw new Error(result.error || 'Failed to reactivate subscription');
+                }
+            } catch (error) {
+                console.error('Error reactivating subscription:', error);
+                alert('Error reactivating subscription: ' + error.message);
+            }
+            hideLoading();
+        }
+
+        function showLoading() {
+            document.getElementById('loadingSpinner').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const modals = ['changePlanModal', 'paymentMethodModal', 'billingHistoryModal', 'contactSupportModal', 'cancelModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
