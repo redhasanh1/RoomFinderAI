@@ -2,9 +2,6 @@
 config.js
 config.mjs
 
-# Python virtual environment
-venv/
-
 # Node modules
 node_modules/
 backend/node_modules/
