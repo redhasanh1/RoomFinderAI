@@ -418,6 +418,45 @@
         <!-- Listings Display -->
         <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Available Listings</h2>
+            
+            <!-- Search and Filter Controls -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <label for="searchLocation" class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                        <input type="text" id="searchLocation" placeholder="Enter city or suburb..." class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="searchMaxPrice" class="block text-sm font-medium text-gray-700 mb-1">Max Price</label>
+                        <input type="number" id="searchMaxPrice" placeholder="e.g. 1200" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="searchRoomType" class="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
+                        <select id="searchRoomType" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">All Types</option>
+                            <option value="House">House</option>
+                            <option value="Apartment">Apartment</option>
+                            <option value="Condo">Condo</option>
+                            <option value="Townhouse">Townhouse</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="searchBedrooms" class="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
+                        <select id="searchBedrooms" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Any</option>
+                            <option value="1">1 Bedroom</option>
+                            <option value="2">2 Bedrooms</option>
+                            <option value="3">3 Bedrooms</option>
+                            <option value="4">4+ Bedrooms</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="applySearchFilters()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition font-semibold">Search & Filter</button>
+                    <button onclick="clearSearchFilters()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition font-semibold">Clear Filters</button>
+                </div>
+            </div>
+            
             <div class="mb-4 flex gap-4">
                 <button onclick="displayListings()" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Refresh Listings</button>
                 <button onclick="refreshMapOnly()" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-semibold shadow-md hover:shadow-lg">Refresh Map</button>
@@ -1177,62 +1216,9 @@
             container.innerHTML = '';
 
             if (listings.length === 0) {
-                console.warn('⚠️ No listings from database, using test data for demonstration');
-                listings = [{
-                    id: 1,
-                    title: 'Test Apartment Toronto',
-                    price: 1200,
-                    city: 'Toronto',
-                    street: '456 Yonge Street',
-                    postalCode: 'M4Y 1X9',
-                    house_type: 'Apartment',
-                    bedrooms: 2,
-                    utilities: 'Included',
-                    description: 'Test description',
-                    media: [{ url: 'https://via.placeholder.com/300x200', type: 'image/jpeg', name: 'test.jpg' }],
-                    user_email: 'test@example.com'
-                }, {
-                    id: 2,
-                    title: 'Vancouver Condo',
-                    price: 1800,
-                    city: 'Vancouver',
-                    street: '123 Robson Street',
-                    postalCode: 'V6B 2A7',
-                    house_type: 'Condo',
-                    bedrooms: 1,
-                    utilities: 'Not included',
-                    description: 'Modern Vancouver condo',
-                    media: [{ url: 'https://via.placeholder.com/300x200', type: 'image/jpeg', name: 'vancouver.jpg' }],
-                    user_email: 'test2@example.com'
-                }, {
-                    id: 3,
-                    title: 'Montreal House',
-                    price: 1500,
-                    city: 'Montreal',
-                    street: '789 Saint-Catherine Street',
-                    postalCode: 'H3B 1Y5',
-                    house_type: 'House',
-                    bedrooms: 3,
-                    utilities: 'Included',
-                    description: 'Charming Montreal house',
-                    media: [{ url: 'https://via.placeholder.com/300x200', type: 'image/jpeg', name: 'montreal.jpg' }],
-                    user_email: 'test3@example.com'
-                }, {
-                    id: 4,
-                    title: 'Calgary Townhouse',
-                    price: 1400,
-                    city: 'Calgary',
-                    street: '321 17th Avenue SW',
-                    postalCode: 'T2S 0A1',
-                    house_type: 'Townhouse',
-                    bedrooms: 2,
-                    utilities: 'Not included',
-                    description: 'Spacious Calgary townhouse',
-                    media: [{ url: 'https://via.placeholder.com/300x200', type: 'image/jpeg', name: 'calgary.jpg' }],
-                    user_email: 'test4@example.com'
-                }];
-                container.innerHTML = '<p class="text-gray-600 text-center mb-4">No listings available in database, showing test listings for map demonstration.</p>';
-                console.log('📝 Using', listings.length, 'test listings for demonstration');
+                container.innerHTML = '<p class="text-gray-600 text-center mb-4">No listings available in database.</p>';
+                console.log('📝 No listings found in database');
+                return;
             }
 
             listings.forEach(listing => {
@@ -1598,65 +1584,7 @@
         async function refreshMapOnly() {
             console.log('🔄 Manual map refresh requested');
             const listings = await fetchListings();
-            if (listings.length === 0) {
-                // Use the same test data as displayListings
-                const testListings = [{
-                    id: 1,
-                    title: 'Test Apartment Toronto',
-                    price: 1200,
-                    city: 'Toronto',
-                    street: '456 Yonge Street',
-                    postalCode: 'M4Y 1X9',
-                    house_type: 'Apartment',
-                    bedrooms: 2,
-                    utilities: 'Included',
-                    description: 'Test description',
-                    media: [{ url: 'https://via.placeholder.com/300x200', type: 'image/jpeg', name: 'test.jpg' }],
-                    user_email: 'test@example.com'
-                }, {
-                    id: 2,
-                    title: 'Vancouver Condo',
-                    price: 1800,
-                    city: 'Vancouver',
-                    street: '123 Robson Street',
-                    postalCode: 'V6B 2A7',
-                    house_type: 'Condo',
-                    bedrooms: 1,
-                    utilities: 'Not included',
-                    description: 'Modern Vancouver condo',
-                    media: [{ url: 'https://via.placeholder.com/300x200', type: 'image/jpeg', name: 'vancouver.jpg' }],
-                    user_email: 'test2@example.com'
-                }, {
-                    id: 3,
-                    title: 'Montreal House',
-                    price: 1500,
-                    city: 'Montreal',
-                    street: '789 Saint-Catherine Street',
-                    postalCode: 'H3B 1Y5',
-                    house_type: 'House',
-                    bedrooms: 3,
-                    utilities: 'Included',
-                    description: 'Charming Montreal house',
-                    media: [{ url: 'https://via.placeholder.com/300x200', type: 'image/jpeg', name: 'montreal.jpg' }],
-                    user_email: 'test3@example.com'
-                }, {
-                    id: 4,
-                    title: 'Calgary Townhouse',
-                    price: 1400,
-                    city: 'Calgary',
-                    street: '321 17th Avenue SW',
-                    postalCode: 'T2S 0A1',
-                    house_type: 'Townhouse',
-                    bedrooms: 2,
-                    utilities: 'Not included',
-                    description: 'Spacious Calgary townhouse',
-                    media: [{ url: 'https://via.placeholder.com/300x200', type: 'image/jpeg', name: 'calgary.jpg' }],
-                    user_email: 'test4@example.com'
-                }];
-                await updateMap(testListings);
-            } else {
-                await updateMap(listings);
-            }
+            await updateMap(listings);
         }
 
         // Function to start conversation from map popup
@@ -2174,6 +2102,181 @@
                     }
                 });
         };
+
+        // Search and Filter Functions
+        let originalListings = [];
+        let filteredListings = [];
+
+        async function applySearchFilters() {
+            console.log('🔍 Applying search filters...');
+            
+            const location = document.getElementById('searchLocation').value.toLowerCase().trim();
+            const maxPrice = parseInt(document.getElementById('searchMaxPrice').value);
+            const roomType = document.getElementById('searchRoomType').value;
+            const bedrooms = document.getElementById('searchBedrooms').value;
+            
+            console.log('Search criteria:', { location, maxPrice, roomType, bedrooms });
+            
+            // Build Supabase query with filters
+            let query = supabase
+                .from('listings')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            // Apply location filter (city, street, or postal code)
+            if (location) {
+                query = query.or(`city.ilike.%${location}%,street.ilike.%${location}%,postalCode.ilike.%${location}%`);
+            }
+            
+            // Apply price filter
+            if (maxPrice && !isNaN(maxPrice)) {
+                query = query.lte('price', maxPrice);
+            }
+            
+            // Apply room type filter
+            if (roomType) {
+                query = query.eq('house_type', roomType);
+            }
+            
+            // Apply bedroom filter
+            if (bedrooms) {
+                query = query.eq('bedrooms', parseInt(bedrooms));
+            }
+            
+            try {
+                const { data: filteredListings, error } = await query;
+                
+                if (error) {
+                    console.error('Search error:', error);
+                    alert('Search failed: ' + error.message);
+                    return;
+                }
+                
+                console.log(`✅ Found ${filteredListings.length} listings matching criteria`);
+                
+                // Display filtered results
+                const container = document.getElementById('listingsContainer');
+                container.innerHTML = '';
+
+                if (filteredListings.length === 0) {
+                    container.innerHTML = '<p class="text-gray-600 text-center mb-4">No listings match your search criteria. Try adjusting your filters.</p>';
+                    // Clear map
+                    if (markerClusterGroup) {
+                        markerClusterGroup.clearLayers();
+                    }
+                    return;
+                }
+
+                // Display filtered listings
+                filteredListings.forEach(listing => {
+                    displayListingCard(listing, container);
+                });
+                
+                // Update map with filtered results
+                await updateMap(filteredListings);
+                
+            } catch (error) {
+                console.error('Search error:', error);
+                alert('Search failed: ' + error.message);
+            }
+        }
+
+        function clearSearchFilters() {
+            console.log('🧹 Clearing search filters...');
+            
+            // Clear input fields
+            document.getElementById('searchLocation').value = '';
+            document.getElementById('searchMaxPrice').value = '';
+            document.getElementById('searchRoomType').value = '';
+            document.getElementById('searchBedrooms').value = '';
+            
+            // Reset to show all listings
+            filteredListings = [];
+            displayListings();
+        }
+        
+        function displayListingCard(listing, container) {
+            let media = listing.media || [];
+            if (!Array.isArray(media)) {
+                media = [];
+            }
+
+            media = media.map(item => {
+                if (item.type === 'application/json' || !item.type || item.type === 'application/octet-stream') {
+                    const extension = item.name.split('.').pop().toLowerCase();
+                    let correctedType;
+                    switch (extension) {
+                        case 'jpg':
+                        case 'jpeg':
+                            correctedType = 'image/jpeg';
+                            break;
+                        case 'png':
+                            correctedType = 'image/png';
+                            break;
+                        case 'mp4':
+                            correctedType = 'video/mp4';
+                            break;
+                        default:
+                            correctedType = item.type || 'application/octet-stream';
+                    }
+                    return { ...item, type: correctedType };
+                }
+                return item;
+            });
+
+            const isImage = (file) => {
+                const byType = file.type.startsWith('image/');
+                const byExtension = file.name.match(/\.(jpg|jpeg|png)$/i);
+                return byType || byExtension;
+            };
+
+            const primaryImage = media.length > 0 && isImage(media[0])
+                ? media[0].url
+                : 'https://via.placeholder.com/300x200?text=No+Image';
+
+            const listingCard = document.createElement('div');
+            listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden';
+
+            const hasOwner = !!listing.user_email;
+            listingCard.innerHTML = `
+                <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='https://via.placeholder.com/300x200?text=Image+Not+Available';">
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold text-gray-800 truncate">${listing.title}</h3>
+                    <p class="text-xl font-bold text-blue-600">$${listing.price.toLocaleString()}/mo</p>
+                    <p class="text-gray-600 text-sm">${listing.street}, ${listing.city}, ${listing.postalCode}</p>
+                    <div class="flex items-center space-x-2 text-sm text-gray-600 mt-2">
+                        <span>${listing.bedrooms} Bed</span>
+                        <span>•</span>
+                        <span>${listing.house_type}</span>
+                        <span>•</span>
+                        <span>${listing.utilities}</span>
+                    </div>
+                    <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
+                    <div class="flex space-x-2 mt-4">
+                        <button class="view-details-btn w-1/2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
+                        <button class="chat-btn w-1/2 bg-green-600 text-white px-4 py-2 rounded-lg transition ${hasOwner ? 'hover:bg-green-700' : ''} font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(listingCard);
+
+            // Add event listeners for this card
+            const viewDetailsBtn = listingCard.querySelector('.view-details-btn');
+            const chatBtn = listingCard.querySelector('.chat-btn');
+            
+            viewDetailsBtn.addEventListener('click', () => {
+                const listing = JSON.parse(viewDetailsBtn.dataset.listing);
+                showListingModal(listing);
+            });
+
+            if (!chatBtn.disabled) {
+                chatBtn.addEventListener('click', () => {
+                    const listing = JSON.parse(chatBtn.dataset.listing);
+                    startConversation(listing);
+                });
+            }
+        }
+
 
         // Real-time subscription to listings
         supabase

@@ -82,7 +82,7 @@ class AINegotiator {
         
         EXTRACTION TARGETS (matching database columns):
         - price: Maximum budget (number only)
-        - city: City name (e.g., "Paris", "Tehran", "Toronto") 
+        - city: City name (e.g., "paris", "tehran", "toronto", "moscow") 
         - house_type: Property type ("Apartment", "Condo", "House", "Studio", "Basement")
         - bedrooms: Number of bedrooms (1-5)
         - utilities: "included" or "not included"
@@ -90,8 +90,8 @@ class AINegotiator {
         
         RULES:
         - For price: look for "under $1200", "max $2000", etc.
-        - For city: extract ANY city mentioned: "Paris", "Tehran", "Sydney", etc.
-        - For house_type: use exact values
+        - For city: extract ANY city mentioned and return lowercase: "paris", "tehran", "toronto", "moscow"
+        - For house_type: use exact values from database
         - Be conservative - only extract what's clearly mentioned
         
         Return JSON with only fields that have values:
@@ -133,19 +133,28 @@ class AINegotiator {
         console.log('Using manual extraction for:', message);
         const result = {};
         
-        // Extract price
-        const priceMatch = message.match(/(?:under|below|max|up to)?\s*\$?(\d{1,5})/i);
+        // Extract price - improved regex to catch more patterns
+        const priceMatch = message.match(/(?:under|below|max|up to|for|at|around)?\s*\$?(\d{1,5})/i);
         if (priceMatch) {
             const extractedPrice = Number(priceMatch[1]);
             if (extractedPrice > 100) {
                 result.price = extractedPrice;
+                console.log('💰 Extracted price:', extractedPrice);
             }
         }
         
-        // Extract city - EXPANDED LIST
-        const cityMatch = message.match(/\b(paris|tehran|sydney|toronto|vancouver|montreal|calgary|ottawa|edmonton|winnipeg|hamilton|quebec|saskatoon|regina|halifax|london|kitchener|waterloo|windsor|markham|mississauga|brampton|iran|australia|canada|france|new york|los angeles|chicago|miami|boston)\b/i);
+        // Extract city - UPDATED LIST based on actual database listings
+        const cityMatch = message.match(/\b(paris|tehran|toronto|moscow|sydney|vancouver|montreal|calgary|ottawa|edmonton|winnipeg|hamilton|quebec|saskatoon|regina|halifax|london|kitchener|waterloo|windsor|markham|mississauga|brampton|iran|australia|canada|france|new york|los angeles|chicago|miami|boston)\b/i);
         if (cityMatch) {
             result.city = cityMatch[1].toLowerCase().trim();
+            console.log('🏙️ Extracted city:', result.city);
+        }
+        
+        // Additional location patterns for "in [city]"
+        const inCityMatch = message.match(/\bin\s+(paris|tehran|toronto|moscow|sydney|vancouver|montreal|calgary)\b/i);
+        if (inCityMatch && !result.city) {
+            result.city = inCityMatch[1].toLowerCase().trim();
+            console.log('🏙️ Extracted city from "in" pattern:', result.city);
         }
         
         // Extract house type
@@ -188,11 +197,11 @@ class AINegotiator {
         
         if (extractedData.city) {
             // Clean up the city name - remove country codes and extra info
-            let cleanCity = extractedData.city.toString().trim();
+            let cleanCity = extractedData.city.toString().trim().toLowerCase();
             cleanCity = cleanCity.split(',')[0].trim(); // Remove everything after comma
             cleanCity = cleanCity.replace(/\s+(fr|france|canada|ca|usa|us|australia|au)$/i, ''); // Remove country codes
             this.userNeeds.preferredLocation = cleanCity;
-            console.log('✅ Set location:', cleanCity, '(cleaned from:', extractedData.city, ')');
+            console.log('✅ Set location:', cleanCity, '(cleaned and lowercased from:', extractedData.city, ')');
         }
         
         if (extractedData.house_type) {
@@ -226,10 +235,10 @@ class AINegotiator {
             query = query.neq('user_email', this.currentUser.email);
         }
         
-        // Price filter
+        // Price filter - include listings AT the max price
         if (this.userNeeds.maxPrice) {
-            query = query.lt('price', this.userNeeds.maxPrice);
-            appliedFilters.push(`price under $${this.userNeeds.maxPrice} (strict)`);
+            query = query.lte('price', this.userNeeds.maxPrice);
+            appliedFilters.push(`price up to $${this.userNeeds.maxPrice} (inclusive)`);
             hasSpecificCriteria = true;
         }
         
@@ -237,9 +246,27 @@ class AINegotiator {
         if (this.userNeeds.preferredLocation) {
             console.log(`🔍 STRICT search for location "${this.userNeeds.preferredLocation}" in title, description, and city`);
             const location = this.userNeeds.preferredLocation.trim();
-            query = query.or(`title.ilike.%${location}%,description.ilike.%${location}%,city.ilike.%${location}%`);
-            appliedFilters.push(`location: ${location} (REQUIRED in title/description/city)`);
+            
+            // First try exact city match, then fallback to any field containing the location
+            // Also search for country codes (since cities in DB may be like "france" instead of "paris")
+            let locationQuery;
+            if (location === 'paris') {
+                locationQuery = `city.ilike.%france%,city.ilike.%paris%,title.ilike.%${location}%,description.ilike.%${location}%`;
+            } else if (location === 'tehran') {
+                locationQuery = `city.ilike.%iran%,city.ilike.%tehran%,title.ilike.%${location}%,description.ilike.%${location}%`;
+            } else if (location === 'moscow') {
+                locationQuery = `city.ilike.%russia%,city.ilike.%moscow%,title.ilike.%${location}%,description.ilike.%${location}%`;
+            } else if (location === 'toronto') {
+                locationQuery = `city.ilike.%canada%,city.ilike.%toronto%,title.ilike.%${location}%,description.ilike.%${location}%`;
+            } else {
+                locationQuery = `city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%`;
+            }
+            
+            query = query.or(locationQuery);
+            appliedFilters.push(`location: ${location} (searching city/title/description)`);
             hasSpecificCriteria = true;
+            
+            console.log(`📍 Location filter applied: ${locationQuery}`);
         } else {
             console.log('❌ NO LOCATION EXTRACTED - searching all locations');
         }
@@ -263,6 +290,7 @@ class AINegotiator {
         }
         
         console.log('🔍 Applied filters:', appliedFilters.join(', '));
+        console.log('🔎 User needs for debugging:', this.userNeeds);
         
         const { data: listings, error } = await query.order('created_at', { ascending: false }).limit(20);
         
@@ -271,7 +299,60 @@ class AINegotiator {
         }
         
         console.log('📊 Query results:', listings?.length || 0, 'listings found');
+        
+        // Debug: Log what we actually found
+        if (listings && listings.length > 0) {
+            console.log('🏠 Found listings details:');
+            listings.forEach((listing, i) => {
+                console.log(`  ${i+1}. "${listing.title}" - $${listing.price} - ${listing.house_type} - City: "${listing.city || 'NO CITY'}" - ID: ${listing.id}`);
+            });
+        } else {
+            console.log('❌ No listings found with current filters');
+            
+            // Let's also check what's actually in the database
+            const { data: allListings } = await this.supabase
+                .from('listings')
+                .select('title, city, price, house_type')
+                .limit(10);
+            
+            console.log('🗃️ Sample of ALL listings in database:');
+            allListings?.forEach((listing, i) => {
+                console.log(`  ${i+1}. "${listing.title}" - City: "${listing.city || 'NO CITY'}" - $${listing.price} - ${listing.house_type}`);
+            });
+        }
+        
         return listings || [];
+    }
+
+    // Test function to verify search works for known listings
+    async testSearchForKnownListings() {
+        console.log('🧪 TESTING SEARCH FOR KNOWN LISTINGS');
+        
+        const testCases = [
+            { message: "I want a house in Paris under $1300", expectedCity: "paris", expectedPrice: 1300, expectedType: "House" },
+            { message: "I need a condo in Moscow under $1000", expectedCity: "moscow", expectedPrice: 1000, expectedType: "Condo" },
+            { message: "Looking for a house in Tehran under $1200", expectedCity: "tehran", expectedPrice: 1200, expectedType: "House" },
+            { message: "I want a house in Toronto under $1000", expectedCity: "toronto", expectedPrice: 1000, expectedType: "House" }
+        ];
+        
+        for (const test of testCases) {
+            console.log(`\n--- Testing: "${test.message}" ---`);
+            
+            // Extract criteria
+            const extracted = await this.extractRentalInfo(test.message);
+            console.log('Extracted:', extracted);
+            
+            // Update user needs
+            this.updateUserNeeds(extracted);
+            console.log('User needs:', this.userNeeds);
+            
+            // Search
+            const results = await this.findMatchingListings();
+            console.log(`Found ${results.length} results`);
+            
+            // Reset for next test
+            this.userNeeds = { maxPrice: null, minPrice: null, preferredLocation: null, houseType: null, bedrooms: null, utilities: null };
+        }
     }
 
     // Main search and messaging function
@@ -341,30 +422,81 @@ class AINegotiator {
 
     // Handle no matches found
     async handleNoMatches() {
-        this.appendMessage('AI', 'No listings found matching your criteria. Let me show what\'s available...', 'left');
+        // First, let's check if we extracted the criteria correctly
+        const extracted = [];
+        if (this.userNeeds.preferredLocation) extracted.push(`Location: "${this.userNeeds.preferredLocation}"`);
+        if (this.userNeeds.maxPrice) extracted.push(`Max Price: $${this.userNeeds.maxPrice}`);
+        if (this.userNeeds.houseType) extracted.push(`Type: ${this.userNeeds.houseType}`);
         
-        const { data: allListings } = await this.supabase
+        this.appendMessage('AI', `❌ No exact matches found. I searched for: ${extracted.join(', ')}`, 'left');
+        
+        // Try to find similar listings with relaxed criteria
+        let query = this.supabase
             .from('listings')
-            .select('id, title, price, house_type, bedrooms, description')
+            .select('id, title, price, house_type, bedrooms, description, city')
             .neq('user_email', this.currentUser?.email || '')
             .limit(10);
+
+        // First try: relax location requirement but keep other criteria
+        let hasValidFilters = false;
+        if (this.userNeeds.houseType || this.userNeeds.maxPrice) {
+            if (this.userNeeds.maxPrice) {
+                // Increase price range by 20%
+                const relaxedPrice = Math.floor(this.userNeeds.maxPrice * 1.2);
+                query = query.lte('price', relaxedPrice);
+                hasValidFilters = true;
+            }
+            if (this.userNeeds.houseType) {
+                query = query.eq('house_type', this.userNeeds.houseType);
+                hasValidFilters = true;
+            }
+        }
         
-        if (allListings?.length > 0) {
+        // If we have a location preference, still try to prioritize it but don't make it required
+        if (this.userNeeds.preferredLocation && hasValidFilters) {
+            console.log(`🔍 Looking for similar listings, preferring location: ${this.userNeeds.preferredLocation}`);
+        }
+        
+        const { data: similarListings } = await query.order('price', { ascending: true });
+        
+        if (similarListings?.length > 0) {
             const criteria = [];
             if (this.userNeeds.houseType) criteria.push(this.userNeeds.houseType.toLowerCase());
             if (this.userNeeds.preferredLocation) criteria.push(`in ${this.userNeeds.preferredLocation}`);
             if (this.userNeeds.maxPrice) criteria.push(`under $${this.userNeeds.maxPrice}`);
             
-            this.appendMessage('AI', `I searched for: ${criteria.join(' + ')}. Here's what's available:`, 'left');
+            this.appendMessage('AI', `I searched for: ${criteria.join(' + ')}. Here are similar listings:`, 'left');
             
-            for (const listing of allListings.slice(0, 3)) {
-                const descText = listing.description ? listing.description.substring(0, 50) + '...' : 'No description';
-                this.appendMessage('AI', `📋 "${listing.title}" - $${listing.price}/month (${listing.bedrooms} bed ${listing.house_type}) - ${descText}`, 'left');
+            let shownCount = 0;
+            for (const listing of similarListings.slice(0, 5)) {
+                // Skip obvious test/fake listings
+                if (listing.title.toLowerCase().includes('test') || 
+                    listing.title.toLowerCase().includes('hello') ||
+                    listing.title.toLowerCase().includes('eric')) {
+                    continue;
+                }
+                
+                const descText = listing.description ? listing.description.substring(0, 30) + '...' : 'No description';
+                const locationText = listing.city ? ` in ${listing.city}` : '';
+                this.appendMessage('AI', `📋 "${listing.title}" - $${listing.price}/month (${listing.bedrooms} bed ${listing.house_type})${locationText} - ${descText}`, 'left');
+                shownCount++;
+                
+                if (shownCount >= 3) break;
             }
             
-            this.appendMessage('AI', `None match your criteria. Try different search terms or add listings with "${this.userNeeds.preferredLocation}" in the title/description.`, 'left');
+            if (shownCount === 0) {
+                this.appendMessage('AI', 'No suitable listings found in the database. Try creating a listing or contact an administrator to add listings in your preferred location.', 'left');
+            } else {
+                const suggestions = [];
+                if (this.userNeeds.maxPrice) suggestions.push(`increase your budget above $${this.userNeeds.maxPrice}`);
+                if (this.userNeeds.preferredLocation) suggestions.push(`try nearby areas or add "${this.userNeeds.preferredLocation}" to listing titles`);
+                
+                if (suggestions.length > 0) {
+                    this.appendMessage('AI', `💡 Suggestions: ${suggestions.join(' or ')}.`, 'left');
+                }
+            }
         } else {
-            this.appendMessage('AI', 'No listings found in database. Please add some listings first.', 'left');
+            this.appendMessage('AI', 'No listings found in database. The database may be empty or all listings are from your account.', 'left');
         }
         
         this.negotiationState = 'idle';
