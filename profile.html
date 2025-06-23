@@ -569,22 +569,76 @@
                     const nextBilling = new Date(sub.start_date);
                     nextBilling.setMonth(nextBilling.getMonth() + 1);
                     
-                    subscriptionInfo.innerHTML = `
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-6 max-w-md mx-auto">
-                            <div class="flex items-center justify-center mb-4">
-                                <svg class="w-8 h-8 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <h3 class="text-lg font-semibold text-green-800">Active Subscription</h3>
+                    // Check if subscription is cancelled but still active (pending cancellation)
+                    const isCancelled = sub.status === 'canceled';
+                    const isPendingCancellation = isCancelled && sub.end_date && new Date(sub.end_date) > new Date();
+                    const hasEnded = isCancelled && sub.end_date && new Date(sub.end_date) <= new Date();
+                    
+                    // Don't show subscription if it has actually ended
+                    if (hasEnded) {
+                        subscriptionInfo.innerHTML = `
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 max-w-md mx-auto">
+                                <div class="flex items-center justify-center mb-4">
+                                    <svg class="w-8 h-8 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <h3 class="text-lg font-semibold text-gray-600">No Active Subscription</h3>
+                                </div>
+                                <p class="text-gray-500 text-center mb-4">Subscribe to access premium features.</p>
+                                <div class="text-center">
+                                    <a href="/pricing" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-medium">
+                                        View Plans
+                                    </a>
+                                </div>
                             </div>
+                        `;
+                        return;
+                    }
+                    
+                    // Determine colors and status based on cancellation state
+                    const bgColor = isPendingCancellation ? 'bg-orange-50 border border-orange-200' : 'bg-green-50 border border-green-200';
+                    const textColor = isPendingCancellation ? 'text-orange-700' : 'text-green-700';
+                    const iconColor = isPendingCancellation ? 'text-orange-600' : 'text-green-600';
+                    const statusBgColor = isPendingCancellation ? 'bg-orange-100' : 'bg-green-100';
+                    const statusTextColor = isPendingCancellation ? 'text-orange-800' : 'text-green-800';
+                    const headerText = isPendingCancellation ? 'Subscription Ending' : 'Active Subscription';
+                    const statusText = isPendingCancellation ? 'Ending Soon' : 'Active';
+                    
+                    // Determine the billing/end date
+                    const dateLabel = isPendingCancellation ? 'Cancelling On:' : 'Next Billing:';
+                    const dateValue = isPendingCancellation ? new Date(sub.end_date).toLocaleDateString() : nextBilling.toLocaleDateString();
+                    
+                    subscriptionInfo.innerHTML = `
+                        <div class="${bgColor} rounded-lg p-6 max-w-md mx-auto">
+                            <div class="flex items-center justify-center mb-4">
+                                <svg class="w-8 h-8 ${iconColor} mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    ${isPendingCancellation ? 
+                                        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>' :
+                                        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+                                    }
+                                </svg>
+                                <h3 class="text-lg font-semibold ${iconColor}">${headerText}</h3>
+                            </div>
+                            ${isPendingCancellation ? `
+                                <div class="bg-orange-100 border border-orange-300 rounded-lg p-3 mb-4">
+                                    <p class="text-orange-800 text-sm font-medium">⚠️ Your subscription will end on ${dateValue}</p>
+                                    <p class="text-orange-700 text-xs">You'll continue to have access until then.</p>
+                                </div>
+                            ` : ''}
                             <div class="space-y-2 text-sm">
-                                <p class="text-green-700"><strong>Plan:</strong> ${sub.plan_type.charAt(0).toUpperCase() + sub.plan_type.slice(1)}</p>
-                                <p class="text-green-700"><strong>Price:</strong> $${sub.plan_price}/month</p>
-                                <p class="text-green-700"><strong>Status:</strong> <span class="bg-green-100 px-2 py-1 rounded text-green-800">${sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}</span></p>
-                                <p class="text-green-700"><strong>Started:</strong> ${startDate}</p>
-                                <p class="text-green-700"><strong>Next Billing:</strong> ${nextBilling.toLocaleDateString()}</p>
-                                <p class="text-green-700"><strong>Payment Method:</strong> ${sub.payment_method === 'card' ? 'Credit Card' : 'E-Transfer'}</p>
-                                ${sub.stripe_charge_id ? `<p class="text-green-700"><strong>Charge ID:</strong> ${sub.stripe_charge_id}</p>` : ''}
+                                <p class="${textColor}"><strong>Plan:</strong> ${sub.plan_type.charAt(0).toUpperCase() + sub.plan_type.slice(1)}</p>
+                                <p class="${textColor}"><strong>Price:</strong> $${sub.plan_price}/month</p>
+                                <p class="${textColor}"><strong>Status:</strong> <span class="${statusBgColor} px-2 py-1 rounded ${statusTextColor}">${statusText}</span></p>
+                                <p class="${textColor}"><strong>Started:</strong> ${startDate}</p>
+                                <p class="${textColor}"><strong>${dateLabel}</strong> ${dateValue}</p>
+                                <p class="${textColor}"><strong>Payment Method:</strong> ${
+                                    sub.payment_method === 'card' ? 'Credit Card' :
+                                    sub.payment_method === 'google_pay' ? 'Google Pay' :
+                                    sub.payment_method === 'apple_pay' ? 'Apple Pay' :
+                                    sub.payment_method === 'wallet' ? 'Digital Wallet' :
+                                    'E-Transfer'
+                                }</p>
+                                ${sub.stripe_charge_id ? `<p class="${textColor}"><strong>Charge ID:</strong> ${sub.stripe_charge_id}</p>` : ''}
                             </div>
                             <div class="mt-4">
                                 <a href="/manage-subscription" class="text-blue-600 hover:text-blue-700 text-sm font-medium">Manage Subscription</a>

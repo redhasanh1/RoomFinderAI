@@ -468,6 +468,18 @@ app.post('/api/process-payment', async (req, res) => {
             // Continue without profile_id if profile not found
         }
 
+        // Normalize payment method for database compatibility
+        let normalizedPaymentMethod = paymentMethod || 'card';
+        
+        // If the database doesn't support the new payment methods yet, 
+        // map them to supported values while preserving the info in metadata
+        const supportedMethods = ['card', 'etransfer'];
+        if (!supportedMethods.includes(normalizedPaymentMethod)) {
+            // Store the original method in Stripe metadata, use 'card' for db
+            charge.metadata.original_payment_method = normalizedPaymentMethod;
+            normalizedPaymentMethod = 'card';
+        }
+
         // Insert subscription into Supabase
         const subscriptionData = {
             email: customerEmail,
@@ -476,7 +488,7 @@ app.post('/api/process-payment', async (req, res) => {
             plan_price: parseFloat(price),
             status: 'active',
             stripe_charge_id: charge.id,
-            payment_method: paymentMethod || 'card',
+            payment_method: normalizedPaymentMethod,
             start_date: new Date().toISOString()
         };
 
@@ -523,14 +535,46 @@ app.get('/api/subscription/:email', async (req, res) => {
             return res.status(400).json({ error: 'Email is required' });
         }
 
-        const { data: subscription, error } = await supabase
+        // Get the most recent subscription regardless of status
+        const { data: allSubs, error: allError } = await supabase
             .from('subscriptions')
             .select('*')
             .eq('email', email)
-            .eq('status', 'active')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
+            .order('created_at', { ascending: false });
+
+        if (allError) {
+            console.error('Error fetching subscriptions:', allError);
+            return res.status(500).json({ error: 'Failed to fetch subscription', details: allError.message });
+        }
+
+        let subscription = null;
+        let error = null;
+
+        if (allSubs && allSubs.length > 0) {
+            // Prioritize active subscriptions first
+            const activeSub = allSubs.find(sub => sub.status === 'active');
+            
+            if (activeSub) {
+                subscription = activeSub;
+            } else {
+                // If no active subscription, find the most recent canceled subscription
+                // that hasn't ended yet (pending cancellation)
+                const pendingCancellationSub = allSubs.find(sub => 
+                    sub.status === 'canceled' && 
+                    sub.end_date && 
+                    new Date(sub.end_date) > new Date()
+                );
+                
+                if (pendingCancellationSub) {
+                    subscription = pendingCancellationSub;
+                } else {
+                    // No active or pending cancellation subscriptions
+                    error = { code: 'PGRST116' };
+                }
+            }
+        } else {
+            error = { code: 'PGRST116' };
+        }
 
         console.log('Supabase subscription query result:', { subscription, error });
 
@@ -567,6 +611,7 @@ app.post('/api/subscription/cancel', async (req, res) => {
             .single();
             
         if (fetchError || !currentSub) {
+            console.error('Subscription not found:', fetchError);
             return res.status(404).json({ error: 'Subscription not found' });
         }
         
@@ -575,14 +620,20 @@ app.post('/api/subscription/cancel', async (req, res) => {
         const cancelEffectiveDate = new Date(startDate);
         cancelEffectiveDate.setMonth(cancelEffectiveDate.getMonth() + 1);
         
-        // Update subscription to be cancelled at end of billing period
+        // For now, since the schema might not have the new columns, let's update just the status
+        // and store cancellation info in a way that's compatible with current schema
+        const updateData = {
+            status: 'canceled', // Use existing status value
+            end_date: cancelEffectiveDate.toISOString() // Use existing end_date field
+        };
+        
+        // Use fallback approach with existing schema fields
+        // Mark as canceled and set end_date to the cancellation effective date
         const { data: subscription, error } = await supabase
             .from('subscriptions')
             .update({
-                status: 'pending_cancellation',
-                cancellation_requested_at: new Date().toISOString(),
-                cancellation_effective_date: cancelEffectiveDate.toISOString(),
-                cancellation_reason: cancellation_reason || null
+                status: 'canceled',
+                end_date: cancelEffectiveDate.toISOString()
             })
             .eq('id', subscription_id)
             .eq('email', email)
@@ -594,17 +645,14 @@ app.post('/api/subscription/cancel', async (req, res) => {
             return res.status(500).json({ error: 'Failed to schedule subscription cancellation', details: error.message });
         }
         
-        console.log('Subscription cancellation scheduled successfully:', subscription.id, 'effective date:', cancelEffectiveDate.toISOString());
+        console.log('Subscription cancelled successfully:', subscription.id, 'effective date:', cancelEffectiveDate.toISOString());
         
-        const responseData = { 
+        return res.json({ 
             success: true, 
-            message: `Subscription will be cancelled at the end of your current billing period (${cancelEffectiveDate.toLocaleDateString()})`,
+            message: `Subscription cancelled. You'll continue to have access until ${cancelEffectiveDate.toLocaleDateString()}`,
             subscription: subscription,
             cancellation_effective_date: cancelEffectiveDate.toISOString()
-        };
-        
-        console.log('Sending response:', responseData);
-        res.json(responseData);
+        });
         
     } catch (error) {
         console.error('Error in /api/subscription/cancel:', error);
@@ -877,6 +925,48 @@ app.post('/api/support/submit', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/support/submit:', error);
         res.status(500).json({ error: 'Failed to submit support request', details: error.message });
+    }
+});
+
+// Migration endpoint to update subscription schema
+app.post('/api/migrate/subscriptions', async (req, res) => {
+    try {
+        console.log('Running subscription schema migration...');
+        
+        // Try to add the new columns using raw SQL
+        const migrations = [
+            'ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS cancellation_requested_at TIMESTAMP WITH TIME ZONE;',
+            'ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS cancellation_effective_date TIMESTAMP WITH TIME ZONE;',
+            'ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;',
+            "ALTER TABLE subscriptions DROP CONSTRAINT IF EXISTS subscriptions_status_check;",
+            "ALTER TABLE subscriptions ADD CONSTRAINT subscriptions_status_check CHECK (status IN ('active', 'canceled', 'expired', 'paused', 'pending_cancellation'));"
+        ];
+        
+        const results = [];
+        for (const sql of migrations) {
+            try {
+                const { data, error } = await supabase.rpc('exec_sql', { sql_query: sql });
+                results.push({ sql, success: !error, error: error?.message });
+                if (error) {
+                    console.log(`Migration step failed: ${sql} - ${error.message}`);
+                } else {
+                    console.log(`Migration step succeeded: ${sql}`);
+                }
+            } catch (err) {
+                console.log(`Migration step error: ${sql} - ${err.message}`);
+                results.push({ sql, success: false, error: err.message });
+            }
+        }
+        
+        res.json({ 
+            success: true, 
+            message: 'Migration attempted',
+            results: results
+        });
+        
+    } catch (error) {
+        console.error('Migration error:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 

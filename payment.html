@@ -522,7 +522,28 @@
                                  document.getElementById('name')?.value || 
                                  'Wallet User';
 
-                console.log('Processing wallet payment with:', { walletEmail, walletName, token });
+                // Determine the specific wallet type based on the token
+                let paymentMethodType = 'wallet'; // default fallback
+                
+                if (token.type) {
+                    // Check the token type to determine payment method
+                    if (token.type === 'apple_pay' || token.card?.wallet?.type === 'apple_pay') {
+                        paymentMethodType = 'apple_pay';
+                    } else if (token.type === 'google_pay' || token.card?.wallet?.type === 'google_pay') {
+                        paymentMethodType = 'google_pay';
+                    }
+                }
+                
+                // Also check the card wallet details
+                if (token.card?.wallet) {
+                    if (token.card.wallet.type === 'apple_pay') {
+                        paymentMethodType = 'apple_pay';
+                    } else if (token.card.wallet.type === 'google_pay') {
+                        paymentMethodType = 'google_pay';
+                    }
+                }
+
+                console.log('Processing wallet payment with:', { walletEmail, walletName, token, paymentMethodType });
 
                 // Send payment to backend for processing
                 const response = await fetch('http://localhost:3000/api/process-payment', {
@@ -536,7 +557,7 @@
                         name: walletName,
                         plan: plan,
                         price: price,
-                        paymentMethod: 'wallet'
+                        paymentMethod: paymentMethodType
                     })
                 });
 

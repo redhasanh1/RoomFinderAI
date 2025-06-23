@@ -519,16 +519,47 @@
             const nextBilling = new Date(sub.start_date);
             nextBilling.setMonth(nextBilling.getMonth() + 1);
             
-            // Check if subscription is pending cancellation
-            const isPendingCancellation = sub.status === 'pending_cancellation';
-            const effectiveDate = isPendingCancellation && sub.cancellation_effective_date 
-                ? new Date(sub.cancellation_effective_date).toLocaleDateString()
-                : nextBilling.toLocaleDateString();
+            // Check if subscription is cancelled or active
+            const isCancelled = sub.status === 'canceled';
+            const isActive = sub.status === 'active';
             
-            const bgColor = isPendingCancellation ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200';
-            const textColor = isPendingCancellation ? 'text-yellow-800' : 'text-green-800';
-            const iconColor = isPendingCancellation ? 'text-yellow-600' : 'text-green-600';
-            const statusColor = isPendingCancellation ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
+            // Determine the effective date based on status
+            let effectiveDate;
+            if (isCancelled && sub.end_date) {
+                effectiveDate = new Date(sub.end_date).toLocaleDateString();
+                // Check if the cancellation is in the future (scheduled) or past (already ended)
+                const endDate = new Date(sub.end_date);
+                const now = new Date();
+                const isPendingCancellation = endDate > now;
+            } else {
+                effectiveDate = nextBilling.toLocaleDateString();
+            }
+            
+            // If cancelled but end date is in future, treat as pending cancellation
+            const isPendingCancellation = isCancelled && sub.end_date && new Date(sub.end_date) > new Date();
+            const hasEnded = isCancelled && sub.end_date && new Date(sub.end_date) <= new Date();
+            
+            // Set colors and styling based on status
+            let bgColor, textColor, iconColor, statusColor;
+            if (hasEnded) {
+                // Subscription has ended
+                bgColor = 'bg-red-50 border border-red-200';
+                textColor = 'text-red-800';
+                iconColor = 'text-red-600';
+                statusColor = 'bg-red-100 text-red-800';
+            } else if (isPendingCancellation) {
+                // Scheduled for cancellation but still active - use orange
+                bgColor = 'bg-orange-50 border border-orange-200';
+                textColor = 'text-orange-800';
+                iconColor = 'text-orange-600';
+                statusColor = 'bg-orange-100 text-orange-800';
+            } else {
+                // Active subscription
+                bgColor = 'bg-green-50 border border-green-200';
+                textColor = 'text-green-800';
+                iconColor = 'text-green-600';
+                statusColor = 'bg-green-100 text-green-800';
+            }
             
             container.innerHTML = `
                 <div class="${bgColor} rounded-lg p-6 max-w-2xl mx-auto">
@@ -541,12 +572,20 @@
                         </svg>
                         <h3 class="text-2xl font-semibold ${textColor}">${sub.plan_type.charAt(0).toUpperCase() + sub.plan_type.slice(1)} Plan</h3>
                     </div>
-                    ${isPendingCancellation ? `
+                    ${hasEnded ? `
                         <div class="text-center mb-4">
-                            <div class="bg-yellow-100 border border-yellow-300 rounded-lg p-4 mb-4">
-                                <p class="text-yellow-800 font-semibold mb-2">⚠️ Cancellation Scheduled</p>
-                                <p class="text-yellow-700 text-sm">Your subscription will be cancelled on <strong>${effectiveDate}</strong></p>
-                                <p class="text-yellow-700 text-sm">You'll continue to have access until then.</p>
+                            <div class="bg-red-100 border border-red-300 rounded-lg p-4 mb-4">
+                                <p class="text-red-800 font-semibold mb-2">❌ Subscription Ended</p>
+                                <p class="text-red-700 text-sm">Your subscription ended on <strong>${effectiveDate}</strong></p>
+                                <p class="text-red-700 text-sm">You can resubscribe at any time to regain access.</p>
+                            </div>
+                        </div>
+                    ` : isPendingCancellation ? `
+                        <div class="text-center mb-4">
+                            <div class="bg-orange-100 border border-orange-300 rounded-lg p-4 mb-4">
+                                <p class="text-orange-800 font-semibold mb-2">⚠️ Cancellation Scheduled</p>
+                                <p class="text-orange-700 text-sm">Your subscription will end on <strong>${effectiveDate}</strong></p>
+                                <p class="text-orange-700 text-sm">You'll continue to have access until then.</p>
                             </div>
                         </div>
                     ` : ''}
@@ -556,13 +595,13 @@
                             <p class="text-2xl font-bold ${textColor}">$${sub.plan_price}/month</p>
                         </div>
                         <div class="text-center">
-                            <p class="${textColor}"><strong>${isPendingCancellation ? 'Ends On:' : 'Next Billing:'}:</strong></p>
+                            <p class="${textColor}"><strong>${hasEnded ? 'Ended On:' : isPendingCancellation ? 'Cancelling On:' : 'Next Billing:'}:</strong></p>
                             <p class="text-lg font-semibold ${textColor}">${effectiveDate}</p>
                         </div>
                     </div>
                     <div class="mt-4 text-center">
                         <span class="${statusColor} px-3 py-1 rounded-full font-medium">
-                            ${isPendingCancellation ? 'Pending Cancellation' : sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
+                            ${hasEnded ? 'Ended' : isPendingCancellation ? 'Ending Soon' : 'Active'}
                         </span>
                     </div>
                 </div>
@@ -587,7 +626,13 @@
                     <div>
                         <h4 class="font-semibold text-gray-800 mb-2">Billing Information</h4>
                         <div class="space-y-1 text-sm text-gray-600">
-                            <p><strong>Payment Method:</strong> ${sub.payment_method === 'card' ? 'Credit Card' : 'E-Transfer'}</p>
+                            <p><strong>Payment Method:</strong> ${
+                                sub.payment_method === 'card' ? 'Credit Card' :
+                                sub.payment_method === 'google_pay' ? 'Google Pay' :
+                                sub.payment_method === 'apple_pay' ? 'Apple Pay' :
+                                sub.payment_method === 'wallet' ? 'Digital Wallet' :
+                                'E-Transfer'
+                            }</p>
                             <p><strong>Email:</strong> ${sub.email}</p>
                             ${sub.stripe_charge_id ? `<p><strong>Last Charge:</strong> ${sub.stripe_charge_id}</p>` : ''}
                         </div>
@@ -688,7 +733,13 @@
                             <span class="text-green-600 font-semibold">$${userSubscription.plan_price}</span>
                         </div>
                         <div class="text-sm text-gray-500">
-                            <p>Payment Method: ${userSubscription.payment_method === 'card' ? 'Credit Card' : 'E-Transfer'}</p>
+                            <p>Payment Method: ${
+                                userSubscription.payment_method === 'card' ? 'Credit Card' :
+                                userSubscription.payment_method === 'google_pay' ? 'Google Pay' :
+                                userSubscription.payment_method === 'apple_pay' ? 'Apple Pay' :
+                                userSubscription.payment_method === 'wallet' ? 'Digital Wallet' :
+                                'E-Transfer'
+                            }</p>
                             ${userSubscription.stripe_charge_id ? `<p>Charge ID: ${userSubscription.stripe_charge_id}</p>` : ''}
                         </div>
                     </div>
@@ -711,21 +762,52 @@
             const modal = document.getElementById('cancelModal');
             const modalContent = modal.querySelector('.modal-content');
             
-            // Check if subscription is already pending cancellation
-            if (userSubscription && userSubscription.status === 'pending_cancellation') {
-                const effectiveDate = new Date(userSubscription.cancellation_effective_date).toLocaleDateString();
+            // Check subscription status
+            const isCancelled = userSubscription && userSubscription.status === 'canceled';
+            const isPendingCancellation = isCancelled && userSubscription.end_date && new Date(userSubscription.end_date) > new Date();
+            const hasEnded = isCancelled && userSubscription.end_date && new Date(userSubscription.end_date) <= new Date();
+            
+            if (hasEnded) {
+                const endDate = userSubscription.end_date ? new Date(userSubscription.end_date).toLocaleDateString() : 'Unknown';
                 modalContent.innerHTML = `
                     <span class="close" onclick="closeModal('cancelModal')">&times;</span>
-                    <h2 class="text-2xl font-bold text-yellow-800 mb-6">Cancellation Already Scheduled</h2>
+                    <h2 class="text-2xl font-bold text-red-800 mb-6">Subscription Has Ended</h2>
                     <div class="space-y-4">
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                            <p class="text-yellow-800 mb-2">
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <p class="text-red-800 mb-2">
+                                <strong>Your subscription has already ended.</strong>
+                            </p>
+                            <p class="text-red-700 text-sm mb-2">
+                                End Date: <strong>${endDate}</strong>
+                            </p>
+                            <p class="text-red-700 text-sm">
+                                You can resubscribe at any time to regain access to premium features.
+                            </p>
+                        </div>
+                        <div class="flex space-x-4">
+                            <a href="/pricing" class="modern-button text-sm px-4 py-2">
+                                View Plans
+                            </a>
+                            <button onclick="closeModal('cancelModal')" class="modern-button-secondary text-sm px-4 py-2">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (isPendingCancellation) {
+                const effectiveDate = new Date(userSubscription.end_date).toLocaleDateString();
+                modalContent.innerHTML = `
+                    <span class="close" onclick="closeModal('cancelModal')">&times;</span>
+                    <h2 class="text-2xl font-bold text-orange-800 mb-6">Cancellation Already Scheduled</h2>
+                    <div class="space-y-4">
+                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                            <p class="text-orange-800 mb-2">
                                 <strong>Your subscription is already scheduled for cancellation.</strong>
                             </p>
-                            <p class="text-yellow-700 text-sm mb-2">
+                            <p class="text-orange-700 text-sm mb-2">
                                 Cancellation Date: <strong>${effectiveDate}</strong>
                             </p>
-                            <p class="text-yellow-700 text-sm">
+                            <p class="text-orange-700 text-sm">
                                 You'll continue to have access until then.
                             </p>
                         </div>
