@@ -162,6 +162,7 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
         }
+        /* Legacy listing card styles - keeping for compatibility */
         .listing-card {
             background: white;
             border-radius: 24px;
@@ -202,12 +203,206 @@
         .listing-card:hover .listing-image {
             transform: scale(1.05);
         }
-        #aiButton {
-            transition: transform 0.3s ease-in-out, box-shadow 0.2s ease-in-out;
+
+        /* Premium listing card styles */
+        .premium-listing-card {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            max-width: 420px;
+            width: 100%;
         }
-        #aiButton:hover {
+
+        .premium-listing-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f093fb 75%, #667eea 100%);
+            background-size: 300% 100%;
+            opacity: 0;
+            transition: all 0.6s ease;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .premium-listing-card:hover::before {
+            opacity: 1;
+        }
+
+        .premium-listing-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .premium-listing-image {
+            border-radius: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .premium-listing-card:hover .premium-listing-image {
+            transform: scale(1.02);
+        }
+
+        /* Premium shadow effects */
+        .shadow-3xl {
+            box-shadow: 
+                0 35px 60px rgba(0, 0, 0, 0.15),
+                0 20px 30px rgba(0, 0, 0, 0.12),
+                0 5px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Premium gradient overlays */
+        .premium-listing-card .absolute.inset-0 {
+            background: linear-gradient(
+                135deg,
+                rgba(102, 126, 234, 0.1) 0%,
+                rgba(118, 75, 162, 0.05) 50%,
+                rgba(240, 147, 251, 0.1) 100%
+            );
+        }
+
+        /* Enhanced grid for premium cards */
+        .listing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 2.5rem;
+            padding: 2rem 0;
+            justify-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .listing-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .premium-listing-card {
+                border-radius: 24px;
+            }
+        }
+
+        /* Premium button animations */
+        .premium-listing-card button {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .premium-listing-card button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .premium-listing-card button:hover::before {
+            left: 100%;
+        }
+        #aiButton, #messageToggleBtn {
+            background: #3b82f6;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            border: none;
+        }
+        #aiButton:hover, #messageToggleBtn:hover {
             transform: translateY(-2px);
+            background: #2563eb;
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+        }
+        
+        /* Simple Chat Messages Styling */
+        .chat-message {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .chat-message.sent {
+            flex-direction: row-reverse;
+        }
+        
+        .chat-message-avatar {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            background: #6b7280;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+        
+        .chat-message.sent .chat-message-avatar {
+            background: #3b82f6;
+        }
+        
+        .chat-message-content {
+            max-width: 75%;
+            background: white;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .chat-message.sent .chat-message-content {
+            background: #3b82f6;
+            color: white;
+            border: 1px solid #2563eb;
+        }
+        
+        .chat-message-text {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 0.25rem;
+        }
+        
+        .chat-message-time {
+            font-size: 0.7rem;
+            opacity: 0.6;
+        }
+        
+        .chat-message.sent .chat-message-time {
+            opacity: 0.8;
+        }
+        
+        /* Conversation item styling */
+        .conversation-item {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .conversation-item:hover {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #3b82f6;
+        }
+        
+        .conversation-item.unread {
+            border-color: #3b82f6;
+            background: #eff6ff;
         }
         .custom-autocomplete {
             position: absolute;
@@ -280,16 +475,46 @@
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(102,126,234,0.3) 50%, rgba(240,147,251,0.3) 100%);
+            backdrop-filter: blur(10px);
+            animation: modalFadeIn 0.3s ease-out;
         }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes modalSlideIn {
+            from { 
+                opacity: 0;
+                transform: translate(-50%, -60%) scale(0.9);
+            }
+            to { 
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        
         .modal-content {
-            background-color: #fff;
-            margin: 5% auto;
-            padding: 20px;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(145deg, #ffffff 0%, #fefefe 50%, #f8fafc 100%);
+            border-radius: 32px;
+            box-shadow: 
+                0 50px 100px rgba(0, 0, 0, 0.25),
+                0 25px 50px rgba(102, 126, 234, 0.15),
+                0 15px 30px rgba(240, 147, 251, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
             width: 90%;
-            max-width: 600px;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .modal-media img, .modal-media video {
             max-width: 150px;
@@ -331,19 +556,23 @@
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.5);
         }
         .chat-modal-content {
-            background-color: #fff;
-            margin: 5% auto;
-            padding: 20px;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             width: 90%;
-            max-width: 600px;
+            max-width: 500px;
+            max-height: 80vh;
             display: flex;
             flex-direction: column;
-            max-height: 80vh;
+            overflow: hidden;
         }
         .chat-header {
             display: flex;
@@ -2113,37 +2342,67 @@
                 </div>
             </div>
             
-            <!-- Listings Container with Enhanced Design -->
-            <div class="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-white/40 shadow-2xl">
-                <div class="flex items-center justify-between mb-8">
-                    <h3 class="text-2xl font-bold text-gray-900">🏆 Premium Properties</h3>
-                    <div class="flex items-center space-x-4">
-                        <button onclick="displayListings()" class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                            🔄 Refresh
+            <!-- Featured Properties Showcase -->
+            <div class="feature-card">
+                <!-- Header Section -->
+                <div class="text-center mb-12">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                        </svg>
+                    </div>
+                    
+                    <h3 class="text-4xl font-bold gradient-text mb-6">
+                        🏆 Featured Properties
+                    </h3>
+                    
+                    <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+                        Handpicked properties with verified listings and quality amenities
+                    </p>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+                        <button onclick="displayListings()" class="cta-button flex items-center space-x-2">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>🔄 Refresh Listings</span>
                         </button>
-                        <div class="flex items-center space-x-2 text-sm text-gray-600">
-                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                            <span>Live Updates</span>
+                        
+                        <div class="flex items-center space-x-3 bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-3 rounded-full border border-green-200">
+                            <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                            <span class="text-green-700 font-semibold text-sm">Live Updates Active</span>
                         </div>
                     </div>
                 </div>
                 
-                <div id="listingsContainer" class="listing-grid"></div>
-                
-                <!-- Enhanced No listings message -->
-                <div id="noListingsMessage" class="text-center py-16 hidden">
-                    <div class="w-32 h-32 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg">
-                        <svg class="w-16 h-16 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                        </svg>
+                <!-- Properties Grid Container -->
+                <div id="premiumListingsContainer" class="listing-grid"></div>
+                        
+                        <!-- No Properties Message -->
+                        <div id="noListingsMessage" class="text-center py-20 hidden">
+                            <div class="w-24 h-24 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-8">
+                                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                            </div>
+                            
+                            <h3 class="text-3xl font-bold gradient-text mb-6">
+                                No Featured Properties Yet
+                            </h3>
+                            
+                            <p class="text-lg text-gray-600 mb-8 max-w-lg mx-auto">
+                                Be the first to showcase your premium property on our platform!
+                            </p>
+                            
+                            <button onclick="document.getElementById('listingForm').scrollIntoView({behavior: 'smooth'})" class="cta-button flex items-center space-x-2 mx-auto">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span>Add First Property</span>
+                            </button>
+                        </div>
                     </div>
-                    <h3 class="text-3xl font-bold text-gray-900 mb-4">No Properties Yet</h3>
-                    <p class="text-lg text-gray-600 mb-8 max-w-md mx-auto">
-                        Be the first to showcase your amazing property on our premium platform!
-                    </p>
-                    <button onclick="document.getElementById('listingForm').scrollIntoView({behavior: 'smooth'})" class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 font-bold text-lg shadow-2xl hover:shadow-3xl transform hover:-translate-y-2">
-                        🚀 Add First Property
-                    </button>
                 </div>
             </div>
         </div>
@@ -2211,44 +2470,204 @@
             </form>
         </section>
 
-        <!-- Listings Display -->
-        <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Available Listings</h2>
-            <div class="mb-4 flex gap-4">
-                <button onclick="displayListings()" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Refresh Listings</button>
-                <button onclick="refreshMapOnly()" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-semibold shadow-md hover:shadow-lg">Refresh Map</button>
+        <!-- Premium Listings Display -->
+        <section class="bg-gradient-to-br from-white via-purple-50/30 to-pink-50/30 rounded-3xl shadow-2xl p-8 sm:p-12 border-2 border-white/50 backdrop-blur-lg">
+            <!-- Premium Header -->
+            <div class="text-center mb-12">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mb-6 shadow-xl">
+                    <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 mb-4">
+                    🏆 Exclusive Property Collection
+                </h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto font-medium">
+                    Discover handpicked premium properties with luxury amenities and prime locations
+                </p>
             </div>
-            <div id="listingsContainer" class="listing-grid"></div>
-            <div id="map"></div>
-            <p id="map-error">Failed to load map. Please check your connection or try again later.</p>
+
+            <!-- Premium Control Panel -->
+            <div class="flex flex-col sm:flex-row gap-4 mb-10 justify-center">
+                <button onclick="displayListings()" class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 font-bold shadow-xl hover:shadow-2xl transform hover:-translate-y-2 flex items-center justify-center group">
+                    <svg class="w-5 h-5 mr-3 group-hover:rotate-180 transition-transform duration-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                    </svg>
+                    Refresh Premium Collection
+                </button>
+                <button onclick="refreshMapOnly()" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-4 rounded-2xl hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 font-bold shadow-xl hover:shadow-2xl transform hover:-translate-y-2 flex items-center justify-center group">
+                    <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                    </svg>
+                    Update Location Map
+                </button>
+            </div>
+
+            <!-- Listings Container -->
+            <div class="bg-white/40 backdrop-blur-sm rounded-3xl p-8 border border-white/60 shadow-xl mb-8">
+                <div id="mainListingsContainer" class="listing-grid"></div>
+            </div>
+
+            <!-- Premium Map Container -->
+            <div class="bg-white/40 backdrop-blur-sm rounded-3xl p-8 border border-white/60 shadow-xl">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                        🗺️ Interactive Location Map
+                    </h3>
+                    <div class="flex items-center space-x-2 text-sm text-gray-600">
+                        <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                        <span class="font-medium">Live Map Data</span>
+                    </div>
+                </div>
+                <div id="map" class="rounded-2xl overflow-hidden shadow-lg"></div>
+                <p id="map-error" class="text-center text-red-500 font-medium bg-red-50 rounded-2xl p-4 mt-4 hidden">
+                    🔍 Map temporarily unavailable. Please check your connection and try again.
+                </p>
+            </div>
         </section>
 
-        <!-- Modal for Listing Overview -->
+        <!-- Premium Modal for Listing Overview -->
         <div id="listingModal" class="modal">
             <div class="modal-content">
-                <span class="close-button">×</span>
-                <h2 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-4"></h2>
-                <img id="modalImage" src="" alt="Listing" class="listing-image mb-4">
-                <p id="modalPrice" class="text-xl font-bold text-blue-600 mb-2"></p>
-                <p id="modalLocation" class="text-gray-600 mb-2"></p>
-                <div id="modalDetails" class="text-gray-600 mb-4"></div>
-                <p id="modalDescription" class="text-gray-600 mb-4"></p>
-                <div id="modalMedia" class="modal-media flex flex-wrap mb-4"></div>
-                <a id="modalViewDetails" href="#" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg text-center w-full">View Details</a>
+                <!-- Premium Header -->
+                <div class="relative p-8 pb-6">
+                    <!-- Close Button -->
+                    <button class="close-button absolute top-6 right-6 w-12 h-12 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-white hover:shadow-lg transition-all duration-300 text-2xl font-light">×</button>
+                    
+                    <!-- Premium Badge -->
+                    <div class="inline-flex items-center bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg backdrop-blur-sm mb-4">
+                        ✨ PREMIUM LISTING
+                    </div>
+                    
+                    <!-- Title -->
+                    <h2 id="modalTitle" class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 mb-4 leading-tight"></h2>
+                    
+                    <!-- Price -->
+                    <div class="flex items-center space-x-4 mb-6">
+                        <p id="modalPrice" class="text-3xl font-bold text-emerald-600"></p>
+                        <div class="flex items-center space-x-2 bg-emerald-50 px-3 py-1 rounded-full">
+                            <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                            <span class="text-emerald-700 text-sm font-semibold">Available Now</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Location -->
+                    <p id="modalLocation" class="text-xl text-gray-600 mb-6 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span id="modalLocationText"></span>
+                    </p>
+                </div>
+
+                <!-- Main Content Grid -->
+                <div class="px-8 pb-8">
+                    <div class="grid lg:grid-cols-2 gap-8">
+                        <!-- Left Column - Media -->
+                        <div class="space-y-6">
+                            <!-- Main Image -->
+                            <div class="relative group">
+                                <img id="modalImage" src="" alt="Listing" class="w-full h-80 object-cover rounded-2xl shadow-xl group-hover:shadow-2xl transition-shadow duration-300">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            </div>
+                            
+                            <!-- Media Gallery -->
+                            <div id="modalMedia" class="grid grid-cols-3 gap-3"></div>
+                        </div>
+
+                        <!-- Right Column - Details -->
+                        <div class="space-y-6">
+                            <!-- Property Details -->
+                            <div class="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/40 shadow-lg">
+                                <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                                    <svg class="w-6 h-6 mr-3 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                                    </svg>
+                                    Property Details
+                                </h3>
+                                <div id="modalDetails" class="grid grid-cols-2 gap-4 text-gray-700"></div>
+                            </div>
+                            
+                            <!-- Description -->
+                            <div class="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/40 shadow-lg">
+                                <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                                    <svg class="w-6 h-6 mr-3 text-pink-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Description
+                                </h3>
+                                <p id="modalDescription" class="text-gray-600 leading-relaxed"></p>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="space-y-4">
+                                <a id="modalViewDetails" href="#" class="group w-full bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white px-8 py-4 rounded-2xl hover:from-purple-700 hover:via-pink-700 hover:to-indigo-700 transition-all duration-500 font-bold text-lg shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 flex items-center justify-center space-x-3">
+                                    <svg class="w-6 h-6 group-hover:scale-110 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span>View Full Details</span>
+                                    <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </a>
+                                
+                                <button class="w-full bg-white/80 backdrop-blur-sm border-2 border-purple-200 text-purple-700 px-8 py-4 rounded-2xl hover:bg-purple-50 hover:border-purple-300 transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl flex items-center justify-center space-x-3">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path>
+                                    </svg>
+                                    <span>Contact Owner</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Chat Modal -->
+        <!-- Modern Chat Modal -->
         <div id="chatModal" class="chat-modal">
-            <div class="chat-modal-content">
-                <div class="chat-header">
-                    <h2 id="chatTitle" class="text-xl font-bold text-gray-800">Chat</h2>
-                    <span class="close-button chat-close-button">×</span>
+            <div class="chat-modal-content feature-card">
+                <!-- Modern Chat Header -->
+                <div class="p-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-2xl">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 id="chatTitle" class="text-xl font-bold">Chat</h2>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                                    <span class="text-blue-100 text-sm font-medium">Online</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="close-button chat-close-button w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl flex items-center justify-center text-white transition-all duration-300 backdrop-blur-sm hover:scale-105">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-                <div id="chatMessages" class="chat-messages"></div>
-                <div class="chat-input-container">
-                    <textarea id="chatInput" class="chat-input" rows="2" placeholder="Type your message..."></textarea>
-                    <button id="chatSendBtn" class="chat-send-btn">Send</button>
+                
+                <!-- Chat Messages Area -->
+                <div id="chatMessages" class="flex-1 p-6 overflow-y-auto min-h-[300px] max-h-[400px] bg-gradient-to-br from-gray-50 to-blue-50">
+                    <!-- Messages will be populated here -->
+                </div>
+                
+                <!-- Modern Chat Input -->
+                <div class="p-6 bg-white border-t border-gray-100 rounded-b-2xl">
+                    <div class="flex space-x-4 items-end">
+                        <textarea id="chatInput" class="flex-1 p-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-300" rows="2" placeholder="Type your message..."></textarea>
+                        <button id="chatSendBtn" class="cta-button flex items-center justify-center min-w-[60px] h-12">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2269,25 +2688,51 @@
         </div>
     </footer>
 
-    <!-- Messaging Panel -->
-    <div id="messagingPanel" class="fixed bottom-4 right-4 z-50">
-        <!-- Message Toggle Button -->
-        <button id="messageToggleBtn" class="bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition flex items-center justify-center w-16 h-16 relative">
+    <!-- Modern Messaging Panel -->
+    <div id="messagingPanel" class="fixed bottom-6 right-6 z-50">
+        <!-- Modern Message Toggle Button -->
+        <button id="messageToggleBtn" class="relative bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full p-4 flex items-center justify-center w-16 h-16 group shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
             </svg>
-            <span id="messageNotificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center hidden">0</span>
+            <span id="messageNotificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center hidden shadow-lg border-2 border-white font-bold animate-pulse">0</span>
         </button>
         
-        <!-- Message Panel -->
-        <div id="messagePanel" class="hidden absolute bottom-20 right-0 w-80 bg-white rounded-lg shadow-xl border">
-            <div class="p-4 border-b bg-blue-600 text-white rounded-t-lg flex justify-between items-center">
-                <h3 class="font-semibold">Messages</h3>
-                <button id="forceHideNotifications" class="text-xs bg-red-600 hover:bg-red-700 px-2 py-1 rounded" title="Force hide notifications">🔥</button>
+        <!-- Modern Message Panel -->
+        <div id="messagePanel" class="hidden absolute bottom-20 right-0 w-80 feature-card overflow-hidden">
+            <!-- Modern Header -->
+            <div class="p-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg">Messages</h3>
+                            <p class="text-blue-100 text-sm font-medium">Property conversations</p>
+                        </div>
+                    </div>
+                    <button id="forceHideNotifications" class="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-xl transition-all duration-300 backdrop-blur-sm hover:scale-105" title="Mark all as read">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
-            <div id="conversationTabs" class="max-h-96 overflow-y-auto">
-                <div id="noConversations" class="p-4 text-gray-500 text-center">
-                    No conversations yet
+            
+            <!-- Conversations List -->
+            <div id="conversationTabs" class="max-h-80 overflow-y-auto p-4 space-y-3">
+                <div id="noConversations" class="text-center py-8">
+                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                    </div>
+                    <h4 class="font-medium text-gray-800 mb-2">No conversations yet</h4>
+                    <p class="text-gray-500 text-sm">Start chatting with property owners</p>
                 </div>
             </div>
         </div>
@@ -3077,9 +3522,14 @@
             let listings = await fetchListings();
             console.log('📋 Fetched listings:', listings);
             
-            const container = document.getElementById('listingsContainer');
+            // Get both containers
+            const premiumContainer = document.getElementById('premiumListingsContainer');
+            const mainContainer = document.getElementById('mainListingsContainer');
             const noListingsMessage = document.getElementById('noListingsMessage');
-            container.innerHTML = '';
+            
+            // Clear both containers
+            if (premiumContainer) premiumContainer.innerHTML = '';
+            if (mainContainer) mainContainer.innerHTML = '';
             
             // Hide no listings message initially
             if (noListingsMessage) {
@@ -3240,9 +3690,10 @@
                     .catch(err => console.error('Failed to fetch MIME type for', primaryImage, err));
 
                 const listingCard = document.createElement('div');
-                listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden';
+                listingCard.className = 'premium-listing-card bg-white rounded-3xl shadow-2xl overflow-hidden transform transition-all duration-500 hover:scale-105 hover:shadow-3xl border border-gray-100 hover:border-purple-200 group';
 
                 const hasOwner = !!listing.user_email;
+<<<<<<< Updated upstream
                 const isVerified = listing.users && listing.users.is_verified;
                 const verificationBadge = isVerified ? `
                     <div class="absolute top-2 right-2 bg-blue-600 rounded-full p-1 border-2 border-white shadow-lg" title="Verified Owner">
@@ -3262,6 +3713,59 @@
                 ` : '';
 
                 listingCard.innerHTML = `
+=======
+<<<<<<< HEAD
+                const bedroomText = listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} Bed${listing.bedrooms > 1 ? 's' : ''}`;
+                const priceFormatted = listing.price.toLocaleString();
+                
+                listingCard.innerHTML = `
+                    <!-- Premium Badge -->
+                    <div class="absolute top-4 left-4 z-10">
+                        <span class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm">
+                            ✨ PREMIUM
+                        </span>
+                    </div>
+                    
+                    <!-- Status Badge -->
+                    <div class="absolute top-4 right-4 z-10">
+                        <span class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg backdrop-blur-sm flex items-center">
+                            <div class="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
+                            AVAILABLE
+                        </span>
+                    </div>
+                    
+                    <!-- Image Container with Gradient Overlay -->
+                    <div class="relative overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 cursor-pointer" onclick="showListingModal(${JSON.stringify(listing).replace(/"/g, '&quot;')})">
+                        <img src="${primaryImage}" alt="${listing.title}" class="premium-listing-image w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110" onerror="this.src='https://via.placeholder.com/400x300/667eea/ffffff?text=Luxury+Property';">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        
+                        <!-- Quick Preview Indicator -->
+                        <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <svg class="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                            </svg>
+=======
+                const isVerified = listing.users && listing.users.is_verified;
+                const verificationBadge = isVerified ? `
+                    <div class="absolute top-2 right-2 bg-blue-600 rounded-full p-1 border-2 border-white shadow-lg" title="Verified Owner">
+                        <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                        </svg>
+                    </div>
+                ` : '';
+                
+                const verificationIndicator = isVerified ? `
+                    <div class="flex items-center space-x-1 text-xs text-blue-600 mt-1">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                        </svg>
+                        <span class="font-medium">Verified Owner</span>
+                    </div>
+                ` : '';
+
+                listingCard.innerHTML = `
+>>>>>>> Stashed changes
                     <div class="relative">
                         <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='https://via.placeholder.com/300x200?text=Image+Not+Available';">
                         ${verificationBadge}
@@ -3277,24 +3781,103 @@
                             <span>${listing.house_type}</span>
                             <span>•</span>
                             <span>${listing.utilities}</span>
+>>>>>>> d02dd91f36995fe212f958cf0ce0737a5dc701d7
                         </div>
-                        <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
-                        <div class="flex space-x-2 mt-4">
-                            <button class="view-details-btn w-1/2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                            <button class="chat-btn w-1/2 bg-green-600 text-white px-4 py-2 rounded-lg transition ${hasOwner ? 'hover:bg-green-700' : ''} font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
+                        
+                        <!-- Floating Price Tag -->
+                        <div class="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-2 shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                            <div class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                                $${priceFormatted}
+                            </div>
+                            <div class="text-xs text-gray-600 font-semibold">per month</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Card Content -->
+                    <div class="p-6 bg-gradient-to-b from-white to-gray-50/30">
+                        <!-- Title with Gradient -->
+                        <h3 class="text-xl font-bold text-gray-900 mb-3 line-clamp-1 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 transition-all duration-300">
+                            ${listing.title}
+                        </h3>
+                        
+                        <!-- Location with Icon -->
+                        <div class="flex items-center text-gray-600 mb-4">
+                            <svg class="w-4 h-4 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-sm font-medium">${listing.street}, ${listing.city}, ${listing.postalCode}</span>
+                        </div>
+                        
+                        <!-- Features with Premium Icons -->
+                        <div class="flex items-center justify-between mb-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-3">
+                            <div class="flex items-center space-x-4 text-sm">
+                                <div class="flex items-center text-purple-600 font-semibold">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                                    </svg>
+                                    ${bedroomText}
+                                </div>
+                                <div class="w-1 h-1 bg-purple-400 rounded-full"></div>
+                                <div class="flex items-center text-pink-600 font-semibold">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm3 5a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    ${listing.house_type}
+                                </div>
+                                <div class="w-1 h-1 bg-purple-400 rounded-full"></div>
+                                <div class="flex items-center text-indigo-600 font-semibold">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    ${listing.utilities}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Description -->
+                        <p class="text-gray-600 text-sm mb-6 line-clamp-2 leading-relaxed">
+                            ${listing.description || 'Discover luxury living in this exceptional property with premium amenities and stunning design.'}
+                        </p>
+                        
+                        <!-- Premium Action Buttons -->
+                        <div class="flex space-x-3">
+                            <button class="view-details-btn flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 font-bold text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center group" data-listing='${JSON.stringify(listing)}'>
+                                <svg class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                View Details
+                            </button>
+                            <button class="chat-btn flex-1 ${hasOwner ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-6 py-3 rounded-2xl transition-all duration-300 font-bold text-sm shadow-lg ${hasOwner ? 'hover:shadow-xl transform hover:-translate-y-1' : ''} flex items-center justify-center group" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>
+                                <svg class="w-4 h-4 mr-2 ${hasOwner ? 'group-hover:scale-110' : ''} transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path>
+                                </svg>
+                                ${hasOwner ? 'Start Chat' : 'Unavailable'}
+                            </button>
                         </div>
                     </div>
                 `;
-                container.appendChild(listingCard);
+                
+                // Add to both containers
+                if (premiumContainer) {
+                    const premiumCard = listingCard.cloneNode(true);
+                    premiumContainer.appendChild(premiumCard);
+                }
+                if (mainContainer) {
+                    const mainCard = listingCard.cloneNode(true);
+                    mainContainer.appendChild(mainCard);
+                }
             });
 
+            // Attach event listeners to all view-details buttons in both containers
             document.querySelectorAll('.view-details-btn').forEach(button => {
                 button.addEventListener('click', () => {
                     const listing = JSON.parse(button.dataset.listing);
-                    showListingModal(listing);
+                    window.location.href = `/listing_details?id=${listing.id}`;
                 });
             });
 
+            // Attach event listeners to all chat buttons in both containers
             document.querySelectorAll('.chat-btn').forEach(button => {
                 button.addEventListener('click', () => {
                     const listing = JSON.parse(button.dataset.listing);
@@ -3303,7 +3886,10 @@
             });
 
             // Show/hide no listings message based on container content
-            if (container.children.length === 0) {
+            const totalListings = (premiumContainer ? premiumContainer.children.length : 0) + 
+                                (mainContainer ? mainContainer.children.length : 0);
+            
+            if (totalListings === 0) {
                 console.log('No listings to display, showing no listings message');
                 if (noListingsMessage) {
                     noListingsMessage.classList.remove('hidden');
@@ -3328,26 +3914,65 @@
         function showListingModal(listing) {
             document.getElementById('modalTitle').textContent = listing.title;
             document.getElementById('modalPrice').textContent = `$${listing.price.toLocaleString()}/mo`;
-            document.getElementById('modalLocation').textContent = `${listing.street}, ${listing.city}, ${listing.postalCode}`;
+            document.getElementById('modalLocationText').textContent = `${listing.street}, ${listing.city}, ${listing.postalCode}`;
+            
+            // Property details with better formatting
+            const bedroomText = listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} Bedroom${listing.bedrooms > 1 ? 's' : ''}`;
             document.getElementById('modalDetails').innerHTML = `
-                <span>${listing.bedrooms} Bed</span> • <span>${listing.house_type}</span> • <span>${listing.utilities}</span>
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                    </svg>
+                    <span class="font-semibold">${listing.house_type}</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-pink-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                    </svg>
+                    <span class="font-semibold">${bedroomText}</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="font-semibold">${listing.utilities}</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="font-semibold">Verified Listing</span>
+                </div>
             `;
-            document.getElementById('modalDescription').textContent = listing.description || 'No description provided';
+            
+            document.getElementById('modalDescription').textContent = listing.description || 'No description provided for this premium property. Contact the owner for more details about this exceptional rental opportunity.';
             
             const modalImage = document.getElementById('modalImage');
             modalImage.src = listing.media && listing.media.length > 0 && listing.media[0].type.startsWith('image/')
                 ? listing.media[0].url
-                : 'https://via.placeholder.com/300x200?text=No+Image';
+                : 'https://via.placeholder.com/600x400/667eea/ffffff?text=Premium+Property';
             
             const modalMedia = document.getElementById('modalMedia');
-            modalMedia.innerHTML = listing.media && listing.media.length > 0
-                ? listing.media.map(file => 
+            if (listing.media && listing.media.length > 1) {
+                modalMedia.innerHTML = listing.media.slice(1, 7).map(file => 
                     file.type.startsWith('image/')
-                        ? `<img src="${file.url}" alt="${file.name}">`
-                        : `<video src="${file.url}" controls></video>`
-                ).join('')
-                : '';
-
+                        ? `<div class="relative group cursor-pointer">
+                            <img src="${file.url}" alt="${file.name}" class="w-full h-24 object-cover rounded-xl shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                           </div>`
+                        : `<div class="relative group cursor-pointer">
+                            <video src="${file.url}" class="w-full h-24 object-cover rounded-xl shadow-md group-hover:shadow-lg transition-shadow duration-300" muted></video>
+                            <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center">
+                                <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                           </div>`
+                ).join('');
+            } else {
+                modalMedia.innerHTML = '<p class="text-gray-500 text-center py-8 col-span-3">No additional media available</p>';
+            }
+            
             document.getElementById('modalViewDetails').href = `/listing_details?id=${listing.id}`;
             
             modal.style.display = 'block';
