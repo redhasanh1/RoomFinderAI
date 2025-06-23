@@ -23,9 +23,15 @@ class AINegotiator {
     }
 
     // Initialize the chat system
-    init(currentUser) {
+    async init(currentUser) {
         this.currentUser = currentUser;
-        this.setupAIUser();
+        
+        // Setup user profile for messaging
+        const setupSuccess = await this.setupAIUser();
+        if (!setupSuccess) {
+            this.appendMessage('AI', 'Warning: Messaging setup incomplete. Please register/login to send messages to landlords.', 'left');
+        }
+        
         this.appendMessage('AI', 'Hello! I\'m your AI Negotiator. Tell me what you\'re looking for (e.g., "I need a 2-bedroom apartment under $1500 in Toronto") and I\'ll find matching listings and negotiate with landlords for you automatically using market data!', 'left');
     }
 
@@ -226,63 +232,59 @@ class AINegotiator {
     async findMatchingListings() {
         console.log('🔍 Starting search with criteria:', this.userNeeds);
         
-        let query = this.supabase.from('listings').select('id, title, price, house_type, bedrooms, utilities, description, user_email, city');
+        console.log('🔍 Building search query step by step...');
+        
+        // Start with base query
+        let query = this.supabase
+            .from('listings')
+            .select('id, title, price, house_type, bedrooms, utilities, description, user_email, city, street');
+        
         let appliedFilters = [];
         let hasSpecificCriteria = false;
         
-        // Exclude user's own listings
+        // Step 1: Exclude user's own listings
         if (this.currentUser?.email) {
             query = query.neq('user_email', this.currentUser.email);
+            console.log('✅ Step 1: Excluded own listings');
         }
         
-        // Price filter - include listings AT the max price
+        // Step 2: Apply price filter
         if (this.userNeeds.maxPrice) {
             query = query.lte('price', this.userNeeds.maxPrice);
-            appliedFilters.push(`price up to $${this.userNeeds.maxPrice} (inclusive)`);
+            appliedFilters.push(`price ≤ $${this.userNeeds.maxPrice}`);
             hasSpecificCriteria = true;
+            console.log(`✅ Step 2: Price filter applied - price <= ${this.userNeeds.maxPrice}`);
         }
         
-        // Location filter - STRICT (search in title, description, AND city)
-        if (this.userNeeds.preferredLocation) {
-            console.log(`🔍 STRICT search for location "${this.userNeeds.preferredLocation}" in title, description, and city`);
-            const location = this.userNeeds.preferredLocation.trim();
-            
-            // First try exact city match, then fallback to any field containing the location
-            // Also search for country codes (since cities in DB may be like "france" instead of "paris")
-            let locationQuery;
-            if (location === 'paris') {
-                locationQuery = `city.ilike.%france%,city.ilike.%paris%,title.ilike.%${location}%,description.ilike.%${location}%`;
-            } else if (location === 'tehran') {
-                locationQuery = `city.ilike.%iran%,city.ilike.%tehran%,title.ilike.%${location}%,description.ilike.%${location}%`;
-            } else if (location === 'moscow') {
-                locationQuery = `city.ilike.%russia%,city.ilike.%moscow%,title.ilike.%${location}%,description.ilike.%${location}%`;
-            } else if (location === 'toronto') {
-                locationQuery = `city.ilike.%canada%,city.ilike.%toronto%,title.ilike.%${location}%,description.ilike.%${location}%`;
-            } else {
-                locationQuery = `city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%`;
-            }
-            
-            query = query.or(locationQuery);
-            appliedFilters.push(`location: ${location} (searching city/title/description)`);
-            hasSpecificCriteria = true;
-            
-            console.log(`📍 Location filter applied: ${locationQuery}`);
-        } else {
-            console.log('❌ NO LOCATION EXTRACTED - searching all locations');
-        }
-        
-        // House type filter
+        // Step 3: Apply house type filter
         if (this.userNeeds.houseType) {
-            query = query.eq('house_type', this.userNeeds.houseType);
-            appliedFilters.push(`house type: ${this.userNeeds.houseType}`);
+            if (this.userNeeds.houseType === 'House') {
+                query = query.in('house_type', ['House', 'Townhouse']);
+                appliedFilters.push(`house type: ${this.userNeeds.houseType} (including Townhouse)`);
+                console.log('✅ Step 3: House type filter applied - House OR Townhouse');
+            } else {
+                query = query.eq('house_type', this.userNeeds.houseType);
+                appliedFilters.push(`house type: ${this.userNeeds.houseType}`);
+                console.log(`✅ Step 3: House type filter applied - ${this.userNeeds.houseType}`);
+            }
             hasSpecificCriteria = true;
         }
         
-        // Bedroom filter
+        // Step 4: Apply location filter
+        if (this.userNeeds.preferredLocation) {
+            const location = this.userNeeds.preferredLocation.trim();
+            query = query.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%`);
+            appliedFilters.push(`location contains: ${location}`);
+            hasSpecificCriteria = true;
+            console.log(`✅ Step 4: Location filter applied - searching for "${location}" in city/title/description/street`);
+        }
+        
+        // Step 5: Apply bedroom filter
         if (this.userNeeds.bedrooms) {
             query = query.eq('bedrooms', this.userNeeds.bedrooms);
             appliedFilters.push(`bedrooms: ${this.userNeeds.bedrooms}`);
             hasSpecificCriteria = true;
+            console.log(`✅ Step 5: Bedroom filter applied - ${this.userNeeds.bedrooms} bedrooms`);
         }
         
         if (!hasSpecificCriteria) {
@@ -292,7 +294,38 @@ class AINegotiator {
         console.log('🔍 Applied filters:', appliedFilters.join(', '));
         console.log('🔎 User needs for debugging:', this.userNeeds);
         
-        const { data: listings, error } = await query.order('created_at', { ascending: false }).limit(20);
+        // Try a simpler approach that matches our working test query
+        console.log('🚀 Executing final query...');
+        
+        let finalQuery = this.supabase
+            .from('listings')
+            .select('id, title, price, house_type, bedrooms, utilities, description, user_email, city, street');
+            
+        // Apply filters one by one like the working test
+        if (this.currentUser?.email) {
+            finalQuery = finalQuery.neq('user_email', this.currentUser.email);
+        }
+        
+        if (this.userNeeds.maxPrice) {
+            finalQuery = finalQuery.lte('price', this.userNeeds.maxPrice);
+        }
+        
+        if (this.userNeeds.houseType === 'House') {
+            finalQuery = finalQuery.in('house_type', ['House', 'Townhouse']);
+        } else if (this.userNeeds.houseType) {
+            finalQuery = finalQuery.eq('house_type', this.userNeeds.houseType);
+        }
+        
+        if (this.userNeeds.preferredLocation) {
+            const location = this.userNeeds.preferredLocation.trim();
+            finalQuery = finalQuery.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%`);
+        }
+        
+        if (this.userNeeds.bedrooms) {
+            finalQuery = finalQuery.eq('bedrooms', this.userNeeds.bedrooms);
+        }
+        
+        const { data: listings, error } = await finalQuery.order('created_at', { ascending: false }).limit(20);
         
         if (error) {
             throw new Error(`Database query failed: ${error.message}`);
@@ -309,16 +342,67 @@ class AINegotiator {
         } else {
             console.log('❌ No listings found with current filters');
             
-            // Let's also check what's actually in the database
+            // Let's check what's actually in the database with detailed info
             const { data: allListings } = await this.supabase
                 .from('listings')
-                .select('title, city, price, house_type')
+                .select('title, city, price, house_type, id, street, postalCode')
+                .limit(20);
+            
+            console.log('🗃️ ALL listings in database:');
+            allListings?.forEach((listing, i) => {
+                console.log(`  ${i+1}. "${listing.title}" - City: "${listing.city || 'NO CITY'}" - $${listing.price} - ${listing.house_type} - Address: "${listing.street || 'NO STREET'}" - Postal: "${listing.postalCode || 'NO POSTAL'}"`);
+            });
+            
+            // Test: Search for all houses under $1500 (no location filter)
+            console.log('\n🔍 Testing: All houses under $1500 (no location filter)');
+            const { data: houseTest } = await this.supabase
+                .from('listings')
+                .select('title, city, price, house_type, street')
+                .in('house_type', ['House', 'Townhouse'])
+                .lte('price', 1500)
                 .limit(10);
             
-            console.log('🗃️ Sample of ALL listings in database:');
-            allListings?.forEach((listing, i) => {
-                console.log(`  ${i+1}. "${listing.title}" - City: "${listing.city || 'NO CITY'}" - $${listing.price} - ${listing.house_type}`);
+            console.log(`Found ${houseTest?.length || 0} houses under $1500:`);
+            houseTest?.forEach(listing => {
+                console.log(`  - "${listing.title}" in "${listing.city}" - $${listing.price} (${listing.house_type}) - Street: "${listing.street}"`);
             });
+            
+            // Test the exact query that should find Calgary house
+            console.log('\n🔍 Testing exact Calgary query that should work:');
+            const { data: calgaryExactTest, error: calgaryError } = await this.supabase
+                .from('listings')
+                .select('title, city, price, house_type, street')
+                .lte('price', 1500)
+                .in('house_type', ['House', 'Townhouse'])
+                .or(`city.ilike.%calgary%,title.ilike.%calgary%,description.ilike.%calgary%,street.ilike.%calgary%`)
+                .limit(10);
+            
+            if (calgaryError) {
+                console.log(`❌ Calgary test query error: ${calgaryError.message}`);
+            } else {
+                console.log(`✅ Calgary test found ${calgaryExactTest?.length || 0} results:`);
+                calgaryExactTest?.forEach(listing => {
+                    console.log(`  - "${listing.title}" in "${listing.city}" - $${listing.price} (${listing.house_type})`);
+                });
+            }
+            
+            // Specifically look for Calgary-related listings
+            console.log('🔍 Looking specifically for Calgary-related listings...');
+            const calgaryListings = allListings?.filter(listing => 
+                listing.title?.toLowerCase().includes('calgary') ||
+                listing.city?.toLowerCase().includes('calgary') ||
+                listing.street?.toLowerCase().includes('calgary') ||
+                listing.postalCode?.toLowerCase().includes('calgary')
+            );
+            
+            if (calgaryListings && calgaryListings.length > 0) {
+                console.log('🏠 Found Calgary-related listings:');
+                calgaryListings.forEach(listing => {
+                    console.log(`  - "${listing.title}" in "${listing.city}" at $${listing.price} (${listing.house_type})`);
+                });
+            } else {
+                console.log('❌ No Calgary listings found in database');
+            }
         }
         
         return listings || [];
@@ -329,6 +413,7 @@ class AINegotiator {
         console.log('🧪 TESTING SEARCH FOR KNOWN LISTINGS');
         
         const testCases = [
+            { message: "I want a house in Calgary under $1500", expectedCity: "calgary", expectedPrice: 1500, expectedType: "House" },
             { message: "I want a house in Paris under $1300", expectedCity: "paris", expectedPrice: 1300, expectedType: "House" },
             { message: "I need a condo in Moscow under $1000", expectedCity: "moscow", expectedPrice: 1000, expectedType: "Condo" },
             { message: "Looking for a house in Tehran under $1200", expectedCity: "tehran", expectedPrice: 1200, expectedType: "House" },
@@ -352,6 +437,50 @@ class AINegotiator {
             
             // Reset for next test
             this.userNeeds = { maxPrice: null, minPrice: null, preferredLocation: null, houseType: null, bedrooms: null, utilities: null };
+        }
+    }
+    
+    // Debug function to manually check Calgary
+    async debugCalgarySearch() {
+        console.log('🔍 DEBUGGING CALGARY SEARCH SPECIFICALLY');
+        
+        // First, let's see all listings
+        const { data: allListings } = await this.supabase
+            .from('listings')
+            .select('*')
+            .limit(20);
+        
+        console.log('📊 All listings in database:');
+        allListings?.forEach((listing, i) => {
+            console.log(`${i+1}. "${listing.title}" - City: "${listing.city}" - $${listing.price} - ${listing.house_type} - Street: "${listing.street}"`);
+        });
+        
+        // Now test different Calgary searches
+        const calgaryTests = [
+            `city.ilike.%calgary%`,
+            `title.ilike.%calgary%`, 
+            `street.ilike.%calgary%`,
+            `description.ilike.%calgary%`,
+            `house_type = 'Townhouse'`,
+            `price <= 1500`
+        ];
+        
+        for (const testQuery of calgaryTests) {
+            console.log(`\n🔍 Testing query: ${testQuery}`);
+            try {
+                const { data: results } = await this.supabase
+                    .from('listings')
+                    .select('title, city, price, house_type, street')
+                    .or(testQuery)
+                    .limit(10);
+                
+                console.log(`Found ${results?.length || 0} results`);
+                results?.forEach(listing => {
+                    console.log(`  - "${listing.title}" in "${listing.city}" - $${listing.price} (${listing.house_type})`);
+                });
+            } catch (error) {
+                console.log(`Error: ${error.message}`);
+            }
         }
     }
 
@@ -380,10 +509,22 @@ class AINegotiator {
             }
             
             // Filter valid listings and message owners
-            const validListings = this.matchingListings.filter(listing => listing.user_email && listing.id);
+            const validListings = this.matchingListings.filter(listing => {
+                if (!listing.user_email || !listing.id) {
+                    console.log(`⚠️ Skipping listing "${listing.title}" - missing email or ID`);
+                    return false;
+                }
+                if (listing.user_email === this.currentUser?.email) {
+                    console.log(`⚠️ Skipping listing "${listing.title}" - user's own listing`);
+                    return false;
+                }
+                return true;
+            });
+            
+            console.log(`📧 Found ${validListings.length} valid listings for messaging out of ${this.matchingListings.length} total`);
             
             if (validListings.length === 0) {
-                this.appendMessage('AI', 'Found listings, but none have valid owner emails for messaging.', 'left');
+                this.appendMessage('AI', 'Found listings, but none have valid owner emails for messaging (or they are your own listings).', 'left');
                 this.negotiationState = 'idle';
                 return;
             }
@@ -447,7 +588,12 @@ class AINegotiator {
                 hasValidFilters = true;
             }
             if (this.userNeeds.houseType) {
-                query = query.eq('house_type', this.userNeeds.houseType);
+                if (this.userNeeds.houseType === 'House') {
+                    // When user wants "House", also include "Townhouse" as they're similar
+                    query = query.in('house_type', ['House', 'Townhouse']);
+                } else {
+                    query = query.eq('house_type', this.userNeeds.houseType);
+                }
                 hasValidFilters = true;
             }
         }
@@ -549,22 +695,38 @@ class AINegotiator {
     // Fallback basic message
     async sendBasicMessage(listing) {
         try {
+            console.log('📧 Sending basic message for listing:', listing.title);
+            
             const conversation = await this.getOrCreateConversation(listing);
-            if (!conversation) return false;
+            if (!conversation) {
+                console.error('❌ Failed to get/create conversation');
+                return false;
+            }
 
             const basicMessage = `Hi! I'm interested in your ${listing.house_type || 'property'} "${listing.title}". ${this.userNeeds.maxPrice ? `My budget is around $${this.userNeeds.maxPrice}.` : ''} I'm a qualified tenant ready to move quickly. Are you open to discussing the terms?`;
 
-            const { error } = await this.supabase
+            console.log('💬 Message content:', basicMessage);
+            console.log('📧 Sending to conversation:', conversation.id);
+
+            const { data, error } = await this.supabase
                 .from('messages')
                 .insert({
                     conversation_id: conversation.id,
                     sender_email: this.currentUser.email,
-                    content: basicMessage
-                });
+                    content: basicMessage,
+                    created_at: new Date().toISOString()
+                })
+                .select();
 
-            return !error;
+            if (error) {
+                console.error('❌ Error inserting message:', error);
+                return false;
+            }
+
+            console.log('✅ Message sent successfully:', data[0]?.id);
+            return true;
         } catch (error) {
-            console.error('Basic message send error:', error);
+            console.error('❌ Basic message send error:', error);
             return false;
         }
     }
@@ -572,46 +734,101 @@ class AINegotiator {
     // Get or create conversation
     async getOrCreateConversation(listing) {
         try {
+            console.log('🔍 Looking for existing conversation for listing:', listing.id, 'user:', this.currentUser.email, 'owner:', listing.user_email);
+            
             // Check if conversation already exists
-            const { data: existingConv } = await this.supabase
+            const { data: existingConv, error: searchError } = await this.supabase
                 .from('conversations')
                 .select('*')
                 .eq('listing_id', listing.id)
-                .eq('user_email', this.currentUser.email)
+                .eq('sender_email', this.currentUser.email)
+                .eq('receiver_email', listing.user_email)
                 .single();
 
+            if (searchError && searchError.code !== 'PGRST116') {
+                console.error('Error searching for conversation:', searchError);
+            }
+
             if (existingConv) {
+                console.log('✅ Found existing conversation:', existingConv.id);
                 return existingConv;
             }
 
-            // Create new conversation
+            console.log('📝 Creating new conversation...');
+            
+            // Create new conversation with correct schema
             const { data: newConv, error } = await this.supabase
                 .from('conversations')
                 .insert({
                     listing_id: listing.id,
-                    user_email: this.currentUser.email,
-                    landlord_email: listing.user_email,
-                    sender_email: this.currentUser.email
+                    sender_email: this.currentUser.email,
+                    receiver_email: listing.user_email,
+                    created_at: new Date().toISOString()
                 })
                 .select()
                 .single();
 
             if (error) {
-                console.error('Error creating conversation:', error);
+                console.error('❌ Error creating conversation:', error);
                 return null;
             }
 
+            console.log('✅ Created new conversation:', newConv.id);
             return newConv;
         } catch (error) {
-            console.error('Error in getOrCreateConversation:', error);
+            console.error('❌ Error in getOrCreateConversation:', error);
             return null;
         }
     }
 
-    // Setup AI user account
+    // Setup AI user account - ensure current user exists in profiles
     async setupAIUser() {
-        // Implementation would go here
-        console.log('AI user setup...');
+        if (!this.currentUser?.email) {
+            console.error('❌ No current user found for AI setup');
+            return false;
+        }
+
+        try {
+            // Check if user exists in profiles table
+            const { data: existingProfile, error: profileError } = await this.supabase
+                .from('profiles')
+                .select('email')
+                .eq('email', this.currentUser.email)
+                .single();
+
+            if (profileError && profileError.code !== 'PGRST116') {
+                console.error('❌ Error checking user profile:', profileError);
+                return false;
+            }
+
+            if (!existingProfile) {
+                console.log('📝 Creating user profile for messaging...');
+                
+                // Create profile for current user
+                const { error: createError } = await this.supabase
+                    .from('profiles')
+                    .insert({
+                        email: this.currentUser.email,
+                        first_name: this.currentUser.firstName || 'User',
+                        last_name: this.currentUser.lastName || '',
+                        created_at: new Date().toISOString()
+                    });
+
+                if (createError) {
+                    console.error('❌ Error creating user profile:', createError);
+                    return false;
+                }
+
+                console.log('✅ User profile created successfully');
+            } else {
+                console.log('✅ User profile already exists');
+            }
+
+            return true;
+        } catch (error) {
+            console.error('❌ Error in setupAIUser:', error);
+            return false;
+        }
     }
 
     // Process user message
