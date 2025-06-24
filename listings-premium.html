@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomFinderAI - Premium Property Discovery Platform</title>
+    
+    <!-- Polyfills and Core Libraries -->
+    <script src="safari-polyfill.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    
+    <!-- Configuration -->
+    <script src="config.js"></script>
+    <script>
+        // Load API keys from config and make them globally available
+        const SUPABASE_URL = (window.config && window.config.SUPABASE_URL) || (config && config.SUPABASE_URL);
+        const SUPABASE_ANON_KEY = (window.config && window.config.SUPABASE_ANON_KEY) || (config && config.SUPABASE_ANON_KEY);
+        
+        // Debug config loading
+        console.log('Premium Listings config loaded:', {
+            hasSupabaseURL: !!SUPABASE_URL,
+            hasSupabaseKey: !!SUPABASE_ANON_KEY,
+            browser: navigator.userAgent.includes('Safari') ? 'Safari' : 'Other'
+        });
+        
+        // Safari compatibility check
+        var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        if (isSafari) {
+            console.log('Safari browser detected - using compatibility mode');
+            window.SAFARI_MODE = true;
+        } else {
+            window.SAFARI_MODE = false;
+        }
+        
+        // Make config available globally
+        window.SUPABASE_URL = SUPABASE_URL;
+        window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+    </script>
+    
+    <!-- Utility Scripts -->
+    <script src="listings-utils.js"></script>
+    <script src="listings-chat.js"></script>
+    
+    <!-- Map Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    
+    <!-- Custom Stylesheets -->
+    <link rel="stylesheet" href="listings.css">
+    <link rel="stylesheet" href="css/listings-enhanced.css">
+    <link rel="stylesheet" href="css/map-and-modals.css">
+    <link rel="stylesheet" href="css/form-components.css">
+    <link rel="stylesheet" href="css/premium-listings.css">
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+    <!-- Premium Header -->
+    <header class="fixed top-0 w-full z-50 modern-header shadow-lg">
+        <nav class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-8">
+                <div class="text-2xl font-bold gradient-text">🏆 RoomFinderAI</div>
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
+                    <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
+                    <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
+                    <a href="/ai-negotiator" class="text-gray-700 hover:text-blue-600 transition font-medium">AI Negotiator</a>
+                    <a href="/listings" class="text-blue-600 font-semibold border-b-2 border-blue-600">Listings</a>
+                    <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition font-medium">Pricing</a>
+                </div>
+            </div>
+            <div id="authSection" class="flex items-center space-x-4">
+                <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Grand Hero Section -->
+    <section class="premium-hero text-white relative z-10">
+        <!-- Floating Elements -->
+        <div class="floating-element">
+            <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="floating-element">
+            <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="floating-element">
+            <div class="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+            </div>
+        </div>
+        
+        <!-- Sparkle Effects -->
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+            <div class="grid lg:grid-cols-2 gap-12 items-center py-20 mt-16">
+                <div class="hero-content" style="animation: slideInFromLeft 1s ease-out;">
+                    <div class="inline-flex items-center bg-white/20 backdrop-blur-sm rounded-full px-6 py-3 mb-8">
+                        <span class="text-white font-semibold text-sm mr-2">🚀 NEXT-GEN PROPERTY DISCOVERY</span>
+                        <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    </div>
+                    
+                    <h1 class="text-6xl sm:text-7xl lg:text-8xl font-extrabold mb-8 leading-tight">
+                        <span class="block">AI-Powered</span>
+                        <span class="block text-white">Luxury Living</span>
+                        <span class="block text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-purple-200">Discovery</span>
+                    </h1>
+                    
+                    <p class="text-xl sm:text-2xl mb-8 text-gray-100 leading-relaxed max-w-2xl">
+                        Experience the future of property search with our revolutionary AI platform. Discover premium rentals, negotiate smart deals, and find your perfect home with intelligent matching technology.
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-6 mb-12">
+                        <button onclick="document.getElementById('advancedSearch').scrollIntoView({behavior: 'smooth'})" class="cta-button text-lg px-8 py-4 rounded-full font-bold">
+                            🔍 Start AI Search
+                        </button>
+                        <button onclick="document.getElementById('aiFeatures').scrollIntoView({behavior: 'smooth'})" class="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-8 py-4 rounded-full font-semibold hover:bg-white/30 transition-all duration-300">
+                            ✨ Explore AI Features
+                        </button>
+                    </div>
+                    
+                    <!-- Real-time Stats -->
+                    <div class="grid grid-cols-3 gap-8 mt-16">
+                        <div class="text-center">
+                            <div class="stat-counter text-white mb-2" data-target="25000">0</div>
+                            <div class="text-sm text-gray-200">Premium Properties</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="stat-counter text-white mb-2" data-target="99">0</div>
+                            <div class="text-sm text-gray-200">AI Match Rate %</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="stat-counter text-white mb-2" data-target="24">0</div>
+                            <div class="text-sm text-gray-200">Hours Support</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Interactive Demo/Preview -->
+                <div class="relative" style="animation: slideInFromRight 1s ease-out;">
+                    <div class="premium-glass-card p-8 float-animation">
+                        <div class="text-center">
+                            <div class="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                                <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                <div class="absolute inset-0 rounded-full animate-pulse" style="box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);"></div>
+                            </div>
+                            <h3 class="text-3xl font-bold mb-6">Intelligent Property Matching</h3>
+                            <p class="text-gray-100 text-lg leading-relaxed">
+                                Our advanced AI analyzes your preferences, lifestyle, and budget to match you with perfect properties in real-time. Experience the future of property discovery.
+                            </p>
+                            
+                            <!-- Mini Demo Interface -->
+                            <div class="mt-8 bg-white/10 rounded-2xl p-4">
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                                    <span class="text-sm text-gray-200">AI Analyzing Preferences...</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="bg-white/20 rounded-lg h-3 animate-pulse"></div>
+                                    <div class="bg-white/20 rounded-lg h-3 w-3/4 animate-pulse"></div>
+                                    <div class="bg-white/20 rounded-lg h-3 w-1/2 animate-pulse"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Advanced AI Search Section -->
+    <section id="advancedSearch" class="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <div class="inline-flex items-center bg-blue-600 text-white rounded-full px-6 py-3 mb-8">
+                    <span class="font-semibold text-sm mr-2">🤖 AI-POWERED SEARCH</span>
+                    <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                </div>
+                
+                <h2 class="text-5xl sm:text-6xl font-bold text-gray-900 mb-8 leading-tight">
+                    <span class="gradient-text">Intelligent</span> Property Discovery
+                </h2>
+                
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Experience next-generation property search with AI-powered filters, smart recommendations, and predictive insights
+                </p>
+            </div>
+            
+            <div class="advanced-search relative z-10">
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <!-- AI Search Input -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <div>
+                            <label class="block text-lg font-bold text-gray-900 mb-4">🎯 Tell our AI what you're looking for</label>
+                            <div class="relative">
+                                <textarea 
+                                    id="aiSearchInput" 
+                                    class="premium-filter w-full h-24 resize-none text-lg" 
+                                    placeholder="E.g., 'I need a modern 2-bedroom apartment near downtown Toronto with a gym, under $2000, pet-friendly, with parking...'"
+                                ></textarea>
+                                <button class="absolute bottom-4 right-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full font-semibold hover:shadow-lg transition-all">
+                                    🚀 AI Search
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Smart Filters Grid -->
+                        <div class="grid md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">💰 Budget Range</label>
+                                <select class="premium-filter w-full">
+                                    <option>AI Recommend</option>
+                                    <option>Under $1,000</option>
+                                    <option>$1,000 - $1,500</option>
+                                    <option>$1,500 - $2,500</option>
+                                    <option>$2,500+</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">🏠 Property Type</label>
+                                <select class="premium-filter w-full">
+                                    <option>All Types</option>
+                                    <option>Luxury Apartment</option>
+                                    <option>Modern Condo</option>
+                                    <option>Executive House</option>
+                                    <option>Designer Studio</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">📍 Location</label>
+                                <select class="premium-filter w-full">
+                                    <option>AI Auto-detect</option>
+                                    <option>Downtown Core</option>
+                                    <option>Business District</option>
+                                    <option>Waterfront</option>
+                                    <option>Suburbs</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">✨ Lifestyle</label>
+                                <select class="premium-filter w-full">
+                                    <option>Luxury Living</option>
+                                    <option>Professional</option>
+                                    <option>Student-Friendly</option>
+                                    <option>Family-Oriented</option>
+                                    <option>Pet-Friendly</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- AI Suggestions -->
+                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6">
+                            <h4 class="text-lg font-bold text-gray-900 mb-4">🧠 AI Suggestions Based on Your Profile</h4>
+                            <div class="flex flex-wrap gap-3">
+                                <span class="bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium cursor-pointer hover:bg-blue-200 transition">Gym Access</span>
+                                <span class="bg-purple-100 text-purple-800 px-4 py-2 rounded-full text-sm font-medium cursor-pointer hover:bg-purple-200 transition">Rooftop Terrace</span>
+                                <span class="bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-medium cursor-pointer hover:bg-green-200 transition">Transit Access</span>
+                                <span class="bg-orange-100 text-orange-800 px-4 py-2 rounded-full text-sm font-medium cursor-pointer hover:bg-orange-200 transition">Concierge</span>
+                                <span class="bg-pink-100 text-pink-800 px-4 py-2 rounded-full text-sm font-medium cursor-pointer hover:bg-pink-200 transition">In-Unit Laundry</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- AI Features Panel -->
+                    <div class="space-y-6">
+                        <div class="ai-feature">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="text-xl font-bold">Smart Match</h4>
+                            </div>
+                            <p class="text-white/90">AI analyzes 200+ factors to find your perfect property match</p>
+                        </div>
+                        
+                        <div class="ai-feature">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="text-xl font-bold">Price Prediction</h4>
+                            </div>
+                            <p class="text-white/90">Real-time market analysis and price forecasting</p>
+                        </div>
+                        
+                        <div class="ai-feature">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="text-xl font-bold">Neighborhood Intel</h4>
+                            </div>
+                            <p class="text-white/90">AI-powered insights about safety, amenities, and lifestyle</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Premium Interactive Map Section -->
+    <section class="py-24 bg-white">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl sm:text-6xl font-bold text-gray-900 mb-8">
+                    <span class="gradient-text">Interactive</span> Property Map
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Explore properties with our advanced interactive map featuring real-time data, neighborhood insights, and AR visualization
+                </p>
+            </div>
+            
+            <div class="premium-map-container">
+                <div class="grid lg:grid-cols-4 gap-8">
+                    <!-- Enhanced Map Controls -->
+                    <div class="lg:col-span-1">
+                        <div class="map-controls-panel space-y-6">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-4">🎮 Map Controls</h3>
+                                <div class="space-y-3">
+                                    <button onclick="window.appController && window.appController.listingsManager.displayListings()" class="map-control-button w-full">
+                                        🔄 Refresh Properties
+                                    </button>
+                                    <button onclick="window.appController && window.appController.mapManager.centerMapOnUser()" class="map-control-button w-full">
+                                        📍 My Location
+                                    </button>
+                                    <button class="map-control-button w-full">
+                                        🛰️ Satellite View
+                                    </button>
+                                    <button class="map-control-button w-full">
+                                        🏙️ 3D Buildings
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Real-time Filters -->
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">⚡ Live Filters</h4>
+                                <div class="space-y-3">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="mr-3 text-blue-600 focus:ring-blue-500 rounded" checked>
+                                        <span class="text-sm">🆕 New Today</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="mr-3 text-blue-600 focus:ring-blue-500 rounded" checked>
+                                        <span class="text-sm">✅ Verified Only</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="mr-3 text-blue-600 focus:ring-blue-500 rounded">
+                                        <span class="text-sm">🚀 Luxury Properties</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="mr-3 text-blue-600 focus:ring-blue-500 rounded">
+                                        <span class="text-sm">🏃 Virtual Tours</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Live Market Stats -->
+                            <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4">
+                                <h4 class="font-semibold text-blue-900 mb-3">📊 Live Market Intel</h4>
+                                <div class="space-y-3 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-blue-700">Properties in View</span>
+                                        <span class="text-blue-600 font-bold" id="mapPropertyCount">0</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-blue-700">Avg. Price</span>
+                                        <span class="text-green-600 font-bold">$2,247</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-blue-700">Price Trend</span>
+                                        <span class="text-green-600 font-bold">↗ +3.2%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-blue-700">Demand Level</span>
+                                        <span class="text-orange-600 font-bold">🔥 High</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Enhanced Map Display -->
+                    <div class="lg:col-span-3">
+                        <div class="relative">
+                            <div id="map" class="w-full h-96 lg:h-[700px] rounded-2xl border-2 border-gray-200 shadow-2xl"></div>
+                            <p id="map-error" class="hidden text-red-600 text-center p-8">Failed to load map. Please check your connection or try again later.</p>
+                            
+                            <!-- Enhanced Map Legend -->
+                            <div class="absolute top-6 left-6 bg-white/95 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-gray-200">
+                                <h5 class="font-bold text-gray-900 mb-4 text-sm">🗺️ Property Legend</h5>
+                                <div class="space-y-3 text-xs">
+                                    <div class="flex items-center">
+                                        <div class="w-4 h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full mr-3 shadow-sm"></div>
+                                        <span>🏢 Luxury Apartments</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-4 h-4 bg-gradient-to-r from-green-500 to-green-600 rounded-full mr-3 shadow-sm"></div>
+                                        <span>🏡 Premium Houses</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-4 h-4 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full mr-3 shadow-sm"></div>
+                                        <span>🏗️ Modern Condos</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-4 h-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full mr-3 shadow-sm"></div>
+                                        <span>🌟 Designer Studios</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Map Tools -->
+                            <div class="absolute top-6 right-6 flex flex-col space-y-3">
+                                <button class="bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-gray-200 hover:bg-gray-50 transition">
+                                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </button>
+                                <button class="bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-gray-200 hover:bg-gray-50 transition">
+                                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                    </svg>
+                                </button>
+                                <button class="bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-gray-200 hover:bg-gray-50 transition">
+                                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Premium Property Showcase -->
+    <section class="py-24 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 relative overflow-hidden">
+        <!-- Animated Background -->
+        <div class="absolute inset-0 opacity-30">
+            <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,<svg width=60 height=60 viewBox=0 0 60 60 xmlns=http://www.w3.org/2000/svg><g fill=none fill-rule=evenodd><g fill=%23667eea fill-opacity=0.4><circle cx=30 cy=30 r=2/></g></g></svg>');"></div>
+        </div>
+        
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <!-- Grand Header -->
+            <div class="text-center mb-20">
+                <div class="inline-flex items-center bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full px-8 py-4 mb-8 shadow-xl">
+                    <span class="font-bold text-lg mr-3">🏆 PREMIUM COLLECTION</span>
+                    <div class="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                </div>
+                
+                <h2 class="text-6xl sm:text-8xl font-bold text-gray-900 mb-8 leading-tight">
+                    <span class="gradient-text">Luxury</span>
+                    <br class="sm:hidden">
+                    <span class="text-gray-900">Properties</span>
+                </h2>
+                
+                <div class="max-w-4xl mx-auto mb-12">
+                    <p class="text-2xl sm:text-3xl text-gray-600 leading-relaxed mb-8">
+                        Discover our hand-picked collection of extraordinary properties
+                    </p>
+                    <p class="text-lg text-gray-500">
+                        Each property is verified, professionally photographed, and comes with our luxury guarantee
+                    </p>
+                </div>
+                
+                <!-- Live Stats Dashboard -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-4xl mx-auto">
+                    <div class="stat-card">
+                        <div class="stat-counter mb-2" data-target="847">0</div>
+                        <div class="text-sm text-gray-600 font-semibold">Luxury Listings</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-counter mb-2" data-target="99">0</div>
+                        <div class="text-sm text-gray-600 font-semibold">Satisfaction %</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-counter mb-2" data-target="12">0</div>
+                        <div class="text-sm text-gray-600 font-semibold">Hour Response</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-counter mb-2" data-target="5">0</div>
+                        <div class="text-sm text-gray-600 font-semibold">Star Rating ⭐</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Advanced Filters Dashboard -->
+            <div class="mb-16">
+                <div class="bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-white/40 shadow-2xl">
+                    <h3 class="text-3xl font-bold text-gray-900 mb-8 text-center">🔍 AI-Powered Property Filters</h3>
+                    
+                    <div class="grid md:grid-cols-5 gap-6">
+                        <!-- Budget Slider -->
+                        <div class="space-y-3">
+                            <label class="block text-sm font-bold text-gray-700">💰 Budget Range</label>
+                            <select class="premium-filter w-full">
+                                <option>Any Budget</option>
+                                <option>$1,000 - $2,000</option>
+                                <option>$2,000 - $3,500</option>
+                                <option>$3,500 - $5,000</option>
+                                <option>$5,000+ Luxury</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Property Type -->
+                        <div class="space-y-3">
+                            <label class="block text-sm font-bold text-gray-700">🏠 Property Style</label>
+                            <select class="premium-filter w-full">
+                                <option>All Styles</option>
+                                <option>🏢 Modern Apartment</option>
+                                <option>🏡 Executive House</option>
+                                <option>🏗️ Luxury Condo</option>
+                                <option>🌟 Designer Studio</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Bedrooms -->
+                        <div class="space-y-3">
+                            <label class="block text-sm font-bold text-gray-700">🛏️ Bedrooms</label>
+                            <select class="premium-filter w-full">
+                                <option>Any Size</option>
+                                <option>Studio</option>
+                                <option>1 Bedroom</option>
+                                <option>2 Bedrooms</option>
+                                <option>3+ Bedrooms</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Amenities -->
+                        <div class="space-y-3">
+                            <label class="block text-sm font-bold text-gray-700">✨ Amenities</label>
+                            <select class="premium-filter w-full">
+                                <option>Essential</option>
+                                <option>🏋️ Gym Access</option>
+                                <option>🏊 Pool & Spa</option>
+                                <option>🚗 Parking</option>
+                                <option>🌿 Balcony/Terrace</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Apply Filters -->
+                        <div class="space-y-3">
+                            <label class="block text-sm font-bold text-gray-700 opacity-0">Filter</label>
+                            <button class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 font-bold shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+                                🚀 Find Properties
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Premium Listings Container -->
+            <div class="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-white/40 shadow-2xl">
+                <div class="flex items-center justify-between mb-8">
+                    <h3 class="text-3xl font-bold text-gray-900">🏆 Featured Properties</h3>
+                    <div class="flex items-center space-x-4">
+                        <button onclick="window.appController && window.appController.listingsManager.displayListings()" class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 py-4 rounded-2xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 font-bold shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+                            🔄 Refresh
+                        </button>
+                        <div class="flex items-center space-x-2 text-sm text-gray-600">
+                            <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                            <span class="font-semibold">Live Updates</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="listingsContainer" class="listing-grid"></div>
+                
+                <!-- Enhanced No listings message -->
+                <div id="noListingsMessage" class="text-center py-20 hidden">
+                    <div class="w-40 h-40 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-12 shadow-2xl">
+                        <svg class="w-20 h-20 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-4xl font-bold text-gray-900 mb-6">No Properties Yet</h3>
+                    <p class="text-xl text-gray-600 mb-12 max-w-lg mx-auto">
+                        Be the first to showcase your luxury property on our premium platform!
+                    </p>
+                    <button onclick="document.getElementById('premiumListingForm').scrollIntoView({behavior: 'smooth'})" class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-12 py-6 rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 font-bold text-xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2">
+                        🚀 List Premium Property
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Features Section -->
+    <section id="aiFeatures" class="py-24 bg-white">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl font-bold text-gray-900 mb-8">
+                    <span class="gradient-text">AI-Powered</span> Features
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Experience the future of property discovery with our cutting-edge AI technology
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="feature-card text-center">
+                    <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Smart Matching</h3>
+                    <p class="text-gray-600">AI analyzes your preferences and lifestyle to find perfect property matches</p>
+                </div>
+                
+                <div class="feature-card text-center">
+                    <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Price Intelligence</h3>
+                    <p class="text-gray-600">Real-time market analysis and predictive pricing insights</p>
+                </div>
+                
+                <div class="feature-card text-center">
+                    <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Neighborhood AI</h3>
+                    <p class="text-gray-600">Deep insights about safety, amenities, and community lifestyle</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Premium Add Listing Form -->
+    <section id="premiumListingForm" class="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div class="w-[90%] max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl font-bold text-gray-900 mb-8">
+                    <span class="gradient-text">List Your</span> Premium Property
+                </h2>
+                <p class="text-xl text-gray-600">
+                    Join our exclusive platform and reach qualified tenants with AI-powered matching
+                </p>
+            </div>
+            
+            <div class="advanced-search">
+                <form id="listingForm" class="space-y-8">
+                    <!-- Property Details Grid -->
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="form-group">
+                            <label for="city" class="form-label">🏙️ City</label>
+                            <div class="relative">
+                                <input type="text" id="city" name="city" required class="premium-filter" placeholder="e.g., Toronto" autocomplete="off">
+                                <div id="city-autocomplete-dropdown" class="search-suggestions hidden absolute mt-2 w-full"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="street" class="form-label">📍 Street Address</label>
+                            <input type="text" id="street" name="street" required class="premium-filter" placeholder="e.g., 123 Luxury Ave">
+                        </div>
+                        <div class="form-group">
+                            <label for="postalCode" class="form-label">📮 Postal Code</label>
+                            <input type="text" id="postalCode" name="postalCode" required class="premium-filter" placeholder="e.g., M5V 2T6">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="title" class="form-label">✨ Property Title</label>
+                        <input type="text" id="title" name="title" required class="premium-filter text-lg" placeholder="e.g., Luxury 2-Bedroom Penthouse with Stunning City Views">
+                    </div>
+                    
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="form-group">
+                            <label for="price" class="form-label">💰 Monthly Rent ($)</label>
+                            <input type="number" id="price" name="price" required min="0" step="1" class="premium-filter text-lg" placeholder="e.g., 2500">
+                        </div>
+                        <div class="form-group">
+                            <label for="houseType" class="form-label">🏠 Property Type</label>
+                            <select id="houseType" name="houseType" required class="premium-filter">
+                                <option value="" disabled selected>Select property type</option>
+                                <option value="Luxury Apartment">🏢 Luxury Apartment</option>
+                                <option value="Executive House">🏡 Executive House</option>
+                                <option value="Modern Condo">🏗️ Modern Condo</option>
+                                <option value="Designer Studio">🌟 Designer Studio</option>
+                                <option value="Penthouse">🏙️ Penthouse</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="bedrooms" class="form-label">🛏️ Bedrooms</label>
+                            <select id="bedrooms" name="bedrooms" required class="premium-filter">
+                                <option value="" disabled selected>Select bedrooms</option>
+                                <option value="0">Studio</option>
+                                <option value="1">1 Bedroom</option>
+                                <option value="2">2 Bedrooms</option>
+                                <option value="3">3 Bedrooms</option>
+                                <option value="4">4+ Bedrooms</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="utilities" class="form-label">⚡ Utilities & Amenities</label>
+                        <select id="utilities" name="utilities" class="premium-filter">
+                            <option value="All Included">✅ All Utilities Included</option>
+                            <option value="Partially Included">⚡ Electricity & Water Included</option>
+                            <option value="Not included" selected>❌ Not Included</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description" class="form-label">📝 Property Description</label>
+                        <textarea id="description" name="description" rows="4" class="premium-filter text-lg" placeholder="Describe your property's unique features, amenities, neighborhood benefits, and what makes it special..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="media" class="form-label">📸 Professional Photos & Videos</label>
+                        <div class="premium-filter border-dashed border-2 p-8 text-center">
+                            <input type="file" id="media" name="media" accept="image/jpeg,image/png,video/mp4" multiple class="hidden">
+                            <div class="cursor-pointer" onclick="document.getElementById('media').click()">
+                                <div class="text-6xl mb-4">📸</div>
+                                <p class="text-lg font-semibold mb-2">Upload Premium Media</p>
+                                <p class="text-gray-600">Drag & drop or click to upload photos and videos</p>
+                                <p class="text-sm text-gray-500 mt-2">Max 10MB per file. Supports JPEG, PNG, MP4</p>
+                            </div>
+                        </div>
+                        <div id="mediaPreview" class="media-preview flex flex-wrap mt-6"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-12 py-6 rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 font-bold text-xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-1">
+                            🚀 Create Premium Listing
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Premium Footer -->
+    <footer class="bg-gradient-to-r from-gray-900 to-black text-white py-16">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8 mb-12">
+                <div>
+                    <div class="text-3xl font-bold gradient-text mb-4">🏆 RoomFinderAI</div>
+                    <p class="text-gray-300 mb-6">The future of luxury property discovery, powered by artificial intelligence.</p>
+                    <div class="flex space-x-4">
+                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition cursor-pointer">
+                            <span class="text-white font-bold">f</span>
+                        </div>
+                        <div class="w-10 h-10 bg-blue-400 rounded-full flex items-center justify-center hover:bg-blue-500 transition cursor-pointer">
+                            <span class="text-white font-bold">t</span>
+                        </div>
+                        <div class="w-10 h-10 bg-blue-800 rounded-full flex items-center justify-center hover:bg-blue-900 transition cursor-pointer">
+                            <span class="text-white font-bold">in</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="text-xl font-bold mb-4">Platform</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="/index" class="hover:text-white transition">Home</a></li>
+                        <li><a href="/listings" class="hover:text-white transition">Property Search</a></li>
+                        <li><a href="/sublease" class="hover:text-white transition">Sublease</a></li>
+                        <li><a href="/ai-negotiator" class="hover:text-white transition">AI Negotiator</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-xl font-bold mb-4">Resources</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="/pricing" class="hover:text-white transition">Pricing</a></li>
+                        <li><a href="#" class="hover:text-white transition">API Documentation</a></li>
+                        <li><a href="#" class="hover:text-white transition">Help Center</a></li>
+                        <li><a href="#" class="hover:text-white transition">Contact Support</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-xl font-bold mb-4">Stay Updated</h4>
+                    <p class="text-gray-300 mb-4">Get the latest property insights and AI updates</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Enter your email" class="flex-1 px-4 py-2 rounded-l-lg text-gray-900">
+                        <button class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 rounded-r-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition">
+                            Subscribe
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 pt-8 text-center">
+                <p class="text-gray-400">© 2025 RoomFinderAI. All rights reserved. | Powered by Advanced AI Technology</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Enhanced Modals (keeping existing structure) -->
+    <div id="listingModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">×</span>
+            <h2 id="modalTitle" class="text-3xl font-bold text-gray-800 mb-6"></h2>
+            <img id="modalImage" src="" alt="Listing" class="listing-image mb-6 rounded-2xl">
+            <p id="modalPrice" class="premium-price mb-4"></p>
+            <p id="modalLocation" class="text-gray-600 mb-4 text-lg"></p>
+            <div id="modalDetails" class="text-gray-600 mb-6 text-lg"></div>
+            <p id="modalDescription" class="text-gray-600 mb-6 text-lg"></p>
+            <div id="modalMedia" class="modal-media flex flex-wrap mb-6"></div>
+            <a id="modalViewDetails" href="#" class="btn btn-primary btn-block btn-lg">View Full Details</a>
+        </div>
+    </div>
+
+    <div id="chatModal" class="chat-modal">
+        <div class="chat-modal-content">
+            <div class="chat-header">
+                <h2 id="chatTitle" class="text-xl font-bold text-gray-800">Premium Chat</h2>
+                <span class="close-button chat-close-button">×</span>
+            </div>
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat-input-container">
+                <textarea id="chatInput" class="chat-input" rows="2" placeholder="Type your message..."></textarea>
+                <button id="chatSendBtn" class="chat-send-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Messaging Panel -->
+    <div id="messagingPanel" class="fixed bottom-6 right-6 z-50">
+        <button id="messageToggleBtn" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full p-4 shadow-2xl hover:shadow-3xl transition-all flex items-center justify-center w-16 h-16 relative">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            <span id="messageNotificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center hidden">0</span>
+        </button>
+        
+        <div id="messagePanel" class="hidden absolute bottom-20 right-0 w-80 bg-white rounded-2xl shadow-2xl border">
+            <div class="p-4 border-b bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-2xl flex justify-between items-center">
+                <h3 class="font-bold">Premium Messages</h3>
+                <button id="forceHideNotifications" class="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded-full" title="Clear notifications">Clear</button>
+            </div>
+            <div id="conversationTabs" class="max-h-96 overflow-y-auto">
+                <div id="noConversations" class="p-6 text-gray-500 text-center">
+                    <div class="text-4xl mb-4">💬</div>
+                    <p>No conversations yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script src="js/map-manager.js"></script>
+    <script src="js/listings-manager.js"></script>
+    <script src="js/form-manager.js"></script>
+    <script src="js/messaging-manager.js"></script>
+    <script src="js/app-controller.js"></script>
+    
+    <!-- Premium JavaScript Features -->
+    <script>
+        // Counter animation
+        function animateCounters() {
+            const counters = document.querySelectorAll('.stat-counter');
+            counters.forEach(counter => {
+                const target = parseInt(counter.getAttribute('data-target'));
+                const increment = target / 200;
+                let current = 0;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        counter.textContent = target;
+                        clearInterval(timer);
+                    } else {
+                        counter.textContent = Math.floor(current);
+                    }
+                }, 20);
+            });
+        }
+        
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'fadeInUp 0.8s ease-out';
+                }
+            });
+        }, observerOptions);
+        
+        // Enhanced listing card creation
+        function createPremiumListingCard(listing) {
+            const card = document.createElement('div');
+            card.className = 'premium-listing-card';
+            
+            const badges = [];
+            if (listing.users && listing.users.is_verified) {
+                badges.push('<div class="verified-badge">✅ Verified</div>');
+            }
+            if (listing.created_at && new Date(listing.created_at) > new Date(Date.now() - 24*60*60*1000)) {
+                badges.push('<div class="new-badge">🆕 New</div>');
+            }
+            if (listing.price > 3000) {
+                badges.push('<div class="premium-badge">💎 Luxury</div>');
+            }
+            
+            card.innerHTML = `
+                <div class="relative">
+                    <img src="${listing.media?.[0]?.url || 'https://via.placeholder.com/400x300?text=Premium+Property'}" 
+                         alt="${listing.title}" class="listing-image w-full h-64 object-cover">
+                    ${badges.join('')}
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">${listing.title}</h3>
+                    <p class="premium-price mb-3">$${listing.price.toLocaleString()}/mo</p>
+                    <p class="text-gray-600 mb-3">${listing.street}, ${listing.city}</p>
+                    <div class="flex items-center space-x-4 text-sm text-gray-600 mb-4">
+                        <span>🛏️ ${listing.bedrooms} Bed</span>
+                        <span>🏠 ${listing.house_type}</span>
+                        <span>⚡ ${listing.utilities}</span>
+                    </div>
+                    <p class="text-gray-600 mb-6 line-clamp-2">${listing.description || 'Luxury property with premium amenities'}</p>
+                    <div class="flex space-x-3">
+                        <button class="view-details-btn flex-1 btn btn-primary" data-listing='${JSON.stringify(listing)}'>
+                            👁️ View Details
+                        </button>
+                        <button class="chat-btn flex-1 btn btn-secondary" data-listing='${JSON.stringify(listing)}'>
+                            💬 Chat
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        // Initialize premium features when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Start counter animations
+            setTimeout(animateCounters, 1000);
+            
+            // Observe elements for animations
+            document.querySelectorAll('.feature-card, .stat-card').forEach(el => {
+                observer.observe(el);
+            });
+            
+            // Enhanced listing display
+            const originalDisplayListings = window.appController?.listingsManager?.displayListings;
+            if (originalDisplayListings) {
+                window.appController.listingsManager.createListingCard = createPremiumListingCard;
+            }
+        });
+    </script>
+</body>
+</html>
