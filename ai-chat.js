@@ -26,23 +26,312 @@ class AINegotiator {
     async init(currentUser) {
         this.currentUser = currentUser;
         
+        // Load previous conversation history
+        await this.loadConversationHistory();
+        
         // Setup user profile for messaging
         const setupSuccess = await this.setupAIUser();
         if (!setupSuccess) {
             this.appendMessage('AI', 'Warning: Messaging setup incomplete. Please register/login to send messages to landlords.', 'left');
         }
         
-        this.appendMessage('AI', 'Hello! I\'m your AI Negotiator. Tell me what you\'re looking for (e.g., "I need a 2-bedroom apartment under $1500 in Toronto") and I\'ll find matching listings and negotiate with landlords for you automatically using market data!', 'left');
+        // Only show welcome message if no previous conversation
+        if (this.conversationHistory.length === 0) {
+            this.appendMessage('AI', 'Hello! I\'m your AI Negotiator. Tell me what you\'re looking for (e.g., "I need a 2-bedroom apartment under $1500 in Toronto") and I\'ll find matching listings and negotiate with landlords for you automatically using market data!', 'left');
+        }
     }
 
     // Set negotiation engine
     setNegotiationEngine(engine) {
         this.negotiationEngine = engine;
         console.log('🔗 Negotiation engine connected to AI chat');
+        
+        // Listen for negotiation completion updates
+        this.listenForNegotiationUpdates();
     }
 
-    // Append message to chat
-    appendMessage(sender, message, align, isTypingIndicator = false) {
+    // Listen for negotiation completion updates
+    listenForNegotiationUpdates() {
+        if (!this.supabase) {
+            console.warn('⚠️ Supabase not available for real-time updates');
+            return;
+        }
+        
+        if (!this.currentUser?.email) {
+            console.warn('⚠️ User email not available for subscription filter');
+            return;
+        }
+
+        console.log('🔔 Setting up real-time subscription for user:', this.currentUser.email);
+        
+        try {
+            const channel = this.supabase
+                .channel(`negotiation_updates_${Date.now()}`)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'ai_chats',
+                    filter: `user_email=eq.${this.currentUser.email}`
+                }, (payload) => {
+                    console.log('📬 Received real-time update:', payload);
+                    try {
+                        const newChat = payload.new;
+                        if (newChat.title && newChat.title.includes('Negotiation Success')) {
+                            console.log('🎉 Negotiation success detected!');
+                            this.displayNegotiationSuccess(newChat);
+                        } else if (newChat.title && newChat.title.includes('Landlord Reply')) {
+                            console.log('💬 Landlord reply detected!');
+                            this.displayLandlordReply(newChat);
+                        }
+                    } catch (error) {
+                        console.error('Error processing real-time update:', error);
+                    }
+                })
+                .subscribe((status, err) => {
+                    console.log('📡 Subscription status:', status);
+                    if (err) {
+                        console.error('❌ Subscription error:', err);
+                        this.setupFallbackPolling();
+                    }
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ Real-time connection established');
+                        this.stopFallbackPolling(); // Stop polling when real-time works
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                        console.warn('⚠️ Real-time connection issues, using fallback');
+                        this.setupFallbackPolling();
+                    }
+                });
+
+            // Store channel reference for cleanup
+            this.subscriptionChannel = channel;
+            
+        } catch (error) {
+            console.error('Error setting up real-time subscription:', error);
+            this.setupFallbackPolling();
+        }
+    }
+
+    // Display negotiation success message
+    displayNegotiationSuccess(chat) {
+        try {
+            console.log('📨 Processing negotiation success:', chat);
+            const conversationData = JSON.parse(chat.conversation_data);
+            if (conversationData && conversationData[0] && conversationData[0].content) {
+                const content = conversationData[0].content;
+                this.appendMessage('AI', content, 'left');
+                
+                // Add celebration effect
+                this.celebrateSuccess();
+            } else {
+                console.warn('⚠️ Invalid conversation data structure');
+                this.appendMessage('AI', '🎉 Negotiation completed successfully!', 'left');
+            }
+        } catch (error) {
+            console.error('Error displaying negotiation success:', error);
+            this.appendMessage('AI', '🎉 Negotiation completed successfully!', 'left');
+        }
+    }
+
+    // Display landlord reply message
+    displayLandlordReply(chat) {
+        try {
+            console.log('📨 Processing landlord reply:', chat);
+            const conversationData = JSON.parse(chat.conversation_data);
+            if (conversationData && conversationData[0] && conversationData[0].content) {
+                const content = conversationData[0].content;
+                this.appendMessage('AI', content, 'left');
+                
+                // Add subtle animation to highlight new message
+                this.highlightNewMessage();
+            } else {
+                console.warn('⚠️ Invalid landlord reply data structure');
+                this.appendMessage('AI', '💬 Received reply from landlord', 'left');
+            }
+        } catch (error) {
+            console.error('Error displaying landlord reply:', error);
+            this.appendMessage('AI', '💬 Received reply from landlord', 'left');
+        }
+    }
+
+    // Highlight new message with subtle animation
+    highlightNewMessage() {
+        const messages = document.getElementById('chatMessages');
+        if (messages) {
+            const lastMessage = messages.lastElementChild;
+            if (lastMessage) {
+                lastMessage.style.backgroundColor = '#e3f2fd';
+                lastMessage.style.transition = 'background-color 2s ease';
+                setTimeout(() => {
+                    lastMessage.style.backgroundColor = '';
+                }, 2000);
+            }
+        }
+    }
+
+    // Add celebration effect
+    celebrateSuccess() {
+        const chatContainer = document.querySelector('.chat-container');
+        if (chatContainer) {
+            chatContainer.style.animation = 'pulse 0.5s ease-in-out 3';
+            setTimeout(() => {
+                chatContainer.style.animation = '';
+            }, 1500);
+        }
+    }
+
+    // Setup fallback polling when real-time fails
+    setupFallbackPolling() {
+        if (this.pollingInterval) return; // Already polling
+        
+        console.log('🔄 Setting up fallback polling for updates');
+        this.lastPollTime = new Date();
+        
+        this.pollingInterval = setInterval(async () => {
+            try {
+                const { data: newChats, error } = await this.supabase
+                    .from('ai_chats')
+                    .select('*')
+                    .eq('user_email', this.currentUser?.email)
+                    .gte('created_at', this.lastPollTime.toISOString())
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    console.error('Polling error:', error);
+                    return;
+                }
+                
+                if (newChats && newChats.length > 0) {
+                    console.log(`🔄 Found ${newChats.length} new updates via polling`);
+                    for (const chat of newChats) {
+                        if (chat.title && chat.title.includes('Negotiation Success')) {
+                            this.displayNegotiationSuccess(chat);
+                        } else if (chat.title && chat.title.includes('Landlord Reply')) {
+                            this.displayLandlordReply(chat);
+                        }
+                    }
+                    this.lastPollTime = new Date();
+                }
+            } catch (error) {
+                console.error('Error in fallback polling:', error);
+            }
+        }, 3000); // Poll every 3 seconds
+    }
+
+    // Stop polling when real-time is working
+    stopFallbackPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+            console.log('🛑 Stopped fallback polling');
+        }
+    }
+
+    // Auto-negotiate on behalf of user when listings are found
+    async autoNegotiateListings(listings) {
+        if (!this.negotiationEngine || !listings?.length) return;
+        
+        this.appendMessage('AI', `🤖 Found ${listings.length} matching properties! Starting automatic negotiations with landlords...`, 'left');
+        
+        let successCount = 0;
+        for (const listing of listings.slice(0, 3)) { // Limit to first 3 to avoid spam
+            try {
+                this.appendMessage('AI', `📧 Contacting landlord for: ${listing.title} ($${listing.price}/month)`, 'left');
+                
+                const success = await this.negotiateWithLandlord(listing);
+                if (success) {
+                    successCount++;
+                    this.appendMessage('AI', `✅ Message sent successfully!`, 'left');
+                } else {
+                    this.appendMessage('AI', `❌ Failed to contact landlord for this property.`, 'left');
+                }
+                
+                // Wait a bit between messages to avoid spam
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+            } catch (error) {
+                console.error('Error in auto-negotiation:', error);
+                this.appendMessage('AI', `⚠️ Error contacting landlord for: ${listing.title}`, 'left');
+            }
+        }
+        
+        if (successCount > 0) {
+            this.appendMessage('AI', `🎯 Successfully contacted ${successCount} landlord(s)! I'll continue negotiating automatically when they reply. You'll be notified of any agreements reached.`, 'left');
+        }
+    }
+
+    // Helper function for auto-negotiation - maps to existing sendMessage function
+    async negotiateWithLandlord(listing) {
+        return await this.sendMessage(listing);
+    }
+
+    // Load conversation history from localStorage
+    async loadConversationHistory() {
+        try {
+            const storageKey = `ai_negotiator_chat_${this.currentUser?.email || 'anonymous'}`;
+            const savedHistory = localStorage.getItem(storageKey);
+            
+            if (savedHistory) {
+                this.conversationHistory = JSON.parse(savedHistory);
+                console.log(`📂 Loaded ${this.conversationHistory.length} messages from history`);
+                
+                // Restore messages to the chat interface
+                const messages = document.getElementById('chatMessages');
+                if (messages) {
+                    messages.innerHTML = ''; // Clear default content
+                    
+                    for (const message of this.conversationHistory) {
+                        const displayRole = message.role.charAt(0).toUpperCase() + message.role.slice(1);
+                        this.displayMessage(displayRole, message.content, message.role === 'user' ? 'right' : 'left', false);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading conversation history:', error);
+            this.conversationHistory = [];
+        }
+    }
+
+    // Save conversation history to localStorage
+    saveConversationHistory() {
+        try {
+            const storageKey = `ai_negotiator_chat_${this.currentUser?.email || 'anonymous'}`;
+            localStorage.setItem(storageKey, JSON.stringify(this.conversationHistory));
+        } catch (error) {
+            console.error('Error saving conversation history:', error);
+        }
+    }
+
+    // Clear conversation history
+    clearConversationHistory() {
+        try {
+            const storageKey = `ai_negotiator_chat_${this.currentUser?.email || 'anonymous'}`;
+            localStorage.removeItem(storageKey);
+            this.conversationHistory = [];
+            
+            const messages = document.getElementById('chatMessages');
+            if (messages) {
+                messages.innerHTML = '';
+            }
+        } catch (error) {
+            console.error('Error clearing conversation history:', error);
+        }
+    }
+
+    // Debug function to test negotiation success notification
+    testNegotiationSuccess() {
+        console.log('🧪 Testing negotiation success notification...');
+        const testChat = {
+            title: 'Negotiation Success: Test Property',
+            conversation_data: JSON.stringify([{
+                role: 'assistant',
+                content: '✅ **Negotiation Successful!**\n\nProperty: Test Property\nFinal Price: $950/month\nOriginal Price: $1000/month\nSavings: $50/month\n\nThe landlord has accepted your offer! Next steps: Contact the landlord to finalize the rental agreement.'
+            }])
+        };
+        this.displayNegotiationSuccess(testChat);
+    }
+
+    // Display message to chat (without saving to history - used for loading)
+    displayMessage(sender, message, align, isTypingIndicator = false) {
         const messages = document.getElementById('chatMessages');
         if (!messages) {
             console.error('Error: #chatMessages element not found');
@@ -54,7 +343,18 @@ class AINegotiator {
         messageElement.id = isTypingIndicator ? 'typing-indicator' : '';
         messages.appendChild(messageElement);
         messages.scrollTop = messages.scrollHeight;
-        if (!isTypingIndicator) this.conversationHistory.push({ role: sender.toLowerCase(), content: message });
+    }
+
+    // Append message to chat and save to history
+    appendMessage(sender, message, align, isTypingIndicator = false) {
+        // Display the message
+        this.displayMessage(sender, message, align, isTypingIndicator);
+        
+        // Save to history and localStorage (skip typing indicators)
+        if (!isTypingIndicator) {
+            this.conversationHistory.push({ role: sender.toLowerCase(), content: message });
+            this.saveConversationHistory();
+        }
     }
 
     // Remove typing indicator
@@ -506,6 +806,12 @@ class AINegotiator {
                 const typeText = listing.house_type || 'property';
                 const utilitiesText = listing.utilities ? ` (utilities ${listing.utilities})` : '';
                 this.appendMessage('AI', `🏠 "${listing.title}" - $${listing.price}/month (${bedText} ${typeText})${utilitiesText}`, 'left');
+            }
+            
+            // Automatically start negotiations if negotiation engine is available
+            if (this.negotiationEngine && this.matchingListings.length > 0) {
+                await this.autoNegotiateListings(this.matchingListings);
+                return; // Exit early since auto-negotiation handles messaging
             }
             
             // Filter valid listings and message owners
