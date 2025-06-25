@@ -2125,7 +2125,7 @@
             
             // Apply location filter (city, street, or postal code)
             if (location) {
-                query = query.or(`city.ilike.%${location}%,street.ilike.%${location}%,postalCode.ilike.%${location}%`);
+                query = query.or(`city.ilike.%${location}%,street.ilike.%${location}%,postal_code.ilike.%${location}%`);
             }
             
             // Apply price filter
