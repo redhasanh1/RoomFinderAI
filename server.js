@@ -12,13 +12,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('.'));
 
-// Health check endpoint
+// Serve main HTML file
 app.get('/', (req, res) => {
-    res.json({ 
-        status: 'Server running successfully',
-        timestamp: new Date().toISOString(),
-        port: port
-    });
+    res.sendFile(__dirname + '/index.html');
 });
 
 // Test endpoint
