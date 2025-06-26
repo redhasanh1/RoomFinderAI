@@ -589,6 +589,11 @@ app.get('/api/test-supabase', async (req, res) => {
     }
 });
 
+// Health check route for Railway monitoring - MUST BE BEFORE /:page
+app.get('/health', (req, res) => {
+    res.status(200).send('✅ RoomFinderAI server is running');
+});
+
 // Serve main website at root
 app.get('/', (req, res) => {
     try {
@@ -601,10 +606,16 @@ app.get('/', (req, res) => {
     }
 });
 
-// Dynamic route handler for all HTML pages
+// Dynamic route handler for all HTML pages - MUST BE LAST
 app.get('/:page', (req, res) => {
     try {
         const pageName = req.params.page;
+        
+        // Skip API routes and health - they should be handled above
+        if (pageName.startsWith('api') || pageName === 'health') {
+            return res.status(404).send('Route not found');
+        }
+        
         const htmlPath = path.join(__dirname, '..', `${pageName}.html`);
         
         // Check if file exists
@@ -619,11 +630,6 @@ app.get('/:page', (req, res) => {
         console.error('Error serving page:', error);
         res.status(500).send('Server error');
     }
-});
-
-// Health check route for Railway monitoring
-app.get('/health', (req, res) => {
-    res.status(200).send('✅ RoomFinderAI server is running');
 });
 
 // Start server on Railway-required port
