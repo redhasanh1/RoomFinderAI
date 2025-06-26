@@ -50,6 +50,24 @@ class AINegotatior {
                 "I offer $${price}/month plus exceptional tenant qualities.",
                 "$${price}/month with a long-term, responsible tenant like me is a great deal.",
                 "At $${price}/month, you're getting reliability and peace of mind."
+            ],
+            meetingCoordination: [
+                "Perfect! Tonight works excellently for me. What time should we meet? I'll bring all necessary documentation.",
+                "Fantastic! I'm available after 6 PM tonight. Should we meet at the property? I have all my paperwork ready.",
+                "Wonderful! Tonight is ideal. What time works best for you? I can bring references, ID, and first month's rent.",
+                "Excellent! I'm free this evening. Would you prefer to meet at the property or another location?",
+                "Great! Tonight sounds perfect. I'm available anytime after 5 PM. What would be most convenient for you?",
+                "Outstanding! I can meet tonight. Should I bring the first month's rent and security deposit?",
+                "Perfect timing! I'm ready to finalize everything tonight. What documents do you need me to bring?",
+                "Excellent! Tonight works wonderfully. I have all required paperwork ready. What time shall we meet?"
+            ],
+            documentPreparation: [
+                "I'll bring all necessary documents including references, employment verification, and ID.",
+                "I have everything ready: references, proof of income, first month's rent, and security deposit.",
+                "I can provide employment verification, previous landlord references, and credit information.",
+                "I'll come prepared with ID, references, financial documentation, and payment.",
+                "I have all required paperwork: rental application, references, and financial proof.",
+                "I'll bring comprehensive documentation including background check and employment letter."
             ]
         };
     }
@@ -469,6 +487,13 @@ class AINegotatior {
                     // Wait a bit to simulate thinking time
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     
+                    // Check for duplicates before sending
+                    if (this.isRecentDuplicate(response, negotiation)) {
+                        console.log('🚫 Duplicate response detected, generating alternative...');
+                        // Generate alternative response with different strategy
+                        response = await this.generateAlternativeResponse(analysis, negotiation, listing);
+                    }
+                    
                     // Send the response
                     console.log('📤 Sending response to conversation:', conversationId);
                     const sentSuccessfully = await this.sendNegotiationMessage(conversationId, response, negotiation.userEmail);
@@ -614,6 +639,40 @@ class AINegotatior {
     async analyzeReply(replyContent, negotiation, listing) {
         console.log('🔍 Starting advanced reply analysis for:', replyContent);
         
+        // Check for specific meeting coordination first
+        const meetingPatterns = /(?:meet|tonight|today|at\s+\d|pm|am|cafe|restaurant|office|property)/i;
+        const hasMeetingDetails = meetingPatterns.test(replyContent);
+        
+        // Check for already finalized negotiation by looking at recent messages
+        const recentMessages = negotiation.messages?.slice(-5) || [];
+        const hasRecentAgreement = recentMessages.some(msg => 
+            msg.sender === 'ai' && (
+                msg.content.includes('accept') || 
+                msg.content.includes('deal') ||
+                msg.content.includes('perfect') ||
+                msg.content.includes('excellent')
+            )
+        );
+        
+        if (hasMeetingDetails && hasRecentAgreement) {
+            console.log('📅 MEETING COORDINATION DETECTED after agreement:', replyContent);
+            return {
+                sentiment: 'positive',
+                priceOffered: null,
+                acceptsOffer: false,
+                makesCounterOffer: false,
+                shouldRespond: true,
+                isFinalized: false,
+                agreedPrice: this.extractLastOfferedPrice(negotiation),
+                responseStrategy: 'meeting_coordination',
+                suggestedResponse: 'Meeting coordination needed',
+                negotiationPhase: 'logistics',
+                originalReply: replyContent,
+                landlordPersonality: this.detectLandlordPersonality(replyContent, negotiation),
+                negotiationContext: this.analyzeNegotiationContext(negotiation)
+            };
+        }
+        
         // First check for simple acceptance patterns IMMEDIATELY
         const simpleReply = replyContent.trim().toLowerCase();
         const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)$/i.test(simpleReply);
@@ -684,6 +743,12 @@ class AINegotatior {
             - If they counter with price: extract exact number, shouldRespond=true
             - If they show flexibility ("might consider"): makesCounterOffer=true
             - Consider context: if discussing price and mention number, likely counter-offer
+            
+            MEETING COORDINATION DETECTION:
+            - "let's meet", "we can do it tonight", "sounds great", "tonight", "today" = meeting logistics phase
+            - "when can we", "what time", "where should", "I'm available" = scheduling discussion
+            - If price already agreed and they mention timing = responseStrategy should be "meeting_coordination"
+            - After acceptance, logistics phrases should trigger meeting planning responses
             `;
 
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -770,6 +835,13 @@ class AINegotatior {
             if (analysis.makesCounterOffer && analysis.priceOffered) {
                 console.log('💰 Generating sophisticated counter-offer response');
                 return await this.generateSophisticatedCounterOffer(analysis, negotiation, listing, roundNumber);
+            }
+
+            if (analysis.responseStrategy === 'meeting_coordination') {
+                console.log('📅 Generating meeting coordination response');
+                // Pass the original reply for context
+                analysis.originalReply = analysis.originalReply || analysis.suggestedResponse || '';
+                return this.generateMeetingCoordinationResponse(analysis, negotiation, roundNumber);
             }
 
             if (analysis.sentiment === 'negative' || analysis.responseStrategy === 'clarify') {
@@ -895,7 +967,7 @@ class AINegotatior {
         const response = baseTemplate.replace('${price}', targetPrice) + additionalContext;
         
         console.log(`💬 Generated varied response (round ${roundNumber}): ${response.substring(0, 50)}...`);
-        return response;
+        return this.formatMessage(response);
     }
 
     // Select unused template with fallback
@@ -958,7 +1030,7 @@ class AINegotatior {
         ];
         
         const responseIndex = roundNumber % strategicResponses.length;
-        return strategicResponses[responseIndex];
+        return this.formatMessage(strategicResponses[responseIndex]);
     }
 
     // Generate progressive response using advanced tactics
@@ -997,7 +1069,7 @@ class AINegotatior {
             `I hear you! What if we do $${price}/month? I'm really excited about this place and I guarantee you won't have any issues with me as a tenant.`
         ];
         
-        return casualResponses[round % casualResponses.length];
+        return this.formatMessage(casualResponses[round % casualResponses.length]);
     }
 
     // Generate professional progressive responses
@@ -1009,7 +1081,7 @@ class AINegotatior {
             `I value your time and consideration. My proposal of $${price}/month represents fair market value while ensuring you receive a dependable tenant with proven financial stability.`
         ];
         
-        return professionalResponses[round % professionalResponses.length];
+        return this.formatMessage(professionalResponses[round % professionalResponses.length]);
     }
 
     // Generate balanced progressive responses
@@ -1021,7 +1093,175 @@ class AINegotatior {
             `I understand your position. My offer is $${price}/month, and I want to emphasize that you'll be getting a reliable, communicative tenant who respects both the property and landlord relationship.`
         ];
         
-        return balancedResponses[round % balancedResponses.length];
+        return this.formatMessage(balancedResponses[round % balancedResponses.length]);
+    }
+
+    // Generate meeting coordination response
+    generateMeetingCoordinationResponse(analysis, negotiation, roundNumber) {
+        const negotiationId = this.getNegotiationId(negotiation);
+        const usedResponses = this.conversationalMemory.get(negotiationId) || new Set();
+        
+        // Check if this is a follow-up to an already accepted offer
+        const recentMessages = negotiation.messages?.slice(-3) || [];
+        const hasRecentAcceptance = recentMessages.some(msg => 
+            msg.sender === 'ai' && (
+                msg.content.includes('accept') || 
+                msg.content.includes('works excellently') ||
+                msg.content.includes('Perfect') ||
+                msg.content.includes('Excellent')
+            )
+        );
+        
+        if (hasRecentAcceptance) {
+            // This is follow-up logistics, not initial acceptance
+            return this.generateLogisticsFollowUp(analysis, roundNumber, negotiationId);
+        } else {
+            // This is initial meeting acceptance
+            return this.generateInitialMeetingResponse(analysis, roundNumber, negotiationId);
+        }
+    }
+    
+    // Generate logistics follow-up (when we already accepted, now discussing meeting)
+    generateLogisticsFollowUp(analysis, roundNumber, negotiationId) {
+        const landlordMessage = analysis.originalReply || '';
+        
+        // Check if landlord provided specific meeting details
+        const hasVenue = /(?:at\s+\w+|cafe|restaurant|office|property)/i.test(landlordMessage);
+        const hasTime = /(?:\d{1,2}\s*(?:pm|am)|tonight|today|this evening)/i.test(landlordMessage);
+        
+        if (hasVenue || hasTime) {
+            // Landlord provided specific details, confirm them
+            const confirmationResponses = [
+                "Perfect! That works excellently for me. I'll be there with all necessary documents and payment ready.",
+                "Excellent! I can definitely make that work. I'll bring all required paperwork and be on time.",
+                "Great! That sounds perfect. I'll come prepared with references, ID, and first month's rent.",
+                "Wonderful! I'll see you there. I have all documentation ready and I'm excited to finalize everything.",
+                "Outstanding! That timing works perfectly for me. I'll bring everything needed to complete the rental.",
+                "Perfect! I'll be there with all necessary paperwork. Looking forward to finalizing our agreement!",
+                "Fantastic! That works great for me. I'll come prepared with all documents and payment ready.",
+                "Excellent! I can be there on time with all required documentation. See you then!"
+            ];
+            
+            const responseIndex = roundNumber % confirmationResponses.length;
+            return this.formatMessage(confirmationResponses[responseIndex]);
+        } else {
+            // General logistics coordination
+            const logisticsResponses = [
+                "Fantastic! I'm excited to finalize everything. What time works best for you? I'm available after 6 PM.",
+                "Perfect! Should we meet at the property? I have all my documents ready including references and payment.",
+                "Wonderful! What time should we arrange to meet? I can bring everything needed to complete the rental agreement.",
+                "Excellent! I'm free this evening. Would you prefer to meet at 7 PM or later? I'll bring all necessary paperwork.",
+                "Great! I'm ready to proceed tonight. What location would be most convenient for you?",
+                "Outstanding! What time works for your schedule? I'll come prepared with all required documentation.",
+                "Perfect! I'm available anytime after 5:30 PM. Should I bring the first month's rent and security deposit?",
+                "Fantastic! What would be the best time and place to meet? I have everything organized and ready to go."
+            ];
+            
+            const responseIndex = roundNumber % logisticsResponses.length;
+            return this.formatMessage(logisticsResponses[responseIndex]);
+        }
+    }
+    
+    // Generate initial meeting response (when accepting and coordinating simultaneously)
+    generateInitialMeetingResponse(analysis, roundNumber, negotiationId) {
+        const meetingTemplates = this.responseTemplates.meetingCoordination;
+        const documentTemplates = this.responseTemplates.documentPreparation;
+        
+        const meetingResponse = this.selectUnusedTemplate(meetingTemplates, this.conversationalMemory.get(negotiationId) || new Set(), 'meeting', negotiationId);
+        const documentResponse = documentTemplates[roundNumber % documentTemplates.length];
+        
+        const combinedResponse = `${meetingResponse} ${documentResponse}`;
+        return this.formatMessage(combinedResponse);
+    }
+    
+    // Format message with proper punctuation and spacing
+    formatMessage(message) {
+        let formatted = message
+            // Add space after periods if missing
+            .replace(/\.([A-Z])/g, '. $1')
+            // Add space after commas if missing
+            .replace(/,([A-Z])/g, ', $1')
+            // Add space after question marks if missing
+            .replace(/\?([A-Z])/g, '? $1')
+            // Add space after exclamation marks if missing
+            .replace(/!([A-Z])/g, '! $1')
+            // Fix multiple spaces
+            .replace(/\s+/g, ' ')
+            // Trim whitespace
+            .trim();
+        
+        // Ensure proper capitalization after sentence endings
+        formatted = formatted.replace(/([.!?]\s*)([a-z])/g, (match, punctuation, letter) => {
+            return punctuation + letter.toUpperCase();
+        });
+        
+        return formatted;
+    }
+    
+    // Enhanced duplicate prevention
+    isRecentDuplicate(message, negotiation) {
+        if (!negotiation.messages || negotiation.messages.length === 0) return false;
+        
+        // Check last 3 AI messages for similarity
+        const recentAIMessages = negotiation.messages
+            .filter(m => m.sender === 'ai')
+            .slice(-3)
+            .map(m => m.content.toLowerCase().replace(/[^\w\s]/g, ''));
+        
+        const cleanCurrentMessage = message.toLowerCase().replace(/[^\w\s]/g, '');
+        
+        // Calculate similarity threshold (80% similar = duplicate)
+        return recentAIMessages.some(prevMessage => {
+            const similarity = this.calculateMessageSimilarity(cleanCurrentMessage, prevMessage);
+            return similarity > 0.8;
+        });
+    }
+    
+    // Calculate message similarity (simple word overlap)
+    calculateMessageSimilarity(message1, message2) {
+        const words1 = new Set(message1.split(/\s+/));
+        const words2 = new Set(message2.split(/\s+/));
+        
+        const intersection = new Set([...words1].filter(word => words2.has(word)));
+        const union = new Set([...words1, ...words2]);
+        
+        return intersection.size / union.size;
+    }
+
+    // Generate alternative response when duplicate detected
+    async generateAlternativeResponse(analysis, negotiation, listing) {
+        console.log('🔄 Generating alternative response to avoid duplication');
+        
+        const roundNumber = negotiation.messages?.length || 1;
+        const alternativeStrategies = [
+            'casual_approach',
+            'professional_approach', 
+            'value_focused',
+            'time_sensitive',
+            'document_focused'
+        ];
+        
+        const strategy = alternativeStrategies[roundNumber % alternativeStrategies.length];
+        
+        switch (strategy) {
+            case 'casual_approach':
+                return this.formatMessage("Awesome! I'm really excited about this place. When would be a good time to meet up? I've got everything ready to go!");
+                
+            case 'professional_approach':
+                return this.formatMessage("Excellent. I appreciate your prompt response. Shall we arrange a meeting to finalize the rental agreement? I have all documentation prepared.");
+                
+            case 'value_focused':
+                return this.formatMessage("Perfect! I'm confident you'll find me to be an ideal tenant. What's the best way to proceed with finalizing everything?");
+                
+            case 'time_sensitive':
+                return this.formatMessage("Great! I'm ready to move forward immediately. What time works best for you today or this evening?");
+                
+            case 'document_focused':
+                return this.formatMessage("Wonderful! I have all necessary paperwork including references and financial verification ready. How should we arrange to complete the process?");
+                
+            default:
+                return this.formatMessage("Thank you! I'm looking forward to moving forward. What would be the next step?");
+        }
     }
 
     // Get fallback response with variety
@@ -1033,7 +1273,7 @@ class AINegotatior {
             "I value your consideration. I'm a serious tenant looking to establish a positive rental relationship."
         ];
         
-        return fallbacks[roundNumber % fallbacks.length];
+        return this.formatMessage(fallbacks[roundNumber % fallbacks.length]);
     }
 
     // Generate advanced counter-offer with sophisticated tactics (legacy method - keeping for compatibility)
@@ -1473,18 +1713,47 @@ class AINegotatior {
     // Extract the last offered price from negotiation history
     extractLastOfferedPrice(negotiation) {
         try {
-            // Look through AI messages for price offers
-            const aiMessages = negotiation.messages.filter(m => m.sender === 'ai');
+            console.log('🔍 Extracting last offered price from negotiation...');
             
-            for (let i = aiMessages.length - 1; i >= 0; i--) {
-                const message = aiMessages[i].content;
-                const priceMatch = message.match(/\$(\d+)\/month|\$(\d+) per month|\$(\d+)\s*monthly/i);
-                if (priceMatch) {
-                    return parseInt(priceMatch[1] || priceMatch[2] || priceMatch[3]);
+            // First, check if there's an explicitly stored final price
+            if (negotiation.finalPrice) {
+                console.log('✅ Found stored final price:', negotiation.finalPrice);
+                return negotiation.finalPrice;
+            }
+            
+            // Look through all recent messages (AI and landlord) for price mentions
+            const recentMessages = negotiation.messages?.slice(-5) || [];
+            
+            for (let i = recentMessages.length - 1; i >= 0; i--) {
+                const message = recentMessages[i].content;
+                
+                // Enhanced price matching patterns
+                const priceMatches = [
+                    /\$(\d+)\/month/gi,
+                    /\$(\d+)\s*per\s*month/gi,
+                    /\$(\d+)\s*monthly/gi,
+                    /(\d+)\/month/gi,
+                    /(\d+)\s*per\s*month/gi,
+                    /(\d+)\s*monthly/gi,
+                    // Also match simple number patterns when context is about price
+                    /(?:accept|agreed?|deal|works?|sounds?\s+good).*?(\d{3,4})(?!\d)/gi,
+                    /(\d{3,4})(?!\d).*?(?:accept|agreed?|deal|works?|sounds?\s+good)/gi
+                ];
+                
+                for (const pattern of priceMatches) {
+                    const matches = [...message.matchAll(pattern)];
+                    if (matches.length > 0) {
+                        const price = parseInt(matches[0][1]);
+                        if (price >= 100 && price <= 5000) { // Reasonable rent range
+                            console.log(`✅ Found price ${price} in message: "${message.substring(0, 50)}..."`);
+                            return price;
+                        }
+                    }
                 }
             }
             
             // Fallback to user budget if no specific price found
+            console.log('⚠️ No price found, using user budget:', negotiation.userBudget);
             return negotiation.userBudget;
         } catch (error) {
             console.error('Error extracting last offered price:', error);
