@@ -3,11 +3,20 @@ const cors = require('cors');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
+
+// Auto-decrypt config.js if needed (for Railway deployment)
+try {
+    const autoDecrypt = require('../auto-decrypt.js');
+    autoDecrypt();
+} catch (error) {
+    console.log('Auto-decrypt not needed or failed:', error.message);
+}
+
 const config = require('../config.js');
 
 const { createClient } = require('@supabase/supabase-js');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Initialize Stripe with API key from config
 const stripe = require('stripe')(config.STRIPE_SECRET_KEY);
