@@ -65,4 +65,7 @@ __pycache__/
 *.pyc
 
 # Backup files
-*.save
+*.saveconfig.js
+config.js
+.env
+config.js
