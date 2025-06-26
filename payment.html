@@ -314,7 +314,7 @@
 
             try {
                 // Send payment to backend for processing
-                const response = await fetch('http://localhost:3000/api/process-payment', {
+                const response = await fetch('/api/process-payment', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

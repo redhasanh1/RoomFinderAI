@@ -429,27 +429,22 @@ class AINegotiator {
         Return JSON with only fields that have values:
         `;
         
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        const response = await fetch('/api/ai-negotiator', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                'OpenAI-Organization': this.config.OPENAI_ORG_ID
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
-                messages: [{ role: 'system', content: prompt }],
-                max_tokens: 200,
-                temperature: 0.3
+                message: prompt
             })
         });
         
         if (!response.ok) {
-            throw new Error(`OpenAI API error: ${response.status}`);
+            throw new Error(`AI API error: ${response.status}`);
         }
         
         const data = await response.json();
-        const result = JSON.parse(data.choices[0].message.content.trim());
+        const result = { feedback: data.response };
         
         // Clean city data if present
         if (result.city) {
