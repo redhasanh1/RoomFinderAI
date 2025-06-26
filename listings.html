@@ -7,17 +7,38 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="config.js"></script>
     <script>
-        // Load API keys from config
-        const SUPABASE_URL = window.config?.SUPABASE_URL || config?.SUPABASE_URL;
-        const SUPABASE_ANON_KEY = window.config?.SUPABASE_ANON_KEY || config?.SUPABASE_ANON_KEY;
-        
-        // Debug config loading
-        console.log('Listings config loaded:', {
-            hasSupabaseURL: !!SUPABASE_URL,
-            hasSupabaseKey: !!SUPABASE_ANON_KEY
-        });
+        // Initialize configuration variables
+        let SUPABASE_URL;
+        let SUPABASE_ANON_KEY;
+        let GOOGLE_API_KEY;
+        let supabase;
+
+        // Load configuration from Railway API
+        fetch('/api/config')
+            .then(response => response.json())
+            .then(config => {
+                SUPABASE_URL = config.SUPABASE_URL;
+                SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
+                GOOGLE_API_KEY = config.GOOGLE_API_KEY;
+                
+                // Debug config loading
+                console.log('Listings config loaded:', {
+                    hasSupabaseURL: !!SUPABASE_URL,
+                    hasSupabaseKey: !!SUPABASE_ANON_KEY,
+                    hasGoogleKey: !!GOOGLE_API_KEY
+                });
+
+                // Initialize Supabase client
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                // Initialize the listings page
+                initializeListingsPage();
+            })
+            .catch(error => {
+                console.error('Failed to load configuration:', error);
+                showError('Failed to load configuration. Please refresh the page.');
+            });
     </script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -798,7 +819,7 @@
         }
 
         // Authentication check and header update
-        document.addEventListener('DOMContentLoaded', async () => {
+        async function initializeListingsPage() {
             console.log('DOMContentLoaded event fired');
             const profileImages = [
                 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0ZGNkI2QiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4=',
@@ -856,13 +877,8 @@
             setupChat();
             setupMessagingPanel();
             await displayListings();
-        });
+        }
 
-        // Supabase configuration loaded from config.js
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            db: { schema: 'public' },
-            global: { headers: { 'Content-Type': 'application/json' } }
-        });
 
         // Initialize Typo.js for autocorrect
         const typo = new Typo('en_US', false, false, {
