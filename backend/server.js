@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
+const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 
@@ -597,6 +598,26 @@ app.get('/', (req, res) => {
     } catch (error) {
         console.error('Error serving index.html:', error);
         res.status(200).send('✅ RoomFinderAI server is running');
+    }
+});
+
+// Dynamic route handler for all HTML pages
+app.get('/:page', (req, res) => {
+    try {
+        const pageName = req.params.page;
+        const htmlPath = path.join(__dirname, '..', `${pageName}.html`);
+        
+        // Check if file exists
+        if (fs.existsSync(htmlPath)) {
+            console.log(`📄 Serving ${pageName}.html from:`, htmlPath);
+            res.sendFile(htmlPath);
+        } else {
+            console.log(`❌ Page not found: ${pageName}.html`);
+            res.status(404).send(`Page not found: /${pageName}`);
+        }
+    } catch (error) {
+        console.error('Error serving page:', error);
+        res.status(500).send('Server error');
     }
 });
 
