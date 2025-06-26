@@ -535,6 +535,12 @@ app.get('/api/test-supabase', async (req, res) => {
     }
 });
 
+// Health check route for Railway
+app.get('/', (req, res) => {
+    res.status(200).send('✅ RoomFinderAI server is running');
+});
+
+// Start server on Railway-required port
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+    console.log(`✅ Server running on port ${port}`);
 });
