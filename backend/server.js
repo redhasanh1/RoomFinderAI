@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 
@@ -63,7 +64,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from parent directory (frontend files)
-const path = require('path');
 const staticPath = path.join(__dirname, '..');
 console.log('📁 Serving static files from:', staticPath);
 app.use(express.static(staticPath));
