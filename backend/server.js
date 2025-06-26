@@ -11,13 +11,8 @@ try {
 } catch (error) {
     console.log('Auto-decrypt not needed or failed:', error.message);
 }
+const config = require('../config.js');
 
-const config = {
-  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-  OPENAI_ORG_ID: process.env.OPENAI_ORG_ID,
-  OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-3.5-turbo'
-};
 
 
 const { createClient } = require('@supabase/supabase-js');
