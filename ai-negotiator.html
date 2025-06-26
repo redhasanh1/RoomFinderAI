@@ -199,6 +199,22 @@
                 console.warn('⚠️ AINegotatior class not found - negotiation features disabled');
             }
 
+            // Add a small delay to ensure everything is loaded
+            setTimeout(() => {
+                console.log('🚀 Starting real-time systems...');
+                
+                // Set up real-time listeners for AI negotiator interface
+                setupRealTimeNegotiationListener();
+                
+                // Set up automatic polling as backup
+                setupAutomaticPolling();
+                
+                // Request notification permission for better UX
+                requestNotificationPermission();
+                
+                console.log('✅ Real-time systems started');
+            }, 1000);
+
             console.log('✅ AI Negotiator initialized successfully');
         });
 
@@ -268,6 +284,206 @@
             } else {
                 console.error('❌ AI Negotiation Engine not initialized');
             }
+        }
+
+        // Set up real-time negotiation listener for instant updates
+        function setupRealTimeNegotiationListener() {
+            if (!supabase || !currentUser?.email) {
+                console.warn('⚠️ Cannot setup real-time listener - missing supabase or user');
+                return;
+            }
+
+            console.log('🔔 Setting up real-time negotiation listener for instant updates');
+
+            // Listen for new messages from AI negotiator
+            const messageChannel = supabase
+                .channel(`ai_negotiator_realtime_${Date.now()}`)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages'
+                }, async (payload) => {
+                    const newMessage = payload.new;
+                    console.log('🔔 [REAL-TIME] New message detected:', newMessage);
+                    
+                    // Check if this is from AI negotiator
+                    if (newMessage.sender_email === 'ai-negotiator@roomfinder.com') {
+                        console.log('🤖 AI Negotiator message detected!');
+                        
+                        // Get conversation details to find user
+                        const { data: conversation } = await supabase
+                            .from('conversations')
+                            .select('sender_email, receiver_email')
+                            .eq('id', newMessage.conversation_id)
+                            .single();
+                        
+                        // Check if this conversation involves current user
+                        if (conversation && 
+                            (conversation.sender_email === currentUser.email || 
+                             conversation.receiver_email === currentUser.email)) {
+                            
+                            console.log('🎯 Message is for current user - displaying immediately');
+                            
+                            // Extract clean content
+                            const cleanContent = newMessage.content.replace(/^🤖 AI Negotiator.*?:\s*/s, '');
+                            
+                            // Check if this looks like a success message
+                            if (cleanContent.includes('🎉') && cleanContent.includes('Excellent')) {
+                                aiNegotiator.appendMessage('AI', '🎉 **NEGOTIATION SUCCESS!**', 'left');
+                                aiNegotiator.appendMessage('AI', cleanContent, 'left');
+                                aiNegotiator.celebrateSuccess();
+                                
+                                // Show notification
+                                if ('Notification' in window && Notification.permission === 'granted') {
+                                    new Notification('🎉 Negotiation Success!', {
+                                        body: 'Your rental negotiation was successful!',
+                                        icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzRmNzMzYSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+🎉</text></svg>'
+                                    });
+                                }
+                            } else {
+                                // Regular AI response
+                                aiNegotiator.appendMessage('AI', `🤖 **AI Update:** ${cleanContent}`, 'left');
+                            }
+                        }
+                    }
+                })
+                .subscribe((status, err) => {
+                    console.log('🔔 Real-time message listener status:', status);
+                    if (err) {
+                        console.error('❌ Real-time message listener error:', err);
+                    }
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ Real-time message listener active');
+                    }
+                });
+
+            // Store reference for cleanup
+            window.realtimeMessageChannel = messageChannel;
+        }
+
+        // Set up automatic polling as backup
+        function setupAutomaticPolling() {
+            console.log('⏰ Setting up aggressive automatic polling every 3 seconds');
+            console.log('📊 Current user email:', currentUser?.email);
+            console.log('📊 Document hidden:', document.hidden);
+            
+            // Track what we've already shown to avoid duplicates
+            // Start with a time from 1 minute ago so we catch recent activity
+            let lastProcessedBackupTime = Date.now() - (60 * 1000); // 1 minute ago
+            console.log('📊 Starting lastProcessedBackupTime:', new Date(lastProcessedBackupTime));
+            
+            // Check for updates every 3 seconds automatically (much more aggressive)
+            const pollingInterval = setInterval(async () => {
+                console.log('⏰ Auto-polling tick - Document hidden:', document.hidden, 'User email:', currentUser?.email);
+                
+                if (!document.hidden && currentUser?.email) { // Only poll when page is visible
+                    console.log('⏰ Auto-polling for updates...');
+                    
+                    try {
+                        // Check localStorage backups for recent activity
+                        const backups = JSON.parse(localStorage.getItem('ai_negotiation_backups') || '[]');
+                        console.log('📦 Total backups found:', backups.length);
+                        
+                        const newBackups = backups.filter(backup => {
+                            const backupTime = new Date(backup.timestamp).getTime();
+                            const isForCurrentUser = backup.userEmail === currentUser?.email;
+                            const isNew = backupTime > lastProcessedBackupTime;
+                            
+                            console.log('📦 Backup check:', {
+                                timestamp: backup.timestamp,
+                                userEmail: backup.userEmail,
+                                currentUser: currentUser?.email,
+                                isForCurrentUser,
+                                isNew,
+                                backupTime,
+                                lastProcessedBackupTime
+                            });
+                            
+                            return isNew && isForCurrentUser;
+                        });
+                        
+                        console.log('🆕 New backups found:', newBackups.length);
+                        
+                        if (newBackups.length > 0) {
+                            console.log('⚡ FOUND NEW NEGOTIATION ACTIVITY!', newBackups);
+                            
+                            for (const backup of newBackups) {
+                                console.log('🎯 Processing backup:', backup);
+                                
+                                if (backup.landlordReply) {
+                                    aiNegotiator.appendMessage('AI', `💬 **Landlord:** "${backup.landlordReply}"`, 'left');
+                                }
+                                if (backup.aiResponse) {
+                                    aiNegotiator.appendMessage('AI', `🤖 **AI Response:** "${backup.aiResponse}"`, 'left');
+                                }
+                                aiNegotiator.appendMessage('AI', backup.message, 'left');
+                                if (backup.type === 'negotiation_success') {
+                                    aiNegotiator.celebrateSuccess();
+                                    
+                                    // Show browser notification
+                                    if ('Notification' in window && Notification.permission === 'granted') {
+                                        new Notification('🎉 Negotiation Success!', {
+                                            body: 'Your rental negotiation was successful!',
+                                            icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzRmNzMzYSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+🎉</text></svg>'
+                                        });
+                                    }
+                                }
+                                
+                                // Update last processed time
+                                const newTime = new Date(backup.timestamp).getTime();
+                                lastProcessedBackupTime = Math.max(lastProcessedBackupTime, newTime);
+                                console.log('📊 Updated lastProcessedBackupTime to:', new Date(lastProcessedBackupTime));
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Auto-polling error:', error);
+                    }
+                } else {
+                    console.log('⏸️ Skipping auto-poll - document hidden or no user');
+                }
+            }, 3000); // Every 3 seconds (much more responsive!)
+
+            // Store reference for cleanup
+            window.autoPollingInterval = pollingInterval;
+            console.log('✅ Auto-polling interval started with ID:', pollingInterval);
+        }
+
+        // Request notification permission
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    console.log('Notification permission:', permission);
+                });
+            }
+        }
+
+        // Test function to verify auto-polling is working
+        function testAutoPolling() {
+            console.log('🧪 Testing auto-polling status...');
+            console.log('📊 Auto-polling interval ID:', window.autoPollingInterval);
+            console.log('📊 Current user:', currentUser);
+            console.log('📊 Document hidden:', document.hidden);
+            
+            // Check localStorage backups
+            const backups = JSON.parse(localStorage.getItem('ai_negotiation_backups') || '[]');
+            console.log('📦 Backups in localStorage:', backups);
+            
+            // Manually trigger the polling logic
+            if (window.autoPollingInterval) {
+                console.log('✅ Auto-polling is set up');
+            } else {
+                console.log('❌ Auto-polling is NOT set up - restarting...');
+                setupAutomaticPolling();
+            }
+        }
+
+        // Force start auto-polling manually
+        function forceStartAutoPolling() {
+            console.log('🔧 Force starting auto-polling...');
+            if (window.autoPollingInterval) {
+                clearInterval(window.autoPollingInterval);
+            }
+            setupAutomaticPolling();
         }
 
         // Manual check for updates
@@ -410,6 +626,8 @@
         window.testNegotiationFlow = testNegotiationFlow;
         window.checkRecentMessages = checkRecentMessages;
         window.checkForUpdates = checkForUpdates;
+        window.testAutoPolling = testAutoPolling;
+        window.forceStartAutoPolling = forceStartAutoPolling;
     </script>
 </body>
 </html>
