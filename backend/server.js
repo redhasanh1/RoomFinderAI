@@ -62,8 +62,11 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from parent directory
-app.use(express.static('../'));
+// Serve static files from parent directory (frontend files)
+const path = require('path');
+const staticPath = path.join(__dirname, '..');
+console.log('📁 Serving static files from:', staticPath);
+app.use(express.static(staticPath));
 
 // Google Maps API key from config
 const GOOGLE_API_KEY = config.GOOGLE_API_KEY;
@@ -585,8 +588,20 @@ app.get('/api/test-supabase', async (req, res) => {
     }
 });
 
-// Health check route for Railway 
+// Serve main website at root
 app.get('/', (req, res) => {
+    try {
+        const indexPath = path.join(__dirname, '..', 'index.html');
+        console.log('📄 Serving index.html from:', indexPath);
+        res.sendFile(indexPath);
+    } catch (error) {
+        console.error('Error serving index.html:', error);
+        res.status(200).send('✅ RoomFinderAI server is running');
+    }
+});
+
+// Health check route for Railway monitoring
+app.get('/health', (req, res) => {
     res.status(200).send('✅ RoomFinderAI server is running');
 });
 
