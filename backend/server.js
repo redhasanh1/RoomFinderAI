@@ -4,13 +4,7 @@ const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 
-// Auto-decrypt config.js if needed (for Railway deployment)
-try {
-    const autoDecrypt = require('../auto-decrypt.js');
-    autoDecrypt();
-} catch (error) {
-    console.log('Auto-decrypt not needed or failed:', error.message);
-}
+// Load config - Railway deployment reads from environment variables
 const config = require('../config.js');
 
 
@@ -176,7 +170,7 @@ async function generateMarketplaceUrl({ location, price, size, amenities, roomTy
     if (!normalizedLocation) query += `%20${encodeURIComponent(location)}`;
 
     const baseUrl = 'https://www.facebook.com/marketplace';
-    const locationPath = normalizedLocation ? `/${encodedLocation}` : '';
+    const locationPath = normalizedLocation ? `/${normalizedLocation}` : '';
     const marketplaceUrl = `${baseUrl}${locationPath}/search?minPrice=${minPrice}&maxPrice=${maxPrice}&query=${query}`;
     console.log(`Generated Marketplace URL: ${marketplaceUrl}`);
     return marketplaceUrl;
