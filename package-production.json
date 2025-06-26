@@ -3,13 +3,12 @@
   "version": "1.0.0",
   "description": "AI-powered rental negotiation platform with advanced market intelligence",
   "main": "backend/server.js",
-"scripts": {
-  "start": "node backend/server.js",
-  "dev": "node backend/server.js",
-  "build": "echo 'No build step required'",
-  "test": "echo 'No tests specified'"
-},
-
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js",
+    "build": "echo 'No build step required for this project'",
+    "test": "echo 'No tests specified'"
+  },
   "keywords": [
     "ai",
     "negotiation", 
@@ -19,7 +18,7 @@
     "chatbot",
     "supabase"
   ],
-  "author": "RoomFinder AI",
+  "author": "Your Name",
   "license": "MIT",
   "engines": {
     "node": ">=16.0.0",
@@ -33,5 +32,13 @@
     "stripe": "^10.15.0",
     "uuid": "^9.0.0",
     "@supabase/supabase-js": "^2.39.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/roomfinder-ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/roomfinder-ai/issues"
+  },
+  "homepage": "https://github.com/yourusername/roomfinder-ai#readme"
 }

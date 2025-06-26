@@ -70,17 +70,30 @@ class AINegotiator {
                 .on('postgres_changes', {
                     event: 'INSERT',
                     schema: 'public',
-                    table: 'ai_chats',
-                    filter: `user_email=eq.${this.currentUser.email}`
+                    table: 'ai_chats'
+                    // Remove filter - listen to all updates and filter in code
                 }, (payload) => {
                     console.log('📬 Received real-time update:', payload);
                     try {
                         const newChat = payload.new;
+                        
+                        // Filter for current user
+                        if (newChat.user_email !== this.currentUser.email) {
+                            console.log('📭 Update not for current user, skipping');
+                            return;
+                        }
+                        
+                        console.log('📨 Processing update for current user:', newChat.title);
+                        
                         if (newChat.title && newChat.title.includes('Negotiation Success')) {
                             console.log('🎉 Negotiation success detected!');
                             this.displayNegotiationSuccess(newChat);
                         } else if (newChat.title && newChat.title.includes('Landlord Reply')) {
                             console.log('💬 Landlord reply detected!');
+                            this.displayLandlordReply(newChat);
+                        } else {
+                            console.log('📢 Other AI notification:', newChat.title);
+                            // Display any other AI notifications
                             this.displayLandlordReply(newChat);
                         }
                     } catch (error) {
@@ -95,10 +108,19 @@ class AINegotiator {
                     }
                     if (status === 'SUBSCRIBED') {
                         console.log('✅ Real-time connection established');
-                        this.stopFallbackPolling(); // Stop polling when real-time works
+                        // Keep polling as backup even when real-time works
+                        this.setupFallbackPolling(); // More reliable to have both
                     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
                         console.warn('⚠️ Real-time connection issues, using fallback');
                         this.setupFallbackPolling();
+                    } else if (status === 'CLOSED') {
+                        console.warn('📡 Real-time connection closed, attempting to reconnect...');
+                        this.setupFallbackPolling();
+                        // Try to reconnect after a delay
+                        setTimeout(() => {
+                            console.log('🔄 Attempting to reconnect real-time subscription...');
+                            this.listenForNegotiationUpdates();
+                        }, 5000);
                     }
                 });
 
@@ -184,7 +206,7 @@ class AINegotiator {
         if (this.pollingInterval) return; // Already polling
         
         console.log('🔄 Setting up fallback polling for updates');
-        this.lastPollTime = new Date();
+        this.lastPollTime = new Date(Date.now() - 10000); // Check last 10 seconds
         
         this.pollingInterval = setInterval(async () => {
             try {
@@ -203,9 +225,13 @@ class AINegotiator {
                 if (newChats && newChats.length > 0) {
                     console.log(`🔄 Found ${newChats.length} new updates via polling`);
                     for (const chat of newChats) {
+                        console.log('📨 Processing polled update:', chat.title);
                         if (chat.title && chat.title.includes('Negotiation Success')) {
                             this.displayNegotiationSuccess(chat);
                         } else if (chat.title && chat.title.includes('Landlord Reply')) {
+                            this.displayLandlordReply(chat);
+                        } else {
+                            // Display any other AI notifications
                             this.displayLandlordReply(chat);
                         }
                     }
@@ -214,7 +240,7 @@ class AINegotiator {
             } catch (error) {
                 console.error('Error in fallback polling:', error);
             }
-        }, 3000); // Poll every 3 seconds
+        }, 2000); // Poll every 2 seconds for faster updates
     }
 
     // Stop polling when real-time is working
@@ -403,27 +429,22 @@ class AINegotiator {
         Return JSON with only fields that have values:
         `;
         
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        const response = await fetch('/api/ai-negotiator', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                'OpenAI-Organization': this.config.OPENAI_ORG_ID
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
-                messages: [{ role: 'system', content: prompt }],
-                max_tokens: 200,
-                temperature: 0.3
+                message: prompt
             })
         });
         
         if (!response.ok) {
-            throw new Error(`OpenAI API error: ${response.status}`);
+            throw new Error(`AI API error: ${response.status}`);
         }
         
         const data = await response.json();
-        const result = JSON.parse(data.choices[0].message.content.trim());
+        const result = { feedback: data.response };
         
         // Clean city data if present
         if (result.city) {
