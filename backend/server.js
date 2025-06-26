@@ -595,7 +595,10 @@ app.get('/api/config', (req, res) => {
         STRIPE_PUBLISHABLE_KEY: config.STRIPE_PUBLISHABLE_KEY,
         GOOGLE_API_KEY: config.GOOGLE_API_KEY,
         SUPABASE_URL: config.SUPABASE_URL,
-        SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY
+        SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY,
+        OPENAI_API_KEY: config.OPENAI_API_KEY,
+        OPENAI_ORG_ID: config.OPENAI_ORG_ID,
+        OPENAI_MODEL: config.OPENAI_MODEL
     });
 });
 
