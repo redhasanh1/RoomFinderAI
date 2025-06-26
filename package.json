@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "description": "AI-powered rental negotiation platform with advanced market intelligence",
   "main": "backend/server.js",
-  "scripts": {
-    "start": "node start-railway.js",
-    "railway": "node server.js",
-    "dev": "node backend/server.js",
-    "build": "echo 'No build step required'",
-    "test": "echo 'No tests specified'"
-  },
+"scripts": {
+  "start": "node backend/server.js",
+  "dev": "node backend/server.js",
+  "build": "echo 'No build step required'",
+  "test": "echo 'No tests specified'"
+},
+
   "keywords": [
     "ai",
     "negotiation", 
