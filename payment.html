@@ -227,46 +227,13 @@
                 <a href="#contact" class="hover:text-blue-400">Contact</a>
             </div>
         </div>
-    <script src="config.js"></script>
     <script>
-        // Initialize Stripe with publishable key from config
-        const stripe = Stripe(config.STRIPE_PUBLISHABLE_KEY); 
+        // Initialize Stripe with publishable key from Railway API
+        let stripe;
+        let elements;
+        let cardElement;
 
-        const elements = stripe.elements({
-            loader: 'auto'
-        });
-
-        // Create card element
-        const cardElement = elements.create('card', {
-            hidePostalCode: true,
-            disableLink: true,
-            style: {
-                base: {
-                    fontSize: '16px',
-                    color: '#424770',
-                    '::placeholder': {
-                        color: '#aab7c4',
-                    },
-                },
-                invalid: {
-                    color: '#9e2146',
-                },
-            },
-        });
-
-        cardElement.mount('#card-element');
-
-        // Handle real-time validation errors from the card Element
-        cardElement.on('change', ({error}) => {
-            const displayError = document.getElementById('card-errors');
-            if (error) {
-                displayError.textContent = error.message;
-            } else {
-                displayError.textContent = '';
-            }
-        });
-
-        // Get plan details from URL parameters
+        // Get plan details from URL parameters and update display immediately
         const urlParams = new URLSearchParams(window.location.search);
         const plan = urlParams.get('plan') || 'basic';
         const price = urlParams.get('price') || '9.99';
@@ -275,42 +242,88 @@
         document.getElementById('planName').textContent = plan.charAt(0).toUpperCase() + plan.slice(1) + ' Plan';
         document.getElementById('planPrice').textContent = `$${price}/mo`;
 
-        // Handle form submission
-        const form = document.getElementById('payment-form');
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-
-            const submitButton = document.getElementById('submit-payment');
-            const buttonText = document.getElementById('button-text');
-            const spinner = document.getElementById('spinner');
-
-            // Disable button and show loading
-            submitButton.disabled = true;
-            buttonText.textContent = 'Processing...';
-            spinner.classList.remove('hidden');
-
-            const {token, error} = await stripe.createToken(cardElement, {
-                name: document.getElementById('name').value,
+        // Fetch configuration from API and initialize Stripe
+        fetch('/api/config')
+            .then(response => response.json())
+            .then(config => {
+                stripe = Stripe(config.STRIPE_PUBLISHABLE_KEY);
+                elements = stripe.elements({
+                    loader: 'auto'
+                });
+                initializePaymentForm();
+            })
+            .catch(error => {
+                console.error('Failed to load configuration:', error);
+                showErrorMessage('Failed to initialize payment system. Please refresh the page.');
             });
 
-            if (error) {
-                // Show error to customer
-                const errorElement = document.getElementById('card-errors');
-                errorElement.textContent = error.message;
+        function initializePaymentForm() {
+            // Create card element
+            cardElement = elements.create('card', {
+                hidePostalCode: true,
+                disableLink: true,
+                style: {
+                    base: {
+                        fontSize: '16px',
+                        color: '#424770',
+                        '::placeholder': {
+                            color: '#aab7c4',
+                        },
+                    },
+                    invalid: {
+                        color: '#9e2146',
+                    },
+                },
+            });
 
-                // Re-enable button
-                submitButton.disabled = false;
-                buttonText.textContent = 'Subscribe Now';
-                spinner.classList.add('hidden');
-            } else {
-                // Send token to your server
-                submitToken(token);
-            }
-        });
+            cardElement.mount('#card-element');
 
-        async function submitToken(token) {
-            const email = document.getElementById('email').value;
-            const name = document.getElementById('name').value;
+            // Handle real-time validation errors from the card Element
+            cardElement.on('change', ({error}) => {
+                const displayError = document.getElementById('card-errors');
+                if (error) {
+                    displayError.textContent = error.message;
+                } else {
+                    displayError.textContent = '';
+                }
+            });
+
+            // Handle form submission
+            const form = document.getElementById('payment-form');
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const submitButton = document.getElementById('submit-payment');
+                const buttonText = document.getElementById('button-text');
+                const spinner = document.getElementById('spinner');
+
+                // Disable button and show loading
+                submitButton.disabled = true;
+                buttonText.textContent = 'Processing...';
+                spinner.classList.remove('hidden');
+
+                const {token, error} = await stripe.createToken(cardElement, {
+                    name: document.getElementById('name').value,
+                });
+
+                if (error) {
+                    // Show error to customer
+                    const errorElement = document.getElementById('card-errors');
+                    errorElement.textContent = error.message;
+
+                    // Re-enable button
+                    submitButton.disabled = false;
+                    buttonText.textContent = 'Subscribe Now';
+                    spinner.classList.add('hidden');
+                } else {
+                    // Send token to your server
+                    submitToken(token);
+                }
+            });
+
+            async function submitToken(token) {
+                const email = document.getElementById('email').value;
+                const name = document.getElementById('name').value;
 
             try {
                 // Send payment to backend for processing
@@ -371,6 +384,7 @@
                 submitButton.disabled = false;
                 buttonText.textContent = 'Subscribe Now';
                 spinner.classList.add('hidden');
+            }
             }
         }
 

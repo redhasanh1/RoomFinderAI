@@ -589,6 +589,14 @@ app.get('/api/test-supabase', async (req, res) => {
     }
 });
 
+// API endpoint to serve client-safe configuration
+app.get('/api/config', (req, res) => {
+    res.json({
+        STRIPE_PUBLISHABLE_KEY: config.STRIPE_PUBLISHABLE_KEY,
+        GOOGLE_API_KEY: config.GOOGLE_API_KEY
+    });
+});
+
 // Health check route for Railway monitoring - MUST BE BEFORE /:page
 app.get('/health', (req, res) => {
     res.status(200).send('✅ RoomFinderAI server is running');
