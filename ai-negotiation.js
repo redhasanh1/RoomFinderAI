@@ -495,6 +495,14 @@ class AINegotatior {
                             } catch (storageError) {
                                 console.log('Storage backup failed:', storageError.message);
                             }
+                            
+                            // PRIORITY 4: Track negotiation outcome for learning
+                            try {
+                                console.log('📊 Tracking successful negotiation outcome');
+                                await this.trackNegotiationOutcome(negotiation, 'success', negotiation.finalPrice);
+                            } catch (trackingError) {
+                                console.log('Learning tracking failed:', trackingError.message);
+                            }
                         } else {
                             // Show AI response in chat for ongoing negotiation
                             try {
@@ -559,9 +567,9 @@ class AINegotatior {
         }
     }
 
-    // Analyze landlord's reply
+    // Analyze landlord's reply with advanced intelligence
     async analyzeReply(replyContent, negotiation, listing) {
-        console.log('🔍 Starting reply analysis for:', replyContent);
+        console.log('🔍 Starting advanced reply analysis for:', replyContent);
         
         // First check for simple acceptance patterns IMMEDIATELY
         const simpleReply = replyContent.trim().toLowerCase();
@@ -580,9 +588,16 @@ class AINegotatior {
                 agreedPrice: lastOffer || negotiation.userBudget,
                 responseStrategy: 'thank',
                 suggestedResponse: `Excellent! Thank you for accepting the $${lastOffer || negotiation.userBudget}/month offer.`,
-                negotiationPhase: 'closing'
+                negotiationPhase: 'closing',
+                landlordPersonality: this.detectLandlordPersonality(replyContent, negotiation),
+                negotiationContext: this.analyzeNegotiationContext(negotiation)
             };
         }
+
+        // Advanced personality and sentiment detection
+        const personalityProfile = this.detectLandlordPersonality(replyContent, negotiation);
+        const emotionalState = this.detectEmotionalState(replyContent);
+        const negotiationContext = this.analyzeNegotiationContext(negotiation);
 
         try {
             const lastAIMessage = negotiation.messages
@@ -721,24 +736,176 @@ class AINegotatior {
         }
     }
 
-    // Generate advanced counter-offer with market analysis
+    // Generate advanced counter-offer with sophisticated tactics
     async generateAdvancedCounterOffer(analysis, negotiation, listing) {
         const userBudget = negotiation.userBudget;
         const counterPrice = analysis.priceOffered;
         const marketData = negotiation.marketData;
+        const personality = analysis.landlordPersonality || this.detectLandlordPersonality(analysis.originalReply || '', negotiation);
+        const context = analysis.negotiationContext || this.analyzeNegotiationContext(negotiation);
+
+        console.log('🎯 Generating advanced counter-offer with personality:', personality.type);
 
         if (counterPrice <= userBudget) {
-            return `Perfect! $${counterPrice}/month works excellently for me. I'm ready to proceed immediately and can provide excellent references. When can we arrange to finalize the rental agreement?`;
+            return await this.generateAcceptanceResponse(counterPrice, personality, context);
         } else {
-            const maxOffer = Math.min(userBudget, Math.round(counterPrice * 0.92));
-            let justification = '';
-            
-            if (marketData && counterPrice > marketData.average) {
-                justification = ` Given that similar properties in the area average around $${marketData.average}/month,`;
-            }
-            
-            return `I really appreciate your counter-offer!${justification} Would you consider $${maxOffer}/month? This fits perfectly within my budget and I can guarantee immediate occupancy with excellent references. I'm a serious, reliable tenant looking to establish a long-term rental relationship.`;
+            return await this.generateCounterOfferWithStrategy(counterPrice, userBudget, marketData, personality, context, listing);
         }
+    }
+
+    // Generate acceptance response tailored to landlord personality
+    async generateAcceptanceResponse(agreedPrice, personality, context) {
+        if (personality.communicationStyle === 'casual') {
+            return `Perfect! $${agreedPrice}/month works great for me. I'm ready to move fast and can provide solid references. When can we make this official?`;
+        } else if (personality.traits.includes('professional')) {
+            return `Excellent. I accept your offer of $${agreedPrice}/month. I'm prepared to proceed immediately with all necessary documentation and can provide comprehensive references and financial verification. Please advise on the next steps for finalizing our rental agreement.`;
+        } else {
+            return `Perfect! $${agreedPrice}/month works excellently for me. I'm ready to proceed immediately and can provide excellent references. When can we arrange to finalize the rental agreement?`;
+        }
+    }
+
+    // Generate counter-offer with advanced strategy
+    async generateCounterOfferWithStrategy(counterPrice, userBudget, marketData, personality, context, listing) {
+        // Determine negotiation strategy based on personality and context
+        const strategy = this.selectNegotiationStrategy(personality, context, marketData);
+        console.log('🧠 Selected negotiation strategy:', strategy);
+
+        let baseOffer = Math.min(userBudget, Math.round(counterPrice * 0.92));
+        let response = '';
+
+        switch (strategy) {
+            case 'value_proposition':
+                response = await this.generateValuePropositionResponse(baseOffer, counterPrice, personality, listing);
+                break;
+            case 'market_data':
+                response = await this.generateMarketDataResponse(baseOffer, counterPrice, marketData, personality);
+                break;
+            case 'emotional_appeal':
+                response = await this.generateEmotionalResponse(baseOffer, counterPrice, personality, context);
+                break;
+            case 'compromise_creative':
+                response = await this.generateCreativeCompromise(baseOffer, counterPrice, personality, listing);
+                break;
+            case 'final_attempt':
+                response = await this.generateFinalAttemptResponse(baseOffer, counterPrice, personality);
+                break;
+            default:
+                response = await this.generateStandardResponse(baseOffer, counterPrice, marketData, personality);
+        }
+
+        return response;
+    }
+
+    // Select the best negotiation strategy
+    selectNegotiationStrategy(personality, context, marketData) {
+        // If landlord is frustrated/skeptical, use value proposition
+        if (personality.emotionalState === 'frustrated' || personality.traits.includes('skeptical')) {
+            return 'value_proposition';
+        }
+        
+        // If landlord is experienced, use market data
+        if (personality.traits.includes('experienced')) {
+            return 'market_data';
+        }
+        
+        // If landlord is casual/informal, use emotional appeal
+        if (personality.communicationStyle === 'casual') {
+            return 'emotional_appeal';
+        }
+        
+        // If we're in later rounds, try creative compromise
+        if (context.roundsOfNegotiation >= 3) {
+            return 'compromise_creative';
+        }
+        
+        // If significant price reduction already made, final attempt
+        if (context.priceReductions.significant) {
+            return 'final_attempt';
+        }
+        
+        return 'market_data'; // Default to data-driven approach
+    }
+
+    // Generate value proposition response (for skeptical landlords)
+    async generateValuePropositionResponse(offer, counterPrice, personality, listing) {
+        const valueProp = this.generateValuePropositions(listing);
+        
+        if (personality.communicationStyle === 'casual') {
+            return `I hear you! Look, I get that you've heard it all before. Here's the real deal - I can do $${offer}/month, and here's what you get: ${valueProp.casual}. I'm not just another tenant making promises.`;
+        } else {
+            return `I understand your position and appreciate your directness. I can offer $${offer}/month, and I'd like to present some concrete value: ${valueProp.formal}. I believe this creates a win-win situation for both of us.`;
+        }
+    }
+
+    // Generate market data response (for experienced landlords)
+    async generateMarketDataResponse(offer, counterPrice, marketData, personality) {
+        if (!marketData) {
+            return `I appreciate your counter-offer. Based on my research of comparable properties, I can offer $${offer}/month. This reflects current market conditions while ensuring fair value for both parties.`;
+        }
+
+        const marketJustification = counterPrice > marketData.average ? 
+            `current market data shows similar properties averaging $${marketData.average}/month` :
+            `this aligns well with current market rates of around $${marketData.average}/month`;
+
+        if (personality.communicationStyle === 'formal') {
+            return `Thank you for your counter-offer. Based on comprehensive market analysis, ${marketJustification}. I can offer $${offer}/month, which represents fair market value while recognizing the quality of your property.`;
+        } else {
+            return `I appreciate the counter! Looking at ${marketJustification}, I can do $${offer}/month. Fair deal for both of us based on what's out there right now.`;
+        }
+    }
+
+    // Generate emotional appeal response (for casual landlords)
+    async generateEmotionalResponse(offer, counterPrice, personality, context) {
+        if (personality.communicationStyle === 'casual') {
+            return `I really love this place and can see myself living here long-term. I can stretch to $${offer}/month - that's honestly my max but I'd rather pay it for the right spot with a cool landlord. What do you think?`;
+        } else {
+            return `I'm genuinely excited about this property and can envision making it my home. I can offer $${offer}/month, which represents my maximum budget. I'm committed to being an exemplary tenant who takes excellent care of the property.`;
+        }
+    }
+
+    // Generate creative compromise (for extended negotiations)
+    async generateCreativeCompromise(offer, counterPrice, personality, listing) {
+        const compromises = [
+            `$${offer}/month with a 18-month lease commitment`,
+            `$${offer}/month plus I'll handle minor maintenance and upkeep`,
+            `$${offer}/month with first and last month paid upfront`,
+            `$${offer}/month and I'll help with property improvements`
+        ];
+
+        const selectedCompromise = compromises[Math.floor(Math.random() * compromises.length)];
+
+        if (personality.communicationStyle === 'casual') {
+            return `How about we get creative here? I can do ${selectedCompromise}. That way we both win - you get a reliable tenant and I get a fair deal. Sound good?`;
+        } else {
+            return `I'd like to propose a mutually beneficial arrangement: ${selectedCompromise}. This provides additional value and security for you while working within my budget constraints.`;
+        }
+    }
+
+    // Generate final attempt response
+    async generateFinalAttemptResponse(offer, counterPrice, personality) {
+        if (personality.communicationStyle === 'casual') {
+            return `Alright, final offer: $${offer}/month. That's genuinely my absolute max. If it works, awesome! If not, no hard feelings and thanks for your time.`;
+        } else {
+            return `I appreciate your time and consideration. My final offer is $${offer}/month - this represents my absolute maximum budget. If this works for you, I'm ready to proceed immediately. If not, I completely understand and thank you for the opportunity.`;
+        }
+    }
+
+    // Generate standard response
+    async generateStandardResponse(offer, counterPrice, marketData, personality) {
+        let justification = '';
+        if (marketData && counterPrice > marketData.average) {
+            justification = ` Given that similar properties in the area average around $${marketData.average}/month,`;
+        }
+        
+        return `I really appreciate your counter-offer!${justification} Would you consider $${offer}/month? This fits perfectly within my budget and I can guarantee immediate occupancy with excellent references. I'm a serious, reliable tenant looking to establish a long-term rental relationship.`;
+    }
+
+    // Generate value propositions
+    generateValuePropositions(listing) {
+        return {
+            casual: "long-term lease (I'm not going anywhere), excellent credit, no parties, and I actually take care of places better than most owners",
+            formal: "a minimum 12-month lease commitment, verifiable excellent credit history, comprehensive renters insurance, and meticulous property care with regular maintenance updates"
+        };
     }
 
     // Generate market-based response for rejections
@@ -1026,53 +1193,339 @@ class AINegotatior {
     }
 
     // Generate market-based negotiation response to rejections
-    async generateMarketBasedNegotiation(negotiation, listing, landlordMessage, analysis) {
+    // Enhanced dynamic pricing model with market intelligence
+    async getDynamicMarketData(location, houseType, bedrooms, seasonality = null) {
+        const cacheKey = `dynamic_${location}-${houseType}-${bedrooms}-${seasonality || 'default'}`;
+        
+        if (this.marketData.has(cacheKey)) {
+            console.log('📊 Using cached dynamic market data for:', cacheKey);
+            return this.marketData.get(cacheKey);
+        }
+
         try {
-            const marketData = negotiation.marketData || await this.getMarketData(
-                listing.city, listing.house_type, listing.bedrooms
+            // Get base market data
+            const baseMarketData = await this.getMarketData(location, houseType, bedrooms);
+            
+            // Apply dynamic adjustments
+            const adjustments = await this.calculateMarketAdjustments(location, houseType, bedrooms);
+            
+            const dynamicData = {
+                ...baseMarketData,
+                adjustedAverage: Math.round(baseMarketData.average * adjustments.priceMultiplier),
+                adjustedMedian: Math.round(baseMarketData.median * adjustments.priceMultiplier),
+                seasonalFactor: adjustments.seasonalFactor,
+                demandLevel: adjustments.demandLevel,
+                competitiveIndex: adjustments.competitiveIndex,
+                locationDesirability: adjustments.locationDesirability,
+                negotiationLeverage: this.calculateNegotiationLeverage(adjustments),
+                pricingStrategy: this.determinePricingStrategy(adjustments),
+                adjustmentFactors: adjustments
+            };
+            
+            this.marketData.set(cacheKey, dynamicData);
+            console.log('📊 Dynamic market data calculated:', dynamicData);
+            
+            return dynamicData;
+        } catch (error) {
+            console.error('Error getting dynamic market data:', error);
+            return await this.getMarketData(location, houseType, bedrooms);
+        }
+    }
+
+    // Calculate market adjustment factors for dynamic pricing
+    async calculateMarketAdjustments(location, houseType, bedrooms) {
+        try {
+            const currentMonth = new Date().getMonth() + 1;
+            const currentYear = new Date().getFullYear();
+            
+            // Seasonal adjustment (rental market seasonality)
+            const seasonalFactor = this.getSeasonalAdjustment(currentMonth);
+            
+            // Property age and condition adjustment
+            const propertyAgeAdjustment = this.getPropertyAgeAdjustment(houseType);
+            
+            // Location desirability scoring
+            const locationDesirability = await this.calculateLocationDesirability(location);
+            
+            // Demand vs supply analysis
+            const demandLevel = await this.analyzeDemandLevel(location, houseType, bedrooms);
+            
+            // Competitive pricing analysis
+            const competitiveIndex = await this.calculateCompetitiveIndex(location, houseType, bedrooms);
+            
+            // Calculate overall price multiplier
+            const priceMultiplier = (
+                seasonalFactor * 
+                propertyAgeAdjustment * 
+                locationDesirability * 
+                demandLevel * 
+                competitiveIndex
             );
             
-            console.log('🏠 Using market data for negotiation:', marketData);
+            return {
+                seasonalFactor,
+                propertyAgeAdjustment,
+                locationDesirability,
+                demandLevel,
+                competitiveIndex,
+                priceMultiplier: Math.max(0.7, Math.min(1.4, priceMultiplier)) // Cap between 70% and 140%
+            };
+        } catch (error) {
+            console.error('Error calculating market adjustments:', error);
+            return {
+                seasonalFactor: 1.0,
+                propertyAgeAdjustment: 1.0,
+                locationDesirability: 1.0,
+                demandLevel: 1.0,
+                competitiveIndex: 1.0,
+                priceMultiplier: 1.0
+            };
+        }
+    }
+
+    // Seasonal adjustment based on rental market patterns
+    getSeasonalAdjustment(month) {
+        // Peak season: May-September (higher prices)
+        // Off-season: November-March (lower prices)
+        const seasonalMap = {
+            1: 0.92,   // January - low demand
+            2: 0.90,   // February - lowest demand
+            3: 0.95,   // March - starting to pick up
+            4: 1.02,   // April - spring demand
+            5: 1.08,   // May - peak season starts
+            6: 1.10,   // June - peak demand
+            7: 1.12,   // July - highest demand
+            8: 1.10,   // August - still high
+            9: 1.05,   // September - demand cooling
+            10: 0.98,  // October - moderate
+            11: 0.94,  // November - slowing down
+            12: 0.92   // December - holiday slowdown
+        };
+        return seasonalMap[month] || 1.0;
+    }
+
+    // Property age and condition factor
+    getPropertyAgeAdjustment(houseType) {
+        // Newer properties command higher rents
+        const typeAdjustments = {
+            'apartment': 1.0,
+            'house': 1.05,     // Houses typically rent for more
+            'condo': 1.02,
+            'townhouse': 1.03,
+            'studio': 0.95,
+            'room': 0.85       // Rooms rent for less
+        };
+        return typeAdjustments[houseType?.toLowerCase()] || 1.0;
+    }
+
+    // Calculate location desirability score
+    async calculateLocationDesirability(location) {
+        if (!location) return 1.0;
+        
+        const locationLower = location.toLowerCase();
+        
+        // Major city centers get higher scores
+        const cityScores = {
+            'paris': 1.20,
+            'toronto': 1.15,
+            'vancouver': 1.18,
+            'montreal': 1.10,
+            'london': 1.22,
+            'new york': 1.25,
+            'san francisco': 1.30,
+            'los angeles': 1.18,
+            'chicago': 1.12,
+            'boston': 1.15,
+            'seattle': 1.20,
+            'washington': 1.17,
+            'miami': 1.14,
+            'berlin': 1.10,
+            'amsterdam': 1.16,
+            'sydney': 1.18,
+            'melbourne': 1.15
+        };
+        
+        for (const [city, score] of Object.entries(cityScores)) {
+            if (locationLower.includes(city)) {
+                return score;
+            }
+        }
+        
+        // Default for other locations
+        return 1.0;
+    }
+
+    // Analyze demand level for specific market segment
+    async analyzeDemandLevel(location, houseType, bedrooms) {
+        try {
+            // Query recent listing activity
+            const { data: recentListings } = await this.supabase
+                .from('listings')
+                .select('price, created_at')
+                .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+                .ilike('city', `%${location}%`)
+                .eq('house_type', houseType)
+                .eq('bedrooms', bedrooms)
+                .limit(20);
+            
+            if (!recentListings?.length) return 1.0;
+            
+            // High activity = high demand = higher prices
+            const activityLevel = recentListings.length;
+            
+            if (activityLevel >= 15) return 1.08;      // Very high demand
+            if (activityLevel >= 10) return 1.05;      // High demand
+            if (activityLevel >= 5) return 1.02;       // Moderate demand
+            return 0.98;                               // Lower demand
+            
+        } catch (error) {
+            console.error('Error analyzing demand level:', error);
+            return 1.0;
+        }
+    }
+
+    // Calculate competitive index based on similar listings
+    async calculateCompetitiveIndex(location, houseType, bedrooms) {
+        try {
+            // Get similar active listings
+            const { data: competitors } = await this.supabase
+                .from('listings')
+                .select('price')
+                .ilike('city', `%${location}%`)
+                .eq('house_type', houseType)
+                .eq('bedrooms', bedrooms)
+                .gte('price', 1) // Only listings with valid prices
+                .limit(30);
+            
+            if (!competitors?.length) return 1.0;
+            
+            const prices = competitors.map(c => c.price);
+            const priceVariation = (Math.max(...prices) - Math.min(...prices)) / Math.max(...prices);
+            
+            // High price variation = more negotiation room
+            if (priceVariation > 0.3) return 0.95;     // High variation, lower baseline
+            if (priceVariation > 0.2) return 0.98;     // Moderate variation
+            return 1.02;                               // Low variation, premium market
+            
+        } catch (error) {
+            console.error('Error calculating competitive index:', error);
+            return 1.0;
+        }
+    }
+
+    // Calculate negotiation leverage based on market conditions
+    calculateNegotiationLeverage(adjustments) {
+        const leverageScore = (
+            (1 - adjustments.demandLevel) * 0.3 + // Lower demand = more leverage
+            (1 - adjustments.competitiveIndex) * 0.3 + // Less competition = more leverage
+            (1 - adjustments.seasonalFactor) * 0.2 + // Off-season = more leverage
+            (1 - adjustments.locationDesirability) * 0.2 // Less desirable = more leverage
+        );
+        
+        if (leverageScore > 0.15) return 'high';
+        if (leverageScore > 0.05) return 'medium';
+        return 'low';
+    }
+
+    // Determine optimal pricing strategy
+    determinePricingStrategy(adjustments) {
+        const priceMultiplier = adjustments.priceMultiplier;
+        
+        if (priceMultiplier > 1.1) return 'premium_market';
+        if (priceMultiplier < 0.9) return 'aggressive_pricing';
+        return 'balanced_approach';
+    }
+
+    // Select advanced negotiation strategy based on context
+    selectAdvancedNegotiationStrategy(analysis, negotiation, dynamicMarketData) {
+        const personality = analysis.landlordPersonality;
+        const leverage = dynamicMarketData?.negotiationLeverage || 'medium';
+        const pricingStrategy = dynamicMarketData?.pricingStrategy || 'balanced_approach';
+        
+        if (personality?.emotionalState === 'frustrated' || personality?.traits.includes('skeptical')) {
+            return "VALUE PROPOSITION STRATEGY: Focus on tenant quality, reliability, and non-monetary benefits. Emphasize quick decision-making and long-term tenancy.";
+        }
+        
+        if (personality?.traits.includes('experienced') || personality?.communicationStyle === 'business') {
+            return "MARKET DATA STRATEGY: Present comprehensive market analysis with specific comparables and pricing justification. Use data-driven arguments.";
+        }
+        
+        if (leverage === 'high' && pricingStrategy === 'aggressive_pricing') {
+            return "MARKET LEVERAGE STRATEGY: Highlight current market conditions favoring tenants. Present alternative options and competitive pricing.";
+        }
+        
+        if (personality?.traits.includes('flexible') && negotiation.messages?.length <= 2) {
+            return "CREATIVE COMPROMISE STRATEGY: Offer package deals including longer lease terms, utilities, maintenance responsibilities, or other value-adds.";
+        }
+        
+        if (negotiation.messages?.length >= 3) {
+            return "FINAL ATTEMPT STRATEGY: Present best and final offer with clear reasoning and deadline for response. Show respect for their position while maintaining firm stance.";
+        }
+        
+        return "BALANCED PERSUASION STRATEGY: Combine market data with personal tenant qualities and reasonable compromise offers.";
+    }
+
+    // Extract price from message content
+    extractPriceFromMessage(content) {
+        const priceMatch = content.match(/\$([0-9,]+)/);
+        return priceMatch ? parseInt(priceMatch[1].replace(/,/g, '')) : null;
+    }
+
+    async generateMarketBasedNegotiation(negotiation, listing, landlordMessage, analysis) {
+        try {
+            console.log('🏢 Generating advanced market-based response with dynamic pricing');
+            
+            // Get enhanced market data with dynamic pricing
+            const dynamicMarketData = await this.getDynamicMarketData(
+                listing.city, 
+                listing.house_type, 
+                listing.bedrooms
+            );
+            
+            console.log('🏠 Using enhanced market data for negotiation:', dynamicMarketData);
             
             const prompt = `
-            You are an expert rental negotiator responding to a landlord who has rejected or objected to your offer. Generate a persuasive, professional response that uses market data strategically.
+            You are an expert rental negotiator with advanced market intelligence responding to a landlord's rejection.
 
-            LANDLORD'S REJECTION: "${landlordMessage}"
+            LANDLORD'S RESPONSE: "${landlordMessage}"
+            SENTIMENT: ${analysis.sentiment}
+            LANDLORD PERSONALITY: ${analysis.landlordPersonality?.type || 'unknown'}
             
             PROPERTY DETAILS:
-            - Property: ${listing.title}
-            - Current asking price: $${listing.price}/month
+            - ${listing.title}
+            - Current Price: $${listing.price}/month
             - Type: ${listing.house_type}
             - Bedrooms: ${listing.bedrooms}
             - Location: ${listing.city}
             
-            MARKET DATA:
-            - Average market price: $${marketData.average}/month
-            - Price range: $${marketData.min} - $${marketData.max}
-            - Number of comparable properties: ${marketData.count}
-            - Data source: ${marketData.source}
-            
-            YOUR USER'S BUDGET: $${negotiation.userBudget}/month
+            ADVANCED MARKET INTELLIGENCE:
+            - Base Market Average: $${negotiation.marketData?.average || 'Unknown'}
+            - Dynamic Adjusted Average: $${dynamicMarketData?.adjustedAverage || dynamicMarketData?.average || 'Unknown'}
+            - Seasonal Factor: ${((dynamicMarketData?.seasonalFactor || 1) * 100 - 100).toFixed(1)}% ${(dynamicMarketData?.seasonalFactor || 1) > 1 ? 'premium' : 'discount'}
+            - Location Desirability: ${(((dynamicMarketData?.locationDesirability || 1) * 100) - 100).toFixed(1)}% adjustment
+            - Market Demand Level: ${(dynamicMarketData?.demandLevel || 1) > 1.05 ? 'High' : (dynamicMarketData?.demandLevel || 1) > 0.98 ? 'Moderate' : 'Low'}
+            - Negotiation Leverage: ${dynamicMarketData?.negotiationLeverage || 'medium'}
+            - Pricing Strategy: ${dynamicMarketData?.pricingStrategy || 'balanced_approach'}
+            - Competitive Index: ${(((dynamicMarketData?.competitiveIndex || 1) * 100) - 100).toFixed(1)}% vs market
             
             NEGOTIATION CONTEXT:
-            - This is ${negotiation.finalAttempt ? 'a final attempt' : 'an active negotiation'}
-            - Previous conversation: ${negotiation.messages.slice(-2).map(m => `${m.sender}: ${m.content}`).join(' | ')}
+            - Original ask: $${listing.price}
+            - User budget: $${negotiation.userBudget}
+            - Messages exchanged: ${negotiation.messages?.length || 0}
+            - Previous offers: ${negotiation.messages?.filter(m => m.sender === 'ai').map(m => this.extractPriceFromMessage(m.content)).filter(p => p).join(', ') || 'None'}
             
-            RESPONSE STRATEGY:
-            1. Acknowledge their concerns respectfully
-            2. Present market data as evidence (if asking price is above market average)
-            3. Emphasize your value as a tenant (reliability, immediate move-in, excellent care)
-            4. Make a strategic counter-offer based on market data and budget
-            5. Create urgency without being pushy
-            6. Keep it professional and concise (3-4 sentences max)
+            ADVANCED STRATEGY SELECTION:
+            ${this.selectAdvancedNegotiationStrategy(analysis, negotiation, dynamicMarketData)}
             
-            PRICING LOGIC:
-            - If their price is above market average: Justify lower price with market data
-            - If market supports their price: Offer value-adds (longer lease, maintenance, etc.)
-            - If they rejected based on price: Focus on tenant quality and reliability
-            - Always stay within user's budget of $${negotiation.userBudget}
+            Generate a sophisticated response that:
+            1. Acknowledges their position with emotional intelligence
+            2. Presents compelling market-based evidence using dynamic data
+            3. Offers value-added proposals beyond just price (lease terms, utilities, maintenance, etc.)
+            4. Demonstrates tenant quality and reliability
+            5. Provides a specific counter-offer with multi-factor justification
+            6. Adapts tone to landlord's personality and communication style
             
-            Generate ONLY the response message (no greetings or signatures):
+            Keep response professional, persuasive, and appropriately detailed (2-4 sentences):
             `;
 
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -1108,6 +1561,336 @@ class AINegotatior {
             const counterOffer = Math.min(negotiation.userBudget, Math.round(marketData.average * 0.97));
             
             return `I understand your position. Based on current market data for similar ${listing.house_type}s in ${listing.city}, comparable properties average around $${marketData.average}/month. I'm offering $${counterOffer}/month with immediate occupancy and excellent references. I'm a reliable tenant who values long-term stability. Would this work for you?`;
+        }
+    }
+
+    // Advanced negotiation success tracking and learning system
+    async trackNegotiationOutcome(negotiation, outcome, finalPrice = null) {
+        try {
+            console.log('📊 Tracking negotiation outcome:', outcome, 'for listing:', negotiation.listingTitle);
+            
+            const outcomeData = {
+                negotiation_id: negotiation.negotiationId || `neg_${Date.now()}`,
+                listing_id: negotiation.listingId,
+                user_email: negotiation.userEmail,
+                landlord_email: negotiation.landlordEmail,
+                original_price: negotiation.originalPrice,
+                user_budget: negotiation.userBudget,
+                final_price: finalPrice || negotiation.finalPrice,
+                outcome: outcome, // 'success', 'failure', 'abandoned'
+                negotiation_duration: negotiation.startTime ? (Date.now() - new Date(negotiation.startTime).getTime()) / 1000 : null,
+                message_count: negotiation.messages?.length || 0,
+                market_data: negotiation.marketData,
+                dynamic_market_data: negotiation.dynamicMarketData,
+                landlord_personality: negotiation.landlordPersonality,
+                strategies_used: negotiation.strategiesUsed || [],
+                success_factors: this.analyzeSuccessFactors(negotiation, outcome, finalPrice),
+                created_at: new Date().toISOString()
+            };
+            
+            // Store in database
+            const { error } = await this.supabase
+                .from('negotiation_outcomes')
+                .insert(outcomeData);
+            
+            if (error) {
+                console.log('Error storing negotiation outcome:', error.message);
+                // Store in localStorage as backup
+                this.storeOutcomeLocally(outcomeData);
+            } else {
+                console.log('✅ Negotiation outcome tracked successfully');
+            }
+            
+            // Update learning model
+            await this.updateLearningModel(outcomeData);
+            
+        } catch (error) {
+            console.error('Error tracking negotiation outcome:', error);
+            // Fallback to local storage
+            try {
+                this.storeOutcomeLocally({
+                    outcome,
+                    finalPrice,
+                    timestamp: new Date().toISOString(),
+                    listingTitle: negotiation.listingTitle
+                });
+            } catch (storageError) {
+                console.error('Failed to store outcome locally:', storageError);
+            }
+        }
+    }
+
+    // Store negotiation outcome in localStorage as backup
+    storeOutcomeLocally(outcomeData) {
+        try {
+            const existingOutcomes = JSON.parse(localStorage.getItem('negotiation_outcomes') || '[]');
+            existingOutcomes.push(outcomeData);
+            
+            // Keep only last 50 outcomes
+            if (existingOutcomes.length > 50) {
+                existingOutcomes.splice(0, existingOutcomes.length - 50);
+            }
+            
+            localStorage.setItem('negotiation_outcomes', JSON.stringify(existingOutcomes));
+            console.log('💾 Outcome stored locally as backup');
+        } catch (error) {
+            console.error('Error storing outcome locally:', error);
+        }
+    }
+
+    // Analyze factors that contributed to success or failure
+    analyzeSuccessFactors(negotiation, outcome, finalPrice) {
+        const factors = {
+            price_reduction_achieved: null,
+            percentage_saved: null,
+            market_leverage_utilized: false,
+            personality_adaptation: false,
+            timing_factors: [],
+            strategy_effectiveness: {},
+            communication_style: null
+        };
+        
+        if (outcome === 'success' && finalPrice && negotiation.originalPrice) {
+            factors.price_reduction_achieved = negotiation.originalPrice - finalPrice;
+            factors.percentage_saved = ((negotiation.originalPrice - finalPrice) / negotiation.originalPrice * 100).toFixed(2);
+        }
+        
+        // Analyze market leverage usage
+        if (negotiation.dynamicMarketData?.negotiationLeverage === 'high') {
+            factors.market_leverage_utilized = true;
+            factors.timing_factors.push('favorable_market_conditions');
+        }
+        
+        // Check if seasonal timing was beneficial
+        const seasonalFactor = negotiation.dynamicMarketData?.seasonalFactor || 1;
+        if (seasonalFactor < 1.0) {
+            factors.timing_factors.push('off_season_advantage');
+        }
+        
+        // Analyze personality adaptation
+        if (negotiation.landlordPersonality && negotiation.strategiesUsed?.length > 0) {
+            factors.personality_adaptation = true;
+            factors.communication_style = negotiation.landlordPersonality.communicationStyle;
+        }
+        
+        // Strategy effectiveness analysis
+        if (negotiation.strategiesUsed) {
+            negotiation.strategiesUsed.forEach(strategy => {
+                factors.strategy_effectiveness[strategy] = outcome === 'success' ? 'effective' : 'ineffective';
+            });
+        }
+        
+        return factors;
+    }
+
+    // Update the learning model based on negotiation outcomes
+    async updateLearningModel(outcomeData) {
+        try {
+            console.log('🧠 Updating learning model with new outcome data');
+            
+            // Get recent outcomes for pattern analysis
+            const recentOutcomes = await this.getRecentNegotiationOutcomes();
+            
+            // Analyze patterns and update strategies
+            const patterns = this.analyzeNegotiationPatterns(recentOutcomes);
+            
+            // Store learning insights
+            const learningUpdate = {
+                timestamp: new Date().toISOString(),
+                patterns_analyzed: patterns,
+                sample_size: recentOutcomes.length,
+                success_rate: this.calculateSuccessRate(recentOutcomes),
+                most_effective_strategies: this.identifyEffectiveStrategies(recentOutcomes),
+                market_insights: this.extractMarketInsights(recentOutcomes),
+                personality_insights: this.extractPersonalityInsights(recentOutcomes)
+            };
+            
+            // Store learning data
+            localStorage.setItem('negotiation_learning_model', JSON.stringify(learningUpdate));
+            console.log('✅ Learning model updated');
+            
+        } catch (error) {
+            console.error('Error updating learning model:', error);
+        }
+    }
+
+    // Get recent negotiation outcomes for analysis
+    async getRecentNegotiationOutcomes() {
+        try {
+            // Try database first
+            const { data: dbOutcomes } = await this.supabase
+                .from('negotiation_outcomes')
+                .select('*')
+                .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+                .order('created_at', { ascending: false })
+                .limit(100);
+            
+            if (dbOutcomes && dbOutcomes.length > 0) {
+                return dbOutcomes;
+            }
+            
+            // Fallback to localStorage
+            const localOutcomes = JSON.parse(localStorage.getItem('negotiation_outcomes') || '[]');
+            return localOutcomes.slice(-30); // Last 30 outcomes
+            
+        } catch (error) {
+            console.error('Error getting recent outcomes:', error);
+            return [];
+        }
+    }
+
+    // Analyze patterns in negotiation outcomes
+    analyzeNegotiationPatterns(outcomes) {
+        const patterns = {
+            success_by_property_type: {},
+            success_by_price_range: {},
+            success_by_season: {},
+            success_by_message_count: {},
+            average_negotiation_duration: 0,
+            most_effective_strategies: []
+        };
+        
+        if (!outcomes.length) return patterns;
+        
+        outcomes.forEach(outcome => {
+            // Property type analysis
+            const propType = outcome.listing_type || 'unknown';
+            if (!patterns.success_by_property_type[propType]) {
+                patterns.success_by_property_type[propType] = { success: 0, total: 0 };
+            }
+            patterns.success_by_property_type[propType].total++;
+            if (outcome.outcome === 'success') {
+                patterns.success_by_property_type[propType].success++;
+            }
+            
+            // Price range analysis
+            const priceRange = this.categorizePriceRange(outcome.original_price);
+            if (!patterns.success_by_price_range[priceRange]) {
+                patterns.success_by_price_range[priceRange] = { success: 0, total: 0 };
+            }
+            patterns.success_by_price_range[priceRange].total++;
+            if (outcome.outcome === 'success') {
+                patterns.success_by_price_range[priceRange].success++;
+            }
+            
+            // Duration analysis
+            if (outcome.negotiation_duration) {
+                patterns.average_negotiation_duration += outcome.negotiation_duration;
+            }
+        });
+        
+        patterns.average_negotiation_duration /= outcomes.length;
+        
+        return patterns;
+    }
+
+    // Calculate overall success rate
+    calculateSuccessRate(outcomes) {
+        if (!outcomes.length) return 0;
+        const successCount = outcomes.filter(o => o.outcome === 'success').length;
+        return ((successCount / outcomes.length) * 100).toFixed(2);
+    }
+
+    // Identify most effective negotiation strategies
+    identifyEffectiveStrategies(outcomes) {
+        const strategySuccess = {};
+        
+        outcomes.forEach(outcome => {
+            if (outcome.strategies_used && Array.isArray(outcome.strategies_used)) {
+                outcome.strategies_used.forEach(strategy => {
+                    if (!strategySuccess[strategy]) {
+                        strategySuccess[strategy] = { success: 0, total: 0 };
+                    }
+                    strategySuccess[strategy].total++;
+                    if (outcome.outcome === 'success') {
+                        strategySuccess[strategy].success++;
+                    }
+                });
+            }
+        });
+        
+        // Calculate success rates and sort
+        return Object.entries(strategySuccess)
+            .map(([strategy, stats]) => ({
+                strategy,
+                success_rate: (stats.success / stats.total * 100).toFixed(2),
+                sample_size: stats.total
+            }))
+            .sort((a, b) => parseFloat(b.success_rate) - parseFloat(a.success_rate))
+            .slice(0, 5); // Top 5 strategies
+    }
+
+    // Extract market insights from outcomes
+    extractMarketInsights(outcomes) {
+        const insights = {
+            best_negotiation_months: [],
+            price_flexibility_by_location: {},
+            demand_correlation: {}
+        };
+        
+        outcomes.forEach(outcome => {
+            if (outcome.created_at && outcome.outcome === 'success') {
+                const month = new Date(outcome.created_at).getMonth() + 1;
+                insights.best_negotiation_months.push(month);
+            }
+        });
+        
+        return insights;
+    }
+
+    // Extract personality-based insights
+    extractPersonalityInsights(outcomes) {
+        const insights = {
+            most_responsive_personalities: [],
+            communication_preferences: {},
+            success_by_personality_type: {}
+        };
+        
+        outcomes.forEach(outcome => {
+            if (outcome.landlord_personality) {
+                const personalityType = outcome.landlord_personality.type;
+                if (!insights.success_by_personality_type[personalityType]) {
+                    insights.success_by_personality_type[personalityType] = { success: 0, total: 0 };
+                }
+                insights.success_by_personality_type[personalityType].total++;
+                if (outcome.outcome === 'success') {
+                    insights.success_by_personality_type[personalityType].success++;
+                }
+            }
+        });
+        
+        return insights;
+    }
+
+    // Categorize price range for analysis
+    categorizePriceRange(price) {
+        if (price < 800) return 'budget';
+        if (price < 1200) return 'mid_range';
+        if (price < 1800) return 'premium';
+        return 'luxury';
+    }
+
+    // Get learning-based strategy recommendations
+    async getStrategyRecommendations(listing, userBudget, marketData) {
+        try {
+            const learningModel = JSON.parse(localStorage.getItem('negotiation_learning_model') || '{}');
+            
+            if (!learningModel.most_effective_strategies) {
+                return ['balanced_persuasion', 'market_data', 'value_proposition'];
+            }
+            
+            // Filter strategies based on current context
+            const priceRange = this.categorizePriceRange(listing.price);
+            const recommendations = learningModel.most_effective_strategies
+                .filter(strategy => parseFloat(strategy.success_rate) > 60)
+                .map(strategy => strategy.strategy)
+                .slice(0, 3);
+            
+            return recommendations.length > 0 ? recommendations : ['balanced_persuasion', 'market_data'];
+            
+        } catch (error) {
+            console.error('Error getting strategy recommendations:', error);
+            return ['balanced_persuasion', 'market_data'];
         }
     }
 
@@ -1263,6 +2046,121 @@ class AINegotatior {
         } catch (error) {
             console.error('❌ Manual message test failed:', error);
         }
+    }
+
+    // Detect landlord personality from communication patterns
+    detectLandlordPersonality(replyContent, negotiation) {
+        const reply = replyContent.toLowerCase();
+        const allMessages = negotiation.messages.filter(m => m.sender === 'landlord').map(m => m.content.toLowerCase());
+        const fullConversation = allMessages.join(' ') + ' ' + reply;
+        
+        let personality = {
+            type: 'neutral',
+            traits: [],
+            communicationStyle: 'formal',
+            flexibility: 'medium',
+            emotionalState: 'neutral'
+        };
+        
+        // Analyze communication style
+        if (/lol|haha|😂|😄|casual|btw|omg/i.test(fullConversation)) {
+            personality.communicationStyle = 'casual';
+            personality.traits.push('informal');
+        } else if (/sir|madam|please|thank you|regards|sincerely/i.test(fullConversation)) {
+            personality.communicationStyle = 'formal';
+            personality.traits.push('professional');
+        }
+        
+        // Analyze flexibility
+        if (/not flexible|no negotiation|firm|final|non-negotiable|take it or leave it/i.test(fullConversation)) {
+            personality.flexibility = 'low';
+            personality.type = 'rigid';
+            personality.traits.push('inflexible');
+        } else if (/flexible|negotiable|discuss|consider|maybe|depends/i.test(fullConversation)) {
+            personality.flexibility = 'high';
+            personality.type = 'collaborative';
+            personality.traits.push('accommodating');
+        }
+        
+        // Analyze emotional state
+        if (/annoyed|frustrated|tired|everyone says that|heard it all/i.test(reply)) {
+            personality.emotionalState = 'frustrated';
+            personality.traits.push('skeptical');
+        } else if (/interested|sounds good|like that|appreciate/i.test(reply)) {
+            personality.emotionalState = 'positive';
+            personality.traits.push('receptive');
+        }
+        
+        // Detect negotiation experience
+        if (/everyone says|heard that before|typical|usual|standard/i.test(reply)) {
+            personality.traits.push('experienced');
+        }
+        
+        console.log('🧠 Detected landlord personality:', personality);
+        return personality;
+    }
+    
+    // Detect emotional state from recent message
+    detectEmotionalState(replyContent) {
+        const reply = replyContent.toLowerCase();
+        
+        if (/lol|haha|great|excellent|perfect|love it/i.test(reply)) {
+            return 'positive';
+        } else if (/frustrated|annoyed|tired|sick of|enough/i.test(reply)) {
+            return 'negative';
+        } else if (/maybe|consider|think about|possibly/i.test(reply)) {
+            return 'contemplative';
+        } else if (/busy|quick|hurry|time/i.test(reply)) {
+            return 'rushed';
+        }
+        
+        return 'neutral';
+    }
+    
+    // Analyze negotiation context and history
+    analyzeNegotiationContext(negotiation) {
+        return {
+            roundsOfNegotiation: negotiation.messages.filter(m => m.sender === 'ai').length,
+            priceReductions: this.calculatePriceReductions(negotiation),
+            timeElapsed: Date.now() - new Date(negotiation.startTime).getTime(),
+            marketPosition: this.assessMarketPosition(negotiation),
+            userFlexibility: this.assessUserFlexibility(negotiation)
+        };
+    }
+    
+    // Calculate how much the price has been reduced
+    calculatePriceReductions(negotiation) {
+        const originalPrice = negotiation.originalPrice;
+        const currentOffer = this.extractLastOfferedPrice(negotiation);
+        const reduction = originalPrice - currentOffer;
+        const percentageReduction = (reduction / originalPrice) * 100;
+        
+        return {
+            absolute: reduction,
+            percentage: Math.round(percentageReduction * 100) / 100,
+            significant: percentageReduction > 10
+        };
+    }
+    
+    // Assess market position
+    assessMarketPosition(negotiation) {
+        if (!negotiation.marketData) return 'unknown';
+        
+        const originalPrice = negotiation.originalPrice;
+        const marketAverage = negotiation.marketData.average;
+        
+        if (originalPrice > marketAverage * 1.2) return 'overpriced';
+        if (originalPrice < marketAverage * 0.8) return 'underpriced';
+        return 'market_rate';
+    }
+    
+    // Assess user's flexibility
+    assessUserFlexibility(negotiation) {
+        const budgetFlexibility = (negotiation.userBudget / negotiation.originalPrice) * 100;
+        
+        if (budgetFlexibility > 90) return 'high';
+        if (budgetFlexibility > 70) return 'medium';
+        return 'low';
     }
 
     // Check recent messages to see if we're missing anything
