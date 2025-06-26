@@ -6,7 +6,6 @@
     <title>RoomFinderAI - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="config.js"></script>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -242,8 +241,8 @@
         }
     </script>
     <script>
-        // Supabase configuration is now in config.js
-        const supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+        // We'll use the backend API instead of direct Supabase calls
+        // const supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
 
         const form = document.getElementById('authForm');
         const formTitle = document.getElementById('formTitle');
@@ -266,43 +265,39 @@
             const password = document.getElementById('password').value;
 
             if (isLogin) {
-                // Login logic - check Supabase first, then localStorage as fallback
+                // Login using secure backend API
                 try {
-                    const { data, error } = await supabase
-                        .from('profiles')
-                        .select('*')
-                        .eq('email', email)
-                        .single();
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const result = await response.json();
                     
-                    if (data && data.password === password) {
+                    if (response.ok) {
+                        // Create user object for localStorage compatibility
                         const user = {
-                            firstName: data.first_name,
-                            lastName: data.last_name,
-                            email: data.email,
-                            password: data.password,
-                            profileImage: data.profile_image || 'https://via.placeholder.com/40',
+                            firstName: 'User',
+                            lastName: 'Name',
+                            email: email,
+                            profileImage: 'https://via.placeholder.com/40',
                             aiChats: [],
                             listings: []
                         };
                         localStorage.setItem('currentUser', JSON.stringify(user));
                         window.location.href = '/index';
-                        return;
+                    } else {
+                        alert(result.error || 'Login failed');
                     }
-                } catch (err) {
-                    console.error('Supabase login error:', err);
-                }
-
-                // Fallback to localStorage
-                let users = JSON.parse(localStorage.getItem('users')) || [];
-                const user = users.find(u => u.email === email && u.password === password);
-                if (user) {
-                    localStorage.setItem('currentUser', JSON.stringify(user));
-                    window.location.href = '/index';
-                } else {
-                    alert('Invalid email or password.');
+                } catch (error) {
+                    console.error('Login error:', error);
+                    alert('Login failed. Please try again.');
                 }
             } else {
-                // Registration logic
+                // Registration using secure backend API
                 const firstName = document.getElementById('firstName').value.trim();
                 const lastName = document.getElementById('lastName').value.trim();
                 if (!firstName || !lastName) {
@@ -311,58 +306,34 @@
                 }
 
                 try {
-                    // Check if user already exists in Supabase
-                    const { data: existingUser } = await supabase
-                        .from('profiles')
-                        .select('email')
-                        .eq('email', email)
-                        .single();
+                    const response = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ firstName, lastName, email, password })
+                    });
+
+                    const result = await response.json();
                     
-                    if (existingUser) {
-                        alert('Email already registered.');
-                        return;
+                    if (response.ok) {
+                        // Create user object for localStorage compatibility
+                        const user = {
+                            firstName,
+                            lastName,
+                            email,
+                            profileImage: 'https://via.placeholder.com/40',
+                            aiChats: [],
+                            listings: []
+                        };
+                        localStorage.setItem('currentUser', JSON.stringify(user));
+                        alert('Registration successful!');
+                        window.location.href = '/index';
+                    } else {
+                        alert(result.error || 'Registration failed');
                     }
-
-                    // Insert new user into Supabase
-                    const { data, error } = await supabase
-                        .from('profiles')
-                        .insert([{
-                            email: email,
-                            password: password,
-                            first_name: firstName,
-                            last_name: lastName,
-                            profile_image: 'https://via.placeholder.com/40'
-                        }])
-                        .select()
-                        .single();
-
-                    if (error) {
-                        console.error('Supabase registration error:', error);
-                        alert('Registration failed: ' + error.message);
-                        return;
-                    }
-
-                    // Create user object for localStorage
-                    const user = {
-                        firstName,
-                        lastName,
-                        email,
-                        password,
-                        profileImage: 'https://via.placeholder.com/40',
-                        aiChats: [],
-                        listings: []
-                    };
-
-                    // Also save to localStorage for compatibility
-                    let users = JSON.parse(localStorage.getItem('users')) || [];
-                    users.push(user);
-                    localStorage.setItem('users', JSON.stringify(users));
-                    localStorage.setItem('currentUser', JSON.stringify(user));
-
-                    alert('Registration successful!');
-                    window.location.href = '/index';
-                } catch (err) {
-                    console.error('Registration error:', err);
+                } catch (error) {
+                    console.error('Registration error:', error);
                     alert('Registration failed. Please try again.');
                 }
             }
