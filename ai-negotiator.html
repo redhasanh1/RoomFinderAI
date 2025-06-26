@@ -6,7 +6,6 @@
     <title>AI Negotiator - RoomFinderAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="./config.js"></script>
     <script src="./ai-chat.js?v=8"></script>
     <script src="./ai-negotiation.js?v=1"></script>
     <style>
@@ -145,8 +144,40 @@
         let aiNegotiationEngine;
         let currentUser;
 
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', async () => {
+        // Initialize configuration variables
+        let configData;
+        let supabase;
+
+        // Load configuration from Railway API and initialize
+        fetch('/api/config')
+            .then(response => response.json())
+            .then(config => {
+                configData = {
+                    OPENAI_API_KEY: config.OPENAI_API_KEY,
+                    OPENAI_ORG_ID: config.OPENAI_ORG_ID,
+                    OPENAI_MODEL: config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                    SUPABASE_URL: config.SUPABASE_URL,
+                    SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY
+                };
+
+                console.log('🔧 Configuration loaded:', {
+                    hasOpenAIKey: !!configData.OPENAI_API_KEY,
+                    hasSupabaseURL: !!configData.SUPABASE_URL,
+                    model: configData.OPENAI_MODEL
+                });
+
+                // Initialize Supabase
+                supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
+
+                // Initialize the application
+                initializeNegotiator();
+            })
+            .catch(error => {
+                console.error('Failed to load configuration:', error);
+                alert('Failed to load configuration. Please refresh the page.');
+            });
+
+        async function initializeNegotiator() {
             console.log('🚀 Initializing AI Negotiator...');
             
             // Check authentication
@@ -164,18 +195,6 @@
                          alt="Profile" class="w-10 h-10 rounded-full">
                 </a>
             `;
-
-            // Initialize config
-            const configData = {
-                OPENAI_API_KEY: window.config?.OPENAI_API_KEY || config?.OPENAI_API_KEY,
-                OPENAI_ORG_ID: window.config?.OPENAI_ORG_ID || config?.OPENAI_ORG_ID,
-                OPENAI_MODEL: window.config?.OPENAI_MODEL || config?.OPENAI_MODEL || 'gpt-3.5-turbo',
-                SUPABASE_URL: window.config?.SUPABASE_URL || config?.SUPABASE_URL,
-                SUPABASE_ANON_KEY: window.config?.SUPABASE_ANON_KEY || config?.SUPABASE_ANON_KEY
-            };
-
-            // Initialize Supabase
-            const supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
 
             // Check if AINegotiator class is available
             if (typeof AINegotiator === 'undefined') {
@@ -216,7 +235,7 @@
             }, 1000);
 
             console.log('✅ AI Negotiator initialized successfully');
-        });
+        }
 
         // Send message function
         async function sendMessage() {
