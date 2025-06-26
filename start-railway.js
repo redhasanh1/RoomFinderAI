@@ -20,10 +20,12 @@ function decryptConfig() {
     console.log('  - config.js.encrypted:', encryptedConfigPath);
     
     // Check if config.js already exists
-    if (fs.existsSync(configPath)) {
-        console.log('✅ config.js already exists');
-        return true;
-    }
+if (fs.existsSync(configPath)) {
+    console.warn('⚠️ config.js exists — will overwrite to ensure decryption');
+    // Delete the corrupted config first
+    fs.unlinkSync(configPath);
+}
+
     
     // Check if encrypted config exists
     if (!fs.existsSync(encryptedConfigPath)) {
