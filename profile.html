@@ -378,7 +378,7 @@
             subscriptionInfo.innerHTML = '<p class="text-gray-500 text-center">Loading subscription...</p>';
             
             try {
-                const response = await fetch(`http://localhost:3000/api/subscription/${encodeURIComponent(currentUser.email)}`);
+                const response = await fetch(`/api/subscription/${encodeURIComponent(currentUser.email)}`);
                 const result = await response.json();
                 
                 if (response.ok && result.subscription) {

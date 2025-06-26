@@ -935,7 +935,7 @@
                 button.disabled = true;
                 button.textContent = 'Searching...';
 
-                const kijijiResponse = await fetch('http://localhost:8081/api/predict/kijiji', {
+                const kijijiResponse = await fetch('/api/predict/kijiji', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestBody)
@@ -949,7 +949,7 @@
                 }
                 console.log('searchRooms: Kijiji URL', kijijiUrl);
 
-                const marketplaceResponse = await fetch('http://localhost:8081/api/predict/marketplace', {
+                const marketplaceResponse = await fetch('/api/predict/marketplace', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestBody)

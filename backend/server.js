@@ -1,19 +1,59 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path');
+const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
-const config = require('../config.js');
+
+// Load config with error handling
+let config;
+try {
+    config = require('../config.js');
+    console.log('✅ Config loaded successfully');
+} catch (error) {
+    console.log('⚠️ Config file not found, using environment variables directly');
+    config = {
+        STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+        STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
+        GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
+        SUPABASE_URL: process.env.SUPABASE_URL,
+        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+        OPENAI_ORG_ID: process.env.OPENAI_ORG_ID,
+        OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-3.5-turbo'
+    };
+}
 
 const { createClient } = require('@supabase/supabase-js');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
-// Initialize Stripe with API key from config
-const stripe = require('stripe')(config.STRIPE_SECRET_KEY);
+// Initialize Stripe with error handling
+let stripe;
+try {
+    if (config.STRIPE_SECRET_KEY) {
+        stripe = require('stripe')(config.STRIPE_SECRET_KEY);
+        console.log('✅ Stripe initialized');
+    } else {
+        console.log('⚠️ Stripe not initialized - missing STRIPE_SECRET_KEY');
+    }
+} catch (error) {
+    console.log('❌ Stripe initialization failed:', error.message);
+}
 
-// Initialize Supabase client with config keys
-const supabase = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+// Initialize Supabase client with error handling
+let supabase;
+try {
+    if (config.SUPABASE_URL && config.SUPABASE_ANON_KEY) {
+        supabase = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+        console.log('✅ Supabase initialized');
+    } else {
+        console.log('⚠️ Supabase not initialized - missing URL or ANON_KEY');
+    }
+} catch (error) {
+    console.log('❌ Supabase initialization failed:', error.message);
+}
 
 // Middleware
 app.use(cors({
@@ -24,8 +64,10 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from parent directory
-app.use(express.static('../'));
+// Serve static files from parent directory (frontend files)
+const staticPath = path.join(__dirname, '..');
+console.log('📁 Serving static files from:', staticPath);
+app.use(express.static(staticPath));
 
 // Google Maps API key from config
 const GOOGLE_API_KEY = config.GOOGLE_API_KEY;
@@ -166,7 +208,7 @@ async function generateMarketplaceUrl({ location, price, size, amenities, roomTy
     if (!normalizedLocation) query += `%20${encodeURIComponent(location)}`;
 
     const baseUrl = 'https://www.facebook.com/marketplace';
-    const locationPath = normalizedLocation ? `/${encodedLocation}` : '';
+    const locationPath = normalizedLocation ? `/${normalizedLocation}` : '';
     const marketplaceUrl = `${baseUrl}${locationPath}/search?minPrice=${minPrice}&maxPrice=${maxPrice}&query=${query}`;
     console.log(`Generated Marketplace URL: ${marketplaceUrl}`);
     return marketplaceUrl;
@@ -354,6 +396,10 @@ app.post('/api/predict/marketplace', async (req, res) => {
 // API: Process Stripe payment
 app.post('/api/process-payment', async (req, res) => {
     try {
+        if (!stripe) {
+            return res.status(503).json({ error: 'Payment service not available - Stripe not configured' });
+        }
+
         console.log('Payment request received:', req.body);
         const { token, email, name, plan, price } = req.body;
         
@@ -382,6 +428,15 @@ app.post('/api/process-payment', async (req, res) => {
 
         // If charge is successful, store subscription info in Supabase
         console.log('Payment successful:', charge.id);
+
+        if (!supabase) {
+            console.log('⚠️ Supabase not available, skipping subscription storage');
+            return res.json({ 
+                success: true, 
+                chargeId: charge.id,
+                message: 'Payment processed successfully (subscription not stored)' 
+            });
+        }
 
         // Get profile ID from email
         const { data: profile, error: profileError } = await supabase
@@ -443,6 +498,10 @@ app.post('/api/process-payment', async (req, res) => {
 // API: Get user subscription
 app.get('/api/subscription/:email', async (req, res) => {
     try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
+        }
+
         const { email } = req.params;
         console.log('Fetching subscription for email:', email);
         
@@ -477,6 +536,10 @@ app.get('/api/subscription/:email', async (req, res) => {
 // Test endpoint for Supabase connection
 app.get('/api/test-supabase', async (req, res) => {
     try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Supabase not configured' });
+        }
+
         console.log('Testing Supabase connection...');
         
         // Test 1: Try to query profiles table
@@ -526,6 +589,59 @@ app.get('/api/test-supabase', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+// Health check route for Railway monitoring - MUST BE BEFORE /:page
+app.get('/health', (req, res) => {
+    res.status(200).send('✅ RoomFinderAI server is running');
 });
+
+// Serve main website at root
+app.get('/', (req, res) => {
+    try {
+        const indexPath = path.join(__dirname, '..', 'index.html');
+        console.log('📄 Serving index.html from:', indexPath);
+        res.sendFile(indexPath);
+    } catch (error) {
+        console.error('Error serving index.html:', error);
+        res.status(200).send('✅ RoomFinderAI server is running');
+    }
+});
+
+// Dynamic route handler for all HTML pages - MUST BE LAST
+app.get('/:page', (req, res) => {
+    try {
+        const pageName = req.params.page;
+        
+        // Skip API routes and health - they should be handled above
+        if (pageName.startsWith('api') || pageName === 'health') {
+            return res.status(404).send('Route not found');
+        }
+        
+        const htmlPath = path.join(__dirname, '..', `${pageName}.html`);
+        
+        // Check if file exists
+        if (fs.existsSync(htmlPath)) {
+            console.log(`📄 Serving ${pageName}.html from:`, htmlPath);
+            res.sendFile(htmlPath);
+        } else {
+            console.log(`❌ Page not found: ${pageName}.html`);
+            res.status(404).send(`Page not found: /${pageName}`);
+        }
+    } catch (error) {
+        console.error('Error serving page:', error);
+        res.status(500).send('Server error');
+    }
+});
+
+// Start server on Railway-required port
+console.log('🚀 Starting server...');
+console.log('Port:', port);
+console.log('Environment variables check:');
+console.log('- STRIPE_SECRET_KEY:', !!process.env.STRIPE_SECRET_KEY);
+console.log('- SUPABASE_URL:', !!process.env.SUPABASE_URL);
+console.log('- SUPABASE_ANON_KEY:', !!process.env.SUPABASE_ANON_KEY);
+
+app.listen(port, () => {
+    console.log(`✅ Server running on port ${port}`);
+    console.log(`🏥 Health check available at http://localhost:${port}/`);
+});
+// Force update
