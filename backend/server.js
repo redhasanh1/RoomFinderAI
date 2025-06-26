@@ -593,7 +593,9 @@ app.get('/api/test-supabase', async (req, res) => {
 app.get('/api/config', (req, res) => {
     res.json({
         STRIPE_PUBLISHABLE_KEY: config.STRIPE_PUBLISHABLE_KEY,
-        GOOGLE_API_KEY: config.GOOGLE_API_KEY
+        GOOGLE_API_KEY: config.GOOGLE_API_KEY,
+        SUPABASE_URL: config.SUPABASE_URL,
+        SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY
     });
 });
 
