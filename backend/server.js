@@ -530,7 +530,7 @@ app.get('/api/test-supabase', async (req, res) => {
     }
 });
 
-// Health check route for Railway
+// Health check route for Railway 
 app.get('/', (req, res) => {
     res.status(200).send('✅ RoomFinderAI server is running');
 });
