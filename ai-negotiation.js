@@ -8,7 +8,50 @@ class AINegotatior {
         this.activeNegotiations = new Map(); // Track ongoing negotiations
         this.marketData = new Map(); // Cache market data
         this.aiUserInitialized = false;
+        this.conversationalMemory = new Map(); // Track used responses per negotiation
+        this.responseTemplates = this.initializeResponseTemplates();
         this.init();
+    }
+
+    // Initialize response templates for variety
+    initializeResponseTemplates() {
+        return {
+            counterOfferAcceptance: [
+                "That works perfectly for me! $${price}/month sounds excellent.",
+                "I accept your offer of $${price}/month. Great doing business with you!",
+                "Perfect! $${price}/month is exactly what I was hoping for.",
+                "Excellent! I'm very happy to agree to $${price}/month.",
+                "Wonderful! $${price}/month works great for me.",
+                "That's a deal! $${price}/month it is.",
+                "I'm delighted to accept $${price}/month.",
+                "Outstanding! $${price}/month is perfect."
+            ],
+            strategicCounterOffers: [
+                "I appreciate your counter-offer. How about we meet at $${price}/month?",
+                "That's getting closer! Would you consider $${price}/month?",
+                "I understand your position. I can do $${price}/month with excellent references.",
+                "Let's find middle ground - how does $${price}/month sound?",
+                "I'm flexible - would $${price}/month work for you?",
+                "I can stretch to $${price}/month for the right place.",
+                "How about $${price}/month with immediate move-in?",
+                "I could do $${price}/month if we can finalize quickly."
+            ],
+            marketBasedResponses: [
+                "Based on comparable properties, $${price}/month reflects fair market value.",
+                "Market data shows similar places at $${price}/month - would that work?",
+                "Given the current market, I can offer $${price}/month.",
+                "Research indicates $${price}/month is appropriate for this type of property.",
+                "Considering market rates, $${price}/month seems reasonable.",
+                "Market analysis supports $${price}/month for this location."
+            ],
+            valuePropositions: [
+                "At $${price}/month, you get an excellent tenant with pristine references.",
+                "For $${price}/month, I guarantee reliable rent and property care.",
+                "I offer $${price}/month plus exceptional tenant qualities.",
+                "$${price}/month with a long-term, responsible tenant like me is a great deal.",
+                "At $${price}/month, you're getting reliability and peace of mind."
+            ]
+        };
     }
 
     // Initialize the negotiation engine
@@ -630,14 +673,17 @@ class AINegotatior {
                 "negotiationPhase": "initial/bargaining/closing/rejected"
             }
 
-            ANALYSIS RULES:
-            - "sure", "yes", "ok", "sounds good" = acceptance of last offer
+            ENHANCED ANALYSIS RULES:
+            - "sure", "yes", "ok", "sounds good", "fine", "agreed", "deal" = acceptance of last offer
+            - "I might consider X", "how about X", "what about X", "I could do X" = counter-offer
+            - "too low", "too high", "not enough" = rejection requiring counter
+            - "X is my best", "final offer X", "can't go lower than X" = firm counter-offer
+            - Extract ALL numbers: $790, 790, "seven ninety", "790/month", "790 per month"
+            - Look for conditional acceptance: "maybe X", "possibly X", "perhaps X"
             - If they accept: isFinalized=true, agreedPrice=last offered price
             - If they counter with price: extract exact number, shouldRespond=true
-            - If they say "market price isn't $X": shouldRespond=true with market data
-            - If outright rejection: shouldRespond=true for one final attempt
-            - Simple positive words like "sure" mean agreement to last proposal
-            - Extract prices carefully: look for $XXX or XXX/month patterns
+            - If they show flexibility ("might consider"): makesCounterOffer=true
+            - Consider context: if discussing price and mention number, likely counter-offer
             `;
 
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -710,33 +756,287 @@ class AINegotatior {
         if (!analysis.shouldRespond) return null;
 
         try {
+            const negotiationId = this.getNegotiationId(negotiation);
+            const roundNumber = negotiation.messages?.length || 1;
+            
+            console.log(`🎯 Generating response for round ${roundNumber}, sentiment: ${analysis.sentiment}`);
+
             if (analysis.isFinalized && analysis.acceptsOffer) {
                 const finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
                 console.log('🎉 GENERATING FINAL ACCEPTANCE RESPONSE - Price:', finalPrice);
-                return `🎉 Excellent! Thank you for accepting the $${finalPrice}/month offer. I'm thrilled to move forward with this rental! I'm a reliable tenant ready to proceed immediately. Could you please let me know the next steps for finalizing the rental agreement? I have excellent references and can complete all necessary paperwork promptly. Looking forward to hearing from you soon!`;
+                return this.generateVariedAcceptanceResponse(finalPrice, negotiationId, roundNumber);
             }
 
             if (analysis.makesCounterOffer && analysis.priceOffered) {
-                console.log('💰 Generating counter-offer response');
-                return await this.generateAdvancedCounterOffer(analysis, negotiation, listing);
+                console.log('💰 Generating sophisticated counter-offer response');
+                return await this.generateSophisticatedCounterOffer(analysis, negotiation, listing, roundNumber);
             }
 
             if (analysis.sentiment === 'negative' || analysis.responseStrategy === 'clarify') {
-                console.log('🔄 Generating market-based response for negative sentiment');
-                return await this.generateMarketBasedResponse(negotiation, listing);
+                console.log('🔄 Generating strategic response for negative sentiment');
+                return await this.generateStrategicResponse(negotiation, listing, roundNumber);
             }
 
-            // Use AI to generate contextual response
-            console.log('🤖 Generating contextual response');
-            return await this.generateContextualResponse(analysis, negotiation, listing);
+            // Use progressive negotiation tactics
+            console.log('🧠 Generating progressive contextual response');
+            return await this.generateProgressiveResponse(analysis, negotiation, listing, roundNumber);
 
         } catch (error) {
             console.error('Error generating counter-response:', error);
-            return "Thank you for your response. I'm very interested in moving forward with this rental and I'm flexible on terms.";
+            return this.getFallbackResponse(negotiation.messages?.length || 1);
         }
     }
 
-    // Generate advanced counter-offer with sophisticated tactics
+    // Get unique negotiation ID for memory tracking
+    getNegotiationId(negotiation) {
+        return negotiation.negotiationId || negotiation.listingId || 'default';
+    }
+
+    // Generate varied acceptance response to prevent repetition
+    generateVariedAcceptanceResponse(finalPrice, negotiationId, roundNumber) {
+        const templates = this.responseTemplates.counterOfferAcceptance;
+        const usedResponses = this.conversationalMemory.get(negotiationId) || new Set();
+        
+        // Find unused template
+        const availableTemplates = templates.filter((_, index) => !usedResponses.has(`acceptance_${index}`));
+        
+        let selectedTemplate;
+        if (availableTemplates.length > 0) {
+            selectedTemplate = availableTemplates[Math.floor(Math.random() * availableTemplates.length)];
+        } else {
+            // All templates used, reset and pick new one
+            usedResponses.clear();
+            selectedTemplate = templates[Math.floor(Math.random() * templates.length)];
+        }
+        
+        // Mark this template as used
+        const templateIndex = templates.indexOf(selectedTemplate);
+        usedResponses.add(`acceptance_${templateIndex}`);
+        this.conversationalMemory.set(negotiationId, usedResponses);
+        
+        // Add closing details with variation
+        const closingVariations = [
+            "I'm ready to proceed immediately with all necessary documentation. What are the next steps?",
+            "I can provide excellent references and complete paperwork right away. How do we move forward?",
+            "I'm excited to finalize this! I have all my documents ready. What's our next step?",
+            "Perfect! I'm prepared to move quickly with references and paperwork. How do we proceed?",
+            "I'm thrilled to move forward! I can handle all the paperwork immediately. What do you need from me?"
+        ];
+        
+        const closingIndex = roundNumber % closingVariations.length;
+        const baseResponse = selectedTemplate.replace('${price}', finalPrice);
+        
+        return `${baseResponse} ${closingVariations[closingIndex]}`;
+    }
+
+    // Generate sophisticated counter-offer with progressive tactics
+    async generateSophisticatedCounterOffer(analysis, negotiation, listing, roundNumber) {
+        const landlordPrice = analysis.priceOffered;
+        const userBudget = negotiation.userBudget;
+        const negotiationId = this.getNegotiationId(negotiation);
+        
+        // Progressive negotiation strategy based on round
+        let targetPrice;
+        let strategy;
+        
+        if (roundNumber <= 2) {
+            // Early rounds: Be more conservative, show market awareness
+            targetPrice = Math.min(userBudget, Math.round(landlordPrice * 0.95));
+            strategy = 'market_informed';
+        } else if (roundNumber <= 4) {
+            // Middle rounds: Show flexibility, add value propositions
+            targetPrice = Math.min(userBudget, Math.round(landlordPrice * 0.97));
+            strategy = 'value_added';
+        } else {
+            // Later rounds: Move closer to their price, emphasize urgency
+            targetPrice = Math.min(userBudget, Math.round(landlordPrice * 0.985));
+            strategy = 'closing_focus';
+        }
+        
+        // Ensure we don't exceed budget
+        targetPrice = Math.min(targetPrice, userBudget);
+        
+        console.log(`🎯 Round ${roundNumber} strategy: ${strategy}, offering: $${targetPrice}`);
+        
+        return this.generateVariedCounterOffer(targetPrice, landlordPrice, strategy, negotiationId, roundNumber, listing);
+    }
+
+    // Generate varied counter-offer responses
+    generateVariedCounterOffer(targetPrice, landlordPrice, strategy, negotiationId, roundNumber, listing) {
+        const usedResponses = this.conversationalMemory.get(negotiationId) || new Set();
+        
+        let baseTemplate;
+        let additionalContext = '';
+        
+        switch (strategy) {
+            case 'market_informed':
+                const marketTemplates = this.responseTemplates.marketBasedResponses;
+                baseTemplate = this.selectUnusedTemplate(marketTemplates, usedResponses, 'market', negotiationId);
+                additionalContext = " I've researched comparable properties to ensure fair pricing.";
+                break;
+                
+            case 'value_added':
+                const valueTemplates = this.responseTemplates.valuePropositions;
+                baseTemplate = this.selectUnusedTemplate(valueTemplates, usedResponses, 'value', negotiationId);
+                additionalContext = this.getValueAddOns(roundNumber);
+                break;
+                
+            case 'closing_focus':
+                const strategicTemplates = this.responseTemplates.strategicCounterOffers;
+                baseTemplate = this.selectUnusedTemplate(strategicTemplates, usedResponses, 'strategic', negotiationId);
+                additionalContext = " I'm ready to finalize this today if we can agree on terms.";
+                break;
+                
+            default:
+                const defaultTemplates = this.responseTemplates.strategicCounterOffers;
+                baseTemplate = this.selectUnusedTemplate(defaultTemplates, usedResponses, 'default', negotiationId);
+        }
+        
+        const response = baseTemplate.replace('${price}', targetPrice) + additionalContext;
+        
+        console.log(`💬 Generated varied response (round ${roundNumber}): ${response.substring(0, 50)}...`);
+        return response;
+    }
+
+    // Select unused template with fallback
+    selectUnusedTemplate(templates, usedResponses, category, negotiationId) {
+        const availableTemplates = templates.filter((_, index) => !usedResponses.has(`${category}_${index}`));
+        
+        let selectedTemplate;
+        if (availableTemplates.length > 0) {
+            selectedTemplate = availableTemplates[Math.floor(Math.random() * availableTemplates.length)];
+        } else {
+            // Reset category if all used
+            for (let key of usedResponses) {
+                if (key.startsWith(`${category}_`)) {
+                    usedResponses.delete(key);
+                }
+            }
+            selectedTemplate = templates[Math.floor(Math.random() * templates.length)];
+        }
+        
+        // Mark as used
+        const templateIndex = templates.indexOf(selectedTemplate);
+        usedResponses.add(`${category}_${templateIndex}`);
+        this.conversationalMemory.set(negotiationId, usedResponses);
+        
+        return selectedTemplate;
+    }
+
+    // Get value-added propositions based on round
+    getValueAddOns(roundNumber) {
+        const valueAdds = [
+            " Plus, I can offer a longer lease commitment for stability.",
+            " I'm also willing to handle minor maintenance to keep the property in excellent condition.",
+            " Additionally, I can provide first and last month upfront for your security.",
+            " I'm flexible on move-in dates to work with your schedule.",
+            " I can also provide additional security deposit if that helps."
+        ];
+        
+        return valueAdds[roundNumber % valueAdds.length];
+    }
+
+    // Generate strategic response for negative sentiment
+    async generateStrategicResponse(negotiation, listing, roundNumber) {
+        const userBudget = negotiation.userBudget;
+        const dynamicMarketData = await this.getDynamicMarketData(
+            listing.city, 
+            listing.house_type, 
+            listing.bedrooms
+        );
+        
+        const adjustedOffer = Math.min(
+            userBudget, 
+            Math.round((dynamicMarketData?.adjustedAverage || listing.price) * 0.96)
+        );
+        
+        const strategicResponses = [
+            `I understand your position. Let me present a comprehensive offer: $${adjustedOffer}/month with excellent references, immediate occupancy, and long-term reliability. This reflects both market conditions and my value as a tenant.`,
+            `I appreciate your feedback. Based on current market analysis, I can offer $${adjustedOffer}/month. This represents fair value while ensuring you have a responsible, verified tenant who takes excellent care of properties.`,
+            `I respect your perspective. My research shows comparable properties at around $${adjustedOffer}/month. I'm offering this rate plus the peace of mind that comes with a reliable, long-term tenant with pristine references.`,
+            `I hear you. Let me propose $${adjustedOffer}/month, which aligns with market data for similar properties. I bring exceptional tenant qualities including financial stability, property care, and communication.`
+        ];
+        
+        const responseIndex = roundNumber % strategicResponses.length;
+        return strategicResponses[responseIndex];
+    }
+
+    // Generate progressive response using advanced tactics
+    async generateProgressiveResponse(analysis, negotiation, listing, roundNumber) {
+        const personality = analysis.landlordPersonality || this.detectLandlordPersonality(analysis.originalReply || '', negotiation);
+        const userBudget = negotiation.userBudget;
+        
+        // Progressive pricing based on rounds
+        const basePrice = listing.price;
+        let offerPrice;
+        
+        if (roundNumber === 1) {
+            offerPrice = Math.min(userBudget, Math.round(basePrice * 0.88)); // Start lower
+        } else if (roundNumber <= 3) {
+            offerPrice = Math.min(userBudget, Math.round(basePrice * 0.92)); // Move up gradually
+        } else {
+            offerPrice = Math.min(userBudget, Math.round(basePrice * 0.95)); // Get closer to asking
+        }
+        
+        // Personality-adapted responses
+        if (personality.communicationStyle === 'casual') {
+            return this.generateCasualProgressiveResponse(offerPrice, roundNumber, listing);
+        } else if (personality.traits?.includes('professional')) {
+            return this.generateProfessionalProgressiveResponse(offerPrice, roundNumber, listing);
+        } else {
+            return this.generateBalancedProgressiveResponse(offerPrice, roundNumber, listing);
+        }
+    }
+
+    // Generate casual progressive responses
+    generateCasualProgressiveResponse(price, round, listing) {
+        const casualResponses = [
+            `Hey! Thanks for getting back to me. I'm really interested in the ${listing.house_type}. How about $${price}/month? I'm a great tenant - clean, quiet, and always on time with rent.`,
+            `I appreciate you considering my offer! Would $${price}/month work? I'm flexible and really love the place. Plus, I'm super reliable and take great care of properties.`,
+            `Thanks for the response! How about we settle on $${price}/month? I'm ready to move fast and I think you'll find I'm exactly the kind of tenant you want.`,
+            `I hear you! What if we do $${price}/month? I'm really excited about this place and I guarantee you won't have any issues with me as a tenant.`
+        ];
+        
+        return casualResponses[round % casualResponses.length];
+    }
+
+    // Generate professional progressive responses
+    generateProfessionalProgressiveResponse(price, round, listing) {
+        const professionalResponses = [
+            `Thank you for your consideration. I would like to propose $${price}/month for the ${listing.house_type}. I am a qualified professional tenant with excellent credit and references.`,
+            `I appreciate your response. My offer is $${price}/month, reflecting both market conditions and my credentials as a reliable, long-term tenant with verifiable income and references.`,
+            `Thank you for continuing our discussion. I can offer $${price}/month and provide comprehensive documentation including employment verification, credit report, and landlord references.`,
+            `I value your time and consideration. My proposal of $${price}/month represents fair market value while ensuring you receive a dependable tenant with proven financial stability.`
+        ];
+        
+        return professionalResponses[round % professionalResponses.length];
+    }
+
+    // Generate balanced progressive responses
+    generateBalancedProgressiveResponse(price, round, listing) {
+        const balancedResponses = [
+            `Thank you for your reply. I'd like to offer $${price}/month for this ${listing.house_type}. I'm a responsible tenant with excellent references and I'm ready to move forward quickly.`,
+            `I appreciate your consideration. Would $${price}/month work for you? I can provide strong references and I'm committed to maintaining the property in excellent condition.`,
+            `Thanks for getting back to me. I can offer $${price}/month and I'm prepared to provide all necessary documentation. I believe this represents good value for both of us.`,
+            `I understand your position. My offer is $${price}/month, and I want to emphasize that you'll be getting a reliable, communicative tenant who respects both the property and landlord relationship.`
+        ];
+        
+        return balancedResponses[round % balancedResponses.length];
+    }
+
+    // Get fallback response with variety
+    getFallbackResponse(roundNumber) {
+        const fallbacks = [
+            "Thank you for your response. I'm very interested in moving forward with this rental and I'm flexible on terms.",
+            "I appreciate your time. I'm committed to finding a mutually beneficial arrangement for this property.",
+            "Thanks for continuing our discussion. I'm confident we can reach an agreement that works for both of us.",
+            "I value your consideration. I'm a serious tenant looking to establish a positive rental relationship."
+        ];
+        
+        return fallbacks[roundNumber % fallbacks.length];
+    }
+
+    // Generate advanced counter-offer with sophisticated tactics (legacy method - keeping for compatibility)
     async generateAdvancedCounterOffer(analysis, negotiation, listing) {
         const userBudget = negotiation.userBudget;
         const counterPrice = analysis.priceOffered;
