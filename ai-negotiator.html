@@ -121,6 +121,9 @@
                         <button id="sendButton" onclick="sendMessage()" class="flex-1 modern-button">
                             Send Message
                         </button>
+                        <button onclick="checkForUpdates()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                            Refresh
+                        </button>
                         <button onclick="clearChat()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
                             Clear Chat
                         </button>
@@ -267,6 +270,138 @@
             }
         }
 
+        // Manual check for updates
+        async function checkForUpdates() {
+            if (!aiNegotiator) {
+                console.error('❌ AI Negotiator not initialized');
+                return;
+            }
+            
+            console.log('🔄 Manually checking for updates...');
+            aiNegotiator.appendMessage('AI', '🔄 Checking for new updates (last 5 minutes)...', 'left', true);
+            
+            try {
+                // Check for recent AI chat notifications - extended time window
+                const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString(); // Last 5 minutes
+                
+                const { data: recentChats, error } = await aiNegotiator.supabase
+                    .from('ai_chats')
+                    .select('*')
+                    .eq('user_email', currentUser?.email)
+                    .gte('created_at', fiveMinutesAgo)
+                    .order('created_at', { ascending: false });
+                
+                aiNegotiator.removeTypingIndicator();
+                
+                if (error) {
+                    console.error('Error checking for updates:', error);
+                    aiNegotiator.appendMessage('AI', `❌ Error checking for updates: ${error.message}`, 'left');
+                    
+                    // Fallback: Check recent messages table for AI responses
+                    console.log('🔄 Trying fallback check for recent messages...');
+                    try {
+                        const { data: recentMessages, error: msgError } = await aiNegotiator.supabase
+                            .from('messages')
+                            .select('*')
+                            .eq('sender_email', 'ai-negotiator@roomfinder.com')
+                            .gte('created_at', fiveMinutesAgo)
+                            .order('created_at', { ascending: false })
+                            .limit(5);
+                        
+                        if (!msgError && recentMessages?.length > 0) {
+                            aiNegotiator.appendMessage('AI', `📨 Found ${recentMessages.length} recent AI message(s):`, 'left');
+                            for (const msg of recentMessages) {
+                                aiNegotiator.appendMessage('AI', `💬 AI Response: "${msg.content}"`, 'left');
+                            }
+                        } else {
+                            aiNegotiator.appendMessage('AI', '❌ No updates found in fallback check either', 'left');
+                        }
+                    } catch (fallbackError) {
+                        console.error('Fallback check failed:', fallbackError);
+                        aiNegotiator.appendMessage('AI', '❌ All update checks failed', 'left');
+                    }
+                    return;
+                }
+                
+                if (recentChats && recentChats.length > 0) {
+                    console.log(`Found ${recentChats.length} recent updates`);
+                    aiNegotiator.appendMessage('AI', `✅ Found ${recentChats.length} recent update(s):`, 'left');
+                    
+                    for (const chat of recentChats) {
+                        console.log('Processing update:', chat.title, chat.conversation_data);
+                        if (chat.title && chat.title.includes('Negotiation Success')) {
+                            aiNegotiator.displayNegotiationSuccess(chat);
+                        } else if (chat.title && chat.title.includes('Landlord Reply')) {
+                            aiNegotiator.displayLandlordReply(chat);
+                        } else {
+                            aiNegotiator.displayLandlordReply(chat);
+                        }
+                    }
+                } else {
+                    aiNegotiator.appendMessage('AI', '📭 No new updates found in last 5 minutes', 'left');
+                    
+                    // Check localStorage backups first
+                    console.log('🔍 Checking localStorage backups...');
+                    try {
+                        const backups = JSON.parse(localStorage.getItem('ai_negotiation_backups') || '[]');
+                        const recentBackups = backups.filter(backup => 
+                            new Date(backup.timestamp) > new Date(Date.now() - 5 * 60 * 1000) &&
+                            backup.userEmail === currentUser?.email
+                        );
+                        
+                        if (recentBackups.length > 0) {
+                            aiNegotiator.appendMessage('AI', `💾 Found ${recentBackups.length} backup notification(s):`, 'left');
+                            for (const backup of recentBackups) {
+                                if (backup.landlordReply) {
+                                    aiNegotiator.appendMessage('AI', `💬 **Landlord:** "${backup.landlordReply}"`, 'left');
+                                }
+                                if (backup.aiResponse) {
+                                    aiNegotiator.appendMessage('AI', `🤖 **AI Response:** "${backup.aiResponse}"`, 'left');
+                                }
+                                aiNegotiator.appendMessage('AI', backup.message, 'left');
+                                if (backup.type === 'negotiation_success') {
+                                    aiNegotiator.celebrateSuccess();
+                                }
+                            }
+                            return; // Found backups, don't check messages table
+                        }
+                    } catch (backupError) {
+                        console.error('Error checking backups:', backupError);
+                    }
+                    
+                    // Also check for any AI messages in the messages table
+                    console.log('🔍 Checking messages table for recent AI activity...');
+                    try {
+                        const { data: aiMessages, error: aiMsgError } = await aiNegotiator.supabase
+                            .from('messages')
+                            .select('*')
+                            .eq('sender_email', 'ai-negotiator@roomfinder.com')
+                            .gte('created_at', fiveMinutesAgo)
+                            .order('created_at', { ascending: false })
+                            .limit(3);
+                        
+                        if (!aiMsgError && aiMessages?.length > 0) {
+                            aiNegotiator.appendMessage('AI', `🤖 Found ${aiMessages.length} recent AI message(s) in conversations:`, 'left');
+                            for (const msg of aiMessages) {
+                                // Extract the actual message content (remove the AI prefix)
+                                const cleanContent = msg.content.replace(/^🤖 AI Negotiator.*?:\s*/s, '');
+                                aiNegotiator.appendMessage('AI', cleanContent, 'left');
+                            }
+                        } else {
+                            aiNegotiator.appendMessage('AI', 'ℹ️ No recent AI activity found', 'left');
+                        }
+                    } catch (msgCheckError) {
+                        console.error('Error checking messages:', msgCheckError);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error in manual update check:', error);
+                aiNegotiator.removeTypingIndicator();
+                aiNegotiator.appendMessage('AI', `❌ Error checking for updates: ${error.message}`, 'left');
+            }
+        }
+
         // Global functions for onclick
         window.sendMessage = sendMessage;
         window.clearChat = clearChat;
@@ -274,6 +409,7 @@
         window.testMessageHandling = testMessageHandling;
         window.testNegotiationFlow = testNegotiationFlow;
         window.checkRecentMessages = checkRecentMessages;
+        window.checkForUpdates = checkForUpdates;
     </script>
 </body>
 </html>

@@ -417,56 +417,109 @@ class AINegotatior {
 
             // Generate response if needed
             if (analysis.shouldRespond) {
+                console.log('🚀 Generating response based on analysis:', analysis);
                 const response = await this.generateCounterResponse(analysis, negotiation, listing);
                 
                 if (response) {
+                    console.log('📝 Generated response:', response);
+                    
                     // Wait a bit to simulate thinking time
-                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     
                     // Send the response
-                    await this.sendNegotiationMessage(conversationId, response, negotiation.userEmail);
+                    console.log('📤 Sending response to conversation:', conversationId);
+                    const sentSuccessfully = await this.sendNegotiationMessage(conversationId, response, negotiation.userEmail);
                     
-                    // Update negotiation state
-                    negotiation.messages.push({
-                        sender: 'ai',
-                        content: response,
-                        timestamp: new Date()
-                    });
-
-                    // Notify user about our response
-                    await this.notifyLandlordReply(negotiation, message.content, response);
-
-                    if (analysis.isFinalized) {
-                        negotiation.status = 'finalized';
-                        negotiation.finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
-                        console.log('✅ Negotiation finalized at $', negotiation.finalPrice);
+                    if (sentSuccessfully) {
+                        console.log('✅ Response sent successfully');
                         
-                        // Directly update AI chat with success message
-                        try {
-                            if (typeof window !== 'undefined' && window.aiNegotiator) {
-                                const savings = negotiation.originalPrice - negotiation.finalPrice;
-                                const savingsText = savings > 0 ? ` (Saved $${savings}!)` : '';
-                                window.aiNegotiator.appendMessage('AI', `🎉 **DEAL CLOSED!** Landlord accepted $${negotiation.finalPrice}/month${savingsText}. Property: ${negotiation.listingTitle}`, 'left');
-                                window.aiNegotiator.celebrateSuccess();
+                        // Update negotiation state
+                        negotiation.messages.push({
+                            sender: 'ai',
+                            content: response,
+                            timestamp: new Date()
+                        });
+
+                        // Check if negotiation is complete
+                        if (analysis.isFinalized) {
+                            negotiation.status = 'finalized';
+                            negotiation.finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
+                            console.log('🎉 NEGOTIATION FINALIZED at $', negotiation.finalPrice);
+                            
+                            // PRIORITY 1: Direct UI update (immediate feedback)
+                            const savings = negotiation.originalPrice - negotiation.finalPrice;
+                            const savingsText = savings > 0 ? ` (Saved $${savings}!)` : '';
+                            const successMessage = `🎉 **DEAL CLOSED!** Landlord said "${message.content}" and accepted $${negotiation.finalPrice}/month${savingsText}. Property: ${negotiation.listingTitle}`;
+                            
+                            try {
+                                if (typeof window !== 'undefined' && window.aiNegotiator) {
+                                    console.log('🎯 DIRECTLY updating AI chat interface with success');
+                                    window.aiNegotiator.appendMessage('AI', `💬 **Landlord:** "${message.content}"`, 'left');
+                                    window.aiNegotiator.appendMessage('AI', `🤖 **AI Response:** "${response}"`, 'left');
+                                    window.aiNegotiator.appendMessage('AI', successMessage, 'left');
+                                    window.aiNegotiator.celebrateSuccess();
+                                    console.log('✅ Direct UI update successful!');
+                                } else {
+                                    console.log('⚠️ Window AI negotiator not available for direct update');
+                                }
+                            } catch (error) {
+                                console.log('❌ Direct UI update failed:', error.message);
                             }
-                        } catch (error) {
-                            console.log('Could not directly update AI chat with success:', error.message);
+                            
+                            // PRIORITY 2: Try database notification (may fail due to constraints)
+                            try {
+                                await this.notifyNegotiationComplete(negotiation, message.content);
+                            } catch (dbError) {
+                                console.log('Database notification failed (expected):', dbError.message);
+                            }
+                            
+                            // PRIORITY 3: Store in localStorage as backup
+                            try {
+                                const backupData = {
+                                    type: 'negotiation_success',
+                                    timestamp: new Date().toISOString(),
+                                    userEmail: negotiation.userEmail,
+                                    message: successMessage,
+                                    landlordReply: message.content,
+                                    aiResponse: response
+                                };
+                                
+                                const existingBackups = JSON.parse(localStorage.getItem('ai_negotiation_backups') || '[]');
+                                existingBackups.push(backupData);
+                                // Keep only last 10 items
+                                if (existingBackups.length > 10) {
+                                    existingBackups.splice(0, existingBackups.length - 10);
+                                }
+                                localStorage.setItem('ai_negotiation_backups', JSON.stringify(existingBackups));
+                                console.log('✅ Backup stored in localStorage');
+                            } catch (storageError) {
+                                console.log('Storage backup failed:', storageError.message);
+                            }
+                        } else {
+                            // Show AI response in chat for ongoing negotiation
+                            try {
+                                if (typeof window !== 'undefined' && window.aiNegotiator) {
+                                    window.aiNegotiator.appendMessage('AI', `🤖 **My Response**: "${response}"`, 'left');
+                                }
+                            } catch (error) {
+                                console.log('Could not directly update AI chat with response:', error.message);
+                            }
+                            
+                            // Notify user about the ongoing exchange
+                            await this.notifyLandlordReply(negotiation, message.content, response);
                         }
-                        
-                        // Send finalization message to AI negotiator page with landlord's exact message
-                        await this.notifyNegotiationComplete(negotiation, message.content);
                     } else {
-                        // Show AI response in chat
-                        try {
-                            if (typeof window !== 'undefined' && window.aiNegotiator) {
-                                window.aiNegotiator.appendMessage('AI', `🤖 **My Response**: "${response}"`, 'left');
-                            }
-                        } catch (error) {
-                            console.log('Could not directly update AI chat with response:', error.message);
-                        }
+                        console.error('❌ Failed to send response');
                     }
+                } else {
+                    console.log('❌ No response generated');
                 }
-            } else if (analysis.sentiment === 'negative') {
+            } else {
+                console.log('ℹ️ Analysis indicates no response needed');
+            }
+            
+            // Handle special case for negative sentiment when no response was generated above
+            if (analysis.sentiment === 'negative' && !analysis.shouldRespond) {
                 // Handle rejection with intelligent market-based response
                 console.log('❌ Received negative response, attempting market-based negotiation');
                 
@@ -508,6 +561,29 @@ class AINegotatior {
 
     // Analyze landlord's reply
     async analyzeReply(replyContent, negotiation, listing) {
+        console.log('🔍 Starting reply analysis for:', replyContent);
+        
+        // First check for simple acceptance patterns IMMEDIATELY
+        const simpleReply = replyContent.trim().toLowerCase();
+        const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)$/i.test(simpleReply);
+        
+        if (isSimpleAcceptance) {
+            console.log('🎯 IMMEDIATE ACCEPTANCE DETECTED:', simpleReply);
+            const lastOffer = this.extractLastOfferedPrice(negotiation);
+            return {
+                sentiment: 'positive',
+                priceOffered: null,
+                acceptsOffer: true,
+                makesCounterOffer: false,
+                shouldRespond: true,
+                isFinalized: true,
+                agreedPrice: lastOffer || negotiation.userBudget,
+                responseStrategy: 'thank',
+                suggestedResponse: `Excellent! Thank you for accepting the $${lastOffer || negotiation.userBudget}/month offer.`,
+                negotiationPhase: 'closing'
+            };
+        }
+
         try {
             const lastAIMessage = negotiation.messages
                 .filter(m => m.sender === 'ai')
@@ -557,58 +633,59 @@ class AINegotatior {
                     'OpenAI-Organization': this.config.OPENAI_ORG_ID
                 },
                 body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
+                    model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
                     messages: [{ role: 'system', content: prompt }],
                     max_tokens: 250,
-                    temperature: 0.2
+                    temperature: 0.1
                 })
             });
 
             if (!response.ok) {
+                console.warn('OpenAI API failed, using fallback analysis');
                 throw new Error(`OpenAI API error: ${response.status}`);
             }
 
             const data = await response.json();
-            const analysis = JSON.parse(data.choices[0].message.content.trim());
+            let analysis = JSON.parse(data.choices[0].message.content.trim());
             
-            // Enhanced fallback for simple "sure" responses
-            const simpleReply = replyContent.trim().toLowerCase();
-            if (/^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great)$/i.test(simpleReply)) {
-                console.log('🎯 Detected simple acceptance:', simpleReply);
+            // Double-check for acceptance patterns in AI response too
+            if (/\b(sure|yes|ok|okay|sounds good|works|fine|agreed|deal)\b/i.test(simpleReply)) {
+                console.log('🎯 AI also detected acceptance in:', simpleReply);
                 analysis.acceptsOffer = true;
                 analysis.isFinalized = true;
                 analysis.sentiment = 'positive';
                 analysis.shouldRespond = true;
                 analysis.responseStrategy = 'thank';
-                // Extract last offered price from negotiation history
                 const lastOffer = this.extractLastOfferedPrice(negotiation);
                 if (lastOffer) {
                     analysis.agreedPrice = lastOffer;
-                    console.log('💰 Agreed price extracted:', lastOffer);
                 }
             }
             
+            console.log('📊 AI Analysis result:', analysis);
             return analysis;
 
         } catch (error) {
-            console.error('Error analyzing reply:', error);
+            console.error('Error with AI analysis, using enhanced fallback:', error);
             
-            // Enhanced fallback analysis
+            // Enhanced fallback analysis with better detection
             const replyLower = replyContent.toLowerCase().trim();
             const hasPrice = replyContent.match(/\$(\d+)/);
-            const seemsPositive = /\b(yes|ok|sure|accept|agree|sounds good|works|fine)\b/i.test(replyContent);
-            const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine)\s*$/i.test(replyLower);
+            const seemsPositive = /\b(yes|ok|sure|accept|agree|sounds good|works|fine|deal|great|perfect)\b/i.test(replyContent);
+            const hasAcceptanceWords = /\b(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|perfect|great|excellent)\b/i.test(replyLower);
+            
+            console.log('🔧 Fallback analysis - hasAcceptanceWords:', hasAcceptanceWords, 'for:', replyLower);
             
             return {
                 sentiment: seemsPositive ? 'positive' : 'neutral',
                 priceOffered: hasPrice ? parseInt(hasPrice[1]) : null,
-                acceptsOffer: isSimpleAcceptance,
+                acceptsOffer: hasAcceptanceWords && !hasPrice,
                 makesCounterOffer: !!hasPrice,
                 shouldRespond: true,
-                isFinalized: isSimpleAcceptance,
-                agreedPrice: isSimpleAcceptance ? this.extractLastOfferedPrice(negotiation) : null,
-                responseStrategy: isSimpleAcceptance ? 'thank' : (hasPrice ? 'counter' : 'clarify'),
-                negotiationPhase: isSimpleAcceptance ? 'closing' : 'bargaining'
+                isFinalized: hasAcceptanceWords && !hasPrice,
+                agreedPrice: (hasAcceptanceWords && !hasPrice) ? this.extractLastOfferedPrice(negotiation) : null,
+                responseStrategy: (hasAcceptanceWords && !hasPrice) ? 'thank' : (hasPrice ? 'counter' : 'clarify'),
+                negotiationPhase: (hasAcceptanceWords && !hasPrice) ? 'closing' : 'bargaining'
             };
         }
     }
@@ -620,18 +697,22 @@ class AINegotatior {
         try {
             if (analysis.isFinalized && analysis.acceptsOffer) {
                 const finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
-                return `Excellent! Thank you for accepting the $${finalPrice}/month offer. I'm excited to move forward with this rental. I'm a reliable tenant ready to proceed immediately. Could you please let me know the next steps for finalizing the rental agreement? I can provide references and complete any necessary paperwork promptly.`;
+                console.log('🎉 GENERATING FINAL ACCEPTANCE RESPONSE - Price:', finalPrice);
+                return `🎉 Excellent! Thank you for accepting the $${finalPrice}/month offer. I'm thrilled to move forward with this rental! I'm a reliable tenant ready to proceed immediately. Could you please let me know the next steps for finalizing the rental agreement? I have excellent references and can complete all necessary paperwork promptly. Looking forward to hearing from you soon!`;
             }
 
             if (analysis.makesCounterOffer && analysis.priceOffered) {
+                console.log('💰 Generating counter-offer response');
                 return await this.generateAdvancedCounterOffer(analysis, negotiation, listing);
             }
 
             if (analysis.sentiment === 'negative' || analysis.responseStrategy === 'clarify') {
+                console.log('🔄 Generating market-based response for negative sentiment');
                 return await this.generateMarketBasedResponse(negotiation, listing);
             }
 
             // Use AI to generate contextual response
+            console.log('🤖 Generating contextual response');
             return await this.generateContextualResponse(analysis, negotiation, listing);
 
         } catch (error) {
@@ -1134,13 +1215,13 @@ class AINegotatior {
     async testMessageHandling(testMessage = 'sure') {
         console.log('🧪 Testing message handling with:', testMessage);
         
-        // Create test data
+        // Create test data that matches your scenario
         const testListing = {
             id: 'test-listing-id',
-            title: '2 bedroom test',
-            price: 800,
-            city: 'Moscow',
-            house_type: 'Condo',
+            title: '2 bedroom house in Tehran',
+            price: 1000,
+            city: 'Tehran',
+            house_type: 'House',
             bedrooms: 2,
             user_email: 'landlord@test.com'
         };
@@ -1151,9 +1232,34 @@ class AINegotatior {
             conversation_id: 'test-conversation-id'
         };
         
+        // Create a test negotiation with some history to make it more realistic
+        const testConversationId = 'test-conversation-id';
+        this.activeNegotiations.set(testConversationId, {
+            listingId: testListing.id,
+            listingTitle: testListing.title,
+            originalPrice: testListing.price,
+            userBudget: 950, // User wants it for less
+            userEmail: 'user@test.com',
+            landlordEmail: testListing.user_email,
+            status: 'active',
+            startTime: new Date(),
+            messages: [{
+                sender: 'ai',
+                content: 'Would you consider $950/month? I can move in immediately.',
+                timestamp: new Date()
+            }]
+        });
+        
+        console.log('🧪 Test setup complete, calling handleNegotiationReply...');
+        
         try {
-            await this.handleNegotiationReply(testMessageObj, 'test-conversation-id', testListing);
+            await this.handleNegotiationReply(testMessageObj, testConversationId, testListing);
             console.log('✅ Manual message test completed');
+            
+            // Check final state
+            const finalNegotiation = this.activeNegotiations.get(testConversationId);
+            console.log('📊 Final negotiation state:', finalNegotiation);
+            
         } catch (error) {
             console.error('❌ Manual message test failed:', error);
         }
