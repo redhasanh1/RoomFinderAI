@@ -256,6 +256,13 @@ class AIChatHandler {
     async autoNegotiateListings(listings) {
         if (!this.negotiationEngine || !listings?.length) return;
         
+        // Prevent duplicate auto-negotiations
+        if (this.negotiationState === 'auto_negotiating') {
+            console.log('⚠️ Auto-negotiation already in progress, skipping duplicate call');
+            return;
+        }
+        
+        this.negotiationState = 'auto_negotiating';
         this.appendMessage('AI', `🤖 Found ${listings.length} matching properties! Starting automatic negotiations with landlords...`, 'left');
         
         let successCount = 0;
@@ -283,6 +290,9 @@ class AIChatHandler {
         if (successCount > 0) {
             this.appendMessage('AI', `🎯 Successfully contacted ${successCount} landlord(s)! I'll continue negotiating automatically when they reply. You'll be notified of any agreements reached.`, 'left');
         }
+        
+        // Reset negotiation state
+        this.negotiationState = 'idle';
     }
 
     // Helper function for auto-negotiation - maps to existing sendMessage function
@@ -1025,6 +1035,20 @@ class AIChatHandler {
     async sendMessage(listing) {
         try {
             console.log('🚀 Starting negotiation for:', listing.title);
+            
+            // Prevent duplicate messages to the same listing
+            const negotiationKey = `${listing.id}_${this.currentUser?.email}`;
+            if (this.activeNegotiations.has(negotiationKey)) {
+                console.log('⚠️ Negotiation already active for this listing, skipping duplicate');
+                return false;
+            }
+            
+            // Mark this negotiation as active
+            this.activeNegotiations.set(negotiationKey, {
+                listingId: listing.id,
+                listingTitle: listing.title,
+                startTime: Date.now()
+            });
 
             if (!this.negotiationEngine) {
                 console.warn('⚠️ No negotiation engine available, using basic message');
@@ -1061,7 +1085,16 @@ class AIChatHandler {
 
         } catch (error) {
             console.error('Negotiation send error:', error);
+            // Clean up failed negotiation tracking
+            const negotiationKey = `${listing.id}_${this.currentUser?.email}`;
+            this.activeNegotiations.delete(negotiationKey);
             return await this.sendBasicMessage(listing);
+        } finally {
+            // Clean up after 30 seconds to allow for retry if needed
+            setTimeout(() => {
+                const negotiationKey = `${listing.id}_${this.currentUser?.email}`;
+                this.activeNegotiations.delete(negotiationKey);
+            }, 30000);
         }
     }
 
