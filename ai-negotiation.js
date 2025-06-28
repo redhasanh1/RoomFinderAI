@@ -84,89 +84,39 @@ class AINegotatior {
 
     // Ensure AI user exists in database
     async ensureAIUserExists() {
-        if (this.aiUserInitialized) return true;
+        if (this.aiUserInitialized) {
+            console.log('✅ AI user already initialized, skipping check');
+            return true;
+        }
         
         try {
             const aiEmail = 'ai-negotiator@roomfinder.com';
             
+            console.log('🔍 Checking if AI user exists...');
+            
             // Check if AI user exists - use maybeSingle to avoid 406 errors
             const { data: existingUser, error: checkError } = await this.supabase
                 .from('users')
-                .select('email')
+                .select('id, email, first_name, last_name')
                 .eq('email', aiEmail)
                 .maybeSingle();
 
-            if (checkError) {
-                console.log('Error checking for existing AI user:', checkError.message);
-                // Continue to try creating user
+            if (checkError && !checkError.message.includes('No rows')) {
+                console.log('⚠️ Error checking for existing AI user:', checkError.message);
+                // Mark as initialized to avoid infinite retry
+                this.aiUserInitialized = true;
+                return true;
             }
 
             if (existingUser) {
-                console.log('✅ AI user already exists, skipping creation');
+                console.log('✅ AI user already exists:', existingUser.first_name, existingUser.last_name);
                 this.aiUserInitialized = true;
                 return true;
-            } else {
-                console.log('Creating AI negotiator user...');
-                // Try different schema combinations to find what works
-                const attempts = [
-                    // Attempt 1: Full schema
-                    {
-                        first_name: 'AI',
-                        last_name: 'Negotiator', 
-                        email: aiEmail,
-                        password_hash: 'ai_user_placeholder_hash',
-                        profile_image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzRiNWU3YSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+QUk8L3RleHQ+PC9zdmc+'
-                    },
-                    // Attempt 2: Without password_hash
-                    {
-                        first_name: 'AI',
-                        last_name: 'Negotiator', 
-                        email: aiEmail,
-                        profile_image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzRiNWU3YSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+QUk8L3RleHQ+PC9zdmc+'
-                    },
-                    // Attempt 3: Minimal schema with ID
-                    {
-                        id: crypto.randomUUID(),
-                        first_name: 'AI',
-                        last_name: 'Negotiator', 
-                        email: aiEmail
-                    },
-                    // Attempt 4: Single name field with ID
-                    {
-                        id: crypto.randomUUID(),
-                        name: 'AI Negotiator',
-                        email: aiEmail
-                    },
-                    // Attempt 5: Just email with ID
-                    {
-                        id: crypto.randomUUID(),
-                        email: aiEmail
-                    }
-                ];
-
-                let created = false;
-                for (let i = 0; i < attempts.length && !created; i++) {
-                    console.log(`Attempt ${i + 1}: Trying to create AI user with schema:`, Object.keys(attempts[i]));
-                    
-                    const { error } = await this.supabase
-                        .from('users')
-                        .insert(attempts[i]);
-                    
-                    if (!error) {
-                        console.log(`✅ AI user created successfully with attempt ${i + 1}`);
-                        created = true;
-                    } else {
-                        console.log(`❌ Attempt ${i + 1} failed:`, error.message);
-                    }
-                }
-                
-                if (!created) {
-                    console.log('⚠️ Could not create AI user with any schema, continuing anyway...');
-                }
             }
-
+            
+            console.log('❌ AI user not found, but skipping creation to avoid errors');
+            console.log('⚠️ Please manually create AI user with email:', aiEmail);
             this.aiUserInitialized = true;
-            console.log('✅ AI user setup complete');
             return true;
 
         } catch (error) {
