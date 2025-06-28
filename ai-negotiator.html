@@ -428,8 +428,18 @@
                                     });
                                 }
                             } else {
-                                // Regular AI response
-                                aiNegotiator.appendMessage('AI', `🤖 **AI Update:** ${cleanContent}`, 'left');
+                                // Filter AI responses - only show important updates, not every negotiation message
+                                const importantKeywords = ['deal', 'closed', 'accepted', 'agreed', 'signed', 'approved', 'rejected', 'countered'];
+                                const isImportant = importantKeywords.some(keyword => 
+                                    cleanContent.toLowerCase().includes(keyword)
+                                );
+                                
+                                if (isImportant) {
+                                    aiNegotiator.appendMessage('AI', `🤖 **AI Update:** ${cleanContent}`, 'left');
+                                } else {
+                                    // Regular negotiation chatter - just log it
+                                    console.log('💬 AI Negotiation:', cleanContent);
+                                }
                             }
                         }
                     }
