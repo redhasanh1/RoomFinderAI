@@ -147,229 +147,113 @@
         let aiNegotiationEngine;
         let currentUser;
 
-        // Initialize configuration variables
-        let configData;
-        let supabase;
-
-        // Show loading indicator
-        const chatMessages = document.getElementById('chatMessages');
-        chatMessages.innerHTML = '<div class="typing-indicator">🔧 Loading AI Negotiator configuration...</div>';
-
-        // Load configuration from Railway API and initialize
-        fetch('/api/config')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Configuration API error: ${response.status} ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(config => {
-                // Validate required configuration
-                const missingKeys = [];
-                if (!config.OPENAI_API_KEY) missingKeys.push('OPENAI_API_KEY');
-                if (!config.SUPABASE_URL) missingKeys.push('SUPABASE_URL');
-                if (!config.SUPABASE_ANON_KEY) missingKeys.push('SUPABASE_ANON_KEY');
-                
-                if (missingKeys.length > 0) {
-                    throw new Error(`Missing required configuration: ${missingKeys.join(', ')}`);
-                }
-
-                configData = {
-                    OPENAI_API_KEY: config.OPENAI_API_KEY,
-                    OPENAI_ORG_ID: config.OPENAI_ORG_ID,
-                    OPENAI_MODEL: config.OPENAI_MODEL || 'gpt-3.5-turbo',
-                    SUPABASE_URL: config.SUPABASE_URL,
-                    SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY
-                };
-
-                console.log('✅ Configuration loaded successfully:', {
-                    hasOpenAIKey: !!configData.OPENAI_API_KEY,
-                    hasSupabaseURL: !!configData.SUPABASE_URL,
-                    hasSupabaseKey: !!configData.SUPABASE_ANON_KEY,
-                    model: configData.OPENAI_MODEL
-                });
-
-                // Clear loading indicator
-                chatMessages.innerHTML = '<div class="typing-indicator">🔧 Initializing Supabase connection...</div>';
-
-                // Initialize Supabase
-                try {
-                    supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
-                    console.log('✅ Supabase client created successfully');
-                    
-                    // Clear loading and initialize the application
-                    chatMessages.innerHTML = '<div class="typing-indicator">🤖 Starting AI Negotiator...</div>';
-                    initializeNegotiator();
-                } catch (supabaseError) {
-                    throw new Error(`Supabase initialization failed: ${supabaseError.message}`);
-                }
-            })
-            .catch(error => {
-                console.error('❌ Configuration failed:', error);
-                chatMessages.innerHTML = `
-                    <div style="color: red; padding: 1rem; border: 1px solid red; border-radius: 8px; background: #ffeaea;">
-                        <h4>⚠️ Configuration Error</h4>
-                        <p><strong>Failed to load AI Negotiator:</strong> ${error.message}</p>
-                        <p><em>This usually means the Railway environment variables are not properly set.</em></p>
-                        <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                            🔄 Retry
-                        </button>
-                    </div>
-                `;
-            });
-
-        async function initializeNegotiator() {
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', async () => {
             console.log('🚀 Initializing AI Negotiator...');
             
+            // Check authentication
+            currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // Update auth section
+            const authSection = document.getElementById('authSection');
+            authSection.innerHTML = `
+                <a href="/profile">
+                    <img src="${currentUser.profileImage || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzY2NzJhMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4='}" 
+                         alt="Profile" class="w-10 h-10 rounded-full">
+                </a>
+            `;
+
+            // Load configuration from Railway API first, fallback to config.js
+            let configData;
             try {
-                // Check authentication
-                currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                if (!currentUser) {
-                    chatMessages.innerHTML = `
-                        <div style="color: orange; padding: 1rem; border: 1px solid orange; border-radius: 8px; background: #fff3cd;">
-                            <h4>🔐 Authentication Required</h4>
-                            <p>You need to be logged in to use the AI Negotiator.</p>
-                            <a href="/login" style="color: #0066cc; text-decoration: underline;">
-                                Click here to login or register
-                            </a>
-                        </div>
-                    `;
-                    return;
+                const response = await fetch('/api/config');
+                if (response.ok) {
+                    const config = await response.json();
+                    configData = {
+                        OPENAI_API_KEY: config.OPENAI_API_KEY,
+                        OPENAI_ORG_ID: config.OPENAI_ORG_ID,
+                        OPENAI_MODEL: config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                        SUPABASE_URL: config.SUPABASE_URL,
+                        SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY
+                    };
+                    console.log('✅ Using Railway API configuration');
+                } else {
+                    throw new Error('Railway API failed');
                 }
+            } catch (error) {
+                console.log('⚠️ Railway API failed, using fallback config');
+                configData = {
+                    OPENAI_API_KEY: window.config?.OPENAI_API_KEY || config?.OPENAI_API_KEY,
+                    OPENAI_ORG_ID: window.config?.OPENAI_ORG_ID || config?.OPENAI_ORG_ID,
+                    OPENAI_MODEL: window.config?.OPENAI_MODEL || config?.OPENAI_MODEL || 'gpt-3.5-turbo',
+                    SUPABASE_URL: window.config?.SUPABASE_URL || config?.SUPABASE_URL,
+                    SUPABASE_ANON_KEY: window.config?.SUPABASE_ANON_KEY || config?.SUPABASE_ANON_KEY
+                };
+            }
 
-                // Update auth section
-                const authSection = document.getElementById('authSection');
-                authSection.innerHTML = `
-                    <a href="/profile">
-                        <img src="${currentUser.profileImage || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzY2NzJhMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4='}" 
-                             alt="Profile" class="w-10 h-10 rounded-full">
-                    </a>
-                `;
+            // Initialize Supabase
+            const supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
 
-                // Clear chat and show dependency check
-                chatMessages.innerHTML = '<div class="typing-indicator">🔍 Checking AI dependencies...</div>';
+            // Check if AIChatHandler class is available
+            if (typeof AIChatHandler === 'undefined') {
+                console.error('❌ AIChatHandler class not found! ai-chat.js not loaded properly');
+                alert('Error: AI Chat module not loaded. Please refresh the page.');
+                return;
+            }
 
-                // Check if required JavaScript modules are loaded
-                const missingDependencies = [];
-                if (typeof AIChatHandler === 'undefined') {
-                    missingDependencies.push('AIChatHandler (ai-chat.js)');
-                }
-                if (typeof AINegotiationEngine === 'undefined') {
-                    missingDependencies.push('AINegotiationEngine (ai-negotiation.js)');
-                }
+            // Initialize AI Negotiator
+            console.log('🔧 Creating AIChatHandler instance...');
+            aiNegotiator = new AIChatHandler(supabase, configData);
+            aiNegotiator.init(currentUser);
 
-                if (missingDependencies.length > 0) {
-                    console.error('❌ Missing dependencies:', missingDependencies);
-                    chatMessages.innerHTML = `
-                        <div style="color: red; padding: 1rem; border: 1px solid red; border-radius: 8px; background: #ffeaea;">
-                            <h4>⚠️ Module Loading Error</h4>
-                            <p><strong>Missing required AI modules:</strong></p>
-                            <ul style="margin-left: 20px;">
-                                ${missingDependencies.map(dep => `<li>${dep}</li>`).join('')}
-                            </ul>
-                            <p><em>Please check that ai-chat.js and ai-negotiation.js are loading properly.</em></p>
-                            <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                🔄 Reload Page
-                            </button>
-                        </div>
-                    `;
-                    return;
-                }
-
-                // Show initialization progress
-                chatMessages.innerHTML = '<div class="typing-indicator">🤖 Initializing AI Negotiator...</div>';
-
-                // Initialize AI Chat Handler
-                console.log('🔧 Creating AIChatHandler instance...');
-                aiNegotiator = new AIChatHandler(supabase, configData);
-                await aiNegotiator.init(currentUser);
-                console.log('✅ AIChatHandler initialized');
-
-                // Show negotiation engine initialization
-                chatMessages.innerHTML = '<div class="typing-indicator">⚡ Starting negotiation engine...</div>';
-
-                // Initialize AI Negotiation Engine
-                console.log('🔧 Creating AINegotiationEngine instance...');
+            // Initialize AI Negotiation Engine
+            console.log('🔧 Creating AINegotiationEngine instance...');
+            if (typeof AINegotiationEngine !== 'undefined') {
                 aiNegotiationEngine = new AINegotiationEngine(supabase, configData);
                 aiNegotiator.setNegotiationEngine(aiNegotiationEngine);
                 console.log('✅ AI Negotiation Engine initialized');
-
-                // Show real-time setup
-                chatMessages.innerHTML = '<div class="typing-indicator">🔔 Setting up real-time notifications...</div>';
-
-                // Set up real-time systems
-                setupRealTimeNegotiationListener();
-                setupAutomaticPolling();
-                requestNotificationPermission();
-
-                // Clear loading and show welcome message or conversation history
-                chatMessages.innerHTML = '';
-                
-                // Show success message briefly
-                if (aiNegotiator.conversationHistory.length === 0) {
-                    aiNegotiator.appendMessage('AI', '✅ AI Negotiator is ready! Tell me what you\'re looking for (e.g., "I need a 2-bedroom apartment under $1500 in Toronto") and I\'ll find matching listings and negotiate with landlords for you automatically using market data!', 'left');
-                }
-
-                console.log('✅ AI Negotiator initialized successfully');
-
-            } catch (error) {
-                console.error('❌ Initialization error:', error);
-                chatMessages.innerHTML = `
-                    <div style="color: red; padding: 1rem; border: 1px solid red; border-radius: 8px; background: #ffeaea;">
-                        <h4>⚠️ Initialization Failed</h4>
-                        <p><strong>Error:</strong> ${error.message}</p>
-                        <p><em>Please check the console for more details.</em></p>
-                        <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                            🔄 Retry
-                        </button>
-                    </div>
-                `;
+            } else {
+                console.warn('⚠️ AINegotiationEngine class not found - negotiation features disabled');
             }
-        }
+
+            // Add a small delay to ensure everything is loaded
+            setTimeout(() => {
+                console.log('🚀 Starting real-time systems...');
+                
+                // Set up real-time listeners for AI negotiator interface
+                setupRealTimeNegotiationListener();
+                
+                // Set up automatic polling as backup
+                setupAutomaticPolling();
+                
+                // Request notification permission for better UX
+                requestNotificationPermission();
+                
+                console.log('✅ Real-time systems started');
+            }, 1000);
+
+            console.log('✅ AI Negotiator initialized successfully');
+        });
 
         // Send message function
         async function sendMessage() {
             const input = document.getElementById('chatInput');
-            const sendButton = document.getElementById('sendButton');
             const message = input.value.trim();
             
             if (!message) return;
             
-            // Check if AI negotiator is initialized
-            if (!aiNegotiator) {
-                aiNegotiator.appendMessage('AI', '❌ AI Negotiator not ready. Please wait for initialization to complete.', 'left');
-                return;
-            }
-            
             console.log('💬 Sending message:', message);
-            
-            // Disable input and button during processing
-            input.disabled = true;
-            sendButton.disabled = true;
-            sendButton.textContent = 'Processing...';
             
             try {
                 await aiNegotiator.processMessage(message);
                 input.value = '';
             } catch (error) {
-                console.error('❌ Error processing message:', error);
-                if (aiNegotiator) {
-                    aiNegotiator.appendMessage('AI', `❌ Error processing your message: ${error.message}`, 'left');
-                } else {
-                    // Fallback if aiNegotiator is not available
-                    const chatMessages = document.getElementById('chatMessages');
-                    chatMessages.innerHTML += `
-                        <div style="color: red; padding: 0.5rem; margin: 0.5rem 0; border-left: 3px solid red;">
-                            ❌ Error: ${error.message}
-                        </div>
-                    `;
-                }
-            } finally {
-                // Re-enable input and button
-                input.disabled = false;
-                sendButton.disabled = false;
-                sendButton.textContent = 'Send Message';
-                input.focus();
+                console.error('Error processing message:', error);
+                aiNegotiator.appendMessage('AI', 'Sorry, there was an error processing your message.', 'left');
             }
         }
 
