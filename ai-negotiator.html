@@ -251,11 +251,11 @@
 
                 // Check if required JavaScript modules are loaded
                 const missingDependencies = [];
-                if (typeof AINegotiator === 'undefined') {
-                    missingDependencies.push('AINegotiator (ai-chat.js)');
+                if (typeof AIChatHandler === 'undefined') {
+                    missingDependencies.push('AIChatHandler (ai-chat.js)');
                 }
-                if (typeof AINegotiator === 'undefined') {
-                    missingDependencies.push('AINegotiator (ai-negotiation.js)');
+                if (typeof AINegotiationEngine === 'undefined') {
+                    missingDependencies.push('AINegotiationEngine (ai-negotiation.js)');
                 }
 
                 if (missingDependencies.length > 0) {
@@ -279,18 +279,18 @@
                 // Show initialization progress
                 chatMessages.innerHTML = '<div class="typing-indicator">🤖 Initializing AI Negotiator...</div>';
 
-                // Initialize AI Negotiator
-                console.log('🔧 Creating AINegotiator instance...');
-                aiNegotiator = new AINegotiator(supabase, configData);
+                // Initialize AI Chat Handler
+                console.log('🔧 Creating AIChatHandler instance...');
+                aiNegotiator = new AIChatHandler(supabase, configData);
                 await aiNegotiator.init(currentUser);
-                console.log('✅ AINegotiator initialized');
+                console.log('✅ AIChatHandler initialized');
 
                 // Show negotiation engine initialization
                 chatMessages.innerHTML = '<div class="typing-indicator">⚡ Starting negotiation engine...</div>';
 
                 // Initialize AI Negotiation Engine
-                console.log('🔧 Creating AINegotiator (negotiation engine) instance...');
-                aiNegotiationEngine = new AINegotiator(supabase, configData);
+                console.log('🔧 Creating AINegotiationEngine instance...');
+                aiNegotiationEngine = new AINegotiationEngine(supabase, configData);
                 aiNegotiator.setNegotiationEngine(aiNegotiationEngine);
                 console.log('✅ AI Negotiation Engine initialized');
 
