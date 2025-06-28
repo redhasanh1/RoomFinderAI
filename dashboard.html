@@ -6,7 +6,6 @@
     <title>Dashboard - RoomFinderAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -188,9 +187,6 @@
                 </button>
                 <button class="tab-button" onclick="switchTab('verification', this)">
                     ✅ Verification
-                </button>
-                <button class="tab-button" onclick="switchTab('analytics', this)">
-                    📈 Analytics
                 </button>
             </div>
         </div>
@@ -390,19 +386,6 @@
                 </div>
             </div>
 
-            <!-- Analytics Tab -->
-            <div id="analytics-tab" class="tab-content hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="glass-card p-6">
-                        <h3 class="text-xl font-bold text-gray-900 mb-4">Listing Performance</h3>
-                        <canvas id="listingChart" width="400" height="200"></canvas>
-                    </div>
-                    <div class="glass-card p-6">
-                        <h3 class="text-xl font-bold text-gray-900 mb-4">Monthly Activity</h3>
-                        <canvas id="activityChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
         </div>
     </main>
 
@@ -465,8 +448,6 @@
                 // Load recent activity
                 loadRecentActivity();
 
-                // Initialize charts
-                initializeCharts();
 
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
@@ -573,52 +554,6 @@
             `).join('');
         }
 
-        function initializeCharts() {
-            // Listing Performance Chart
-            const listingCtx = document.getElementById('listingChart').getContext('2d');
-            new Chart(listingCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Views',
-                        data: [12, 19, 3, 5, 2, 3],
-                        borderColor: 'rgb(102, 126, 234)',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-
-            // Activity Chart
-            const activityCtx = document.getElementById('activityChart').getContext('2d');
-            new Chart(activityCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Listings', 'Messages', 'Views', 'Other'],
-                    datasets: [{
-                        data: [30, 25, 35, 10],
-                        backgroundColor: [
-                            'rgb(102, 126, 234)',
-                            'rgb(240, 147, 251)',
-                            'rgb(17, 153, 142)',
-                            'rgb(252, 74, 26)'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true
-                }
-            });
-        }
 
         // Tab switching functionality
         function switchTab(tabName, buttonElement) {
