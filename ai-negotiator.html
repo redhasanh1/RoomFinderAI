@@ -173,6 +173,31 @@
                 const response = await fetch('/api/config');
                 if (response.ok) {
                     const config = await response.json();
+                    
+                    // Check for missing critical variables
+                    if (config._debug && config._debug.missingVars.length > 0) {
+                        console.error('❌ Missing Railway environment variables:', config._debug.missingVars);
+                        
+                        // Show user-friendly error for missing OpenAI key
+                        if (config._debug.missingVars.includes('OPENAI_API_KEY')) {
+                            document.getElementById('chatMessages').innerHTML = `
+                                <div style="color: red; padding: 1rem; border: 2px solid red; border-radius: 8px; margin: 1rem 0;">
+                                    <h3>❌ Configuration Error</h3>
+                                    <p><strong>OpenAI API Key is missing from Railway environment variables.</strong></p>
+                                    <p>To fix this:</p>
+                                    <ol>
+                                        <li>Go to your Railway project dashboard</li>
+                                        <li>Navigate to Variables tab</li>
+                                        <li>Add: <code>OPENAI_API_KEY</code> = your OpenAI API key</li>
+                                        <li>Redeploy the service</li>
+                                    </ol>
+                                    <p>Missing variables: ${config._debug.missingVars.join(', ')}</p>
+                                </div>
+                            `;
+                            return; // Stop initialization
+                        }
+                    }
+                    
                     configData = {
                         OPENAI_API_KEY: config.OPENAI_API_KEY,
                         OPENAI_ORG_ID: config.OPENAI_ORG_ID,
@@ -180,12 +205,21 @@
                         SUPABASE_URL: config.SUPABASE_URL,
                         SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY
                     };
-                    console.log('✅ Using Railway API configuration');
+                    
+                    // Validate critical keys
+                    if (!configData.OPENAI_API_KEY) {
+                        throw new Error('OpenAI API key is missing');
+                    }
+                    if (!configData.SUPABASE_URL || !configData.SUPABASE_ANON_KEY) {
+                        throw new Error('Supabase configuration is missing');
+                    }
+                    
+                    console.log('✅ Using Railway API configuration with all required variables');
                 } else {
                     throw new Error('Railway API failed');
                 }
             } catch (error) {
-                console.log('⚠️ Railway API failed, using fallback config');
+                console.log('⚠️ Railway API failed, using fallback config:', error.message);
                 configData = {
                     OPENAI_API_KEY: window.config?.OPENAI_API_KEY || config?.OPENAI_API_KEY,
                     OPENAI_ORG_ID: window.config?.OPENAI_ORG_ID || config?.OPENAI_ORG_ID,
@@ -193,6 +227,19 @@
                     SUPABASE_URL: window.config?.SUPABASE_URL || config?.SUPABASE_URL,
                     SUPABASE_ANON_KEY: window.config?.SUPABASE_ANON_KEY || config?.SUPABASE_ANON_KEY
                 };
+                
+                // Final validation
+                if (!configData.OPENAI_API_KEY) {
+                    document.getElementById('chatMessages').innerHTML = `
+                        <div style="color: red; padding: 1rem; border: 2px solid red; border-radius: 8px; margin: 1rem 0;">
+                            <h3>❌ Critical Configuration Missing</h3>
+                            <p><strong>OpenAI API Key not found in Railway environment variables or fallback config.</strong></p>
+                            <p>Error: ${error.message}</p>
+                            <p>Please add OPENAI_API_KEY to your Railway project environment variables.</p>
+                        </div>
+                    `;
+                    return;
+                }
             }
 
             // Initialize Supabase
@@ -518,30 +565,57 @@
                 const config = await configResponse.json();
                 testResults.push(`✅ Config API: OK (${configResponse.status})`);
                 testResults.push(`  - OpenAI Key: ${config.OPENAI_API_KEY ? '✅ Present' : '❌ Missing'}`);
+                testResults.push(`  - OpenAI Org: ${config.OPENAI_ORG_ID ? '✅ Present' : '❌ Missing'}`);
                 testResults.push(`  - Supabase URL: ${config.SUPABASE_URL ? '✅ Present' : '❌ Missing'}`);
+                testResults.push(`  - Supabase Key: ${config.SUPABASE_ANON_KEY ? '✅ Present' : '❌ Missing'}`);
                 
-                // Test Supabase connection
-                if (supabase) {
-                    console.log('🧪 Testing Supabase connection...');
-                    const { data, error } = await supabase.from('users').select('count').limit(1);
-                    if (error) {
-                        testResults.push(`❌ Supabase: ${error.message}`);
-                    } else {
-                        testResults.push(`✅ Supabase: Connected`);
+                // Show debug info if available
+                if (config._debug) {
+                    testResults.push(`  - Config Valid: ${config._debug.isValid ? '✅ Yes' : '❌ No'}`);
+                    if (config._debug.missingVars.length > 0) {
+                        testResults.push(`  - Missing Env Vars: ${config._debug.missingVars.join(', ')}`);
                     }
-                } else {
-                    testResults.push('❌ Supabase: Not initialized');
                 }
                 
-                // Test OpenAI (if available)
-                if (config.OPENAI_API_KEY && aiNegotiationEngine) {
-                    console.log('🧪 Testing OpenAI API...');
+                // Test Supabase connection
+                if (supabase && config.SUPABASE_URL) {
+                    console.log('🧪 Testing Supabase connection...');
                     try {
-                        // This would be a real test in production
-                        testResults.push('✅ OpenAI: Configuration present');
-                    } catch (err) {
-                        testResults.push(`❌ OpenAI: ${err.message}`);
+                        const { data, error } = await supabase.from('users').select('count').limit(1);
+                        if (error) {
+                            testResults.push(`❌ Supabase: ${error.message}`);
+                        } else {
+                            testResults.push(`✅ Supabase: Connected`);
+                        }
+                    } catch (supabaseError) {
+                        testResults.push(`❌ Supabase: Connection failed - ${supabaseError.message}`);
                     }
+                } else {
+                    testResults.push('❌ Supabase: Not initialized (missing URL/key)');
+                }
+                
+                // Test OpenAI API directly
+                if (config.OPENAI_API_KEY) {
+                    console.log('🧪 Testing OpenAI API directly...');
+                    try {
+                        const openaiResponse = await fetch('https://api.openai.com/v1/models', {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${config.OPENAI_API_KEY}`,
+                                'OpenAI-Organization': config.OPENAI_ORG_ID
+                            }
+                        });
+                        
+                        if (openaiResponse.ok) {
+                            testResults.push('✅ OpenAI API: Authentication successful');
+                        } else {
+                            testResults.push(`❌ OpenAI API: ${openaiResponse.status} ${openaiResponse.statusText}`);
+                        }
+                    } catch (openaiError) {
+                        testResults.push(`❌ OpenAI API: ${openaiError.message}`);
+                    }
+                } else {
+                    testResults.push('❌ OpenAI API: No API key available for testing');
                 }
                 
             } catch (error) {

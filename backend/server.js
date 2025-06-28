@@ -591,15 +591,28 @@ app.get('/api/test-supabase', async (req, res) => {
 
 // API endpoint to serve client-safe configuration
 app.get('/api/config', (req, res) => {
-    res.json({
+    console.log('📋 Config endpoint called - checking environment variables:');
+    console.log('- OPENAI_API_KEY:', config.OPENAI_API_KEY ? `Present (${config.OPENAI_API_KEY.substring(0, 10)}...)` : 'MISSING');
+    console.log('- OPENAI_ORG_ID:', config.OPENAI_ORG_ID ? `Present (${config.OPENAI_ORG_ID})` : 'MISSING');
+    console.log('- SUPABASE_URL:', config.SUPABASE_URL ? `Present (${config.SUPABASE_URL.substring(0, 30)}...)` : 'MISSING');
+    console.log('- SUPABASE_ANON_KEY:', config.SUPABASE_ANON_KEY ? `Present (${config.SUPABASE_ANON_KEY.substring(0, 10)}...)` : 'MISSING');
+    
+    const configData = {
         STRIPE_PUBLISHABLE_KEY: config.STRIPE_PUBLISHABLE_KEY,
         GOOGLE_API_KEY: config.GOOGLE_API_KEY,
         SUPABASE_URL: config.SUPABASE_URL,
         SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY,
         OPENAI_API_KEY: config.OPENAI_API_KEY,
         OPENAI_ORG_ID: config.OPENAI_ORG_ID,
-        OPENAI_MODEL: config.OPENAI_MODEL
-    });
+        OPENAI_MODEL: config.OPENAI_MODEL,
+        // Add debug info about missing variables
+        _debug: {
+            missingVars: config.getMissingVars ? config.getMissingVars() : [],
+            isValid: config.isValid ? config.isValid() : false
+        }
+    };
+    
+    res.json(configData);
 });
 
 // Health check route for Railway monitoring - MUST BE BEFORE /:page
