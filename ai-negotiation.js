@@ -2124,18 +2124,15 @@ class AINegotiationEngine {
                 created_at: new Date().toISOString()
             };
             
-            // Store in database
-            const { error } = await this.supabase
-                .from('negotiation_outcomes')
-                .insert(outcomeData);
+            // Store in database (disabled - table doesn't exist)
+            // const { error } = await this.supabase
+            //     .from('negotiation_outcomes')
+            //     .insert(outcomeData);
             
-            if (error) {
-                console.log('Error storing negotiation outcome:', error.message);
-                // Store in localStorage as backup
-                this.storeOutcomeLocally(outcomeData);
-            } else {
-                console.log('✅ Negotiation outcome tracked successfully');
-            }
+            // Store in localStorage instead
+            console.log('Storing negotiation outcome in localStorage (negotiation_outcomes table not available)');
+            this.storeOutcomeLocally(outcomeData);
+            console.log('✅ Negotiation outcome tracked successfully');
             
             // Update learning model
             await this.updateLearningModel(outcomeData);
@@ -2253,19 +2250,15 @@ class AINegotiationEngine {
     // Get recent negotiation outcomes for analysis
     async getRecentNegotiationOutcomes() {
         try {
-            // Try database first
-            const { data: dbOutcomes } = await this.supabase
-                .from('negotiation_outcomes')
-                .select('*')
-                .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-                .order('created_at', { ascending: false })
-                .limit(100);
+            // Database disabled - use localStorage only
+            // const { data: dbOutcomes } = await this.supabase
+            //     .from('negotiation_outcomes')
+            //     .select('*')
+            //     .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+            //     .order('created_at', { ascending: false })
+            //     .limit(100);
             
-            if (dbOutcomes && dbOutcomes.length > 0) {
-                return dbOutcomes;
-            }
-            
-            // Fallback to localStorage
+            // Use localStorage data
             const localOutcomes = JSON.parse(localStorage.getItem('negotiation_outcomes') || '[]');
             return localOutcomes.slice(-30); // Last 30 outcomes
             
