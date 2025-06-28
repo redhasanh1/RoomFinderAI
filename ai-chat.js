@@ -650,7 +650,7 @@ class AIChatHandler {
         if (this.userNeeds.preferredLocation) {
             const location = this.userNeeds.preferredLocation.trim();
             // For international cities like Karachi, also search in description and address fields
-            query = query.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%,postal_code.ilike.%${location}%`);
+            query = query.or(`location.ilike.%${location}%,street.ilike.%${location}%`);
             appliedFilters.push(`location contains: ${location}`);
             hasSpecificCriteria = true;
             console.log(`✅ Step 4: STRICT location filter applied - searching for "${location}" in city/title/description/street/address`);
@@ -697,7 +697,7 @@ class AIChatHandler {
         if (this.userNeeds.preferredLocation) {
             const location = this.userNeeds.preferredLocation.trim();
             console.log(`🎯 FINAL QUERY - Applying location filter for: "${location}"`);
-            finalQuery = finalQuery.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%,postal_code.ilike.%${location}%`);
+            finalQuery = finalQuery.or(`location.ilike.%${location}%,street.ilike.%${location}%`);
         }
         
         if (this.userNeeds.bedrooms) {
@@ -737,12 +737,12 @@ class AIChatHandler {
             // Let's check what's actually in the database with detailed info
             const { data: allListings } = await this.supabase
                 .from('listings')
-                .select('title, city, price, house_type, id, street, postal_code, description')
+                .select('id, street, location, user_email')
                 .limit(20);
             
             console.log('🗃️ ALL listings in database:');
             allListings?.forEach((listing, i) => {
-                console.log(`  ${i+1}. "${listing.title}" - City: "${listing.city || 'NO CITY'}" - $${listing.price} - ${listing.house_type} - Address: "${listing.street || 'NO STREET'}" - Postal: "${listing.postal_code || 'NO POSTAL'}" - Desc: "${(listing.description || '').substring(0, 30)}"`);
+                console.log(`  ${i+1}. ID: ${listing.id} - Location: "${listing.location || 'NO LOCATION'}" - Street: "${listing.street || 'NO STREET'}" - User: "${listing.user_email || 'NO USER'}"`);
             });
             
             // Check for requested location specifically if user searched for any city
@@ -750,17 +750,14 @@ class AIChatHandler {
                 const searchLocation = this.userNeeds.preferredLocation.toLowerCase();
                 console.log(`🌍 SPECIFIC CHECK: Looking for "${searchLocation}"-related listings...`);
                 const locationListings = allListings?.filter(listing => 
-                    (listing.city && listing.city.toLowerCase().includes(searchLocation)) ||
-                    (listing.title && listing.title.toLowerCase().includes(searchLocation)) ||
-                    (listing.street && listing.street.toLowerCase().includes(searchLocation)) ||
-                    (listing.description && listing.description.toLowerCase().includes(searchLocation)) ||
-                    (listing.postal_code && listing.postal_code.toLowerCase().includes(searchLocation))
+                    (listing.location && listing.location.toLowerCase().includes(searchLocation)) ||
+                    (listing.street && listing.street.toLowerCase().includes(searchLocation))
                 );
                 
                 if (locationListings && locationListings.length > 0) {
                     console.log(`✅ Found ${searchLocation} listings:`);
                     locationListings.forEach(listing => {
-                        console.log(`  - "${listing.title}" in "${listing.city}" at $${listing.price} (${listing.house_type})`);
+                        console.log(`  - ID: ${listing.id} in "${listing.location}" at "${listing.street}"`);
                     });
                 } else {
                     console.log(`❌ NO ${searchLocation.toUpperCase()} LISTINGS FOUND in database - this explains the issue!`);
@@ -803,16 +800,14 @@ class AIChatHandler {
             // Specifically look for Calgary-related listings
             console.log('🔍 Looking specifically for Calgary-related listings...');
             const calgaryListings = allListings?.filter(listing => 
-                listing.title?.toLowerCase().includes('calgary') ||
-                listing.city?.toLowerCase().includes('calgary') ||
-                listing.street?.toLowerCase().includes('calgary') ||
-                listing.postal_code?.toLowerCase().includes('calgary')
+                listing.location?.toLowerCase().includes('calgary') ||
+                listing.street?.toLowerCase().includes('calgary')
             );
             
             if (calgaryListings && calgaryListings.length > 0) {
                 console.log('🏠 Found Calgary-related listings:');
                 calgaryListings.forEach(listing => {
-                    console.log(`  - "${listing.title}" in "${listing.city}" at $${listing.price} (${listing.house_type})`);
+                    console.log(`  - ID: ${listing.id} in "${listing.location}" at "${listing.street}"`);
                 });
             } else {
                 console.log('❌ No Calgary listings found in database');
