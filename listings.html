@@ -1644,15 +1644,45 @@
                 .eq('email', listing.user_email)
                 .single();
 
+            // Auto-create profile for current user if missing
             if (currentUserError || !currentUserProfile) {
-                alert('You must be registered to send messages. Please register first.');
-                window.location.href = '/login';
-                return;
+                console.log('Creating missing profile for current user...');
+                const { error: createCurrentUserError } = await supabase
+                    .from('profiles')
+                    .insert([{
+                        email: currentUser.email,
+                        first_name: currentUser.firstName || 'User',
+                        last_name: currentUser.lastName || '',
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (createCurrentUserError) {
+                    console.error('Error creating current user profile:', createCurrentUserError);
+                    alert('Error setting up your profile. Please try refreshing the page.');
+                    return;
+                }
+                console.log('✅ Created profile for current user');
             }
 
+            // Auto-create profile for listing owner if missing
             if (listingOwnerError || !listingOwnerProfile) {
-                alert('Cannot start chat: The listing owner is not registered in our system.');
-                return;
+                console.log('Creating missing profile for listing owner...');
+                // Try to get the listing owner's info from local storage or use defaults
+                const { error: createOwnerError } = await supabase
+                    .from('profiles')
+                    .insert([{
+                        email: listing.user_email,
+                        first_name: 'User',
+                        last_name: '',
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (createOwnerError) {
+                    console.error('Error creating listing owner profile:', createOwnerError);
+                    alert('Error setting up chat. Please try again.');
+                    return;
+                }
+                console.log('✅ Created profile for listing owner');
             }
 
             currentListing = listing;

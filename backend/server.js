@@ -310,6 +310,30 @@ app.post('/api/register', async (req, res) => {
         };
 
         users.push(user);
+
+        // Also create profile in Supabase for chat functionality
+        if (supabase) {
+            try {
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .insert([{
+                        id: user.id,
+                        email: user.email,
+                        first_name: user.firstName,
+                        last_name: user.lastName,
+                        created_at: user.createdAt
+                    }]);
+                
+                if (profileError) {
+                    console.warn('Warning: Could not create profile in Supabase:', profileError);
+                } else {
+                    console.log('✅ Profile created in Supabase for:', user.email);
+                }
+            } catch (profileErr) {
+                console.warn('Warning: Error creating profile in Supabase:', profileErr);
+            }
+        }
+
         res.status(201).json({ message: 'User registered successfully' });
     } catch (error) {
         console.error('Error in /api/register:', error.message);
