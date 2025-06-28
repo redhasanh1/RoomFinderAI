@@ -356,15 +356,22 @@
 
         // Set up real-time negotiation listener for instant updates
         function setupRealTimeNegotiationListener() {
-            if (!supabase || !currentUser?.email) {
+            if (!window.supabase || !currentUser?.email) {
                 console.warn('⚠️ Cannot setup real-time listener - missing supabase or user');
+                return;
+            }
+            
+            // Get the properly initialized supabase client
+            const supabaseClient = aiNegotiator?.supabase;
+            if (!supabaseClient || typeof supabaseClient.channel !== 'function') {
+                console.warn('⚠️ Supabase client not properly initialized for real-time');
                 return;
             }
 
             console.log('🔔 Setting up real-time negotiation listener for instant updates');
 
             // Listen for new messages from AI negotiator
-            const messageChannel = supabase
+            const messageChannel = supabaseClient
                 .channel(`ai_negotiator_realtime_${Date.now()}`)
                 .on('postgres_changes', {
                     event: 'INSERT',
@@ -379,7 +386,7 @@
                         console.log('🤖 AI Negotiator message detected!');
                         
                         // Get conversation details to find user
-                        const { data: conversation } = await supabase
+                        const { data: conversation } = await supabaseClient
                             .from('conversations')
                             .select('sender_email, receiver_email')
                             .eq('id', newMessage.conversation_id)

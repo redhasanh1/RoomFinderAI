@@ -14,14 +14,14 @@ try {
 } catch (error) {
     console.log('⚠️ Config file not found, using environment variables directly');
     config = {
-        STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-        STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
-        GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
-        SUPABASE_URL: process.env.SUPABASE_URL,
-        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-        OPENAI_ORG_ID: process.env.OPENAI_ORG_ID,
-        OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-3.5-turbo'
+        STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY?.trim(),
+        STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY?.trim(),
+        GOOGLE_API_KEY: process.env.GOOGLE_API_KEY?.trim(),
+        SUPABASE_URL: process.env.SUPABASE_URL?.trim(),
+        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.trim(),
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim(),
+        OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim(),
+        OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || 'gpt-3.5-turbo'
     };
 }
 
