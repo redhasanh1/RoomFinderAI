@@ -6,7 +6,6 @@
     <title>RoomFinderAI - Profile</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="config.js"></script>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -209,15 +208,69 @@
             return gk_fileData[filename] || "";
         }
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        // Initialize configuration variables
+        let configData;
+        let supabase;
+
+        // Load configuration from Railway API and initialize
+        fetch('/api/config')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Configuration API error: ${response.status} ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(config => {
+                // Validate required configuration
+                const missingKeys = [];
+                if (!config.SUPABASE_URL) missingKeys.push('SUPABASE_URL');
+                if (!config.SUPABASE_ANON_KEY) missingKeys.push('SUPABASE_ANON_KEY');
+                
+                if (missingKeys.length > 0) {
+                    throw new Error(`Missing required configuration: ${missingKeys.join(', ')}`);
+                }
+
+                configData = {
+                    SUPABASE_URL: config.SUPABASE_URL,
+                    SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY
+                };
+
+                console.log('✅ Configuration loaded successfully:', {
+                    hasSupabaseURL: !!configData.SUPABASE_URL,
+                    hasSupabaseKey: !!configData.SUPABASE_ANON_KEY
+                });
+
+                // Initialize Supabase
+                try {
+                    supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
+                    console.log('✅ Supabase client created successfully');
+                    
+                    // Initialize the profile page
+                    initializeProfile();
+                } catch (supabaseError) {
+                    throw new Error(`Supabase initialization failed: ${supabaseError.message}`);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Configuration failed:', error);
+                document.body.innerHTML = `
+                    <div style="padding: 2rem; text-align: center; color: red;">
+                        <h2>⚠️ Configuration Error</h2>
+                        <p><strong>Failed to load profile page:</strong> ${error.message}</p>
+                        <p><em>This usually means the Railway environment variables are not properly set.</em></p>
+                        <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            🔄 Retry
+                        </button>
+                    </div>
+                `;
+            });
+
+        async function initializeProfile() {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             if (!currentUser) {
                 window.location.href = '/login';
                 return;
             }
-
-            // Supabase configuration is now in config.js
-            const supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
 
             // Update profile info
             document.getElementById('profileLogo').src = currentUser.profileImage || 'https://via.placeholder.com/40';
@@ -510,7 +563,7 @@
                 localStorage.removeItem('currentUser');
                 window.location.href = '/login';
             });
-        });
+        }
     </script>
 </body>
 </html>
