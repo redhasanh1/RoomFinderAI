@@ -148,7 +148,7 @@
         .autocomplete-item:hover {
             background-color: #f3f4f6;
         }
-        #city, #street, #postalCode {
+        #city, #country, #street, #postalCode {
             user-select: text !important;
             -webkit-user-select: text !important;
             -moz-user-select: text !important;
@@ -377,11 +377,24 @@
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Add a New Listing</h2>
             <p class="text-lg text-gray-600 mb-6 text-center">Fill out the form below to manually add a listing or use the AI Negotiator to create one automatically.</p>
             <form id="listingForm" class="space-y-6">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <div class="relative">
                         <label for="city" class="block text-sm font-medium text-gray-700">City</label>
-                        <input type="text" id="city" name="city" required class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="e.g., Toronto" autocomplete="off">
+                        <input type="text" id="city" name="city" required class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="e.g., Indianapolis" autocomplete="off">
                         <div id="city-autocomplete-dropdown" class="custom-autocomplete hidden"></div>
+                    </div>
+                    <div>
+                        <label for="country" class="block text-sm font-medium text-gray-700">Country</label>
+                        <select id="country" name="country" required class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                            <option value="US">United States</option>
+                            <option value="CA">Canada</option>
+                            <option value="UK">United Kingdom</option>
+                            <option value="AU">Australia</option>
+                            <option value="FR">France</option>
+                            <option value="DE">Germany</option>
+                            <option value="IN">India</option>
+                            <option value="PK">Pakistan</option>
+                        </select>
                     </div>
                     <div>
                         <label for="street" class="block text-sm font-medium text-gray-700">Street</label>
@@ -1395,6 +1408,7 @@
                 // Log original input values for debugging
                 const originalValues = {
                     city: document.getElementById('city').value,
+                    country: document.getElementById('country').value,
                     street: document.getElementById('street').value,
                     postalCode: document.getElementById('postalCode').value
                 };
@@ -1404,6 +1418,7 @@
                     title: autocorrectInput(sanitizeInput(document.getElementById('title').value)),
                     price: parseInt(document.getElementById('price').value),
                     city: cleanAddressInput(document.getElementById('city').value),
+                    country: document.getElementById('country').value,
                     street: cleanAddressInput(document.getElementById('street').value),
                     postalCode: document.getElementById('postalCode').value.trim().toUpperCase().replace(/\s+/g, ' '),
                     house_type: document.getElementById('houseType').value,
@@ -1422,7 +1437,7 @@
                 });
                 console.log('📋 Submitting listing:', listing);
 
-                if (!listing.title || !listing.price || !listing.city || !listing.street || !listing.postalCode || !listing.house_type || !listing.bedrooms) {
+                if (!listing.title || !listing.price || !listing.city || !listing.country || !listing.street || !listing.postalCode || !listing.house_type || !listing.bedrooms) {
                     alert('Please fill in all required fields.');
                     return;
                 }
