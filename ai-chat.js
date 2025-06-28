@@ -617,13 +617,13 @@ class AIChatHandler {
             hasSpecificCriteria = true;
         }
         
-        // Step 4: Apply location filter
+        // Step 4: Apply location filter (STRICT)
         if (this.userNeeds.preferredLocation) {
             const location = this.userNeeds.preferredLocation.trim();
             query = query.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%`);
             appliedFilters.push(`location contains: ${location}`);
             hasSpecificCriteria = true;
-            console.log(`✅ Step 4: Location filter applied - searching for "${location}" in city/title/description/street`);
+            console.log(`✅ Step 4: STRICT location filter applied - searching for "${location}" in city/title/description/street`);
         }
         
         // Step 5: Apply bedroom filter
@@ -680,11 +680,17 @@ class AIChatHandler {
         
         console.log('📊 Query results:', listings?.length || 0, 'listings found');
         
-        // Debug: Log what we actually found
+        // Debug: Log what we actually found and validate matches
         if (listings && listings.length > 0) {
             console.log('🏠 Found listings details:');
             listings.forEach((listing, i) => {
-                console.log(`  ${i+1}. "${listing.title}" - $${listing.price} - ${listing.house_type} - City: "${listing.city || 'NO CITY'}" - ID: ${listing.id}`);
+                const matches = {
+                    price: !this.userNeeds.maxPrice || listing.price <= this.userNeeds.maxPrice,
+                    location: !this.userNeeds.preferredLocation || this.matchesLocation(listing, this.userNeeds.preferredLocation),
+                    type: !this.userNeeds.houseType || listing.house_type === this.userNeeds.houseType || (this.userNeeds.houseType === 'House' && listing.house_type === 'Townhouse')
+                };
+                const matchScore = Object.values(matches).filter(Boolean).length;
+                console.log(`  ${i+1}. "${listing.title}" - $${listing.price} - ${listing.house_type} - City: "${listing.city || 'NO CITY'}" - MATCHES: ${matchScore}/3 (Price:${matches.price}, Location:${matches.location}, Type:${matches.type})`);
             });
         } else {
             console.log('❌ No listings found with current filters');
@@ -753,6 +759,20 @@ class AIChatHandler {
         }
         
         return listings || [];
+    }
+
+    // Helper function to check if listing matches location
+    matchesLocation(listing, searchLocation) {
+        const location = searchLocation.toLowerCase();
+        const city = (listing.city || '').toLowerCase();
+        const title = (listing.title || '').toLowerCase();
+        const description = (listing.description || '').toLowerCase();
+        const street = (listing.street || '').toLowerCase();
+        
+        return city.includes(location) || 
+               title.includes(location) || 
+               description.includes(location) || 
+               street.includes(location);
     }
 
     // Test function to verify search works for known listings
