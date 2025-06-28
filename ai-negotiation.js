@@ -1618,6 +1618,20 @@ class AINegotiationEngine {
     async startNegotiation(listing, userBudget, userEmail) {
         try {
             console.log('🚀 Starting negotiation for:', listing.title);
+            
+            // Prevent duplicate negotiations for the same listing
+            const negotiationKey = `${listing.id}_${userEmail}`;
+            const existingNegotiation = Array.from(this.activeNegotiations.values())
+                .find(neg => neg.listingId === listing.id && neg.userEmail === userEmail);
+            
+            if (existingNegotiation) {
+                console.log('⚠️ Negotiation already exists for this listing, skipping duplicate');
+                return {
+                    success: false,
+                    message: 'Negotiation already in progress for this listing',
+                    marketData: existingNegotiation.marketData
+                };
+            }
 
             // Clean up location data before getting market data
             let cleanCity = listing.city ? listing.city.toString().trim() : null;
