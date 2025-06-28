@@ -640,11 +640,11 @@ class AIChatHandler {
         if (this.userNeeds.preferredLocation) {
             const location = this.userNeeds.preferredLocation.trim();
             // Search for city at start of "City, Country" format and also in street field
-            query = query.or(`city.ilike.${location}\,%,street.ilike.%${location}%`);
+            query = query.or(`city.ilike.${location}*,street.ilike.*${location}*`);
             appliedFilters.push(`location contains: ${location}`);
             hasSpecificCriteria = true;
             console.log(`✅ Step 4: STRICT location filter applied - searching for "${location}" in city/title/description/street/address`);
-            console.log(`🔍 EXACT SEARCH PATTERN: city.ilike.${location}\,%,street.ilike.%${location}%`);
+            console.log(`🔍 EXACT SEARCH PATTERN: city.ilike.${location}*,street.ilike.*${location}*`);
         }
         
         // Step 5: Apply bedroom filter
@@ -687,7 +687,7 @@ class AIChatHandler {
         if (this.userNeeds.preferredLocation) {
             const location = this.userNeeds.preferredLocation.trim();
             console.log(`🎯 FINAL QUERY - Applying location filter for: "${location}"`);
-            finalQuery = finalQuery.or(`city.ilike.${location}\,%,street.ilike.%${location}%`);
+            finalQuery = finalQuery.or(`city.ilike.${location}*,street.ilike.*${location}*`);
         }
         
         if (this.userNeeds.bedrooms) {
