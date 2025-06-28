@@ -622,7 +622,7 @@ class AIChatHandler {
         // Start with base query
         let query = this.supabase
             .from('listings')
-            .select('id, title, price, house_type, bedrooms, utilities, description, user_email, city, street');
+            .select('id, street, location, user_email');
         
         let appliedFilters = [];
         let hasSpecificCriteria = false;
@@ -633,27 +633,8 @@ class AIChatHandler {
             console.log('✅ Step 1: Excluded own listings');
         }
         
-        // Step 2: Apply price filter
-        if (this.userNeeds.maxPrice) {
-            query = query.lte('price', this.userNeeds.maxPrice);
-            appliedFilters.push(`price ≤ $${this.userNeeds.maxPrice}`);
-            hasSpecificCriteria = true;
-            console.log(`✅ Step 2: Price filter applied - price <= ${this.userNeeds.maxPrice}`);
-        }
-        
-        // Step 3: Apply house type filter
-        if (this.userNeeds.houseType) {
-            if (this.userNeeds.houseType === 'House') {
-                query = query.in('house_type', ['House', 'Townhouse']);
-                appliedFilters.push(`house type: ${this.userNeeds.houseType} (including Townhouse)`);
-                console.log('✅ Step 3: House type filter applied - House OR Townhouse');
-            } else {
-                query = query.eq('house_type', this.userNeeds.houseType);
-                appliedFilters.push(`house type: ${this.userNeeds.houseType}`);
-                console.log(`✅ Step 3: House type filter applied - ${this.userNeeds.houseType}`);
-            }
-            hasSpecificCriteria = true;
-        }
+        // Note: Price and house_type filters disabled - columns don't exist in current schema
+        console.log('⚠️ Price and house_type filters skipped - not available in current database schema');
         
         // Step 4: Apply location filter (STRICT) with enhanced international city support
         if (this.userNeeds.preferredLocation) {
