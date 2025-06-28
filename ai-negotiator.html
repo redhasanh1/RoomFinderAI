@@ -219,27 +219,39 @@
                     throw new Error('Railway API failed');
                 }
             } catch (error) {
-                console.log('⚠️ Railway API failed, using fallback config:', error.message);
-                configData = {
-                    OPENAI_API_KEY: window.config?.OPENAI_API_KEY || config?.OPENAI_API_KEY,
-                    OPENAI_ORG_ID: window.config?.OPENAI_ORG_ID || config?.OPENAI_ORG_ID,
-                    OPENAI_MODEL: window.config?.OPENAI_MODEL || config?.OPENAI_MODEL || 'gpt-3.5-turbo',
-                    SUPABASE_URL: window.config?.SUPABASE_URL || config?.SUPABASE_URL,
-                    SUPABASE_ANON_KEY: window.config?.SUPABASE_ANON_KEY || config?.SUPABASE_ANON_KEY
-                };
+                console.error('❌ Railway API failed:', error);
                 
-                // Final validation
-                if (!configData.OPENAI_API_KEY) {
-                    document.getElementById('chatMessages').innerHTML = `
-                        <div style="color: red; padding: 1rem; border: 2px solid red; border-radius: 8px; margin: 1rem 0;">
-                            <h3>❌ Critical Configuration Missing</h3>
-                            <p><strong>OpenAI API Key not found in Railway environment variables or fallback config.</strong></p>
-                            <p>Error: ${error.message}</p>
-                            <p>Please add OPENAI_API_KEY to your Railway project environment variables.</p>
-                        </div>
-                    `;
-                    return;
-                }
+                // Show detailed error to help debug
+                document.getElementById('chatMessages').innerHTML = `
+                    <div style="color: red; padding: 1rem; border: 2px solid red; border-radius: 8px; margin: 1rem 0;">
+                        <h3>❌ Configuration Loading Failed</h3>
+                        <p><strong>Cannot load configuration from Railway API endpoint.</strong></p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Status:</strong> Configuration API unreachable</p>
+                        <br>
+                        <p><strong>Diagnosis:</strong></p>
+                        <ul>
+                            <li>Railway environment variables may not be set</li>
+                            <li>Backend server may not be running</li>
+                            <li>API endpoint /api/config may be down</li>
+                        </ul>
+                        <br>
+                        <p><strong>Required Railway Environment Variables:</strong></p>
+                        <ul>
+                            <li><code>OPENAI_API_KEY</code> - Your OpenAI API key</li>
+                            <li><code>SUPABASE_URL</code> - Supabase project URL</li>
+                            <li><code>SUPABASE_ANON_KEY</code> - Supabase anonymous key</li>
+                        </ul>
+                        <br>
+                        <button onclick="window.location.reload()" style="background: #667eea; color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer;">
+                            🔄 Retry
+                        </button>
+                        <button onclick="testConnectivity()" style="background: #10b981; color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; margin-left: 8px;">
+                            🧪 Test Connectivity
+                        </button>
+                    </div>
+                `;
+                return;
             }
 
             // Initialize Supabase

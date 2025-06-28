@@ -438,6 +438,14 @@ class AIChatHandler {
         Return JSON with only fields that have values:
         `;
         
+        // Validate API key before making request
+        if (!this.config.OPENAI_API_KEY) {
+            console.error('❌ OpenAI API key missing - check Railway environment variables');
+            throw new Error('OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.');
+        }
+
+        console.log('🔑 Making OpenAI API request with key:', this.config.OPENAI_API_KEY.substring(0, 10) + '...');
+        
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -463,7 +471,19 @@ class AIChatHandler {
         });
         
         if (!response.ok) {
-            throw new Error(`OpenAI API error: ${response.status}`);
+            const errorText = await response.text();
+            console.error('❌ OpenAI API Error:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: errorText,
+                apiKey: this.config.OPENAI_API_KEY ? 'Present' : 'Missing'
+            });
+            
+            if (response.status === 401) {
+                throw new Error(`OpenAI API authentication failed (401). Please check your OPENAI_API_KEY environment variable. Key present: ${!!this.config.OPENAI_API_KEY}`);
+            }
+            
+            throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
         }
         
         const data = await response.json();
