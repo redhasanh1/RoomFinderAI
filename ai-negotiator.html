@@ -89,8 +89,11 @@
             <div class="flex items-center space-x-6">
                 <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
                 <a href="/index" class="text-gray-700 hover:text-blue-600 transition">Home</a>
+                <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition">About</a>
+                <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition">Sublease</a>
                 <a href="/listings" class="text-gray-700 hover:text-blue-600 transition">Listings</a>
                 <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition">Pricing</a>
+                <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition">Contact Us</a>
             </div>
             <div id="authSection">
                 <a href="/login" class="text-gray-700 hover:text-blue-600 transition">Login/Register</a>
@@ -98,41 +101,105 @@
         </nav>
     </header>
 
-    <main class="flex-grow w-[80%] mx-auto px-4 py-12">
-        <section class="chat-container p-6 mb-12">
-            <h2 class="text-4xl font-bold gradient-text mb-6 text-center">AI Negotiator</h2>
-            <p class="text-lg text-gray-600 mb-6 text-center">Chat with our AI to find rentals and negotiate with landlords automatically!</p>
-            
-            <div class="border border-gray-200 rounded-2xl shadow-lg">
-                <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-t-2xl">
-                    <h3 class="text-lg font-semibold">AI Negotiator Assistant</h3>
-                </div>
-                
-                <div id="chatMessages" class="border-b border-gray-200">
-                    <p class="text-gray-600">Hello! I'm here to help you find rentals and negotiate with landlords.</p>
-                </div>
-                
-                <div class="p-4">
-                    <input id="chatInput" type="text" class="chat-input w-full" 
-                           placeholder="Type your message... (e.g., 'I want a house in Paris under $1200')" 
-                           onkeypress="if(event.key==='Enter') sendMessage()">
-                    <div class="flex gap-2 mt-4">
-                        <button id="sendButton" onclick="sendMessage()" class="flex-1 modern-button">
-                            Send Message
+    <main class="flex-grow w-[90%] mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Sidebar - Search & Filters -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">🔍 Search Properties</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                            <input type="text" id="filterLocation" placeholder="Enter city..." class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Max Price</label>
+                            <input type="number" id="filterPrice" placeholder="e.g., 1500" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
+                            <select id="filterType" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="">Any Type</option>
+                                <option value="House">House</option>
+                                <option value="Apartment">Apartment</option>
+                                <option value="Condo">Condo</option>
+                                <option value="Townhouse">Townhouse</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
+                            <select id="filterBedrooms" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="">Any</option>
+                                <option value="1">1 Bedroom</option>
+                                <option value="2">2 Bedrooms</option>
+                                <option value="3">3 Bedrooms</option>
+                                <option value="4+">4+ Bedrooms</option>
+                            </select>
+                        </div>
+                        <button onclick="applyFilters()" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                            🔍 Search Properties
                         </button>
-                        <button onclick="checkForUpdates()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors" title="Check for new AI responses">
-                            🔄 Refresh
-                        </button>
-                        <button onclick="testAPIConnectivity()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors" title="Test API connections">
-                            🧪 Test
-                        </button>
-                        <button onclick="clearChat()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors" title="Clear chat history">
-                            🗑️ Clear
+                        <button onclick="clearFilters()" class="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition">
+                            Clear Filters
                         </button>
                     </div>
                 </div>
+
+                <!-- Current Negotiations Panel -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">🏠 Active Negotiations</h3>
+                    <div id="activeNegotiations" class="space-y-3">
+                        <p class="text-gray-500 text-sm">No active negotiations yet. Start chatting to begin!</p>
+                    </div>
+                </div>
             </div>
-        </section>
+
+            <!-- Center - AI Chat -->
+            <div class="lg:col-span-2">
+                <section class="chat-container">
+                    <div class="bg-white rounded-xl shadow-lg">
+                        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-t-xl">
+                            <h2 class="text-2xl font-bold mb-2">🤖 AI Negotiator Assistant</h2>
+                            <p class="text-blue-100">Chat with our AI to find rentals and negotiate with landlords automatically!</p>
+                        </div>
+                        
+                        <div id="chatMessages" class="h-96 overflow-y-auto p-6 border-b border-gray-200">
+                            <p class="text-gray-600">Hello! I'm here to help you find rentals and negotiate with landlords. Try saying something like "I want a 2-bedroom apartment under $1500 in Toronto"</p>
+                        </div>
+                        
+                        <div class="p-6">
+                            <input id="chatInput" type="text" class="chat-input w-full mb-4" 
+                                   placeholder="Type your message... (e.g., 'I want a house in Karachi under $1200')" 
+                                   onkeypress="if(event.key==='Enter') sendMessage()">
+                            <div class="flex gap-2">
+                                <button id="sendButton" onclick="sendMessage()" class="flex-1 modern-button">
+                                    💬 Send Message
+                                </button>
+                                <button onclick="checkForUpdates()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors" title="Check for new AI responses">
+                                    🔄 Refresh
+                                </button>
+                                <button onclick="testAPIConnectivity()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors" title="Test API connections">
+                                    🧪 Test
+                                </button>
+                                <button onclick="clearChat()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors" title="Clear chat history">
+                                    🗑️ Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Search Results Panel -->
+                <section class="mt-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">🏘️ Available Properties</h3>
+                        <div id="searchResults" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <p class="text-gray-500 col-span-full text-center py-8">Use the search filters or chat with AI to find properties</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
     </main>
 
     <footer class="bg-gray-800 text-white py-8">
@@ -838,6 +905,79 @@
             }
         }
 
+        // Property search and filter functions
+        function applyFilters() {
+            const location = document.getElementById('filterLocation').value;
+            const price = document.getElementById('filterPrice').value;
+            const type = document.getElementById('filterType').value;
+            const bedrooms = document.getElementById('filterBedrooms').value;
+            
+            console.log('Applying filters:', { location, price, type, bedrooms });
+            
+            // Send filter criteria to AI chat
+            const filterMessage = `Find properties: ${location ? 'in ' + location : ''} ${price ? 'under $' + price : ''} ${type ? type : ''} ${bedrooms ? bedrooms + ' bedroom' : ''}`.trim();
+            
+            if (filterMessage !== 'Find properties:') {
+                document.getElementById('chatInput').value = filterMessage;
+                sendMessage();
+            }
+            
+            // Display filter results
+            displayFilterResults({ location, price, type, bedrooms });
+        }
+        
+        function clearFilters() {
+            document.getElementById('filterLocation').value = '';
+            document.getElementById('filterPrice').value = '';
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterBedrooms').value = '';
+            
+            // Clear search results
+            document.getElementById('searchResults').innerHTML = '<p class="text-gray-500 col-span-full text-center py-8">Use the search filters or chat with AI to find properties</p>';
+        }
+        
+        function displayFilterResults(filters) {
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = '<p class="text-blue-500 col-span-full text-center py-4">🔍 Searching for properties...</p>';
+            
+            // Simulate search results (replace with actual Supabase query)
+            setTimeout(() => {
+                resultsContainer.innerHTML = `
+                    <div class="bg-gray-50 rounded-lg p-4 border">
+                        <h4 class="font-semibold text-gray-800">Sample Property 1</h4>
+                        <p class="text-sm text-gray-600">Location: ${filters.location || 'Various'}</p>
+                        <p class="text-sm text-gray-600">Price: ${filters.price ? '$' + filters.price + '/month' : 'Price on request'}</p>
+                        <p class="text-sm text-blue-600 mt-2">💬 Chat with AI to negotiate this property</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4 border">
+                        <h4 class="font-semibold text-gray-800">Sample Property 2</h4>
+                        <p class="text-sm text-gray-600">Location: ${filters.location || 'Various'}</p>
+                        <p class="text-sm text-gray-600">Type: ${filters.type || 'Mixed types'}</p>
+                        <p class="text-sm text-blue-600 mt-2">💬 Chat with AI to negotiate this property</p>
+                    </div>
+                `;
+            }, 1000);
+        }
+        
+        function updateActiveNegotiations(propertyInfo) {
+            const container = document.getElementById('activeNegotiations');
+            const existingNegotiations = container.children.length;
+            
+            if (existingNegotiations === 1 && container.children[0].textContent.includes('No active negotiations')) {
+                container.innerHTML = '';
+            }
+            
+            const negotiationCard = document.createElement('div');
+            negotiationCard.className = 'bg-blue-50 rounded-lg p-3 border-l-4 border-blue-500';
+            negotiationCard.innerHTML = `
+                <h4 class="font-semibold text-sm text-gray-800">Property in ${propertyInfo.location || 'Unknown'}</h4>
+                <p class="text-xs text-gray-600">Budget: $${propertyInfo.price || 'Negotiable'}</p>
+                <p class="text-xs text-blue-600 mt-1">🤖 AI actively negotiating...</p>
+            `;
+            
+            container.appendChild(negotiationCard);
+        }
+
         // Global functions for onclick
         window.sendMessage = sendMessage;
         window.clearChat = clearChat;
@@ -849,6 +989,8 @@
         window.testAutoPolling = testAutoPolling;
         window.forceStartAutoPolling = forceStartAutoPolling;
         window.testAPIConnectivity = testAPIConnectivity;
+        window.applyFilters = applyFilters;
+        window.clearFilters = clearFilters;
     </script>
 </body>
 </html>
