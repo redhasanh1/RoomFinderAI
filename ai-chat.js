@@ -1,7 +1,7 @@
 // AI Chat functionality for the negotiator
 // This handles all the messaging, search, and negotiation logic
 
-class AINegotiator {
+class AIChatHandler {
     constructor(supabase, config) {
         this.supabase = supabase;
         this.config = config;
@@ -1196,4 +1196,4 @@ class AINegotiator {
 }
 
 // Export for use in HTML
-window.AINegotiator = AINegotiator;
+window.AIChatHandler = AIChatHandler;
