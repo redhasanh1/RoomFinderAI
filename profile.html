@@ -118,7 +118,10 @@
                 <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition font-medium">Pricing</a>
                 <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
             </div>
-            <div>
+            <div class="flex items-center space-x-4">
+                <a href="/dashboard" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition font-medium shadow-lg">
+                    📊 Dashboard
+                </a>
                 <a href="/profile" aria-label="View user profile">
                     <img id="profileLogo" src="https://via.placeholder.com/40" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
                 </a>
@@ -147,11 +150,6 @@
             <div id="chatHistory" class="space-y-4"></div>
         </section>
 
-        <!-- Subscription Info -->
-        <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Subscription</h2>
-            <div id="subscriptionInfo" class="text-center"></div>
-        </section>
 
         <!-- User Listings -->
         <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8">
@@ -426,132 +424,6 @@
                 }
             }
 
-            // Fetch and display subscription info from backend
-            const subscriptionInfo = document.getElementById('subscriptionInfo');
-            subscriptionInfo.innerHTML = '<p class="text-gray-500 text-center">Loading subscription...</p>';
-            
-            try {
-                const response = await fetch(`/api/subscription/${encodeURIComponent(currentUser.email)}`);
-                const result = await response.json();
-                
-                if (response.ok && result.subscription) {
-                    const sub = result.subscription;
-                    const startDate = new Date(sub.start_date).toLocaleDateString();
-                    const nextBilling = new Date(sub.start_date);
-                    nextBilling.setMonth(nextBilling.getMonth() + 1);
-                    
-                    subscriptionInfo.innerHTML = `
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-6 max-w-md mx-auto">
-                            <div class="flex items-center justify-center mb-4">
-                                <svg class="w-8 h-8 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <h3 class="text-lg font-semibold text-green-800">Active Subscription</h3>
-                            </div>
-                            <div class="space-y-2 text-sm">
-                                <p class="text-green-700"><strong>Plan:</strong> ${sub.plan_type.charAt(0).toUpperCase() + sub.plan_type.slice(1)}</p>
-                                <p class="text-green-700"><strong>Price:</strong> $${sub.plan_price}/month</p>
-                                <p class="text-green-700"><strong>Status:</strong> <span class="bg-green-100 px-2 py-1 rounded text-green-800">${sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}</span></p>
-                                <p class="text-green-700"><strong>Started:</strong> ${startDate}</p>
-                                <p class="text-green-700"><strong>Next Billing:</strong> ${nextBilling.toLocaleDateString()}</p>
-                                <p class="text-green-700"><strong>Payment Method:</strong> ${sub.payment_method === 'card' ? 'Credit Card' : 'E-Transfer'}</p>
-                                ${sub.stripe_charge_id ? `<p class="text-green-700"><strong>Charge ID:</strong> ${sub.stripe_charge_id}</p>` : ''}
-                            </div>
-                            <div class="mt-4">
-                                <a href="/pricing" class="text-blue-600 hover:text-blue-700 text-sm font-medium">Manage Subscription</a>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    subscriptionInfo.innerHTML = `
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 max-w-md mx-auto">
-                            <div class="flex items-center justify-center mb-4">
-                                <svg class="w-8 h-8 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <h3 class="text-lg font-semibold text-gray-600">No Active Subscription</h3>
-                            </div>
-                            <p class="text-gray-500 text-sm mb-4">Subscribe to unlock premium features and unlimited access.</p>
-                            <a href="/pricing" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium text-sm">
-                                View Plans
-                            </a>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error fetching subscription:', error);
-                subscriptionInfo.innerHTML = `
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
-                        <p class="text-red-600 text-center">Failed to load subscription information.</p>
-                    </div>
-                `;
-            }
-
-            // Display user listings from Supabase
-            await displayUserListings();
-
-            async function displayUserListings() {
-                const userListings = document.getElementById('userListings');
-                
-                try {
-                    // Fetch user's listings from Supabase
-                    const { data: listings, error } = await supabase
-                        .from('listings')
-                        .select('*')
-                        .eq('user_email', currentUser.email)
-                        .order('created_at', { ascending: false });
-
-                    if (error) {
-                        console.error('Error fetching user listings:', error);
-                        userListings.innerHTML = '<p class="text-red-600 text-center">Error loading listings.</p>';
-                        return;
-                    }
-
-                    if (!listings || listings.length === 0) {
-                        userListings.innerHTML = '<p class="text-gray-600 text-center">No listings yet. <a href="/listings" class="text-blue-600 hover:underline">Create your first listing!</a></p>';
-                        return;
-                    }
-
-                    userListings.innerHTML = '';
-                    listings.forEach(listing => {
-                        const listingCard = document.createElement('div');
-                        listingCard.className = 'listing-card bg-white p-6 rounded-xl shadow-xl';
-                        
-                        const mediaHtml = listing.media && listing.media.length > 0
-                            ? `<div class="listing-media flex flex-wrap mt-4">${listing.media.map(file => 
-                                file.type && file.type.startsWith('image/')
-                                    ? `<img src="${file.url}" alt="${file.name}" class="w-32 h-32 object-cover rounded">`
-                                    : file.type && file.type.startsWith('video/')
-                                    ? `<video src="${file.url}" controls class="w-32 h-32 object-cover rounded"></video>`
-                                    : `<img src="${file.url}" alt="${file.name}" class="w-32 h-32 object-cover rounded">`
-                            ).join('')}</div>`
-                            : '';
-                        
-                        listingCard.innerHTML = `
-                            <div class="flex justify-between items-start mb-4">
-                                <h3 class="text-xl font-semibold text-gray-800">${listing.title}</h3>
-                                <button onclick="viewListing('${listing.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium">
-                                    View Listing
-                                </button>
-                            </div>
-                            <p class="text-gray-600">Price: $${listing.price ? listing.price.toLocaleString() : 'N/A'}/month</p>
-                            <p class="text-gray-600">Location: ${listing.city || 'Not specified'}</p>
-                            <p class="text-gray-600">Address: ${listing.street || 'Not specified'}</p>
-                            <p class="text-gray-600">Postal Code: ${listing.postalCode || 'Not specified'}</p>
-                            <p class="text-gray-600">Type: ${listing.house_type || 'Not specified'}</p>
-                            <p class="text-gray-600">Bedrooms: ${listing.bedrooms || 'Not specified'}</p>
-                            <p class="text-gray-600">Utilities: ${listing.utilities || 'Not specified'}</p>
-                            <p class="text-gray-600 mt-2">${listing.description || 'No description provided'}</p>
-                            <p class="text-gray-500 text-sm mt-2">Created: ${new Date(listing.created_at).toLocaleDateString()}</p>
-                            ${mediaHtml}
-                        `;
-                        userListings.appendChild(listingCard);
-                    });
-                } catch (err) {
-                    console.error('Error displaying listings:', err);
-                    userListings.innerHTML = '<p class="text-red-600 text-center">Error loading listings.</p>';
-                }
-            }
 
             // Function to view listing details
             window.viewListing = function(listingId) {
