@@ -101,7 +101,11 @@ class AINegotatior {
                 // Continue to try creating user
             }
 
-            if (!existingUser) {
+            if (existingUser) {
+                console.log('✅ AI user already exists, skipping creation');
+                this.aiUserInitialized = true;
+                return true;
+            } else {
                 console.log('Creating AI negotiator user...');
                 // Try different schema combinations to find what works
                 const attempts = [
