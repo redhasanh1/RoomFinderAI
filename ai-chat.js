@@ -650,7 +650,7 @@ class AIChatHandler {
         if (this.userNeeds.preferredLocation) {
             const location = this.userNeeds.preferredLocation.trim();
             // For international cities like Karachi, also search in description and address fields
-            query = query.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%,address.ilike.%${location}%`);
+            query = query.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%,postal_code.ilike.%${location}%`);
             appliedFilters.push(`location contains: ${location}`);
             hasSpecificCriteria = true;
             console.log(`✅ Step 4: STRICT location filter applied - searching for "${location}" in city/title/description/street/address`);
@@ -697,7 +697,7 @@ class AIChatHandler {
         if (this.userNeeds.preferredLocation) {
             const location = this.userNeeds.preferredLocation.trim();
             console.log(`🎯 FINAL QUERY - Applying location filter for: "${location}"`);
-            finalQuery = finalQuery.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%,address.ilike.%${location}%`);
+            finalQuery = finalQuery.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%,postal_code.ilike.%${location}%`);
         }
         
         if (this.userNeeds.bedrooms) {
@@ -737,12 +737,12 @@ class AIChatHandler {
             // Let's check what's actually in the database with detailed info
             const { data: allListings } = await this.supabase
                 .from('listings')
-                .select('title, city, price, house_type, id, street, postalCode, description, address')
+                .select('title, city, price, house_type, id, street, postal_code, description')
                 .limit(20);
             
             console.log('🗃️ ALL listings in database:');
             allListings?.forEach((listing, i) => {
-                console.log(`  ${i+1}. "${listing.title}" - City: "${listing.city || 'NO CITY'}" - $${listing.price} - ${listing.house_type} - Address: "${listing.street || 'NO STREET'}" - Postal: "${listing.postalCode || 'NO POSTAL'}" - Desc: "${(listing.description || '').substring(0, 30)}"`);
+                console.log(`  ${i+1}. "${listing.title}" - City: "${listing.city || 'NO CITY'}" - $${listing.price} - ${listing.house_type} - Address: "${listing.street || 'NO STREET'}" - Postal: "${listing.postal_code || 'NO POSTAL'}" - Desc: "${(listing.description || '').substring(0, 30)}"`);
             });
             
             // Check for requested location specifically if user searched for any city
@@ -754,7 +754,7 @@ class AIChatHandler {
                     (listing.title && listing.title.toLowerCase().includes(searchLocation)) ||
                     (listing.street && listing.street.toLowerCase().includes(searchLocation)) ||
                     (listing.description && listing.description.toLowerCase().includes(searchLocation)) ||
-                    (listing.address && listing.address.toLowerCase().includes(searchLocation))
+                    (listing.postal_code && listing.postal_code.toLowerCase().includes(searchLocation))
                 );
                 
                 if (locationListings && locationListings.length > 0) {
@@ -806,7 +806,7 @@ class AIChatHandler {
                 listing.title?.toLowerCase().includes('calgary') ||
                 listing.city?.toLowerCase().includes('calgary') ||
                 listing.street?.toLowerCase().includes('calgary') ||
-                listing.postalCode?.toLowerCase().includes('calgary')
+                listing.postal_code?.toLowerCase().includes('calgary')
             );
             
             if (calgaryListings && calgaryListings.length > 0) {
