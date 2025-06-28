@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Negotiator - RoomFinderAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="./ai-chat.js?v=8"></script>
     <script src="./ai-negotiation.js?v=1"></script>
     <style>
@@ -246,7 +246,7 @@
                         <button onclick="window.location.reload()" style="background: #667eea; color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer;">
                             🔄 Retry
                         </button>
-                        <button onclick="testConnectivity()" style="background: #10b981; color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; margin-left: 8px;">
+                        <button onclick="testAPIConnectivity()" style="background: #10b981; color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; margin-left: 8px;">
                             🧪 Test Connectivity
                         </button>
                     </div>
@@ -254,8 +254,46 @@
                 return;
             }
 
-            // Initialize Supabase
-            const supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
+            // Initialize Supabase with proper error handling
+            let supabase;
+            try {
+                if (!window.supabase) {
+                    throw new Error('Supabase library not loaded from CDN');
+                }
+                
+                // Check if createClient exists (Supabase v2 syntax)
+                if (typeof window.supabase.createClient !== 'function') {
+                    throw new Error('Supabase createClient function not available - CDN load failed');
+                }
+                
+                supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
+                console.log('✅ Supabase client initialized successfully');
+                
+                // Test the connection with a simple query
+                await supabase.from('listings').select('count', { count: 'exact', head: true });
+                console.log('✅ Supabase connection test successful');
+                
+            } catch (error) {
+                console.error('❌ Supabase initialization failed:', error);
+                document.getElementById('chatMessages').innerHTML += `
+                    <div style="color: orange; padding: 1rem; border: 2px solid orange; border-radius: 8px; margin: 1rem 0;">
+                        <h3>⚠️ Supabase Connection Issue</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>The app will continue to work with limited functionality.</p>
+                    </div>
+                `;
+                // Create a mock supabase object so the app doesn't crash
+                supabase = {
+                    from: () => ({
+                        select: () => Promise.resolve({ data: [], error: new Error('Supabase not available') }),
+                        insert: () => Promise.resolve({ error: new Error('Supabase not available') }),
+                        eq: () => this,
+                        or: () => this,
+                        lte: () => this,
+                        neq: () => this
+                    })
+                };
+            }
 
             // Check if AIChatHandler class is available
             if (typeof AIChatHandler === 'undefined') {
@@ -610,11 +648,12 @@
                 if (supabase && config.SUPABASE_URL) {
                     console.log('🧪 Testing Supabase connection...');
                     try {
-                        const { data, error } = await supabase.from('users').select('count').limit(1);
+                        // Test with listings table that actually exists
+                        const { data, error } = await supabase.from('listings').select('id').limit(1);
                         if (error) {
                             testResults.push(`❌ Supabase: ${error.message}`);
                         } else {
-                            testResults.push(`✅ Supabase: Connected`);
+                            testResults.push(`✅ Supabase: Connected successfully`);
                         }
                     } catch (supabaseError) {
                         testResults.push(`❌ Supabase: Connection failed - ${supabaseError.message}`);
