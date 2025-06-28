@@ -1,7 +1,7 @@
 // AI Negotiation Engine
 // Handles real-time negotiation with landlords using market data and OpenAI
 
-class AINegotatior {
+class AINegotiator {
     constructor(supabase, config) {
         this.supabase = supabase;
         this.config = config;
@@ -2730,4 +2730,4 @@ class AINegotatior {
 }
 
 // Export for use
-window.AINegotatior = AINegotatior;
+window.AINegotiator = AINegotiator;
