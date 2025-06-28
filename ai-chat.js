@@ -639,12 +639,12 @@ class AIChatHandler {
         // Step 4: Apply location filter (STRICT) with enhanced international city support
         if (this.userNeeds.preferredLocation) {
             const location = this.userNeeds.preferredLocation.trim();
-            // Search for city at start of "City, Country" format and also in street field
-            query = query.or(`city.ilike.${location}*,street.ilike.*${location}*`);
+            // Search for exact city match (now separated from country) and in street field
+            query = query.or(`city.ilike.*${location}*,street.ilike.*${location}*`);
             appliedFilters.push(`location contains: ${location}`);
             hasSpecificCriteria = true;
             console.log(`✅ Step 4: STRICT location filter applied - searching for "${location}" in city/title/description/street/address`);
-            console.log(`🔍 EXACT SEARCH PATTERN: city.ilike.${location}*,street.ilike.*${location}*`);
+            console.log(`🔍 EXACT SEARCH PATTERN: city.ilike.*${location}*,street.ilike.*${location}*`);
         }
         
         // Step 5: Apply bedroom filter
@@ -687,7 +687,7 @@ class AIChatHandler {
         if (this.userNeeds.preferredLocation) {
             const location = this.userNeeds.preferredLocation.trim();
             console.log(`🎯 FINAL QUERY - Applying location filter for: "${location}"`);
-            finalQuery = finalQuery.or(`city.ilike.${location}*,street.ilike.*${location}*`);
+            finalQuery = finalQuery.or(`city.ilike.*${location}*,street.ilike.*${location}*`);
         }
         
         if (this.userNeeds.bedrooms) {
@@ -815,11 +815,8 @@ class AIChatHandler {
         const description = (listing.description || '').toLowerCase();
         const street = (listing.street || '').toLowerCase();
         
-        // Check if city starts with location (for "City, Country" format)
-        const cityStartsWith = city.startsWith(location + ',') || city.startsWith(location + ' ');
-        
-        return cityStartsWith ||
-               city.includes(location) || 
+        // Simple city matching (city and country are now separate fields)
+        return city.includes(location) || 
                title.includes(location) || 
                description.includes(location) || 
                street.includes(location);
