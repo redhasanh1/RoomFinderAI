@@ -410,10 +410,8 @@ class AIChatHandler {
             return openAIResult;
         } catch (error) {
             console.log('⚠️ OpenAI extraction failed:', error.message);
-            console.log('🔄 Falling back to manual extraction...');
-            const manualResult = this.extractManually(message);
-            console.log('🔧 Manual extraction result:', manualResult);
-            return manualResult;
+            console.log('❌ NO MANUAL FALLBACK - OpenAI extraction required');
+            throw new Error(`OpenAI extraction failed: ${error.message}`);
         }
     }
 
@@ -424,7 +422,7 @@ class AIChatHandler {
         
         EXTRACTION TARGETS (matching database columns):
         - price: Maximum budget (number only)
-        - city: City name (e.g., "paris", "tehran", "toronto", "moscow") 
+        - city: City name (e.g., "karachi", "paris", "tehran", "toronto", "moscow", "islamabad", "lahore") 
         - house_type: Property type ("Apartment", "Condo", "House", "Studio", "Basement")
         - bedrooms: Number of bedrooms (1-5)
         - utilities: "included" or "not included"
@@ -432,9 +430,10 @@ class AIChatHandler {
         
         RULES:
         - For price: look for "under $1200", "max $2000", etc.
-        - For city: extract ANY city mentioned and return lowercase: "paris", "tehran", "toronto", "moscow"
+        - For city: extract ANY city mentioned including international cities like "karachi", "islamabad", "lahore", "rawalpindi" and return lowercase
         - For house_type: use exact values from database
         - Be conservative - only extract what's clearly mentioned
+        - ALWAYS prioritize extracting the city name if mentioned
         
         Return JSON with only fields that have values:
         `;
@@ -506,15 +505,15 @@ class AIChatHandler {
             }
         }
         
-        // Extract city - UPDATED LIST based on actual database listings
-        const cityMatch = message.match(/\b(paris|tehran|toronto|moscow|sydney|vancouver|montreal|calgary|ottawa|edmonton|winnipeg|hamilton|quebec|saskatoon|regina|halifax|london|kitchener|waterloo|windsor|markham|mississauga|brampton|iran|australia|canada|france|new york|los angeles|chicago|miami|boston)\b/i);
+        // Extract city - UPDATED LIST based on actual database listings + international cities
+        const cityMatch = message.match(/\b(karachi|paris|tehran|toronto|moscow|sydney|vancouver|montreal|calgary|ottawa|edmonton|winnipeg|hamilton|quebec|saskatoon|regina|halifax|london|kitchener|waterloo|windsor|markham|mississauga|brampton|islamabad|lahore|rawalpindi|faisalabad|multan|hyderabad|peshawar|quetta|iran|australia|canada|france|pakistan|new york|los angeles|chicago|miami|boston)\b/i);
         if (cityMatch) {
             result.city = cityMatch[1].toLowerCase().trim();
             console.log('🏙️ Extracted city:', result.city);
         }
         
         // Additional location patterns for "in [city]"
-        const inCityMatch = message.match(/\bin\s+(paris|tehran|toronto|moscow|sydney|vancouver|montreal|calgary)\b/i);
+        const inCityMatch = message.match(/\bin\s+(karachi|paris|tehran|toronto|moscow|sydney|vancouver|montreal|calgary|islamabad|lahore|rawalpindi)\b/i);
         if (inCityMatch && !result.city) {
             result.city = inCityMatch[1].toLowerCase().trim();
             console.log('🏙️ Extracted city from "in" pattern:', result.city);
@@ -627,13 +626,15 @@ class AIChatHandler {
             hasSpecificCriteria = true;
         }
         
-        // Step 4: Apply location filter (STRICT)
+        // Step 4: Apply location filter (STRICT) with enhanced international city support
         if (this.userNeeds.preferredLocation) {
             const location = this.userNeeds.preferredLocation.trim();
-            query = query.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%`);
+            // For international cities like Karachi, also search in description and address fields
+            query = query.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%,address.ilike.%${location}%`);
             appliedFilters.push(`location contains: ${location}`);
             hasSpecificCriteria = true;
-            console.log(`✅ Step 4: STRICT location filter applied - searching for "${location}" in city/title/description/street`);
+            console.log(`✅ Step 4: STRICT location filter applied - searching for "${location}" in city/title/description/street/address`);
+            console.log(`🔍 EXACT SEARCH PATTERN: city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%,address.ilike.%${location}%`);
         }
         
         // Step 5: Apply bedroom filter
@@ -675,7 +676,8 @@ class AIChatHandler {
         
         if (this.userNeeds.preferredLocation) {
             const location = this.userNeeds.preferredLocation.trim();
-            finalQuery = finalQuery.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%`);
+            console.log(`🎯 FINAL QUERY - Applying location filter for: "${location}"`);
+            finalQuery = finalQuery.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%,address.ilike.%${location}%`);
         }
         
         if (this.userNeeds.bedrooms) {
@@ -689,6 +691,7 @@ class AIChatHandler {
         }
         
         console.log('📊 Query results:', listings?.length || 0, 'listings found');
+        console.log('🔍 User requested location:', this.userNeeds.preferredLocation);
         
         // Debug: Log what we actually found and validate matches
         if (listings && listings.length > 0) {
@@ -700,7 +703,13 @@ class AIChatHandler {
                     type: !this.userNeeds.houseType || listing.house_type === this.userNeeds.houseType || (this.userNeeds.houseType === 'House' && listing.house_type === 'Townhouse')
                 };
                 const matchScore = Object.values(matches).filter(Boolean).length;
-                console.log(`  ${i+1}. "${listing.title}" - $${listing.price} - ${listing.house_type} - City: "${listing.city || 'NO CITY'}" - MATCHES: ${matchScore}/3 (Price:${matches.price}, Location:${matches.location}, Type:${matches.type})`);
+                console.log(`  ${i+1}. "${listing.title}" - $${listing.price} - ${listing.house_type} - City: "${listing.city || 'NO CITY'}" - Street: "${listing.street || 'NO STREET'}" - MATCHES: ${matchScore}/3 (Price:${matches.price}, Location:${matches.location}, Type:${matches.type})`);
+                
+                // Enhanced debugging for location matching
+                if (this.userNeeds.preferredLocation) {
+                    const locationMatch = this.matchesLocation(listing, this.userNeeds.preferredLocation);
+                    console.log(`    🌍 Location debug - Searching for "${this.userNeeds.preferredLocation}" in: city="${listing.city}", title="${listing.title}", street="${listing.street}" - Match: ${locationMatch}`);
+                }
             });
         } else {
             console.log('❌ No listings found with current filters');
@@ -708,13 +717,35 @@ class AIChatHandler {
             // Let's check what's actually in the database with detailed info
             const { data: allListings } = await this.supabase
                 .from('listings')
-                .select('title, city, price, house_type, id, street, postalCode')
+                .select('title, city, price, house_type, id, street, postalCode, description, address')
                 .limit(20);
             
             console.log('🗃️ ALL listings in database:');
             allListings?.forEach((listing, i) => {
-                console.log(`  ${i+1}. "${listing.title}" - City: "${listing.city || 'NO CITY'}" - $${listing.price} - ${listing.house_type} - Address: "${listing.street || 'NO STREET'}" - Postal: "${listing.postalCode || 'NO POSTAL'}"`);
+                console.log(`  ${i+1}. "${listing.title}" - City: "${listing.city || 'NO CITY'}" - $${listing.price} - ${listing.house_type} - Address: "${listing.street || 'NO STREET'}" - Postal: "${listing.postalCode || 'NO POSTAL'}" - Desc: "${(listing.description || '').substring(0, 30)}"`);
             });
+            
+            // Check for requested location specifically if user searched for any city
+            if (this.userNeeds.preferredLocation) {
+                const searchLocation = this.userNeeds.preferredLocation.toLowerCase();
+                console.log(`🌍 SPECIFIC CHECK: Looking for "${searchLocation}"-related listings...`);
+                const locationListings = allListings?.filter(listing => 
+                    (listing.city && listing.city.toLowerCase().includes(searchLocation)) ||
+                    (listing.title && listing.title.toLowerCase().includes(searchLocation)) ||
+                    (listing.street && listing.street.toLowerCase().includes(searchLocation)) ||
+                    (listing.description && listing.description.toLowerCase().includes(searchLocation)) ||
+                    (listing.address && listing.address.toLowerCase().includes(searchLocation))
+                );
+                
+                if (locationListings && locationListings.length > 0) {
+                    console.log(`✅ Found ${searchLocation} listings:`);
+                    locationListings.forEach(listing => {
+                        console.log(`  - "${listing.title}" in "${listing.city}" at $${listing.price} (${listing.house_type})`);
+                    });
+                } else {
+                    console.log(`❌ NO ${searchLocation.toUpperCase()} LISTINGS FOUND in database - this explains the issue!`);
+                }
+            }
             
             // Test: Search for all houses under $1500 (no location filter)
             console.log('\n🔍 Testing: All houses under $1500 (no location filter)');

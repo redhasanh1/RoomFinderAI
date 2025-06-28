@@ -1620,7 +1620,6 @@ class AINegotiationEngine {
             console.log('🚀 Starting negotiation for:', listing.title);
             
             // Prevent duplicate negotiations for the same listing
-            const negotiationKey = `${listing.id}_${userEmail}`;
             const existingNegotiation = Array.from(this.activeNegotiations.values())
                 .find(neg => neg.listingId === listing.id && neg.userEmail === userEmail);
             
