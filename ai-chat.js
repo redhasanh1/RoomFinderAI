@@ -429,30 +429,56 @@ class AIChatHandler {
         Return JSON with only fields that have values:
         `;
         
-        const response = await fetch('/api/ai-negotiator', {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
+                'OpenAI-Organization': this.config.OPENAI_ORG_ID
             },
             body: JSON.stringify({
-                message: prompt
+                model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are a rental property information extractor. Return only valid JSON with extracted information.'
+                    },
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                max_tokens: 150,
+                temperature: 0.1
             })
         });
         
         if (!response.ok) {
-            throw new Error(`AI API error: ${response.status}`);
+            throw new Error(`OpenAI API error: ${response.status}`);
         }
         
         const data = await response.json();
-        const result = { feedback: data.response };
+        const content = data.choices[0]?.message?.content;
         
-        // Clean city data if present
-        if (result.city) {
-            result.city = result.city.toString().trim().split(',')[0].trim();
-            result.city = result.city.replace(/\s+(fr|france|canada|ca|usa|us|australia|au)$/i, '');
+        if (!content) {
+            throw new Error('No content from OpenAI');
         }
         
-        return result;
+        // Try to parse JSON from the response
+        try {
+            const result = JSON.parse(content.trim());
+            
+            // Clean city data if present
+            if (result.city) {
+                result.city = result.city.toString().trim().toLowerCase().split(',')[0].trim();
+                result.city = result.city.replace(/\s+(fr|france|canada|ca|usa|us|australia|au)$/i, '');
+            }
+            
+            return result;
+        } catch (parseError) {
+            console.log('⚠️ Failed to parse OpenAI response as JSON:', content);
+            throw new Error('Invalid JSON response from OpenAI');
+        }
     }
 
     // Manual extraction fallback
