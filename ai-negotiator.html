@@ -254,8 +254,8 @@
                 if (typeof AINegotiator === 'undefined') {
                     missingDependencies.push('AINegotiator (ai-chat.js)');
                 }
-                if (typeof AINegotatior === 'undefined') {
-                    missingDependencies.push('AINegotatior (ai-negotiation.js)');
+                if (typeof AINegotiator === 'undefined') {
+                    missingDependencies.push('AINegotiator (ai-negotiation.js)');
                 }
 
                 if (missingDependencies.length > 0) {
@@ -289,8 +289,8 @@
                 chatMessages.innerHTML = '<div class="typing-indicator">⚡ Starting negotiation engine...</div>';
 
                 // Initialize AI Negotiation Engine
-                console.log('🔧 Creating AINegotatior (negotiation engine) instance...');
-                aiNegotiationEngine = new AINegotatior(supabase, configData);
+                console.log('🔧 Creating AINegotiator (negotiation engine) instance...');
+                aiNegotiationEngine = new AINegotiator(supabase, configData);
                 aiNegotiator.setNegotiationEngine(aiNegotiationEngine);
                 console.log('✅ AI Negotiation Engine initialized');
 
