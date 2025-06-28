@@ -434,6 +434,7 @@ class AIChatHandler {
         - For house_type: use exact values from database
         - Be conservative - only extract what's clearly mentioned
         - ALWAYS prioritize extracting the city name if mentioned
+        - For intent: return "search" if user is looking for/wanting/needing rental properties (keywords: "want", "need", "looking for", "find", "search"), otherwise "general"
         
         Return JSON with only fields that have values:
         `;
@@ -561,7 +562,15 @@ class AIChatHandler {
         // Set intent
         if (message.toLowerCase().includes('looking for') || 
             message.toLowerCase().includes('need') || 
-            message.toLowerCase().includes('want')) {
+            message.toLowerCase().includes('want') ||
+            message.toLowerCase().includes('find') ||
+            message.toLowerCase().includes('search')) {
+            result.intent = 'search';
+        }
+        
+        // Backup logic: if we extracted rental criteria (price + city), assume search intent
+        if ((result.price || result.city) && !result.intent) {
+            console.log('🎯 BACKUP LOGIC: Found rental criteria without intent, setting to search');
             result.intent = 'search';
         }
         
@@ -1308,10 +1317,23 @@ class AIChatHandler {
         this.removeTypingIndicator();
         
         // Check if user is expressing needs
-        const needsKeywords = ['looking for', 'need', 'want', 'searching for', 'find me'];
+        const needsKeywords = ['looking for', 'need', 'want', 'searching for', 'find me', 'find', 'search'];
         const isSearchRequest = needsKeywords.some(keyword => message.toLowerCase().includes(keyword));
         
-        if (isSearchRequest && extractedData.intent === 'search') {
+        // Improved logic: trigger search if either condition is true OR if we have rental criteria
+        const shouldSearch = (isSearchRequest && extractedData.intent === 'search') || 
+                           extractedData.intent === 'search' ||
+                           (extractedData.price || extractedData.city);
+        
+        console.log('🔍 SEARCH DECISION:', {
+            isSearchRequest,
+            extractedIntent: extractedData.intent,
+            hasPrice: !!extractedData.price,
+            hasCity: !!extractedData.city,
+            shouldSearch
+        });
+        
+        if (shouldSearch) {
             this.appendMessage('AI', 'I understand! Searching for matching listings and contacting landlords...', 'left');
             setTimeout(() => this.searchAndMessage(), 1000);
         } else {
