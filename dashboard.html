@@ -511,7 +511,8 @@
 
         async function loadRecentActivity() {
             try {
-                const userEmail = localStorage.getItem('userEmail');
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const userEmail = currentUser?.email;
                 
                 if (!userEmail) {
                     document.getElementById('recentActivity').innerHTML = `
