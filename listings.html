@@ -384,6 +384,10 @@
                         <div id="city-autocomplete-dropdown" class="custom-autocomplete hidden"></div>
                     </div>
                     <div>
+                        <label for="country" class="block text-sm font-medium text-gray-700">Country (Optional)</label>
+                        <input type="text" id="country" name="country" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="e.g., USA">
+                    </div>
+                    <div>
                         <label for="street" class="block text-sm font-medium text-gray-700">Street</label>
                         <input type="text" id="street" name="street" required class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="e.g., 123 Main St">
                     </div>
@@ -1405,6 +1409,7 @@
                     title: autocorrectInput(sanitizeInput(document.getElementById('title').value)),
                     price: parseInt(document.getElementById('price').value),
                     city: cleanAddressInput(document.getElementById('city').value),
+                    country: sanitizeInput(document.getElementById('country').value), // Added country
                     street: cleanAddressInput(document.getElementById('street').value),
                     postalCode: document.getElementById('postalCode').value.trim().toUpperCase().replace(/\s+/g, ' '),
                     house_type: document.getElementById('houseType').value,
