@@ -93,14 +93,22 @@ class AINegotiationEngine {
                 "Fantastic! Tomorrow night is perfect for move-in. What time should we meet? I'll bring all necessary paperwork and payments."
             ],
             timingPostponement: [
-                "No problem at all! I completely understand you're busy. Please reach out when you're free to discuss - I'm flexible with timing.",
-                "Of course! Take your time. I'm very interested and happy to wait until you're available to chat.",
-                "Absolutely! I respect your schedule. Just let me know when works better for you.",
-                "No worries! I understand you're not available right now. Feel free to contact me whenever you're free.",
-                "That's perfectly fine! I'm flexible and can discuss whenever it's convenient for you.",
-                "Understood! I appreciate you letting me know. I'll wait to hear from you when you have time.",
-                "No rush at all! I know schedules can be busy. Please reach out when you're available.",
-                "Completely understand! I'm patient and ready to discuss whenever you're free."
+                "No problem at all! I completely understand you're busy right now. I'll check back with you in a few hours when you might be more available.",
+                "Of course! Take your time. I'm very interested in the property and happy to wait. I'll follow up when you're likely to be free.",
+                "Absolutely! I respect your schedule. I'll give you some space and reach back out later today to see if you're available then.",
+                "No worries! I understand you're not available right now. I'll touch base again in a bit when you might have more time.",
+                "That's perfectly fine! I'm flexible with timing. I'll check in with you later to see when might work better for discussing the rental.",
+                "Understood! I appreciate you letting me know. I'll follow up in a few hours to see if you're free then.",
+                "No rush at all! I know schedules can be busy. I'll reach out again later today when you might be more available.",
+                "Completely understand! I'm patient and will check back in a few hours when you might have time to discuss the property."
+            ],
+            followUpAfterPostponement: [
+                "Hi! I wanted to follow up about the rental property. Are you available to discuss the terms now?",
+                "Hello! I'm checking back in about the property we discussed. Do you have time to talk about the rental details now?",
+                "Hi there! I hope you're having a good day. Are you free now to discuss the rental opportunity?",
+                "Hello! I wanted to circle back about the property. Is now a better time to chat about the rental terms?",
+                "Hi! I'm following up on our earlier conversation. Are you available to discuss the property details now?",
+                "Hello! I hope this is a better time. Are you free to talk about the rental property now?"
             ]
         };
     }
@@ -886,6 +894,26 @@ class AINegotiationEngine {
             const data = await response.json();
             let analysis = JSON.parse(data.choices[0].message.content.trim());
             
+            // FORCE CHECK: Override OpenAI analysis for timing postponement (highest priority)
+            const isTimingPostponementForced = /\b(no not right now|not right now|no right now|busy|couple hours|when i\'?m free|later|in a bit|little bit|can we discuss later|give me some time|not available now|talk in a few hours|i\'?m busy|not free|can\'?t talk now|call back later|will be free|will be available)\b/i.test(replyContent);
+            
+            if (isTimingPostponementForced) {
+                console.log('🕐 FORCED TIMING POSTPONEMENT DETECTED - Overriding OpenAI analysis');
+                return {
+                    sentiment: 'neutral',
+                    priceOffered: null,
+                    acceptsOffer: false,
+                    makesCounterOffer: false,
+                    shouldRespond: true,
+                    isFinalized: false,
+                    agreedPrice: null,
+                    responseStrategy: 'timing_postponement',
+                    negotiationPhase: 'postponed',
+                    originalReply: replyContent,
+                    postponementDetected: true
+                };
+            }
+            
             // Double-check for acceptance patterns in AI response too
             if (/\b(sure|yes|ok|okay|sounds good|works|fine|agreed|deal)\b/i.test(simpleReply)) {
                 console.log('🎯 AI also detected acceptance in:', simpleReply);
@@ -916,8 +944,15 @@ class AINegotiationEngine {
             const isAskingForIncrease = /\b(can you|could you|would you).*(raise|increase|go up|higher)/i.test(replyContent) ||
                                       /\b(raise it|increase it|go higher|bump it up)/i.test(replyContent);
             
-            // Check for timing postponement requests
-            const isTimingPostponement = /\b(not right now|busy|couple hours|when i\'?m free|later|in a bit|can we discuss later|give me some time|not available now|talk in a few hours|i\'?m busy|not free|can\'?t talk now|call back later)\b/i.test(replyContent);
+            // Check for timing postponement requests - enhanced patterns
+            const isTimingPostponement = /\b(no not right now|not right now|no right now|busy|couple hours|when i\'?m free|later|in a bit|little bit|can we discuss later|give me some time|not available now|talk in a few hours|i\'?m busy|not free|can\'?t talk now|call back later|will be free|will be available)\b/i.test(replyContent);
+            
+            // Debug logging for timing detection
+            console.log('🕐 TIMING DETECTION DEBUG:', {
+                replyContent: replyContent,
+                isTimingPostponement: isTimingPostponement,
+                matchedPattern: replyContent.match(/\b(no not right now|not right now|no right now|busy|couple hours|when i\'?m free|later|in a bit|little bit|can we discuss later|give me some time|not available now|talk in a few hours|i\'?m busy|not free|can\'?t talk now|call back later|will be free|will be available)\b/i)
+            });
             
             console.log('🔧 Fallback analysis - hasAcceptanceWords:', hasAcceptanceWords, 'isAskingForIncrease:', isAskingForIncrease, 'isTimingPostponement:', isTimingPostponement, 'for:', replyLower);
             
@@ -1006,7 +1041,7 @@ class AINegotiationEngine {
 
             if (analysis.responseStrategy === 'timing_postponement') {
                 console.log('⏰ Generating timing postponement response');
-                return this.generateTimingPostponementResponse(negotiationId, roundNumber);
+                return await this.generateTimingPostponementResponse(negotiationId, roundNumber, negotiation, listing);
             }
 
             if (analysis.responseStrategy === 'move_in_logistics') {
@@ -3099,7 +3134,7 @@ class AINegotiationEngine {
     }
 
     // Generate timing postponement response when landlord is busy
-    generateTimingPostponementResponse(negotiationId, roundNumber) {
+    async generateTimingPostponementResponse(negotiationId, roundNumber, negotiation, listing) {
         try {
             const templates = this.responseTemplates.timingPostponement;
             const usedResponses = this.conversationalMemory.get(negotiationId) || new Set();
@@ -3120,12 +3155,58 @@ class AINegotiationEngine {
             usedResponses.add(selectedTemplate);
             this.conversationalMemory.set(negotiationId, usedResponses);
             
+            // Save postponement to database for follow-up scheduling
+            await this.savePostponement(negotiation, listing, selectedTemplate);
+            
             console.log(`⏰ Selected timing postponement response: "${selectedTemplate}"`);
             return selectedTemplate;
             
         } catch (error) {
             console.error('Error generating timing postponement response:', error);
             return "No problem at all! I completely understand you're busy. Please reach out when you're free to discuss - I'm flexible with timing.";
+        }
+    }
+
+    // Save postponement to database for follow-up scheduling
+    async savePostponement(negotiation, listing, responseMessage) {
+        try {
+            // Calculate follow-up time (default 24 hours, but could be smarter based on landlord's message)
+            const followUpTime = new Date();
+            followUpTime.setHours(followUpTime.getHours() + 24); // 24 hours from now
+            
+            // Extract context for restoration
+            const lastOffer = this.extractLastOfferedPrice(negotiation) || Math.round(listing.price * 0.90);
+            
+            const postponementData = {
+                conversation_id: negotiation.conversationId,
+                listing_id: listing.id,
+                user_email: negotiation.userEmail || 'ai-negotiator@roomfinder.com',
+                landlord_email: listing.user_email,
+                postponement_reason: responseMessage,
+                expected_follow_up_time: followUpTime.toISOString(),
+                last_offer_amount: lastOffer,
+                negotiation_round: negotiation.messages?.length || 1,
+                conversation_context: {
+                    userBudget: negotiation.userBudget,
+                    messages: negotiation.messages || [],
+                    listingPrice: listing.price
+                },
+                status: 'pending'
+            };
+            
+            const { data, error } = await this.supabase
+                .from('negotiation_postponements')
+                .insert([postponementData])
+                .select();
+                
+            if (error) {
+                console.error('Error saving postponement:', error);
+            } else {
+                console.log('✅ Postponement saved for follow-up:', data[0].id);
+            }
+            
+        } catch (error) {
+            console.error('Error in savePostponement:', error);
         }
     }
 
