@@ -481,7 +481,16 @@ class AINegotiationEngine {
                         // Check if negotiation is complete
                         if (analysis.isFinalized) {
                             negotiation.status = 'finalized';
-                            negotiation.finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
+                            let finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
+                            
+                            // CRITICAL: Ensure finalPrice is never null/undefined/0
+                            if (!finalPrice || finalPrice <= 0) {
+                                console.error('❌ CRITICAL: Invalid finalPrice in finalization, using fallback');
+                                finalPrice = negotiation.userBudget || negotiation.originalPrice || 1500;
+                                console.log('✅ Using fallback price for finalization:', finalPrice);
+                            }
+                            
+                            negotiation.finalPrice = finalPrice;
                             console.log('🎉 NEGOTIATION FINALIZED at $', negotiation.finalPrice);
                             
                             // PRIORITY 1: Direct UI update (immediate feedback)
@@ -691,7 +700,7 @@ class AINegotiationEngine {
         
         // Check for vague responses that need clarification (PRIORITY CHECK)
         const simpleReply = replyContent.trim().toLowerCase();
-        const vageResponsePatterns = /\b(sure but|maybe|i guess|i mean|kinda|sorta|a little|somewhat|perhaps)\b/i;
+        const vageResponsePatterns = /\b(sure but|maybe|i guess|i mean|kinda|sorta|a little|somewhat|perhaps|slight adjustment|small adjustment|little adjustment|minor change)\b/i;
         const isVagueResponse = vageResponsePatterns.test(replyContent);
         
         if (isVagueResponse) {
@@ -877,7 +886,15 @@ class AINegotiationEngine {
             console.log(`🎯 Generating response for round ${roundNumber}, sentiment: ${analysis.sentiment}`);
 
             if (analysis.isFinalized && analysis.acceptsOffer) {
-                const finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
+                let finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
+                
+                // CRITICAL: Ensure finalPrice is never null/undefined/0
+                if (!finalPrice || finalPrice <= 0) {
+                    console.error('❌ CRITICAL: No valid price found, using fallback');
+                    finalPrice = negotiation.userBudget || listing?.price || 1500;
+                    console.log('✅ Using fallback price:', finalPrice);
+                }
+                
                 console.log('🎉 GENERATING FINAL ACCEPTANCE RESPONSE - Price:', finalPrice);
                 return this.generateVariedAcceptanceResponse(finalPrice, negotiationId, roundNumber);
             }
@@ -896,7 +913,15 @@ class AINegotiationEngine {
 
             if (analysis.responseStrategy === 'security_deposit') {
                 console.log('💰 Generating security deposit response');
-                const finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
+                let finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
+                
+                // CRITICAL: Ensure finalPrice is never null/undefined/0
+                if (!finalPrice || finalPrice <= 0) {
+                    console.error('❌ CRITICAL: No valid price for security deposit, using fallback');
+                    finalPrice = negotiation.userBudget || listing?.price || 1500;
+                    console.log('✅ Using fallback price for security deposit:', finalPrice);
+                }
+                
                 return this.generateSecurityDepositResponse(finalPrice, negotiationId, roundNumber);
             }
 
@@ -937,6 +962,15 @@ class AINegotiationEngine {
 
     // Generate varied acceptance response to prevent repetition
     generateVariedAcceptanceResponse(finalPrice, negotiationId, roundNumber) {
+        // CRITICAL: Ensure finalPrice is never null/undefined/0
+        if (!finalPrice || finalPrice <= 0) {
+            console.error('❌ CRITICAL: Invalid finalPrice detected:', finalPrice);
+            // Get negotiation to access fallback prices
+            const negotiation = this.activeNegotiations.get(negotiationId);
+            finalPrice = negotiation?.userBudget || 1500; // Safe fallback
+            console.log('✅ Using fallback price:', finalPrice);
+        }
+        
         const templates = this.responseTemplates.counterOfferAcceptance;
         const usedResponses = this.conversationalMemory.get(negotiationId) || new Set();
         
@@ -1881,11 +1915,14 @@ class AINegotiationEngine {
             }
             
             // Fallback to user budget if no specific price found
-            console.log('⚠️ No price found, using user budget:', negotiation.userBudget);
-            return negotiation.userBudget;
+            const fallbackPrice = negotiation.userBudget || negotiation.originalPrice || 1500;
+            console.log('⚠️ No price found, using fallback:', fallbackPrice);
+            return fallbackPrice;
         } catch (error) {
             console.error('Error extracting last offered price:', error);
-            return negotiation.userBudget;
+            const fallbackPrice = negotiation.userBudget || negotiation.originalPrice || 1500;
+            console.log('✅ Error fallback price:', fallbackPrice);
+            return fallbackPrice;
         }
     }
 
@@ -2897,6 +2934,15 @@ class AINegotiationEngine {
 
     // Generate security deposit response
     generateSecurityDepositResponse(finalPrice, negotiationId, roundNumber) {
+        // CRITICAL: Ensure finalPrice is never null/undefined/0
+        if (!finalPrice || finalPrice <= 0) {
+            console.error('❌ CRITICAL: Invalid finalPrice in security deposit:', finalPrice);
+            // Get negotiation to access fallback prices
+            const negotiation = this.activeNegotiations.get(negotiationId);
+            finalPrice = negotiation?.userBudget || 1500; // Safe fallback
+            console.log('✅ Using fallback price for security deposit:', finalPrice);
+        }
+        
         const templates = this.responseTemplates.securityDepositResponses;
         const responseIndex = roundNumber % templates.length;
         let response = templates[responseIndex];
@@ -2917,7 +2963,15 @@ class AINegotiationEngine {
 
     // Generate response to increase requests like "can you raise it"
     generateIncreaseRequestResponse(negotiation, listing, negotiationId, roundNumber) {
-        const lastOffer = this.extractLastOfferedPrice(negotiation);
+        let lastOffer = this.extractLastOfferedPrice(negotiation);
+        
+        // CRITICAL: Ensure lastOffer is never null/undefined/0
+        if (!lastOffer || lastOffer <= 0) {
+            console.error('❌ CRITICAL: Invalid lastOffer in increase request, using fallback');
+            lastOffer = negotiation.userBudget || listing?.price || 1500;
+            console.log('✅ Using fallback price for increase request:', lastOffer);
+        }
+        
         const userBudget = negotiation.userBudget;
         
         // Calculate a reasonable increase
@@ -2942,7 +2996,14 @@ class AINegotiationEngine {
 
     // Generate clarification request for vague responses
     generateVagueClarificationResponse(negotiation, listing, negotiationId, roundNumber) {
-        const lastOffer = this.extractLastOfferedPrice(negotiation);
+        let lastOffer = this.extractLastOfferedPrice(negotiation);
+        
+        // CRITICAL: Ensure lastOffer is never null/undefined/0
+        if (!lastOffer || lastOffer <= 0) {
+            console.error('❌ CRITICAL: Invalid lastOffer in vague clarification, using fallback');
+            lastOffer = negotiation.userBudget || listing?.price || 1500;
+            console.log('✅ Using fallback price for vague clarification:', lastOffer);
+        }
         
         const clarificationResponses = [
             `I appreciate your response! Just to clarify - what specific price would work for you? I offered $${lastOffer}/month.`,
