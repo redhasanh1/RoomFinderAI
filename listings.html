@@ -1671,31 +1671,78 @@
         }
 
         async function startConversation(listing) {
-            console.log('Starting conversation for listing:', listing.title);
+            console.log('🚀 Starting conversation for listing:', listing.title);
+            
+            // Verify authentication
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            console.log('👤 Authentication check:', { 
+                hasUser: !!currentUser, 
+                userEmail: currentUser?.email,
+                hasSupabase: !!supabase 
+            });
+            
             if (!currentUser) {
+                console.error('❌ No authenticated user found');
                 alert('Please log in to start a chat.');
                 window.location.href = '/login';
                 return;
             }
 
-            if (!listing.user_email) {
-                alert('Cannot start chat: Listing owner not specified.');
+            // Verify Supabase connection
+            if (!supabase) {
+                console.error('❌ Supabase client not initialized');
+                alert('Connection error. Please refresh the page and try again.');
                 return;
             }
 
-            // Verify both users are registered in profiles database
-            const { data: currentUserProfile, error: currentUserError } = await supabase
-                .from('profiles')
-                .select('email')
-                .eq('email', currentUser.email)
-                .single();
+            if (!listing.user_email) {
+                console.error('❌ Listing missing user_email:', listing);
+                alert('Cannot start chat: Listing owner not specified.');
+                return;
+            }
+            
+            console.log('📧 Chat participants:', {
+                sender: currentUser.email,
+                receiver: listing.user_email,
+                listingId: listing.id
+            });
 
-            const { data: listingOwnerProfile, error: listingOwnerError } = await supabase
-                .from('profiles')
-                .select('email')
-                .eq('email', listing.user_email)
-                .single();
+            // Verify both users are registered in profiles database
+            console.log('🔍 Checking user profiles...');
+            let currentUserProfile, listingOwnerProfile, currentUserError, listingOwnerError;
+            
+            try {
+                const currentUserResult = await supabase
+                    .from('profiles')
+                    .select('email')
+                    .eq('email', currentUser.email)
+                    .single();
+                currentUserProfile = currentUserResult.data;
+                currentUserError = currentUserResult.error;
+                
+                console.log('👤 Current user profile check:', { 
+                    found: !!currentUserProfile, 
+                    error: currentUserError?.message 
+                });
+                
+                const ownerResult = await supabase
+                    .from('profiles')
+                    .select('email')
+                    .eq('email', listing.user_email)
+                    .single();
+                listingOwnerProfile = ownerResult.data;
+                listingOwnerError = ownerResult.error;
+                
+                console.log('🏠 Listing owner profile check:', { 
+                    found: !!listingOwnerProfile, 
+                    error: listingOwnerError?.message 
+                });
+                
+            } catch (profileError) {
+                console.error('💥 Error checking profiles:', profileError);
+                alert('Database connection error. Please try again.');
+                return;
+            }
 
             // Auto-create profile for current user if missing
             if (currentUserError || !currentUserProfile) {
@@ -1738,18 +1785,46 @@
                 console.log('✅ Created profile for listing owner');
             }
 
+            // Verify chat title element exists
+            const chatTitle = document.getElementById('chatTitle');
+            if (!chatTitle) {
+                console.error('❌ Chat title element not found');
+                alert('Chat interface error. Please refresh the page.');
+                return;
+            }
+            
             currentListing = listing;
-            document.getElementById('chatTitle').textContent = `Chat about ${listing.title}`;
+            chatTitle.textContent = `Chat about ${listing.title}`;
+            console.log('📝 Chat title set:', listing.title);
 
-            const { data: conversations, error } = await supabase
-                .from('conversations')
-                .select('*')
-                .eq('listing_id', listing.id)
-                .eq('sender_email', currentUser.email)
-                .eq('receiver_email', listing.user_email);
+            // Check for existing conversations
+            console.log('🔍 Checking for existing conversations...');
+            let conversations, error;
+            
+            try {
+                const result = await supabase
+                    .from('conversations')
+                    .select('*')
+                    .eq('listing_id', listing.id)
+                    .eq('sender_email', currentUser.email)
+                    .eq('receiver_email', listing.user_email);
+                    
+                conversations = result.data;
+                error = result.error;
+                
+                console.log('💬 Conversation query result:', { 
+                    found: conversations?.length || 0, 
+                    error: error?.message 
+                });
+                
+            } catch (queryError) {
+                console.error('💥 Error querying conversations:', queryError);
+                alert('Database error while loading conversation. Please try again.');
+                return;
+            }
 
             if (error) {
-                console.error('Error checking conversation:', error);
+                console.error('❌ Database error checking conversation:', error);
                 alert('Failed to load conversation: ' + error.message);
                 return;
             }
@@ -1780,42 +1855,90 @@
             }
 
             currentConversationId = conversation.id;
-            await loadMessages(conversation.id);
-            // document.getElementById('chatModal').style.display = 'block';
-            document.getElementById('chatModal').classList.add('active'); // Use class for animation
-            console.log('Chat modal opened for conversation:', conversation.id);
+            
+            // Verify chat modal exists before proceeding
+            const chatModal = document.getElementById('chatModal');
+            if (!chatModal) {
+                console.error('❌ Chat modal element not found');
+                alert('Chat interface error. Please refresh the page.');
+                return;
+            }
+            
+            // Show loading state
+            console.log('⏳ Loading messages...');
+            const chatMessages = document.getElementById('chatMessages');
+            if (chatMessages) {
+                chatMessages.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">Loading messages...</div>';
+            }
+            
+            try {
+                await loadMessages(conversation.id);
+                chatModal.classList.add('active');
+                console.log('✅ Chat modal opened for conversation:', conversation.id);
+            } catch (loadError) {
+                console.error('❌ Error loading messages:', loadError);
+                alert('Failed to load chat messages. Please try again.');
+                if (chatMessages) {
+                    chatMessages.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Failed to load messages</div>';
+                }
+            }
         }
 
         async function loadMessages(conversationId) {
-            console.log('Loading messages for conversation:', conversationId);
-            const { data: messages, error } = await supabase
-                .from('messages')
-                .select('*')
-                .eq('conversation_id', conversationId)
-                .order('created_at', { ascending: true });
+            console.log('🔄 Loading messages for conversation:', conversationId);
+            console.log('📊 Supabase client status:', !!supabase);
+            console.log('👤 Current user status:', !!localStorage.getItem('currentUser'));
+            
+            try {
+                const { data: messages, error } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('conversation_id', conversationId)
+                    .order('created_at', { ascending: true });
 
-            if (error) {
-                console.error('Error loading messages:', error);
-                alert('Failed to load messages: ' + error.message);
-                return;
+                console.log('📨 Messages query result:', { messages, error, count: messages?.length });
+
+                if (error) {
+                    console.error('❌ Error loading messages:', error);
+                    alert('Failed to load messages: ' + error.message);
+                    return;
+                }
+
+                const chatMessagesContainer = document.getElementById('chatMessages');
+                console.log('📋 Chat container element:', !!chatMessagesContainer);
+                
+                if (!chatMessagesContainer) {
+                    console.error('❌ Chat messages container not found!');
+                    return;
+                }
+                
+                chatMessagesContainer.innerHTML = '';
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                console.log('👤 Current user for message display:', currentUser?.email);
+
+                messages.forEach((message, index) => {
+                    console.log(`💬 Processing message ${index + 1}:`, {
+                        sender: message.sender_email,
+                        content: message.content?.substring(0, 50) + '...',
+                        timestamp: message.created_at
+                    });
+                    
+                    const messageElement = document.createElement('div');
+                    messageElement.className = `message ${message.sender_email === currentUser.email ? 'sent' : 'received'}`;
+                    messageElement.innerHTML = `
+                        <p>${sanitizeInput(message.content)}</p>
+                        <div class="message-timestamp">${new Date(message.created_at).toLocaleTimeString()}</div>
+                    `;
+                    chatMessagesContainer.appendChild(messageElement);
+                });
+
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                console.log('✅ Messages loaded successfully:', messages.length, 'messages displayed');
+                
+            } catch (error) {
+                console.error('💥 Exception in loadMessages:', error);
+                alert('Failed to load messages due to an error: ' + error.message);
             }
-
-            const chatMessagesContainer = document.getElementById('chatMessages');
-            chatMessagesContainer.innerHTML = '';
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-
-            messages.forEach(message => {
-                const messageElement = document.createElement('div');
-                messageElement.className = `message ${message.sender_email === currentUser.email ? 'sent' : 'received'}`;
-                messageElement.innerHTML = `
-                    <p>${sanitizeInput(message.content)}</p>
-                    <div class="message-timestamp">${new Date(message.created_at).toLocaleTimeString()}</div>
-                `;
-                chatMessagesContainer.appendChild(messageElement);
-            });
-
-            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-            console.log('Messages loaded:', messages.length);
         }
 
         // Global variables for messaging
