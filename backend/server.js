@@ -81,7 +81,7 @@ try {
     console.log('- ENDPOINT value:', config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'undefined');
     
     if (config.AZURE_DOCUMENT_INTELLIGENCE_KEY && config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
-        documentClient = DocumentIntelligenceClient(
+        documentClient = new DocumentIntelligenceClient(
             config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
             new AzureKeyCredential(config.AZURE_DOCUMENT_INTELLIGENCE_KEY)
         );
@@ -93,7 +93,8 @@ try {
     }
 } catch (error) {
     console.log('❌ Azure Document Intelligence initialization failed:', error.message);
-    console.log('❌ Full error:', error);
+    console.log('❌ Full error details:', error);
+    console.log('❌ Stack trace:', error.stack);
 }
 
 // Initialize Azure Face client
@@ -118,7 +119,8 @@ try {
     }
 } catch (error) {
     console.log('❌ Azure Face API initialization failed:', error.message);
-    console.log('❌ Full error:', error);
+    console.log('❌ Full error details:', error);
+    console.log('❌ Stack trace:', error.stack);
 }
 
 // Configure multer for file uploads
@@ -1372,13 +1374,14 @@ function reinitializeAzureClients() {
     // Try to reinitialize Document Intelligence if it's not available
     if (!documentClient && currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY && currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
         try {
-            documentClient = DocumentIntelligenceClient(
-                config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
-                new AzureKeyCredential(config.AZURE_DOCUMENT_INTELLIGENCE_KEY)
+            documentClient = new DocumentIntelligenceClient(
+                currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
+                new AzureKeyCredential(currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY)
             );
             console.log('✅ Azure Document Intelligence reinitialized successfully');
         } catch (error) {
             console.log('❌ Azure Document Intelligence reinitialization failed:', error.message);
+            console.log('❌ Full error details:', error);
         }
     }
     
@@ -1392,6 +1395,7 @@ function reinitializeAzureClients() {
             console.log('✅ Azure Face API reinitialized successfully');
         } catch (error) {
             console.log('❌ Azure Face API reinitialization failed:', error.message);
+            console.log('❌ Full error details:', error);
         }
     }
     
