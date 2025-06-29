@@ -91,6 +91,16 @@ class AINegotiationEngine {
                 "Excellent! I'm ready to move in tomorrow night. What time would be convenient for you? I'll bring all required documentation.",
                 "Outstanding! Tomorrow evening works great. What time should I plan to arrive? I have everything prepared.",
                 "Fantastic! Tomorrow night is perfect for move-in. What time should we meet? I'll bring all necessary paperwork and payments."
+            ],
+            timingPostponement: [
+                "No problem at all! I completely understand you're busy. Please reach out when you're free to discuss - I'm flexible with timing.",
+                "Of course! Take your time. I'm very interested and happy to wait until you're available to chat.",
+                "Absolutely! I respect your schedule. Just let me know when works better for you.",
+                "No worries! I understand you're not available right now. Feel free to contact me whenever you're free.",
+                "That's perfectly fine! I'm flexible and can discuss whenever it's convenient for you.",
+                "Understood! I appreciate you letting me know. I'll wait to hear from you when you have time.",
+                "No rush at all! I know schedules can be busy. Please reach out when you're available.",
+                "Completely understand! I'm patient and ready to discuss whenever you're free."
             ]
         };
     }
@@ -840,6 +850,12 @@ class AINegotiationEngine {
             - If they show flexibility ("might consider"): makesCounterOffer=true
             - Consider context: if discussing price and mention number, likely counter-offer
             
+            TIMING POSTPONEMENT DETECTION:
+            - "not right now", "busy", "couple hours", "when I'm free", "later", "in a bit" = responseStrategy: "timing_postponement"
+            - "can we discuss later", "give me some time", "not available now", "talk in a few hours" = timing respect needed
+            - "I'm busy", "not free", "can't talk now", "call back later" = postponement request
+            - Should acknowledge their schedule and express willingness to wait respectfully
+            
             MEETING COORDINATION DETECTION:
             - "let's meet", "we can do it tonight", "sounds great", "tonight", "today" = meeting logistics phase
             - "when can we", "what time", "where should", "I'm available" = scheduling discussion
@@ -900,7 +916,26 @@ class AINegotiationEngine {
             const isAskingForIncrease = /\b(can you|could you|would you).*(raise|increase|go up|higher)/i.test(replyContent) ||
                                       /\b(raise it|increase it|go higher|bump it up)/i.test(replyContent);
             
-            console.log('🔧 Fallback analysis - hasAcceptanceWords:', hasAcceptanceWords, 'isAskingForIncrease:', isAskingForIncrease, 'for:', replyLower);
+            // Check for timing postponement requests
+            const isTimingPostponement = /\b(not right now|busy|couple hours|when i\'?m free|later|in a bit|can we discuss later|give me some time|not available now|talk in a few hours|i\'?m busy|not free|can\'?t talk now|call back later)\b/i.test(replyContent);
+            
+            console.log('🔧 Fallback analysis - hasAcceptanceWords:', hasAcceptanceWords, 'isAskingForIncrease:', isAskingForIncrease, 'isTimingPostponement:', isTimingPostponement, 'for:', replyLower);
+            
+            // Handle timing postponement first - overrides other responses
+            if (isTimingPostponement) {
+                return {
+                    sentiment: 'neutral',
+                    priceOffered: null,
+                    acceptsOffer: false,
+                    makesCounterOffer: false,
+                    shouldRespond: true,
+                    isFinalized: false,
+                    agreedPrice: null,
+                    responseStrategy: 'timing_postponement',
+                    negotiationPhase: 'postponed',
+                    originalReply: replyContent
+                };
+            }
             
             return {
                 sentiment: seemsPositive || isAskingForIncrease ? 'positive' : 'neutral',
@@ -967,6 +1002,11 @@ class AINegotiationEngine {
                 }
                 
                 return this.generateSecurityDepositResponse(finalPrice, negotiationId, roundNumber);
+            }
+
+            if (analysis.responseStrategy === 'timing_postponement') {
+                console.log('⏰ Generating timing postponement response');
+                return this.generateTimingPostponementResponse(negotiationId, roundNumber);
             }
 
             if (analysis.responseStrategy === 'move_in_logistics') {
@@ -3056,6 +3096,37 @@ class AINegotiationEngine {
         const responseIndex = roundNumber % templates.length;
         
         return this.formatMessage(templates[responseIndex]);
+    }
+
+    // Generate timing postponement response when landlord is busy
+    generateTimingPostponementResponse(negotiationId, roundNumber) {
+        try {
+            const templates = this.responseTemplates.timingPostponement;
+            const usedResponses = this.conversationalMemory.get(negotiationId) || new Set();
+            
+            // Select unused template or fallback to random if all used
+            let selectedTemplate;
+            const availableTemplates = templates.filter(template => !usedResponses.has(template));
+            
+            if (availableTemplates.length > 0) {
+                selectedTemplate = availableTemplates[roundNumber % availableTemplates.length];
+            } else {
+                // All templates used, pick random
+                selectedTemplate = templates[roundNumber % templates.length];
+                usedResponses.clear(); // Reset memory for this conversation
+            }
+            
+            // Mark template as used
+            usedResponses.add(selectedTemplate);
+            this.conversationalMemory.set(negotiationId, usedResponses);
+            
+            console.log(`⏰ Selected timing postponement response: "${selectedTemplate}"`);
+            return selectedTemplate;
+            
+        } catch (error) {
+            console.error('Error generating timing postponement response:', error);
+            return "No problem at all! I completely understand you're busy. Please reach out when you're free to discuss - I'm flexible with timing.";
+        }
     }
 
     // Generate response to increase requests like "can you raise it"
