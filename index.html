@@ -6,16 +6,38 @@
     <title>RoomFinderAI - AI-Powered Rental Search & Negotiation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.halo.min.js"></script>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         
-        /* Hero section with gradient background */
+        /* Revolutionary 3D Hero section */
         .hero-gradient {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #ff6b6b 100%);
             position: relative;
             overflow: hidden;
+            min-height: 100vh;
+        }
+        
+        .hero-3d-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        #three-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
         }
         
         .hero-gradient::before {
@@ -28,43 +50,72 @@
             background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.05"><circle cx="30" cy="30" r="2"/></g></g></svg>');
         }
         
-        /* Glass morphism cards */
+        /* Enhanced glass morphism cards with 3D effects */
         .glass-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            perspective: 1000px;
         }
         
         .glass-card:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-12px) rotateX(5deg);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2), 0 0 30px rgba(102, 126, 234, 0.3);
         }
         
-        /* Feature cards */
+        /* Revolutionary 3D Feature cards */
         .feature-card {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            border: 1px solid #f1f5f9;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), 0 0 40px rgba(102, 126, 234, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transform-style: preserve-3d;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(240, 147, 251, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .feature-card:hover::before {
+            opacity: 1;
         }
         
         .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-            border-color: #3b82f6;
+            transform: translateY(-15px) rotateX(5deg) rotateY(5deg);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2), 0 0 60px rgba(102, 126, 234, 0.3);
+            border-color: rgba(102, 126, 234, 0.5);
         }
         
-        /* Animated gradient text */
+        /* Revolutionary animated gradient text */
         .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #ff6b6b 100%);
+            background-size: 200% 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
         
         /* Floating animation */
@@ -138,22 +189,65 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
         }
         
-        /* CTA Button styles */
+        /* Revolutionary 3D CTA Button styles */
         .cta-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 100%);
             border: none;
-            border-radius: 50px;
-            padding: 1rem 2.5rem;
+            border-radius: 60px;
+            padding: 1.2rem 3rem;
             color: white;
-            font-weight: 600;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            font-weight: 700;
+            font-size: 1.2rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4), 0 0 20px rgba(240, 147, 251, 0.3);
+            transform-style: preserve-3d;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .cta-button:hover::before {
+            left: 100%;
         }
         
         .cta-button:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6), 0 0 30px rgba(240, 147, 251, 0.5);
+        }
+        
+        /* Modern input styling for 3D effects */
+        .modern-input {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 15px;
+            padding: 1rem 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            font-weight: 500;
+        }
+        
+        .modern-input:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.8);
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3), 0 0 20px rgba(240, 147, 251, 0.2);
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        /* Enhanced 3D rotation utilities */
+        .rotate-y-5:hover {
+            transform: rotateY(5deg);
         }
         
         /* Mobile responsiveness */
@@ -161,6 +255,7 @@
             .hero-content { text-align: center; }
             .feature-grid { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .hero-3d-container { display: none; }
         }
         
         /* Legacy styles for compatibility */
@@ -171,12 +266,40 @@
             transform: translateY(-4px);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
+        /* Revolutionary AI Button with 3D effects */
         #aiButton {
-            transition: transform 0.3s ease-in-out, box-shadow 0.2s ease-in-out;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 100%);
+            border: none;
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4), 0 0 20px rgba(240, 147, 251, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            position: relative;
+            overflow: hidden;
         }
+        
+        #aiButton::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
+            transition: all 0.3s ease;
+            transform: translate(-50%, -50%);
+        }
+        
         #aiButton:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-6px) scale(1.1) rotateY(15deg);
+            box-shadow: 0 20px 50px rgba(102, 126, 234, 0.6), 0 0 40px rgba(240, 147, 251, 0.5);
+        }
+        
+        #aiButton:hover::before {
+            width: 100px;
+            height: 100px;
         }
         .custom-autocomplete {
             position: absolute;
@@ -239,64 +362,67 @@
         </nav>
     </header>
 
-    <!-- Hero Section -->
+    <!-- Revolutionary 3D Hero Section -->
     <section id="home" class="hero-gradient text-white py-20 relative z-10">
+        <div class="hero-3d-container">
+            <canvas id="three-canvas"></canvas>
+        </div>
         <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
             <div class="grid lg:grid-cols-2 gap-12 items-center">
                 <div class="hero-content">
                     <h1 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
-                        <span class="block">Find Your Perfect</span>
-                        <span class="block gradient-text">Rental with AI</span>
+                        <span class="block animate-pulse">Find Your Perfect</span>
+                        <span class="block gradient-text text-transparent bg-clip-text">🏠 Rental with AI 🤖</span>
                     </h1>
-                    <p class="text-xl sm:text-2xl mb-8 text-gray-100 leading-relaxed">
-                        Smart room searching meets intelligent price negotiation. Let our AI find and negotiate the best rental deals automatically.
+                    <p class="text-xl sm:text-2xl mb-8 text-gray-100 leading-relaxed backdrop-blur-sm bg-black/20 p-4 rounded-xl">
+                        🚀 Revolutionary AI-powered rental platform with 3D property visualization and intelligent price negotiation. Experience the future of real estate today!
                     </p>
-                    <div class="flex flex-col sm:flex-row gap-4 mb-8">
-                        <button onclick="window.location.href='/ai-negotiator'" class="cta-button">
-                            🤖 Try AI Negotiator
+                    <div class="flex flex-col sm:flex-row gap-6 mb-8">
+                        <button onclick="window.location.href='/ai-negotiator'" class="cta-button relative overflow-hidden">
+                            🤖 Experience AI Magic
                         </button>
-                        <button onclick="searchRooms()" class="bg-white text-gray-800 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300">
-                            Start Searching
+                        <button onclick="searchRooms()" class="bg-white/20 backdrop-blur-md text-white px-8 py-4 rounded-full font-semibold hover:bg-white/30 hover:scale-105 transition-all duration-300 border border-white/30">
+                            🔍 Explore 3D Properties
                         </button>
                     </div>
                     
-                    <!-- Quick stats -->
+                    <!-- Revolutionary stats with 3D effects -->
                     <div class="grid grid-cols-3 gap-6 mt-12">
-                        <div class="text-center">
-                            <div class="text-3xl font-bold mb-2">1K+</div>
-                            <div class="text-sm text-gray-200">Successful Negotiations</div>
+                        <div class="text-center glass-card p-4 hover:scale-105 transition-all duration-300">
+                            <div class="text-4xl font-bold mb-2 gradient-text">1K+</div>
+                            <div class="text-sm text-gray-100">🎯 Successful Negotiations</div>
                         </div>
-                        <div class="text-center">
-                            <div class="text-3xl font-bold mb-2">15%</div>
-                            <div class="text-sm text-gray-200">Average Savings</div>
+                        <div class="text-center glass-card p-4 hover:scale-105 transition-all duration-300">
+                            <div class="text-4xl font-bold mb-2 gradient-text">25%</div>
+                            <div class="text-sm text-gray-100">💰 Average Savings</div>
                         </div>
-                        <div class="text-center">
-                            <div class="text-3xl font-bold mb-2">24/7</div>
-                            <div class="text-sm text-gray-200">AI Assistant</div>
+                        <div class="text-center glass-card p-4 hover:scale-105 transition-all duration-300">
+                            <div class="text-4xl font-bold mb-2 gradient-text">24/7</div>
+                            <div class="text-sm text-gray-100">🤖 AI Assistant</div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="relative">
-                    <!-- AI Demo Preview -->
-                    <div class="glass-card p-6 float-animation">
+                    <!-- Revolutionary 3D AI Demo Preview -->
+                    <div class="glass-card p-6 float-animation hover:rotate-y-5 transition-all duration-500">
                         <div class="mb-4">
                             <div class="flex items-center mb-3">
-                                <div class="w-3 h-3 bg-red-400 rounded-full mr-2"></div>
-                                <div class="w-3 h-3 bg-yellow-400 rounded-full mr-2"></div>
-                                <div class="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
-                                <span class="text-sm text-gray-200 ml-2">AI Negotiator</span>
+                                <div class="w-4 h-4 bg-gradient-to-r from-red-400 to-red-600 rounded-full mr-2 animate-pulse"></div>
+                                <div class="w-4 h-4 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full mr-2 animate-pulse"></div>
+                                <div class="w-4 h-4 bg-gradient-to-r from-green-400 to-green-600 rounded-full mr-2 animate-pulse"></div>
+                                <span class="text-sm text-gray-100 ml-2 font-semibold">🧠 AI Negotiator Pro</span>
                             </div>
                         </div>
-                        <div class="space-y-3">
-                            <div class="chat-bubble">
-                                🤖 Found 3 apartments under $1500 in Toronto. Negotiating prices now...
+                        <div class="space-y-4">
+                            <div class="chat-bubble bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg hover:scale-105 transition-all duration-300">
+                                🤖 Found 5 luxury apartments under $1500 in Toronto. Analyzing market data and negotiating optimal prices...
                             </div>
-                            <div class="chat-bubble user">
-                                Great! What's the best deal?
+                            <div class="chat-bubble user bg-gradient-to-r from-gray-600 to-gray-700 shadow-lg hover:scale-105 transition-all duration-300">
+                                Amazing! Show me the best 3D property tour!
                             </div>
-                            <div class="chat-bubble">
-                                ✅ Negotiated $1200/month (was $1400) for 2BR downtown apartment!
+                            <div class="chat-bubble bg-gradient-to-r from-green-500 to-teal-600 shadow-lg hover:scale-105 transition-all duration-300">
+                                ✅ Negotiated $1100/month (was $1400) for luxury 2BR downtown! 🏠 3D tour ready!
                             </div>
                         </div>
                     </div>
@@ -318,59 +444,59 @@
             </div>
             
             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-                <!-- AI Negotiator Feature -->
-                <div class="feature-card text-center">
-                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <!-- Revolutionary AI Negotiator Feature -->
+                <div class="feature-card text-center relative z-10">
+                    <div class="w-20 h-20 bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl hover:scale-110 transition-all duration-300">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">🤖 AI Negotiator</h3>
-                    <p class="text-gray-600 mb-6">Our AI contacts landlords and negotiates better prices automatically, saving you up to 15% on rent.</p>
-                    <a href="/ai-negotiator" class="text-blue-600 font-semibold hover:text-blue-700">Try Now →</a>
+                    <h3 class="text-xl font-bold gradient-text mb-4">🤖 AI Negotiator Pro</h3>
+                    <p class="text-gray-700 mb-6 relative z-10">Revolutionary AI contacts landlords and negotiates better prices automatically, saving you up to 25% on rent with 3D property analysis.</p>
+                    <a href="/ai-negotiator" class="inline-block px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full font-semibold hover:scale-105 transition-all duration-300 shadow-lg">Experience Magic →</a>
                 </div>
                 
-                <!-- Smart Search Feature -->
-                <div class="feature-card text-center">
-                    <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <!-- 3D Smart Search Feature -->
+                <div class="feature-card text-center relative z-10">
+                    <div class="w-20 h-20 bg-gradient-to-r from-green-500 via-teal-600 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl hover:scale-110 transition-all duration-300">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">🔍 Smart Search</h3>
-                    <p class="text-gray-600 mb-6">Advanced algorithms search multiple platforms to find rentals that perfectly match your criteria.</p>
-                    <a href="/listings" class="text-blue-600 font-semibold hover:text-blue-700">Search Now →</a>
+                    <h3 class="text-xl font-bold gradient-text mb-4">🔍 3D Smart Search</h3>
+                    <p class="text-gray-700 mb-6 relative z-10">Next-gen algorithms with 3D visualization search multiple platforms to find perfect rentals with immersive property tours.</p>
+                    <a href="/listings" class="inline-block px-6 py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-full font-semibold hover:scale-105 transition-all duration-300 shadow-lg">Explore 3D →</a>
                 </div>
                 
-                <!-- Market Analysis Feature -->
-                <div class="feature-card text-center">
-                    <div class="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <!-- 3D Market Analysis Feature -->
+                <div class="feature-card text-center relative z-10">
+                    <div class="w-20 h-20 bg-gradient-to-r from-orange-500 via-red-600 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl hover:scale-110 transition-all duration-300">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">📊 Market Analysis</h3>
-                    <p class="text-gray-600 mb-6">Get real-time market insights and fair price recommendations based on current rental data.</p>
-                    <a href="/pricing" class="text-blue-600 font-semibold hover:text-blue-700">View Pricing →</a>
+                    <h3 class="text-xl font-bold gradient-text mb-4">📊 3D Market Intel</h3>
+                    <p class="text-gray-700 mb-6 relative z-10">Revolutionary 3D market visualization with real-time insights and fair price recommendations powered by advanced AI analytics.</p>
+                    <a href="/pricing" class="inline-block px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full font-semibold hover:scale-105 transition-all duration-300 shadow-lg">View 3D Data →</a>
                 </div>
                 
-                <!-- Real-time Messaging Feature -->
-                <div class="feature-card text-center">
-                    <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <!-- 3D Smart Messaging Feature -->
+                <div class="feature-card text-center relative z-10">
+                    <div class="w-20 h-20 bg-gradient-to-r from-purple-500 via-pink-600 to-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl hover:scale-110 transition-all duration-300">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">💬 Smart Messaging</h3>
-                    <p class="text-gray-600 mb-6">Seamless communication system with landlords, including AI-assisted message suggestions.</p>
-                    <a href="/profile" class="text-blue-600 font-semibold hover:text-blue-700">View Messages →</a>
+                    <h3 class="text-xl font-bold gradient-text mb-4">💬 3D Messaging Hub</h3>
+                    <p class="text-gray-700 mb-6 relative z-10">Immersive communication platform with 3D chat interface, AI-powered message optimization, and real-time translation.</p>
+                    <a href="/profile" class="inline-block px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-full font-semibold hover:scale-105 transition-all duration-300 shadow-lg">Enter Hub →</a>
                 </div>
             </div>
         </div>
     </section>
     
-    <!-- Interactive Demo Section -->
-    <section class="py-20 bg-gray-50">
+    <!-- Interactive Demo Section with 3D Background -->
+    <section id="vanta-bg" class="py-20 bg-gray-50 relative overflow-hidden">
         <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
@@ -382,58 +508,58 @@
             <div class="demo-container">
                 <div class="grid lg:grid-cols-2 gap-12 items-center">
                     <div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-6">Try the AI Search</h3>
-                        <div class="bg-white rounded-xl p-6 shadow-lg">
+                        <h3 class="text-2xl font-bold gradient-text mb-6">🚀 Try the Revolutionary AI Search</h3>
+                        <div class="glass-card p-6">
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">What are you looking for?</label>
-                                    <input type="text" placeholder="I need a 2-bedroom apartment under $1500 in Toronto" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <input type="text" placeholder="I need a luxury 3D-viewable 2-bedroom apartment under $1500 in Toronto" class="modern-input w-full">
                                 </div>
-                                <button onclick="searchRooms()" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300">
-                                    🤖 Start AI Search
+                                <button onclick="searchRooms()" class="cta-button w-full">
+                                    🤖 Start Revolutionary AI Search
                                 </button>
                             </div>
                         </div>
                     </div>
                     
                     <div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-6">Live Negotiation Preview</h3>
-                        <div class="bg-white rounded-xl p-6 shadow-lg max-h-80 overflow-y-auto">
+                        <h3 class="text-2xl font-bold gradient-text mb-6">🎥 Live 3D Negotiation Preview</h3>
+                        <div class="glass-card p-6 max-h-80 overflow-y-auto">
                             <div class="space-y-4">
                                 <div class="flex items-start space-x-3">
                                     <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                                         <span class="text-white text-sm font-bold">AI</span>
                                     </div>
-                                    <div class="bg-blue-50 rounded-lg p-3 flex-1">
-                                        <p class="text-sm">Found 3 matching properties! Contacting landlords now...</p>
+                                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 flex-1 border border-blue-200">
+                                        <p class="text-sm font-medium">🏠 Found 5 luxury properties with 3D tours! Contacting landlords now...</p>
                                     </div>
                                 </div>
                                 <div class="flex items-start space-x-3">
                                     <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
                                         <span class="text-white text-sm font-bold">L</span>
                                     </div>
-                                    <div class="bg-gray-50 rounded-lg p-3 flex-1">
-                                        <p class="text-sm">Hi! The rent is $1400/month for the 2BR apartment.</p>
+                                    <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 flex-1 border border-gray-200">
+                                        <p class="text-sm font-medium">💬 Hi! The rent is $1400/month for the 2BR apartment with 3D virtual tour.</p>
                                     </div>
                                 </div>
                                 <div class="flex items-start space-x-3">
                                     <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                                         <span class="text-white text-sm font-bold">AI</span>
                                     </div>
-                                    <div class="bg-blue-50 rounded-lg p-3 flex-1">
-                                        <p class="text-sm">Based on market data, would you consider $1200? My client is qualified and ready to move in.</p>
+                                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 flex-1 border border-blue-200">
+                                        <p class="text-sm font-medium">📊 Based on 3D market analysis, would you consider $1100? My client is qualified with perfect credit!</p>
                                     </div>
                                 </div>
                                 <div class="flex items-start space-x-3">
                                     <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
                                         <span class="text-white text-sm font-bold">L</span>
                                     </div>
-                                    <div class="bg-gray-50 rounded-lg p-3 flex-1">
-                                        <p class="text-sm">That works! Let's proceed with $1200/month.</p>
+                                    <div class="bg-gradient-to-r from-green-50 to-teal-50 rounded-lg p-3 flex-1 border border-green-200">
+                                        <p class="text-sm font-medium">✅ Perfect! Let's proceed with $1100/month. 3D lease signing ready!</p>
                                     </div>
                                 </div>
-                                <div class="bg-green-100 border border-green-200 rounded-lg p-3">
-                                    <p class="text-sm text-green-800 font-medium">✅ Negotiation successful! Saved $200/month ($2,400/year)</p>
+                                <div class="bg-gradient-to-r from-green-100 to-teal-100 border-2 border-green-300 rounded-lg p-4 shadow-lg">
+                                    <p class="text-sm text-green-800 font-bold">✅ Revolutionary AI negotiation successful! Saved $300/month ($3,600/year) + 3D tour included!</p>
                                 </div>
                             </div>
                         </div>
@@ -476,27 +602,27 @@
         </div>
     </section>
     
-    <!-- Quick Search Section -->
-    <section class="py-12 bg-white">
+    <!-- Revolutionary Quick Search Section -->
+    <section class="py-12 bg-gradient-to-br from-white via-blue-50 to-purple-50 relative overflow-hidden">
         <div class="w-[90%] max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-8">
                 <h2 class="text-2xl font-bold gradient-text mb-3">Quick Search</h2>
                 <p class="text-gray-600">Start your rental search or add a property listing</p>
             </div>
             
-            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <div class="glass-card p-8 hover:scale-105 transition-all duration-500">
                 <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                     <!-- Location -->
                     <div class="relative">
                         <label for="location" class="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                        <input type="text" id="location" class="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm" placeholder="Toronto, ON" required autocomplete="off" data-autocomplete="off">
+                        <input type="text" id="location" class="modern-input w-full text-sm" placeholder="Toronto, ON - Explore 3D Properties" required autocomplete="off" data-autocomplete="off">
                         <div id="autocomplete-dropdown" class="custom-autocomplete hidden"></div>
                     </div>
                     
                     <!-- Room Type -->
                     <div>
                         <label for="roomType" class="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
-                        <select id="roomType" class="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm" required>
+                        <select id="roomType" class="modern-input w-full text-sm" required>
                             <option value="" disabled selected>Select type</option>
                             <option value="House">House</option>
                             <option value="Apartment">Apartment</option>
@@ -508,7 +634,7 @@
                     <!-- Price -->
                     <div>
                         <label for="price" class="block text-sm font-medium text-gray-700 mb-1">Max Price</label>
-                        <input type="number" id="price" min="0" step="1" class="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm" placeholder="1200" required>
+                        <input type="number" id="price" min="0" step="1" class="modern-input w-full text-sm" placeholder="1200 - AI Market Analysis" required>
                     </div>
                 </div>
                 
@@ -516,22 +642,22 @@
                 <div class="grid md:grid-cols-3 gap-4 mb-6">
                     <div>
                         <label for="bedrooms" class="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
-                        <input type="number" id="bedrooms" min="0" step="1" class="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm" placeholder="Any">
+                        <input type="number" id="bedrooms" min="0" step="1" class="modern-input w-full text-sm" placeholder="Any - 3D Optimized">
                     </div>
                     <div>
                         <label for="size" class="block text-sm font-medium text-gray-700 mb-1">Size (sq ft)</label>
-                        <input type="number" id="size" min="0" step="1" class="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm" placeholder="Any">
+                        <input type="number" id="size" min="0" step="1" class="modern-input w-full text-sm" placeholder="Any - 3D Measured">
                     </div>
                     <div>
                         <label for="amenities" class="block text-sm font-medium text-gray-700 mb-1">Amenities</label>
-                        <input type="text" id="amenities" class="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm" placeholder="WiFi, Parking, etc.">
+                        <input type="text" id="amenities" class="modern-input w-full text-sm" placeholder="WiFi, Parking, 3D Tours, etc.">
                     </div>
                 </div>
                 <!-- Action buttons -->
                 <div class="flex flex-col sm:flex-row gap-3">
-                    <button onclick="searchRooms()" class="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2.5 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition font-semibold text-sm">🔍 Smart Search</button>
-                    <button onclick="askAI()" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-2.5 px-4 rounded-lg hover:from-purple-600 hover:to-pink-700 transition font-semibold text-sm">🤖 Ask AI</button>
-                    <button onclick="addRoom()" class="flex-1 bg-gray-600 text-white py-2.5 px-4 rounded-lg hover:bg-gray-700 transition font-semibold text-sm">➕ Add Listing</button>
+                    <button onclick="searchRooms()" class="flex-1 bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 text-white py-3 px-4 rounded-xl hover:scale-105 hover:shadow-xl transition-all duration-300 font-bold text-sm">🔍 3D Smart Search</button>
+                    <button onclick="askAI()" class="flex-1 bg-gradient-to-r from-purple-500 via-pink-600 to-red-500 text-white py-3 px-4 rounded-xl hover:scale-105 hover:shadow-xl transition-all duration-300 font-bold text-sm">🤖 AI Magic</button>
+                    <button onclick="addRoom()" class="flex-1 bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 text-white py-3 px-4 rounded-xl hover:scale-105 hover:shadow-xl transition-all duration-300 font-bold text-sm">➕ Add 3D Listing</button>
                 </div>
             </div>
         </div>
@@ -544,8 +670,8 @@
         </div>
     </section>
 
-    <!-- Success Stories Section -->
-    <section id="about" class="bg-gradient-to-r from-blue-50 to-purple-50 py-20">
+    <!-- Revolutionary Success Stories Section -->
+    <section id="about" class="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 py-20 relative overflow-hidden">
         <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h2 class="text-4xl font-bold text-gray-900 mb-6">Success Stories</h2>
@@ -553,46 +679,52 @@
             </div>
             
             <div class="grid md:grid-cols-3 gap-8">
-                <div class="bg-white rounded-2xl p-8 shadow-lg">
+                <div class="glass-card p-8 hover:scale-105 hover:rotate-y-5 transition-all duration-500 group">
                     <div class="flex items-center mb-6">
-                        <img src="https://via.placeholder.com/60/4F46E5/FFFFFF?text=S" alt="Sarah" class="w-12 h-12 rounded-full mr-4">
+                        <div class="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-all duration-300">
+                            <span class="text-white font-bold text-lg">S</span>
+                        </div>
                         <div>
-                            <h3 class="font-semibold text-gray-900">Sarah Chen</h3>
-                            <p class="text-gray-600 text-sm">Toronto, ON</p>
+                            <h3 class="font-bold gradient-text">Sarah Chen</h3>
+                            <p class="text-gray-600 text-sm">🏠 Toronto, ON</p>
                         </div>
                     </div>
-                    <blockquote class="text-gray-700 mb-4">
-                        "The AI negotiator saved me $300/month on my downtown apartment. It handled everything while I was at work!"
+                    <blockquote class="text-gray-700 mb-4 italic relative">
+                        "🤖 The revolutionary AI negotiator saved me $400/month on my luxury downtown apartment with 3D virtual tour. It handled everything while I was at work!"
                     </blockquote>
-                    <div class="text-green-600 font-semibold">Saved: $3,600/year</div>
+                    <div class="text-green-600 font-bold text-lg bg-green-50 p-3 rounded-xl">💰 Saved: $4,800/year</div>
                 </div>
                 
-                <div class="bg-white rounded-2xl p-8 shadow-lg">
+                <div class="glass-card p-8 hover:scale-105 hover:rotate-y-5 transition-all duration-500 group">
                     <div class="flex items-center mb-6">
-                        <img src="https://via.placeholder.com/60/10B981/FFFFFF?text=M" alt="Mike" class="w-12 h-12 rounded-full mr-4">
+                        <div class="w-14 h-14 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-all duration-300">
+                            <span class="text-white font-bold text-lg">M</span>
+                        </div>
                         <div>
-                            <h3 class="font-semibold text-gray-900">Mike Rodriguez</h3>
-                            <p class="text-gray-600 text-sm">Vancouver, BC</p>
+                            <h3 class="font-bold gradient-text">Mike Rodriguez</h3>
+                            <p class="text-gray-600 text-sm">🏙️ Vancouver, BC</p>
                         </div>
                     </div>
-                    <blockquote class="text-gray-700 mb-4">
-                        "Found my perfect 2-bedroom condo in just 2 days. The AI searched multiple sites and negotiated the best price."
+                    <blockquote class="text-gray-700 mb-4 italic relative">
+                        "🔍 Found my perfect 2-bedroom luxury condo in just 1 day! The 3D AI searched multiple sites, provided virtual tours, and negotiated the best price."
                     </blockquote>
-                    <div class="text-green-600 font-semibold">Saved: $450/month</div>
+                    <div class="text-green-600 font-bold text-lg bg-green-50 p-3 rounded-xl">💰 Saved: $550/month</div>
                 </div>
                 
-                <div class="bg-white rounded-2xl p-8 shadow-lg">
+                <div class="glass-card p-8 hover:scale-105 hover:rotate-y-5 transition-all duration-500 group">
                     <div class="flex items-center mb-6">
-                        <img src="https://via.placeholder.com/60/F59E0B/FFFFFF?text=A" alt="Amanda" class="w-12 h-12 rounded-full mr-4">
+                        <div class="w-14 h-14 bg-gradient-to-r from-orange-500 to-pink-600 rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-all duration-300">
+                            <span class="text-white font-bold text-lg">A</span>
+                        </div>
                         <div>
-                            <h3 class="font-semibold text-gray-900">Amanda Foster</h3>
-                            <p class="text-gray-600 text-sm">Montreal, QC</p>
+                            <h3 class="font-bold gradient-text">Amanda Foster</h3>
+                            <p class="text-gray-600 text-sm">🎆 Montreal, QC</p>
                         </div>
                     </div>
-                    <blockquote class="text-gray-700 mb-4">
-                        "As a busy grad student, having AI handle the negotiations was a game-changer. Highly recommend!"
+                    <blockquote class="text-gray-700 mb-4 italic relative">
+                        "🎓 As a busy grad student, having the 3D AI handle negotiations with virtual property tours was revolutionary. Highly recommend this magic!"
                     </blockquote>
-                    <div class="text-green-600 font-semibold">Saved: $275/month</div>
+                    <div class="text-green-600 font-bold text-lg bg-green-50 p-3 rounded-xl">💰 Saved: $375/month</div>
                 </div>
             </div>
         </div>
@@ -636,16 +768,156 @@
         </div>
     </footer>
 
-    <!-- AI Button -->
-    <div class="fixed bottom-4 right-4 z-50">
-        <button id="aiButton" onclick="window.location.href='/ai-negotiator'" class="bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition flex items-center justify-center w-16 h-16">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+    <!-- Revolutionary 3D AI Button -->
+    <div class="fixed bottom-6 right-6 z-50">
+        <button id="aiButton" onclick="window.location.href='/ai-negotiator'" class="text-white rounded-full flex items-center justify-center shadow-2xl transition-all duration-300">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
             </svg>
+            <span class="ml-2 font-bold">AI</span>
         </button>
     </div>
 
     <script>
+        // Revolutionary 3D Scene Setup
+        let scene, camera, renderer, houses = [], rotatingCube;
+        
+        function init3DScene() {
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('three-canvas'), alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0);
+            
+            // Create floating 3D houses
+            createFloatingHouses();
+            
+            // Create rotating AI cube
+            createRotatingCube();
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x667eea, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xf093fb, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            scene.add(directionalLight);
+            
+            camera.position.set(0, 0, 10);
+            
+            animate3D();
+        }
+        
+        function createFloatingHouses() {
+            const houseGeometry = new THREE.BoxGeometry(1, 1, 1);
+            const roofGeometry = new THREE.ConeGeometry(0.7, 0.5, 4);
+            
+            for (let i = 0; i < 5; i++) {
+                const houseGroup = new THREE.Group();
+                
+                // House base
+                const houseMaterial = new THREE.MeshLambertMaterial({
+                    color: new THREE.Color().setHSL(Math.random() * 0.3 + 0.5, 0.7, 0.6)
+                });
+                const house = new THREE.Mesh(houseGeometry, houseMaterial);
+                house.position.y = -0.25;
+                houseGroup.add(house);
+                
+                // Roof
+                const roofMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+                roof.position.y = 0.5;
+                roof.rotation.y = Math.PI / 4;
+                houseGroup.add(roof);
+                
+                // Position houses
+                houseGroup.position.x = (Math.random() - 0.5) * 20;
+                houseGroup.position.y = (Math.random() - 0.5) * 10;
+                houseGroup.position.z = (Math.random() - 0.5) * 15;
+                
+                houseGroup.userData = {
+                    originalY: houseGroup.position.y,
+                    floatOffset: Math.random() * Math.PI * 2
+                };
+                
+                houses.push(houseGroup);
+                scene.add(houseGroup);
+            }
+        }
+        
+        function createRotatingCube() {
+            const cubeGeometry = new THREE.BoxGeometry(2, 2, 2);
+            const cubeMaterials = [
+                new THREE.MeshLambertMaterial({ color: 0x667eea }),
+                new THREE.MeshLambertMaterial({ color: 0x764ba2 }),
+                new THREE.MeshLambertMaterial({ color: 0xf093fb }),
+                new THREE.MeshLambertMaterial({ color: 0xff6b6b }),
+                new THREE.MeshLambertMaterial({ color: 0x4ecdc4 }),
+                new THREE.MeshLambertMaterial({ color: 0xffe66d })
+            ];
+            
+            rotatingCube = new THREE.Mesh(cubeGeometry, cubeMaterials);
+            rotatingCube.position.set(8, 3, -5);
+            scene.add(rotatingCube);
+        }
+        
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            
+            // Rotate the AI cube
+            if (rotatingCube) {
+                rotatingCube.rotation.x += 0.01;
+                rotatingCube.rotation.y += 0.02;
+            }
+            
+            // Float the houses
+            houses.forEach((house, index) => {
+                const time = Date.now() * 0.001;
+                house.position.y = house.userData.originalY + Math.sin(time + house.userData.floatOffset) * 0.5;
+                house.rotation.y += 0.005;
+            });
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Initialize 3D scene and Vanta background when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            init3DScene();
+            
+            // Initialize Vanta.js background for demo section
+            if (typeof VANTA !== 'undefined') {
+                setTimeout(() => {
+                    try {
+                        VANTA.HALO({
+                            el: "#vanta-bg",
+                            mouseControls: true,
+                            touchControls: true,
+                            gyroControls: false,
+                            minHeight: 200.00,
+                            minWidth: 200.00,
+                            amplitudeFactor: 1.00,
+                            xOffset: 0.23,
+                            yOffset: -0.09,
+                            size: 1.20,
+                            backgroundColor: 0xf8fafc
+                        });
+                    } catch (e) {
+                        console.log('Vanta.js not available:', e);
+                    }
+                }, 1000);
+            }
+            
+            // Resize handler
+            window.addEventListener('resize', () => {
+                if (camera && renderer) {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                }
+            });
+        });
+        
         // Update authentication section based on login status
         document.addEventListener('DOMContentLoaded', () => {
             const profileImages = [
