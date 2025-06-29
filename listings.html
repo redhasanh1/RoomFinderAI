@@ -2581,7 +2581,7 @@
                         .select('last_read_at')
                         .eq('conversation_id', conv.id)
                         .eq('user_email', currentUser.email)
-                        .single();
+                        .maybeSingle();
 
                     const lastReadAt = readData?.last_read_at || '1970-01-01T00:00:00Z';
 
