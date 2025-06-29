@@ -365,8 +365,7 @@
                                     <p class="text-sm text-gray-600">Upload a government-issued ID</p>
                                 </div>
                             </div>
-                            <input type="file" id="idFileInput" accept="image/*,.pdf" style="display: none;">
-                            <button id="uploadIdBtn" class="modern-button" onclick="selectIdFile()">Upload ID</button>
+                            <button id="uploadIdBtn" class="modern-button" onclick="openVerificationModal()">Upload ID</button>
                         </div>
 
                         <div class="flex items-center justify-between p-4 bg-white rounded-lg border">
@@ -389,6 +388,105 @@
 
         </div>
     </main>
+
+    <!-- ID Verification Modal -->
+    <div id="verificationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">ID Verification</h3>
+                    <button onclick="closeVerificationModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div id="uploadSection" class="space-y-4">
+                    <p class="text-gray-600">Upload a clear photo of your government-issued ID (driver's license, passport, or state ID).</p>
+                    
+                    <!-- Drag and Drop Area -->
+                    <div id="dropArea" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer">
+                        <div class="space-y-2">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="text-sm text-gray-600">
+                                <span class="font-medium text-blue-600">Click to upload</span> or drag and drop
+                            </div>
+                            <p class="text-xs text-gray-500">PNG, JPG, PDF up to 10MB</p>
+                        </div>
+                    </div>
+                    
+                    <input type="file" id="fileInput" accept="image/*,.pdf" class="hidden">
+                    
+                    <div class="flex space-x-3">
+                        <button onclick="selectFile()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            Choose File
+                        </button>
+                        <button onclick="closeVerificationModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Loading Section -->
+                <div id="loadingSection" class="hidden text-center space-y-4">
+                    <div class="animate-spin mx-auto h-12 w-12 text-blue-600">
+                        <svg fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-medium text-gray-900">Verifying your ID...</p>
+                        <p class="text-sm text-gray-600">This may take a few moments</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <p id="progressText" class="text-xs text-gray-500">Uploading...</p>
+                    </div>
+                </div>
+                
+                <!-- Success Section -->
+                <div id="successSection" class="hidden text-center space-y-4">
+                    <div class="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-medium text-gray-900">ID Verified Successfully!</p>
+                        <p class="text-sm text-gray-600">Your government ID has been verified and your account is now secure.</p>
+                    </div>
+                    <button onclick="closeVerificationModal()" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                        Continue
+                    </button>
+                </div>
+                
+                <!-- Error Section -->
+                <div id="errorSection" class="hidden text-center space-y-4">
+                    <div class="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-medium text-gray-900">Verification Failed</p>
+                        <p id="errorMessage" class="text-sm text-gray-600">Something went wrong. Please try again.</p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button onclick="resetModal()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            Try Again
+                        </button>
+                        <button onclick="closeVerificationModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Initialize configuration variables
@@ -719,30 +817,84 @@
         // Initialize notification count
         updateNotificationCount();
 
-        // ID Verification Functions
-        function selectIdFile() {
-            document.getElementById('idFileInput').click();
+        // ID Verification Modal Functions
+        function openVerificationModal() {
+            document.getElementById('verificationModal').classList.remove('hidden');
+            resetModal();
+        }
+
+        function closeVerificationModal() {
+            document.getElementById('verificationModal').classList.add('hidden');
+        }
+
+        function resetModal() {
+            // Hide all sections
+            document.getElementById('uploadSection').classList.remove('hidden');
+            document.getElementById('loadingSection').classList.add('hidden');
+            document.getElementById('successSection').classList.add('hidden');
+            document.getElementById('errorSection').classList.add('hidden');
+            
+            // Reset progress
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressText').textContent = 'Uploading...';
+        }
+
+        function selectFile() {
+            document.getElementById('fileInput').click();
         }
 
         // Handle file selection
-        document.getElementById('idFileInput').addEventListener('change', function(event) {
+        document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
                 uploadIdDocument(file);
             }
         });
 
-        async function uploadIdDocument(file) {
-            const uploadBtn = document.getElementById('uploadIdBtn');
-            const originalText = uploadBtn.textContent;
+        // Drag and drop functionality
+        const dropArea = document.getElementById('dropArea');
+        
+        dropArea.addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
+
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.classList.add('border-blue-400', 'bg-blue-50');
+        });
+
+        dropArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('border-blue-400', 'bg-blue-50');
+        });
+
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('border-blue-400', 'bg-blue-50');
             
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+                    uploadIdDocument(file);
+                } else {
+                    showError('Please upload an image or PDF file.');
+                }
+            }
+        });
+
+        async function uploadIdDocument(file) {
             try {
-                // Show upload progress
-                uploadBtn.textContent = 'Uploading...';
-                uploadBtn.disabled = true;
+                // Show loading section
+                document.getElementById('uploadSection').classList.add('hidden');
+                document.getElementById('loadingSection').classList.remove('hidden');
+                
+                // Simulate progress animation
+                animateProgress();
                 
                 // Get user email from session
-                const userEmail = localStorage.getItem('userEmail');
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const userEmail = currentUser?.email;
                 if (!userEmail) {
                     throw new Error('User email not found. Please log in again.');
                 }
@@ -761,8 +913,11 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    showVerificationSuccess('ID verification successful!');
-                    // Update UI to show verified status
+                    // Show success
+                    document.getElementById('loadingSection').classList.add('hidden');
+                    document.getElementById('successSection').classList.remove('hidden');
+                    
+                    // Update main button status
                     updateIdVerificationStatus('verified');
                 } else {
                     throw new Error(result.error || 'Upload failed');
@@ -770,12 +925,41 @@
                 
             } catch (error) {
                 console.error('ID upload error:', error);
-                showVerificationError('Failed to upload ID: ' + error.message);
-            } finally {
-                // Reset button
-                uploadBtn.textContent = originalText;
-                uploadBtn.disabled = false;
+                showError(error.message);
             }
+        }
+
+        function animateProgress() {
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            let progress = 0;
+            
+            const steps = [
+                { progress: 20, text: 'Uploading file...' },
+                { progress: 50, text: 'Processing document...' },
+                { progress: 80, text: 'Verifying identity...' },
+                { progress: 100, text: 'Almost done...' }
+            ];
+            
+            let currentStep = 0;
+            
+            const updateProgress = () => {
+                if (currentStep < steps.length) {
+                    const step = steps[currentStep];
+                    progressBar.style.width = step.progress + '%';
+                    progressText.textContent = step.text;
+                    currentStep++;
+                    setTimeout(updateProgress, 1000);
+                }
+            };
+            
+            updateProgress();
+        }
+
+        function showError(message) {
+            document.getElementById('loadingSection').classList.add('hidden');
+            document.getElementById('errorSection').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = message;
         }
 
         function updateIdVerificationStatus(status) {
@@ -784,34 +968,8 @@
                 button.textContent = '✓ Verified';
                 button.classList.add('bg-green-600', 'hover:bg-green-700');
                 button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                button.disabled = true;
+                button.onclick = null; // Disable clicking
             }
-        }
-
-        function showVerificationSuccess(message) {
-            // Create success notification
-            const notification = document.createElement('div');
-            notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-
-        function showVerificationError(message) {
-            // Create error notification
-            const notification = document.createElement('div');
-            notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            // Remove after 5 seconds
-            setTimeout(() => {
-                notification.remove();
-            }, 5000);
         }
     </script>
 </body>
