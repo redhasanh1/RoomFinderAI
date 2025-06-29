@@ -174,6 +174,32 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- User Activities table
+CREATE TABLE IF NOT EXISTS user_activities (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_email VARCHAR(255) NOT NULL,
+    activity_type VARCHAR(50) NOT NULL CHECK (activity_type IN ('registered', 'profile_updated', 'listing_created', 'subscription_bought', 'subscription_renewed', 'message_received', 'message_sent')),
+    description TEXT NOT NULL,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    FOREIGN KEY (user_email) REFERENCES users(email) ON DELETE CASCADE
+);
+
+-- Index for user activities
+CREATE INDEX IF NOT EXISTS idx_user_activities_user_email ON user_activities(user_email);
+CREATE INDEX IF NOT EXISTS idx_user_activities_created_at ON user_activities(created_at);
+CREATE INDEX IF NOT EXISTS idx_user_activities_type ON user_activities(activity_type);
+
+-- User Activities policies
+CREATE POLICY "Users can view their own activities" ON user_activities
+    FOR SELECT USING (user_email = current_setting('app.current_user_email', true));
+
+CREATE POLICY "System can create user activities" ON user_activities
+    FOR INSERT WITH CHECK (true);
+
+-- Enable Row Level Security for user_activities
+ALTER TABLE user_activities ENABLE ROW LEVEL SECURITY;
+
 -- Create triggers for updated_at
 CREATE TRIGGER update_users_updated_at 
     BEFORE UPDATE ON users 
