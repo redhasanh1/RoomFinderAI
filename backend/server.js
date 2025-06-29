@@ -231,10 +231,10 @@ function validateListingInput(data) {
 }
 
 // API: Add a new listing
-app.post('/api/listings', (req, res) => {
+app.post('/api/listings', async (req, res) => {
     try {
         console.log('Received listing request:', req.body);
-        const { city, street, postalCode, title, price, houseType, bedrooms, utilities, description, media } = req.body;
+        const { city, street, postalCode, title, price, houseType, bedrooms, utilities, description, media, userEmail } = req.body;
         
         const errors = validateListingInput(req.body);
         if (errors.length > 0) {
@@ -253,10 +253,22 @@ app.post('/api/listings', (req, res) => {
             utilities,
             description,
             media: media || [],
+            userEmail: userEmail || 'unknown',
             createdAt: new Date().toISOString(),
         };
 
         listings.push(listing);
+
+        // Log listing creation activity
+        if (userEmail) {
+            await logUserActivity(userEmail, 'listing_created', `Created new listing: ${title}`, {
+                listing_id: listing.id,
+                city: city,
+                price: price,
+                bedrooms: bedrooms
+            });
+        }
+
         res.status(201).json({ message: 'Listing added successfully', listing });
     } catch (error) {
         console.error('Error in /api/listings:', error.message);
@@ -499,6 +511,12 @@ app.post('/api/verify-email', async (req, res) => {
             }
         }
 
+        // Log user registration activity
+        await logUserActivity(user.email, 'registered', 'User account created successfully', {
+            firstName: user.firstName,
+            lastName: user.lastName
+        });
+
         // Clean up verification code
         emailVerificationCodes.delete(email);
 
@@ -553,15 +571,24 @@ app.post('/api/login', async (req, res) => {
 });
 
 // API: AI Negotiator chat (placeholder)
-app.post('/api/ai-negotiator', (req, res) => {
+app.post('/api/ai-negotiator', async (req, res) => {
     try {
-        const { message } = req.body;
+        const { message, userEmail } = req.body;
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
         }
 
         // Placeholder: In production, integrate with an AI model
         const response = `AI Negotiator: I received your message: "${message}". How can I assist you with pricing tips, negotiation strategies, or adding a listing?`;
+        
+        // Log AI negotiator usage
+        if (userEmail) {
+            await logUserActivity(userEmail, 'message_sent', `Used AI negotiator for assistance`, {
+                message_length: message.length,
+                type: 'ai_negotiator'
+            });
+        }
+        
         res.json({ response });
     } catch (error) {
         console.error('Error in /api/ai-negotiator:', error.message);
@@ -687,6 +714,13 @@ app.post('/api/process-payment', async (req, res) => {
             // Payment succeeded but subscription save failed - could handle this differently
         } else {
             console.log('Subscription saved to Supabase:', subscription?.id);
+            
+            // Log subscription activity
+            await logUserActivity(email, 'subscription_bought', `Subscribed to ${plan} plan for $${price}`, {
+                plan_type: plan,
+                amount: price,
+                charge_id: charge.id
+            });
         }
 
         res.json({ 
@@ -798,6 +832,124 @@ app.get('/api/test-supabase', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// Helper function to log user activity
+async function logUserActivity(userEmail, activityType, description, metadata = {}) {
+    try {
+        if (!supabase) {
+            console.log('⚠️ Cannot log activity - Supabase not initialized');
+            return;
+        }
+
+        await supabase.rpc('set_current_user_email', { email: userEmail });
+        
+        const { error } = await supabase
+            .from('user_activities')
+            .insert({
+                user_email: userEmail,
+                activity_type: activityType,
+                description: description,
+                metadata: metadata
+            });
+
+        if (error) {
+            console.error('❌ Failed to log user activity:', error.message);
+        }
+    } catch (error) {
+        console.error('❌ Error logging user activity:', error.message);
+    }
+}
+
+// API endpoint to get user's recent activities
+app.get('/api/user/activities', async (req, res) => {
+    try {
+        const userEmail = req.headers['x-user-email'];
+        
+        if (!userEmail) {
+            return res.status(401).json({ error: 'User email required' });
+        }
+
+        if (!supabase) {
+            return res.status(500).json({ error: 'Database not available' });
+        }
+
+        await supabase.rpc('set_current_user_email', { email: userEmail });
+
+        const { data: activities, error } = await supabase
+            .from('user_activities')
+            .select('*')
+            .eq('user_email', userEmail)
+            .order('created_at', { ascending: false })
+            .limit(4);
+
+        if (error) {
+            console.error('❌ Error fetching user activities:', error.message);
+            return res.status(500).json({ error: 'Failed to fetch activities' });
+        }
+
+        // If no activities found, create some sample activities for the user
+        if (activities.length === 0) {
+            const sampleActivities = [
+                {
+                    user_email: userEmail,
+                    activity_type: 'registered',
+                    description: 'Welcome to RoomFinderAI! Your account has been created successfully.',
+                    metadata: {}
+                }
+            ];
+
+            // Insert sample activities
+            const { error: insertError } = await supabase
+                .from('user_activities')
+                .insert(sampleActivities);
+
+            if (!insertError) {
+                // Fetch the newly created activities
+                const { data: newActivities } = await supabase
+                    .from('user_activities')
+                    .select('*')
+                    .eq('user_email', userEmail)
+                    .order('created_at', { ascending: false })
+                    .limit(4);
+
+                if (newActivities) {
+                    const formattedActivities = newActivities.map(activity => ({
+                        type: activity.activity_type,
+                        message: activity.description,
+                        time: formatTimeAgo(new Date(activity.created_at)),
+                        created_at: activity.created_at
+                    }));
+
+                    return res.json(formattedActivities);
+                }
+            }
+        }
+
+        const formattedActivities = activities.map(activity => ({
+            type: activity.activity_type,
+            message: activity.description,
+            time: formatTimeAgo(new Date(activity.created_at)),
+            created_at: activity.created_at
+        }));
+
+        res.json(formattedActivities);
+    } catch (error) {
+        console.error('❌ Error in activities endpoint:', error.message);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Helper function to format time ago
+function formatTimeAgo(date) {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
+}
 
 // API endpoint to serve client-safe configuration
 app.get('/api/config', (req, res) => {

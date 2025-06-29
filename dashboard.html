@@ -509,23 +509,59 @@
             }
         }
 
-        function loadRecentActivity() {
-            const activities = [
-                { type: 'listing', message: 'Created new listing', time: '2 hours ago' },
-                { type: 'chat', message: 'New message received', time: '4 hours ago' },
-                { type: 'profile', message: 'Profile updated', time: '1 day ago' },
-                { type: 'subscription', message: 'Subscription renewed', time: '3 days ago' }
-            ];
+        async function loadRecentActivity() {
+            try {
+                const userEmail = localStorage.getItem('userEmail');
+                
+                if (!userEmail) {
+                    document.getElementById('recentActivity').innerHTML = `
+                        <div class="text-center py-4">
+                            <p class="text-gray-500">Please log in to see your recent activities</p>
+                        </div>
+                    `;
+                    return;
+                }
 
-            const activityContainer = document.getElementById('recentActivity');
-            activityContainer.innerHTML = activities.map(activity => `
-                <div class="timeline-item">
-                    <div class="flex items-center justify-between">
-                        <p class="text-gray-800 font-medium">${activity.message}</p>
-                        <span class="text-sm text-gray-500">${activity.time}</span>
+                const response = await fetch('/api/user/activities', {
+                    headers: {
+                        'x-user-email': userEmail
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch activities');
+                }
+
+                const activities = await response.json();
+                const activityContainer = document.getElementById('recentActivity');
+                
+                if (activities.length === 0) {
+                    activityContainer.innerHTML = `
+                        <div class="text-center py-4">
+                            <p class="text-gray-500">No recent activities yet</p>
+                            <p class="text-sm text-gray-400 mt-1">Start using the platform to see your activity here</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                activityContainer.innerHTML = activities.map(activity => `
+                    <div class="timeline-item">
+                        <div class="flex items-center justify-between">
+                            <p class="text-gray-800 font-medium">${activity.message}</p>
+                            <span class="text-sm text-gray-500">${activity.time}</span>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            } catch (error) {
+                console.error('Error loading recent activities:', error);
+                document.getElementById('recentActivity').innerHTML = `
+                    <div class="text-center py-4">
+                        <p class="text-gray-500">Unable to load recent activities</p>
+                        <p class="text-sm text-gray-400 mt-1">Please try refreshing the page</p>
+                    </div>
+                `;
+            }
         }
 
         function populateListingsTab(listings) {
