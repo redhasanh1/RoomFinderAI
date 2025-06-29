@@ -382,6 +382,115 @@
             background: transparent !important;
             border: none !important;
         }
+        
+        /* Revolutionary 3D Listing Cards */
+        .listing-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), 0 0 40px rgba(102, 126, 234, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transform-style: preserve-3d;
+            position: relative;
+            overflow: hidden;
+            transform: perspective(1000px) rotateX(5deg) rotateY(5deg);
+        }
+        
+        .listing-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(240, 147, 251, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .listing-card:hover {
+            transform: perspective(1000px) rotateX(10deg) rotateY(10deg) translateY(-20px) scale(1.05);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.2), 0 0 60px rgba(102, 126, 234, 0.3);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+        
+        .listing-card:hover::before {
+            opacity: 1;
+        }
+        
+        .listing-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 20px 20px 0 0;
+            transition: all 0.3s ease;
+        }
+        
+        .listing-card:hover .listing-image {
+            transform: scale(1.1);
+        }
+        
+        /* 3D Property Type Icons */
+        .property-type-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+            margin-right: 8px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .property-type-icon:hover {
+            transform: scale(1.2) rotateY(180deg);
+        }
+        
+        /* Revolutionary button styles */
+        .view-details-btn, .chat-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 100%);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-weight: 700;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .view-details-btn::before, .chat-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .view-details-btn:hover::before, .chat-btn:hover::before {
+            left: 100%;
+        }
+        
+        .view-details-btn:hover, .chat-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        }
+        
+        .chat-btn {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 30%, #6ee7b7 100%);
+        }
+        
+        .chat-btn:hover {
+            box-shadow: 0 15px 40px rgba(16, 185, 129, 0.6);
+        }
     </style>
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen"> <!-- Body background updated -->
@@ -405,10 +514,28 @@
     </header>
 
     <!-- Hero Section -->
-    <section id="home" class="text-white py-20 text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"> <!-- Hero background updated -->
+    <section id="home" class="text-white py-20 text-center relative overflow-hidden" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #ff6b6b 100%);"> <!-- Hero background updated -->
         <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 class="text-4xl sm:text-5xl font-extrabold mb-4">Explore Our Listings</h1>
-            <p class="text-lg sm:text-xl mb-6">Discover and add rental properties tailored to your needs with Room Finder.</p>
+            <h1 class="text-5xl sm:text-6xl font-extrabold mb-6 bg-white bg-clip-text text-transparent animate-pulse">
+                🏠 Explore 3D Listings 🚀
+            </h1>
+            <p class="text-xl sm:text-2xl mb-8 backdrop-blur-sm bg-black/20 p-4 rounded-xl inline-block">
+                🔮 Discover revolutionary 3D rental properties with AI-powered insights and virtual tours!
+            </p>
+            <div class="grid grid-cols-3 gap-6 mt-8 max-w-md mx-auto">
+                <div class="bg-white/20 backdrop-blur-md p-4 rounded-xl hover:scale-110 transition-all duration-300">
+                    <div class="text-3xl font-bold">🏠</div>
+                    <div class="text-sm">3D Houses</div>
+                </div>
+                <div class="bg-white/20 backdrop-blur-md p-4 rounded-xl hover:scale-110 transition-all duration-300">
+                    <div class="text-3xl font-bold">🤖</div>
+                    <div class="text-sm">AI Tours</div>
+                </div>
+                <div class="bg-white/20 backdrop-blur-md p-4 rounded-xl hover:scale-110 transition-all duration-300">
+                    <div class="text-3xl font-bold">👁️</div>
+                    <div class="text-sm">VR Ready</div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -1333,14 +1460,14 @@
                     .catch(err => console.error('Failed to fetch MIME type for', primaryImage, err));
 
                 const listingCard = document.createElement('div');
-                listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden';
+                listingCard.className = 'listing-card relative z-10';
 
                 const hasOwner = !!listing.user_email;
                 listingCard.innerHTML = `
                     <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'">
                     <div class="p-4">
-                        <h3 class="text-lg font-semibold text-gray-800 truncate">${listing.title}</h3>
-                        <p class="text-xl font-bold text-blue-600">$${listing.price.toLocaleString()}/mo</p>
+                        <h3 class="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent truncate">${listing.title}</h3>
+                        <div class="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">$${listing.price.toLocaleString()}</div>
                         <p class="text-gray-600 text-sm">${listing.street}, ${listing.city}, ${listing.postalCode}</p>
                         <div class="flex items-center space-x-2 text-sm text-gray-600 mt-2">
                             <span>${listing.bedrooms} Bed</span>
@@ -1351,8 +1478,12 @@
                         </div>
                         <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
                         <div class="flex space-x-2 mt-4">
-                            <button class="view-details-btn w-1/2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                            <button class="chat-btn w-1/2 bg-green-600 text-white px-4 py-2 rounded-lg transition ${hasOwner ? 'hover:bg-green-700' : ''} font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
+                            <button class="view-details-btn flex-1 px-4 py-3 rounded-xl font-bold text-sm relative z-10" data-listing='${JSON.stringify(listing)}'>
+                                🔍 View 3D Details
+                            </button>
+                            <button class="chat-btn flex-1 px-4 py-3 rounded-xl font-bold text-sm relative z-10 ${hasOwner ? '' : 'opacity-50 cursor-not-allowed'}" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>
+                                💬 AI Chat
+                            </button>
                         </div>
                     </div>
                 `;
@@ -2339,7 +2470,7 @@
 
             const listingCard = document.createElement('div');
             // Tailwind classes like bg-white, rounded-lg, shadow-md, overflow-hidden are applied to listingCard
-            listingCard.className = 'listing-card'; // Custom class for JS targeting and 3D effects
+            listingCard.className = 'listing-card relative z-10'; // Revolutionary 3D listing card
 
             const hasOwner = !!listing.user_email;
             listingCard.innerHTML = `
@@ -2362,8 +2493,7 @@
                     </div>
                 </div>
             `;
-            // Apply Tailwind classes directly here for simplicity, as .listing-card CSS focuses on 3D aspects
-            listingCard.classList.add('bg-white', 'rounded-lg', 'shadow-md', 'overflow-hidden');
+            // Revolutionary 3D card - CSS handles all styling
 
 
             perspectiveContainer.appendChild(listingCard); // Append card to perspective container
