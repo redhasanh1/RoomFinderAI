@@ -21,7 +21,8 @@ try {
         SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.trim(),
         OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim(),
         OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim(),
-        OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || 'gpt-3.5-turbo'
+        OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || 'gpt-3.5-turbo',
+        BREVO_API_KEY: process.env.BREVO_API_KEY?.trim()
     };
 }
 
@@ -75,6 +76,7 @@ const GOOGLE_API_KEY = config.GOOGLE_API_KEY;
 // In-memory database (replace with MongoDB/PostgreSQL in production)
 const listings = [];
 const users = [];
+const emailVerificationCodes = new Map(); // Store verification codes with expiration
 
 // Location overrides for problematic North American cities
 const locationOverrides = {
@@ -286,32 +288,195 @@ app.get('/api/listings/:id', (req, res) => {
     }
 });
 
-// API: User registration
-app.post('/api/register', async (req, res) => {
+// Helper: Generate 6-digit verification code
+function generateVerificationCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Helper: Send email via Brevo
+async function sendVerificationEmail(email, code, firstName) {
     try {
+        const emailData = {
+            sender: {
+                name: "RoomFinderAI",
+                email: "wilmahenning01@gmail.com"
+            },
+            to: [{
+                email: email,
+                name: firstName
+            }],
+            subject: "Verify your RoomFinderAI account",
+            htmlContent: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Email Verification</title>
+                </head>
+                <body style="font-family: 'Inter', Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px;">
+                    <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); overflow: hidden;">
+                        <!-- Header -->
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">RoomFinderAI</h1>
+                            <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0; font-size: 16px;">Verify Your Account</p>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div style="padding: 40px 30px;">
+                            <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hi ${firstName}!</h2>
+                            <p style="color: #64748b; line-height: 1.6; margin: 0 0 30px 0; font-size: 16px;">
+                                Welcome to RoomFinderAI! To complete your registration and start finding your perfect room, please verify your email address using the code below:
+                            </p>
+                            
+                            <!-- Verification Code -->
+                            <div style="text-align: center; margin: 40px 0;">
+                                <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 20px; border-radius: 12px; border: 2px dashed #667eea; display: inline-block;">
+                                    <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px; font-weight: 600;">VERIFICATION CODE</p>
+                                    <p style="margin: 0; font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 4px;">${code}</p>
+                                </div>
+                            </div>
+                            
+                            <p style="color: #64748b; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                                Enter this code on the verification page to activate your account. This code will expire in <strong>10 minutes</strong> for security reasons.
+                            </p>
+                            
+                            <p style="color: #64748b; line-height: 1.6; margin: 0; font-size: 14px;">
+                                If you didn't create an account with RoomFinderAI, please ignore this email.
+                            </p>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div style="background: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <p style="margin: 0; color: #64748b; font-size: 14px;">
+                                © 2025 RoomFinderAI. All rights reserved.
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `
+        };
+
+        const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+            headers: {
+                'accept': 'application/json',
+                'api-key': config.BREVO_API_KEY,
+                'content-type': 'application/json'
+            }
+        });
+
+        console.log('✅ Verification email sent successfully to:', email);
+        return { success: true };
+    } catch (error) {
+        console.error('❌ Error sending verification email:', error.response?.data || error.message);
+        return { success: false, error: error.message };
+    }
+}
+
+// API: Send verification email
+app.post('/api/send-verification', async (req, res) => {
+    try {
+        console.log('📧 Received verification request:', req.body);
         const { firstName, lastName, email, password } = req.body;
+        
         if (!firstName || !lastName || !email || !password) {
+            console.log('❌ Missing required fields');
             return res.status(400).json({ error: 'All fields are required' });
         }
 
+        // Check if user already exists
         const existingUser = users.find(u => u.email === email);
         if (existingUser) {
+            console.log('❌ User already exists:', email);
             return res.status(400).json({ error: 'Email already registered' });
         }
 
+        // Check if Brevo API key is available
+        if (!config.BREVO_API_KEY) {
+            console.log('❌ BREVO_API_KEY not found in config');
+            return res.status(500).json({ error: 'Email service not configured' });
+        }
+
+        console.log('✅ Generating verification code...');
+        // Generate verification code
+        const code = generateVerificationCode();
+        const expirationTime = Date.now() + 10 * 60 * 1000; // 10 minutes from now
+
+        // Store code with user data and expiration
+        emailVerificationCodes.set(email, {
+            code,
+            expirationTime,
+            userData: { firstName, lastName, email, password },
+            verified: false
+        });
+
+        console.log('📤 Sending verification email to:', email);
+        // Send verification email
+        const emailResult = await sendVerificationEmail(email, code, firstName);
+        
+        if (emailResult.success) {
+            console.log('✅ Verification email sent successfully');
+            res.json({ 
+                message: 'Verification code sent to your email',
+                email: email 
+            });
+        } else {
+            console.log('❌ Failed to send verification email:', emailResult.error);
+            // Clean up the stored code if email failed
+            emailVerificationCodes.delete(email);
+            res.status(500).json({ error: 'Failed to send verification email: ' + (emailResult.error || 'Unknown error') });
+        }
+    } catch (error) {
+        console.error('❌ Error in /api/send-verification:', error.message);
+        res.status(500).json({ error: 'Failed to send verification code: ' + error.message });
+    }
+});
+
+// API: Verify email code and complete registration
+app.post('/api/verify-email', async (req, res) => {
+    try {
+        const { email, code } = req.body;
+        
+        if (!email || !code) {
+            return res.status(400).json({ error: 'Email and verification code are required' });
+        }
+
+        // Get stored verification data
+        const verificationData = emailVerificationCodes.get(email);
+        
+        if (!verificationData) {
+            return res.status(400).json({ error: 'No verification code found for this email' });
+        }
+
+        // Check if code has expired
+        if (Date.now() > verificationData.expirationTime) {
+            emailVerificationCodes.delete(email);
+            return res.status(400).json({ error: 'Verification code has expired. Please request a new one.' });
+        }
+
+        // Check if code matches
+        if (verificationData.code !== code) {
+            return res.status(400).json({ error: 'Invalid verification code' });
+        }
+
+        // Code is valid, create the user account
+        const { firstName, lastName, password } = verificationData.userData;
         const hashedPassword = await bcrypt.hash(password, 10);
+        
         const user = {
             id: uuidv4(),
             firstName,
             lastName,
             email,
             password: hashedPassword,
+            emailVerified: true,
             createdAt: new Date().toISOString(),
         };
 
         users.push(user);
 
-        // Also create profile in Supabase for chat functionality
+        // Create profile in Supabase for chat functionality
         if (supabase) {
             try {
                 const { error: profileError } = await supabase
@@ -334,11 +499,32 @@ app.post('/api/register', async (req, res) => {
             }
         }
 
-        res.status(201).json({ message: 'User registered successfully' });
+        // Clean up verification code
+        emailVerificationCodes.delete(email);
+
+        res.status(201).json({ 
+            message: 'Email verified and account created successfully',
+            user: {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                emailVerified: user.emailVerified
+            }
+        });
     } catch (error) {
-        console.error('Error in /api/register:', error.message);
-        res.status(500).json({ error: 'Failed to register user' });
+        console.error('Error in /api/verify-email:', error.message);
+        res.status(500).json({ error: 'Failed to verify email and create account' });
     }
+});
+
+// API: User registration (Deprecated - use /api/send-verification + /api/verify-email instead)
+app.post('/api/register', async (req, res) => {
+    // Redirect to new email verification flow
+    res.status(400).json({ 
+        error: 'Direct registration is no longer supported. Please use the email verification flow.',
+        redirect: '/api/send-verification'
+    });
 });
 
 // API: User login
