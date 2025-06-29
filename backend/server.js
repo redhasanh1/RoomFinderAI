@@ -67,33 +67,51 @@ try {
 // Initialize Azure Document Intelligence client
 let documentClient;
 try {
+    console.log('🔍 Azure Document Intelligence Config Check:');
+    console.log('- KEY exists:', !!config.AZURE_DOCUMENT_INTELLIGENCE_KEY);
+    console.log('- ENDPOINT exists:', !!config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT);
+    console.log('- KEY length:', config.AZURE_DOCUMENT_INTELLIGENCE_KEY?.length || 0);
+    console.log('- ENDPOINT value:', config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'undefined');
+    
     if (config.AZURE_DOCUMENT_INTELLIGENCE_KEY && config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
         documentClient = DocumentIntelligenceClient(
             config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
             new AzureKeyCredential(config.AZURE_DOCUMENT_INTELLIGENCE_KEY)
         );
-        console.log('✅ Azure Document Intelligence initialized');
+        console.log('✅ Azure Document Intelligence initialized successfully');
     } else {
         console.log('⚠️ Azure Document Intelligence not initialized - missing credentials');
+        console.log('  - KEY missing:', !config.AZURE_DOCUMENT_INTELLIGENCE_KEY);
+        console.log('  - ENDPOINT missing:', !config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT);
     }
 } catch (error) {
     console.log('❌ Azure Document Intelligence initialization failed:', error.message);
+    console.log('❌ Full error:', error);
 }
 
 // Initialize Azure Face client
 let faceClient;
 try {
+    console.log('🔍 Azure Face API Config Check:');
+    console.log('- KEY exists:', !!config.AZURE_FACE_KEY);
+    console.log('- ENDPOINT exists:', !!config.AZURE_FACE_ENDPOINT);
+    console.log('- KEY length:', config.AZURE_FACE_KEY?.length || 0);
+    console.log('- ENDPOINT value:', config.AZURE_FACE_ENDPOINT || 'undefined');
+    
     if (config.AZURE_FACE_KEY && config.AZURE_FACE_ENDPOINT) {
         faceClient = createFaceClient(
             config.AZURE_FACE_ENDPOINT,
             new FaceCredential(config.AZURE_FACE_KEY)
         );
-        console.log('✅ Azure Face API initialized');
+        console.log('✅ Azure Face API initialized successfully');
     } else {
         console.log('⚠️ Azure Face API not initialized - missing credentials');
+        console.log('  - KEY missing:', !config.AZURE_FACE_KEY);
+        console.log('  - ENDPOINT missing:', !config.AZURE_FACE_ENDPOINT);
     }
 } catch (error) {
     console.log('❌ Azure Face API initialization failed:', error.message);
+    console.log('❌ Full error:', error);
 }
 
 // Configure multer for file uploads
