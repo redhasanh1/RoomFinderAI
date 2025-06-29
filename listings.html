@@ -1597,7 +1597,12 @@
             supabaseConnected: false,
             lastHealthCheck: null,
             setupAttempts: 0,
-            errors: []
+            errors: [],
+            databaseErrors: {
+                constraintViolations: 0,
+                connectionFailures: 0,
+                lastConstraintError: null
+            }
         };
 
         // Comprehensive chat health check function
@@ -1961,6 +1966,13 @@
                 </div>
                 ` : ''}
 
+                <div style="margin-bottom: 8px;">
+                    <strong>Database Stats:</strong><br>
+                    • Constraint Violations: <span style="color: ${chatSystemStatus.databaseErrors.constraintViolations > 0 ? '#fbbf24' : '#4ade80'}">${chatSystemStatus.databaseErrors.constraintViolations}</span><br>
+                    • Connection Failures: <span style="color: ${chatSystemStatus.databaseErrors.connectionFailures > 0 ? '#ef4444' : '#4ade80'}">${chatSystemStatus.databaseErrors.connectionFailures}</span><br>
+                    ${chatSystemStatus.databaseErrors.lastConstraintError ? `• Last Constraint Error: ${chatSystemStatus.databaseErrors.lastConstraintError.toLocaleTimeString()}<br>` : ''}
+                </div>
+
                 ${chatSystemStatus.errors.length > 0 ? `
                 <div style="margin-bottom: 8px; color: #ef4444;">
                     <strong>Recent Errors:</strong><br>
@@ -1993,6 +2005,7 @@
             
             // Test Supabase connection
             if (supabase) {
+                // Test basic connection
                 supabase.from('conversations').select('count').limit(1)
                     .then(result => {
                         console.log('✅ Supabase connection test successful:', result);
@@ -2000,6 +2013,25 @@
                     .catch(error => {
                         console.error('❌ Supabase connection test failed:', error);
                     });
+
+                // Test conversation_reads table specifically (common error source)
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                if (currentUser) {
+                    console.log('🔍 Testing conversation_reads table access...');
+                    supabase.from('conversation_reads')
+                        .select('*')
+                        .eq('user_email', currentUser.email)
+                        .limit(1)
+                        .then(result => {
+                            console.log('✅ conversation_reads table test successful:', result);
+                        })
+                        .catch(error => {
+                            console.error('❌ conversation_reads table test failed:', error);
+                            if (error.message.includes('duplicate key')) {
+                                console.log('🔧 Detected duplicate key constraint issue - this has been handled with fallback logic');
+                            }
+                        });
+                }
             }
             
             updateDiagnosticsContent();
@@ -2828,17 +2860,56 @@
                     conversation_id: conversationId,
                     user_email: currentUser.email,
                     last_read_at: new Date().toISOString()
+                }, {
+                    onConflict: 'conversation_id,user_email'
                 })
                 .then(({ error }) => {
                     if (error) {
                         console.error('❌ Background database update failed:', error);
-                        // If database update fails, remove from locally read set so it can be retried
-                        locallyReadConversations.delete(conversationId);
-                    } else {
-                        console.log('✅ Background database update successful');
-                        // Keep it in the locally read set to prevent future overwrites
-                        // We'll clean it up later when conversation is refreshed from database
+                        
+                        // Track constraint violations
+                        if (error.message && error.message.includes('duplicate key')) {
+                            chatSystemStatus.databaseErrors.constraintViolations++;
+                            chatSystemStatus.databaseErrors.lastConstraintError = new Date();
+                            console.log('📊 Constraint violation tracked. Total violations:', chatSystemStatus.databaseErrors.constraintViolations);
+                        }
+                        
+                        console.log('🔄 Attempting fallback update method...');
+                        
+                        // Fallback: try update first, then insert if not exists
+                        return supabase
+                            .from('conversation_reads')
+                            .update({ last_read_at: new Date().toISOString() })
+                            .eq('conversation_id', conversationId)
+                            .eq('user_email', currentUser.email)
+                            .then(({ data: updateData, error: updateError }) => {
+                                if (updateError || !updateData || updateData.length === 0) {
+                                    console.log('🔄 Update failed or no rows, attempting insert...');
+                                    // If update failed, try insert
+                                    return supabase
+                                        .from('conversation_reads')
+                                        .insert({
+                                            conversation_id: conversationId,
+                                            user_email: currentUser.email,
+                                            last_read_at: new Date().toISOString()
+                                        })
+                                        .then(({ error: insertError }) => {
+                                            if (insertError && !insertError.message.includes('duplicate key')) {
+                                                console.error('❌ Fallback insert failed:', insertError);
+                                                locallyReadConversations.delete(conversationId);
+                                            } else {
+                                                console.log('✅ Fallback method successful');
+                                            }
+                                        });
+                                } else {
+                                    console.log('✅ Fallback update successful');
+                                }
+                            });
                     }
+                })
+                .catch((catchError) => {
+                    console.error('💥 Unexpected error in conversation_reads update:', catchError);
+                    locallyReadConversations.delete(conversationId);
                 });
         };
 
