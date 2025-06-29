@@ -337,7 +337,9 @@
             color: #2563eb;
         }
         .chat-modal {
-            display: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             position: fixed;
             z-index: 1000;
             left: 0;
@@ -346,6 +348,10 @@
             height: 100%;
             overflow: auto;
             background-color: rgba(0,0,0,0.5);
+            opacity: 0;
+            transform: scale(0.9) perspective(800px) rotateX(-15deg);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            pointer-events: none;
         }
         .chat-modal-content {
             background-color: #fff;
@@ -1438,10 +1444,21 @@
             });
 
             document.querySelectorAll('.chat-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const listing = JSON.parse(button.dataset.listing);
-                    startConversation(listing);
-                });
+                if (!button.disabled) {
+                    button.addEventListener('click', () => {
+                        try {
+                            console.log('🎯 Chat button clicked (legacy handler):', button.dataset.listing);
+                            const listing = JSON.parse(button.dataset.listing);
+                            console.log('📋 Parsed listing data:', listing);
+                            startConversation(listing);
+                        } catch (error) {
+                            console.error('❌ Error parsing listing data or starting conversation:', error);
+                            alert('Error opening chat. Please refresh the page and try again.');
+                        }
+                    });
+                } else {
+                    console.log('⚠️ Chat button is disabled (legacy handler) - no owner email specified');
+                }
             });
 
             // Update map with all listings
@@ -2219,7 +2236,8 @@
         }
 
         async function startConversation(listing) {
-            console.log('🚀 Starting conversation for listing:', listing.title);
+            try {
+                console.log('🚀 Starting conversation for listing:', listing?.title || 'Unknown listing');
             
             // Verify authentication
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -2430,7 +2448,25 @@
                     chatMessages.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Failed to load messages</div>';
                 }
             }
+            } catch (error) {
+                console.error('❌ Unexpected error in startConversation:', error);
+                alert('An unexpected error occurred while opening the chat. Please refresh the page and try again.');
+            }
         }
+
+        // Debug function to help troubleshoot chat issues
+        window.debugChatSystem = function() {
+            console.log('🔍 Chat System Debug Information:');
+            console.log('- Chat Modal Element:', !!document.getElementById('chatModal'));
+            console.log('- Chat Close Button:', !!document.querySelector('.chat-close-button'));  
+            console.log('- Chat Input:', !!document.getElementById('chatInput'));
+            console.log('- Chat Send Button:', !!document.getElementById('chatSendBtn'));
+            console.log('- Supabase Client:', !!supabase);
+            console.log('- Current User:', !!localStorage.getItem('currentUser'));
+            console.log('- Chat System Status:', chatSystemStatus);
+            console.log('- Active Chat Buttons:', document.querySelectorAll('.chat-btn:not([disabled])').length);
+            console.log('- Disabled Chat Buttons:', document.querySelectorAll('.chat-btn[disabled]').length);
+        };
 
         async function loadMessages(conversationId) {
             console.log('🔄 Loading messages for conversation:', conversationId);
@@ -2850,7 +2886,7 @@
             document.getElementById('chatTitle').textContent = `Chat with ${otherUserName} about ${listingTitle}`;
             
             await loadMessages(conversationId);
-            document.getElementById('chatModal').style.display = 'block';
+            document.getElementById('chatModal').classList.add('active');
             
             // Update database in background (don't wait)
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -3090,9 +3126,18 @@
 
             if (!chatBtn.disabled) {
                 chatBtn.addEventListener('click', () => {
-                    const listing = JSON.parse(chatBtn.dataset.listing);
-                    startConversation(listing);
+                    try {
+                        console.log('🎯 Chat button clicked for listing:', chatBtn.dataset.listing);
+                        const listing = JSON.parse(chatBtn.dataset.listing);
+                        console.log('📋 Parsed listing data:', listing);
+                        startConversation(listing);
+                    } catch (error) {
+                        console.error('❌ Error parsing listing data or starting conversation:', error);
+                        alert('Error opening chat. Please refresh the page and try again.');
+                    }
                 });
+            } else {
+                console.log('⚠️ Chat button is disabled for listing - no owner email specified');
             }
         }
 
