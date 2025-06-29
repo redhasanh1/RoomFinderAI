@@ -831,14 +831,46 @@ app.get('/api/subscription/:email', async (req, res) => {
             return res.status(400).json({ error: 'Email is required' });
         }
 
-        const { data: subscription, error } = await supabase
+        // Get the most recent subscription regardless of status
+        const { data: allSubs, error: allError } = await supabase
             .from('subscriptions')
             .select('*')
             .eq('email', email)
-            .in('status', ['active', 'canceled'])
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
+            .order('created_at', { ascending: false });
+
+        if (allError) {
+            console.error('Error fetching subscriptions:', allError);
+            return res.status(500).json({ error: 'Failed to fetch subscription', details: allError.message });
+        }
+
+        let subscription = null;
+        let error = null;
+
+        if (allSubs && allSubs.length > 0) {
+            // Prioritize active subscriptions first
+            const activeSub = allSubs.find(sub => sub.status === 'active');
+            
+            if (activeSub) {
+                subscription = activeSub;
+            } else {
+                // If no active subscription, find the most recent canceled subscription
+                // that hasn't ended yet (pending cancellation)
+                const pendingCancellationSub = allSubs.find(sub => 
+                    sub.status === 'canceled' && 
+                    sub.end_date && 
+                    new Date(sub.end_date) > new Date()
+                );
+                
+                if (pendingCancellationSub) {
+                    subscription = pendingCancellationSub;
+                } else {
+                    // No active or pending cancellation subscriptions
+                    error = { code: 'PGRST116' };
+                }
+            }
+        } else {
+            error = { code: 'PGRST116' };
+        }
 
         console.log('Supabase subscription query result:', { subscription, error });
 
@@ -862,47 +894,70 @@ app.post('/api/subscription/cancel', async (req, res) => {
             return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
         }
 
-        const { email } = req.body;
+        const { email, subscription_id, cancellation_reason } = req.body;
         console.log('Canceling subscription for email:', email);
         
         if (!email) {
             return res.status(400).json({ error: 'Email is required' });
         }
 
-        // Update subscription status to 'canceled'
-        const { data: subscription, error } = await supabase
+        // Get current subscription
+        const { data: currentSub, error: fetchError } = await supabase
             .from('subscriptions')
-            .update({ status: 'canceled' })
+            .select('*')
             .eq('email', email)
             .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+            
+        if (fetchError || !currentSub) {
+            console.error('Subscription not found:', fetchError);
+            return res.status(404).json({ error: 'Subscription not found' });
+        }
+        
+        // Calculate cancellation effective date (end of current billing period)
+        const startDate = new Date(currentSub.start_date);
+        const cancelEffectiveDate = new Date(startDate);
+        cancelEffectiveDate.setMonth(cancelEffectiveDate.getMonth() + 1);
+        
+        // For now, since the schema might not have the new columns, let's update just the status
+        // and store cancellation info in a way that's compatible with current schema
+        const updateData = {
+            status: 'canceled', // Use existing status value
+            end_date: cancelEffectiveDate.toISOString() // Use existing end_date field
+        };
+        
+        // Use fallback approach with existing schema fields
+        // Mark as canceled and set end_date to the cancellation effective date
+        const { data: subscription, error } = await supabase
+            .from('subscriptions')
+            .update({
+                status: 'canceled',
+                end_date: cancelEffectiveDate.toISOString()
+            })
+            .eq('id', currentSub.id)
+            .eq('email', email)
             .select()
             .single();
 
         if (error) {
             console.error('Error canceling subscription:', error);
-            return res.status(500).json({ error: 'Failed to cancel subscription', details: error.message });
+            return res.status(500).json({ error: 'Failed to schedule subscription cancellation', details: error.message });
         }
-
-        if (!subscription) {
-            return res.status(404).json({ error: 'No active subscription found to cancel' });
-        }
-
-        // Log subscription cancellation activity
-        await logUserActivity(email, 'subscription_renewed', `Canceled ${subscription.plan_type} subscription`, {
-            plan_type: subscription.plan_type,
-            canceled_at: new Date().toISOString(),
-            subscription_id: subscription.id
-        });
-
-        console.log('Subscription canceled successfully:', subscription.id);
-        res.json({ 
+        
+        console.log('Subscription cancelled successfully:', subscription.id, 'effective date:', cancelEffectiveDate.toISOString());
+        
+        return res.json({ 
             success: true, 
-            message: 'Subscription canceled successfully. It will remain active until the next billing cycle.',
-            subscription: subscription 
+            message: `Subscription cancelled. You'll continue to have access until ${cancelEffectiveDate.toLocaleDateString()}`,
+            subscription: subscription,
+            cancellation_effective_date: cancelEffectiveDate.toISOString()
         });
+        
     } catch (error) {
-        console.error('Error in cancel subscription endpoint:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Error in /api/subscription/cancel:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
