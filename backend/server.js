@@ -33,7 +33,7 @@ try {
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 const { DocumentAnalysisClient, AzureKeyCredential } = require('@azure/ai-form-recognizer');
-const { FaceClient } = require('@azure/ai-vision-face');
+const { FaceClient, CognitiveServicesCredentials } = require('@azure/cognitiveservices-face');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -107,10 +107,8 @@ try {
     console.log('- ENDPOINT value:', config.AZURE_FACE_ENDPOINT || 'undefined');
     
     if (config.AZURE_FACE_KEY && config.AZURE_FACE_ENDPOINT) {
-        faceClient = new FaceClient(
-            config.AZURE_FACE_ENDPOINT,
-            new AzureKeyCredential(config.AZURE_FACE_KEY)
-        );
+        const credentials = new CognitiveServicesCredentials(config.AZURE_FACE_KEY);
+        faceClient = new FaceClient(credentials, config.AZURE_FACE_ENDPOINT);
         console.log('✅ Azure Face API initialized successfully');
     } else {
         console.log('⚠️ Azure Face API not initialized - missing credentials');
@@ -1388,10 +1386,8 @@ function reinitializeAzureClients() {
     // Try to reinitialize Face API if it's not available
     if (!faceClient && currentConfig.AZURE_FACE_KEY && currentConfig.AZURE_FACE_ENDPOINT) {
         try {
-            faceClient = new FaceClient(
-                currentConfig.AZURE_FACE_ENDPOINT,
-                new AzureKeyCredential(currentConfig.AZURE_FACE_KEY)
-            );
+            const credentials = new CognitiveServicesCredentials(currentConfig.AZURE_FACE_KEY);
+            faceClient = new FaceClient(credentials, currentConfig.AZURE_FACE_ENDPOINT);
             console.log('✅ Azure Face API reinitialized successfully');
         } catch (error) {
             console.log('❌ Azure Face API reinitialization failed:', error.message);
