@@ -414,7 +414,8 @@ class AINegotiationEngine {
                 }
                 
                 // Extract user budget from conversation history
-                let userBudget = 1000; // Default fallback
+                // Start with a realistic default based on listing price (85% of asking price - 15% discount max)
+                let userBudget = listing.price ? Math.round(listing.price * 0.85) : 1500;
                 try {
                     // Get conversation messages to find AI's initial offer
                     const { data: messages, error: msgError } = await this.supabase
@@ -440,10 +441,13 @@ class AINegotiationEngine {
                     console.log('Could not extract budget from conversation history, using default');
                 }
                 
-                // If still default, try to extract from listing price (user might want 90% of asking)
-                if (userBudget === 1000 && listing.price && listing.price > 0) {
-                    userBudget = Math.round(listing.price * 0.9);
-                    console.log(`✅ Estimated userBudget based on listing price: $${userBudget}`);
+                // Ensure budget is never less than 85% of listing price (15% discount max)
+                if (listing.price && listing.price > 0) {
+                    const minBudget = Math.round(listing.price * 0.85);
+                    if (userBudget < minBudget) {
+                        userBudget = minBudget;
+                        console.log(`✅ Adjusted userBudget to minimum 85% of listing price: $${userBudget}`);
+                    }
                 }
                 
                 // Create new negotiation state from this reply
@@ -1007,7 +1011,9 @@ class AINegotiationEngine {
             console.error('❌ CRITICAL: Invalid finalPrice detected:', finalPrice);
             // Get negotiation to access fallback prices
             const negotiation = this.activeNegotiations.get(negotiationId);
-            finalPrice = negotiation?.userBudget || 1500; // Safe fallback
+            const listing = Array.from(this.activeNegotiations.values()).find(n => n.id === negotiationId)?.listing;
+            // Use 85% of listing price as fallback (15% discount max)
+            finalPrice = negotiation?.userBudget || (listing?.price ? Math.round(listing.price * 0.85) : 1500);
             console.log('✅ Using fallback price:', finalPrice);
         }
         
@@ -1125,6 +1131,15 @@ class AINegotiationEngine {
         // Ensure we don't exceed budget
         targetPrice = Math.min(targetPrice, userBudget);
         
+        // CRITICAL: Ensure we never offer below 85% of listing price (15% discount max)
+        if (listing.price && listing.price > 0) {
+            const minOffer = Math.round(listing.price * 0.85);
+            if (targetPrice < minOffer) {
+                targetPrice = minOffer;
+                console.log(`✅ Adjusted offer to minimum 85% of listing price: $${targetPrice}`);
+            }
+        }
+        
         console.log(`🎯 Round ${roundNumber} strategy: ${strategy}, offering: $${targetPrice}`);
         
         return this.generateVariedCounterOffer(targetPrice, landlordPrice, strategy, negotiationId, roundNumber, listing);
@@ -1165,7 +1180,8 @@ class AINegotiationEngine {
         if (!targetPrice || targetPrice <= 0) {
             console.error('❌ CRITICAL: Invalid targetPrice detected:', targetPrice);
             const negotiation = this.activeNegotiations.get(negotiationId);
-            targetPrice = negotiation?.userBudget || 1500; // Safe fallback
+            // Use 85% of listing price as fallback (15% discount max)
+            targetPrice = negotiation?.userBudget || (listing.price ? Math.round(listing.price * 0.85) : 1500);
             console.log('✅ Using fallback targetPrice:', targetPrice);
         }
         
@@ -1262,14 +1278,16 @@ class AINegotiationEngine {
             offerPrice = Math.min(userBudget, lastOffer + increaseAmount);
             console.log(`🔄 CORRECTED DIRECTION: Landlord wants $${requestedPrice}, increasing from $${lastOffer} to $${offerPrice}`);
         } else {
-            // Default progressive pricing based on rounds
+            // Realistic progressive pricing based on rounds (15% max discount)
             const basePrice = listing.price;
             if (roundNumber === 1) {
-                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.88)); // Start lower
+                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.85)); // Start at 15% below (minimum)
             } else if (roundNumber <= 3) {
-                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.92)); // Move up gradually
+                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.90)); // Move to 10% below
+            } else if (roundNumber <= 5) {
+                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.95)); // Move to 5% below
             } else {
-                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.95)); // Get closer to asking
+                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.97)); // Get very close to asking
             }
         }
         
@@ -1699,10 +1717,15 @@ class AINegotiationEngine {
             USER BUDGET: $${negotiation.userBudget}/month
             CONVERSATION: ${negotiation.messages.slice(-2).map(m => `${m.sender}: ${m.content}`).join(' | ')}
             
+            IMPORTANT PRICING RULES:
+            - NEVER offer less than 85% of the listing price ($${Math.round(listing.price * 0.85)}/month minimum)
+            - Start negotiations at 85% and gradually increase (85% → 90% → 95% → 97%)
+            - Maximum discount is 15% below listing price
+            
             Generate a professional, persuasive response (2-3 sentences max) that:
             1. Acknowledges their position respectfully
             2. Emphasizes tenant reliability and quick decision-making
-            3. Makes a reasonable counter-proposal if needed
+            3. Makes a reasonable counter-proposal if needed (respecting pricing rules above)
             4. Shows genuine interest in the property
             
             Be concise and professional. Do NOT include greetings or signatures.
