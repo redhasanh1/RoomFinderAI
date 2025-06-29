@@ -1,6 +1,8 @@
 // AI Negotiation Engine
 // Handles real-time negotiation with landlords using market data and OpenAI
 
+const AILearningSystem = require('./ai-learning');
+
 class AINegotiationEngine {
     constructor(supabase, config) {
         this.supabase = supabase;
@@ -10,6 +12,11 @@ class AINegotiationEngine {
         this.aiUserInitialized = false;
         this.conversationalMemory = new Map(); // Track used responses per negotiation
         this.responseTemplates = this.initializeResponseTemplates();
+        
+        // Initialize AI Learning System
+        this.learningSystem = new AILearningSystem(this.supabase);
+        this.learningEnabled = true;
+        
         this.init();
     }
 
@@ -974,20 +981,46 @@ class AINegotiationEngine {
         const templates = this.responseTemplates.counterOfferAcceptance;
         const usedResponses = this.conversationalMemory.get(negotiationId) || new Set();
         
-        // Find unused template
-        const availableTemplates = templates.filter((_, index) => !usedResponses.has(`acceptance_${index}`));
-        
         let selectedTemplate;
-        if (availableTemplates.length > 0) {
-            selectedTemplate = availableTemplates[Math.floor(Math.random() * availableTemplates.length)];
+        let templateIndex;
+        
+        // Use AI Learning System for intelligent template selection
+        if (this.learningEnabled) {
+            try {
+                const context = await this.buildLearningContext('counter_offer_acceptance', negotiation, listing);
+                const optimalTemplate = await this.learningSystem.getOptimalTemplate(context);
+                
+                templateIndex = optimalTemplate.templateId;
+                selectedTemplate = templates[templateIndex];
+                
+                console.log('🧠 AI Learning selected template:', templateIndex, 'Reason:', optimalTemplate.reason);
+            } catch (error) {
+                console.error('❌ Learning system failed, falling back to random selection:', error);
+                // Fallback to original logic
+                const availableTemplates = templates.filter((_, index) => !usedResponses.has(`acceptance_${index}`));
+                
+                if (availableTemplates.length > 0) {
+                    selectedTemplate = availableTemplates[Math.floor(Math.random() * availableTemplates.length)];
+                } else {
+                    usedResponses.clear();
+                    selectedTemplate = templates[Math.floor(Math.random() * templates.length)];
+                }
+                templateIndex = templates.indexOf(selectedTemplate);
+            }
         } else {
-            // All templates used, reset and pick new one
-            usedResponses.clear();
-            selectedTemplate = templates[Math.floor(Math.random() * templates.length)];
+            // Original random selection logic
+            const availableTemplates = templates.filter((_, index) => !usedResponses.has(`acceptance_${index}`));
+            
+            if (availableTemplates.length > 0) {
+                selectedTemplate = availableTemplates[Math.floor(Math.random() * availableTemplates.length)];
+            } else {
+                usedResponses.clear();
+                selectedTemplate = templates[Math.floor(Math.random() * templates.length)];
+            }
+            templateIndex = templates.indexOf(selectedTemplate);
         }
         
         // Mark this template as used
-        const templateIndex = templates.indexOf(selectedTemplate);
         usedResponses.add(`acceptance_${templateIndex}`);
         this.conversationalMemory.set(negotiationId, usedResponses);
         
@@ -3034,6 +3067,166 @@ class AINegotiationEngine {
             }
         }
         return null;
+    }
+
+    // AI Learning System Integration Methods
+    async buildLearningContext(strategyType, negotiation, listing) {
+        try {
+            const context = {
+                strategyType: strategyType,
+                landlordPersonality: negotiation?.landlordPersonality || 'unknown',
+                marketConditions: {
+                    competitiveness: 'medium',
+                    marketTrend: 'stable',
+                    pricePosition: 'market_rate'
+                },
+                priceRange: this.determinePriceRange(listing, negotiation),
+                negotiationStage: this.determineNegotiationStage(negotiation),
+                timeContext: this.getTimeContext()
+            };
+
+            // Enhance with market data if available
+            if (this.marketData.has(listing?.id)) {
+                const marketInfo = this.marketData.get(listing.id);
+                context.marketConditions = this.analyzeMarketConditions(listing, marketInfo);
+            }
+
+            return context;
+        } catch (error) {
+            console.error('Failed to build learning context:', error);
+            // Return basic context as fallback
+            return {
+                strategyType: strategyType,
+                landlordPersonality: 'unknown',
+                marketConditions: { competitiveness: 'medium' },
+                priceRange: 'moderate'
+            };
+        }
+    }
+
+    async recordNegotiationOutcome(conversationId, success, finalPrice, templateUsed, strategyType) {
+        if (!this.learningEnabled) return;
+
+        try {
+            const negotiation = this.activeNegotiations.get(conversationId);
+            if (!negotiation) return;
+
+            const conversationData = {
+                id: conversationId,
+                messages: negotiation.messageHistory || [],
+                success: success,
+                finalPrice: finalPrice,
+                initialPrice: negotiation.userBudget || 0,
+                templateUsed: templateUsed,
+                strategyType: strategyType,
+                created_at: new Date().toISOString()
+            };
+
+            await this.learningSystem.processConversation(conversationData);
+            console.log('✅ Recorded negotiation outcome for learning system');
+        } catch (error) {
+            console.error('❌ Failed to record negotiation outcome:', error);
+        }
+    }
+
+    determinePriceRange(listing, negotiation) {
+        const price = negotiation?.userBudget || listing?.price || 0;
+        
+        if (price < 1000) return 'budget';
+        if (price < 2000) return 'moderate';
+        if (price < 3000) return 'premium';
+        return 'luxury';
+    }
+
+    determineNegotiationStage(negotiation) {
+        if (!negotiation?.messageHistory) return 'initial';
+        
+        const messageCount = negotiation.messageHistory.length;
+        if (messageCount <= 2) return 'initial_contact';
+        if (messageCount <= 5) return 'exploration';
+        if (messageCount <= 10) return 'active_negotiation';
+        return 'closing';
+    }
+
+    analyzeMarketConditions(listing, marketInfo) {
+        const listingPrice = listing?.price || 0;
+        const marketAvg = marketInfo?.averagePrice || listingPrice;
+        
+        let competitiveness = 'medium';
+        if (listingPrice > marketAvg * 1.2) {
+            competitiveness = 'low'; // Overpriced, less competitive
+        } else if (listingPrice < marketAvg * 0.8) {
+            competitiveness = 'high'; // Underpriced, very competitive
+        }
+
+        return {
+            competitiveness: competitiveness,
+            marketTrend: marketInfo?.trend || 'stable',
+            pricePosition: listingPrice > marketAvg ? 'above_market' : 'below_market'
+        };
+    }
+
+    getTimeContext() {
+        const now = new Date();
+        const hour = now.getHours();
+        const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+        
+        return {
+            hour: hour,
+            isWeekend: isWeekend,
+            isBusinessHours: hour >= 9 && hour <= 17 && !isWeekend
+        };
+    }
+
+    // Enhanced template selection for other strategies
+    async selectTemplateWithLearning(strategyType, templates, negotiation, listing) {
+        if (!this.learningEnabled) {
+            // Fallback to random selection
+            return templates[Math.floor(Math.random() * templates.length)];
+        }
+
+        try {
+            const context = await this.buildLearningContext(strategyType, negotiation, listing);
+            const optimalTemplate = await this.learningSystem.getOptimalTemplate(context);
+            
+            console.log(`🧠 Learning system selected template ${optimalTemplate.templateId} for ${strategyType}: ${optimalTemplate.reason}`);
+            
+            return templates[optimalTemplate.templateId] || templates[0];
+        } catch (error) {
+            console.error(`❌ Template selection failed for ${strategyType}, using random:`, error);
+            return templates[Math.floor(Math.random() * templates.length)];
+        }
+    }
+
+    // Method to get learning system performance metrics
+    async getLearningMetrics() {
+        if (!this.learningEnabled) return null;
+
+        try {
+            return await this.learningSystem.getPerformanceMetrics();
+        } catch (error) {
+            console.error('Failed to get learning metrics:', error);
+            return null;
+        }
+    }
+
+    // Method to trigger learning system optimization
+    async optimizeLearningSystem() {
+        if (!this.learningEnabled) return;
+
+        try {
+            const result = await this.learningSystem.updateLearning();
+            console.log('🔄 Learning system optimization completed:', result);
+            return result;
+        } catch (error) {
+            console.error('Learning system optimization failed:', error);
+        }
+    }
+
+    // Toggle learning system on/off
+    toggleLearningSystem(enabled) {
+        this.learningEnabled = enabled;
+        console.log(`🧠 Learning system ${enabled ? 'ENABLED' : 'DISABLED'}`);
     }
 }
 
