@@ -414,8 +414,8 @@ class AINegotiationEngine {
                 }
                 
                 // Extract user budget from conversation history
-                // Start with a realistic default based on listing price (85% of asking price - 15% discount max)
-                let userBudget = listing.price ? Math.round(listing.price * 0.85) : 1500;
+                // Start with a realistic default based on listing price (90% of asking price - 10% discount max)
+                let userBudget = listing.price ? Math.round(listing.price * 0.90) : 1500;
                 try {
                     // Get conversation messages to find AI's initial offer
                     const { data: messages, error: msgError } = await this.supabase
@@ -441,12 +441,12 @@ class AINegotiationEngine {
                     console.log('Could not extract budget from conversation history, using default');
                 }
                 
-                // Ensure budget is never less than 85% of listing price (15% discount max)
+                // Ensure budget is never less than 90% of listing price (10% discount max)
                 if (listing.price && listing.price > 0) {
-                    const minBudget = Math.round(listing.price * 0.85);
+                    const minBudget = Math.round(listing.price * 0.90);
                     if (userBudget < minBudget) {
                         userBudget = minBudget;
-                        console.log(`✅ Adjusted userBudget to minimum 85% of listing price: $${userBudget}`);
+                        console.log(`✅ Adjusted userBudget to minimum 90% of listing price: $${userBudget}`);
                     }
                 }
                 
@@ -870,18 +870,24 @@ class AINegotiationEngine {
             const data = await response.json();
             let analysis = JSON.parse(data.choices[0].message.content.trim());
             
-            // Double-check for acceptance patterns in AI response too
-            if (/\b(sure|yes|ok|okay|sounds good|works|fine|agreed|deal)\b/i.test(simpleReply)) {
-                console.log('🎯 AI also detected acceptance in:', simpleReply);
+            // Double-check for acceptance patterns in AI response too - but only if there was a previous price offer
+            const lastOffer = this.extractLastOfferedPrice(negotiation);
+            if (/\b(sure|yes|ok|okay|sounds good|works|fine|agreed|deal)\b/i.test(simpleReply) && lastOffer && lastOffer > 0) {
+                console.log('🎯 AI also detected acceptance in:', simpleReply, 'for previous offer:', lastOffer);
                 analysis.acceptsOffer = true;
                 analysis.isFinalized = true;
                 analysis.sentiment = 'positive';
                 analysis.shouldRespond = true;
                 analysis.responseStrategy = 'thank';
-                const lastOffer = this.extractLastOfferedPrice(negotiation);
-                if (lastOffer) {
-                    analysis.agreedPrice = lastOffer;
-                }
+                analysis.agreedPrice = lastOffer;
+            } else if (/\b(yes|sure|ok|okay)\b/i.test(simpleReply) && (!lastOffer || lastOffer <= 0)) {
+                console.log('🎯 Landlord is interested but no previous offer detected - should make initial offer');
+                analysis.acceptsOffer = false;
+                analysis.isFinalized = false;
+                analysis.sentiment = 'positive';
+                analysis.shouldRespond = true;
+                analysis.responseStrategy = 'initial_offer';
+                analysis.makesCounterOffer = false;
             }
             
             console.log('📊 AI Analysis result:', analysis);
@@ -969,6 +975,11 @@ class AINegotiationEngine {
                 return this.generateSecurityDepositResponse(finalPrice, negotiationId, roundNumber);
             }
 
+            if (analysis.responseStrategy === 'initial_offer') {
+                console.log('💰 Generating initial price offer');
+                return await this.generateInitialOffer(negotiation, listing, roundNumber);
+            }
+
             if (analysis.responseStrategy === 'move_in_logistics') {
                 console.log('🏠 Generating move-in logistics response');
                 return this.generateMoveInLogisticsResponse(negotiationId, roundNumber);
@@ -1012,8 +1023,8 @@ class AINegotiationEngine {
             // Get negotiation to access fallback prices
             const negotiation = this.activeNegotiations.get(negotiationId);
             const listing = Array.from(this.activeNegotiations.values()).find(n => n.id === negotiationId)?.listing;
-            // Use 85% of listing price as fallback (15% discount max)
-            finalPrice = negotiation?.userBudget || (listing?.price ? Math.round(listing.price * 0.85) : 1500);
+            // Use 90% of listing price as fallback (10% discount max)
+            finalPrice = negotiation?.userBudget || (listing?.price ? Math.round(listing.price * 0.90) : 1500);
             console.log('✅ Using fallback price:', finalPrice);
         }
         
@@ -1131,12 +1142,12 @@ class AINegotiationEngine {
         // Ensure we don't exceed budget
         targetPrice = Math.min(targetPrice, userBudget);
         
-        // CRITICAL: Ensure we never offer below 85% of listing price (15% discount max)
+        // CRITICAL: Ensure we never offer below 90% of listing price (10% discount max)
         if (listing.price && listing.price > 0) {
-            const minOffer = Math.round(listing.price * 0.85);
+            const minOffer = Math.round(listing.price * 0.90);
             if (targetPrice < minOffer) {
                 targetPrice = minOffer;
-                console.log(`✅ Adjusted offer to minimum 85% of listing price: $${targetPrice}`);
+                console.log(`✅ Adjusted offer to minimum 90% of listing price: $${targetPrice}`);
             }
         }
         
@@ -1180,8 +1191,8 @@ class AINegotiationEngine {
         if (!targetPrice || targetPrice <= 0) {
             console.error('❌ CRITICAL: Invalid targetPrice detected:', targetPrice);
             const negotiation = this.activeNegotiations.get(negotiationId);
-            // Use 85% of listing price as fallback (15% discount max)
-            targetPrice = negotiation?.userBudget || (listing.price ? Math.round(listing.price * 0.85) : 1500);
+            // Use 90% of listing price as fallback (10% discount max)
+            targetPrice = negotiation?.userBudget || (listing.price ? Math.round(listing.price * 0.90) : 1500);
             console.log('✅ Using fallback targetPrice:', targetPrice);
         }
         
@@ -1278,16 +1289,16 @@ class AINegotiationEngine {
             offerPrice = Math.min(userBudget, lastOffer + increaseAmount);
             console.log(`🔄 CORRECTED DIRECTION: Landlord wants $${requestedPrice}, increasing from $${lastOffer} to $${offerPrice}`);
         } else {
-            // Realistic progressive pricing based on rounds (15% max discount)
+            // Realistic progressive pricing based on rounds (10% max discount)
             const basePrice = listing.price;
             if (roundNumber === 1) {
-                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.85)); // Start at 15% below (minimum)
+                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.90)); // Start at 10% below (minimum)
             } else if (roundNumber <= 3) {
-                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.90)); // Move to 10% below
+                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.93)); // Move to 7% below
             } else if (roundNumber <= 5) {
-                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.95)); // Move to 5% below
+                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.96)); // Move to 4% below
             } else {
-                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.97)); // Get very close to asking
+                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.98)); // Get very close to asking
             }
         }
         
@@ -1718,9 +1729,9 @@ class AINegotiationEngine {
             CONVERSATION: ${negotiation.messages.slice(-2).map(m => `${m.sender}: ${m.content}`).join(' | ')}
             
             IMPORTANT PRICING RULES:
-            - NEVER offer less than 85% of the listing price ($${Math.round(listing.price * 0.85)}/month minimum)
-            - Start negotiations at 85% and gradually increase (85% → 90% → 95% → 97%)
-            - Maximum discount is 15% below listing price
+            - NEVER offer less than 90% of the listing price ($${Math.round(listing.price * 0.90)}/month minimum)
+            - Start negotiations at 90% and gradually increase (90% → 93% → 96% → 98%)
+            - Maximum discount is 10% below listing price
             
             Generate a professional, persuasive response (2-3 sentences max) that:
             1. Acknowledges their position respectfully
@@ -1755,6 +1766,31 @@ class AINegotiationEngine {
         }
         
         return `Thank you for your consideration. I'm very interested in this ${listing.house_type} and I'm a reliable tenant ready to move quickly. Is there any flexibility we can work with?`;
+    }
+
+    // Generate initial price offer when landlord shows interest
+    async generateInitialOffer(negotiation, listing, roundNumber) {
+        try {
+            // Calculate initial offer at 90% of listing price (10% discount)
+            const initialOffer = Math.round(listing.price * 0.90);
+            
+            console.log(`💰 Making initial offer: $${initialOffer} (90% of $${listing.price})`);
+            
+            const offers = [
+                `Great! I'm interested in renting for $${initialOffer}/month. I'm a reliable tenant with excellent references and can move in quickly.`,
+                `Perfect! I'd like to offer $${initialOffer}/month for this ${listing.house_type}. I have stable income and can provide strong references.`,
+                `Excellent! Would you consider $${initialOffer}/month? I'm a responsible tenant ready to move forward immediately with all documentation.`,
+                `Wonderful! I can offer $${initialOffer}/month and I'm prepared to provide references, proof of income, and move in right away.`,
+                `Thank you! I'd like to propose $${initialOffer}/month. I'm a qualified tenant with excellent credit and rental history.`
+            ];
+            
+            return offers[roundNumber % offers.length];
+            
+        } catch (error) {
+            console.error('Error generating initial offer:', error);
+            const fallbackOffer = Math.round(listing.price * 0.90);
+            return `Thank you for your interest! I'd like to offer $${fallbackOffer}/month for this property. I'm a reliable tenant ready to move quickly.`;
+        }
     }
 
     // Send negotiation message
