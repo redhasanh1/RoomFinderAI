@@ -128,6 +128,17 @@
             animation: slideIn 0.5s ease;
         }
         
+        /* Verification code styling */
+        .letter-spacing-wide {
+            letter-spacing: 0.5rem;
+        }
+        
+        #verificationCode:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
         @keyframes slideIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -162,8 +173,9 @@
     <!-- Main Content -->
     <main class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <section class="auth-container floating-card p-8 sm:p-10 max-w-lg mx-auto">
-            <h2 id="formTitle" class="text-4xl font-bold gradient-text mb-8 text-center">Welcome Back</h2>
-            <form id="authForm" class="space-y-6 form-container">
+            <div id="authFormContainer">
+                <h2 id="formTitle" class="text-4xl font-bold gradient-text mb-8 text-center">Welcome Back</h2>
+                <form id="authForm" class="space-y-6 form-container">
                 <div id="nameFields" class="hidden space-y-6">
                     <div>
                         <label for="firstName" class="block text-sm font-medium text-gray-700">First Name</label>
@@ -189,6 +201,40 @@
                     <button type="button" id="toggleForm" class="toggle-button">Don't have an account? Register</button>
                 </div>
             </form>
+            </div>
+            
+            <!-- Email Verification Section (hidden by default) -->
+            <div id="verificationSection" class="hidden">
+                <h2 class="text-3xl font-bold gradient-text mb-6 text-center">Verify Your Email</h2>
+                <div class="text-center mb-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <svg class="mx-auto h-12 w-12 text-blue-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        <p class="text-gray-700">We've sent a 6-digit verification code to:</p>
+                        <p id="verificationEmail" class="font-semibold text-blue-600 mt-1"></p>
+                    </div>
+                </div>
+                
+                <form id="verificationForm" class="space-y-6">
+                    <div>
+                        <label for="verificationCode" class="block text-sm font-medium text-gray-700 text-center mb-2">Enter Verification Code</label>
+                        <input type="text" id="verificationCode" name="verificationCode" required 
+                               class="modern-input w-full text-center text-2xl font-bold letter-spacing-wide" 
+                               placeholder="123456" maxlength="6" pattern="[0-9]{6}">
+                        <p class="text-sm text-gray-500 text-center mt-2">Code expires in 10 minutes</p>
+                    </div>
+                    <div>
+                        <button type="submit" id="verifyButton" class="w-full auth-button">Verify Email</button>
+                    </div>
+                    <div class="text-center">
+                        <button type="button" id="resendCode" class="toggle-button">Didn't receive code? Resend</button>
+                    </div>
+                    <div class="text-center">
+                        <button type="button" id="backToRegistration" class="text-sm text-gray-600 hover:text-gray-800">← Back to Registration</button>
+                    </div>
+                </form>
+            </div>
         </section>
     </main>
 
@@ -306,7 +352,14 @@
                 }
 
                 try {
-                    const response = await fetch('/api/register', {
+                    console.log('Sending registration request...', { firstName, lastName, email });
+                    
+                    // Disable submit button to prevent double submission
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Sending...';
+                    
+                    // Send verification email instead of direct registration
+                    const response = await fetch('/api/send-verification', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -315,28 +368,150 @@
                     });
 
                     const result = await response.json();
+                    console.log('Registration response:', response.status, result);
                     
                     if (response.ok) {
-                        // Create user object for localStorage compatibility
-                        const user = {
-                            firstName,
-                            lastName,
-                            email,
-                            profileImage: 'https://via.placeholder.com/40',
-                            aiChats: [],
-                            listings: []
-                        };
-                        localStorage.setItem('currentUser', JSON.stringify(user));
-                        alert('Registration successful!');
-                        window.location.href = '/index';
+                        console.log('Registration successful, showing verification section');
+                        // Show verification section
+                        showVerificationSection(email, { firstName, lastName, email, password });
                     } else {
-                        alert(result.error || 'Registration failed');
+                        console.error('Registration failed:', result);
+                        alert(result.error || 'Failed to send verification email');
                     }
                 } catch (error) {
                     console.error('Registration error:', error);
-                    alert('Registration failed. Please try again.');
+                    alert('Registration failed. Please try again. Error: ' + error.message);
+                } finally {
+                    // Re-enable submit button
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Register';
                 }
             }
+        });
+
+        // Store user data temporarily for verification
+        let pendingUserData = null;
+
+        // Show verification section
+        function showVerificationSection(email, userData) {
+            console.log('Showing verification section for:', email);
+            pendingUserData = userData;
+            
+            const authFormContainer = document.getElementById('authFormContainer');
+            const verificationSection = document.getElementById('verificationSection');
+            const verificationEmailElement = document.getElementById('verificationEmail');
+            
+            console.log('Elements found:', {
+                authFormContainer: !!authFormContainer,
+                verificationSection: !!verificationSection,
+                verificationEmailElement: !!verificationEmailElement
+            });
+            
+            authFormContainer.classList.add('hidden');
+            verificationSection.classList.remove('hidden');
+            verificationEmailElement.textContent = email;
+            
+            console.log('Verification section should now be visible');
+        }
+
+        // Hide verification section and show registration form
+        function hideVerificationSection() {
+            document.getElementById('authFormContainer').classList.remove('hidden');
+            document.getElementById('verificationSection').classList.add('hidden');
+            pendingUserData = null;
+        }
+
+        // Handle verification form submission
+        document.getElementById('verificationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!pendingUserData) {
+                alert('No pending verification. Please try registering again.');
+                return;
+            }
+
+            const code = document.getElementById('verificationCode').value.trim();
+            
+            if (!code || code.length !== 6) {
+                alert('Please enter a valid 6-digit code.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/verify-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        email: pendingUserData.email, 
+                        code: code 
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Create user object for localStorage compatibility
+                    const user = {
+                        firstName: pendingUserData.firstName,
+                        lastName: pendingUserData.lastName,
+                        email: pendingUserData.email,
+                        profileImage: 'https://via.placeholder.com/40',
+                        aiChats: [],
+                        listings: [],
+                        emailVerified: true
+                    };
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    alert('Email verified successfully! Welcome to RoomFinderAI.');
+                    window.location.href = '/index';
+                } else {
+                    alert(result.error || 'Verification failed');
+                }
+            } catch (error) {
+                console.error('Verification error:', error);
+                alert('Verification failed. Please try again.');
+            }
+        });
+
+        // Handle resend code
+        document.getElementById('resendCode').addEventListener('click', async () => {
+            if (!pendingUserData) {
+                alert('No pending verification. Please try registering again.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/send-verification', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(pendingUserData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Verification code resent successfully!');
+                    document.getElementById('verificationCode').value = '';
+                } else {
+                    alert(result.error || 'Failed to resend verification code');
+                }
+            } catch (error) {
+                console.error('Resend error:', error);
+                alert('Failed to resend verification code. Please try again.');
+            }
+        });
+
+        // Handle back to registration
+        document.getElementById('backToRegistration').addEventListener('click', () => {
+            hideVerificationSection();
+        });
+
+        // Auto-format verification code input (numbers only)
+        document.getElementById('verificationCode').addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
         });
     </script>
 </body>
