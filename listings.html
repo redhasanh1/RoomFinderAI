@@ -281,17 +281,6 @@
         .login-link:hover {
             color: #2563eb;
         }
-        .chat-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.5);
-        }
         .chat-modal-content {
             background-color: #fff;
             margin: 5% auto;
@@ -2179,7 +2168,7 @@
             document.getElementById('chatTitle').textContent = `Chat with ${otherUserName} about ${listingTitle}`;
             
             await loadMessages(conversationId);
-            document.getElementById('chatModal').style.display = 'block';
+            document.getElementById('chatModal').classList.add('active');
             
             // Update database in background (don't wait)
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
