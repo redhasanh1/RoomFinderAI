@@ -689,8 +689,31 @@ class AINegotiationEngine {
             };
         }
         
-        // First check for simple acceptance patterns IMMEDIATELY
+        // Check for vague responses that need clarification (PRIORITY CHECK)
         const simpleReply = replyContent.trim().toLowerCase();
+        const vageResponsePatterns = /\b(sure but|maybe|i guess|i mean|kinda|sorta|a little|somewhat|perhaps)\b/i;
+        const isVagueResponse = vageResponsePatterns.test(replyContent);
+        
+        if (isVagueResponse) {
+            console.log('❓ VAGUE RESPONSE DETECTED - needs clarification:', replyContent);
+            return {
+                sentiment: 'neutral',
+                priceOffered: null,
+                acceptsOffer: false,
+                makesCounterOffer: false,
+                shouldRespond: true,
+                isFinalized: false,
+                agreedPrice: null,
+                responseStrategy: 'clarify_vague',
+                suggestedResponse: 'Need clarification on vague response',
+                negotiationPhase: 'clarification',
+                originalReply: replyContent,
+                landlordPersonality: this.detectLandlordPersonality(replyContent, negotiation),
+                negotiationContext: this.analyzeNegotiationContext(negotiation)
+            };
+        }
+        
+        // First check for simple acceptance patterns IMMEDIATELY
         const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)$/i.test(simpleReply);
         
         if (isSimpleAcceptance) {
@@ -743,7 +766,7 @@ class AINegotiationEngine {
                 "shouldRespond": true/false,
                 "isFinalized": true/false,
                 "agreedPrice": null or number,
-                "responseStrategy": "accept/counter/negotiate/thank/clarify",
+                "responseStrategy": "accept/counter/negotiate/thank/clarify/increase_request/security_deposit",
                 "suggestedResponse": "brief response if shouldRespond is true",
                 "negotiationPhase": "initial/bargaining/closing/rejected"
             }
@@ -753,10 +776,14 @@ class AINegotiationEngine {
             - "I might consider X", "how about X", "what about X", "I could do X" = counter-offer
             - "too low", "too high", "not enough" = rejection requiring counter
             - "X is my best", "final offer X", "can't go lower than X" = firm counter-offer
+            - "can you raise it", "can you increase", "bump it up", "go higher" = responseStrategy: "increase_request"
+            - "i need deposit", "security deposit", "deposit required" = responseStrategy: "security_deposit"
+            - "sure but", "maybe", "i guess", "a little", "kinda" = VAGUE responses, shouldRespond=true but isFinalized=false
             - Extract ALL numbers: $790, 790, "seven ninety", "790/month", "790 per month"
             - Look for conditional acceptance: "maybe X", "possibly X", "perhaps X"
             - If they accept: isFinalized=true, agreedPrice=last offered price
             - If they counter with price: extract exact number, shouldRespond=true
+            - NEVER finalize on vague responses - require explicit price agreement
             - If they show flexibility ("might consider"): makesCounterOffer=true
             - Consider context: if discussing price and mention number, likely counter-offer
             
@@ -883,6 +910,11 @@ class AINegotiationEngine {
                 return this.generateIncreaseRequestResponse(negotiation, listing, negotiationId, roundNumber);
             }
 
+            if (analysis.responseStrategy === 'clarify_vague') {
+                console.log('❓ Generating clarification request for vague response');
+                return this.generateVagueClarificationResponse(negotiation, listing, negotiationId, roundNumber);
+            }
+
             if (analysis.sentiment === 'negative' || analysis.responseStrategy === 'clarify') {
                 console.log('🔄 Generating strategic response for negative sentiment');
                 return await this.generateStrategicResponse(negotiation, listing, roundNumber);
@@ -925,19 +957,28 @@ class AINegotiationEngine {
         usedResponses.add(`acceptance_${templateIndex}`);
         this.conversationalMemory.set(negotiationId, usedResponses);
         
-        // Add closing details with variation
-        const closingVariations = [
-            "I'm ready to proceed immediately with all necessary documentation. What are the next steps?",
-            "I can provide excellent references and complete paperwork right away. How do we move forward?",
-            "I'm excited to finalize this! I have all my documents ready. What's our next step?",
-            "Perfect! I'm prepared to move quickly with references and paperwork. How do we proceed?",
-            "I'm thrilled to move forward! I can handle all the paperwork immediately. What do you need from me?"
+        // Add price confirmation and closing details with variation
+        const confirmationVariations = [
+            `Just to confirm - we're agreeing on $${finalPrice}/month for the rental, correct?`,
+            `Perfect! So we're set at $${finalPrice}/month - is that confirmed?`,
+            `Excellent! To make sure we're on the same page - $${finalPrice}/month works for both of us?`,
+            `Great! Just want to double-check - $${finalPrice}/month is our agreed price?`,
+            `Wonderful! Confirming the final rent amount - $${finalPrice}/month, right?`
         ];
         
+        const closingVariations = [
+            " I'm ready to proceed immediately with all necessary documentation.",
+            " I can provide excellent references and complete paperwork right away.",
+            " I'm excited to finalize this! I have all my documents ready.",
+            " I'm prepared to move quickly with references and paperwork.",
+            " I can handle all the paperwork immediately."
+        ];
+        
+        const confirmationIndex = roundNumber % confirmationVariations.length;
         const closingIndex = roundNumber % closingVariations.length;
         const baseResponse = selectedTemplate.replace('${price}', finalPrice);
         
-        return `${baseResponse} ${closingVariations[closingIndex]}`;
+        return `${baseResponse} ${confirmationVariations[confirmationIndex]}${closingVariations[closingIndex]}`;
     }
 
     // Generate sophisticated counter-offer with progressive tactics
@@ -2897,6 +2938,23 @@ class AINegotiationEngine {
         
         const responseIndex = roundNumber % increaseResponses.length;
         return this.formatMessage(increaseResponses[responseIndex]);
+    }
+
+    // Generate clarification request for vague responses
+    generateVagueClarificationResponse(negotiation, listing, negotiationId, roundNumber) {
+        const lastOffer = this.extractLastOfferedPrice(negotiation);
+        
+        const clarificationResponses = [
+            `I appreciate your response! Just to clarify - what specific price would work for you? I offered $${lastOffer}/month.`,
+            `Thanks for considering it! Could you let me know what amount you'd be comfortable with? My last offer was $${lastOffer}/month.`,
+            `I want to make sure I understand correctly - are you open to my $${lastOffer}/month offer, or did you have a different amount in mind?`,
+            `I'd love to work something out! What price range were you thinking? I proposed $${lastOffer}/month.`,
+            `Great to hear you're interested! Could you specify what rent amount would work for you? I suggested $${lastOffer}/month.`,
+            `I'm glad you're considering it! What would be a good monthly rent from your perspective? I offered $${lastOffer}/month.`
+        ];
+        
+        const responseIndex = roundNumber % clarificationResponses.length;
+        return this.formatMessage(clarificationResponses[responseIndex]);
     }
 
     // Extract price from any message format
