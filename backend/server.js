@@ -1081,6 +1081,9 @@ function formatTimeAgo(date) {
 // API: Upload and verify government ID
 app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) => {
     try {
+        // Try to reinitialize Azure clients if they're not available
+        reinitializeAzureClients();
+        
         if (!documentClient) {
             return res.status(503).json({ error: 'ID verification service not available - Azure Document Intelligence not configured' });
         }
@@ -1335,13 +1338,48 @@ app.get('/api/verify/status/:email', async (req, res) => {
     }
 });
 
+// Function to reinitialize Azure clients if they failed initially
+function reinitializeAzureClients() {
+    // Try to reinitialize Document Intelligence if it's not available
+    if (!documentClient && config.AZURE_DOCUMENT_INTELLIGENCE_KEY && config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
+        try {
+            documentClient = DocumentIntelligenceClient(
+                config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
+                new AzureKeyCredential(config.AZURE_DOCUMENT_INTELLIGENCE_KEY)
+            );
+            console.log('✅ Azure Document Intelligence reinitialized successfully');
+        } catch (error) {
+            console.log('❌ Azure Document Intelligence reinitialization failed:', error.message);
+        }
+    }
+    
+    // Try to reinitialize Face API if it's not available
+    if (!faceClient && config.AZURE_FACE_KEY && config.AZURE_FACE_ENDPOINT) {
+        try {
+            faceClient = createFaceClient(
+                config.AZURE_FACE_ENDPOINT,
+                new FaceCredential(config.AZURE_FACE_KEY)
+            );
+            console.log('✅ Azure Face API reinitialized successfully');
+        } catch (error) {
+            console.log('❌ Azure Face API reinitialization failed:', error.message);
+        }
+    }
+}
+
 // API endpoint to serve client-safe configuration
 app.get('/api/config', (req, res) => {
+    // Try to reinitialize Azure clients if they're not available
+    reinitializeAzureClients();
     console.log('📋 Config endpoint called - checking environment variables:');
     console.log('- OPENAI_API_KEY:', config.OPENAI_API_KEY ? `Present (${config.OPENAI_API_KEY.substring(0, 10)}...)` : 'MISSING');
     console.log('- OPENAI_ORG_ID:', config.OPENAI_ORG_ID ? `Present (${config.OPENAI_ORG_ID})` : 'MISSING');
     console.log('- SUPABASE_URL:', config.SUPABASE_URL ? `Present (${config.SUPABASE_URL.substring(0, 30)}...)` : 'MISSING');
     console.log('- SUPABASE_ANON_KEY:', config.SUPABASE_ANON_KEY ? `Present (${config.SUPABASE_ANON_KEY.substring(0, 10)}...)` : 'MISSING');
+    console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', config.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${config.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING');
+    console.log('- AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:', config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT ? `Present (${config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT})` : 'MISSING');
+    console.log('- AZURE_FACE_KEY:', config.AZURE_FACE_KEY ? `Present (${config.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING');
+    console.log('- AZURE_FACE_ENDPOINT:', config.AZURE_FACE_ENDPOINT ? `Present (${config.AZURE_FACE_ENDPOINT})` : 'MISSING');
     
     const configData = {
         STRIPE_PUBLISHABLE_KEY: config.STRIPE_PUBLISHABLE_KEY,
@@ -1351,6 +1389,11 @@ app.get('/api/config', (req, res) => {
         OPENAI_API_KEY: config.OPENAI_API_KEY,
         OPENAI_ORG_ID: config.OPENAI_ORG_ID,
         OPENAI_MODEL: config.OPENAI_MODEL,
+        // Azure service status (without exposing keys)
+        azureServicesAvailable: {
+            documentIntelligence: !!documentClient,
+            faceAPI: !!faceClient
+        },
         // Add debug info about missing variables
         _debug: {
             missingVars: config.getMissingVars ? config.getMissingVars() : [],
