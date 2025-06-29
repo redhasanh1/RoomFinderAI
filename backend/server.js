@@ -1396,8 +1396,9 @@ console.log('- SUPABASE_ANON_KEY:', !!process.env.SUPABASE_ANON_KEY);
 console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', !!process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY);
 console.log('- AZURE_FACE_KEY:', !!process.env.AZURE_FACE_KEY);
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
     console.log(`✅ Server running on port ${port}`);
-    console.log(`🏥 Health check available at http://localhost:${port}/`);
+    console.log(`🏥 Health check available at http://localhost:${port}/health`);
+    console.log(`🌐 Server accessible at http://0.0.0.0:${port}`);
 });
 // Force update
