@@ -686,12 +686,16 @@ app.post('/api/process-payment', async (req, res) => {
         }
 
         console.log('Payment request received:', req.body);
-        const { token, email, name, plan, price } = req.body;
+        const { token, email, name, plan, price, paymentMethod } = req.body;
         
-        if (!token || !email || !name || !plan || !price) {
-            console.log('Missing required fields:', { token: !!token, email: !!email, name: !!name, plan: !!plan, price: !!price });
+        if (!token || !plan || !price) {
+            console.log('Missing required fields:', { token: !!token, plan: !!plan, price: !!price });
             return res.status(400).json({ error: 'Missing required payment information' });
         }
+
+        // For wallet payments, email and name might come from the token
+        const customerEmail = email || token.email || 'no-email@provided.com';
+        const customerName = name || token.card?.name || 'No Name Provided';
 
         // Convert price to cents (Stripe expects amounts in smallest currency unit)
         const amount = Math.round(parseFloat(price) * 100);
@@ -703,11 +707,12 @@ app.post('/api/process-payment', async (req, res) => {
             currency: 'usd',
             description: `Room Finder ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan Subscription`,
             source: token.id,
-            receipt_email: email,
+            receipt_email: customerEmail,
             metadata: {
-                customer_name: name,
+                customer_name: customerName,
                 plan_type: plan,
-                monthly_price: price
+                monthly_price: price,
+                payment_method: paymentMethod || 'card'
             }
         });
 
@@ -727,7 +732,7 @@ app.post('/api/process-payment', async (req, res) => {
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('id')
-            .eq('email', email)
+            .eq('email', customerEmail)
             .single();
 
         if (profileError) {
@@ -737,13 +742,13 @@ app.post('/api/process-payment', async (req, res) => {
 
         // Insert subscription into Supabase
         const subscriptionData = {
-            email: email,
+            email: customerEmail,
             profile_id: profile?.id || null,
             plan_type: plan,
             plan_price: parseFloat(price),
             status: 'active',
             stripe_charge_id: charge.id,
-            payment_method: 'card',
+            payment_method: paymentMethod || 'card',
             start_date: new Date().toISOString()
         };
 
@@ -764,7 +769,7 @@ app.post('/api/process-payment', async (req, res) => {
             console.log('Subscription saved to Supabase:', subscription?.id);
             
             // Log subscription activity
-            await logUserActivity(email, 'subscription_bought', `Subscribed to ${plan} plan for $${price}`, {
+            await logUserActivity(customerEmail, 'subscription_bought', `Subscribed to ${plan} plan for $${price}`, {
                 plan_type: plan,
                 amount: price,
                 charge_id: charge.id
