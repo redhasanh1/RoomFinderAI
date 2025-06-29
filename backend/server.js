@@ -745,7 +745,7 @@ app.get('/api/subscription/:email', async (req, res) => {
             .from('subscriptions')
             .select('*')
             .eq('email', email)
-            .eq('status', 'active')
+            .in('status', ['active', 'canceled'])
             .order('created_at', { ascending: false })
             .limit(1)
             .single();
@@ -762,6 +762,57 @@ app.get('/api/subscription/:email', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/subscription:', error);
         res.status(500).json({ error: 'Failed to fetch subscription', details: error.message });
+    }
+});
+
+// API: Cancel user subscription
+app.post('/api/subscription/cancel', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
+        }
+
+        const { email } = req.body;
+        console.log('Canceling subscription for email:', email);
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        // Update subscription status to 'canceled'
+        const { data: subscription, error } = await supabase
+            .from('subscriptions')
+            .update({ status: 'canceled' })
+            .eq('email', email)
+            .eq('status', 'active')
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error canceling subscription:', error);
+            return res.status(500).json({ error: 'Failed to cancel subscription', details: error.message });
+        }
+
+        if (!subscription) {
+            return res.status(404).json({ error: 'No active subscription found to cancel' });
+        }
+
+        // Log subscription cancellation activity
+        await logUserActivity(email, 'subscription_renewed', `Canceled ${subscription.plan_type} subscription`, {
+            plan_type: subscription.plan_type,
+            canceled_at: new Date().toISOString(),
+            subscription_id: subscription.id
+        });
+
+        console.log('Subscription canceled successfully:', subscription.id);
+        res.json({ 
+            success: true, 
+            message: 'Subscription canceled successfully. It will remain active until the next billing cycle.',
+            subscription: subscription 
+        });
+    } catch (error) {
+        console.error('Error in cancel subscription endpoint:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 

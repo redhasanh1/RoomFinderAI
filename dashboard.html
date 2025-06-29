@@ -463,36 +463,85 @@
                 
                 if (response.ok && result.subscription) {
                     const sub = result.subscription;
-                    subscriptionDetails.innerHTML = `
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-6">
-                            <div class="flex items-center mb-4">
-                                <div class="gradient-bg-green p-2 rounded-lg mr-3">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
+                    const isActive = sub.status === 'active';
+                    const statusText = isActive ? 'Active Subscription' : 'Canceled Subscription';
+                    const statusDescription = isActive ? 'Your subscription is active and will renew automatically.' : 'Your subscription has been canceled and will end at the next billing cycle.';
+                    
+                    if (isActive) {
+                        subscriptionDetails.innerHTML = `
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                                <div class="flex items-center mb-4">
+                                    <div class="gradient-bg-green p-2 rounded-lg mr-3">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-lg font-semibold text-green-800">${statusText}</h4>
+                                        <p class="text-sm text-green-600">${statusDescription}</p>
+                                    </div>
                                 </div>
-                                <h4 class="text-lg font-semibold text-green-800">Active Subscription</h4>
+                                <div class="grid grid-cols-2 gap-4 mb-6">
+                                    <div>
+                                        <p class="text-sm text-green-600">Plan</p>
+                                        <p class="text-lg font-semibold text-green-800">${sub.plan_type.charAt(0).toUpperCase() + sub.plan_type.slice(1)}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-green-600">Price</p>
+                                        <p class="text-lg font-semibold text-green-800">$${sub.plan_price}/month</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-green-600">Status</p>
+                                        <p class="text-lg font-semibold text-green-800">${sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-green-600">Next Billing</p>
+                                        <p class="text-lg font-semibold text-green-800">${new Date(sub.start_date).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                                <div class="pt-4 border-t border-green-200">
+                                    <button onclick="cancelSubscription()" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-lg transition duration-200">
+                                        Cancel Subscription
+                                    </button>
+                                    <p class="text-xs text-gray-500 mt-2 text-center">Your subscription will remain active until the next billing cycle</p>
+                                </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p class="text-sm text-green-600">Plan</p>
-                                    <p class="text-lg font-semibold text-green-800">${sub.plan_type.charAt(0).toUpperCase() + sub.plan_type.slice(1)}</p>
+                        `;
+                    } else {
+                        subscriptionDetails.innerHTML = `
+                            <div class="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                                <div class="flex items-center mb-4">
+                                    <div class="bg-orange-500 p-2 rounded-lg mr-3">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-lg font-semibold text-orange-800">${statusText}</h4>
+                                        <p class="text-sm text-orange-600">${statusDescription}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p class="text-sm text-green-600">Price</p>
-                                    <p class="text-lg font-semibold text-green-800">$${sub.plan_price}/month</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-green-600">Status</p>
-                                    <p class="text-lg font-semibold text-green-800">${sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-green-600">Next Billing</p>
-                                    <p class="text-lg font-semibold text-green-800">${new Date(sub.start_date).toLocaleDateString()}</p>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p class="text-sm text-orange-600">Plan</p>
+                                        <p class="text-lg font-semibold text-orange-800">${sub.plan_type.charAt(0).toUpperCase() + sub.plan_type.slice(1)}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-orange-600">Price</p>
+                                        <p class="text-lg font-semibold text-orange-800">$${sub.plan_price}/month</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-orange-600">Status</p>
+                                        <p class="text-lg font-semibold text-orange-800">${sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-orange-600">Ends On</p>
+                                        <p class="text-lg font-semibold text-orange-800">${new Date(sub.start_date).toLocaleDateString()}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    }
                 } else {
                     subscriptionDetails.innerHTML = `
                         <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
@@ -506,6 +555,44 @@
                 }
             } catch (error) {
                 console.error('Error loading subscription:', error);
+            }
+        }
+
+        // Cancel subscription function
+        async function cancelSubscription() {
+            try {
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const userEmail = currentUser?.email;
+                
+                if (!userEmail) {
+                    alert('User email not found. Please log in again.');
+                    return;
+                }
+
+                // Confirm cancellation
+                const confirmed = confirm('Are you sure you want to cancel your subscription? It will remain active until the next billing cycle.');
+                if (!confirmed) return;
+
+                const response = await fetch('/api/subscription/cancel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email: userEmail })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+                    // Reload subscription info to show updated status
+                    loadSubscriptionInfo();
+                } else {
+                    alert('Failed to cancel subscription: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error canceling subscription:', error);
+                alert('Failed to cancel subscription. Please try again.');
             }
         }
 
