@@ -643,15 +643,12 @@ class AINegotiationEngine {
             };
         }
 
-        // Check for post-agreement logistics: security deposit, move-in timing, etc.
-        const securityDepositPatterns = /\b(security deposit|deposit|first month|payment|money|transfer|funds|rent upfront)\b/i;
-        const moveInPatterns = /\b(move.?in|tomorrow|tonight|today|when can you|available|ready)\b/i;
+        // Check for security deposit requests - PRIORITY DETECTION (works anytime)
+        const securityDepositPatterns = /\b(security deposit|deposit|first month|payment|money|transfer|funds|rent upfront|i need|need.*deposit)\b/i;
         const hasSecurityDepositMention = securityDepositPatterns.test(replyContent);
-        const hasMoveInMention = moveInPatterns.test(replyContent);
         
-        if ((hasSecurityDepositMention || hasMoveInMention) && hasRecentAgreement) {
-            console.log('💰 POST-AGREEMENT LOGISTICS DETECTED:', replyContent);
-            const strategy = hasSecurityDepositMention ? 'security_deposit' : 'move_in_logistics';
+        if (hasSecurityDepositMention) {
+            console.log('💰 SECURITY DEPOSIT REQUEST DETECTED:', replyContent);
             return {
                 sentiment: 'positive',
                 priceOffered: null,
@@ -660,8 +657,31 @@ class AINegotiationEngine {
                 shouldRespond: true,
                 isFinalized: false,
                 agreedPrice: this.extractLastOfferedPrice(negotiation),
-                responseStrategy: strategy,
-                suggestedResponse: hasSecurityDepositMention ? 'Security deposit discussion needed' : 'Move-in logistics needed',
+                responseStrategy: 'security_deposit',
+                suggestedResponse: 'Security deposit discussion needed',
+                negotiationPhase: 'logistics',
+                originalReply: replyContent,
+                landlordPersonality: this.detectLandlordPersonality(replyContent, negotiation),
+                negotiationContext: this.analyzeNegotiationContext(negotiation)
+            };
+        }
+
+        // Check for move-in logistics (only after agreement)
+        const moveInPatterns = /\b(move.?in|tomorrow|tonight|today|when can you|available|ready)\b/i;
+        const hasMoveInMention = moveInPatterns.test(replyContent);
+        
+        if (hasMoveInMention && hasRecentAgreement) {
+            console.log('🏠 MOVE-IN LOGISTICS DETECTED:', replyContent);
+            return {
+                sentiment: 'positive',
+                priceOffered: null,
+                acceptsOffer: false,
+                makesCounterOffer: false,
+                shouldRespond: true,
+                isFinalized: false,
+                agreedPrice: this.extractLastOfferedPrice(negotiation),
+                responseStrategy: 'move_in_logistics',
+                suggestedResponse: 'Move-in logistics needed',
                 negotiationPhase: 'logistics',
                 originalReply: replyContent,
                 landlordPersonality: this.detectLandlordPersonality(replyContent, negotiation),
@@ -796,18 +816,25 @@ class AINegotiationEngine {
             const seemsPositive = /\b(yes|ok|sure|accept|agree|sounds good|works|fine|deal|great|perfect)\b/i.test(replyContent);
             const hasAcceptanceWords = /\b(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|perfect|great|excellent)\b/i.test(replyLower);
             
-            console.log('🔧 Fallback analysis - hasAcceptanceWords:', hasAcceptanceWords, 'for:', replyLower);
+            // Check for increase requests like "can you raise it"
+            const isAskingForIncrease = /\b(can you|could you|would you).*(raise|increase|go up|higher)/i.test(replyContent) ||
+                                      /\b(raise it|increase it|go higher|bump it up)/i.test(replyContent);
+            
+            console.log('🔧 Fallback analysis - hasAcceptanceWords:', hasAcceptanceWords, 'isAskingForIncrease:', isAskingForIncrease, 'for:', replyLower);
             
             return {
-                sentiment: seemsPositive ? 'positive' : 'neutral',
+                sentiment: seemsPositive || isAskingForIncrease ? 'positive' : 'neutral',
                 priceOffered: hasPrice ? parseInt(hasPrice[1]) : null,
-                acceptsOffer: hasAcceptanceWords && !hasPrice,
-                makesCounterOffer: !!hasPrice,
+                acceptsOffer: hasAcceptanceWords && !hasPrice && !isAskingForIncrease,
+                makesCounterOffer: !!hasPrice || isAskingForIncrease,
                 shouldRespond: true,
-                isFinalized: hasAcceptanceWords && !hasPrice,
-                agreedPrice: (hasAcceptanceWords && !hasPrice) ? this.extractLastOfferedPrice(negotiation) : null,
-                responseStrategy: (hasAcceptanceWords && !hasPrice) ? 'thank' : (hasPrice ? 'counter' : 'clarify'),
-                negotiationPhase: (hasAcceptanceWords && !hasPrice) ? 'closing' : 'bargaining'
+                isFinalized: hasAcceptanceWords && !hasPrice && !isAskingForIncrease,
+                agreedPrice: (hasAcceptanceWords && !hasPrice && !isAskingForIncrease) ? this.extractLastOfferedPrice(negotiation) : null,
+                responseStrategy: (hasAcceptanceWords && !hasPrice && !isAskingForIncrease) ? 'thank' : 
+                                 (isAskingForIncrease ? 'increase_request' : 
+                                 (hasPrice ? 'counter' : 'clarify')),
+                negotiationPhase: (hasAcceptanceWords && !hasPrice && !isAskingForIncrease) ? 'closing' : 'bargaining',
+                originalReply: replyContent
             };
         }
     }
@@ -849,6 +876,11 @@ class AINegotiationEngine {
             if (analysis.responseStrategy === 'move_in_logistics') {
                 console.log('🏠 Generating move-in logistics response');
                 return this.generateMoveInLogisticsResponse(negotiationId, roundNumber);
+            }
+
+            if (analysis.responseStrategy === 'increase_request') {
+                console.log('⬆️ Generating increase request response');
+                return this.generateIncreaseRequestResponse(negotiation, listing, negotiationId, roundNumber);
             }
 
             if (analysis.sentiment === 'negative' || analysis.responseStrategy === 'clarify') {
@@ -913,23 +945,40 @@ class AINegotiationEngine {
         const landlordPrice = analysis.priceOffered;
         const userBudget = negotiation.userBudget;
         const negotiationId = this.getNegotiationId(negotiation);
+        const lastOffer = this.extractLastOfferedPrice(negotiation);
         
-        // Progressive negotiation strategy based on round
+        // SMART DIRECTION: Check if we should go UP or DOWN
         let targetPrice;
         let strategy;
         
-        if (roundNumber <= 2) {
-            // Early rounds: Be more conservative, show market awareness
-            targetPrice = Math.min(userBudget, Math.round(landlordPrice * 0.95));
-            strategy = 'market_informed';
-        } else if (roundNumber <= 4) {
-            // Middle rounds: Show flexibility, add value propositions
-            targetPrice = Math.min(userBudget, Math.round(landlordPrice * 0.97));
-            strategy = 'value_added';
+        if (landlordPrice > lastOffer) {
+            // Landlord wants MORE money - we should consider going UP from our last offer
+            if (roundNumber <= 2) {
+                // Early rounds: Meet them partway
+                targetPrice = Math.min(userBudget, lastOffer + Math.round((landlordPrice - lastOffer) * 0.5));
+                strategy = 'meeting_halfway';
+            } else if (roundNumber <= 4) {
+                // Middle rounds: Go closer to their price
+                targetPrice = Math.min(userBudget, lastOffer + Math.round((landlordPrice - lastOffer) * 0.7));
+                strategy = 'value_added';
+            } else {
+                // Later rounds: Get very close to their price
+                targetPrice = Math.min(userBudget, lastOffer + Math.round((landlordPrice - lastOffer) * 0.85));
+                strategy = 'closing_focus';
+            }
+            console.log(`⬆️ GOING UP: Landlord wants $${landlordPrice}, last offer was $${lastOffer}, increasing to $${targetPrice}`);
         } else {
-            // Later rounds: Move closer to their price, emphasize urgency
-            targetPrice = Math.min(userBudget, Math.round(landlordPrice * 0.985));
-            strategy = 'closing_focus';
+            // Use original logic when landlord wants less or equal
+            if (roundNumber <= 2) {
+                targetPrice = Math.min(userBudget, Math.round(landlordPrice * 0.95));
+                strategy = 'market_informed';
+            } else if (roundNumber <= 4) {
+                targetPrice = Math.min(userBudget, Math.round(landlordPrice * 0.97));
+                strategy = 'value_added';
+            } else {
+                targetPrice = Math.min(userBudget, Math.round(landlordPrice * 0.985));
+                strategy = 'closing_focus';
+            }
         }
         
         // Ensure we don't exceed budget
@@ -1045,16 +1094,34 @@ class AINegotiationEngine {
         const personality = analysis.landlordPersonality || this.detectLandlordPersonality(analysis.originalReply || '', negotiation);
         const userBudget = negotiation.userBudget;
         
-        // Progressive pricing based on rounds
-        const basePrice = listing.price;
+        // SMART NEGOTIATION DIRECTION: Check what landlord actually wants
         let offerPrice;
+        const lastOffer = this.extractLastOfferedPrice(negotiation);
+        const landlordMessage = analysis.originalReply || '';
         
-        if (roundNumber === 1) {
-            offerPrice = Math.min(userBudget, Math.round(basePrice * 0.88)); // Start lower
-        } else if (roundNumber <= 3) {
-            offerPrice = Math.min(userBudget, Math.round(basePrice * 0.92)); // Move up gradually
+        // Check if landlord is asking for higher price
+        const requestedPrice = this.extractPriceFromMessage(landlordMessage);
+        const isAskingForMore = /\b(want|need|require)\s*\$?(\d+)/i.test(landlordMessage) ||
+                               /\b(can you|could you).*(raise|increase|go up|higher)/i.test(landlordMessage);
+        
+        if (requestedPrice && isAskingForMore && requestedPrice > lastOffer) {
+            // Landlord wants MORE - tenant should consider going UP (not down!)
+            const increaseAmount = Math.min(
+                userBudget - lastOffer, 
+                Math.round((requestedPrice - lastOffer) * 0.7) // Meet them 70% of the way
+            );
+            offerPrice = Math.min(userBudget, lastOffer + increaseAmount);
+            console.log(`🔄 CORRECTED DIRECTION: Landlord wants $${requestedPrice}, increasing from $${lastOffer} to $${offerPrice}`);
         } else {
-            offerPrice = Math.min(userBudget, Math.round(basePrice * 0.95)); // Get closer to asking
+            // Default progressive pricing based on rounds
+            const basePrice = listing.price;
+            if (roundNumber === 1) {
+                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.88)); // Start lower
+            } else if (roundNumber <= 3) {
+                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.92)); // Move up gradually
+            } else {
+                offerPrice = Math.min(userBudget, Math.round(basePrice * 0.95)); // Get closer to asking
+            }
         }
         
         // Personality-adapted responses
@@ -2805,6 +2872,49 @@ class AINegotiationEngine {
         const responseIndex = roundNumber % templates.length;
         
         return this.formatMessage(templates[responseIndex]);
+    }
+
+    // Generate response to increase requests like "can you raise it"
+    generateIncreaseRequestResponse(negotiation, listing, negotiationId, roundNumber) {
+        const lastOffer = this.extractLastOfferedPrice(negotiation);
+        const userBudget = negotiation.userBudget;
+        
+        // Calculate a reasonable increase
+        const increaseAmount = Math.min(
+            userBudget - lastOffer,
+            Math.round(lastOffer * 0.03) // 3% increase
+        );
+        const newOffer = Math.min(userBudget, lastOffer + increaseAmount);
+        
+        const increaseResponses = [
+            `Of course! I can go up to $${newOffer}/month. Would that work for you?`,
+            `Absolutely! I can increase my offer to $${newOffer}/month. Is that more in line with what you're looking for?`,
+            `Sure thing! How about $${newOffer}/month? I'm flexible and want to make this work.`,
+            `Yes, I can do $${newOffer}/month. That's getting close to my maximum but I really like the place.`,
+            `I can bump it up to $${newOffer}/month. Would that be acceptable?`,
+            `Definitely! I can raise it to $${newOffer}/month. I'm committed to making this work.`
+        ];
+        
+        const responseIndex = roundNumber % increaseResponses.length;
+        return this.formatMessage(increaseResponses[responseIndex]);
+    }
+
+    // Extract price from any message format
+    extractPriceFromMessage(message) {
+        const pricePatterns = [
+            /\$(\d+)/,           // $1340
+            /(\d+)\s*dollars?/i, // 1340 dollars
+            /(\d+)\s*\/month/i,  // 1340/month
+            /(\d+)\s*per month/i // 1340 per month
+        ];
+        
+        for (const pattern of pricePatterns) {
+            const match = message.match(pattern);
+            if (match) {
+                return parseInt(match[1]);
+            }
+        }
+        return null;
     }
 }
 
