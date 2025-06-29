@@ -22,11 +22,19 @@ try {
         OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim(),
         OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim(),
         OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || 'gpt-3.5-turbo',
-        BREVO_API_KEY: process.env.BREVO_API_KEY?.trim()
+        BREVO_API_KEY: process.env.BREVO_API_KEY?.trim(),
+        AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim(),
+        AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim(),
+        AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim(),
+        AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim()
     };
 }
 
 const { createClient } = require('@supabase/supabase-js');
+const multer = require('multer');
+const { DocumentIntelligenceClient, AzureKeyCredential } = require('@azure-rest/ai-document-intelligence');
+const { createFaceClient, AzureKeyCredential: FaceCredential } = require('@azure-rest/ai-vision-face');
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -55,6 +63,58 @@ try {
 } catch (error) {
     console.log('❌ Supabase initialization failed:', error.message);
 }
+
+// Initialize Azure Document Intelligence client
+let documentClient;
+try {
+    if (config.AZURE_DOCUMENT_INTELLIGENCE_KEY && config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
+        documentClient = DocumentIntelligenceClient(
+            config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
+            new AzureKeyCredential(config.AZURE_DOCUMENT_INTELLIGENCE_KEY)
+        );
+        console.log('✅ Azure Document Intelligence initialized');
+    } else {
+        console.log('⚠️ Azure Document Intelligence not initialized - missing credentials');
+    }
+} catch (error) {
+    console.log('❌ Azure Document Intelligence initialization failed:', error.message);
+}
+
+// Initialize Azure Face client
+let faceClient;
+try {
+    if (config.AZURE_FACE_KEY && config.AZURE_FACE_ENDPOINT) {
+        faceClient = createFaceClient(
+            config.AZURE_FACE_ENDPOINT,
+            new FaceCredential(config.AZURE_FACE_KEY)
+        );
+        console.log('✅ Azure Face API initialized');
+    } else {
+        console.log('⚠️ Azure Face API not initialized - missing credentials');
+    }
+} catch (error) {
+    console.log('❌ Azure Face API initialization failed:', error.message);
+}
+
+// Configure multer for file uploads
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        // Allow only image files for ID verification
+        if (file.fieldname === 'idDocument' || file.fieldname === 'facePhoto') {
+            if (file.mimetype.startsWith('image/')) {
+                cb(null, true);
+            } else {
+                cb(new Error('Only image files are allowed'), false);
+            }
+        } else {
+            cb(new Error('Invalid field name'), false);
+        }
+    }
+});
 
 // Middleware
 app.use(cors({
@@ -995,6 +1055,263 @@ function formatTimeAgo(date) {
     return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
 }
 
+// API: Upload and verify government ID
+app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) => {
+    try {
+        if (!documentClient) {
+            return res.status(503).json({ error: 'ID verification service not available - Azure Document Intelligence not configured' });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ error: 'ID document image is required' });
+        }
+
+        const { userEmail } = req.body;
+        if (!userEmail) {
+            return res.status(400).json({ error: 'User email is required' });
+        }
+
+        console.log('Processing ID verification for:', userEmail);
+        console.log('File info:', { 
+            originalname: req.file.originalname, 
+            mimetype: req.file.mimetype, 
+            size: req.file.size 
+        });
+
+        // Analyze the government ID using Azure Document Intelligence
+        const poller = await documentClient.beginAnalyzeDocument(
+            'prebuilt-idDocument',
+            req.file.buffer,
+            {
+                contentType: req.file.mimetype
+            }
+        );
+
+        const result = await poller.pollUntilDone();
+        
+        if (!result.documents || result.documents.length === 0) {
+            return res.status(400).json({ error: 'No valid government ID found in the image' });
+        }
+
+        const document = result.documents[0];
+        const extractedData = {};
+
+        // Extract key information from the ID
+        if (document.fields) {
+            if (document.fields.FirstName?.content) {
+                extractedData.firstName = document.fields.FirstName.content;
+            }
+            if (document.fields.LastName?.content) {
+                extractedData.lastName = document.fields.LastName.content;
+            }
+            if (document.fields.DateOfBirth?.content) {
+                extractedData.dateOfBirth = document.fields.DateOfBirth.content;
+            }
+            if (document.fields.DocumentNumber?.content) {
+                extractedData.documentNumber = document.fields.DocumentNumber.content;
+            }
+            if (document.fields.CountryRegion?.content) {
+                extractedData.country = document.fields.CountryRegion.content;
+            }
+        }
+
+        // Store verification status in database
+        if (supabase) {
+            try {
+                const { error: verificationError } = await supabase
+                    .from('user_verifications')
+                    .upsert({
+                        user_email: userEmail,
+                        id_verification_status: 'verified',
+                        id_verification_data: extractedData,
+                        id_verified_at: new Date().toISOString()
+                    });
+
+                if (verificationError) {
+                    console.error('Error storing verification:', verificationError);
+                }
+            } catch (dbError) {
+                console.error('Database error:', dbError);
+            }
+        }
+
+        // Log verification activity
+        await logUserActivity(userEmail, 'id_verified', 'Government ID successfully verified', {
+            document_type: document.docType,
+            extracted_data: extractedData
+        });
+
+        res.json({
+            success: true,
+            message: 'Government ID verified successfully',
+            extractedData: extractedData,
+            documentType: document.docType,
+            confidence: document.confidence
+        });
+
+    } catch (error) {
+        console.error('ID verification error:', error);
+        res.status(500).json({ 
+            error: 'ID verification failed', 
+            details: error.message 
+        });
+    }
+});
+
+// API: Face verification against ID
+app.post('/api/verify/face-match', upload.fields([
+    { name: 'idDocument', maxCount: 1 },
+    { name: 'facePhoto', maxCount: 1 }
+]), async (req, res) => {
+    try {
+        if (!faceClient) {
+            return res.status(503).json({ error: 'Face verification service not available - Azure Face API not configured' });
+        }
+
+        if (!req.files || !req.files.idDocument || !req.files.facePhoto) {
+            return res.status(400).json({ error: 'Both ID document and face photo are required' });
+        }
+
+        const { userEmail } = req.body;
+        if (!userEmail) {
+            return res.status(400).json({ error: 'User email is required' });
+        }
+
+        console.log('Processing face verification for:', userEmail);
+
+        const idFile = req.files.idDocument[0];
+        const faceFile = req.files.facePhoto[0];
+
+        // Detect faces in both images
+        const [idFaceResponse, userFaceResponse] = await Promise.all([
+            faceClient.path('/detect').post({
+                body: idFile.buffer,
+                contentType: idFile.mimetype,
+                queryParameters: {
+                    returnFaceId: true,
+                    returnFaceLandmarks: false,
+                    returnFaceAttributes: false
+                }
+            }),
+            faceClient.path('/detect').post({
+                body: faceFile.buffer,
+                contentType: faceFile.mimetype,
+                queryParameters: {
+                    returnFaceId: true,
+                    returnFaceLandmarks: false,
+                    returnFaceAttributes: false
+                }
+            })
+        ]);
+
+        if (idFaceResponse.status !== '200' || userFaceResponse.status !== '200') {
+            return res.status(400).json({ error: 'Failed to detect faces in one or both images' });
+        }
+
+        const idFaces = idFaceResponse.body;
+        const userFaces = userFaceResponse.body;
+
+        if (!idFaces || idFaces.length === 0) {
+            return res.status(400).json({ error: 'No face detected in ID document' });
+        }
+
+        if (!userFaces || userFaces.length === 0) {
+            return res.status(400).json({ error: 'No face detected in user photo' });
+        }
+
+        // Compare the faces
+        const verifyResponse = await faceClient.path('/verify').post({
+            body: {
+                faceId1: idFaces[0].faceId,
+                faceId2: userFaces[0].faceId
+            }
+        });
+
+        if (verifyResponse.status !== '200') {
+            return res.status(500).json({ error: 'Face comparison failed' });
+        }
+
+        const comparison = verifyResponse.body;
+        const isMatch = comparison.isIdentical;
+        const confidence = comparison.confidence;
+
+        // Store face verification status
+        if (supabase) {
+            try {
+                const { error: verificationError } = await supabase
+                    .from('user_verifications')
+                    .upsert({
+                        user_email: userEmail,
+                        face_verification_status: isMatch ? 'verified' : 'failed',
+                        face_verification_confidence: confidence,
+                        face_verified_at: new Date().toISOString()
+                    });
+
+                if (verificationError) {
+                    console.error('Error storing face verification:', verificationError);
+                }
+            } catch (dbError) {
+                console.error('Database error:', dbError);
+            }
+        }
+
+        // Log face verification activity
+        await logUserActivity(userEmail, 'face_verified', 
+            `Face verification ${isMatch ? 'successful' : 'failed'} with ${(confidence * 100).toFixed(1)}% confidence`, {
+            is_match: isMatch,
+            confidence: confidence
+        });
+
+        res.json({
+            success: true,
+            isMatch: isMatch,
+            confidence: confidence,
+            message: isMatch ? 'Face verification successful' : 'Face verification failed - faces do not match'
+        });
+
+    } catch (error) {
+        console.error('Face verification error:', error);
+        res.status(500).json({ 
+            error: 'Face verification failed', 
+            details: error.message 
+        });
+    }
+});
+
+// API: Get user verification status
+app.get('/api/verify/status/:email', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available' });
+        }
+
+        const { email } = req.params;
+        
+        const { data: verification, error } = await supabase
+            .from('user_verifications')
+            .select('*')
+            .eq('user_email', email)
+            .single();
+
+        if (error && error.code !== 'PGRST116') {
+            console.error('Error fetching verification status:', error);
+            return res.status(500).json({ error: 'Failed to fetch verification status' });
+        }
+
+        res.json({
+            verification: verification || {
+                user_email: email,
+                id_verification_status: 'pending',
+                face_verification_status: 'pending'
+            }
+        });
+
+    } catch (error) {
+        console.error('Error in verification status endpoint:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // API endpoint to serve client-safe configuration
 app.get('/api/config', (req, res) => {
     console.log('📋 Config endpoint called - checking environment variables:');
@@ -1071,6 +1388,8 @@ console.log('Environment variables check:');
 console.log('- STRIPE_SECRET_KEY:', !!process.env.STRIPE_SECRET_KEY);
 console.log('- SUPABASE_URL:', !!process.env.SUPABASE_URL);
 console.log('- SUPABASE_ANON_KEY:', !!process.env.SUPABASE_ANON_KEY);
+console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', !!process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY);
+console.log('- AZURE_FACE_KEY:', !!process.env.AZURE_FACE_KEY);
 
 app.listen(port, () => {
     console.log(`✅ Server running on port ${port}`);
