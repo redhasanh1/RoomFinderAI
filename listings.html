@@ -2576,14 +2576,20 @@
                 const conversationsWithUnread = [];
                 for (const conv of conversations || []) {
                     // Get last read time for this user
-                    const { data: readData } = await supabase
+                    // Modified to handle potential multiple rows from conversation_reads
+                    const { data: readDataArray, error: readError } = await supabase
                         .from('conversation_reads')
                         .select('last_read_at')
                         .eq('conversation_id', conv.id)
                         .eq('user_email', currentUser.email)
-                        .single();
+                        .limit(1); // Fetch at most one record
 
-                    const lastReadAt = readData?.last_read_at || '1970-01-01T00:00:00Z';
+                    if (readError) {
+                        console.warn('Error fetching read status for conv:', conv.id, readError);
+                        // Proceed with a default lastReadAt or handle error as appropriate
+                    }
+
+                    const lastReadAt = (readDataArray && readDataArray.length > 0) ? readDataArray[0].last_read_at : '1970-01-01T00:00:00Z';
 
                     // Count unread messages
                     const { count: unreadCount } = await supabase
