@@ -48,7 +48,7 @@
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            /* background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); */ /* Replaced by Tailwind bg-gray-50 */
         }
         
         /* Gradient text */
@@ -107,18 +107,43 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
         }
+
+        .brand-cta-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-weight: 600; /* Tailwind font-semibold */
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .brand-cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .listing-card-perspective-container {
+            perspective: 1000px;
+        }
+
         .listing-card {
             background: white;
-            border-radius: 20px;
-            transition: all 0.3s ease;
+            /* border-radius: 20px; */ /* Using Tailwind's rounded-lg (0.5rem) for consistency */
+            border-radius: 0.5rem;
+            transition: transform 0.4s ease-out, box-shadow 0.4s ease-out, border-color 0.3s ease;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             border: 1px solid #f1f5f9;
+            /* transform-style: preserve-3d; */ /* Not strictly needed for this simple tilt */
         }
-        .listing-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-            border-color: #667eea;
+
+        /* Combined hover effect on the new parent */
+        .listing-card-perspective-container:hover .listing-card {
+            transform: rotateX(5deg) rotateY(-5deg) translateY(-10px) scale(1.03); /* More pronounced tilt, lift, and scale */
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2); /* Further enhanced shadow */
+            border-color: #667eea; /* Keep consistent hover border color */
         }
+
+        /* Original .listing-card:hover is effectively replaced by the above */
+
         #aiButton {
             transition: transform 0.3s ease-in-out, box-shadow 0.2s ease-in-out;
         }
@@ -188,8 +213,12 @@
             margin-top: 1rem;
             font-weight: 500;
         }
-        .modal {
-            display: none;
+
+        /* Modal base style (hidden state) */
+        .modal, .chat-modal {
+            display: flex; /* Use flex for centering */
+            align-items: center;
+            justify-content: center;
             position: fixed;
             z-index: 1000;
             left: 0;
@@ -198,9 +227,22 @@
             height: 100%;
             overflow: auto;
             background-color: rgba(0,0,0,0.5);
+            opacity: 0;
+            transform: scale(0.9) perspective(800px) rotateX(-15deg);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            pointer-events: none;
         }
+
+        /* Modal active state (visible) */
+        .modal.active, .chat-modal.active {
+            opacity: 1;
+            transform: scale(1) perspective(800px) rotateX(0deg);
+            pointer-events: auto;
+        }
+
         .modal-content {
             background-color: #fff;
+            margin: auto; /* Helps with flex centering */
             margin: 5% auto;
             padding: 20px;
             border-radius: 0.5rem;
@@ -342,9 +384,9 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
+<body class="bg-gray-50 flex flex-col min-h-screen"> <!-- Body background updated -->
     <!-- Header -->
-    <header class="sticky top-0 modern-header shadow-lg z-10">
+    <header class="sticky top-0 bg-white shadow-md z-10"> <!-- Header style updated -->
         <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-6">
                 <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
@@ -363,7 +405,7 @@
     </header>
 
     <!-- Hero Section -->
-    <section id="home" class="bg-gradient-to-r from-blue-500 to-blue-700 text-white py-20 text-center">
+    <section id="home" class="text-white py-20 text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"> <!-- Hero background updated -->
         <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8">
             <h1 class="text-4xl sm:text-5xl font-extrabold mb-4">Explore Our Listings</h1>
             <p class="text-lg sm:text-xl mb-6">Discover and add rental properties tailored to your needs with Room Finder.</p>
@@ -373,7 +415,7 @@
     <!-- Main Content -->
     <main class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <!-- Add Listing Form -->
-        <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
+        <section class="bg-white rounded-xl shadow-lg p-6 sm:p-8 mb-12"> <!-- Shadow updated -->
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Add a New Listing</h2>
             <p class="text-lg text-gray-600 mb-6 text-center">Fill out the form below to manually add a listing or use the AI Negotiator to create one automatically.</p>
             <form id="listingForm" class="space-y-6">
@@ -435,13 +477,13 @@
                     <div id="mediaPreview" class="media-preview flex flex-wrap mt-2"></div>
                 </div>
                 <div>
-                    <button type="submit" class="w-full bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Add Listing</button>
+                    <button type="submit" class="w-full brand-cta-button px-8 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg">Add Listing</button> <!-- Button style updated -->
                 </div>
             </form>
         </section>
 
         <!-- Listings Display -->
-        <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8">
+        <section class="bg-white rounded-xl shadow-lg p-6 sm:p-8"> <!-- Shadow updated -->
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Available Listings</h2>
             
             <!-- Search and Filter Controls -->
@@ -477,14 +519,14 @@
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="applySearchFilters()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition font-semibold">Search & Filter</button>
-                    <button onclick="clearSearchFilters()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition font-semibold">Clear Filters</button>
+                    <button onclick="applySearchFilters()" class="brand-cta-button px-6 py-2 rounded-lg font-semibold">Search & Filter</button> <!-- Button style updated -->
+                    <button onclick="clearSearchFilters()" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 transition font-semibold">Clear Filters</button> <!-- Button style updated -->
                 </div>
             </div>
             
             <div class="mb-4 flex gap-4">
                 <button onclick="displayListings()" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Refresh Listings</button>
-                <button onclick="refreshMapOnly()" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-semibold shadow-md hover:shadow-lg">Refresh Map</button>
+                <button onclick="refreshMapOnly()" class="bg-green-500 text-white px-8 py-3 rounded-lg hover:bg-green-600 transition font-semibold shadow-md hover:shadow-lg">Refresh Map</button> <!-- Button style updated -->
             </div>
             <div id="listingsContainer" class="listing-grid"></div>
             <div id="map"></div>
@@ -502,7 +544,7 @@
                 <div id="modalDetails" class="text-gray-600 mb-4"></div>
                 <p id="modalDescription" class="text-gray-600 mb-4"></p>
                 <div id="modalMedia" class="modal-media flex flex-wrap mb-4"></div>
-                <a id="modalViewDetails" href="#" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg text-center w-full">View Details</a>
+                <a id="modalViewDetails" href="#" class="inline-block brand-cta-button px-8 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg text-center w-full">View Details</a> <!-- Button style updated -->
             </div>
         </div>
 
@@ -1366,18 +1408,21 @@
 
             document.getElementById('modalViewDetails').href = `/listing_details?id=${listing.id}`;
             
-            modal.style.display = 'block';
+            // modal.style.display = 'block';
+            modal.classList.add('active'); // Use class for animation
             console.log('Modal shown for listing:', listing.title);
         }
 
         closeButton.addEventListener('click', () => {
-            modal.style.display = 'none';
+            // modal.style.display = 'none';
+            modal.classList.remove('active'); // Use class for animation
             console.log('Modal closed');
         });
 
         window.addEventListener('click', (event) => {
             if (event.target === modal) {
-                modal.style.display = 'none';
+                // modal.style.display = 'none';
+                modal.classList.remove('active'); // Use class for animation
                 console.log('Modal closed by clicking outside');
             }
         });
@@ -1493,13 +1538,15 @@
             }
 
             chatCloseButton.addEventListener('click', () => {
-                chatModal.style.display = 'none';
+                // chatModal.style.display = 'none';
+                chatModal.classList.remove('active'); // Use class for animation
                 console.log('Chat modal closed');
             });
 
             window.addEventListener('click', (event) => {
                 if (event.target === chatModal) {
-                    chatModal.style.display = 'none';
+                    // chatModal.style.display = 'none';
+                    chatModal.classList.remove('active'); // Use class for animation
                     console.log('Chat modal closed by clicking outside');
                 }
             });
@@ -1734,7 +1781,8 @@
 
             currentConversationId = conversation.id;
             await loadMessages(conversation.id);
-            document.getElementById('chatModal').style.display = 'block';
+            // document.getElementById('chatModal').style.display = 'block';
+            document.getElementById('chatModal').classList.add('active'); // Use class for animation
             console.log('Chat modal opened for conversation:', conversation.id);
         }
 
@@ -2286,8 +2334,12 @@
                 ? media[0].url
                 : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
 
+            const perspectiveContainer = document.createElement('div'); // New perspective container
+            perspectiveContainer.className = 'listing-card-perspective-container';
+
             const listingCard = document.createElement('div');
-            listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden';
+            // Tailwind classes like bg-white, rounded-lg, shadow-md, overflow-hidden are applied to listingCard
+            listingCard.className = 'listing-card'; // Custom class for JS targeting and 3D effects
 
             const hasOwner = !!listing.user_email;
             listingCard.innerHTML = `
@@ -2310,7 +2362,12 @@
                     </div>
                 </div>
             `;
-            container.appendChild(listingCard);
+            // Apply Tailwind classes directly here for simplicity, as .listing-card CSS focuses on 3D aspects
+            listingCard.classList.add('bg-white', 'rounded-lg', 'shadow-md', 'overflow-hidden');
+
+
+            perspectiveContainer.appendChild(listingCard); // Append card to perspective container
+            container.appendChild(perspectiveContainer); // Append perspective container to main listings container
 
             // Add event listeners for this card
             const viewDetailsBtn = listingCard.querySelector('.view-details-btn');
