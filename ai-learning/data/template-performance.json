@@ -1,0 +1,198 @@
+{
+  "counter_offer_acceptance": {
+    "template_0": {
+      "text": "That works perfectly for me! $${price}/month sounds excellent.",
+      "success_rate": 0.82,
+      "sample_size": 45,
+      "best_contexts": ["cooperative_landlords", "quick_decisions"],
+      "avg_savings": 15,
+      "personality_fit": ["cooperative", "casual"]
+    },
+    "template_1": {
+      "text": "I accept your offer of $${price}/month. Great doing business with you!",
+      "success_rate": 0.79,
+      "sample_size": 38,
+      "best_contexts": ["professional_landlords", "business_hours"],
+      "avg_savings": 22,
+      "personality_fit": ["professional", "aggressive"]
+    },
+    "template_2": {
+      "text": "Perfect! $${price}/month is exactly what I was hoping for.",
+      "success_rate": 0.75,
+      "sample_size": 42,
+      "best_contexts": ["market_rate_offers", "premium_properties"],
+      "avg_savings": 18,
+      "personality_fit": ["cooperative", "professional"]
+    },
+    "template_3": {
+      "text": "Excellent! I'm very happy to agree to $${price}/month.",
+      "success_rate": 0.73,
+      "sample_size": 35,
+      "best_contexts": ["formal_negotiations", "high_value_properties"],
+      "avg_savings": 28,
+      "personality_fit": ["professional"]
+    },
+    "template_4": {
+      "text": "Wonderful! $${price}/month works great for me.",
+      "success_rate": 0.77,
+      "sample_size": 29,
+      "best_contexts": ["friendly_negotiations", "moderate_prices"],
+      "avg_savings": 12,
+      "personality_fit": ["cooperative", "casual"]
+    },
+    "template_5": {
+      "text": "That's a deal! $${price}/month it is.",
+      "success_rate": 0.71,
+      "sample_size": 33,
+      "best_contexts": ["quick_closes", "competitive_markets"],
+      "avg_savings": 8,
+      "personality_fit": ["aggressive", "professional"]
+    },
+    "template_6": {
+      "text": "I'm delighted to accept $${price}/month.",
+      "success_rate": 0.68,
+      "sample_size": 27,
+      "best_contexts": ["luxury_properties", "polite_negotiations"],
+      "avg_savings": 35,
+      "personality_fit": ["cooperative", "professional"]
+    },
+    "template_7": {
+      "text": "Outstanding! $${price}/month is perfect.",
+      "success_rate": 0.74,
+      "sample_size": 31,
+      "best_contexts": ["enthusiasm_needed", "casual_landlords"],
+      "avg_savings": 20,
+      "personality_fit": ["cooperative", "casual"]
+    }
+  },
+  "strategic_counter_offers": {
+    "template_0": {
+      "text": "I appreciate your counter-offer. How about we meet at $${price}/month?",
+      "success_rate": 0.65,
+      "sample_size": 52,
+      "best_contexts": ["cooperative_landlords", "moderate_gaps"],
+      "avg_savings": 85,
+      "personality_fit": ["cooperative", "professional"]
+    },
+    "template_1": {
+      "text": "That's getting closer! Would you consider $${price}/month?",
+      "success_rate": 0.58,
+      "sample_size": 41,
+      "best_contexts": ["gradual_negotiation", "friendly_tone"],
+      "avg_savings": 72,
+      "personality_fit": ["cooperative", "casual"]
+    },
+    "template_2": {
+      "text": "I understand your position. I can do $${price}/month with excellent references.",
+      "success_rate": 0.71,
+      "sample_size": 48,
+      "best_contexts": ["value_addition", "professional_approach"],
+      "avg_savings": 95,
+      "personality_fit": ["professional", "aggressive"]
+    },
+    "template_3": {
+      "text": "Let's find middle ground - how does $${price}/month sound?",
+      "success_rate": 0.62,
+      "sample_size": 44,
+      "best_contexts": ["collaborative_approach", "reasonable_gaps"],
+      "avg_savings": 78,
+      "personality_fit": ["cooperative", "professional"]
+    },
+    "template_4": {
+      "text": "I'm flexible - would $${price}/month work for you?",
+      "success_rate": 0.59,
+      "sample_size": 37,
+      "best_contexts": ["flexibility_emphasis", "price_sensitive"],
+      "avg_savings": 68,
+      "personality_fit": ["cooperative", "casual"]
+    },
+    "template_5": {
+      "text": "I can stretch to $${price}/month for the right place.",
+      "success_rate": 0.66,
+      "sample_size": 39,
+      "best_contexts": ["value_recognition", "premium_properties"],
+      "avg_savings": 88,
+      "personality_fit": ["professional", "cooperative"]
+    },
+    "template_6": {
+      "text": "How about $${price}/month with immediate move-in?",
+      "success_rate": 0.69,
+      "sample_size": 43,
+      "best_contexts": ["urgency_advantage", "timing_incentive"],
+      "avg_savings": 92,
+      "personality_fit": ["aggressive", "professional"]
+    },
+    "template_7": {
+      "text": "I could do $${price}/month if we can finalize quickly.",
+      "success_rate": 0.67,
+      "sample_size": 36,
+      "best_contexts": ["speed_incentive", "decision_pressure"],
+      "avg_savings": 82,
+      "personality_fit": ["aggressive", "cooperative"]
+    }
+  },
+  "market_based_responses": {
+    "template_0": {
+      "text": "Based on comparable properties, $${price}/month reflects fair market value.",
+      "success_rate": 0.74,
+      "sample_size": 56,
+      "best_contexts": ["data_driven", "professional_landlords"],
+      "avg_savings": 105,
+      "personality_fit": ["professional", "aggressive"]
+    },
+    "template_1": {
+      "text": "Market data shows similar places at $${price}/month - would that work?",
+      "success_rate": 0.69,
+      "sample_size": 48,
+      "best_contexts": ["evidence_based", "logical_approach"],
+      "avg_savings": 98,
+      "personality_fit": ["professional", "cooperative"]
+    },
+    "template_2": {
+      "text": "Given the current market, I can offer $${price}/month.",
+      "success_rate": 0.66,
+      "sample_size": 42,
+      "best_contexts": ["market_awareness", "confident_offers"],
+      "avg_savings": 88,
+      "personality_fit": ["professional", "aggressive"]
+    },
+    "template_3": {
+      "text": "Research indicates $${price}/month is appropriate for this type of property.",
+      "success_rate": 0.72,
+      "sample_size": 51,
+      "best_contexts": ["research_emphasis", "detailed_analysis"],
+      "avg_savings": 112,
+      "personality_fit": ["professional"]
+    },
+    "template_4": {
+      "text": "Considering market rates, $${price}/month seems reasonable.",
+      "success_rate": 0.68,
+      "sample_size": 45,
+      "best_contexts": ["reasonable_approach", "fair_positioning"],
+      "avg_savings": 85,
+      "personality_fit": ["cooperative", "professional"]
+    },
+    "template_5": {
+      "text": "Market analysis supports $${price}/month for this location.",
+      "success_rate": 0.71,
+      "sample_size": 49,
+      "best_contexts": ["analytical_approach", "location_specific"],
+      "avg_savings": 102,
+      "personality_fit": ["professional", "aggressive"]
+    }
+  },
+  "performance_summary": {
+    "top_performers": [
+      {"template": "counter_offer_acceptance_0", "success_rate": 0.82},
+      {"template": "counter_offer_acceptance_1", "success_rate": 0.79}, 
+      {"template": "counter_offer_acceptance_4", "success_rate": 0.77}
+    ],
+    "improvement_needed": [
+      {"template": "strategic_counter_offers_1", "success_rate": 0.58},
+      {"template": "strategic_counter_offers_4", "success_rate": 0.59},
+      {"template": "market_based_responses_2", "success_rate": 0.66}
+    ],
+    "last_updated": "2024-01-01T00:00:00Z",
+    "total_negotiations_analyzed": 1247
+  }
+}

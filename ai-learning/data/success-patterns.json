@@ -1,0 +1,127 @@
+{
+  "message_length_patterns": {
+    "short_messages": {
+      "success_rate": 0.72,
+      "optimal_range": "20-80 characters",
+      "examples": ["That works for me!", "Perfect! When can we start?"]
+    },
+    "medium_messages": {
+      "success_rate": 0.68,
+      "optimal_range": "81-150 characters", 
+      "examples": ["I appreciate your offer. That price works well for my budget and I can move in quickly."]
+    },
+    "long_messages": {
+      "success_rate": 0.45,
+      "optimal_range": "150+ characters",
+      "note": "Often seen as too verbose or desperate"
+    }
+  },
+  "response_timing_patterns": {
+    "quick_responses": {
+      "timeframe": "0-30 minutes",
+      "success_rate": 0.78,
+      "landlord_perception": "eager and organized"
+    },
+    "moderate_responses": {
+      "timeframe": "1-4 hours", 
+      "success_rate": 0.65,
+      "landlord_perception": "considerate and professional"
+    },
+    "slow_responses": {
+      "timeframe": "4+ hours",
+      "success_rate": 0.41,
+      "landlord_perception": "disinterested or disorganized"
+    }
+  },
+  "price_strategy_patterns": {
+    "market_rate_offers": {
+      "price_range": "95-105% of asking",
+      "success_rate": 0.85,
+      "average_savings": 25
+    },
+    "moderate_low_offers": {
+      "price_range": "85-95% of asking", 
+      "success_rate": 0.62,
+      "average_savings": 125
+    },
+    "aggressive_low_offers": {
+      "price_range": "70-85% of asking",
+      "success_rate": 0.23,
+      "average_savings": 200,
+      "note": "High risk, high reward"
+    }
+  },
+  "landlord_personality_patterns": {
+    "cooperative": {
+      "indicators": ["flexible", "reasonable", "understand", "sure"],
+      "success_rate": 0.79,
+      "best_approach": "collaborative and appreciative",
+      "optimal_templates": [0, 3, 6, 7]
+    },
+    "professional": {
+      "indicators": ["application", "references", "lease terms", "documentation"],
+      "success_rate": 0.71,
+      "best_approach": "formal and detail-oriented", 
+      "optimal_templates": [2, 3, 4, 5]
+    },
+    "aggressive": {
+      "indicators": ["firm", "final", "non-negotiable", "take it or leave it"],
+      "success_rate": 0.34,
+      "best_approach": "direct and decisive",
+      "optimal_templates": [0, 1, 4]
+    },
+    "casual": {
+      "indicators": ["cool", "awesome", "hey", "thanks"],
+      "success_rate": 0.68,
+      "best_approach": "friendly and informal",
+      "optimal_templates": [0, 6, 7]
+    }
+  },
+  "conversation_flow_patterns": {
+    "optimal_message_count": {
+      "range": "3-7 messages",
+      "success_rate": 0.74,
+      "reasoning": "Enough engagement without over-negotiating"
+    },
+    "topic_progression": {
+      "successful_order": ["interest", "price", "logistics", "confirmation"],
+      "avoid": ["rushing to price", "multiple topic jumps", "excessive back-and-forth"]
+    }
+  },
+  "time_based_patterns": {
+    "best_days": {
+      "weekdays": {
+        "success_rate": 0.71,
+        "peak_hours": "9-11 AM, 2-4 PM"
+      },
+      "weekends": {
+        "success_rate": 0.52,
+        "note": "Less responsive landlords"
+      }
+    },
+    "seasonal_trends": {
+      "peak_season": {
+        "months": "May-August", 
+        "success_rate": 0.58,
+        "competition": "high"
+      },
+      "off_season": {
+        "months": "November-February",
+        "success_rate": 0.76,
+        "competition": "low"
+      }
+    }
+  },
+  "market_condition_patterns": {
+    "high_competition": {
+      "strategy": "quick decisions, full price offers",
+      "success_rate": 0.45,
+      "optimal_templates": [0, 4, 6]
+    },
+    "low_competition": {
+      "strategy": "negotiation-friendly, value emphasis", 
+      "success_rate": 0.78,
+      "optimal_templates": [1, 2, 3, 5]
+    }
+  }
+}
