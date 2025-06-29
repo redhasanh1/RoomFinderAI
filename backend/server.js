@@ -1438,6 +1438,36 @@ app.get('/api/config', (req, res) => {
     res.json(configData);
 });
 
+// Debug endpoint to check Azure configuration status
+app.get('/api/debug/azure', (req, res) => {
+    console.log('🔍 Azure debug endpoint called');
+    
+    // Force reinitialization
+    reinitializeAzureClients();
+    
+    const azureStatus = {
+        environmentVariables: {
+            AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING',
+            AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'MISSING',
+            AZURE_FACE_KEY: process.env.AZURE_FACE_KEY ? `Present (${process.env.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING',
+            AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT || 'MISSING'
+        },
+        configObject: {
+            AZURE_DOCUMENT_INTELLIGENCE_KEY: config.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${config.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING',
+            AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'MISSING',
+            AZURE_FACE_KEY: config.AZURE_FACE_KEY ? `Present (${config.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING',
+            AZURE_FACE_ENDPOINT: config.AZURE_FACE_ENDPOINT || 'MISSING'
+        },
+        clients: {
+            documentClient: !!documentClient,
+            faceClient: !!faceClient
+        },
+        ready: !!documentClient && !!faceClient
+    };
+    
+    res.json(azureStatus);
+});
+
 // Health check route for Railway monitoring - MUST BE BEFORE /:page
 app.get('/health', (req, res) => {
     res.status(200).send('✅ RoomFinderAI server is running');
