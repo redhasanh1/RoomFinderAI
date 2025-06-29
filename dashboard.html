@@ -365,7 +365,8 @@
                                     <p class="text-sm text-gray-600">Upload a government-issued ID</p>
                                 </div>
                             </div>
-                            <button class="modern-button">Upload ID</button>
+                            <input type="file" id="idFileInput" accept="image/*,.pdf" style="display: none;">
+                            <button id="uploadIdBtn" class="modern-button" onclick="selectIdFile()">Upload ID</button>
                         </div>
 
                         <div class="flex items-center justify-between p-4 bg-white rounded-lg border">
@@ -717,6 +718,101 @@
 
         // Initialize notification count
         updateNotificationCount();
+
+        // ID Verification Functions
+        function selectIdFile() {
+            document.getElementById('idFileInput').click();
+        }
+
+        // Handle file selection
+        document.getElementById('idFileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadIdDocument(file);
+            }
+        });
+
+        async function uploadIdDocument(file) {
+            const uploadBtn = document.getElementById('uploadIdBtn');
+            const originalText = uploadBtn.textContent;
+            
+            try {
+                // Show upload progress
+                uploadBtn.textContent = 'Uploading...';
+                uploadBtn.disabled = true;
+                
+                // Get user email from session
+                const userEmail = localStorage.getItem('userEmail');
+                if (!userEmail) {
+                    throw new Error('User email not found. Please log in again.');
+                }
+                
+                // Create form data
+                const formData = new FormData();
+                formData.append('idDocument', file);
+                formData.append('userEmail', userEmail);
+                
+                // Upload to backend
+                const response = await fetch('/api/verify/upload-id', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showVerificationSuccess('ID verification successful!');
+                    // Update UI to show verified status
+                    updateIdVerificationStatus('verified');
+                } else {
+                    throw new Error(result.error || 'Upload failed');
+                }
+                
+            } catch (error) {
+                console.error('ID upload error:', error);
+                showVerificationError('Failed to upload ID: ' + error.message);
+            } finally {
+                // Reset button
+                uploadBtn.textContent = originalText;
+                uploadBtn.disabled = false;
+            }
+        }
+
+        function updateIdVerificationStatus(status) {
+            const button = document.getElementById('uploadIdBtn');
+            if (status === 'verified') {
+                button.textContent = '✓ Verified';
+                button.classList.add('bg-green-600', 'hover:bg-green-700');
+                button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                button.disabled = true;
+            }
+        }
+
+        function showVerificationSuccess(message) {
+            // Create success notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function showVerificationError(message) {
+            // Create error notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
     </script>
 </body>
 </html>
