@@ -32,8 +32,8 @@ try {
 
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
-const { DocumentIntelligenceClient, AzureKeyCredential } = require('@azure-rest/ai-document-intelligence');
-const { createFaceClient, AzureKeyCredential: FaceCredential } = require('@azure-rest/ai-vision-face');
+const { DocumentAnalysisClient, AzureKeyCredential } = require('@azure/ai-form-recognizer');
+const { FaceClient } = require('@azure/ai-vision-face');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -81,11 +81,11 @@ try {
     console.log('- ENDPOINT value:', config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'undefined');
     
     if (config.AZURE_DOCUMENT_INTELLIGENCE_KEY && config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
-        documentClient = new DocumentIntelligenceClient(
+        documentClient = new DocumentAnalysisClient(
             config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
             new AzureKeyCredential(config.AZURE_DOCUMENT_INTELLIGENCE_KEY)
         );
-        console.log('✅ Azure Document Intelligence initialized successfully');
+        console.log('✅ Azure Document Analysis initialized successfully');
     } else {
         console.log('⚠️ Azure Document Intelligence not initialized - missing credentials');
         console.log('  - KEY missing:', !config.AZURE_DOCUMENT_INTELLIGENCE_KEY);
@@ -107,9 +107,9 @@ try {
     console.log('- ENDPOINT value:', config.AZURE_FACE_ENDPOINT || 'undefined');
     
     if (config.AZURE_FACE_KEY && config.AZURE_FACE_ENDPOINT) {
-        faceClient = createFaceClient(
+        faceClient = new FaceClient(
             config.AZURE_FACE_ENDPOINT,
-            new FaceCredential(config.AZURE_FACE_KEY)
+            new AzureKeyCredential(config.AZURE_FACE_KEY)
         );
         console.log('✅ Azure Face API initialized successfully');
     } else {
@@ -1374,11 +1374,11 @@ function reinitializeAzureClients() {
     // Try to reinitialize Document Intelligence if it's not available
     if (!documentClient && currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY && currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
         try {
-            documentClient = new DocumentIntelligenceClient(
+            documentClient = new DocumentAnalysisClient(
                 currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
                 new AzureKeyCredential(currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY)
             );
-            console.log('✅ Azure Document Intelligence reinitialized successfully');
+            console.log('✅ Azure Document Analysis reinitialized successfully');
         } catch (error) {
             console.log('❌ Azure Document Intelligence reinitialization failed:', error.message);
             console.log('❌ Full error details:', error);
@@ -1388,9 +1388,9 @@ function reinitializeAzureClients() {
     // Try to reinitialize Face API if it's not available
     if (!faceClient && currentConfig.AZURE_FACE_KEY && currentConfig.AZURE_FACE_ENDPOINT) {
         try {
-            faceClient = createFaceClient(
+            faceClient = new FaceClient(
                 currentConfig.AZURE_FACE_ENDPOINT,
-                new FaceCredential(currentConfig.AZURE_FACE_KEY)
+                new AzureKeyCredential(currentConfig.AZURE_FACE_KEY)
             );
             console.log('✅ Azure Face API reinitialized successfully');
         } catch (error) {
