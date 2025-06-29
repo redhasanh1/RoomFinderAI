@@ -514,7 +514,11 @@
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 const userEmail = currentUser?.email;
                 
+                console.log('🔍 Current user:', currentUser);
+                console.log('📧 User email:', userEmail);
+                
                 if (!userEmail) {
+                    console.log('❌ No user email found');
                     document.getElementById('recentActivity').innerHTML = `
                         <div class="text-center py-4">
                             <p class="text-gray-500">Please log in to see your recent activities</p>
