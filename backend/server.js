@@ -231,10 +231,10 @@ function validateListingInput(data) {
 }
 
 // API: Add a new listing
-app.post('/api/listings', async (req, res) => {
+app.post('/api/listings', (req, res) => {
     try {
         console.log('Received listing request:', req.body);
-        const { city, street, postalCode, title, price, houseType, bedrooms, utilities, description, media, userEmail } = req.body;
+        const { city, street, postalCode, title, price, houseType, bedrooms, utilities, description, media } = req.body;
         
         const errors = validateListingInput(req.body);
         if (errors.length > 0) {
@@ -253,22 +253,10 @@ app.post('/api/listings', async (req, res) => {
             utilities,
             description,
             media: media || [],
-            userEmail: userEmail || 'unknown',
             createdAt: new Date().toISOString(),
         };
 
         listings.push(listing);
-
-        // Log listing creation activity
-        if (userEmail) {
-            await logUserActivity(userEmail, 'listing_created', `Created new listing: ${title}`, {
-                listing_id: listing.id,
-                city: city,
-                price: price,
-                bedrooms: bedrooms
-            });
-        }
-
         res.status(201).json({ message: 'Listing added successfully', listing });
     } catch (error) {
         console.error('Error in /api/listings:', error.message);
@@ -864,12 +852,15 @@ async function logUserActivity(userEmail, activityType, description, metadata = 
 app.get('/api/user/activities', async (req, res) => {
     try {
         const userEmail = req.headers['x-user-email'];
+        console.log('🔍 Activities request for user:', userEmail);
         
         if (!userEmail) {
+            console.log('❌ No user email provided in headers');
             return res.status(401).json({ error: 'User email required' });
         }
 
         if (!supabase) {
+            console.log('❌ Supabase not available');
             return res.status(500).json({ error: 'Database not available' });
         }
 
@@ -881,6 +872,8 @@ app.get('/api/user/activities', async (req, res) => {
             .eq('user_email', userEmail)
             .order('created_at', { ascending: false })
             .limit(4);
+
+        console.log('📊 Activities query result:', { activities, error });
 
         if (error) {
             console.error('❌ Error fetching user activities:', error.message);
