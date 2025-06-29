@@ -413,12 +413,45 @@ class AINegotiationEngine {
                     console.log('Could not fetch conversation details, using default email');
                 }
                 
+                // Extract user budget from conversation history
+                let userBudget = 1000; // Default fallback
+                try {
+                    // Get conversation messages to find AI's initial offer
+                    const { data: messages, error: msgError } = await this.supabase
+                        .from('messages')
+                        .select('content, sender_email')
+                        .eq('conversation_id', conversationId)
+                        .order('created_at', { ascending: true });
+                    
+                    if (!msgError && messages) {
+                        // Look for AI messages with price mentions
+                        for (const msg of messages) {
+                            if (msg.sender_email === 'ai-negotiator@roomfinder.com' && msg.content) {
+                                const extractedPrice = this.extractPriceFromMessage(msg.content);
+                                if (extractedPrice && extractedPrice > 0) {
+                                    userBudget = extractedPrice;
+                                    console.log(`✅ Extracted userBudget from AI message: $${userBudget}`);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.log('Could not extract budget from conversation history, using default');
+                }
+                
+                // If still default, try to extract from listing price (user might want 90% of asking)
+                if (userBudget === 1000 && listing.price && listing.price > 0) {
+                    userBudget = Math.round(listing.price * 0.9);
+                    console.log(`✅ Estimated userBudget based on listing price: $${userBudget}`);
+                }
+                
                 // Create new negotiation state from this reply
                 negotiation = {
                     listingId: listing.id,
                     listingTitle: listing.title,
                     originalPrice: listing.price,
-                    userBudget: 1000, // Default from your scenario
+                    userBudget: userBudget,
                     userEmail: userEmail,
                     landlordEmail: listing.user_email,
                     status: 'active',
@@ -1043,7 +1076,7 @@ class AINegotiationEngine {
         
         const confirmationIndex = roundNumber % confirmationVariations.length;
         const closingIndex = roundNumber % closingVariations.length;
-        const baseResponse = selectedTemplate.replace('${price}', finalPrice);
+        const baseResponse = selectedTemplate.replace(/\$\$\{price\}/g, finalPrice);
         
         return `${baseResponse} ${confirmationVariations[confirmationIndex]}${closingVariations[closingIndex]}`;
     }
@@ -1128,7 +1161,15 @@ class AINegotiationEngine {
                 baseTemplate = this.selectUnusedTemplate(defaultTemplates, usedResponses, 'default', negotiationId);
         }
         
-        const response = baseTemplate.replace('${price}', targetPrice) + additionalContext;
+        // CRITICAL: Ensure targetPrice is never null/undefined/0
+        if (!targetPrice || targetPrice <= 0) {
+            console.error('❌ CRITICAL: Invalid targetPrice detected:', targetPrice);
+            const negotiation = this.activeNegotiations.get(negotiationId);
+            targetPrice = negotiation?.userBudget || 1500; // Safe fallback
+            console.log('✅ Using fallback targetPrice:', targetPrice);
+        }
+        
+        const response = baseTemplate.replace(/\$\$\{price\}/g, targetPrice) + additionalContext;
         
         console.log(`💬 Generated varied response (round ${roundNumber}): ${response.substring(0, 50)}...`);
         return this.formatMessage(response);
@@ -2981,7 +3022,7 @@ class AINegotiationEngine {
         let response = templates[responseIndex];
         
         // Replace price placeholder
-        response = response.replace(/\$\{price\}/g, finalPrice);
+        response = response.replace(/\$\$\{price\}/g, finalPrice);
         
         return this.formatMessage(response);
     }
@@ -3057,7 +3098,9 @@ class AINegotiationEngine {
             /\$(\d+)/,           // $1340
             /(\d+)\s*dollars?/i, // 1340 dollars
             /(\d+)\s*\/month/i,  // 1340/month
-            /(\d+)\s*per month/i // 1340 per month
+            /(\d+)\s*per month/i, // 1340 per month
+            /(\d+)month/i,       // 3000month (no space)
+            /(\d+)\s*month/i     // 3000 month (with space)
         ];
         
         for (const pattern of pricePatterns) {
