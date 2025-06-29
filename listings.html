@@ -1137,8 +1137,8 @@
                     const response = await fetch(`${storageApiUrl}/${filePath}`, {
                         method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, // Use the ANON key
-                            'apikey': SUPABASE_ANON_KEY // Use the ANON key
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'apikey': SUPABASE_KEY
                         },
                         body: formData
                     });
@@ -1399,7 +1399,7 @@
                 // Log original input values for debugging
                 const originalValues = {
                     city: document.getElementById('city').value,
-                    country: document.getElementById('country').value, // Added back: 'country' input field now exists
+                    country: document.getElementById('country').value,
                     street: document.getElementById('street').value,
                     postalCode: document.getElementById('postalCode').value
                 };
