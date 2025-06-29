@@ -68,6 +68,22 @@ class AINegotiationEngine {
                 "I'll come prepared with ID, references, financial documentation, and payment.",
                 "I have all required paperwork: rental application, references, and financial proof.",
                 "I'll bring comprehensive documentation including background check and employment letter."
+            ],
+            securityDepositResponses: [
+                "Absolutely! For a $${price}/month rental, I'm prepared to provide a security deposit. The standard amount is typically one month's rent ($${price}). I can transfer this immediately along with the first month's rent.",
+                "Perfect! I'm ready to provide the security deposit right away. Is one month's rent ($${price}) the amount you require? I can handle the transfer today.",
+                "Of course! I have the security deposit ready. Should we do one month's rent ($${price}) as is standard? I can send it via wire transfer or certified check immediately.",
+                "Excellent! I'm prepared for the security deposit. Is $${price} (one month's rent) the correct amount? I can arrange payment today along with first month's rent.",
+                "Absolutely! I have the security deposit funds ready. Is the standard one month ($${price}) what you need? I can process the payment immediately.",
+                "Perfect! I'm ready with the security deposit. Should I prepare $${price} for the deposit? I can transfer both first month and security deposit today."
+            ],
+            moveInLogistics: [
+                "Great! Tomorrow night works perfectly for me. What time should I arrive? I'll have all my documents and payments ready.",
+                "Wonderful! I can move in tomorrow evening. What time works best for you? Should I bring anything specific?",
+                "Perfect timing! Tomorrow night is ideal. What time should we coordinate for key exchange and final walkthrough?",
+                "Excellent! I'm ready to move in tomorrow night. What time would be convenient for you? I'll bring all required documentation.",
+                "Outstanding! Tomorrow evening works great. What time should I plan to arrive? I have everything prepared.",
+                "Fantastic! Tomorrow night is perfect for move-in. What time should we meet? I'll bring all necessary paperwork and payments."
             ]
         };
     }
@@ -626,6 +642,32 @@ class AINegotiationEngine {
                 negotiationContext: this.analyzeNegotiationContext(negotiation)
             };
         }
+
+        // Check for post-agreement logistics: security deposit, move-in timing, etc.
+        const securityDepositPatterns = /\b(security deposit|deposit|first month|payment|money|transfer|funds|rent upfront)\b/i;
+        const moveInPatterns = /\b(move.?in|tomorrow|tonight|today|when can you|available|ready)\b/i;
+        const hasSecurityDepositMention = securityDepositPatterns.test(replyContent);
+        const hasMoveInMention = moveInPatterns.test(replyContent);
+        
+        if ((hasSecurityDepositMention || hasMoveInMention) && hasRecentAgreement) {
+            console.log('💰 POST-AGREEMENT LOGISTICS DETECTED:', replyContent);
+            const strategy = hasSecurityDepositMention ? 'security_deposit' : 'move_in_logistics';
+            return {
+                sentiment: 'positive',
+                priceOffered: null,
+                acceptsOffer: false,
+                makesCounterOffer: false,
+                shouldRespond: true,
+                isFinalized: false,
+                agreedPrice: this.extractLastOfferedPrice(negotiation),
+                responseStrategy: strategy,
+                suggestedResponse: hasSecurityDepositMention ? 'Security deposit discussion needed' : 'Move-in logistics needed',
+                negotiationPhase: 'logistics',
+                originalReply: replyContent,
+                landlordPersonality: this.detectLandlordPersonality(replyContent, negotiation),
+                negotiationContext: this.analyzeNegotiationContext(negotiation)
+            };
+        }
         
         // First check for simple acceptance patterns IMMEDIATELY
         const simpleReply = replyContent.trim().toLowerCase();
@@ -796,6 +838,17 @@ class AINegotiationEngine {
                 // Pass the original reply for context
                 analysis.originalReply = analysis.originalReply || analysis.suggestedResponse || '';
                 return this.generateMeetingCoordinationResponse(analysis, negotiation, roundNumber);
+            }
+
+            if (analysis.responseStrategy === 'security_deposit') {
+                console.log('💰 Generating security deposit response');
+                const finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
+                return this.generateSecurityDepositResponse(finalPrice, negotiationId, roundNumber);
+            }
+
+            if (analysis.responseStrategy === 'move_in_logistics') {
+                console.log('🏠 Generating move-in logistics response');
+                return this.generateMoveInLogisticsResponse(negotiationId, roundNumber);
             }
 
             if (analysis.sentiment === 'negative' || analysis.responseStrategy === 'clarify') {
@@ -2732,6 +2785,26 @@ class AINegotiationEngine {
         } catch (error) {
             console.error('Error checking recent messages:', error);
         }
+    }
+
+    // Generate security deposit response
+    generateSecurityDepositResponse(finalPrice, negotiationId, roundNumber) {
+        const templates = this.responseTemplates.securityDepositResponses;
+        const responseIndex = roundNumber % templates.length;
+        let response = templates[responseIndex];
+        
+        // Replace price placeholder
+        response = response.replace(/\$\{price\}/g, finalPrice);
+        
+        return this.formatMessage(response);
+    }
+
+    // Generate move-in logistics response  
+    generateMoveInLogisticsResponse(negotiationId, roundNumber) {
+        const templates = this.responseTemplates.moveInLogistics;
+        const responseIndex = roundNumber % templates.length;
+        
+        return this.formatMessage(templates[responseIndex]);
     }
 }
 
