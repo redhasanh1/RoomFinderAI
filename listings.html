@@ -384,19 +384,6 @@
                         <div id="city-autocomplete-dropdown" class="custom-autocomplete hidden"></div>
                     </div>
                     <div>
-                        <label for="country" class="block text-sm font-medium text-gray-700">Country</label>
-                        <select id="country" name="country" required class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-                            <option value="US">United States</option>
-                            <option value="CA">Canada</option>
-                            <option value="UK">United Kingdom</option>
-                            <option value="AU">Australia</option>
-                            <option value="FR">France</option>
-                            <option value="DE">Germany</option>
-                            <option value="IN">India</option>
-                            <option value="PK">Pakistan</option>
-                        </select>
-                    </div>
-                    <div>
                         <label for="street" class="block text-sm font-medium text-gray-700">Street</label>
                         <input type="text" id="street" name="street" required class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="e.g., 123 Main St">
                     </div>
@@ -1418,7 +1405,6 @@
                     title: autocorrectInput(sanitizeInput(document.getElementById('title').value)),
                     price: parseInt(document.getElementById('price').value),
                     city: cleanAddressInput(document.getElementById('city').value),
-                    country: document.getElementById('country').value,
                     street: cleanAddressInput(document.getElementById('street').value),
                     postalCode: document.getElementById('postalCode').value.trim().toUpperCase().replace(/\s+/g, ' '),
                     house_type: document.getElementById('houseType').value,
@@ -1437,7 +1423,7 @@
                 });
                 console.log('📋 Submitting listing:', listing);
 
-                if (!listing.title || !listing.price || !listing.city || !listing.country || !listing.street || !listing.postalCode || !listing.house_type || !listing.bedrooms) {
+                if (!listing.title || !listing.price || !listing.city || !listing.street || !listing.postalCode || !listing.house_type || !listing.bedrooms) {
                     alert('Please fill in all required fields.');
                     return;
                 }
