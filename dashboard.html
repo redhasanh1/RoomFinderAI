@@ -9,20 +9,7 @@
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #ff6b6b 100%);
-            min-height: 100vh;
-            position: relative;
-        }
-        
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.05"><circle cx="30" cy="30" r="2"/></g></g></svg>');
-            z-index: -1;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
         }
         
         /* Gradient backgrounds */
@@ -50,38 +37,13 @@
             background-clip: text;
         }
         
-        /* Revolutionary 3D glass cards */
+        /* Modern glass cards */
         .glass-card {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 24px;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15), 0 0 60px rgba(102, 126, 234, 0.2);
-            transform-style: preserve-3d;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .glass-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(240, 147, 251, 0.1) 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .glass-card:hover {
-            transform: translateY(-10px) rotateX(5deg) rotateY(5deg) scale(1.02);
-            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.2), 0 0 80px rgba(102, 126, 234, 0.3);
-        }
-        
-        .glass-card:hover::before {
-            opacity: 1;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
         
         /* Modern header */
@@ -116,33 +78,18 @@
             transform: translateY(-2px);
         }
         
-        /* Revolutionary 3D stats cards */
+        /* Stats cards */
         .stats-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(15px);
-            border-radius: 20px;
-            padding: 28px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), 0 0 40px rgba(102, 126, 234, 0.1);
-            transform-style: preserve-3d;
-            position: relative;
-        }
-        
-        .stats-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(240, 147, 251, 0.05) 100%);
-            border-radius: 18px;
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            border: 1px solid #f1f5f9;
         }
         
         .stats-card:hover {
-            transform: translateY(-8px) rotateX(5deg) scale(1.05);
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15), 0 0 60px rgba(102, 126, 234, 0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
         
         /* Modern buttons */
