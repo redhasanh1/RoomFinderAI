@@ -1133,8 +1133,8 @@
                     const response = await fetch(`${storageApiUrl}/${filePath}`, {
                         method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${SUPABASE_KEY}`,
-                            'apikey': SUPABASE_KEY
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, // Use the ANON key
+                            'apikey': SUPABASE_ANON_KEY // Use the ANON key
                         },
                         body: formData
                     });
