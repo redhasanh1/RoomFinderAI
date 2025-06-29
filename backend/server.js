@@ -38,6 +38,13 @@ const { createFaceClient, AzureKeyCredential: FaceCredential } = require('@azure
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Log environment variables immediately at startup
+console.log('🚀 Server starting - Environment variable check:');
+console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING');
+console.log('- AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:', process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'MISSING');
+console.log('- AZURE_FACE_KEY:', process.env.AZURE_FACE_KEY ? `Present (${process.env.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING');
+console.log('- AZURE_FACE_ENDPOINT:', process.env.AZURE_FACE_ENDPOINT || 'MISSING');
+
 // Initialize Stripe with error handling
 let stripe;
 try {
@@ -1340,8 +1347,30 @@ app.get('/api/verify/status/:email', async (req, res) => {
 
 // Function to reinitialize Azure clients if they failed initially
 function reinitializeAzureClients() {
+    console.log('🔄 Attempting Azure client reinitialization...');
+    
+    // Force reload config from environment variables
+    const currentConfig = {
+        AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim(),
+        AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim(),
+        AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim(),
+        AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim()
+    };
+    
+    console.log('🔍 Current environment variables:');
+    console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING');
+    console.log('- AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:', currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'MISSING');
+    console.log('- AZURE_FACE_KEY:', currentConfig.AZURE_FACE_KEY ? `Present (${currentConfig.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING');
+    console.log('- AZURE_FACE_ENDPOINT:', currentConfig.AZURE_FACE_ENDPOINT || 'MISSING');
+    
+    // Update global config with fresh environment variables
+    config.AZURE_DOCUMENT_INTELLIGENCE_KEY = currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY;
+    config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT = currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT;
+    config.AZURE_FACE_KEY = currentConfig.AZURE_FACE_KEY;
+    config.AZURE_FACE_ENDPOINT = currentConfig.AZURE_FACE_ENDPOINT;
+    
     // Try to reinitialize Document Intelligence if it's not available
-    if (!documentClient && config.AZURE_DOCUMENT_INTELLIGENCE_KEY && config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
+    if (!documentClient && currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY && currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
         try {
             documentClient = DocumentIntelligenceClient(
                 config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
@@ -1354,17 +1383,22 @@ function reinitializeAzureClients() {
     }
     
     // Try to reinitialize Face API if it's not available
-    if (!faceClient && config.AZURE_FACE_KEY && config.AZURE_FACE_ENDPOINT) {
+    if (!faceClient && currentConfig.AZURE_FACE_KEY && currentConfig.AZURE_FACE_ENDPOINT) {
         try {
             faceClient = createFaceClient(
-                config.AZURE_FACE_ENDPOINT,
-                new FaceCredential(config.AZURE_FACE_KEY)
+                currentConfig.AZURE_FACE_ENDPOINT,
+                new FaceCredential(currentConfig.AZURE_FACE_KEY)
             );
             console.log('✅ Azure Face API reinitialized successfully');
         } catch (error) {
             console.log('❌ Azure Face API reinitialization failed:', error.message);
         }
     }
+    
+    // Log final status
+    console.log('🏁 Reinitialization complete:');
+    console.log('- Document Intelligence available:', !!documentClient);
+    console.log('- Face API available:', !!faceClient);
 }
 
 // API endpoint to serve client-safe configuration
