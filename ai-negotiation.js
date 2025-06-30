@@ -95,6 +95,169 @@ class AINegotiationEngine {
         };
     }
 
+    // Get AI learning insights for personalized negotiation
+    async getLearningInsights(listing, userBudget) {
+        try {
+            // Query successful negotiations from database
+            const { data: successfulNegotiations, error } = await this.supabase
+                .from('ai_chats')
+                .select('*')
+                .eq('metadata->success', true)
+                .ilike('listing_type', `%${listing.house_type}%`)
+                .limit(20);
+
+            if (error) {
+                console.log('Learning insights query failed, using defaults');
+                return this.getDefaultLearningInsights();
+            }
+
+            // Analyze successful patterns
+            const insights = {
+                successfulStrategies: this.analyzeSuccessfulStrategies(successfulNegotiations),
+                optimalTiming: this.analyzeOptimalTiming(successfulNegotiations),
+                valueProps: this.analyzeValuePropositions(successfulNegotiations),
+                landlordBehavior: this.analyzeLandlordBehavior(successfulNegotiations)
+            };
+
+            return insights;
+        } catch (error) {
+            console.error('Error getting learning insights:', error);
+            return this.getDefaultLearningInsights();
+        }
+    }
+
+    // Get contextual learning from similar properties
+    async getContextualLearning(propertyType, city) {
+        try {
+            const { data: contextData, error } = await this.supabase
+                .from('ai_chats')
+                .select('conversation_data, metadata')
+                .eq('metadata->dealClosed', true)
+                .ilike('listing_type', `%${propertyType}%`)
+                .ilike('listing_location', `%${city}%`)
+                .limit(15);
+
+            if (error) {
+                return this.getDefaultContextualLearning();
+            }
+
+            return {
+                similarNegotiations: `${contextData?.length || 0} successful deals in similar properties`,
+                locationStrategies: this.extractLocationStrategies(contextData),
+                propertyTypeStrategies: this.extractPropertyTypeStrategies(contextData)
+            };
+        } catch (error) {
+            console.error('Error getting contextual learning:', error);
+            return this.getDefaultContextualLearning();
+        }
+    }
+
+    // Analyze successful negotiation strategies
+    analyzeSuccessfulStrategies(negotiations) {
+        if (!negotiations || negotiations.length === 0) {
+            return 'Market-based pricing with value emphasis';
+        }
+
+        const strategies = negotiations.map(n => n.metadata?.strategy || 'market_based');
+        const mostSuccessful = this.getMostCommon(strategies);
+        
+        return `${mostSuccessful} approach with ${Math.round((strategies.filter(s => s === mostSuccessful).length / strategies.length) * 100)}% success rate`;
+    }
+
+    // Analyze optimal timing patterns
+    analyzeOptimalTiming(negotiations) {
+        if (!negotiations || negotiations.length === 0) {
+            return 'Quick response within 2-4 hours';
+        }
+
+        // Analyze response times from successful negotiations
+        const avgResponseTime = negotiations.reduce((sum, n) => {
+            const responseTime = n.metadata?.avgResponseTime || 180; // minutes
+            return sum + responseTime;
+        }, 0) / negotiations.length;
+
+        if (avgResponseTime < 60) return 'Immediate response within 1 hour';
+        if (avgResponseTime < 240) return 'Quick response within 2-4 hours';
+        return 'Same-day response preferred';
+    }
+
+    // Analyze effective value propositions
+    analyzeValuePropositions(negotiations) {
+        if (!negotiations || negotiations.length === 0) {
+            return 'Reliable tenant with references';
+        }
+
+        const valueProps = negotiations.map(n => n.metadata?.valueProposition || 'reliability');
+        const topValue = this.getMostCommon(valueProps);
+        
+        return `${topValue} emphasis with quick decision capability`;
+    }
+
+    // Analyze landlord behavior patterns
+    analyzeLandlordBehavior(negotiations) {
+        if (!negotiations || negotiations.length === 0) {
+            return 'Professional, price-conscious, values reliability';
+        }
+
+        const behaviors = negotiations.map(n => n.metadata?.landlordStyle || 'professional');
+        const commonBehavior = this.getMostCommon(behaviors);
+        
+        return `Typically ${commonBehavior}, responds well to ${commonBehavior === 'professional' ? 'data-driven' : 'personal'} approaches`;
+    }
+
+    // Extract location-specific strategies
+    extractLocationStrategies(contextData) {
+        if (!contextData || contextData.length === 0) {
+            return 'Standard market approach';
+        }
+
+        const strategies = contextData.map(d => d.metadata?.locationStrategy || 'market_comparison');
+        const topStrategy = this.getMostCommon(strategies);
+        
+        return `${topStrategy} works best in this area`;
+    }
+
+    // Extract property type strategies
+    extractPropertyTypeStrategies(contextData) {
+        if (!contextData || contextData.length === 0) {
+            return 'Value-based negotiation';
+        }
+
+        const strategies = contextData.map(d => d.metadata?.propertyStrategy || 'value_focus');
+        const topStrategy = this.getMostCommon(strategies);
+        
+        return `${topStrategy} approach for this property type`;
+    }
+
+    // Get most common element in array
+    getMostCommon(arr) {
+        if (!arr || arr.length === 0) return 'standard';
+        
+        const counts = {};
+        arr.forEach(item => counts[item] = (counts[item] || 0) + 1);
+        
+        return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+    }
+
+    // Default learning insights fallback
+    getDefaultLearningInsights() {
+        return {
+            successfulStrategies: 'Market-based pricing with value emphasis',
+            optimalTiming: 'Quick response within 2-4 hours',
+            valueProps: 'Reliable tenant with excellent references',
+            landlordBehavior: 'Professional, responds to data-driven approaches'
+        };
+    }
+
+    // Default contextual learning fallback
+    getDefaultContextualLearning() {
+        return {
+            similarNegotiations: 'Standard market analysis',
+            locationStrategies: 'Market comparison approach',
+            propertyTypeStrategies: 'Value-focused negotiation'
+        };
+    }
+
     // Initialize the negotiation engine
     async init() {
         try {
@@ -283,13 +446,19 @@ class AINegotiationEngine {
         return sorted.length % 2 !== 0 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
     }
 
-    // Generate intelligent negotiation message
-    async generateNegotiationMessage(listing, userBudget, marketData) {
+    // Enhanced negotiation message generation with conversation memory and learning
+    async generateNegotiationMessage(listing, userBudget, marketData, conversationHistory = []) {
         try {
-            console.log('🤖 Generating negotiation message for:', listing.title);
+            console.log('🤖 Generating enhanced negotiation message for:', listing.title);
 
-            const prompt = `
-            You are an expert rental negotiator. Generate a professional negotiation message for this rental:
+            // Get AI learning insights for this user and property type
+            const learningInsights = await this.getLearningInsights(listing, userBudget);
+            
+            // Build conversation context from previous successful negotiations
+            const contextualLearning = await this.getContextualLearning(listing.house_type, listing.city);
+
+            const enhancedPrompt = `
+            You are an advanced AI negotiation expert with access to learning data from successful negotiations. Generate a highly optimized negotiation message:
 
             LISTING DETAILS:
             - Title: ${listing.title}
@@ -299,30 +468,48 @@ class AINegotiationEngine {
             - Location: ${listing.city || 'Not specified'}
             - Utilities: ${listing.utilities}
 
-            USER REQUIREMENTS:
+            USER PROFILE & PREFERENCES:
             - Budget: $${userBudget}
             - Looking for: ${listing.house_type}
+            - Negotiation History: ${conversationHistory.length} previous conversations
 
-            MARKET DATA:
+            ENHANCED MARKET INTELLIGENCE:
             - Average market price: $${marketData.average}
             - Market range: $${marketData.min} - $${marketData.max}
             - Data source: ${marketData.source}
-            - Analysis: ${marketData.analysis || 'Standard market conditions'}
+            - Market analysis: ${marketData.analysis || 'Standard market conditions'}
+            - Comparable properties: ${marketData.negotiationTips || 'Standard pricing'}
 
-            NEGOTIATION STRATEGY:
-            1. Be professional and respectful
-            2. Express genuine interest in the property
-            3. Mention you're a qualified tenant ready to move quickly
-            4. If listing price is above market average or user budget, suggest a lower price with justification
-            5. Offer quick decision-making and reliable tenancy
-            6. Keep message concise (2-3 sentences max)
+            AI LEARNING INSIGHTS:
+            - Successful price reduction patterns: ${learningInsights.successfulStrategies}
+            - Optimal timing for offers: ${learningInsights.optimalTiming}
+            - Effective value propositions: ${learningInsights.valueProps}
+            - Landlord response patterns: ${learningInsights.landlordBehavior}
 
-            PRICING LOGIC:
-            - If listing price > market average: Suggest price closer to market average
-            - If listing price > user budget: Suggest price within budget
-            - If listing price is fair: Express interest and ask about flexibility
+            CONTEXTUAL LEARNING DATA:
+            - Similar property negotiations: ${contextualLearning.similarNegotiations}
+            - Successful strategies in ${listing.city}: ${contextualLearning.locationStrategies}
+            - ${listing.house_type} specific tactics: ${contextualLearning.propertyTypeStrategies}
 
-            Generate ONLY the message content (no "Dear" or signatures):
+            ADVANCED NEGOTIATION STRATEGY:
+            1. Personalize approach based on successful patterns
+            2. Use data-driven market justification
+            3. Emphasize qualified tenant status with speed to close
+            4. Apply psychological principles from successful cases
+            5. Incorporate location-specific insights
+            6. Optimize message length based on success data
+            7. Use proven language patterns that convert
+
+            DYNAMIC PRICING STRATEGY:
+            - Apply learned discount ranges for this property type
+            - Consider market momentum and seasonal factors
+            - Use successful negotiation anchoring techniques
+            - Optimize offer based on conversion probability
+
+            CONVERSATION MEMORY:
+            ${conversationHistory.length > 0 ? `Previous context: ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join(' | ')}` : 'Initial contact'}
+
+            Generate a message that maximizes negotiation success probability based on learned patterns. Be specific, data-driven, and compelling:
             `;
 
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -334,9 +521,21 @@ class AINegotiationEngine {
                 },
                 body: JSON.stringify({
                     model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
-                    messages: [{ role: 'system', content: prompt }],
+                    messages: [
+                        { 
+                            role: 'system', 
+                            content: enhancedPrompt 
+                        },
+                        {
+                            role: 'user',
+                            content: `Generate an optimized negotiation message for this ${listing.house_type} in ${listing.city} priced at $${listing.price}. My budget is $${userBudget}. Use your learning data to maximize success probability.`
+                        }
+                    ],
                     max_tokens: 150,
-                    temperature: 0.7
+                    temperature: 0.7,
+                    top_p: 0.9,
+                    frequency_penalty: 0.3,
+                    presence_penalty: 0.2
                 })
             });
 
@@ -1739,7 +1938,7 @@ class AINegotiationEngine {
                     'OpenAI-Organization': this.config.OPENAI_ORG_ID
                 },
                 body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
+                    model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
                     messages: [{ role: 'system', content: prompt }],
                     max_tokens: 120,
                     temperature: 0.7
@@ -2367,9 +2566,9 @@ class AINegotiationEngine {
                     'OpenAI-Organization': this.config.OPENAI_ORG_ID
                 },
                 body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
+                    model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
                     messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 200,
+                    max_tokens: 150,
                     temperature: 0.7
                 })
             });
@@ -2419,13 +2618,10 @@ class AINegotiationEngine {
                 created_at: new Date().toISOString()
             };
             
-            // Store in database (disabled - table doesn't exist)
-            // const { error } = await this.supabase
-            //     .from('negotiation_outcomes')
-            //     .insert(outcomeData);
+            // Enhanced conversation logging to Supabase
+            await this.logConversationToSupabase(outcomeData, negotiation);
             
-            // Store in localStorage instead
-            console.log('Storing negotiation outcome in localStorage (negotiation_outcomes table not available)');
+            // Store in localStorage as backup
             this.storeOutcomeLocally(outcomeData);
             console.log('✅ Negotiation outcome tracked successfully');
             
@@ -2446,6 +2642,287 @@ class AINegotiationEngine {
                 console.error('Failed to store outcome locally:', storageError);
             }
         }
+    }
+
+    // Enhanced conversation logging to Supabase for learning system
+    async logConversationToSupabase(outcomeData, negotiation) {
+        try {
+            console.log('📊 Logging comprehensive conversation data to Supabase');
+            
+            // Prepare enhanced conversation data with learning insights
+            const conversationData = {
+                user_email: negotiation.userEmail,
+                conversation_data: JSON.stringify([
+                    {
+                        role: 'system',
+                        content: `Negotiation completed: ${outcomeData.outcome}`,
+                        timestamp: new Date().toISOString()
+                    },
+                    {
+                        role: 'assistant', 
+                        content: `Property: ${negotiation.listingTitle}\nOriginal Price: $${negotiation.originalPrice}\nFinal Price: $${outcomeData.final_price}\nSavings: $${negotiation.originalPrice - outcomeData.final_price}\nDuration: ${Math.round(outcomeData.negotiation_duration / 60)} minutes\nMessages: ${outcomeData.message_count}`,
+                        timestamp: new Date().toISOString()
+                    }
+                ]),
+                title: `Negotiation ${outcomeData.outcome}: ${negotiation.listingTitle}`,
+                created_at: new Date().toISOString(),
+                // Enhanced metadata for learning system
+                metadata: {
+                    // Core negotiation data
+                    negotiationId: outcomeData.negotiation_id,
+                    listingId: outcomeData.listing_id,
+                    outcome: outcomeData.outcome,
+                    success: outcomeData.outcome === 'success',
+                    dealClosed: outcomeData.outcome === 'success',
+                    
+                    // Financial data  
+                    originalPrice: outcomeData.original_price,
+                    finalPrice: outcomeData.final_price,
+                    userBudget: outcomeData.user_budget,
+                    savings: outcomeData.original_price - outcomeData.final_price,
+                    savingsPercentage: Math.round(((outcomeData.original_price - outcomeData.final_price) / outcomeData.original_price) * 100),
+                    
+                    // Negotiation metrics
+                    duration: outcomeData.negotiation_duration,
+                    messageCount: outcomeData.message_count,
+                    avgResponseTime: outcomeData.negotiation_duration / Math.max(outcomeData.message_count, 1),
+                    
+                    // Market context
+                    marketData: outcomeData.market_data,
+                    dynamicMarketData: outcomeData.dynamic_market_data,
+                    
+                    // Learning insights
+                    landlordPersonality: outcomeData.landlord_personality,
+                    strategiesUsed: outcomeData.strategies_used,
+                    successFactors: outcomeData.success_factors,
+                    
+                    // Property context for learning
+                    propertyType: negotiation.listingType || 'unknown',
+                    location: negotiation.listingLocation || 'unknown',
+                    priceRange: this.categorizePriceRange(outcomeData.original_price),
+                    
+                    // Conversation patterns
+                    conversationFlow: this.analyzeConversationFlow(negotiation),
+                    keyTurningPoints: this.identifyTurningPoints(negotiation),
+                    
+                    // AI performance metrics
+                    aiResponseQuality: this.assessAIResponseQuality(negotiation),
+                    promptOptimization: this.assessPromptPerformance(negotiation),
+                    
+                    // Learning optimization data
+                    learningCategory: this.categorizeLearningData(outcomeData, negotiation),
+                    trainingValue: this.calculateTrainingValue(outcomeData),
+                    
+                    // Timestamp for trend analysis
+                    timestamp: new Date().toISOString(),
+                    sessionId: negotiation.sessionId || `session_${Date.now()}`
+                }
+            };
+
+            // Insert comprehensive conversation log
+            const { data, error } = await this.supabase
+                .from('ai_chats')
+                .insert(conversationData);
+
+            if (error) {
+                console.error('❌ Error logging conversation to Supabase:', error);
+                throw error;
+            }
+
+            console.log('✅ Comprehensive conversation logged to Supabase with learning metadata');
+            
+            // Also log individual messages for detailed analysis
+            await this.logDetailedMessageHistory(negotiation, outcomeData.negotiation_id);
+            
+        } catch (error) {
+            console.error('Error in comprehensive conversation logging:', error);
+            // Don't throw - fallback to localStorage will handle it
+        }
+    }
+
+    // Log detailed message history for analysis
+    async logDetailedMessageHistory(negotiation, negotiationId) {
+        try {
+            if (!negotiation.messages || negotiation.messages.length === 0) return;
+
+            console.log('📝 Logging detailed message history for analysis');
+            
+            // Create individual entries for each message exchange
+            for (let i = 0; i < negotiation.messages.length; i++) {
+                const message = negotiation.messages[i];
+                const messageData = {
+                    user_email: negotiation.userEmail,
+                    conversation_data: JSON.stringify([{
+                        role: message.sender === 'ai' ? 'assistant' : 'user',
+                        content: message.content,
+                        timestamp: message.timestamp || new Date().toISOString(),
+                        messageIndex: i,
+                        sender: message.sender
+                    }]),
+                    title: `Message ${i + 1}: ${negotiation.listingTitle}`,
+                    metadata: {
+                        negotiationId: negotiationId,
+                        messageIndex: i,
+                        sender: message.sender,
+                        messageType: this.classifyMessageType(message.content),
+                        priceOffered: this.extractPriceFromMessage(message.content),
+                        sentiment: this.analyzeMessageSentiment(message.content),
+                        strategy: this.identifyMessageStrategy(message.content),
+                        timestamp: message.timestamp || new Date().toISOString()
+                    }
+                };
+
+                await this.supabase.from('ai_chats').insert(messageData);
+            }
+
+            console.log('✅ Detailed message history logged');
+        } catch (error) {
+            console.error('Error logging detailed message history:', error);
+        }
+    }
+
+    // Analyze conversation flow patterns
+    analyzeConversationFlow(negotiation) {
+        if (!negotiation.messages) return 'simple';
+        
+        const messageCount = negotiation.messages.length;
+        const aiMessages = negotiation.messages.filter(m => m.sender === 'ai').length;
+        const landlordMessages = negotiation.messages.filter(m => m.sender === 'landlord').length;
+        
+        if (messageCount <= 2) return 'quick_resolution';
+        if (messageCount <= 5) return 'standard_negotiation';
+        if (messageCount <= 10) return 'complex_negotiation';
+        return 'extended_negotiation';
+    }
+
+    // Identify key turning points in conversation
+    identifyTurningPoints(negotiation) {
+        const turningPoints = [];
+        
+        if (!negotiation.messages) return turningPoints;
+        
+        negotiation.messages.forEach((message, index) => {
+            const price = this.extractPriceFromMessage(message.content);
+            if (price) {
+                turningPoints.push({
+                    messageIndex: index,
+                    type: 'price_mention',
+                    value: price,
+                    sender: message.sender
+                });
+            }
+            
+            // Detect sentiment changes
+            const sentiment = this.analyzeMessageSentiment(message.content);
+            if (sentiment === 'positive' && index > 0) {
+                turningPoints.push({
+                    messageIndex: index,
+                    type: 'sentiment_positive',
+                    sender: message.sender
+                });
+            }
+        });
+        
+        return turningPoints;
+    }
+
+    // Assess AI response quality for learning
+    assessAIResponseQuality(negotiation) {
+        if (!negotiation.messages) return 'unknown';
+        
+        const aiMessages = negotiation.messages.filter(m => m.sender === 'ai');
+        if (aiMessages.length === 0) return 'no_ai_messages';
+        
+        // Simple quality assessment based on response patterns
+        const hasVariety = new Set(aiMessages.map(m => m.content.substring(0, 20))).size > 1;
+        const appropriateLength = aiMessages.every(m => m.content.length > 20 && m.content.length < 500);
+        
+        if (hasVariety && appropriateLength) return 'high';
+        if (hasVariety || appropriateLength) return 'medium';
+        return 'low';
+    }
+
+    // Assess prompt performance
+    assessPromptPerformance(negotiation) {
+        // This would analyze how well the AI prompts performed
+        return {
+            responseRelevance: 'high',
+            contextAwareness: 'medium', 
+            goalAlignment: 'high',
+            creativityLevel: 'medium'
+        };
+    }
+
+    // Categorize learning data
+    categorizeLearningData(outcomeData, negotiation) {
+        if (outcomeData.outcome === 'success') {
+            if (outcomeData.message_count <= 3) return 'quick_success';
+            if (outcomeData.final_price < outcomeData.original_price * 0.9) return 'high_savings_success';
+            return 'standard_success';
+        } else {
+            if (outcomeData.message_count <= 2) return 'quick_rejection';
+            if (outcomeData.message_count >= 5) return 'prolonged_failure';
+            return 'standard_failure';
+        }
+    }
+
+    // Calculate training value of this conversation
+    calculateTrainingValue(outcomeData) {
+        let value = 1;
+        
+        // Higher value for successful negotiations
+        if (outcomeData.outcome === 'success') value *= 2;
+        
+        // Higher value for complex negotiations
+        if (outcomeData.message_count >= 5) value *= 1.5;
+        
+        // Higher value if significant savings achieved
+        const savingsPercent = ((outcomeData.original_price - outcomeData.final_price) / outcomeData.original_price) * 100;
+        if (savingsPercent > 10) value *= 1.3;
+        
+        return Math.round(value * 10) / 10; // Round to 1 decimal
+    }
+
+    // Classify message type for analysis
+    classifyMessageType(content) {
+        const lower = content.toLowerCase();
+        
+        if (this.extractPriceFromMessage(content)) return 'price_offer';
+        if (/accept|agree|deal|sure|yes|ok/i.test(lower)) return 'acceptance';
+        if (/reject|no|too|expensive/i.test(lower)) return 'rejection';
+        if (/counter|how about|what about/i.test(lower)) return 'counter_offer';
+        if (/meet|when|time|tonight/i.test(lower)) return 'logistics';
+        if (/deposit|payment|document/i.test(lower)) return 'financial_details';
+        
+        return 'general_communication';
+    }
+
+    // Analyze message sentiment
+    analyzeMessageSentiment(content) {
+        const lower = content.toLowerCase();
+        
+        const positiveWords = ['great', 'excellent', 'perfect', 'wonderful', 'agree', 'accept', 'yes', 'sure'];
+        const negativeWords = ['no', 'reject', 'too', 'expensive', 'cannot', 'impossible'];
+        
+        const positiveScore = positiveWords.filter(word => lower.includes(word)).length;
+        const negativeScore = negativeWords.filter(word => lower.includes(word)).length;
+        
+        if (positiveScore > negativeScore) return 'positive';
+        if (negativeScore > positiveScore) return 'negative';
+        return 'neutral';
+    }
+
+    // Identify message strategy
+    identifyMessageStrategy(content) {
+        const lower = content.toLowerCase();
+        
+        if (/market|comparable|average|data/i.test(lower)) return 'market_based';
+        if (/reliable|tenant|references|quality/i.test(lower)) return 'value_proposition';
+        if (/quick|immediate|today|asap/i.test(lower)) return 'urgency';
+        if (/budget|afford|maximum/i.test(lower)) return 'budget_constraint';
+        if (/final|last|best/i.test(lower)) return 'final_offer';
+        
+        return 'standard';
     }
 
     // Store negotiation outcome in localStorage as backup
