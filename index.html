@@ -663,36 +663,31 @@
     </header>
 
     <!-- Foundation House Style Hero Section -->
-    <section id="home" class="relative min-h-screen flex items-center overflow-hidden bg-white">
-        <!-- Background Property Image -->
-        <div class="absolute inset-0 z-0">
-            <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80" alt="Modern Home" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent"></div>
-        </div>
+    <section id="home" class="relative min-h-screen flex items-center overflow-hidden bg-gray-50">
         
         <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 pt-40">
             <div class="grid lg:grid-cols-2 gap-16 items-center">
                 <!-- Hero Content -->
-                <div class="hero-content reveal-left text-white">
+                <div class="hero-content reveal-left">
                     <div class="mb-6">
-                        <span class="inline-block px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium border border-white/20 mb-6">
-                            AI-Powered Rental Intelligence
+                        <span class="inline-block px-6 py-3 bg-blue-600 text-white rounded-full text-sm font-medium mb-6">
+                            🚀 AI-Powered Rental Platform
                         </span>
                     </div>
-                    <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8 leading-tight font-display">
-                        Unlocking Smart Rentals For 
-                        <span class="text-blue-400 typing-animation">Data-Driven Renters</span>
+                    <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8 leading-tight font-display text-gray-900">
+                        Find Perfect Rentals with 
+                        <span class="text-blue-600 typing-animation">AI</span>
                     </h1>
-                    <p class="text-xl mb-10 text-white/90 leading-relaxed max-w-2xl">
-                        Revolutionary AI technology that finds, analyzes, and negotiates the perfect rental properties while you focus on what matters most.
+                    <p class="text-xl mb-10 text-gray-700 leading-relaxed max-w-2xl">
+                        Advanced artificial intelligence that discovers, analyzes, and negotiates rental properties automatically. Experience the future of property search.
                     </p>
                     
                     <!-- CTA Buttons -->
                     <div class="flex flex-col sm:flex-row gap-6 mb-16">
-                        <button onclick="window.location.href='/ai-negotiator'" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-semibold transition-all duration-300 hover:transform hover:translateY(-1px) shadow-lg">
+                        <button onclick="window.location.href='/ai-negotiator'" class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-lg font-semibold transition-all duration-300">
                             Start AI Search
                         </button>
-                        <button onclick="window.location.href='/free-trial'" class="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/30 transition-all duration-300">
+                        <button onclick="window.location.href='/free-trial'" class="bg-gray-900 hover:bg-black text-white px-10 py-4 rounded-lg font-semibold transition-all duration-300">
                             Free Trial
                         </button>
                     </div>
@@ -700,67 +695,88 @@
                     <!-- Key Metrics -->
                     <div class="grid grid-cols-3 gap-8">
                         <div class="text-center">
-                            <div class="text-3xl font-bold mb-2 text-white">1,247</div>
-                            <div class="text-sm text-white/70">Properties Negotiated</div>
+                            <div class="text-3xl font-bold mb-2 text-gray-900">1,247</div>
+                            <div class="text-sm text-gray-600">Properties Negotiated</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-3xl font-bold mb-2 text-white">$847</div>
-                            <div class="text-sm text-white/70">Avg Monthly Savings</div>
+                            <div class="text-3xl font-bold mb-2 text-gray-900">$847</div>
+                            <div class="text-sm text-gray-600">Avg Monthly Savings</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-3xl font-bold mb-2 text-white">89%</div>
-                            <div class="text-sm text-white/70">Success Rate</div>
+                            <div class="text-3xl font-bold mb-2 text-gray-900">89%</div>
+                            <div class="text-sm text-gray-600">Success Rate</div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Property Showcase -->
+                <!-- AI Negotiation Preview -->
                 <div class="relative reveal-right">
-                    <div class="bg-white/95 backdrop-blur-xl rounded-2xl p-8 shadow-2xl">
+                    <div class="bg-white rounded-2xl p-8 shadow-xl border border-gray-100">
                         <div class="mb-6">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-semibold text-gray-900">Live Property Analysis</h3>
+                                <h3 class="text-lg font-semibold text-gray-900">AI Negotiation Live</h3>
                                 <div class="flex items-center space-x-2">
-                                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                    <span class="text-xs text-gray-600">Real-time</span>
+                                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                                    <span class="text-xs text-gray-600">Live</span>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Property Card -->
-                        <div class="space-y-4">
-                            <div class="relative">
-                                <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Apartment" class="w-full h-48 object-cover rounded-lg">
-                                <div class="absolute top-3 left-3 bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
-                                    AI Negotiated
-                                </div>
-                                <div class="absolute top-3 right-3 bg-black/60 text-white px-2 py-1 rounded text-xs">
-                                    $200/mo saved
+                        <!-- Live Chat Interface -->
+                        <div class="space-y-4 h-80 overflow-y-auto bg-gray-50 rounded-xl p-4">
+                            <!-- User Message -->
+                            <div class="flex justify-end">
+                                <div class="bg-blue-600 text-white px-4 py-2 rounded-lg max-w-xs">
+                                    <p class="text-sm">Find me a 2BR under $1500 in Toronto</p>
                                 </div>
                             </div>
                             
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <h4 class="font-semibold text-gray-900">Modern 2BR Downtown</h4>
-                                        <p class="text-sm text-gray-600">King Street West, Toronto</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-lg font-bold text-gray-900">$1,200/mo</div>
-                                        <div class="text-sm text-gray-500 line-through">$1,400/mo</div>
-                                    </div>
+                            <!-- AI Response -->
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white text-xs font-bold">AI</span>
                                 </div>
-                                
-                                <!-- Live Negotiation Status -->
-                                <div class="space-y-2 max-h-32 overflow-y-auto">
-                                    <div class="chat-bubble-small bg-blue-50 text-blue-900 p-2 rounded text-xs">
-                                        🤖 AI: Analyzing market data... Found comparable at $1,150
-                                    </div>
-                                    <div class="chat-bubble-small bg-gray-50 text-gray-900 p-2 rounded text-xs ml-8">
-                                        Landlord: Best I can do is $1,250
-                                    </div>
-                                    <div class="chat-bubble-small bg-green-50 text-green-900 p-2 rounded text-xs">
-                                        ✅ Deal closed at $1,200/mo
+                                <div class="bg-white border border-gray-200 rounded-lg p-3 max-w-xs">
+                                    <p class="text-sm text-gray-800">Found 127 matches. Analyzing market data and contacting landlords...</p>
+                                    <div class="mt-2 text-xs text-blue-600">Negotiating with 3 properties</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Landlord Response -->
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white text-xs font-bold">L</span>
+                                </div>
+                                <div class="bg-white border border-gray-200 rounded-lg p-3 max-w-xs">
+                                    <p class="text-sm text-gray-800">Hi! The rent is $1450/month for the 2BR unit</p>
+                                </div>
+                            </div>
+                            
+                            <!-- AI Counter-offer -->
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white text-xs font-bold">AI</span>
+                                </div>
+                                <div class="bg-white border border-gray-200 rounded-lg p-3 max-w-xs">
+                                    <p class="text-sm text-gray-800">Based on market analysis, similar units rent for $1300. Would you consider $1350?</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Success Message -->
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                                <p class="text-sm text-green-800 font-medium">Deal secured at $1350/month - Saved $100/month!</p>
+                            </div>
+                            
+                            <!-- Typing Indicator -->
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white text-xs font-bold">AI</span>
+                                </div>
+                                <div class="bg-white border border-gray-200 rounded-lg p-3">
+                                    <div class="flex space-x-1">
+                                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
                                     </div>
                                 </div>
                             </div>
@@ -794,14 +810,14 @@
             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
                 <!-- AI Negotiator Feature -->
                 <div class="feature-card text-center reveal scale-in">
-                    <div class="feature-icon w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
+                    <div class="feature-icon w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
                         <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">🤖 AI Negotiator</h3>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">AI Negotiator</h3>
                     <p class="text-gray-600 mb-8 leading-relaxed">Our AI contacts landlords and negotiates better prices automatically, saving you up to 15% on rent.</p>
-                    <a href="/ai-negotiator" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 group">
+                    <a href="/ai-negotiator" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all duration-300 group">
                         Try Now 
                         <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
@@ -811,14 +827,14 @@
                 
                 <!-- Smart Search Feature -->
                 <div class="feature-card text-center reveal scale-in" style="animation-delay: 0.2s;">
-                    <div class="feature-icon w-20 h-20 bg-gradient-to-r from-green-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
+                    <div class="feature-icon w-20 h-20 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
                         <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">🔍 Smart Search</h3>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">Smart Search</h3>
                     <p class="text-gray-600 mb-8 leading-relaxed">Advanced algorithms search multiple platforms to find rentals that perfectly match your criteria.</p>
-                    <a href="/listings" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-teal-700 transition-all duration-300 group">
+                    <a href="/listings" class="inline-flex items-center px-6 py-3 bg-gray-900 text-white rounded-xl font-semibold hover:bg-black transition-all duration-300 group">
                         Search Now
                         <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
@@ -828,14 +844,14 @@
                 
                 <!-- Market Analysis Feature -->
                 <div class="feature-card text-center reveal scale-in" style="animation-delay: 0.4s;">
-                    <div class="feature-icon w-20 h-20 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
+                    <div class="feature-icon w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
                         <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">📊 Market Analysis</h3>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">Market Analysis</h3>
                     <p class="text-gray-600 mb-8 leading-relaxed">Get real-time market insights and fair price recommendations based on current rental data.</p>
-                    <a href="/pricing" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-red-700 transition-all duration-300 group">
+                    <a href="/pricing" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all duration-300 group">
                         View Pricing
                         <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
@@ -845,14 +861,14 @@
                 
                 <!-- Smart Messaging Feature -->
                 <div class="feature-card text-center reveal scale-in" style="animation-delay: 0.6s;">
-                    <div class="feature-icon w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
+                    <div class="feature-icon w-20 h-20 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
                         <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">💬 Smart Messaging</h3>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">Smart Messaging</h3>
                     <p class="text-gray-600 mb-8 leading-relaxed">Seamless communication system with landlords, including AI-assisted message suggestions.</p>
-                    <a href="/profile" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-600 hover:to-pink-700 transition-all duration-300 group">
+                    <a href="/profile" class="inline-flex items-center px-6 py-3 bg-gray-900 text-white rounded-xl font-semibold hover:bg-black transition-all duration-300 group">
                         View Messages
                         <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
@@ -1046,9 +1062,9 @@
                 </div>
                 <!-- Premium Action buttons -->
                 <div class="flex flex-col sm:flex-row gap-6">
-                    <button onclick="searchRooms()" class="flex-1 cta-button py-5 px-8 text-lg font-semibold rounded-2xl hover:transform hover:translateY(-1px) transition-all duration-200">🔍 Smart Search</button>
-                    <button onclick="askAI()" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-5 px-8 rounded-2xl hover:from-purple-600 hover:to-pink-700 hover:transform hover:translateY(-1px) transition-all duration-200 font-semibold text-lg">🤖 Ask AI</button>
-                    <button onclick="addRoom()" class="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white py-5 px-8 rounded-2xl hover:from-gray-700 hover:to-gray-800 hover:transform hover:translateY(-1px) transition-all duration-200 font-semibold text-lg">➕ Add Listing</button>
+                    <button onclick="searchRooms()" class="flex-1 bg-blue-600 text-white py-5 px-8 text-lg font-semibold rounded-2xl hover:bg-blue-700 hover:transform hover:translateY(-1px) transition-all duration-200">Smart Search</button>
+                    <button onclick="askAI()" class="flex-1 bg-gray-900 text-white py-5 px-8 rounded-2xl hover:bg-black hover:transform hover:translateY(-1px) transition-all duration-200 font-semibold text-lg">Ask AI</button>
+                    <button onclick="addRoom()" class="flex-1 bg-blue-600 text-white py-5 px-8 rounded-2xl hover:bg-blue-700 hover:transform hover:translateY(-1px) transition-all duration-200 font-semibold text-lg">Add Listing</button>
                 </div>
             </div>
         </div>
