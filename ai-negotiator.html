@@ -6,8 +6,8 @@
     <title>AI Negotiator - RoomFinderAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-    <script src="./ai-chat.js?v=8"></script>
-    <script src="./ai-negotiation.js?v=1"></script>
+    <script src="./ai-chat.js?v=9"></script>
+    <script src="./ai-negotiation.js?v=2"></script>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -375,19 +375,45 @@
             aiNegotiator.init(currentUser);
 
             // Initialize AI Negotiation Engine
-            console.log('🔧 Creating AINegotiationEngine instance...');
+            console.log('🔧 [ENGINE INIT] Starting AINegotiationEngine initialization...');
+            console.log('🔧 [ENGINE INIT] Checking class availability...');
+            console.log('🔧 [ENGINE INIT] AINegotiationEngine type:', typeof AINegotiationEngine);
+            console.log('🔧 [ENGINE INIT] AINegotiationEngine class:', AINegotiationEngine);
+            console.log('🔧 [ENGINE INIT] Available globals:', Object.keys(window).filter(key => key.toLowerCase().includes('negotiation')));
+            
             if (typeof AINegotiationEngine !== 'undefined') {
+                console.log('✅ [ENGINE INIT] AINegotiationEngine class found, attempting initialization...');
+                console.log('🔧 [ENGINE INIT] Supabase available:', !!supabase);
+                console.log('🔧 [ENGINE INIT] Config available:', !!configData);
+                console.log('🔧 [ENGINE INIT] Config contents:', configData);
+                
                 try {
+                    console.log('🔧 [ENGINE INIT] Calling AINegotiationEngine constructor...');
                     aiNegotiationEngine = new AINegotiationEngine(supabase, configData);
+                    console.log('✅ [ENGINE INIT] Constructor completed successfully');
+                    
+                    console.log('🔧 [ENGINE INIT] Setting negotiation engine on aiNegotiator...');
                     aiNegotiator.setNegotiationEngine(aiNegotiationEngine);
-                    console.log('✅ AI Negotiation Engine initialized successfully');
+                    console.log('✅ [ENGINE INIT] AI Negotiation Engine initialized successfully - AUTO-NEGOTIATION MODE ACTIVE');
+                    
+                    // Add status indicator
+                    document.getElementById('chatMessages').innerHTML += '<div style="background: #10b981; color: white; padding: 8px; border-radius: 8px; margin: 8px 0; text-align: center;">🤖 <strong>Auto-Negotiation Engine Active</strong> - I will automatically negotiate with landlords!</div>';
+                    
                 } catch (error) {
-                    console.error('❌ Failed to initialize AI Negotiation Engine:', error);
-                    console.log('🔄 Falling back to basic messaging mode');
+                    console.error('❌ [ENGINE INIT] Failed to initialize AI Negotiation Engine:', error);
+                    console.error('❌ [ENGINE INIT] Error stack:', error.stack);
+                    console.log('🔄 [ENGINE INIT] Falling back to basic messaging mode');
                     aiNegotiationEngine = null;
+                    
+                    // Add status indicator for basic mode
+                    document.getElementById('chatMessages').innerHTML += '<div style="background: #f59e0b; color: white; padding: 8px; border-radius: 8px; margin: 8px 0; text-align: center;">📧 <strong>Basic Messaging Mode</strong> - Using simple messages (auto-negotiation disabled)</div>';
                 }
             } else {
-                console.warn('⚠️ AINegotiationEngine class not found - using basic messaging mode');
+                console.warn('⚠️ [ENGINE INIT] AINegotiationEngine class not found - using basic messaging mode');
+                console.warn('⚠️ [ENGINE INIT] Available window objects:', Object.keys(window).slice(0, 20));
+                
+                // Add status indicator for missing class
+                document.getElementById('chatMessages').innerHTML += '<div style="background: #ef4444; color: white; padding: 8px; border-radius: 8px; margin: 8px 0; text-align: center;">❌ <strong>Negotiation Engine Missing</strong> - Class not loaded properly</div>';
             }
 
             // Add a small delay to ensure everything is loaded
