@@ -33,7 +33,8 @@ try {
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 const { DocumentAnalysisClient, AzureKeyCredential } = require('@azure/ai-form-recognizer');
-const { FaceClient, CognitiveServicesCredentials } = require('@azure/cognitiveservices-face');
+const { FaceClient } = require('@azure/cognitiveservices-face');
+const { CognitiveServicesCredentials } = require('@azure/ms-rest-azure-js');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -1147,7 +1148,12 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
         reinitializeAzureClients();
         
         if (!documentClient) {
-            return res.status(503).json({ error: 'ID verification service not available - Azure Document Intelligence not configured' });
+            console.log('⚠️ ID verification attempted but Azure Document Intelligence not configured');
+            return res.status(503).json({ 
+                error: 'ID verification service not available',
+                message: 'The ID verification service is currently not configured. Please contact support.',
+                serviceAvailable: false
+            });
         }
 
         if (!req.file) {
@@ -1252,8 +1258,16 @@ app.post('/api/verify/face-match', upload.fields([
     { name: 'facePhoto', maxCount: 1 }
 ]), async (req, res) => {
     try {
+        // Try to reinitialize Azure clients if they're not available
+        reinitializeAzureClients();
+        
         if (!faceClient) {
-            return res.status(503).json({ error: 'Face verification service not available - Azure Face API not configured' });
+            console.log('⚠️ Face verification attempted but Azure Face API not configured');
+            return res.status(503).json({ 
+                error: 'Face verification service not available',
+                message: 'The face verification service is currently not configured. Please contact support.',
+                serviceAvailable: false
+            });
         }
 
         if (!req.files || !req.files.idDocument || !req.files.facePhoto) {
@@ -1271,33 +1285,18 @@ app.post('/api/verify/face-match', upload.fields([
         const faceFile = req.files.facePhoto[0];
 
         // Detect faces in both images
-        const [idFaceResponse, userFaceResponse] = await Promise.all([
-            faceClient.path('/detect').post({
-                body: idFile.buffer,
-                contentType: idFile.mimetype,
-                queryParameters: {
-                    returnFaceId: true,
-                    returnFaceLandmarks: false,
-                    returnFaceAttributes: false
-                }
+        const [idFaces, userFaces] = await Promise.all([
+            faceClient.face.detectWithStream(idFile.buffer, {
+                returnFaceId: true,
+                returnFaceLandmarks: false,
+                returnFaceAttributes: []
             }),
-            faceClient.path('/detect').post({
-                body: faceFile.buffer,
-                contentType: faceFile.mimetype,
-                queryParameters: {
-                    returnFaceId: true,
-                    returnFaceLandmarks: false,
-                    returnFaceAttributes: false
-                }
+            faceClient.face.detectWithStream(faceFile.buffer, {
+                returnFaceId: true,
+                returnFaceLandmarks: false,
+                returnFaceAttributes: []
             })
         ]);
-
-        if (idFaceResponse.status !== '200' || userFaceResponse.status !== '200') {
-            return res.status(400).json({ error: 'Failed to detect faces in one or both images' });
-        }
-
-        const idFaces = idFaceResponse.body;
-        const userFaces = userFaceResponse.body;
 
         if (!idFaces || idFaces.length === 0) {
             return res.status(400).json({ error: 'No face detected in ID document' });
@@ -1308,18 +1307,11 @@ app.post('/api/verify/face-match', upload.fields([
         }
 
         // Compare the faces
-        const verifyResponse = await faceClient.path('/verify').post({
-            body: {
-                faceId1: idFaces[0].faceId,
-                faceId2: userFaces[0].faceId
-            }
-        });
+        const comparison = await faceClient.face.verifyFaceToFace(
+            idFaces[0].faceId,
+            userFaces[0].faceId
+        );
 
-        if (verifyResponse.status !== '200') {
-            return res.status(500).json({ error: 'Face comparison failed' });
-        }
-
-        const comparison = verifyResponse.body;
         const isMatch = comparison.isIdentical;
         const confidence = comparison.confidence;
 
@@ -1385,13 +1377,20 @@ app.get('/api/verify/status/:email', async (req, res) => {
             console.error('Error fetching verification status:', error);
             return res.status(500).json({ error: 'Failed to fetch verification status' });
         }
+        
+        // Include service availability status
+        const servicesAvailable = {
+            documentIntelligence: !!documentClient,
+            faceAPI: !!faceClient
+        };
 
         res.json({
             verification: verification || {
                 user_email: email,
                 id_verification_status: 'pending',
                 face_verification_status: 'pending'
-            }
+            },
+            servicesAvailable: servicesAvailable
         });
 
     } catch (error) {
@@ -1455,6 +1454,28 @@ function reinitializeAzureClients() {
     console.log('- Document Intelligence available:', !!documentClient);
     console.log('- Face API available:', !!faceClient);
 }
+
+// API: Check verification services availability
+app.get('/api/verify/service-status', (req, res) => {
+    // Try to reinitialize Azure clients if they're not available
+    reinitializeAzureClients();
+    
+    const status = {
+        documentIntelligence: {
+            available: !!documentClient,
+            configured: !!(config.AZURE_DOCUMENT_INTELLIGENCE_KEY && config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT),
+            message: documentClient ? 'Service is available' : 'Service not configured - Azure Document Intelligence credentials missing'
+        },
+        faceAPI: {
+            available: !!faceClient,
+            configured: !!(config.AZURE_FACE_KEY && config.AZURE_FACE_ENDPOINT),
+            message: faceClient ? 'Service is available' : 'Service not configured - Azure Face API credentials missing'
+        },
+        overallStatus: !!(documentClient && faceClient)
+    };
+    
+    res.json(status);
+});
 
 // API endpoint to serve client-safe configuration
 app.get('/api/config', (req, res) => {
