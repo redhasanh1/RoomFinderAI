@@ -188,6 +188,9 @@
                 <button class="tab-button" onclick="switchTab('verification', this)">
                     ✅ Verification
                 </button>
+                <button class="tab-button" onclick="switchTab('ai-analytics', this)">
+                    🎯 AI Analytics
+                </button>
             </div>
         </div>
 
@@ -410,6 +413,112 @@
                                 </div>
                             </div>
                             <button class="modern-button">Add Phone</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Analytics Tab -->
+            <div id="ai-analytics-tab" class="tab-content hidden">
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">🎯 AI Negotiation Analytics</h3>
+                    
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="stats-card bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-blue-700">Negotiations Won</p>
+                                    <p id="negotiationsWon" class="text-3xl font-bold text-blue-900">0</p>
+                                    <p class="text-xs text-blue-600 mt-1">Success Rate: <span id="successRate">0%</span></p>
+                                </div>
+                                <div class="bg-blue-500 p-3 rounded-lg">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stats-card bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-green-700">Total Savings</p>
+                                    <p id="totalSavings" class="text-3xl font-bold text-green-900">$0</p>
+                                    <p class="text-xs text-green-600 mt-1">Avg per deal: $<span id="avgSavings">0</span></p>
+                                </div>
+                                <div class="bg-green-500 p-3 rounded-lg">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stats-card bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-purple-700">AI Conversations</p>
+                                    <p id="totalConversations" class="text-3xl font-bold text-purple-900">0</p>
+                                    <p class="text-xs text-purple-600 mt-1">This month: <span id="monthlyConversations">0</span></p>
+                                </div>
+                                <div class="bg-purple-500 p-3 rounded-lg">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stats-card bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border border-orange-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-orange-700">AI Performance</p>
+                                    <p id="aiPerformanceScore" class="text-3xl font-bold text-orange-900">85</p>
+                                    <p class="text-xs text-orange-600 mt-1">Learning Score</p>
+                                </div>
+                                <div class="bg-orange-500 p-3 rounded-lg">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Chart Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-gray-50 p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">📈 Negotiation Success Trend</h3>
+                            <div id="successChart" class="h-48 flex items-center justify-center text-gray-500">
+                                Chart will be rendered here
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">💰 Savings by Property Type</h3>
+                            <div id="savingsChart" class="h-48 flex items-center justify-center text-gray-500">
+                                Chart will be rendered here
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Negotiation Insights -->
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-200">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">🧠 AI Learning Insights</h3>
+                        <div id="aiInsights" class="space-y-3">
+                            <div class="flex items-start space-x-3">
+                                <div class="bg-green-500 w-2 h-2 rounded-full mt-2"></div>
+                                <p class="text-sm text-gray-700">AI is learning your preferred negotiation style and adapting responses</p>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <div class="bg-blue-500 w-2 h-2 rounded-full mt-2"></div>
+                                <p class="text-sm text-gray-700">Most effective approach: Professional with market data references</p>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <div class="bg-yellow-500 w-2 h-2 rounded-full mt-2"></div>
+                                <p class="text-sm text-gray-700">Recommendation: Continue emphasizing value propositions in negotiations</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -702,6 +811,9 @@
 
             // Load dashboard data
             await loadDashboardData();
+            
+            // Load AI analytics data
+            await loadAnalyticsData();
             
             // Check verification service availability
             await checkVerificationServices();
@@ -1499,6 +1611,115 @@
                 showBankError(error.message);
             }
         });
+
+        // AI Analytics Functions
+        async function loadAnalyticsData() {
+            try {
+                // Fetch analytics data from Supabase
+                const { data: conversations, error: convError } = await supabase
+                    .from('ai_chats')
+                    .select('*')
+                    .eq('user_email', currentUser.email);
+
+                if (convError) {
+                    console.error('Error fetching conversation data:', convError);
+                    return;
+                }
+
+                // Calculate analytics metrics
+                const totalConversations = conversations?.length || 0;
+                const successfulNegotiations = conversations?.filter(conv => 
+                    conv.metadata?.dealClosed === true || 
+                    conv.metadata?.success === true
+                )?.length || 0;
+                
+                const totalSavings = conversations?.reduce((sum, conv) => 
+                    sum + (conv.metadata?.savings || 0), 0) || 0;
+                
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                const monthlyConversations = conversations?.filter(conv => {
+                    const convDate = new Date(conv.created_at);
+                    return convDate.getMonth() === currentMonth && convDate.getFullYear() === currentYear;
+                })?.length || 0;
+
+                const successRate = totalConversations > 0 ? 
+                    Math.round((successfulNegotiations / totalConversations) * 100) : 0;
+                
+                const avgSavings = successfulNegotiations > 0 ? 
+                    Math.round(totalSavings / successfulNegotiations) : 0;
+
+                // Update DOM elements
+                document.getElementById('negotiationsWon').textContent = successfulNegotiations;
+                document.getElementById('successRate').textContent = `${successRate}%`;
+                document.getElementById('totalSavings').textContent = `$${totalSavings.toLocaleString()}`;
+                document.getElementById('avgSavings').textContent = avgSavings.toLocaleString();
+                document.getElementById('totalConversations').textContent = totalConversations;
+                document.getElementById('monthlyConversations').textContent = monthlyConversations;
+
+                // AI Performance Score (calculated based on success rate and usage)
+                const performanceScore = Math.min(100, Math.max(0, 
+                    (successRate * 0.6) + (Math.min(totalConversations, 20) * 2) + 20
+                ));
+                document.getElementById('aiPerformanceScore').textContent = Math.round(performanceScore);
+
+                // Update AI insights based on data
+                updateAIInsights(conversations, successRate, totalSavings);
+
+            } catch (error) {
+                console.error('Error loading analytics data:', error);
+            }
+        }
+
+        function updateAIInsights(conversations, successRate, totalSavings) {
+            const insights = [];
+            
+            if (successRate > 70) {
+                insights.push({
+                    color: 'green',
+                    text: `Excellent! ${successRate}% success rate shows your negotiation skills are improving`
+                });
+            } else if (successRate > 40) {
+                insights.push({
+                    color: 'blue',
+                    text: `Good progress with ${successRate}% success rate. AI is optimizing strategies for you`
+                });
+            } else {
+                insights.push({
+                    color: 'yellow',
+                    text: 'AI is learning your style and will improve negotiation success over time'
+                });
+            }
+
+            if (totalSavings > 1000) {
+                insights.push({
+                    color: 'green',
+                    text: `Amazing! You've saved $${totalSavings.toLocaleString()} through AI negotiations`
+                });
+            }
+
+            if (conversations?.length > 5) {
+                insights.push({
+                    color: 'blue',
+                    text: 'AI has learned your preferences and is personalizing responses'
+                });
+            }
+
+            // Update insights in DOM
+            const insightsContainer = document.getElementById('aiInsights');
+            if (insights.length > 0) {
+                insightsContainer.innerHTML = '';
+                insights.forEach(insight => {
+                    const insightElement = document.createElement('div');
+                    insightElement.className = 'flex items-start space-x-3';
+                    insightElement.innerHTML = `
+                        <div class="bg-${insight.color}-500 w-2 h-2 rounded-full mt-2"></div>
+                        <p class="text-sm text-gray-700">${insight.text}</p>
+                    `;
+                    insightsContainer.appendChild(insightElement);
+                });
+            }
+        }
     </script>
 </body>
 </html>

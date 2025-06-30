@@ -144,6 +144,7 @@
             </div>
         </section>
 
+
         <!-- AI Chat History -->
         <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">AI Chat History</h2>
@@ -358,8 +359,12 @@
                 });
             }
 
+            // Setup success metrics tracking
+            setupSuccessMetricsTracking();
+
             // Display user listings from Supabase
             await displayUserListings();
+
 
             async function displayUserListings() {
                 const userListings = document.getElementById('userListings');
@@ -435,6 +440,344 @@
                 localStorage.removeItem('currentUser');
                 window.location.href = '/login';
             });
+        }
+
+        // Success metrics tracking for user satisfaction and performance
+        function setupSuccessMetricsTracking() {
+            console.log('🎯 Setting up success metrics tracking');
+            
+            // Track user satisfaction after AI negotiations
+            trackUserSatisfaction();
+            
+            // Track deal completion metrics
+            trackDealCompletion();
+            
+            // Set up user feedback collection
+            setupUserFeedbackCollection();
+        }
+
+        async function trackUserSatisfaction() {
+            try {
+                // Get recent AI negotiations from the last week
+                const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+                
+                const { data: recentNegotiations, error } = await supabase
+                    .from('ai_chats')
+                    .select('*')
+                    .eq('user_email', currentUser.email)
+                    .gte('created_at', oneWeekAgo)
+                    .contains('metadata', { dealClosed: true });
+
+                if (error) {
+                    console.error('Error fetching recent negotiations:', error);
+                    return;
+                }
+
+                // Show satisfaction survey for unrated negotiations
+                for (const negotiation of recentNegotiations || []) {
+                    if (!negotiation.metadata?.userSatisfactionRated) {
+                        await showSatisfactionSurvey(negotiation);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error tracking user satisfaction:', error);
+            }
+        }
+
+        async function showSatisfactionSurvey(negotiation) {
+            // Create a non-intrusive satisfaction survey
+            const satisfactionModal = document.createElement('div');
+            satisfactionModal.className = 'fixed bottom-4 right-4 bg-white p-6 rounded-xl shadow-xl border-l-4 border-blue-500 max-w-sm z-50';
+            satisfactionModal.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="font-semibold text-gray-800">📊 Quick Feedback</h3>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">How satisfied were you with your AI negotiation for "${negotiation.title}"?</p>
+                <div class="flex space-x-2 mb-4">
+                    <button onclick="submitSatisfactionRating('${negotiation.id}', 5, this.parentElement.parentElement.parentElement)" class="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600">😄 Great</button>
+                    <button onclick="submitSatisfactionRating('${negotiation.id}', 4, this.parentElement.parentElement.parentElement)" class="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600">😊 Good</button>
+                    <button onclick="submitSatisfactionRating('${negotiation.id}', 3, this.parentElement.parentElement.parentElement)" class="px-3 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600">😐 OK</button>
+                    <button onclick="submitSatisfactionRating('${negotiation.id}', 2, this.parentElement.parentElement.parentElement)" class="px-3 py-1 bg-orange-500 text-white rounded text-sm hover:bg-orange-600">😕 Poor</button>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-xs text-gray-500 hover:text-gray-700">Skip for now</button>
+            `;
+
+            document.body.appendChild(satisfactionModal);
+
+            // Auto-remove after 30 seconds if no interaction
+            setTimeout(() => {
+                if (satisfactionModal.parentElement) {
+                    satisfactionModal.remove();
+                }
+            }, 30000);
+        }
+
+        // Submit satisfaction rating and track metrics
+        window.submitSatisfactionRating = async function(negotiationId, rating, modalElement) {
+            try {
+                console.log(`📊 Submitting satisfaction rating: ${rating} for negotiation ${negotiationId}`);
+
+                // Update the negotiation record with satisfaction rating
+                const { error } = await supabase
+                    .from('ai_chats')
+                    .update({
+                        metadata: {
+                            ...negotiationId.metadata,
+                            userSatisfactionRated: true,
+                            userSatisfactionRating: rating,
+                            satisfactionTimestamp: new Date().toISOString()
+                        }
+                    })
+                    .eq('id', negotiationId);
+
+                if (error) {
+                    console.error('Error saving satisfaction rating:', error);
+                } else {
+                    console.log('✅ Satisfaction rating saved successfully');
+                    
+                    // Log success metric to analytics
+                    await logSuccessMetric('user_satisfaction', {
+                        negotiationId: negotiationId,
+                        rating: rating,
+                        timestamp: new Date().toISOString(),
+                        userEmail: currentUser.email
+                    });
+                }
+
+                // Show thank you message
+                modalElement.innerHTML = `
+                    <div class="text-center">
+                        <div class="text-2xl mb-2">🙏</div>
+                        <p class="text-sm text-gray-600">Thank you for your feedback!</p>
+                    </div>
+                `;
+
+                // Remove modal after 2 seconds
+                setTimeout(() => modalElement.remove(), 2000);
+
+            } catch (error) {
+                console.error('Error submitting satisfaction rating:', error);
+            }
+        };
+
+        // Track deal completion metrics
+        async function trackDealCompletion() {
+            try {
+                // Get user's completed negotiations
+                const { data: completedDeals, error } = await supabase
+                    .from('ai_chats')
+                    .select('*')
+                    .eq('user_email', currentUser.email)
+                    .contains('metadata', { dealClosed: true });
+
+                if (error) {
+                    console.error('Error fetching completed deals:', error);
+                    return;
+                }
+
+                // Calculate and log deal completion metrics
+                const dealMetrics = {
+                    totalDeals: completedDeals?.length || 0,
+                    averageSavings: 0,
+                    totalSavings: 0,
+                    successRate: 0
+                };
+
+                if (completedDeals && completedDeals.length > 0) {
+                    const savings = completedDeals.map(deal => deal.metadata?.savings || 0);
+                    dealMetrics.totalSavings = savings.reduce((sum, saving) => sum + saving, 0);
+                    dealMetrics.averageSavings = Math.round(dealMetrics.totalSavings / completedDeals.length);
+                    
+                    // Success rate calculation (deals closed vs total negotiations)
+                    const { data: allNegotiations } = await supabase
+                        .from('ai_chats')
+                        .select('id')
+                        .eq('user_email', currentUser.email)
+                        .like('title', '%Negotiation%');
+
+                    if (allNegotiations) {
+                        dealMetrics.successRate = Math.round((completedDeals.length / allNegotiations.length) * 100);
+                    }
+                }
+
+                // Log deal completion metrics
+                await logSuccessMetric('deal_completion', dealMetrics);
+
+                console.log('📈 Deal completion metrics:', dealMetrics);
+
+            } catch (error) {
+                console.error('Error tracking deal completion:', error);
+            }
+        }
+
+        // Setup user feedback collection
+        function setupUserFeedbackCollection() {
+            // Add feedback button to navigation (if not already present)
+            const header = document.querySelector('nav');
+            if (header && !document.getElementById('feedbackBtn')) {
+                const feedbackBtn = document.createElement('button');
+                feedbackBtn.id = 'feedbackBtn';
+                feedbackBtn.className = 'text-gray-700 hover:text-blue-600 transition font-medium';
+                feedbackBtn.innerHTML = '💬 Feedback';
+                feedbackBtn.onclick = showFeedbackForm;
+
+                header.appendChild(feedbackBtn);
+            }
+        }
+
+        // Show feedback form
+        function showFeedbackForm() {
+            const feedbackModal = document.createElement('div');
+            feedbackModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+            feedbackModal.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">📝 Your Feedback</h3>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form id="feedbackForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Feedback Type</label>
+                            <select name="feedbackType" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="ai_negotiation">AI Negotiation Experience</option>
+                                <option value="user_interface">User Interface</option>
+                                <option value="feature_request">Feature Request</option>
+                                <option value="bug_report">Bug Report</option>
+                                <option value="general">General Feedback</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Your Feedback</label>
+                            <textarea name="feedbackContent" rows="4" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Please share your thoughts, suggestions, or report any issues..."></textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Rating (1-5)</label>
+                            <div class="flex space-x-2">
+                                <button type="button" onclick="setRating(1, this)" class="rating-btn px-3 py-1 border rounded hover:bg-gray-100" data-rating="1">1</button>
+                                <button type="button" onclick="setRating(2, this)" class="rating-btn px-3 py-1 border rounded hover:bg-gray-100" data-rating="2">2</button>
+                                <button type="button" onclick="setRating(3, this)" class="rating-btn px-3 py-1 border rounded hover:bg-gray-100" data-rating="3">3</button>
+                                <button type="button" onclick="setRating(4, this)" class="rating-btn px-3 py-1 border rounded hover:bg-gray-100" data-rating="4">4</button>
+                                <button type="button" onclick="setRating(5, this)" class="rating-btn px-3 py-1 border rounded hover:bg-gray-100" data-rating="5">5</button>
+                            </div>
+                            <input type="hidden" name="rating" id="selectedRating" value="5">
+                        </div>
+                        
+                        <div class="flex space-x-3 pt-4">
+                            <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                                Submit Feedback
+                            </button>
+                            <button type="button" onclick="this.closest('.fixed').remove()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            document.body.appendChild(feedbackModal);
+
+            // Handle form submission
+            document.getElementById('feedbackForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(e.target);
+                const feedbackData = {
+                    userEmail: currentUser.email,
+                    feedbackType: formData.get('feedbackType'),
+                    content: formData.get('feedbackContent'),
+                    rating: parseInt(formData.get('rating')),
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent,
+                    url: window.location.href
+                };
+
+                try {
+                    await logSuccessMetric('user_feedback', feedbackData);
+                    
+                    // Show success message
+                    feedbackModal.innerHTML = `
+                        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 text-center">
+                            <div class="text-4xl mb-4">🙏</div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Thank You!</h3>
+                            <p class="text-gray-600">Your feedback helps us improve RoomFinderAI.</p>
+                        </div>
+                    `;
+                    
+                    setTimeout(() => feedbackModal.remove(), 3000);
+                    
+                } catch (error) {
+                    console.error('Error submitting feedback:', error);
+                    alert('Error submitting feedback. Please try again.');
+                }
+            });
+        }
+
+        // Set rating for feedback form
+        window.setRating = function(rating, button) {
+            // Clear previous selection
+            document.querySelectorAll('.rating-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-500', 'text-white');
+                btn.classList.add('hover:bg-gray-100');
+            });
+            
+            // Highlight selected rating and all previous
+            for (let i = 1; i <= rating; i++) {
+                const btn = document.querySelector(`[data-rating="${i}"]`);
+                if (btn) {
+                    btn.classList.add('bg-blue-500', 'text-white');
+                    btn.classList.remove('hover:bg-gray-100');
+                }
+            }
+            
+            document.getElementById('selectedRating').value = rating;
+        };
+
+        // Log success metrics to Supabase
+        async function logSuccessMetric(metricType, data) {
+            try {
+                const metricData = {
+                    user_email: currentUser.email,
+                    conversation_data: JSON.stringify([{
+                        role: 'system',
+                        content: `Success metric: ${metricType}`,
+                        data: data,
+                        timestamp: new Date().toISOString()
+                    }]),
+                    title: `Success Metric: ${metricType}`,
+                    metadata: {
+                        metricType: metricType,
+                        metricData: data,
+                        timestamp: new Date().toISOString(),
+                        source: 'success_tracking'
+                    }
+                };
+
+                const { error } = await supabase
+                    .from('ai_chats')
+                    .insert(metricData);
+
+                if (error) {
+                    console.error('Error logging success metric:', error);
+                } else {
+                    console.log(`✅ Success metric logged: ${metricType}`);
+                }
+
+            } catch (error) {
+                console.error('Error in logSuccessMetric:', error);
+            }
         }
     </script>
 </body>
