@@ -377,11 +377,17 @@
             // Initialize AI Negotiation Engine
             console.log('🔧 Creating AINegotiationEngine instance...');
             if (typeof AINegotiationEngine !== 'undefined') {
-                aiNegotiationEngine = new AINegotiationEngine(supabase, configData);
-                aiNegotiator.setNegotiationEngine(aiNegotiationEngine);
-                console.log('✅ AI Negotiation Engine initialized');
+                try {
+                    aiNegotiationEngine = new AINegotiationEngine(supabase, configData);
+                    aiNegotiator.setNegotiationEngine(aiNegotiationEngine);
+                    console.log('✅ AI Negotiation Engine initialized successfully');
+                } catch (error) {
+                    console.error('❌ Failed to initialize AI Negotiation Engine:', error);
+                    console.log('🔄 Falling back to basic messaging mode');
+                    aiNegotiationEngine = null;
+                }
             } else {
-                console.warn('⚠️ AINegotiationEngine class not found - negotiation features disabled');
+                console.warn('⚠️ AINegotiationEngine class not found - using basic messaging mode');
             }
 
             // Add a small delay to ensure everything is loaded

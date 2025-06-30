@@ -1215,6 +1215,24 @@ class AIChatHandler {
             }
 
             console.log('✅ Message sent successfully:', data[0]?.id);
+            
+            // Set up context for potential landlord response in basic message mode
+            this.pendingUserResponse = {
+                id: `basic_message_${conversation.id}`,
+                listing: {
+                    id: listing.id,
+                    title: listing.title,
+                    price: listing.price,
+                    landlord_email: listing.user_email
+                },
+                lastMessage: `Sent basic message: "${basicMessage}"`,
+                phase: 'awaiting_landlord_response',
+                timestamp: new Date().toISOString(),
+                messageId: data[0]?.id
+            };
+            
+            console.log('📝 Set up context for basic message response:', this.pendingUserResponse);
+            
             return true;
         } catch (error) {
             console.error('❌ Basic message send error:', error);
@@ -1460,6 +1478,13 @@ class AIChatHandler {
         if (!this.pendingUserResponse && this.activeConversations.size === 0) {
             console.log('⚠️ No active negotiation context found');
             this.appendMessage('AI', 'I understand you\'re ready to proceed! However, I don\'t see any active negotiations at the moment. Try starting with: "I\'m looking for a 2-bedroom apartment under $1500" and I\'ll find properties and start negotiations for you!', 'left');
+            return;
+        }
+        
+        // Check if user is responding before landlord has replied
+        if (this.pendingUserResponse && this.pendingUserResponse.phase === 'awaiting_landlord_response') {
+            console.log('⚠️ User responding before landlord reply received');
+            this.appendMessage('AI', `I understand you're eager to proceed! However, I just sent a message to the landlord about "${this.pendingUserResponse.listing.title}" and we haven't received their reply yet. Once they respond, I'll let you know and help continue the conversation. Please wait for their response first! 📧`, 'left');
             return;
         }
         
