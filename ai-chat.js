@@ -20,6 +20,10 @@ class AIChatHandler {
         this.activeNegotiations = new Map();
         this.lastMessageTime = 0;
         this.negotiationEngine = null;
+        
+        // Track active conversation contexts
+        this.activeConversations = new Map(); // conversation_id -> {listing, landlord, lastMessage, status}
+        this.pendingUserResponse = null; // Track what the user is responding to
     }
 
     // Initialize the chat system
@@ -183,11 +187,35 @@ class AIChatHandler {
                 const content = conversationData[0].content;
                 this.appendMessage('AI', content, 'left');
                 
+                // Set up context for user response
+                this.pendingUserResponse = {
+                    id: chat.id || 'landlord_reply',
+                    listing: {
+                        id: chat.listing_id || 'unknown',
+                        title: chat.listing_title || 'Property',
+                        price: chat.listing_price || null,
+                        landlord_email: chat.landlord_email || 'unknown'
+                    },
+                    lastMessage: content,
+                    phase: 'awaiting_user_response',
+                    timestamp: new Date().toISOString()
+                };
+                
+                console.log('📝 Set pending user response context:', this.pendingUserResponse);
+                
                 // Add subtle animation to highlight new message
                 this.highlightNewMessage();
             } else {
                 console.warn('⚠️ Invalid landlord reply data structure');
                 this.appendMessage('AI', '💬 Received reply from landlord', 'left');
+                
+                // Still set up basic context
+                this.pendingUserResponse = {
+                    id: 'generic_reply',
+                    listing: { id: 'unknown', title: 'Property', price: null },
+                    lastMessage: 'Landlord replied',
+                    phase: 'awaiting_user_response'
+                };
             }
         } catch (error) {
             console.error('Error displaying landlord reply:', error);
@@ -1357,10 +1385,42 @@ class AIChatHandler {
     checkForNegotiationResponse(message) {
         const cleanMessage = message.toLowerCase().trim();
         
+        // First check: Do we have any active conversations waiting for user response?
+        const hasActiveContext = this.pendingUserResponse !== null || this.activeConversations.size > 0;
+        
+        // Secondary check: Look for conversation patterns in recent history
+        const recentMessages = this.conversationHistory.slice(-3);
+        const hasRecentLandlordInteraction = recentMessages.some(msg => 
+            msg.role === 'ai' && (
+                msg.content.includes('discussing') || 
+                msg.content.includes('terms') ||
+                msg.content.includes('open to') ||
+                msg.content.includes('interested in') ||
+                msg.content.includes('landlord') ||
+                msg.content.includes('property')
+            )
+        );
+        
+        if (!hasActiveContext && !hasRecentLandlordInteraction) {
+            console.log('🔍 No active negotiation context or recent interaction - treating as search request');
+            return false;
+        }
+        
+        // If we have recent landlord interaction but no context, create temporary context
+        if (!hasActiveContext && hasRecentLandlordInteraction) {
+            console.log('🔧 Creating temporary context based on recent conversation');
+            this.pendingUserResponse = {
+                id: 'conversation_continuation',
+                listing: { id: 'ongoing', title: 'Ongoing Discussion', price: null },
+                lastMessage: 'Recent conversation detected',
+                phase: 'continuing_conversation'
+            };
+        }
+        
         // Acceptance patterns - same as in ai-negotiation.js
         const acceptancePatterns = [
             /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)$/i,
-            /^(yes\s+(sure|absolutely|definitely|of course|certainly))/i,
+            /^(yes\s+(sure|absolutely|definitely|of course|certainly|i am))/i,
             /^(sure\s+(thing|yes|absolutely|definitely))/i,
             /^(yeah\s+(sure|that works|sounds good|okay))/i,
             /^(absolutely\s+(yes|sure)?)/i,
@@ -1380,15 +1440,28 @@ class AIChatHandler {
         const negotiationKeywords = ['price', 'rent', 'lower', 'higher', 'counter', 'offer', 'deal'];
         const hasNegotiationKeywords = negotiationKeywords.some(keyword => cleanMessage.includes(keyword));
         
-        // Check if we have recent AI activity (indicating ongoing negotiation)
-        const hasRecentActivity = this.conversationHistory.length > 1;
+        console.log('🔍 Negotiation response check:', {
+            cleanMessage,
+            hasActiveContext,
+            isAcceptance,
+            hasNegotiationKeywords,
+            pendingResponse: this.pendingUserResponse,
+            activeConversations: this.activeConversations.size
+        });
         
-        return isAcceptance || (hasNegotiationKeywords && hasRecentActivity);
+        return isAcceptance || hasNegotiationKeywords;
     }
 
     // Handle negotiation responses
     async handleNegotiationResponse(message) {
         console.log('🤝 Handling negotiation response:', message);
+        
+        // Check for active conversation context
+        if (!this.pendingUserResponse && this.activeConversations.size === 0) {
+            console.log('⚠️ No active negotiation context found');
+            this.appendMessage('AI', 'I understand you\'re ready to proceed! However, I don\'t see any active negotiations at the moment. Try starting with: "I\'m looking for a 2-bedroom apartment under $1500" and I\'ll find properties and start negotiations for you!', 'left');
+            return;
+        }
         
         // Check if negotiation engine is available
         if (!this.negotiationEngine) {
@@ -1398,30 +1471,49 @@ class AIChatHandler {
         }
         
         try {
-            // Simulate a negotiation context - in a real scenario, this would come from ongoing negotiation state
-            const mockNegotiation = {
-                id: 'current_negotiation',
-                listing: {
-                    id: 'sample_listing',
-                    title: 'Sample Property',
-                    price: 1500,
-                    landlord_email: 'landlord@example.com'
-                },
-                lastOffer: 1400,
-                phase: 'price_negotiation'
-            };
+            // If we have a pending response context, use it
+            let negotiationContext = this.pendingUserResponse;
+            
+            // Otherwise, get the most recent active conversation
+            if (!negotiationContext && this.activeConversations.size > 0) {
+                const latestConversation = Array.from(this.activeConversations.values())[0];
+                negotiationContext = {
+                    id: 'active_conversation',
+                    listing: latestConversation.listing,
+                    lastMessage: latestConversation.lastMessage,
+                    phase: 'user_response'
+                };
+            }
+            
+            // Still no context - create a generic one to maintain conversation flow
+            if (!negotiationContext) {
+                negotiationContext = {
+                    id: 'general_inquiry',
+                    listing: {
+                        id: 'inquiry',
+                        title: 'Property Inquiry',
+                        price: null,
+                        landlord_email: 'unknown'
+                    },
+                    lastOffer: null,
+                    phase: 'initial_interest'
+                };
+            }
             
             // Use the negotiation engine to analyze the response
-            const analysis = await this.negotiationEngine.analyzeReply(message, mockNegotiation, mockNegotiation.listing);
+            const analysis = await this.negotiationEngine.analyzeReply(message, negotiationContext, negotiationContext.listing);
             console.log('📊 Negotiation analysis:', analysis);
             
             if (analysis.acceptsOffer) {
-                this.appendMessage('AI', `🎉 Excellent! I understand you're interested in proceeding. Let me help coordinate the next steps with the landlord. I'll send them a message about finalizing the rental agreement!`, 'left');
+                this.appendMessage('AI', `🎉 Excellent! I understand you're interested in proceeding. Let me help coordinate the next steps. I'll continue the negotiation process and update you on any progress!`, 'left');
                 
                 // Add celebration effect
                 this.celebrateSuccess();
+                
+                // Clear pending response since it's been handled
+                this.pendingUserResponse = null;
             } else if (analysis.makesCounterOffer && analysis.priceOffered) {
-                this.appendMessage('AI', `💬 I see you're interested in negotiating the price to $${analysis.priceOffered}. Let me reach out to the landlord with your counter-offer!`, 'left');
+                this.appendMessage('AI', `💬 I see you're interested in negotiating the price to $${analysis.priceOffered}. Let me continue working with the landlords on your behalf!`, 'left');
             } else {
                 // General positive response
                 this.appendMessage('AI', `👍 I understand your response! I'm working on finding the best options for you and will negotiate on your behalf. Let me continue the process...`, 'left');
@@ -1429,12 +1521,12 @@ class AIChatHandler {
             
             // Show that AI is taking action
             setTimeout(() => {
-                this.appendMessage('AI', '📧 Sending message to landlord... I\'ll update you when I receive a response!', 'left');
+                this.appendMessage('AI', '📧 Continuing negotiations with landlords... I\'ll update you when I receive responses!', 'left');
             }, 2000);
             
         } catch (error) {
             console.error('Error handling negotiation response:', error);
-            this.appendMessage('AI', 'I understand your response! I\'m working on coordinating with the landlord and will update you soon.', 'left');
+            this.appendMessage('AI', 'I understand your response! I\'m working on coordinating with landlords and will update you soon.', 'left');
         }
     }
 }
