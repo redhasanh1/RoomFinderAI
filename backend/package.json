@@ -10,6 +10,7 @@
   "dependencies": {
     "@azure/ai-form-recognizer": "^5.0.0",
     "@azure/cognitiveservices-face": "^4.1.0",
+    "@azure/ms-rest-azure-js": "^2.1.0",
     "@supabase/supabase-js": "^2.38.0",
     "axios": "^1.6.0",
     "bcryptjs": "^2.4.3",
