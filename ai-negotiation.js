@@ -17,31 +17,59 @@ class AINegotiationEngine {
         this.learningSystem = new AILearningSystem(this.supabase);
         this.learningEnabled = true;
         
+        // Conversation state management
+        this.conversationStates = new Map(); // Track conversation phases
+        this.stateTransitions = this.initializeStateTransitions();
+        
+        // Landlord personality detection and adaptation
+        this.landlordPersonalities = new Map(); // Track detected personalities
+        this.personalityAdaptations = this.initializePersonalityAdaptations();
+        
+        // Initialize channel reference for cleanup
+        this.messageChannel = null;
+        
         this.init();
+        
+        // Dashboard integration
+        this.dashboardIntegration = this.initializeDashboardIntegration();
     }
 
     // Initialize response templates for variety
     initializeResponseTemplates() {
         return {
             counterOfferAcceptance: [
-                "That works perfectly for me! $${price}/month sounds excellent.",
-                "I accept your offer of $${price}/month. Great doing business with you!",
-                "Perfect! $${price}/month is exactly what I was hoping for.",
-                "Excellent! I'm very happy to agree to $${price}/month.",
-                "Wonderful! $${price}/month works great for me.",
-                "That's a deal! $${price}/month it is.",
-                "I'm delighted to accept $${price}/month.",
-                "Outstanding! $${price}/month is perfect."
+                "That works perfectly for me! $${price}/month sounds excellent. What are the next steps?",
+                "I accept your offer of $${price}/month. Great doing business with you! When can we finalize everything?",
+                "Perfect! $${price}/month is exactly what I was hoping for. I'm excited to move forward.",
+                "Excellent! I'm very happy to agree to $${price}/month. Should we discuss the lease details?",
+                "Wonderful! $${price}/month works great for me. I'm ready to proceed whenever you are.",
+                "That's a deal! $${price}/month it is. Thank you for being so reasonable!",
+                "I'm delighted to accept $${price}/month. This property is going to be perfect for me.",
+                "Outstanding! $${price}/month is perfect. I really appreciate you working with me on this.",
+                "Fantastic! $${price}/month works beautifully. I'm thrilled we could reach an agreement!",
+                "Amazing! I'm so happy to agree to $${price}/month. This feels like the perfect fit.",
+                "Yes! $${price}/month is exactly right. I can't wait to make this place my home.",
+                "Brilliant! $${price}/month sounds fair to both of us. You've been wonderful to work with.",
+                "Absolutely perfect! $${price}/month it is. I'm genuinely excited about this opportunity.",
+                "That's exactly what I was hoping for! $${price}/month works great. Thank you so much!",
+                "I love it! $${price}/month is a deal. You've made this process so smooth and easy."
             ],
             strategicCounterOffers: [
-                "I appreciate your counter-offer. How about we meet at $${price}/month?",
-                "That's getting closer! Would you consider $${price}/month?",
-                "I understand your position. I can do $${price}/month with excellent references.",
-                "Let's find middle ground - how does $${price}/month sound?",
-                "I'm flexible - would $${price}/month work for you?",
-                "I can stretch to $${price}/month for the right place.",
-                "How about $${price}/month with immediate move-in?",
-                "I could do $${price}/month if we can finalize quickly."
+                "I appreciate your counter-offer! How about we meet somewhere in the middle at $${price}/month?",
+                "That's getting closer! Would you consider $${price}/month? I think that could work for both of us.",
+                "I understand your position completely. I can do $${price}/month, and I come with excellent references.",
+                "Let's find some middle ground - how does $${price}/month sound? I'm really hoping we can make this work.",
+                "I'm definitely flexible here - would $${price}/month work for you? I'm excited about this place!",
+                "I can stretch to $${price}/month for the right place, and this feels perfect for me.",
+                "How about $${price}/month with immediate move-in? I'm ready to go as soon as possible.",
+                "I could do $${price}/month if we can finalize this quickly. I'd love to get this settled!",
+                "What if we tried $${price}/month? I think that's fair for both of us and I'm genuinely interested.",
+                "I'm really hoping we can work something out. Would $${price}/month be acceptable?",
+                "Could we possibly do $${price}/month? I've been looking for a while and this place is exactly what I need.",
+                "I'd be thrilled to pay $${price}/month for this property. It's exactly what I've been searching for!",
+                "Would you be open to $${price}/month? I'm a reliable tenant and I promise to take great care of the place.",
+                "I'm thinking $${price}/month might work for both of us. What do you think about that?",
+                "How about we try $${price}/month? I'm really excited about this opportunity and want to make it work."
             ],
             marketBasedResponses: [
                 "Based on comparable properties, $${price}/month reflects fair market value.",
@@ -91,8 +119,489 @@ class AINegotiationEngine {
                 "Excellent! I'm ready to move in tomorrow night. What time would be convenient for you? I'll bring all required documentation.",
                 "Outstanding! Tomorrow evening works great. What time should I plan to arrive? I have everything prepared.",
                 "Fantastic! Tomorrow night is perfect for move-in. What time should we meet? I'll bring all necessary paperwork and payments."
+            ],
+            
+            // Post-agreement conversation phases
+            dealConfirmation: [
+                "Excellent! So we're agreed on $${price}/month for the ${propertyType}. To confirm our agreement: monthly rent $${price}, move-in date ${moveInDate}, and security deposit of $${deposit}. Should I prepare the first month's rent and security deposit?",
+                "Perfect! I'm thrilled we reached an agreement on $${price}/month. Just to recap: $${price} monthly rent, ${moveInDate} move-in, $${deposit} security deposit. When would you like me to transfer the payments?",
+                "Wonderful! We have a deal at $${price}/month. Let me confirm the details: Monthly rent $${price}, move-in ${moveInDate}, security deposit $${deposit}. I can process payments today - what's your preferred method?",
+                "Outstanding! $${price}/month it is! Our agreement: $${price} rent, ${moveInDate} move-in date, $${deposit} security deposit. I'm ready to proceed with payments and paperwork immediately.",
+                "Fantastic! We're set at $${price}/month. Final terms: $${price} monthly rent, move-in ${moveInDate}, $${deposit} security deposit. Should I arrange payment transfer and schedule our lease signing?"
+            ],
+            
+            leaseTermsDiscussion: [
+                "Regarding the lease terms, I'm looking for a ${leaseTerm} lease. Are you flexible on the lease duration? I'm also wondering about utilities - are any included in the rent?",
+                "For the lease agreement, I'd prefer ${leaseTerm}. Could we discuss what's included? Utilities, parking, pet policy if applicable? I want to ensure we cover everything.",
+                "About the lease terms - I'm thinking ${leaseTerm}. What utilities are included? Also, is there assigned parking? I'd like to understand the complete package.",
+                "Let's discuss lease details: I'd like ${leaseTerm} if possible. What about utilities, internet, parking space? And what's your pet policy in case I get one later?",
+                "For the lease, ${leaseTerm} works best for me. Could you clarify what's included in rent? Utilities, parking, any restrictions I should know about?"
+            ],
+            
+            paymentArrangement: [
+                "For payments, I can transfer the first month's rent ($${price}) and security deposit ($${deposit}) via wire transfer, certified check, or e-transfer. What works best for you? I can process it today.",
+                "I'm ready to send $${totalAmount} total - $${price} first month + $${deposit} security deposit. Do you prefer wire transfer, certified check, or another method? I can arrange it immediately.",
+                "Perfect! I'll arrange payment of $${totalAmount} ($${price} + $${deposit}). Wire transfer or certified check? I can process same-day to expedite our move-in timeline.",
+                "Ready to transfer the full amount: $${price} first month's rent plus $${deposit} security deposit = $${totalAmount}. What's your preferred payment method? I can send today.",
+                "I can send the $${totalAmount} total ($${price} rent + $${deposit} deposit) right away. Wire transfer, certified check, or e-transfer? Just provide the details and I'll process immediately."
+            ],
+            
+            leaseSigningCoordination: [
+                "When would be convenient to sign the lease agreement? I'm available evenings and weekends. Should we meet at the property or would you prefer another location?",
+                "Perfect! When can we schedule lease signing? I'm flexible on timing and location. Would you prefer to meet at the property, your office, or somewhere else convenient?",
+                "Great! Let's coordinate lease signing. I'm available most evenings and weekends. Should we do this at the property so I can do a final walkthrough too?",
+                "Excellent! When works for lease signing? I can meet weekday evenings or anytime on weekends. Property location or would you prefer somewhere else?",
+                "Wonderful! I'm ready to sign the lease. What's your availability? I'm flexible - evenings, weekends, whatever works. At the property or another location?"
+            ],
+            
+            keyExchangeAndWalkthrough: [
+                "For move-in day, should we schedule a property walkthrough and key exchange? I'd like to document the property condition and get oriented with utilities, appliances, etc.",
+                "On move-in day, could we do a walkthrough together? I want to note any existing issues and understand how everything works - appliances, heating, parking, etc.",
+                "Perfect! For key exchange, should we meet at the property? I'd appreciate a quick walkthrough to check everything's working and document the move-in condition.",
+                "Great! When we meet for keys, could you show me around? I'd like to understand the utilities, appliances, parking situation, and note the property's condition.",
+                "Excellent! At key exchange, would it be possible to do a brief walkthrough? I want to ensure everything's in order and understand how all the systems work."
+            ],
+            
+            finalConfirmationAndNext: [
+                "Perfect! So our timeline is: payment processing today, lease signing ${signingDate}, move-in ${moveInDate}. I'll have everything ready. Is there anything else we need to coordinate?",
+                "Excellent! To summarize: I'll send $${totalAmount} today, we'll sign the lease ${signingDate}, and I move in ${moveInDate}. Do you need any additional documentation from me?",
+                "Outstanding! Our plan: payment transfer today, lease signing ${signingDate}, property walkthrough and move-in ${moveInDate}. Anything else you need from me?",
+                "Wonderful! Final checklist: payment today ($${totalAmount}), lease signing ${signingDate}, move-in ${moveInDate}. Should I bring anything specific beyond what we discussed?",
+                "Fantastic! Everything's set: payments today, lease ${signingDate}, move-in ${moveInDate}. I'm excited about the property! Any last details to coordinate?"
+            ],
+            
+            problemResolution: [
+                "I understand there might be some complexity here. Could we work together to find a solution? I'm flexible and want to make this work for both of us.",
+                "No problem - let's figure this out together. I'm committed to making this rental work. What would help resolve this concern?",
+                "I appreciate you bringing this up. Let's find a solution that works for everyone. I'm open to reasonable adjustments to address your concerns.",
+                "Thanks for the heads up. I'm sure we can work through this. What would be the best way to handle this situation from your perspective?",
+                "I understand. Let's solve this together - I really want this property and I'm flexible on finding solutions. What are your thoughts on how to proceed?"
             ]
         };
+    }
+
+    // Initialize conversation state machine
+    initializeStateTransitions() {
+        return {
+            // Conversation phases and their possible transitions
+            phases: {
+                'initial_contact': {
+                    next: ['price_negotiation', 'information_gathering'],
+                    templates: ['strategicCounterOffers', 'marketBasedResponses', 'valuePropositions']
+                },
+                'price_negotiation': {
+                    next: ['deal_agreement', 'negotiation_stalemate', 'counter_negotiation'],
+                    templates: ['strategicCounterOffers', 'marketBasedResponses', 'counterOfferAcceptance']
+                },
+                'deal_agreement': {
+                    next: ['deal_confirmation', 'terms_discussion'],
+                    templates: ['dealConfirmation', 'counterOfferAcceptance']
+                },
+                'deal_confirmation': {
+                    next: ['lease_terms', 'payment_arrangement'],
+                    templates: ['dealConfirmation', 'leaseTermsDiscussion']
+                },
+                'lease_terms': {
+                    next: ['payment_arrangement', 'lease_signing'],
+                    templates: ['leaseTermsDiscussion', 'problemResolution']
+                },
+                'payment_arrangement': {
+                    next: ['lease_signing', 'security_deposit_discussion'],
+                    templates: ['paymentArrangement', 'securityDepositResponses']
+                },
+                'security_deposit_discussion': {
+                    next: ['lease_signing', 'payment_processing'],
+                    templates: ['securityDepositResponses', 'paymentArrangement']
+                },
+                'lease_signing': {
+                    next: ['move_in_coordination', 'document_preparation'],
+                    templates: ['leaseSigningCoordination', 'documentPreparation']
+                },
+                'move_in_coordination': {
+                    next: ['key_exchange', 'final_walkthrough'],
+                    templates: ['moveInLogistics', 'keyExchangeAndWalkthrough']
+                },
+                'key_exchange': {
+                    next: ['rental_complete', 'final_confirmation'],
+                    templates: ['keyExchangeAndWalkthrough', 'finalConfirmationAndNext']
+                },
+                'final_confirmation': {
+                    next: ['rental_complete'],
+                    templates: ['finalConfirmationAndNext', 'meetingCoordination']
+                },
+                'rental_complete': {
+                    next: [],
+                    templates: ['finalConfirmationAndNext']
+                },
+                // Error states
+                'negotiation_stalemate': {
+                    next: ['price_negotiation', 'problem_resolution'],
+                    templates: ['problemResolution', 'strategicCounterOffers']
+                },
+                'problem_resolution': {
+                    next: ['price_negotiation', 'lease_terms', 'payment_arrangement'],
+                    templates: ['problemResolution', 'strategicCounterOffers', 'valuePropositions']
+                }
+            },
+            
+            // Keywords that trigger state transitions
+            transitionTriggers: {
+                deal_agreement: ['agree', 'deal', 'accept', 'sounds good', 'perfect', 'yes that works', 'agreed'],
+                deal_confirmation: ['confirm', 'correct', 'exactly', 'that\'s right', 'recap'],
+                lease_terms: ['lease', 'terms', 'duration', 'utilities', 'parking', 'pets'],
+                payment_arrangement: ['payment', 'transfer', 'deposit', 'wire', 'check', 'pay'],
+                security_deposit_discussion: ['security deposit', 'deposit', 'security'],
+                lease_signing: ['sign', 'lease signing', 'contract', 'agreement'],
+                move_in_coordination: ['move in', 'move-in', 'moving', 'keys', 'when can i'],
+                key_exchange: ['keys', 'key exchange', 'walkthrough', 'final walk'],
+                problem_resolution: ['problem', 'issue', 'concern', 'not sure', 'but', 'however']
+            }
+        };
+    }
+
+    // Get current conversation state for a negotiation
+    getConversationState(negotiationId) {
+        return this.conversationStates.get(negotiationId) || {
+            phase: 'initial_contact',
+            context: {},
+            messageCount: 0,
+            lastUpdate: new Date()
+        };
+    }
+
+    // Update conversation state
+    updateConversationState(negotiationId, newPhase, context = {}) {
+        const currentState = this.getConversationState(negotiationId);
+        const updatedState = {
+            ...currentState,
+            phase: newPhase,
+            context: { ...currentState.context, ...context },
+            messageCount: currentState.messageCount + 1,
+            lastUpdate: new Date()
+        };
+        
+        this.conversationStates.set(negotiationId, updatedState);
+        console.log(`🔄 Conversation ${negotiationId} transitioned to: ${newPhase}`);
+        return updatedState;
+    }
+
+    // Determine next conversation phase based on landlord response
+    determineNextPhase(currentPhase, landlordMessage) {
+        const message = landlordMessage.toLowerCase();
+        const transitions = this.stateTransitions.transitionTriggers;
+        
+        // Check for specific triggers
+        for (const [targetPhase, triggers] of Object.entries(transitions)) {
+            if (triggers.some(trigger => message.includes(trigger))) {
+                // Validate transition is allowed from current phase
+                const allowedTransitions = this.stateTransitions.phases[currentPhase]?.next || [];
+                if (allowedTransitions.includes(targetPhase)) {
+                    return targetPhase;
+                }
+            }
+        }
+        
+        // Default progression logic
+        const phaseProgression = {
+            'initial_contact': 'price_negotiation',
+            'price_negotiation': message.includes('agree') || message.includes('deal') ? 'deal_agreement' : 'price_negotiation',
+            'deal_agreement': 'deal_confirmation',
+            'deal_confirmation': 'lease_terms',
+            'lease_terms': 'payment_arrangement',
+            'payment_arrangement': 'lease_signing',
+            'lease_signing': 'move_in_coordination',
+            'move_in_coordination': 'key_exchange',
+            'key_exchange': 'final_confirmation',
+            'final_confirmation': 'rental_complete'
+        };
+        
+        return phaseProgression[currentPhase] || currentPhase;
+    }
+
+    // Get appropriate templates for current conversation phase
+    getPhaseTemplates(phase) {
+        return this.stateTransitions.phases[phase]?.templates || ['strategicCounterOffers'];
+    }
+
+    // Initialize landlord personality adaptations
+    initializePersonalityAdaptations() {
+        return {
+            personalities: {
+                'professional': {
+                    traits: ['business-like', 'formal', 'data-driven', 'efficient'],
+                    keywords: ['terms', 'contract', 'references', 'application', 'documentation'],
+                    responseStyle: 'formal_businesslike',
+                    negotiationApproach: 'data_driven',
+                    preferredTemplates: ['marketBasedResponses', 'valuePropositions', 'documentPreparation'],
+                    communicationTone: 'professional',
+                    timePreference: 'business_hours'
+                },
+                'friendly': {
+                    traits: ['casual', 'personal', 'accommodating', 'conversational'],
+                    keywords: ['great', 'wonderful', 'love', 'happy', 'excited', 'nice'],
+                    responseStyle: 'warm_personal',
+                    negotiationApproach: 'relationship_building',
+                    preferredTemplates: ['strategicCounterOffers', 'meetingCoordination', 'moveInLogistics'],
+                    communicationTone: 'friendly',
+                    timePreference: 'flexible'
+                },
+                'price_focused': {
+                    traits: ['cost-conscious', 'value-oriented', 'negotiation-ready'],
+                    keywords: ['price', 'rent', 'cost', 'budget', 'affordable', 'deal'],
+                    responseStyle: 'value_oriented',
+                    negotiationApproach: 'price_focused',
+                    preferredTemplates: ['marketBasedResponses', 'strategicCounterOffers', 'paymentArrangement'],
+                    communicationTone: 'direct',
+                    timePreference: 'quick_decision'
+                },
+                'cautious': {
+                    traits: ['careful', 'thorough', 'risk-averse', 'detailed'],
+                    keywords: ['careful', 'sure', 'think', 'consider', 'check', 'verify'],
+                    responseStyle: 'detailed_reassuring',
+                    negotiationApproach: 'trust_building',
+                    preferredTemplates: ['valuePropositions', 'documentPreparation', 'problemResolution'],
+                    communicationTone: 'reassuring',
+                    timePreference: 'thoughtful_process'
+                },
+                'quick_decision': {
+                    traits: ['decisive', 'fast-paced', 'time-conscious', 'efficient'],
+                    keywords: ['quickly', 'asap', 'today', 'immediately', 'fast', 'urgent'],
+                    responseStyle: 'efficient_decisive',
+                    negotiationApproach: 'speed_focused',
+                    preferredTemplates: ['counterOfferAcceptance', 'paymentArrangement', 'moveInLogistics'],
+                    communicationTone: 'efficient',
+                    timePreference: 'immediate'
+                },
+                'experienced': {
+                    traits: ['knowledgeable', 'market-aware', 'established'],
+                    keywords: ['market', 'experience', 'properties', 'tenants', 'years'],
+                    responseStyle: 'knowledgeable_peer',
+                    negotiationApproach: 'expertise_based',
+                    preferredTemplates: ['marketBasedResponses', 'valuePropositions', 'leaseTermsDiscussion'],
+                    communicationTone: 'respectful',
+                    timePreference: 'standard_process'
+                }
+            },
+            
+            adaptationStrategies: {
+                'professional': {
+                    emphasize: ['credentials', 'references', 'documentation', 'formal_process'],
+                    avoid: ['casual_language', 'personal_stories', 'pressure_tactics'],
+                    tone_adjustments: 'formal_respectful'
+                },
+                'friendly': {
+                    emphasize: ['personal_connection', 'enthusiasm', 'flexibility', 'mutual_benefit'],
+                    avoid: ['overly_formal', 'aggressive_negotiation', 'impersonal_language'],
+                    tone_adjustments: 'warm_personable'
+                },
+                'price_focused': {
+                    emphasize: ['market_data', 'value_proposition', 'cost_benefits', 'savings'],
+                    avoid: ['ignoring_budget', 'luxury_features', 'emotional_appeals'],
+                    tone_adjustments: 'direct_value_focused'
+                },
+                'cautious': {
+                    emphasize: ['reliability', 'security', 'guarantees', 'detailed_explanations'],
+                    avoid: ['rushed_decisions', 'vague_terms', 'pressure'],
+                    tone_adjustments: 'patient_thorough'
+                },
+                'quick_decision': {
+                    emphasize: ['efficiency', 'immediate_availability', 'quick_response', 'decisiveness'],
+                    avoid: ['lengthy_discussions', 'delays', 'over_analysis'],
+                    tone_adjustments: 'concise_action_oriented'
+                },
+                'experienced': {
+                    emphasize: ['market_knowledge', 'professional_respect', 'industry_understanding'],
+                    avoid: ['explaining_basics', 'condescension', 'amateur_approach'],
+                    tone_adjustments: 'peer_to_peer_professional'
+                }
+            }
+        };
+    }
+
+    // Detect landlord personality from messages
+    detectLandlordPersonality(messages, landlordId = null) {
+        if (!messages || messages.length === 0) return 'professional'; // Default
+        
+        // Check if we already have a detected personality for this landlord
+        if (landlordId && this.landlordPersonalities.has(landlordId)) {
+            return this.landlordPersonalities.get(landlordId);
+        }
+        
+        const allMessages = Array.isArray(messages) ? messages.join(' ') : messages;
+        const messageText = allMessages.toLowerCase();
+        
+        const personalityScores = {};
+        const personalities = this.personalityAdaptations.personalities;
+        
+        // Score each personality based on keyword matches
+        for (const [personality, traits] of Object.entries(personalities)) {
+            let score = 0;
+            
+            // Check keyword matches
+            traits.keywords.forEach(keyword => {
+                const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+                const matches = messageText.match(regex) || [];
+                score += matches.length * 2; // Keywords worth 2 points each
+            });
+            
+            // Check trait indicators
+            traits.traits.forEach(trait => {
+                if (this.checkTraitIndicators(messageText, trait)) {
+                    score += 1;
+                }
+            });
+            
+            personalityScores[personality] = score;
+        }
+        
+        // Additional heuristics
+        personalityScores.professional += this.countPatterns(messageText, [
+            'application', 'documentation', 'references', 'lease', 'terms'
+        ]);
+        
+        personalityScores.friendly += this.countPatterns(messageText, [
+            'great!', 'wonderful!', 'love', 'excited', 'happy to'
+        ]);
+        
+        personalityScores.price_focused += this.countPatterns(messageText, [
+            '$', 'price', 'rent', 'cost', 'budget', 'afford'
+        ]);
+        
+        personalityScores.cautious += this.countPatterns(messageText, [
+            'need to check', 'let me think', 'want to make sure', 'careful'
+        ]);
+        
+        personalityScores.quick_decision += this.countPatterns(messageText, [
+            'today', 'asap', 'right away', 'immediately', 'quickly'
+        ]);
+        
+        // Find highest scoring personality
+        const detectedPersonality = Object.keys(personalityScores).reduce((a, b) => 
+            personalityScores[a] > personalityScores[b] ? a : b
+        );
+        
+        // Cache the result if we have a landlord ID
+        if (landlordId) {
+            this.landlordPersonalities.set(landlordId, detectedPersonality);
+        }
+        
+        console.log(`🎭 Detected landlord personality: ${detectedPersonality} (scores:`, personalityScores, ')');
+        return detectedPersonality;
+    }
+
+    // Check for trait indicators in text
+    checkTraitIndicators(text, trait) {
+        const traitPatterns = {
+            'business-like': ['business', 'professional', 'formal', 'standard'],
+            'formal': ['please', 'thank you', 'sir', 'madam', 'regards'],
+            'data-driven': ['market', 'data', 'analysis', 'comparison', 'statistics'],
+            'casual': ['hey', 'yeah', 'sure', 'sounds good', 'no problem'],
+            'personal': ['i love', 'i think', 'my experience', 'personally'],
+            'accommodating': ['flexible', 'work with you', 'accommodate', 'adjust'],
+            'cost-conscious': ['budget', 'affordable', 'reasonable', 'cost-effective'],
+            'careful': ['want to make sure', 'need to verify', 'double check'],
+            'decisive': ['let\'s do it', 'sounds good', 'i\'ll take it', 'decided'],
+            'knowledgeable': ['in my experience', 'market shows', 'typically', 'usually']
+        };
+        
+        const patterns = traitPatterns[trait] || [];
+        return patterns.some(pattern => text.includes(pattern));
+    }
+
+    // Count pattern matches in text
+    countPatterns(text, patterns) {
+        return patterns.reduce((count, pattern) => {
+            const matches = text.match(new RegExp(pattern, 'gi')) || [];
+            return count + matches.length;
+        }, 0);
+    }
+
+    // Get personality-adapted response strategies
+    getPersonalityAdaptation(personality) {
+        return this.personalityAdaptations.adaptationStrategies[personality] || 
+               this.personalityAdaptations.adaptationStrategies['professional'];
+    }
+
+    // Get personality-specific templates
+    getPersonalityTemplates(personality, phase) {
+        const personalityTraits = this.personalityAdaptations.personalities[personality];
+        const phaseTemplates = this.getPhaseTemplates(phase);
+        
+        if (personalityTraits) {
+            // Prioritize templates that match personality preferences
+            const preferredTemplates = personalityTraits.preferredTemplates.filter(template => 
+                phaseTemplates.includes(template)
+            );
+            
+            return preferredTemplates.length > 0 ? preferredTemplates : phaseTemplates;
+        }
+        
+        return phaseTemplates;
+    }
+
+    // Adapt message tone based on personality
+    adaptMessageTone(message, personality) {
+        const adaptation = this.getPersonalityAdaptation(personality);
+        
+        // Apply tone adjustments based on personality
+        switch (adaptation.tone_adjustments) {
+            case 'formal_respectful':
+                return this.makeFormalTone(message);
+            case 'warm_personable':
+                return this.makeWarmTone(message);
+            case 'direct_value_focused':
+                return this.makeDirectTone(message);
+            case 'patient_thorough':
+                return this.makePatientTone(message);
+            case 'concise_action_oriented':
+                return this.makeConciseTone(message);
+            case 'peer_to_peer_professional':
+                return this.makePeerTone(message);
+            default:
+                return message;
+        }
+    }
+
+    // Tone adaptation helper methods
+    makeFormalTone(message) {
+        return message
+            .replace(/hey/gi, 'Hello')
+            .replace(/yeah/gi, 'Yes')
+            .replace(/sure thing/gi, 'Certainly')
+            .replace(/!/g, '.');
+    }
+
+    makeWarmTone(message) {
+        if (!message.includes('!') && Math.random() > 0.5) {
+            message = message.replace(/\.$/, '!');
+        }
+        return message;
+    }
+
+    makeDirectTone(message) {
+        // Keep message concise and value-focused
+        return message;
+    }
+
+    makePatientTone(message) {
+        // Add reassuring language
+        if (Math.random() > 0.7) {
+            message = 'I completely understand. ' + message;
+        }
+        return message;
+    }
+
+    makeConciseTone(message) {
+        // Remove unnecessary words, keep action-oriented
+        return message
+            .replace(/I think that/gi, '')
+            .replace(/perhaps/gi, '')
+            .replace(/maybe/gi, '');
+    }
+
+    makePeerTone(message) {
+        // Professional but not condescending
+        return message;
     }
 
     // Get AI learning insights for personalized negotiation
@@ -261,6 +770,13 @@ class AINegotiationEngine {
     // Initialize the negotiation engine
     async init() {
         try {
+            // Validate environment variables first
+            const envCheck = this.validateEnvironmentVariables();
+            if (!envCheck.valid) {
+                console.error('❌ Environment validation failed - AI negotiation engine cannot start');
+                return;
+            }
+            
             await this.ensureAIUserExists();
             this.setupMessageListener();
         } catch (error) {
@@ -313,7 +829,7 @@ class AINegotiationEngine {
         }
     }
 
-    // Get real market data for pricing analysis
+    // Enhanced market data analysis with external intelligence
     async getMarketData(location, houseType, bedrooms) {
         const cacheKey = `${location}-${houseType}-${bedrooms}`;
         
@@ -324,10 +840,34 @@ class AINegotiationEngine {
         }
 
         try {
-            console.log('🔍 Gathering market data for:', { location, houseType, bedrooms });
+            console.log('🔍 Gathering enhanced market data for:', { location, houseType, bedrooms });
 
+            // Get internal database data
+            const internalData = await this.getInternalMarketData(location, houseType, bedrooms);
+            
+            // Get AI-powered market analysis
+            const aiData = await this.getAIMarketData(location, houseType, bedrooms);
+            
+            // Combine data sources for comprehensive analysis
+            const enhancedStats = this.combineMarketSources(internalData, aiData, location);
+            
+            // Cache the result
+            this.marketData.set(cacheKey, enhancedStats);
+            console.log('📊 Enhanced market data calculated:', enhancedStats);
+            
+            return enhancedStats;
+
+        } catch (error) {
+            console.error('Error getting enhanced market data:', error);
+            return this.getAIMarketData(location, houseType, bedrooms);
+        }
+    }
+
+    // Get internal database market data
+    async getInternalMarketData(location, houseType, bedrooms) {
+        try {
             // Query database for similar properties
-            let query = this.supabase.from('listings').select('price, title, city, bedrooms, house_type');
+            let query = this.supabase.from('listings').select('price, title, city, bedrooms, house_type, created_at');
             
             if (location) {
                 const cleanLocation = location.trim();
@@ -343,32 +883,166 @@ class AINegotiationEngine {
             const { data: listings, error } = await query.limit(50);
             
             if (error || !listings?.length) {
-                console.log('⚠️ No market data found in database');
-                return this.getAIMarketData(location, houseType, bedrooms);
+                console.log('⚠️ No internal market data found');
+                return null;
             }
 
             // Calculate market statistics
-            const prices = listings.map(l => l.price).filter(p => p > 0);
-            const stats = {
+            const prices = listings.map(l => l.price).filter(p => p > 0 && p < 15000);
+            
+            if (prices.length === 0) return null;
+            
+            return {
                 average: Math.round(prices.reduce((a, b) => a + b, 0) / prices.length),
                 median: this.calculateMedian(prices),
                 min: Math.min(...prices),
                 max: Math.max(...prices),
                 count: prices.length,
                 listings: listings.slice(0, 5), // Sample listings
-                source: 'database'
+                source: 'internal_database',
+                freshness: this.calculateDataFreshness(listings),
+                prices: prices
             };
 
-            // Cache the result
-            this.marketData.set(cacheKey, stats);
-            console.log('📊 Market data calculated:', stats);
-            
-            return stats;
-
         } catch (error) {
-            console.error('Error getting market data:', error);
-            return this.getAIMarketData(location, houseType, bedrooms);
+            console.error('Error getting internal market data:', error);
+            return null;
         }
+    }
+
+    // Combine multiple market data sources
+    combineMarketSources(internalData, aiData, location) {
+        console.log('🔄 Combining market data sources for comprehensive analysis...');
+        
+        if (internalData && aiData) {
+            // Both sources available - create enhanced analysis
+            const combinedAverage = Math.round((internalData.average + aiData.average) / 2);
+            const variance = Math.abs(internalData.average - aiData.average);
+            const confidenceScore = variance < (internalData.average * 0.1) ? 'high' : 'medium';
+            
+            return {
+                average: combinedAverage,
+                median: internalData.median,
+                min: Math.min(internalData.min, aiData.min || internalData.min),
+                max: Math.max(internalData.max, aiData.max || internalData.max),
+                count: internalData.count,
+                listings: internalData.listings,
+                source: 'combined_analysis',
+                analysis: this.generateCombinedMarketAnalysis(internalData, aiData, variance),
+                negotiationTips: this.generateEnhancedNegotiationTips(internalData, aiData),
+                confidence: confidenceScore,
+                dataFreshness: internalData.freshness,
+                aiInsights: aiData.insights,
+                marketTrend: aiData.trend || 'stable',
+                competitiveness: aiData.competitiveness || 'medium'
+            };
+        }
+        
+        if (internalData) {
+            // Only internal data - enhance with basic analysis
+            return {
+                ...internalData,
+                analysis: this.generateMarketAnalysis(internalData.prices),
+                negotiationTips: this.generateNegotiationTips(internalData.prices),
+                confidence: 'medium'
+            };
+        }
+        
+        if (aiData) {
+            // Only AI data - return with appropriate confidence
+            return {
+                ...aiData,
+                confidence: 'ai_estimated'
+            };
+        }
+        
+        // Fallback if no data available
+        return this.getFallbackMarketData();
+    }
+
+    // Generate combined market analysis
+    generateCombinedMarketAnalysis(internalData, aiData, variance) {
+        const variancePercent = Math.round((variance / internalData.average) * 100);
+        
+        let analysis = `Market analysis based on ${internalData.count} database listings and AI market intelligence. `;
+        
+        if (variancePercent < 5) {
+            analysis += `Data sources are highly consistent (${variancePercent}% variance), indicating stable market conditions.`;
+        } else if (variancePercent < 15) {
+            analysis += `Sources show moderate variance (${variancePercent}%), typical for dynamic markets.`;
+        } else {
+            analysis += `Significant variance detected (${variancePercent}%), suggesting market volatility or limited data.`;
+        }
+        
+        if (aiData.trend) {
+            analysis += ` Market trend: ${aiData.trend}.`;
+        }
+        
+        if (aiData.competitiveness) {
+            analysis += ` Competition level: ${aiData.competitiveness}.`;
+        }
+        
+        return analysis;
+    }
+
+    // Generate enhanced negotiation tips
+    generateEnhancedNegotiationTips(internalData, aiData) {
+        const tips = [];
+        
+        // Data-driven tips
+        if (internalData.count >= 10) {
+            tips.push(`Strong data confidence with ${internalData.count} comparable properties`);
+        } else {
+            tips.push(`Limited local data (${internalData.count} properties) - emphasize unique value`);
+        }
+        
+        // Freshness-based tips
+        if (internalData.freshness === 'fresh') {
+            tips.push('Recent market data supports current pricing');
+        } else if (internalData.freshness === 'stale') {
+            tips.push('Market data is older - current conditions may differ');
+        }
+        
+        // AI insights
+        if (aiData.trend === 'rising') {
+            tips.push('Market trending upward - negotiate quickly');
+        } else if (aiData.trend === 'declining') {
+            tips.push('Market cooling - good opportunity for price reduction');
+        }
+        
+        if (aiData.competitiveness === 'high') {
+            tips.push('Competitive market - highlight tenant reliability and quick decision');
+        } else if (aiData.competitiveness === 'low') {
+            tips.push('Less competitive market - more room for price negotiation');
+        }
+        
+        // Price positioning tips
+        const spread = internalData.max - internalData.min;
+        if (spread > internalData.average * 0.3) {
+            tips.push('Wide price range indicates negotiation flexibility');
+        }
+        
+        return tips.join('. ') + '.';
+    }
+
+    // Calculate data freshness
+    calculateDataFreshness(listings) {
+        if (!listings || listings.length === 0) return 'unknown';
+        
+        const now = new Date();
+        const dates = listings
+            .map(l => new Date(l.created_at))
+            .filter(d => !isNaN(d));
+        
+        if (dates.length === 0) return 'unknown';
+        
+        const avgAge = dates.reduce((sum, date) => sum + (now - date), 0) / dates.length;
+        const daysOld = Math.round(avgAge / (1000 * 60 * 60 * 24));
+        
+        if (daysOld < 7) return 'fresh';
+        if (daysOld < 30) return 'recent';
+        if (daysOld < 90) return 'aging';
+        return 'stale';
     }
 
     // Get AI-generated market data when database data is insufficient
@@ -444,6 +1118,433 @@ class AINegotiationEngine {
         const sorted = [...prices].sort((a, b) => a - b);
         const mid = Math.floor(sorted.length / 2);
         return sorted.length % 2 !== 0 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+    }
+
+    // Enhanced negotiation message generation with conversation state awareness and personality adaptation
+    async generateContextualNegotiationMessage(listing, userBudget, marketData, conversationHistory = [], negotiationId = null, landlordMessage = '', landlordId = null) {
+        try {
+            console.log('🤖 Generating state-aware negotiation message for:', listing.title);
+            
+            // Get or initialize conversation state
+            let conversationState = negotiationId ? this.getConversationState(negotiationId) : {
+                phase: 'initial_contact',
+                context: {},
+                messageCount: 0
+            };
+            
+            // Detect landlord personality if we have messages
+            let landlordPersonality = 'professional'; // Default
+            if (landlordMessage || conversationHistory.length > 0) {
+                const allLandlordMessages = [landlordMessage, ...conversationHistory.filter(msg => msg.role === 'landlord').map(msg => msg.content)].filter(Boolean);
+                landlordPersonality = this.detectLandlordPersonality(allLandlordMessages, landlordId);
+            }
+            
+            console.log(`🎭 Adapting to ${landlordPersonality} landlord personality`);
+            
+            // Determine next phase if landlord responded
+            if (landlordMessage && negotiationId) {
+                const nextPhase = this.determineNextPhase(conversationState.phase, landlordMessage);
+                conversationState = this.updateConversationState(negotiationId, nextPhase, {
+                    landlordMessage: landlordMessage,
+                    agreedPrice: this.extractPriceFromMessage(landlordMessage) || conversationState.context.agreedPrice,
+                    landlordPersonality: landlordPersonality
+                });
+            }
+            
+            console.log(`🎯 Conversation phase: ${conversationState.phase}`);
+            
+            // Get personality-adapted templates
+            const personalityTemplates = this.getPersonalityTemplates(landlordPersonality, conversationState.phase);
+            const phaseTemplates = this.getPhaseTemplates(conversationState.phase);
+            
+            // Enhanced context based on conversation phase
+            const phaseContext = this.getPhaseContext(conversationState.phase, listing, userBudget, conversationState.context);
+            
+            // Get personality adaptation strategies
+            const personalityAdaptation = this.getPersonalityAdaptation(landlordPersonality);
+            
+            // Get AI learning insights
+            const learningInsights = await this.getLearningInsights(listing, userBudget);
+            const contextualLearning = await this.getContextualLearning(listing.house_type, listing.city);
+
+            const enhancedPrompt = `
+            You are an advanced AI negotiation expert with conversation state awareness and personality adaptation. Generate a message appropriate for the current negotiation phase and landlord personality:
+
+            CONVERSATION CONTEXT:
+            - Current Phase: ${conversationState.phase}
+            - Message Count: ${conversationState.messageCount}
+            - Available Templates: ${phaseTemplates.join(', ')}
+            ${landlordMessage ? `- Landlord's Last Message: "${landlordMessage}"` : ''}
+            
+            LANDLORD PERSONALITY ADAPTATION:
+            - Detected Personality: ${landlordPersonality}
+            - Preferred Templates: ${personalityTemplates.join(', ')}
+            - Communication Style: ${personalityAdaptation.tone_adjustments}
+            - Emphasize: ${personalityAdaptation.emphasize.join(', ')}
+            - Avoid: ${personalityAdaptation.avoid.join(', ')}
+            
+            PHASE-SPECIFIC CONTEXT:
+            ${phaseContext}
+
+            LISTING DETAILS:
+            - Title: ${listing.title}
+            - Current Price: $${listing.price}/month
+            - Type: ${listing.house_type}
+            - Bedrooms: ${listing.bedrooms}
+            - Location: ${listing.city || 'Not specified'}
+            - Utilities: ${listing.utilities}
+
+            USER PREFERENCES:
+            - Budget: $${userBudget}
+            - Looking for: ${listing.house_type}
+            - Negotiation History: ${conversationHistory.length} previous conversations
+
+            MARKET INTELLIGENCE:
+            - Average market price: $${marketData.average}
+            - Market range: $${marketData.min} - $${marketData.max}
+            - Market analysis: ${marketData.analysis || 'Standard market conditions'}
+
+            AI LEARNING INSIGHTS:
+            - Successful strategies: ${learningInsights.successfulStrategies}
+            - Optimal timing: ${learningInsights.optimalTiming}
+            - Value propositions: ${learningInsights.valueProps}
+            - Landlord behavior: ${learningInsights.landlordBehavior}
+
+            CONVERSATION MEMORY:
+            ${conversationHistory.length > 0 ? `Previous context: ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join(' | ')}` : 'Initial contact'}
+
+            Generate a message that:
+            1. Is appropriate for the ${conversationState.phase} phase
+            2. Adapts to the ${landlordPersonality} personality (${personalityAdaptation.tone_adjustments} tone)
+            3. Uses templates from: ${personalityTemplates.join(', ')}
+            4. Emphasizes: ${personalityAdaptation.emphasize.join(', ')}
+            5. Avoids: ${personalityAdaptation.avoid.join(', ')}
+            6. Responds appropriately to the landlord's message if provided
+            7. Moves the conversation toward rental completion
+            8. Maintains the appropriate tone for this landlord personality
+
+            Message (be specific and actionable):
+            `;
+
+            let response = await this.callOpenAI(enhancedPrompt, {
+                max_tokens: 200,
+                temperature: 0.7,
+                top_p: 0.9
+            });
+
+            // Apply personality-specific tone adaptation
+            response = this.adaptMessageTone(response, landlordPersonality);
+
+            // Log the generated message with state context
+            if (negotiationId) {
+                await this.logStateAwareConversation(negotiationId, conversationState, response, {
+                    landlordPersonality: landlordPersonality,
+                    personalityAdaptation: personalityAdaptation
+                });
+            }
+
+            console.log(`✅ Generated ${landlordPersonality}-adapted message for ${conversationState.phase} phase`);
+            return response;
+        } catch (error) {
+            console.error('Error generating state-aware message:', error);
+            // Fallback to original method
+            return await this.generateNegotiationMessage(listing, userBudget, marketData, conversationHistory);
+        }
+    }
+
+    // Get context information based on conversation phase
+    getPhaseContext(phase, listing, userBudget, conversationContext) {
+        const agreedPrice = conversationContext.agreedPrice || userBudget;
+        const deposit = Math.round(agreedPrice); // Standard: one month rent
+        const totalAmount = agreedPrice + deposit;
+        const moveInDate = this.getPreferredMoveInDate();
+        const signingDate = this.getPreferredSigningDate();
+        
+        const contexts = {
+            'initial_contact': `
+                - Goal: Express interest and begin price negotiation
+                - Strategy: Show enthusiasm while establishing budget expectations
+                - Key elements: Introduce yourself as qualified tenant, express interest`,
+            
+            'price_negotiation': `
+                - Goal: Negotiate favorable rental price
+                - Current offer consideration: Around $${userBudget}
+                - Market positioning: Use $${listing.price} vs market average $${userBudget}
+                - Strategy: Data-driven negotiation with value emphasis`,
+            
+            'deal_agreement': `
+                - Goal: Confirm price agreement and transition to terms
+                - Agreed price: $${agreedPrice}/month
+                - Next steps: Confirm terms and move to logistics`,
+            
+            'deal_confirmation': `
+                - Agreed price: $${agreedPrice}/month
+                - Security deposit: $${deposit}
+                - Move-in date: ${moveInDate}
+                - Goal: Confirm all terms and transition to formal arrangements`,
+            
+            'lease_terms': `
+                - Monthly rent: $${agreedPrice}
+                - Goal: Discuss lease duration, utilities, parking, pets
+                - Focus: Clarify what's included and any restrictions`,
+            
+            'payment_arrangement': `
+                - First month rent: $${agreedPrice}
+                - Security deposit: $${deposit}
+                - Total required: $${totalAmount}
+                - Goal: Arrange payment method and timing`,
+            
+            'security_deposit_discussion': `
+                - Security deposit amount: $${deposit}
+                - Standard: One month's rent
+                - Goal: Confirm amount and payment method`,
+            
+            'lease_signing': `
+                - Goal: Schedule lease signing appointment
+                - Preferred date: ${signingDate}
+                - Location preference: At property or landlord's office`,
+            
+            'move_in_coordination': `
+                - Move-in date: ${moveInDate}
+                - Goal: Coordinate logistics and walkthrough
+                - Requirements: Key exchange, final inspection`,
+            
+            'key_exchange': `
+                - Goal: Schedule key exchange and property walkthrough
+                - Documents needed: ID, signed lease, payment confirmations`,
+            
+            'final_confirmation': `
+                - Goal: Confirm all arrangements and finalize rental
+                - Timeline summary: Payment → Lease signing → Move-in`,
+            
+            'rental_complete': `
+                - Goal: Express satisfaction and maintain positive relationship
+                - Status: All arrangements completed successfully`
+        };
+        
+        return contexts[phase] || contexts['initial_contact'];
+    }
+
+    // Utility methods for phase context
+    getPreferredMoveInDate() {
+        const date = new Date();
+        date.setDate(date.getDate() + 7); // One week from now
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    getPreferredSigningDate() {
+        const date = new Date();
+        date.setDate(date.getDate() + 3); // Three days from now
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    // Extract price from message text
+    extractPriceFromMessage(message) {
+        if (!message) return null;
+        
+        // Look for various price formats
+        const pricePatterns = [
+            /\$(\d+,?\d*)/g,  // $1500 or $1,500
+            /(\d+,?\d*)\s*dollars?/gi,  // 1500 dollars
+            /(\d+,?\d*)\s*per month/gi,  // 1500 per month
+            /rent.*?(\d+,?\d*)/gi  // rent of 1500
+        ];
+        
+        for (const pattern of pricePatterns) {
+            const matches = message.match(pattern);
+            if (matches) {
+                const numbers = matches.map(match => {
+                    const num = match.replace(/[^0-9]/g, '');
+                    return parseInt(num);
+                }).filter(num => num >= 500 && num <= 10000); // Reasonable rent range
+                
+                if (numbers.length > 0) {
+                    return Math.max(...numbers); // Return highest price found
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    // Validate environment variables before API calls
+    validateEnvironmentVariables() {
+        const requiredVars = {
+            OPENAI_API_KEY: this.config.OPENAI_API_KEY,
+            SUPABASE_URL: this.config.SUPABASE_URL,
+            SUPABASE_ANON_KEY: this.config.SUPABASE_ANON_KEY
+        };
+
+        const missing = [];
+        const present = [];
+
+        for (const [varName, value] of Object.entries(requiredVars)) {
+            if (!value || value.trim() === '') {
+                missing.push(varName);
+            } else {
+                present.push(varName);
+            }
+        }
+
+        if (missing.length > 0) {
+            console.error('❌ Missing environment variables:', missing);
+            console.log('✅ Present environment variables:', present);
+            return {
+                valid: false,
+                missing: missing,
+                present: present
+            };
+        }
+
+        console.log('✅ All required environment variables present');
+        return {
+            valid: true,
+            missing: [],
+            present: present
+        };
+    }
+
+    // Enhanced OpenAI API call with environment validation
+    async callOpenAI(prompt, options = {}) {
+        // Validate environment variables first
+        const envCheck = this.validateEnvironmentVariables();
+        if (!envCheck.valid) {
+            throw new Error(`Missing environment variables: ${envCheck.missing.join(', ')}. Please configure these in Railway.`);
+        }
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
+                'OpenAI-Organization': this.config.OPENAI_ORG_ID
+            },
+            body: JSON.stringify({
+                model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                messages: [{ role: 'system', content: prompt }],
+                max_tokens: options.max_tokens || 150,
+                temperature: options.temperature || 0.7,
+                top_p: options.top_p || 1.0,
+                frequency_penalty: options.frequency_penalty || 0,
+                presence_penalty: options.presence_penalty || 0
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = `OpenAI API Error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`;
+            console.error('❌ OpenAI API call failed:', errorMessage);
+            
+            // Return human-like fallback response instead of throwing
+            return this.getFallbackResponse(prompt, options);
+        }
+
+        const data = await response.json();
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            console.error('❌ Invalid OpenAI response structure');
+            return this.getFallbackResponse(prompt, options);
+        }
+
+        return data.choices[0].message.content.trim();
+    }
+
+    // Generate fallback response when OpenAI API fails
+    getFallbackResponse(prompt, options = {}) {
+        console.log('🔄 Generating fallback response due to API failure');
+        
+        // Analyze the prompt to determine appropriate fallback
+        const promptLower = prompt.toLowerCase();
+        
+        if (promptLower.includes('acceptance') || promptLower.includes('accept')) {
+            return "Perfect! I'm excited to move forward with this rental. What are the next steps for finalizing everything?";
+        }
+        
+        if (promptLower.includes('security deposit') || promptLower.includes('deposit')) {
+            return "Absolutely! I'm ready to handle the security deposit. What's the amount and what's your preferred payment method?";
+        }
+        
+        if (promptLower.includes('meeting') || promptLower.includes('logistics')) {
+            return "Great! I'm flexible with timing. What works best for you? I can meet anytime that's convenient.";
+        }
+        
+        if (promptLower.includes('counter') || promptLower.includes('negotiation')) {
+            return "I appreciate you getting back to me. I'm definitely interested in working something out that works for both of us.";
+        }
+        
+        if (promptLower.includes('clarif') || promptLower.includes('vague')) {
+            return "Thanks for your response! Could you help me understand what you're thinking? I want to make sure we're on the same page.";
+        }
+        
+        // Default professional fallback
+        return "Thanks for your response! I'm really interested in this property and I'm hoping we can work something out. What are your thoughts?";
+    }
+
+    // Emergency response when everything else fails
+    getEmergencyResponse(landlordMessage) {
+        console.log('🚨 Generating emergency response for:', landlordMessage);
+        
+        const messageLower = landlordMessage.toLowerCase();
+        
+        // Handle common simple responses
+        if (messageLower.includes('yes') || messageLower.includes('sure') || messageLower.includes('ok')) {
+            return "Perfect! I'm excited to move forward. What should we do next to finalize everything?";
+        }
+        
+        if (messageLower.includes('no') || messageLower.includes('sorry')) {
+            return "I understand. Thank you for letting me know. If anything changes, please don't hesitate to reach out!";
+        }
+        
+        if (messageLower.includes('price') || messageLower.includes('rent') || messageLower.includes('$')) {
+            return "Thanks for getting back to me about the pricing. I'm definitely interested in working something out that makes sense for both of us.";
+        }
+        
+        if (messageLower.includes('meet') || messageLower.includes('time') || messageLower.includes('when')) {
+            return "Great! I'm flexible with timing and would love to meet when it's convenient for you. Just let me know what works best!";
+        }
+        
+        // Generic friendly response
+        return "Thanks for your message! I'm really interested in this property and would love to discuss it further. What would be the best next step?";
+    }
+
+    // Log state-aware conversation to Supabase
+    async logStateAwareConversation(negotiationId, conversationState, generatedMessage, additionalContext = {}) {
+        try {
+            if (!this.supabase) return;
+            
+            const logData = {
+                user_email: 'ai_negotiator',
+                conversation_data: JSON.stringify([{
+                    role: 'assistant',
+                    content: generatedMessage,
+                    timestamp: new Date().toISOString(),
+                    conversationPhase: conversationState.phase,
+                    messageCount: conversationState.messageCount,
+                    landlordPersonality: additionalContext.landlordPersonality
+                }]),
+                title: `AI Message: ${conversationState.phase} (${additionalContext.landlordPersonality || 'unknown'} personality)`,
+                metadata: {
+                    negotiationId: negotiationId,
+                    conversationPhase: conversationState.phase,
+                    messageCount: conversationState.messageCount,
+                    context: conversationState.context,
+                    landlordPersonality: additionalContext.landlordPersonality,
+                    personalityAdaptation: additionalContext.personalityAdaptation,
+                    source: 'personality_aware_negotiation'
+                }
+            };
+
+            const { error } = await this.supabase
+                .from('ai_chats')
+                .insert(logData);
+
+            if (error) {
+                console.error('Error logging state-aware conversation:', error);
+            } else {
+                console.log(`✅ Personality-aware conversation logged: ${conversationState.phase} (${additionalContext.landlordPersonality})`);
+            }
+        } catch (error) {
+            console.error('Error in logStateAwareConversation:', error);
+        }
     }
 
     // Enhanced negotiation message generation with conversation memory and learning
@@ -853,7 +1954,16 @@ class AINegotiationEngine {
             this.activeNegotiations.set(conversationId, negotiation);
 
         } catch (error) {
-            console.error('Error handling negotiation reply:', error);
+            console.error('❌ Error handling negotiation reply:', error);
+            
+            // Emergency fallback - always respond with something human-like
+            try {
+                const emergencyResponse = this.getEmergencyResponse(message.content);
+                await this.sendToLandlord(listing, emergencyResponse, 'emergency_fallback');
+                console.log('🚨 Emergency response sent:', emergencyResponse);
+            } catch (emergencyError) {
+                console.error('❌ Emergency response also failed:', emergencyError);
+            }
         }
     }
 
@@ -965,8 +2075,24 @@ class AINegotiationEngine {
             };
         }
         
-        // First check for simple acceptance patterns IMMEDIATELY
-        const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)$/i.test(simpleReply);
+        // First check for simple acceptance patterns IMMEDIATELY - Enhanced to handle multi-word responses
+        const acceptancePatterns = [
+            /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)$/i,
+            /^(yes\s+(sure|absolutely|definitely|of course|certainly))/i,
+            /^(sure\s+(thing|yes|absolutely|definitely))/i,
+            /^(yeah\s+(sure|that works|sounds good|okay))/i,
+            /^(absolutely\s+(yes|sure)?)/i,
+            /^(definitely\s+(yes|sure)?)/i,
+            /^(of course\s+(yes|sure)?)/i,
+            /^(that\s+(works|sounds good|sounds great))/i,
+            /^(sounds\s+(good|great|perfect|fine))/i,
+            /^(works\s+for me)/i,
+            /^(i accept)/i,
+            /^(lets do it|let's do it)/i,
+            /^(perfect)/i
+        ];
+        
+        const isSimpleAcceptance = acceptancePatterns.some(pattern => pattern.test(simpleReply));
         
         if (isSimpleAcceptance) {
             console.log('🎯 IMMEDIATE ACCEPTANCE DETECTED:', simpleReply);
@@ -2002,7 +3128,13 @@ class AINegotiationEngine {
 
     // Setup real-time message listener
     setupMessageListener() {
+        if (!this.supabase) {
+            console.error('❌ Supabase client not initialized - cannot setup message listener');
+            return;
+        }
+        
         try {
+            console.log('🔗 Setting up real-time message listener...');
             const messageChannel = this.supabase
                 .channel(`negotiation_messages_${Date.now()}`)
                 .on('postgres_changes', {
@@ -2028,6 +3160,11 @@ class AINegotiationEngine {
                             
                         if (convError) {
                             console.log('❌ Conversation lookup error:', convError.message);
+                            return;
+                        }
+                        
+                        if (!conversation) {
+                            console.log('📭 No conversation found for message');
                             return;
                         }
                         
@@ -2098,6 +3235,8 @@ class AINegotiationEngine {
                     }
                 });
 
+            // Store channel reference for cleanup
+            this.messageChannel = messageChannel;
             console.log('🔔 Negotiation message listener setup complete');
 
         } catch (error) {
@@ -3770,6 +4909,139 @@ class AINegotiationEngine {
     toggleLearningSystem(enabled) {
         this.learningEnabled = enabled;
         console.log(`🧠 Learning system ${enabled ? 'ENABLED' : 'DISABLED'}`);
+    }
+
+    // Initialize dashboard integration capabilities
+    initializeDashboardIntegration() {
+        return {
+            analyticsEndpoints: {
+                negotiationMetrics: '/api/negotiations/metrics',
+                personalityAnalysis: '/api/negotiations/personalities',
+                conversionRates: '/api/negotiations/conversions',
+                marketInsights: '/api/negotiations/market-insights'
+            },
+            dashboardWidgets: {
+                activeNegotiations: this.getActiveNegotiationsWidget.bind(this),
+                personalityBreakdown: this.getPersonalityBreakdownWidget.bind(this),
+                conversionFunnel: this.getConversionFunnelWidget.bind(this),
+                marketTrends: this.getMarketTrendsWidget.bind(this)
+            },
+            realTimeUpdates: true
+        };
+    }
+
+    // Get active negotiations widget data
+    async getActiveNegotiationsWidget() {
+        try {
+            const activeNegotiations = Array.from(this.activeNegotiations.values());
+            const conversationStates = Array.from(this.conversationStates.values());
+            
+            return {
+                title: 'Active Negotiations',
+                type: 'metric_cards',
+                data: {
+                    total: activeNegotiations.length,
+                    byPhase: this.groupByPhase(conversationStates),
+                    recentActivity: await this.getRecentNegotiationActivity(),
+                    successRate: await this.calculateCurrentSuccessRate()
+                }
+            };
+        } catch (error) {
+            console.error('Error getting active negotiations widget:', error);
+            return { title: 'Active Negotiations', type: 'error', data: null };
+        }
+    }
+
+    // Dashboard API endpoint for getting widget data
+    async getDashboardData(widgetType) {
+        const widgets = this.dashboardIntegration.dashboardWidgets;
+        
+        if (widgets[widgetType]) {
+            return await widgets[widgetType]();
+        }
+        
+        throw new Error(`Unknown widget type: ${widgetType}`);
+    }
+
+    // Helper method to group conversation states by phase
+    groupByPhase(conversationStates) {
+        const phaseGroups = {};
+        conversationStates.forEach(state => {
+            const phase = state.phase || 'unknown';
+            phaseGroups[phase] = (phaseGroups[phase] || 0) + 1;
+        });
+        return phaseGroups;
+    }
+
+    // Get recent negotiation activity for dashboard
+    async getRecentNegotiationActivity() {
+        try {
+            if (!this.supabase) return [];
+            
+            const { data, error } = await this.supabase
+                .from('ai_chats')
+                .select('title, created_at, metadata')
+                .contains('metadata', { source: 'personality_aware_negotiation' })
+                .order('created_at', { ascending: false })
+                .limit(5);
+                
+            if (error) return [];
+            
+            return data.map(chat => ({
+                title: chat.title,
+                timestamp: chat.created_at,
+                phase: chat.metadata?.conversationPhase || 'unknown',
+                personality: chat.metadata?.landlordPersonality || 'unknown'
+            }));
+        } catch (error) {
+            console.error('Error getting recent activity:', error);
+            return [];
+        }
+    }
+
+    // Calculate current success rate for dashboard
+    async calculateCurrentSuccessRate() {
+        try {
+            if (!this.supabase) return 0;
+            
+            const { data, error } = await this.supabase
+                .from('ai_chats')
+                .select('metadata')
+                .contains('metadata', { source: 'personality_aware_negotiation' })
+                .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+                
+            if (error || !data) return 0;
+            
+            const completed = data.filter(chat => 
+                chat.metadata?.conversationPhase === 'rental_complete'
+            ).length;
+            
+            return data.length > 0 ? Math.round((completed / data.length) * 100) : 0;
+        } catch (error) {
+            console.error('Error calculating success rate:', error);
+            return 0;
+        }
+    }
+
+    // Real-time updates for dashboard integration
+    async broadcastNegotiationUpdate(negotiationId, update) {
+        try {
+            const updateData = {
+                type: 'negotiation_update',
+                negotiationId: negotiationId,
+                timestamp: new Date().toISOString(),
+                data: update
+            };
+            
+            console.log('📡 Broadcasting dashboard update:', updateData);
+            
+            // In production, this would integrate with WebSockets or SSE
+            if (typeof window !== 'undefined' && window.dashboardUpdateCallback) {
+                window.dashboardUpdateCallback(updateData);
+            }
+        } catch (error) {
+            console.error('Error broadcasting dashboard update:', error);
+        }
     }
 }
 

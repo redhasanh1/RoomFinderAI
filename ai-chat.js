@@ -65,6 +65,11 @@ class AIChatHandler {
         console.log('🔔 Setting up real-time subscription for user:', this.currentUser.email);
         
         try {
+            if (!this.supabase) {
+                console.error('❌ Supabase client not initialized for real-time updates');
+                return;
+            }
+            
             const channel = this.supabase
                 .channel(`negotiation_updates_${Date.now()}`)
                 .on('postgres_changes', {
@@ -130,6 +135,21 @@ class AIChatHandler {
         } catch (error) {
             console.error('Error setting up real-time subscription:', error);
             this.setupFallbackPolling();
+        }
+    }
+
+    // Cleanup method for proper resource management
+    cleanup() {
+        if (this.subscriptionChannel) {
+            console.log('🧹 Cleaning up real-time subscription channel');
+            this.subscriptionChannel.unsubscribe();
+            this.subscriptionChannel = null;
+        }
+        
+        if (this.pollingInterval) {
+            console.log('🧹 Cleaning up polling interval');
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
         }
     }
 
