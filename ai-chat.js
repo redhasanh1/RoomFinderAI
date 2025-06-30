@@ -1231,7 +1231,22 @@ class AIChatHandler {
                 messageId: data[0]?.id
             };
             
-            console.log('📝 Set up context for basic message response:', this.pendingUserResponse);
+            console.log('📝 [CONTEXT SET] Basic message context created:', {
+                id: this.pendingUserResponse.id,
+                phase: this.pendingUserResponse.phase,
+                listingTitle: this.pendingUserResponse.listing.title,
+                timestamp: this.pendingUserResponse.timestamp
+            });
+            
+            // Also add to conversation tracking
+            this.activeConversations.set(conversation.id, {
+                listing: this.pendingUserResponse.listing,
+                lastMessage: basicMessage,
+                status: 'message_sent',
+                timestamp: new Date().toISOString()
+            });
+            
+            console.log('📝 [CONTEXT SET] Active conversations updated:', this.activeConversations.size);
             
             return true;
         } catch (error) {
@@ -1356,14 +1371,19 @@ class AIChatHandler {
         this.appendMessage('AI', 'Analyzing your request...', 'left', true);
         
         // Check if this is a negotiation response first
+        console.log('🔍 [PROCESS MESSAGE] About to check if negotiation response...');
         const isNegotiationResponse = this.checkForNegotiationResponse(message);
+        console.log('🔍 [PROCESS MESSAGE] Negotiation response check result:', isNegotiationResponse);
         
         if (isNegotiationResponse) {
-            console.log('🤝 Detected negotiation response:', message);
+            console.log('🤝 [PROCESS MESSAGE] Detected negotiation response, handling...');
             this.removeTypingIndicator();
             await this.handleNegotiationResponse(message);
+            console.log('🤝 [PROCESS MESSAGE] Negotiation response handling complete, returning');
             return;
         }
+        
+        console.log('🔍 [PROCESS MESSAGE] Not a negotiation response, proceeding with search logic...');
         
         // Extract requirements for search requests
         const extractedData = await this.extractRentalInfo(message);
@@ -1401,23 +1421,44 @@ class AIChatHandler {
 
     // Check if the message is a negotiation response (yes, sure, etc.)
     checkForNegotiationResponse(message) {
+        console.log('🔍 [NEGOTIATION CHECK] Starting check for message:', message);
         const cleanMessage = message.toLowerCase().trim();
         
         // First check: Do we have any active conversations waiting for user response?
         const hasActiveContext = this.pendingUserResponse !== null || this.activeConversations.size > 0;
         
+        console.log('🔍 [NEGOTIATION CHECK] Active context check:', {
+            pendingUserResponse: this.pendingUserResponse ? {
+                id: this.pendingUserResponse.id,
+                phase: this.pendingUserResponse.phase,
+                listingTitle: this.pendingUserResponse.listing?.title
+            } : null,
+            activeConversationsCount: this.activeConversations.size,
+            hasActiveContext
+        });
+        
         // Secondary check: Look for conversation patterns in recent history
-        const recentMessages = this.conversationHistory.slice(-3);
+        const recentMessages = this.conversationHistory.slice(-5); // Check more messages
+        const interactionKeywords = [
+            'discussing', 'terms', 'open to', 'interested in', 
+            'landlord', 'landlords', 'property', 'listing', 
+            'contacting', 'message', 'sent', 'negotiat', 
+            'reply', 'respond', 'owner', 'rent'
+        ];
+        
         const hasRecentLandlordInteraction = recentMessages.some(msg => 
-            msg.role === 'ai' && (
-                msg.content.includes('discussing') || 
-                msg.content.includes('terms') ||
-                msg.content.includes('open to') ||
-                msg.content.includes('interested in') ||
-                msg.content.includes('landlord') ||
-                msg.content.includes('property')
+            msg.role === 'ai' && interactionKeywords.some(keyword => 
+                msg.content.toLowerCase().includes(keyword.toLowerCase())
             )
         );
+        
+        console.log('🔍 Recent interaction check:', {
+            recentMessages: recentMessages.map(m => ({ role: m.role, content: m.content.substring(0, 50) + '...' })),
+            hasRecentLandlordInteraction,
+            matchedKeywords: interactionKeywords.filter(keyword => 
+                recentMessages.some(msg => msg.role === 'ai' && msg.content.toLowerCase().includes(keyword.toLowerCase()))
+            )
+        });
         
         if (!hasActiveContext && !hasRecentLandlordInteraction) {
             console.log('🔍 No active negotiation context or recent interaction - treating as search request');
@@ -1454,20 +1495,37 @@ class AIChatHandler {
         
         const isAcceptance = acceptancePatterns.some(pattern => pattern.test(cleanMessage));
         
+        // Debug pattern matching
+        const matchingPatterns = acceptancePatterns.filter(pattern => pattern.test(cleanMessage));
+        console.log('🔍 [PATTERN MATCHING] Testing acceptance patterns:', {
+            cleanMessage,
+            isAcceptance,
+            matchingPatterns: matchingPatterns.map(p => p.toString()),
+            allPatternResults: acceptancePatterns.map((pattern, index) => ({
+                pattern: pattern.toString(),
+                matches: pattern.test(cleanMessage)
+            }))
+        });
+        
         // Also check for negotiation keywords
         const negotiationKeywords = ['price', 'rent', 'lower', 'higher', 'counter', 'offer', 'deal'];
         const hasNegotiationKeywords = negotiationKeywords.some(keyword => cleanMessage.includes(keyword));
         
-        console.log('🔍 Negotiation response check:', {
+        const finalDecision = isAcceptance || hasNegotiationKeywords;
+        
+        console.log('🔍 [FINAL DECISION] Negotiation response check result:', {
             cleanMessage,
             hasActiveContext,
+            hasRecentLandlordInteraction,
             isAcceptance,
             hasNegotiationKeywords,
-            pendingResponse: this.pendingUserResponse,
-            activeConversations: this.activeConversations.size
+            finalDecision,
+            pendingResponse: this.pendingUserResponse ? 'SET' : 'NULL',
+            activeConversations: this.activeConversations.size,
+            decision: finalDecision ? 'TREATING AS NEGOTIATION RESPONSE' : 'TREATING AS SEARCH REQUEST'
         });
         
-        return isAcceptance || hasNegotiationKeywords;
+        return finalDecision;
     }
 
     // Handle negotiation responses
