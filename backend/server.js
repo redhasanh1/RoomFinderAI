@@ -469,7 +469,7 @@ async function sendPasswordResetEmail(email, code, firstName) {
         const emailData = {
             sender: {
                 name: "RoomFinderAI",
-                email: "noreply@roomfinderai.com"
+                email: "wilmahenning01@gmail.com"
             },
             to: [{
                 email: email,
