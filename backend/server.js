@@ -163,6 +163,7 @@ const GOOGLE_API_KEY = config.GOOGLE_API_KEY;
 const listings = [];
 const users = [];
 const emailVerificationCodes = new Map(); // Store verification codes with expiration
+const passwordResetCodes = new Map(); // Store password reset codes with expiration
 
 // Location overrides for problematic North American cities
 const locationOverrides = {
@@ -460,6 +461,89 @@ async function sendVerificationEmail(email, code, firstName) {
     }
 }
 
+// Function to send password reset email
+async function sendPasswordResetEmail(email, code, firstName) {
+    try {
+        console.log('📧 Sending password reset email to:', email);
+        
+        const emailData = {
+            sender: {
+                name: "RoomFinderAI",
+                email: "noreply@roomfinderai.com"
+            },
+            to: [{
+                email: email,
+                name: firstName
+            }],
+            subject: "Reset your RoomFinderAI password",
+            htmlContent: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Password Reset</title>
+                </head>
+                <body style="font-family: 'Inter', Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px;">
+                    <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); overflow: hidden;">
+                        <!-- Header -->
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">RoomFinderAI</h1>
+                            <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0; font-size: 16px;">Password Reset Request</p>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div style="padding: 40px 30px;">
+                            <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hi ${firstName}!</h2>
+                            <p style="color: #64748b; line-height: 1.6; margin: 0 0 30px 0; font-size: 16px;">
+                                We received a request to reset your password. Use the code below to complete the process:
+                            </p>
+                            
+                            <!-- Reset Code -->
+                            <div style="text-align: center; margin: 40px 0;">
+                                <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 20px; border-radius: 12px; border: 2px dashed #667eea; display: inline-block;">
+                                    <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px; font-weight: 600;">RESET CODE</p>
+                                    <p style="margin: 0; font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 4px;">${code}</p>
+                                </div>
+                            </div>
+                            
+                            <p style="color: #64748b; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                                Enter this code on the password reset page. This code will expire in <strong>10 minutes</strong> for security reasons.
+                            </p>
+                            
+                            <p style="color: #64748b; line-height: 1.6; margin: 0; font-size: 14px;">
+                                If you didn't request a password reset, please ignore this email. Your password won't be changed unless you enter this code.
+                            </p>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div style="background: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <p style="margin: 0; color: #64748b; font-size: 14px;">
+                                © 2025 RoomFinderAI. All rights reserved.
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `
+        };
+
+        const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+            headers: {
+                'accept': 'application/json',
+                'api-key': config.BREVO_API_KEY,
+                'content-type': 'application/json'
+            }
+        });
+
+        console.log('✅ Password reset email sent successfully to:', email);
+        return { success: true };
+    } catch (error) {
+        console.error('❌ Error sending password reset email:', error.response?.data || error.message);
+        return { success: false, error: error.message };
+    }
+}
+
 // API: Send verification email
 app.post('/api/send-verification', async (req, res) => {
     try {
@@ -641,6 +725,169 @@ app.post('/api/login', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/login:', error.message);
         res.status(500).json({ error: 'Failed to login' });
+    }
+});
+
+// API: Send password reset code
+app.post('/api/send-reset-code', async (req, res) => {
+    try {
+        console.log('📧 Received password reset request for:', req.body.email);
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        // Check if user exists
+        const user = users.find(u => u.email === email);
+        if (!user) {
+            // Don't reveal if user exists or not for security
+            return res.json({ 
+                message: 'If an account exists with this email, a reset code will be sent.',
+                sessionId: uuidv4()
+            });
+        }
+
+        // Check if Brevo API key is available
+        if (!config.BREVO_API_KEY) {
+            console.log('❌ BREVO_API_KEY not found in config');
+            return res.status(500).json({ error: 'Email service not configured' });
+        }
+
+        // Generate reset code
+        const code = generateVerificationCode();
+        const sessionId = uuidv4();
+        const expirationTime = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+        // Store reset code
+        passwordResetCodes.set(email, {
+            code,
+            sessionId,
+            expirationTime,
+            verified: false
+        });
+
+        console.log('📤 Sending password reset email to:', email);
+        // Send reset email
+        const emailResult = await sendPasswordResetEmail(email, code, user.firstName);
+        
+        if (emailResult.success) {
+            console.log('✅ Password reset email sent successfully');
+            res.json({ 
+                message: 'Reset code sent to your email',
+                sessionId: sessionId
+            });
+        } else {
+            console.log('❌ Failed to send reset email:', emailResult.error);
+            passwordResetCodes.delete(email);
+            res.status(500).json({ error: 'Failed to send reset email' });
+        }
+    } catch (error) {
+        console.error('❌ Error in /api/send-reset-code:', error.message);
+        res.status(500).json({ error: 'Failed to send reset code' });
+    }
+});
+
+// API: Verify password reset code
+app.post('/api/verify-reset-code', async (req, res) => {
+    try {
+        const { email, code, sessionId } = req.body;
+        
+        if (!email || !code || !sessionId) {
+            return res.status(400).json({ error: 'Email, code, and sessionId are required' });
+        }
+
+        // Get stored reset data
+        const resetData = passwordResetCodes.get(email);
+        
+        if (!resetData) {
+            return res.status(400).json({ error: 'No reset code found for this email' });
+        }
+
+        // Check session ID
+        if (resetData.sessionId !== sessionId) {
+            return res.status(400).json({ error: 'Invalid session' });
+        }
+
+        // Check if code has expired
+        if (Date.now() > resetData.expirationTime) {
+            passwordResetCodes.delete(email);
+            return res.status(400).json({ error: 'Reset code has expired. Please request a new one.' });
+        }
+
+        // Check if code matches
+        if (resetData.code !== code) {
+            return res.status(400).json({ error: 'Invalid reset code' });
+        }
+
+        // Mark as verified
+        resetData.verified = true;
+        passwordResetCodes.set(email, resetData);
+
+        res.json({ message: 'Code verified successfully' });
+    } catch (error) {
+        console.error('Error in /api/verify-reset-code:', error.message);
+        res.status(500).json({ error: 'Failed to verify code' });
+    }
+});
+
+// API: Reset password
+app.post('/api/reset-password', async (req, res) => {
+    try {
+        const { email, code, newPassword, sessionId } = req.body;
+        
+        if (!email || !code || !newPassword || !sessionId) {
+            return res.status(400).json({ error: 'All fields are required' });
+        }
+
+        // Get stored reset data
+        const resetData = passwordResetCodes.get(email);
+        
+        if (!resetData || !resetData.verified) {
+            return res.status(400).json({ error: 'Invalid or unverified reset request' });
+        }
+
+        // Verify session and code again
+        if (resetData.sessionId !== sessionId || resetData.code !== code) {
+            return res.status(400).json({ error: 'Invalid reset credentials' });
+        }
+
+        // Find user and update password
+        const user = users.find(u => u.email === email);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        
+        // Update in Supabase if available
+        if (supabase) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ password: hashedPassword })
+                    .eq('email', email);
+                
+                if (error) {
+                    console.error('Error updating password in Supabase:', error);
+                }
+            } catch (dbError) {
+                console.error('Database update error:', dbError);
+            }
+        }
+
+        // Clean up reset code
+        passwordResetCodes.delete(email);
+
+        // Log password reset
+        await logUserActivity(email, 'password_reset', 'Password successfully reset');
+
+        res.json({ message: 'Password reset successfully' });
+    } catch (error) {
+        console.error('Error in /api/reset-password:', error.message);
+        res.status(500).json({ error: 'Failed to reset password' });
     }
 });
 
