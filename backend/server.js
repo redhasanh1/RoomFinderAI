@@ -962,6 +962,150 @@ app.post('/api/subscription/cancel', async (req, res) => {
     }
 });
 
+// API: Save bank information
+app.post('/api/bank-info/save', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
+        }
+
+        const { 
+            userEmail, 
+            accountHolderName, 
+            bankName, 
+            accountNumber, 
+            routingNumber, 
+            accountType, 
+            swiftCode, 
+            bankAddress 
+        } = req.body;
+
+        console.log('Saving bank information for email:', userEmail);
+        
+        if (!userEmail || !accountHolderName || !bankName || !accountNumber || !routingNumber || !accountType) {
+            return res.status(400).json({ error: 'Required fields are missing' });
+        }
+
+        // Check if user already has bank information
+        const { data: existingBank, error: checkError } = await supabase
+            .from('bank_information')
+            .select('*')
+            .eq('user_email', userEmail)
+            .single();
+
+        let result;
+        if (existingBank) {
+            // Update existing bank information
+            const { data, error } = await supabase
+                .from('bank_information')
+                .update({
+                    account_holder_name: accountHolderName,
+                    bank_name: bankName,
+                    account_number: accountNumber,
+                    routing_number: routingNumber,
+                    account_type: accountType,
+                    swift_code: swiftCode || null,
+                    bank_address: bankAddress || null,
+                    verification_status: 'pending',
+                    updated_at: new Date().toISOString()
+                })
+                .eq('user_email', userEmail)
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Error updating bank information:', error);
+                return res.status(500).json({ error: 'Failed to update bank information', details: error.message });
+            }
+            result = data;
+        } else {
+            // Insert new bank information
+            const { data, error } = await supabase
+                .from('bank_information')
+                .insert({
+                    user_email: userEmail,
+                    account_holder_name: accountHolderName,
+                    bank_name: bankName,
+                    account_number: accountNumber,
+                    routing_number: routingNumber,
+                    account_type: accountType,
+                    swift_code: swiftCode || null,
+                    bank_address: bankAddress || null,
+                    verification_status: 'pending'
+                })
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Error inserting bank information:', error);
+                return res.status(500).json({ error: 'Failed to save bank information', details: error.message });
+            }
+            result = data;
+        }
+
+        // Log bank information submission activity
+        await logUserActivity(userEmail, 'bank_info_updated', 'User submitted bank information for verification', {
+            bank_name: bankName,
+            account_type: accountType,
+            verification_status: 'pending',
+            bank_info_id: result.id
+        });
+
+        console.log('Bank information saved successfully:', result.id);
+        res.json({ 
+            success: true, 
+            message: 'Bank information saved successfully and is pending verification.',
+            bankInfo: {
+                id: result.id,
+                bank_name: result.bank_name,
+                account_type: result.account_type,
+                verification_status: result.verification_status,
+                created_at: result.created_at
+            }
+        });
+    } catch (error) {
+        console.error('Error in bank info save endpoint:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// API: Get bank information
+app.get('/api/bank-info/:email', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
+        }
+
+        const { email } = req.params;
+        console.log('Fetching bank information for email:', email);
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        const { data: bankInfo, error } = await supabase
+            .from('bank_information')
+            .select('id, user_email, account_holder_name, bank_name, account_type, verification_status, created_at, updated_at')
+            .eq('user_email', email)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        console.log('Supabase bank info query result:', { bankInfo, error });
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+            console.error('Error fetching bank information:', error);
+            return res.status(500).json({ error: 'Failed to fetch bank information', details: error.message });
+        }
+
+        res.json({ bankInfo: bankInfo || null });
+
+    } catch (error) {
+        console.error('Error in bank info fetch endpoint:', error);
+        res.status(500).json({ error: 'Failed to fetch bank information', details: error.message });
+    }
+});
+
 // Test endpoint for Supabase connection
 app.get('/api/test-supabase', async (req, res) => {
     try {
