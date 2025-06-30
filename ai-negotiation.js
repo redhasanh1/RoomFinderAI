@@ -17,6 +17,9 @@ class AINegotiationEngine {
         this.learningSystem = new AILearningSystem(this.supabase);
         this.learningEnabled = true;
         
+        // Validate OpenAI configuration
+        this.validateOpenAIConfig();
+        
         this.init();
     }
 
@@ -1014,6 +1017,14 @@ class AINegotiationEngine {
         const negotiationContext = this.analyzeNegotiationContext(negotiation);
 
         try {
+            console.log('🤖 Attempting OpenAI analysis...');
+            console.log('🤖 OpenAI Config Check:', {
+                hasKey: !!this.config.OPENAI_API_KEY,
+                keyPreview: this.config.OPENAI_API_KEY ? this.config.OPENAI_API_KEY.substring(0, 10) + '...' : 'Missing',
+                model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                hasOrgId: !!this.config.OPENAI_ORG_ID
+            });
+            
             const lastAIMessage = negotiation.messages
                 .filter(m => m.sender === 'ai')
                 .pop();
@@ -1083,8 +1094,14 @@ class AINegotiationEngine {
             });
 
             if (!response.ok) {
-                console.warn('OpenAI API failed, using fallback analysis');
-                throw new Error(`OpenAI API error: ${response.status}`);
+                const errorText = await response.text();
+                console.error('❌ OpenAI API failed with status:', response.status);
+                console.error('❌ OpenAI API error details:', errorText);
+                console.error('❌ OpenAI API key being used:', this.config.OPENAI_API_KEY ? 'Present' : 'Missing');
+                console.error('❌ OpenAI Model:', this.config.OPENAI_MODEL);
+                console.error('❌ OpenAI Org ID:', this.config.OPENAI_ORG_ID ? 'Present' : 'Missing');
+                console.warn('⚠️ Using fallback analysis instead');
+                throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
@@ -3849,6 +3866,85 @@ class AINegotiationEngine {
     toggleLearningSystem(enabled) {
         this.learningEnabled = enabled;
         console.log(`🧠 Learning system ${enabled ? 'ENABLED' : 'DISABLED'}`);
+    }
+
+    // Validate OpenAI configuration
+    validateOpenAIConfig() {
+        console.log('🔧 Validating OpenAI configuration...');
+        console.log('🔧 Config object:', {
+            hasOpenAIKey: !!this.config?.OPENAI_API_KEY,
+            hasOrgId: !!this.config?.OPENAI_ORG_ID,
+            model: this.config?.OPENAI_MODEL,
+            configKeys: this.config ? Object.keys(this.config) : 'No config'
+        });
+        
+        if (!this.config) {
+            console.error('❌ No config object provided to AINegotiationEngine');
+            return false;
+        }
+        
+        if (!this.config.OPENAI_API_KEY) {
+            console.error('❌ OPENAI_API_KEY missing from config');
+            console.error('❌ Available config keys:', Object.keys(this.config));
+            return false;
+        }
+        
+        if (this.config.OPENAI_API_KEY.startsWith('sk-')) {
+            console.log('✅ OpenAI API key format looks correct');
+        } else {
+            console.warn('⚠️ OpenAI API key format might be incorrect (should start with sk-)');
+        }
+        
+        console.log('✅ OpenAI configuration validated');
+        return true;
+    }
+
+    // Test OpenAI API connectivity
+    async testOpenAIConnectivity() {
+        console.log('🧪 Testing OpenAI API connectivity...');
+        console.log('🔑 API Key present:', !!this.config.OPENAI_API_KEY);
+        console.log('🔑 API Key preview:', this.config.OPENAI_API_KEY ? this.config.OPENAI_API_KEY.substring(0, 10) + '...' : 'Missing');
+        console.log('🔑 Org ID present:', !!this.config.OPENAI_ORG_ID);
+        console.log('🔑 Model:', this.config.OPENAI_MODEL || 'gpt-3.5-turbo');
+        
+        if (!this.config.OPENAI_API_KEY) {
+            console.error('❌ OpenAI API key is missing from config');
+            return false;
+        }
+
+        try {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
+                    'OpenAI-Organization': this.config.OPENAI_ORG_ID
+                },
+                body: JSON.stringify({
+                    model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                    messages: [{ role: 'user', content: 'Test connection. Reply with just "OK".' }],
+                    max_tokens: 10,
+                    temperature: 0
+                })
+            });
+
+            console.log('🔗 OpenAI API Response Status:', response.status);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ OpenAI API test failed:', response.status, errorText);
+                return false;
+            }
+
+            const data = await response.json();
+            console.log('✅ OpenAI API test successful!');
+            console.log('📝 Test response:', data.choices[0]?.message?.content);
+            return true;
+
+        } catch (error) {
+            console.error('❌ OpenAI API test error:', error);
+            return false;
+        }
     }
 }
 

@@ -181,6 +181,9 @@
                                 <button onclick="testAPIConnectivity()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors" title="Test API connections">
                                     🧪 Test
                                 </button>
+                                <button onclick="testOpenAI()" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors" title="Test OpenAI API">
+                                    🤖 OpenAI
+                                </button>
                                 <button onclick="clearChat()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors" title="Clear chat history">
                                     🗑️ Clear
                                 </button>
@@ -978,6 +981,33 @@
             container.appendChild(negotiationCard);
         }
 
+        // Test OpenAI API specifically
+        async function testOpenAI() {
+            if (!aiNegotiationEngine) {
+                console.error('❌ AI Negotiation Engine not initialized');
+                alert('AI Negotiation Engine not available');
+                return;
+            }
+            
+            console.log('🧪 Testing OpenAI API...');
+            aiNegotiator.appendMessage('AI', '🤖 Testing OpenAI API connectivity...', 'left', true);
+            
+            try {
+                const success = await aiNegotiationEngine.testOpenAIConnectivity();
+                aiNegotiator.removeTypingIndicator();
+                
+                if (success) {
+                    aiNegotiator.appendMessage('AI', '✅ OpenAI API test successful! API is working correctly.', 'left');
+                } else {
+                    aiNegotiator.appendMessage('AI', '❌ OpenAI API test failed! Check console for details.', 'left');
+                }
+            } catch (error) {
+                aiNegotiator.removeTypingIndicator();
+                aiNegotiator.appendMessage('AI', `❌ OpenAI API test error: ${error.message}`, 'left');
+                console.error('OpenAI test error:', error);
+            }
+        }
+
         // Global functions for onclick
         window.sendMessage = sendMessage;
         window.clearChat = clearChat;
@@ -989,6 +1019,7 @@
         window.testAutoPolling = testAutoPolling;
         window.forceStartAutoPolling = forceStartAutoPolling;
         window.testAPIConnectivity = testAPIConnectivity;
+        window.testOpenAI = testOpenAI;
         window.applyFilters = applyFilters;
         window.clearFilters = clearFilters;
     </script>
