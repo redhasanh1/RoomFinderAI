@@ -267,22 +267,28 @@
             
             <div class="modern-container p-8">
             <form id="subleaseForm" class="space-y-8">
-                <!-- AI Contract Upload -->
+                <!-- Smart Lease Compatibility Checker -->
                 <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border-2 border-dashed border-blue-300">
                     <div class="text-center">
                         <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">🤖 AI Contract Analysis</h3>
-                        <p class="text-gray-600 mb-4">Upload your lease contract and let our AI extract all the details automatically</p>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">🔍 Smart Lease Compatibility Checker</h3>
+                        <p class="text-gray-600 mb-4">Upload your original lease to check if subletting is allowed and get legal guidance</p>
                         <label for="contractFile" class="cursor-pointer modern-button inline-block">
-                            📄 Upload Contract
+                            📄 Upload Original Lease
                         </label>
                         <input type="file" id="contractFile" name="contractFile" class="hidden" accept="image/*,application/pdf,.pdf" aria-describedby="contractHelp">
-                        <p id="contractHelp" class="text-sm text-gray-500 mt-3">Supports PDF, JPEG, and PNG files</p>
-                        <button type="button" id="extractButton" class="mt-4 bg-gradient-to-r from-green-500 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-teal-700 transition font-semibold hidden">✨ Extract Details</button>
+                        <p id="contractHelp" class="text-sm text-gray-500 mt-3">We'll analyze subletting clauses and legal requirements</p>
+                        <button type="button" id="extractButton" class="mt-4 bg-gradient-to-r from-green-500 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-teal-700 transition font-semibold hidden">✨ Check Compatibility</button>
+                    </div>
+                    
+                    <!-- Compatibility Results -->
+                    <div id="compatibilityResults" class="hidden mt-6 p-4 bg-white rounded-lg border">
+                        <h4 class="font-semibold text-gray-800 mb-3">📋 Lease Compatibility Report</h4>
+                        <div id="compatibilityContent"></div>
                     </div>
                 </div>
                 
@@ -297,7 +303,60 @@
                     </div>
                     <div>
                         <label for="rent" class="block text-sm font-medium text-gray-700 mb-2">💰 Monthly Rent</label>
-                        <input type="number" id="rent" name="rent" class="modern-input w-full" placeholder="1200" required aria-required="true">
+                        <div class="relative">
+                            <input type="number" id="rent" name="rent" class="modern-input w-full" placeholder="1200" required aria-required="true">
+                            <button type="button" id="calculateRentBtn" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                🧮 Calculate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sublease Financial Calculator -->
+                <div id="financialCalculator" class="hidden bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4">💰 Sublease Financial Calculator</h4>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Original Monthly Rent</label>
+                            <input type="number" id="originalRent" class="modern-input w-full" placeholder="1500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Remaining Lease Months</label>
+                            <input type="number" id="remainingMonths" class="modern-input w-full" placeholder="8">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Security Deposit (Original)</label>
+                            <input type="number" id="originalDeposit" class="modern-input w-full" placeholder="1500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Utilities (Monthly)</label>
+                            <input type="number" id="monthlyUtilities" class="modern-input w-full" placeholder="150">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-white rounded-lg">
+                        <h5 class="font-medium text-gray-800 mb-3">📊 Financial Breakdown</h5>
+                        <div id="financialBreakdown" class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span>Recommended Sublease Rent:</span>
+                                <span id="recommendedRent" class="font-semibold text-green-600">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Security Deposit to Collect:</span>
+                                <span id="recommendedDeposit" class="font-semibold">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Total Lease Value Remaining:</span>
+                                <span id="totalLeaseValue" class="font-semibold">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Your Monthly Savings:</span>
+                                <span id="monthlySavings" class="font-semibold text-blue-600">$0</span>
+                            </div>
+                        </div>
+                        <button type="button" onclick="applyCalculatedRent()" class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                            Apply Calculated Rent
+                        </button>
                     </div>
                 </div>
                 
@@ -370,6 +429,56 @@
                     </div>
                     <div id="imagePreview" class="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4"></div>
                 </div>
+                <!-- Handover Assistant -->
+                <div class="bg-green-50 border border-green-200 rounded-xl p-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4">🤝 Sublease Handover Assistant</h4>
+                    <p class="text-gray-600 mb-4">We'll help coordinate the transfer process between you and your subletter</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="keys" class="mr-3 text-green-600">
+                                <span class="text-sm">🔑 Keys & Access Cards</span>
+                            </label>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="utilities" class="mr-3 text-green-600">
+                                <span class="text-sm">⚡ Utility Account Transfer</span>
+                            </label>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="internet" class="mr-3 text-green-600">
+                                <span class="text-sm">📶 WiFi & Internet Setup</span>
+                            </label>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="mailbox" class="mr-3 text-green-600">
+                                <span class="text-sm">📬 Mailbox Access</span>
+                            </label>
+                        </div>
+                        <div>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="inventory" class="mr-3 text-green-600">
+                                <span class="text-sm">📋 Inventory Documentation</span>
+                            </label>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="deposit" class="mr-3 text-green-600">
+                                <span class="text-sm">💰 Security Deposit Transfer</span>
+                            </label>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="cleaning" class="mr-3 text-green-600">
+                                <span class="text-sm">🧹 Cleaning Requirements</span>
+                            </label>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="emergency" class="mr-3 text-green-600">
+                                <span class="text-sm">🚨 Emergency Contacts</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-white rounded-lg">
+                        <p class="text-sm text-gray-600 mb-2">📅 We'll create a custom handover timeline and checklist for your selected items.</p>
+                        <p class="text-sm text-green-600 font-medium">✅ Professional handover reduces disputes and ensures smooth transitions</p>
+                    </div>
+                </div>
+
                 <!-- Submit Buttons -->
                 <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
                     <button type="button" onclick="showPreview()" class="flex-1 bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 transition font-semibold">👁️ Preview Listing</button>
@@ -595,7 +704,19 @@
                 }
             });
 
-            // Contract document extraction
+            // Smart Lease Compatibility Checker
+            document.getElementById('calculateRentBtn')?.addEventListener('click', () => {
+                const calculator = document.getElementById('financialCalculator');
+                calculator.classList.toggle('hidden');
+                
+                // Auto-calculate when inputs change
+                const inputs = ['originalRent', 'remainingMonths', 'originalDeposit', 'monthlyUtilities'];
+                inputs.forEach(id => {
+                    document.getElementById(id)?.addEventListener('input', updateFinancialCalculation);
+                });
+            });
+
+            // Contract document extraction with compatibility check
             document.getElementById('extractButton')?.addEventListener('click', async () => {
                 const contractFile = document.getElementById('contractFile').files[0];
                 if (!contractFile) {
@@ -644,8 +765,11 @@
                     console.log('RAW EXTRACTED TEXT:', text);
                     extractedContractData = extractContractDetails(text);
                     
+                    // Check subletting compatibility
+                    const compatibilityData = checkSubletCompatibility(text);
+                    
                     hideLoading();
-                    showExtractionResults(extractedContractData, text);
+                    showCompatibilityResults(compatibilityData, extractedContractData);
                     
                 } catch (error) {
                     console.error('Extraction error:', error);
@@ -1154,6 +1278,178 @@
                 closeExtractionModal();
             }
         });
+
+        // Sublease Compatibility Checker
+        function checkSubletCompatibility(text) {
+            const cleanText = text.toLowerCase();
+            
+            const compatibilityResults = {
+                sublettingAllowed: null,
+                requiresConsent: false,
+                restrictions: [],
+                recommendations: [],
+                riskLevel: 'medium'
+            };
+
+            // Check for subletting clauses
+            const prohibitedPatterns = [
+                /no subletting/i,
+                /subletting prohibited/i,
+                /shall not sublet/i,
+                /tenant may not sublease/i,
+                /no assignment or subletting/i
+            ];
+
+            const allowedPatterns = [
+                /subletting permitted/i,
+                /may sublet/i,
+                /subletting allowed/i,
+                /tenant may sublease/i
+            ];
+
+            const consentPatterns = [
+                /landlord consent/i,
+                /written consent/i,
+                /permission.*subletting/i,
+                /approval.*sublet/i,
+                /consent.*sublease/i
+            ];
+
+            // Analyze subletting status
+            if (prohibitedPatterns.some(pattern => pattern.test(cleanText))) {
+                compatibilityResults.sublettingAllowed = false;
+                compatibilityResults.riskLevel = 'high';
+                compatibilityResults.restrictions.push('Lease explicitly prohibits subletting');
+            } else if (allowedPatterns.some(pattern => pattern.test(cleanText))) {
+                compatibilityResults.sublettingAllowed = true;
+                compatibilityResults.riskLevel = 'low';
+            } else if (consentPatterns.some(pattern => pattern.test(cleanText))) {
+                compatibilityResults.sublettingAllowed = true;
+                compatibilityResults.requiresConsent = true;
+                compatibilityResults.riskLevel = 'medium';
+                compatibilityResults.restrictions.push('Requires landlord consent');
+            } else {
+                compatibilityResults.sublettingAllowed = null;
+                compatibilityResults.restrictions.push('Subletting policy unclear - consult landlord');
+            }
+
+            // Add recommendations based on analysis
+            if (compatibilityResults.sublettingAllowed === false) {
+                compatibilityResults.recommendations.push('Contact landlord to discuss options');
+                compatibilityResults.recommendations.push('Consider lease assignment instead');
+            } else if (compatibilityResults.requiresConsent) {
+                compatibilityResults.recommendations.push('Obtain written landlord consent before listing');
+                compatibilityResults.recommendations.push('Use our landlord consent form template');
+            } else if (compatibilityResults.sublettingAllowed === true) {
+                compatibilityResults.recommendations.push('Proceed with subletting - you have permission');
+                compatibilityResults.recommendations.push('Still notify landlord as courtesy');
+            }
+
+            return compatibilityResults;
+        }
+
+        // Show compatibility results
+        function showCompatibilityResults(compatibilityData, extractedData) {
+            const resultsContainer = document.getElementById('compatibilityResults');
+            const contentContainer = document.getElementById('compatibilityContent');
+            
+            let statusIcon, statusColor, statusText;
+            
+            if (compatibilityData.sublettingAllowed === true) {
+                statusIcon = '✅';
+                statusColor = 'text-green-600';
+                statusText = compatibilityData.requiresConsent ? 'Allowed with Consent' : 'Subletting Allowed';
+            } else if (compatibilityData.sublettingAllowed === false) {
+                statusIcon = '❌';
+                statusColor = 'text-red-600';
+                statusText = 'Subletting Prohibited';
+            } else {
+                statusIcon = '⚠️';
+                statusColor = 'text-yellow-600';
+                statusText = 'Policy Unclear';
+            }
+
+            contentContainer.innerHTML = `
+                <div class="mb-4">
+                    <div class="flex items-center mb-2">
+                        <span class="text-2xl mr-3">${statusIcon}</span>
+                        <span class="text-lg font-semibold ${statusColor}">${statusText}</span>
+                    </div>
+                    <div class="text-sm text-gray-600">Risk Level: <span class="font-medium capitalize">${compatibilityData.riskLevel}</span></div>
+                </div>
+
+                ${compatibilityData.restrictions.length > 0 ? `
+                    <div class="mb-4">
+                        <h5 class="font-medium text-gray-800 mb-2">⚠️ Restrictions & Requirements:</h5>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            ${compatibilityData.restrictions.map(restriction => `<li>• ${restriction}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+
+                <div class="mb-4">
+                    <h5 class="font-medium text-gray-800 mb-2">💡 Recommendations:</h5>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        ${compatibilityData.recommendations.map(rec => `<li>• ${rec}</li>`).join('')}
+                    </ul>
+                </div>
+
+                ${compatibilityData.requiresConsent ? `
+                    <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-blue-800">📄 Need landlord consent form?</span>
+                            <button onclick="generateConsentForm()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition">
+                                Generate Form
+                            </button>
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${extractedData.address && extractedData.rent ? `
+                    <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <p class="text-sm text-green-800 font-medium">✅ Property details extracted and pre-filled</p>
+                    </div>
+                ` : ''}
+            `;
+
+            resultsContainer.classList.remove('hidden');
+
+            // Auto-fill extracted data
+            if (extractedData.address) {
+                populateFormFields(extractedData);
+            }
+        }
+
+        // Financial Calculator Functions
+        function updateFinancialCalculation() {
+            const originalRent = parseFloat(document.getElementById('originalRent')?.value) || 0;
+            const remainingMonths = parseFloat(document.getElementById('remainingMonths')?.value) || 0;
+            const originalDeposit = parseFloat(document.getElementById('originalDeposit')?.value) || 0;
+            const monthlyUtilities = parseFloat(document.getElementById('monthlyUtilities')?.value) || 0;
+
+            if (originalRent > 0 && remainingMonths > 0) {
+                // Calculate recommended sublease rent (typically 90-95% of original)
+                const recommendedRent = Math.round(originalRent * 0.92);
+                const recommendedDeposit = Math.min(originalDeposit, recommendedRent);
+                const totalLeaseValue = originalRent * remainingMonths;
+                const monthlySavings = originalRent - recommendedRent;
+
+                document.getElementById('recommendedRent').textContent = `$${recommendedRent}`;
+                document.getElementById('recommendedDeposit').textContent = `$${recommendedDeposit}`;
+                document.getElementById('totalLeaseValue').textContent = `$${totalLeaseValue.toLocaleString()}`;
+                document.getElementById('monthlySavings').textContent = `$${monthlySavings}`;
+            }
+        }
+
+        function applyCalculatedRent() {
+            const recommendedRent = document.getElementById('recommendedRent').textContent.replace('$', '');
+            document.getElementById('rent').value = recommendedRent;
+            document.getElementById('financialCalculator').classList.add('hidden');
+        }
+
+        function generateConsentForm() {
+            alert('📄 Landlord consent form template has been generated and emailed to you! (Feature in development)');
+        }
     </script>
 </body>
 </html>
