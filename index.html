@@ -642,106 +642,126 @@
     </style>
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen">
-    <!-- Premium Header -->
-    <header id="header" class="fixed top-0 w-full premium-header z-50">
-        <nav class="w-[85%] max-w-7xl mx-auto px-6 lg:px-8 py-6 flex justify-between items-center">
-            <div class="flex items-center space-x-8">
-                <div class="brand-logo font-display">RoomFinderAI</div>
-                <div class="hidden lg:flex items-center space-x-1">
-                    <a href="/index" class="nav-link">Home</a>
-                    <a href="/index#about" class="nav-link">About</a>
-                    <a href="/sublease" class="nav-link">Sublease</a>
-                    <a href="/ai-negotiator" class="nav-link">AI Negotiator</a>
-                    <a href="/listings" class="nav-link">Listings</a>
-                    <a href="/pricing" class="nav-link">Pricing</a>
-                    <a href="/index#contact" class="nav-link">Contact</a>
-                </div>
+    <!-- Minimalist Header -->
+    <header id="header" class="fixed top-0 w-full bg-white/95 backdrop-blur-md border-b border-gray-100 z-50">
+        <nav class="w-full max-w-7xl mx-auto px-6 lg:px-8 py-6 flex justify-between items-center">
+            <div class="brand-logo font-display text-2xl font-bold text-gray-900">RoomFinderAI</div>
+            
+            <!-- Simplified Navigation -->
+            <div class="hidden lg:flex items-center space-x-8">
+                <a href="/index" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">Home</a>
+                <a href="/ai-negotiator" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">AI Search</a>
+                <a href="/sublease" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">Sublease</a>
+                <a href="/index#about" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">About</a>
             </div>
+            
             <div id="authSection" class="flex items-center space-x-4">
-                <a href="/login" class="nav-link login-link">Login</a>
-                <a href="/free-trial" class="cta-button magnetic-btn text-sm px-6 py-3">Start Free Trial</a>
+                <a href="/login" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">Sign In</a>
+                <a href="/free-trial" class="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium">Get Started</a>
             </div>
         </nav>
     </header>
 
-    <!-- Hero Section -->
-    <section id="home" class="hero-gradient text-white py-32 pt-40 relative z-10 min-h-screen flex items-center">
-        <!-- Floating Elements -->
-        <div class="floating-elements">
-            <div class="floating-element" style="left: 10%; animation-delay: 0s; width: 20px; height: 20px;"></div>
-            <div class="floating-element" style="left: 20%; animation-delay: -5s; width: 15px; height: 15px;"></div>
-            <div class="floating-element" style="left: 25%; animation-delay: -10s; width: 25px; height: 25px;"></div>
-            <div class="floating-element" style="left: 70%; animation-delay: -15s; width: 18px; height: 18px;"></div>
-            <div class="floating-element" style="left: 80%; animation-delay: -20s; width: 22px; height: 22px;"></div>
-            <div class="floating-element" style="left: 90%; animation-delay: -25s; width: 16px; height: 16px;"></div>
+    <!-- Foundation House Style Hero Section -->
+    <section id="home" class="relative min-h-screen flex items-center overflow-hidden bg-white">
+        <!-- Background Property Image -->
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80" alt="Modern Home" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent"></div>
         </div>
         
-        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+        <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 pt-40">
             <div class="grid lg:grid-cols-2 gap-16 items-center">
-                <div class="hero-content reveal-left">
-                    <h1 class="text-6xl sm:text-7xl lg:text-8xl font-extrabold mb-8 leading-tight font-display">
-                        <span class="block">Find Your Perfect</span>
-                        <span class="block typing-animation">Rental with AI</span>
+                <!-- Hero Content -->
+                <div class="hero-content reveal-left text-white">
+                    <div class="mb-6">
+                        <span class="inline-block px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium border border-white/20 mb-6">
+                            AI-Powered Rental Intelligence
+                        </span>
+                    </div>
+                    <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8 leading-tight font-display">
+                        Unlocking Smart Rentals For 
+                        <span class="text-blue-400 typing-animation">Data-Driven Renters</span>
                     </h1>
-                    <p class="text-xl sm:text-2xl mb-10 text-white/90 leading-relaxed max-w-2xl">
-                        Smart room searching meets intelligent price negotiation. Let our AI find and negotiate the best rental deals automatically.
+                    <p class="text-xl mb-10 text-white/90 leading-relaxed max-w-2xl">
+                        Revolutionary AI technology that finds, analyzes, and negotiates the perfect rental properties while you focus on what matters most.
                     </p>
-                    <div class="flex flex-col sm:flex-row gap-6 mb-12">
-                        <button onclick="window.location.href='/ai-negotiator'" class="cta-button magnetic-btn text-lg px-8 py-4">
-                            🤖 Try AI Negotiator
+                    
+                    <!-- CTA Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-6 mb-16">
+                        <button onclick="window.location.href='/ai-negotiator'" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-semibold transition-all duration-300 hover:transform hover:translateY(-1px) shadow-lg">
+                            Start AI Search
                         </button>
-                        <button onclick="searchRooms()" class="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-8 py-4 rounded-full font-semibold hover:bg-white/30 hover:transform hover:scale-105 transition-all duration-300">
-                            Start Searching
+                        <button onclick="window.location.href='/free-trial'" class="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/30 transition-all duration-300">
+                            Free Trial
                         </button>
                     </div>
                     
-                    <!-- Premium Quick stats -->
-                    <div class="grid grid-cols-3 gap-8 mt-16">
-                        <div class="text-center glass-card p-6 scale-in">
-                            <div class="text-4xl font-black mb-3 text-white">1K+</div>
-                            <div class="text-sm text-white/80 font-medium">Successful Negotiations</div>
+                    <!-- Key Metrics -->
+                    <div class="grid grid-cols-3 gap-8">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold mb-2 text-white">1,247</div>
+                            <div class="text-sm text-white/70">Properties Negotiated</div>
                         </div>
-                        <div class="text-center glass-card p-6 scale-in" style="animation-delay: 0.2s;">
-                            <div class="text-4xl font-black mb-3 text-white">15%</div>
-                            <div class="text-sm text-white/80 font-medium">Average Savings</div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold mb-2 text-white">$847</div>
+                            <div class="text-sm text-white/70">Avg Monthly Savings</div>
                         </div>
-                        <div class="text-center glass-card p-6 scale-in" style="animation-delay: 0.4s;">
-                            <div class="text-4xl font-black mb-3 text-white">24/7</div>
-                            <div class="text-sm text-white/80 font-medium">AI Assistant</div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold mb-2 text-white">89%</div>
+                            <div class="text-sm text-white/70">Success Rate</div>
                         </div>
                     </div>
                 </div>
                 
+                <!-- Property Showcase -->
                 <div class="relative reveal-right">
-                    <!-- Enhanced AI Demo Preview -->
-                    <div class="glass-card p-8 float-animation">
+                    <div class="bg-white/95 backdrop-blur-xl rounded-2xl p-8 shadow-2xl">
                         <div class="mb-6">
                             <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-red-400 rounded-full mr-2"></div>
-                                    <div class="w-3 h-3 bg-yellow-400 rounded-full mr-2"></div>
-                                    <div class="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
-                                    <span class="text-sm text-white/80 ml-3 font-medium">AI Negotiator Live Demo</span>
-                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900">Live Property Analysis</h3>
                                 <div class="flex items-center space-x-2">
-                                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                                    <span class="text-xs text-white/60">Live</span>
+                                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                    <span class="text-xs text-gray-600">Real-time</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="space-y-4 max-h-80 overflow-y-auto">
-                            <div class="chat-bubble">
-                                🤖 Found 3 apartments under $1500 in Toronto. Negotiating prices now...
+                        
+                        <!-- Property Card -->
+                        <div class="space-y-4">
+                            <div class="relative">
+                                <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Apartment" class="w-full h-48 object-cover rounded-lg">
+                                <div class="absolute top-3 left-3 bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
+                                    AI Negotiated
+                                </div>
+                                <div class="absolute top-3 right-3 bg-black/60 text-white px-2 py-1 rounded text-xs">
+                                    $200/mo saved
+                                </div>
                             </div>
-                            <div class="chat-bubble user">
-                                Great! What's the best deal?
-                            </div>
-                            <div class="chat-bubble">
-                                ✅ Negotiated $1200/month (was $1400) for 2BR downtown apartment!
-                            </div>
-                            <div class="flex justify-center mt-6">
-                                <div class="bg-green-500/20 border border-green-400/30 rounded-lg px-4 py-2">
-                                    <span class="text-green-300 font-semibold text-sm">💰 Saved $200/month ($2,400/year)</span>
+                            
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">Modern 2BR Downtown</h4>
+                                        <p class="text-sm text-gray-600">King Street West, Toronto</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-lg font-bold text-gray-900">$1,200/mo</div>
+                                        <div class="text-sm text-gray-500 line-through">$1,400/mo</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Live Negotiation Status -->
+                                <div class="space-y-2 max-h-32 overflow-y-auto">
+                                    <div class="chat-bubble-small bg-blue-50 text-blue-900 p-2 rounded text-xs">
+                                        🤖 AI: Analyzing market data... Found comparable at $1,150
+                                    </div>
+                                    <div class="chat-bubble-small bg-gray-50 text-gray-900 p-2 rounded text-xs ml-8">
+                                        Landlord: Best I can do is $1,250
+                                    </div>
+                                    <div class="chat-bubble-small bg-green-50 text-green-900 p-2 rounded text-xs">
+                                        ✅ Deal closed at $1,200/mo
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -752,18 +772,22 @@
     </section>
 
     <!-- Premium Features Section -->
-    <section class="py-32 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-purple-50/50"></div>
+    <section class="py-32 relative overflow-hidden">
+        <!-- Background Image -->
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1560184897-ae75f418493e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80" alt="Modern Interior" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-white/90"></div>
+        </div>
         <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center mb-20 reveal">
-                <div class="inline-block px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full text-sm font-medium text-gray-600 mb-6">
-                    🌟 Premium Features
+                <div class="inline-block px-6 py-3 bg-black/5 backdrop-blur-sm rounded-full text-sm font-medium text-gray-700 mb-8">
+                    Premium Features
                 </div>
-                <h2 class="text-5xl sm:text-6xl font-black text-gray-900 mb-8 font-display">
-                    Why Choose <span class="gradient-text">RoomFinderAI</span>?
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-8 font-display leading-tight">
+                    Advanced Rental Intelligence
                 </h2>
-                <p class="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-                    Experience the future of rental searching with AI-powered features that save you time and money.
+                <p class="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
+                    Sophisticated AI technology that transforms how you find and secure rental properties.
                 </p>
             </div>
             
@@ -840,8 +864,13 @@
     </section>
     
     <!-- Interactive Demo Section -->
-    <section class="py-20 bg-gray-50">
-        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section class="py-32 relative">
+        <!-- Background Image -->
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80" alt="Modern Living Space" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gray-50/95"></div>
+        </div>
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center mb-16">
                 <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
                     See <span class="gradient-text">RoomFinderAI</span> in Action
@@ -914,15 +943,19 @@
     </section>
     
     <!-- Premium Statistics Section -->
-    <section class="py-32 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 relative overflow-hidden">
-        <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+    <section class="py-32 relative overflow-hidden">
+        <!-- Background Image -->
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80" alt="Luxury Home" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gray-900/85"></div>
+        </div>
         <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center mb-20 reveal">
-                <div class="inline-block px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium text-white/80 mb-6">
-                    📊 Real Impact
+                <div class="inline-block px-6 py-3 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium text-white/80 mb-8">
+                    Real Impact
                 </div>
-                <h2 class="text-5xl sm:text-6xl font-black text-white mb-8 font-display">Proven Results</h2>
-                <p class="text-xl text-white/80 max-w-3xl mx-auto leading-relaxed">Join thousands of satisfied renters who saved money with RoomFinderAI</p>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 font-display leading-tight">By the Numbers</h2>
+                <p class="text-xl text-white/80 max-w-2xl mx-auto leading-relaxed">Data-driven results from our AI-powered platform</p>
             </div>
             
             <div class="stats-grid">
@@ -951,16 +984,21 @@
     </section>
     
     <!-- Premium Quick Search Section -->
-    <section class="py-32 bg-gradient-to-b from-white to-gray-50 relative">
-        <div class="w-[90%] max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section class="py-32 relative">
+        <!-- Background Image -->
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80" alt="Modern Kitchen" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-white/95"></div>
+        </div>
+        <div class="w-[90%] max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center mb-16 reveal">
-                <div class="inline-block px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full text-sm font-medium text-gray-600 mb-6">
-                    🔍 Smart Search
+                <div class="inline-block px-6 py-3 bg-black/5 backdrop-blur-sm rounded-full text-sm font-medium text-gray-700 mb-8">
+                    Smart Search
                 </div>
-                <h2 class="text-5xl sm:text-6xl font-black mb-8 font-display">
-                    <span class="gradient-text">Quick Search</span>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-8 font-display leading-tight text-gray-900">
+                    Find Your Home
                 </h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">Start your rental search or add a property listing with our intelligent search system</p>
+                <p class="text-xl text-gray-700 max-w-2xl mx-auto leading-relaxed">Start your search with our intelligent AI-powered platform</p>
             </div>
             
             <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-10 sm:p-12 border border-white/20 reveal scale-in" style="box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.5);">
@@ -1024,14 +1062,19 @@
     </section>
 
     <!-- Premium Success Stories Section with Rotation -->
-    <section id="about" class="bg-gradient-to-r from-blue-50 to-purple-50 py-32 relative overflow-hidden">
-        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="about" class="py-32 relative overflow-hidden">
+        <!-- Background Image -->
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1600607687644-c7171b42498b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80" alt="Happy Renters" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-blue-50/90"></div>
+        </div>
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center mb-20 reveal">
-                <div class="inline-block px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full text-sm font-medium text-gray-600 mb-6">
-                    ⭐ Customer Success
+                <div class="inline-block px-6 py-3 bg-black/5 backdrop-blur-sm rounded-full text-sm font-medium text-gray-700 mb-8">
+                    Customer Success
                 </div>
-                <h2 class="text-5xl sm:text-6xl font-black text-gray-900 mb-8 font-display">Success Stories</h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">Real people, real savings with RoomFinderAI</p>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-8 font-display leading-tight">Real Stories</h2>
+                <p class="text-xl text-gray-700 max-w-2xl mx-auto leading-relaxed">Experiences from our community</p>
             </div>
             
             <!-- Rotating Stories Container -->
@@ -1186,18 +1229,23 @@
     </section>
 
     <!-- CTA Section -->
-    <section id="contact" class="bg-gradient-to-r from-gray-900 to-blue-900 text-white py-20">
-        <div class="w-[90%] max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-4xl sm:text-5xl font-bold mb-6">Ready to Find Your Perfect Rental?</h2>
-            <p class="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                Join thousands of smart renters who use AI to find better deals. Start your search today and let our AI negotiate the best price for you.
+    <section id="contact" class="relative py-32 text-white overflow-hidden">
+        <!-- Background Image -->
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1560448204-603b3fc33ddc?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80" alt="Modern Home at Night" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gray-900/80"></div>
+        </div>
+        <div class="w-[90%] max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <h2 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-8 leading-tight">Find Your Perfect Home</h2>
+            <p class="text-xl text-white/90 mb-12 max-w-2xl mx-auto leading-relaxed">
+                Join thousands who've discovered smarter rental searching with AI-powered negotiation.
             </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-                <button onclick="window.location.href='/free-trial'" class="cta-button text-lg px-8 py-4">
-                    ✨ Start Free Trial
+            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
+                <button onclick="window.location.href='/free-trial'" class="bg-white text-gray-900 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-all duration-300 text-lg">
+                    Start Free Trial
                 </button>
-                <button onclick="window.location.href='/ai-negotiator'" class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-gray-900 transition-all duration-300">
-                    Try AI Negotiator
+                <button onclick="window.location.href='/ai-negotiator'" class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/10 transition-all duration-300 text-lg">
+                    Try AI Search
                 </button>
             </div>
             <p class="text-sm text-gray-400">
@@ -1207,18 +1255,40 @@
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-8">
-        <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
-            <div class="mt-4 flex justify-center space-x-4">
-                <a href="/index" class="hover:text-blue-400">Home</a>
-                <a href="/index#about" class="hover:text-blue-400">About</a>
-                <a href="/sublease" class="hover:text-blue-400">Sublease</a>
-                <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
-                <a href="/listings" class="hover:text-blue-400">Listings</a>
-                <a href="/pricing" class="hover:text-blue-400">Pricing</a>
-                <a href="/index#contact" class="hover:text-blue-400">Contact</a>
+    <!-- Minimalist Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="w-full max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="font-bold text-xl mb-4">RoomFinderAI</div>
+                    <p class="text-gray-400 text-sm leading-relaxed">AI-powered rental search and negotiation platform.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Product</h4>
+                    <div class="space-y-2">
+                        <a href="/ai-negotiator" class="block text-gray-400 hover:text-white transition-colors text-sm">AI Search</a>
+                        <a href="/sublease" class="block text-gray-400 hover:text-white transition-colors text-sm">Sublease</a>
+                        <a href="/pricing" class="block text-gray-400 hover:text-white transition-colors text-sm">Pricing</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Company</h4>
+                    <div class="space-y-2">
+                        <a href="/index#about" class="block text-gray-400 hover:text-white transition-colors text-sm">About</a>
+                        <a href="/index#contact" class="block text-gray-400 hover:text-white transition-colors text-sm">Contact</a>
+                        <a href="#" class="block text-gray-400 hover:text-white transition-colors text-sm">Privacy</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Support</h4>
+                    <div class="space-y-2">
+                        <a href="/free-trial" class="block text-gray-400 hover:text-white transition-colors text-sm">Free Trial</a>
+                        <a href="mailto:support@roomfinderai.com" class="block text-gray-400 hover:text-white transition-colors text-sm">Help</a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-6 text-center">
+                <p class="text-gray-400 text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
             </div>
         </div>
     </footer>
