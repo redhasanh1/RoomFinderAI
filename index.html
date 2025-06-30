@@ -3,780 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoomFinderAI - AI-Powered Rental Search & Negotiation</title>
+    <title>RoomFinderAI - AI-Powered Rental Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            --glass-bg: rgba(255, 255, 255, 0.25);
-            --glass-border: rgba(255, 255, 255, 0.18);
-            --shadow-soft: 0 8px 32px rgba(31, 38, 135, 0.37);
-            --shadow-hard: 0 20px 40px rgba(0, 0, 0, 0.1);
-            --transition-smooth: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
-            --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-        
-        * {
-            scroll-behavior: smooth;
-        }
-        
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
         }
         
-        .font-display {
-            font-family: 'Space Grotesk', 'Inter', sans-serif;
-        }
-        
-        /* Premium Header */
-        .premium-header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: var(--shadow-soft);
-            transition: var(--transition-smooth);
-        }
-        
-        .premium-header.scrolled {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(25px);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        }
-        
-        .nav-link {
-            position: relative;
-            color: #374151;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: 0.75rem;
-            transition: var(--transition-smooth);
-            overflow: hidden;
-        }
-        
-        .nav-link::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--primary-gradient);
+        /* Foundation House inspired animations */
+        .fade-up {
             opacity: 0;
-            transform: translateY(100%);
-            transition: var(--transition-smooth);
-            z-index: -1;
+            transform: translateY(30px);
         }
         
-        .nav-link:hover::before {
-            opacity: 0.1;
-            transform: translateY(0);
-        }
-        
-        .nav-link:hover {
-            color: #667eea;
-            transform: translateY(-2px);
-        }
-        
-        .brand-logo {
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 800;
-            font-size: 1.75rem;
-            transition: var(--transition-smooth);
-        }
-        
-        .brand-logo:hover {
-            transform: scale(1.05);
-            filter: brightness(1.1);
-        }
-        
-        /* Hero section with dynamic gradient background */
-        .hero-gradient {
-            background: linear-gradient(135deg, 
-                #667eea 0%, 
-                #764ba2 25%, 
-                #f093fb 50%, 
-                #f5576c 75%, 
-                #4facfe 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        .hero-gradient::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.05"><circle cx="30" cy="30" r="2"/></g></g></svg>');
-            animation: float 20s ease-in-out infinite;
-        }
-        
-        .hero-gradient::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: rotateGrid 30s linear infinite;
-            opacity: 0.3;
-        }
-        
-        @keyframes rotateGrid {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        .floating-elements {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-        
-        .floating-element {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            animation: floatUp 20s infinite linear;
-        }
-        
-        @keyframes floatUp {
-            0% {
-                opacity: 0;
-                transform: translateY(100vh) scale(0);
-            }
-            10% {
-                opacity: 1;
-            }
-            90% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-100vh) scale(1);
-            }
-        }
-        
-        /* Premium Glass morphism cards */
-        .glass-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            box-shadow: var(--shadow-soft);
-            transition: var(--transition-smooth);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .glass-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        .fade-left {
             opacity: 0;
-            transition: var(--transition-smooth);
+            transform: translateX(-30px);
         }
         
-        .glass-card:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-12px) rotateX(10deg);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-        
-        .glass-card:hover::before {
-            opacity: 1;
-        }
-        
-        /* Premium Feature cards with 3D effects */
-        .feature-card {
-            background: linear-gradient(145deg, #ffffff, #f8fafc);
-            border-radius: 28px;
-            padding: 2.5rem;
-            box-shadow: 
-                0 10px 30px rgba(0, 0, 0, 0.08),
-                0 4px 8px rgba(0, 0, 0, 0.04),
-                inset 0 1px 0 rgba(255, 255, 255, 0.8);
-            transition: var(--transition-smooth);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            position: relative;
-            overflow: hidden;
-            transform-style: preserve-3d;
-            perspective: 1000px;
-        }
-        
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(246, 173, 85, 0.05));
+        .fade-right {
             opacity: 0;
-            transition: var(--transition-smooth);
-            border-radius: 28px;
+            transform: translateX(30px);
         }
         
-        .feature-card:hover {
-            transform: translateY(-16px) rotateX(5deg) rotateY(-2deg);
-            box-shadow: 
-                0 30px 60px rgba(0, 0, 0, 0.12),
-                0 10px 20px rgba(0, 0, 0, 0.08),
-                inset 0 1px 0 rgba(255, 255, 255, 0.9);
-            border-color: rgba(102, 126, 234, 0.3);
-        }
-        
-        .feature-card:hover::before {
-            opacity: 1;
-        }
-        
-        .feature-icon {
-            transition: var(--transition-bounce);
-            position: relative;
-            z-index: 2;
-        }
-        
-        .feature-card:hover .feature-icon {
-            transform: translateY(-8px) scale(1.1);
-            filter: drop-shadow(0 8px 16px rgba(102, 126, 234, 0.3));
-        }
-        
-        /* Animated gradient text */
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        
-        /* Floating animation */
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-        }
-        
-        .float-animation {
-            animation: float 6s ease-in-out infinite;
-        }
-        
-        /* Counter animation */
-        .counter {
-            font-size: 3rem;
-            font-weight: bold;
-            color: #3b82f6;
-        }
-        
-        /* Demo section */
-        .demo-container {
-            background: linear-gradient(45deg, #f8fafc 0%, #e2e8f0 100%);
-            border-radius: 20px;
-            padding: 3rem;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        /* AI chat bubble styles */
-        .chat-bubble {
-            background: #3b82f6;
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 20px 20px 5px 20px;
-            max-width: 80%;
-            margin-bottom: 1rem;
-            animation: slideInLeft 0.5s ease;
-        }
-        
-        .chat-bubble.user {
-            background: #e5e7eb;
-            color: #1f2937;
-            border-radius: 20px 20px 20px 5px;
-            margin-left: auto;
-            animation: slideInRight 0.5s ease;
-        }
-        
-        @keyframes slideInLeft {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        
-        @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        
-        /* Statistics section */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
-            margin: 3rem 0;
-        }
-        
-        .stat-card {
-            text-align: center;
-            padding: 2rem;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-        }
-        
-        /* Premium CTA Button styles */
-        .cta-button {
-            background: var(--primary-gradient);
-            border: none;
-            border-radius: 50px;
-            padding: 1.25rem 3rem;
-            color: white;
-            font-weight: 600;
-            font-size: 1.1rem;
-            transition: var(--transition-smooth);
-            box-shadow: 
-                0 8px 25px rgba(102, 126, 234, 0.3),
-                0 4px 8px rgba(102, 126, 234, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-        }
-        
-        .cta-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.6s;
-        }
-        
-        .cta-button:hover::before {
-            left: 100%;
-        }
-        
-        .cta-button:hover {
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 
-                0 15px 35px rgba(102, 126, 234, 0.4),
-                0 8px 15px rgba(102, 126, 234, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-            filter: brightness(1.05);
-        }
-        
-        .cta-button:active {
-            transform: translateY(-2px) scale(0.98);
-        }
-        
-        /* Magnetic button effect */
-        .magnetic-btn {
-            position: relative;
-            transition: var(--transition-smooth);
-        }
-        
-        .magnetic-btn:hover {
-            transform: translateY(-3px);
-        }
-        
-        .magnetic-btn::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            border-radius: inherit;
-            background: inherit;
-            z-index: -1;
+        .scale-up {
             opacity: 0;
-            transform: scale(1.1);
-            transition: var(--transition-smooth);
+            transform: scale(0.95);
         }
         
-        .magnetic-btn:hover::after {
-            opacity: 0.3;
-            transform: scale(1.15);
-        }
-        
-        /* Mobile responsiveness */
-        @media (max-width: 768px) {
-            .hero-content { text-align: center; }
-            .feature-grid { grid-template-columns: 1fr; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        
-        /* Legacy styles for compatibility */
-        .room-card {
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-        .room-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-        #aiButton {
-            transition: transform 0.3s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-        #aiButton:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        .custom-autocomplete {
-            position: absolute;
-            z-index: 1000;
-            background-color: #fff;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: calc(100% - 2rem);
-            max-width: 400px;
-            margin-top: 2px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .autocomplete-item {
-            padding: 0.75rem;
-            font-size: 0.875rem;
-            color: #374151;
-            cursor: pointer;
-        }
-        .autocomplete-item:hover {
-            background-color: #f3f4f6;
-        }
-        #location {
-            user-select: text !important;
-            -webkit-user-select: text !important;
-            -moz-user-select: text !important;
-        }
-        .profile-logo {
-            transition: transform 0.2s ease-in-out;
-        }
-        .profile-logo:hover {
-            transform: scale(1.1);
-        }
-        .login-link {
-            transition: color 0.2s ease-in-out;
-        }
-        .login-link:hover {
-            color: #2563eb;
-        }
-        
-        /* Scroll-triggered animations */
-        .reveal {
-            opacity: 0;
-            transform: translateY(50px);
-            transition: var(--transition-smooth);
-        }
-        
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        .reveal-left {
-            opacity: 0;
-            transform: translateX(-50px);
-            transition: var(--transition-smooth);
-        }
-        
-        .reveal-left.active {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        
-        .reveal-right {
-            opacity: 0;
-            transform: translateX(50px);
-            transition: var(--transition-smooth);
-        }
-        
-        .reveal-right.active {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        
-        .scale-in {
-            opacity: 0;
-            transform: scale(0.8);
-            transition: var(--transition-smooth);
-        }
-        
-        .scale-in.active {
-            opacity: 1;
-            transform: scale(1);
-        }
-        
-        /* Foundation House typing animation */
-        .typing-animation {
-            overflow: hidden;
-            border-right: 3px solid #3b82f6;
-            white-space: nowrap;
-            animation: typing 4s steps(15, end), blink-caret 0.75s step-end infinite;
-        }
-        
-        @keyframes typing {
-            from { width: 0; }
-            to { width: 100%; }
-        }
-        
-        @keyframes blink-caret {
-            from, to { border-color: transparent; }
-            50% { border-color: #3b82f6; }
-        }
-        
-        /* Foundation House smooth transitions */
-        .gsap-fade-up {
-            opacity: 0;
-            transform: translateY(50px);
-        }
-        
-        .gsap-fade-left {
-            opacity: 0;
-            transform: translateX(-50px);
-        }
-        
-        .gsap-fade-right {
-            opacity: 0;
-            transform: translateX(50px);
-        }
-        
-        .gsap-scale {
-            opacity: 0;
-            transform: scale(0.8);
-        }
-        
-        /* Clean chat bubbles */
-        .chat-bubble {
-            background: #3b82f6;
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            max-width: 80%;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
-            position: relative;
-        }
-        
-        .chat-bubble::before {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 20px;
-            width: 0;
-            height: 0;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-top: 8px solid #1d4ed8;
-        }
-        
-        .chat-bubble.user {
-            background: linear-gradient(135deg, #e5e7eb, #d1d5db);
-            color: #1f2937;
-            border-radius: 20px 20px 20px 5px;
-            margin-left: auto;
-            animation: slideInRight 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            box-shadow: 0 4px 12px rgba(209, 213, 219, 0.4);
-        }
-        
-        .chat-bubble.user::before {
-            right: 20px;
-            left: auto;
-            border-top-color: #d1d5db;
-        }
-        
-        /* Clean statistics cards */
-        .stat-card {
-            text-align: center;
-            padding: 2.5rem;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
+        /* Modern card design */
+        .foundation-card {
+            background: #ffffff;
             border: 1px solid #e5e7eb;
-            position: relative;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
         }
         
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: #3b82f6;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-        }
-        
-        .stat-card:hover::before {
-            transform: translateX(0);
-        }
-        
-        .stat-card:hover {
+        .foundation-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
             border-color: #3b82f6;
         }
         
-        /* Clean counter */
-        .counter {
-            font-size: 3rem;
-            font-weight: 800;
-            color: #3b82f6;
+        /* Live chat typing effect */
+        .typing-indicator {
+            animation: typing 1.5s infinite;
+        }
+        
+        @keyframes typing {
+            0%, 20% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
     </style>
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
-    <!-- Minimalist Header -->
-    <header id="header" class="fixed top-0 w-full bg-white/95 backdrop-blur-md border-b border-gray-100 z-50">
-        <nav class="w-full max-w-7xl mx-auto px-6 lg:px-8 py-6 flex justify-between items-center">
-            <div class="brand-logo font-display text-2xl font-bold text-gray-900">RoomFinderAI</div>
+<body class="bg-white">
+    <!-- Header -->
+    <header class="fixed top-0 w-full bg-white/95 backdrop-blur-md border-b border-gray-100 z-50">
+        <nav class="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center">
+            <div class="text-2xl font-bold text-gray-900">RoomFinderAI</div>
             
-            <!-- Simplified Navigation -->
-            <div class="hidden lg:flex items-center space-x-8">
-                <a href="/index" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">Home</a>
-                <a href="/ai-negotiator" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">AI Search</a>
-                <a href="/sublease" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">Sublease</a>
-                <a href="/index#about" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">About</a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#home" class="text-gray-600 hover:text-gray-900 transition-colors">Home</a>
+                <a href="#features" class="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
+                <a href="#about" class="text-gray-600 hover:text-gray-900 transition-colors">About</a>
+                <a href="/ai-negotiator" class="text-gray-600 hover:text-gray-900 transition-colors">AI Search</a>
             </div>
             
-            <div id="authSection" class="flex items-center space-x-4">
-                <a href="/login" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">Sign In</a>
-                <a href="/free-trial" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">Get Started</a>
+            <div class="flex items-center space-x-4">
+                <a href="/login" class="text-gray-600 hover:text-gray-900 transition-colors">Sign In</a>
+                <a href="/free-trial" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">Get Started</a>
             </div>
         </nav>
     </header>
 
-    <!-- Foundation House Style Hero Section -->
-    <section id="home" class="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50">
-        
-        <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 pt-40">
+    <!-- Hero Section -->
+    <section id="home" class="pt-32 pb-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-6">
             <div class="grid lg:grid-cols-2 gap-16 items-center">
-                <!-- Hero Content -->
-                <div class="hero-content gsap-fade-left">
-                    <div class="mb-8">
-                        <span class="inline-block px-6 py-3 bg-blue-600 text-white rounded-full text-sm font-medium mb-6">
-                            Next-Generation Rental Platform
-                        </span>
+                <!-- Left Content -->
+                <div class="fade-left">
+                    <!-- Restored Original Tag -->
+                    <div class="inline-block bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-8">
+                        AI-Powered Rental Platform
                     </div>
-                    <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8 leading-tight font-display text-gray-900">
-                        AI-Powered Rental
-                        <span class="text-blue-600 typing-animation">Intelligence</span>
+                    
+                    <h1 class="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+                        Find Rentals with
+                        <span class="text-blue-600">Artificial Intelligence</span>
                     </h1>
-                    <p class="text-xl mb-12 text-gray-700 leading-relaxed max-w-2xl">
-                        Advanced artificial intelligence that finds, analyzes, and negotiates rental properties automatically. Experience the future of real estate search.
+                    
+                    <p class="text-xl text-gray-600 mb-8 leading-relaxed">
+                        Advanced AI technology that discovers, analyzes, and negotiates rental properties automatically. Experience the future of property search.
                     </p>
                     
-                    <!-- CTA Buttons -->
-                    <div class="flex flex-col sm:flex-row gap-6 mb-16">
-                        <button onclick="window.location.href='/ai-negotiator'" class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-lg font-semibold transition-all duration-300 hover:transform hover:translateY(-1px) shadow-lg">
+                    <div class="flex flex-col sm:flex-row gap-4 mb-12">
+                        <button onclick="window.location.href='/ai-negotiator'" class="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
                             Start AI Search
                         </button>
-                        <button onclick="window.location.href='/free-trial'" class="bg-gray-900 hover:bg-black text-white px-10 py-4 rounded-lg font-semibold transition-all duration-300">
+                        <button onclick="window.location.href='/free-trial'" class="bg-gray-900 text-white px-8 py-4 rounded-lg hover:bg-black transition-colors font-semibold">
                             Free Trial
                         </button>
                     </div>
                     
-                    <!-- Key Metrics -->
+                    <!-- Stats -->
                     <div class="grid grid-cols-3 gap-8">
                         <div class="text-center">
-                            <div class="text-3xl font-bold mb-2 text-gray-900">1,247</div>
+                            <div class="text-2xl font-bold text-gray-900">1,247</div>
                             <div class="text-sm text-gray-600">Properties Negotiated</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-3xl font-bold mb-2 text-gray-900">$847</div>
-                            <div class="text-sm text-gray-600">Avg Monthly Savings</div>
+                            <div class="text-2xl font-bold text-gray-900">$847</div>
+                            <div class="text-sm text-gray-600">Avg Savings/Month</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-3xl font-bold mb-2 text-gray-900">89%</div>
+                            <div class="text-2xl font-bold text-gray-900">89%</div>
                             <div class="text-sm text-gray-600">Success Rate</div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- AI Negotiation Preview -->
-                <div class="relative gsap-fade-right">
-                    <div class="bg-white rounded-2xl p-8 shadow-2xl border border-gray-100">
-                        <div class="mb-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-semibold text-gray-900">AI Negotiation Live</h3>
-                                <div class="flex items-center space-x-2">
-                                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
-                                    <span class="text-xs text-gray-600">Real-time</span>
-                                </div>
+                <!-- AI Negotiation Preview (Right Side) -->
+                <div class="fade-right">
+                    <div class="foundation-card p-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900">AI Negotiation Live</h3>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                <span class="text-sm text-gray-600">Live</span>
                             </div>
                         </div>
                         
-                        <!-- Live Chat Interface -->
                         <div class="space-y-4 h-80 overflow-y-auto bg-gray-50 rounded-xl p-4">
-                            <div id="live-chat" class="space-y-3">
-                                <!-- User Message -->
-                                <div class="flex justify-end">
-                                    <div class="bg-blue-600 text-white px-4 py-2 rounded-lg max-w-xs">
-                                        <p class="text-sm">Find me a 2BR under $1500 in downtown Toronto</p>
-                                    </div>
+                            <!-- User Message -->
+                            <div class="flex justify-end">
+                                <div class="bg-blue-600 text-white px-4 py-2 rounded-lg max-w-xs">
+                                    <p class="text-sm">Find me a 2BR under $1500 in Toronto</p>
                                 </div>
-                                
-                                <!-- AI Response -->
-                                <div class="flex items-start space-x-3">
-                                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <span class="text-white text-xs font-bold">AI</span>
-                                    </div>
-                                    <div class="bg-white border border-gray-200 rounded-lg p-3 max-w-xs">
-                                        <p class="text-sm text-gray-800">Found 127 matches. Analyzing market data and contacting landlords...</p>
-                                        <div class="mt-2 text-xs text-blue-600">Negotiating with 3 properties</div>
-                                    </div>
+                            </div>
+                            
+                            <!-- AI Response -->
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white text-xs font-bold">AI</span>
                                 </div>
-                                
-                                <!-- Landlord Response -->
-                                <div class="flex items-start space-x-3">
-                                    <div class="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <span class="text-white text-xs font-bold">L</span>
-                                    </div>
-                                    <div class="bg-white border border-gray-200 rounded-lg p-3 max-w-xs">
-                                        <p class="text-sm text-gray-800">Hi! The rent is $1450/month for the 2BR unit</p>
-                                    </div>
+                                <div class="bg-white border border-gray-200 rounded-lg p-3 max-w-xs">
+                                    <p class="text-sm text-gray-800">Found 127 matches. Analyzing market data and contacting landlords...</p>
+                                    <div class="mt-2 text-xs text-blue-600">Negotiating with 3 properties</div>
                                 </div>
-                                
-                                <!-- AI Counter-offer -->
-                                <div class="flex items-start space-x-3">
-                                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <span class="text-white text-xs font-bold">AI</span>
-                                    </div>
-                                    <div class="bg-white border border-gray-200 rounded-lg p-3 max-w-xs">
-                                        <p class="text-sm text-gray-800">Based on market analysis, similar units rent for $1300. Would you consider $1350?</p>
-                                    </div>
+                            </div>
+                            
+                            <!-- Landlord Response -->
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white text-xs font-bold">L</span>
                                 </div>
-                                
-                                <!-- Success Message -->
-                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                    <p class="text-sm text-blue-800 font-medium">Deal secured at $1350/month - Saved $100/month!</p>
+                                <div class="bg-white border border-gray-200 rounded-lg p-3 max-w-xs">
+                                    <p class="text-sm text-gray-800">Hi! The rent is $1450/month for the 2BR unit</p>
+                                </div>
+                            </div>
+                            
+                            <!-- AI Counter-offer -->
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white text-xs font-bold">AI</span>
+                                </div>
+                                <div class="bg-white border border-gray-200 rounded-lg p-3 max-w-xs">
+                                    <p class="text-sm text-gray-800">Based on market analysis, similar units rent for $1300. Would you consider $1350?</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Success Message -->
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                                <p class="text-sm text-green-800 font-medium">Deal secured at $1350/month - Saved $100/month!</p>
+                            </div>
+                            
+                            <!-- Typing Indicator -->
+                            <div class="flex items-start space-x-3 typing-indicator">
+                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white text-xs font-bold">AI</span>
+                                </div>
+                                <div class="bg-white border border-gray-200 rounded-lg p-3">
+                                    <div class="flex space-x-1">
+                                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -786,85 +203,68 @@
         </div>
     </section>
 
-    <!-- Premium Features Section -->
-    <section class="py-32 bg-white">
-        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="text-center mb-20 gsap-fade-up">
-                <div class="inline-block px-6 py-3 bg-blue-50 rounded-full text-sm font-medium text-blue-600 mb-8">
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 fade-up">
+                <div class="inline-block bg-blue-50 text-blue-600 px-4 py-2 rounded-full text-sm font-medium mb-6">
                     Core Features
                 </div>
-                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-8 font-display leading-tight">
+                <h2 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
                     Intelligent Rental Platform
                 </h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
                     Advanced AI technology that automates property discovery and negotiation processes.
                 </p>
             </div>
             
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
-                <!-- AI Negotiator Feature -->
-                <div class="feature-card text-center gsap-scale">
-                    <div class="feature-icon w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
-                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- AI Negotiator -->
+                <div class="foundation-card p-8 text-center scale-up">
+                    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">AI Negotiator</h3>
-                    <p class="text-gray-600 mb-8 leading-relaxed">Automated negotiation system that contacts landlords and secures better rental prices through data-driven analysis.</p>
-                    <a href="/ai-negotiator" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all duration-300 group">
-                        Try Now 
-                        <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">AI Negotiator</h3>
+                    <p class="text-gray-600 mb-6">Automated negotiation system that contacts landlords and secures better rental prices through data-driven analysis.</p>
+                    <a href="/ai-negotiator" class="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold">
+                        Try Now
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
                         </svg>
                     </a>
                 </div>
                 
-                <!-- Smart Search Feature -->
-                <div class="feature-card text-center gsap-scale">
-                    <div class="feature-icon w-20 h-20 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
-                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <!-- Smart Search -->
+                <div class="foundation-card p-8 text-center scale-up">
+                    <div class="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">Smart Search</h3>
-                    <p class="text-gray-600 mb-8 leading-relaxed">Machine learning algorithms that scan multiple platforms to identify properties matching your specific requirements.</p>
-                    <a href="/listings" class="inline-flex items-center px-6 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-black transition-all duration-300 group">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Smart Search</h3>
+                    <p class="text-gray-600 mb-6">Machine learning algorithms that scan multiple platforms to identify properties matching your specific requirements.</p>
+                    <a href="/listings" class="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold">
                         Search Now
-                        <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
                         </svg>
                     </a>
                 </div>
                 
-                <!-- Market Analysis Feature -->
-                <div class="feature-card text-center gsap-scale">
-                    <div class="feature-icon w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
-                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <!-- Market Analysis -->
+                <div class="foundation-card p-8 text-center scale-up">
+                    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">Market Analysis</h3>
-                    <p class="text-gray-600 mb-8 leading-relaxed">Real-time market intelligence and pricing analytics to ensure optimal rental decisions and fair market value.</p>
-                    <a href="/pricing" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all duration-300 group">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Market Analysis</h3>
+                    <p class="text-gray-600 mb-6">Real-time market intelligence and pricing analytics to ensure optimal rental decisions and fair market value.</p>
+                    <a href="/pricing" class="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold">
                         View Analysis
-                        <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                        </svg>
-                    </a>
-                </div>
-                
-                <!-- Smart Messaging Feature -->
-                <div class="feature-card text-center gsap-scale">
-                    <div class="feature-icon w-20 h-20 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
-                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">Smart Communication</h3>
-                    <p class="text-gray-600 mb-8 leading-relaxed">Automated communication platform with landlords featuring AI-generated responses and negotiation strategies.</p>
-                    <a href="/profile" class="inline-flex items-center px-6 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-black transition-all duration-300 group">
-                        View Platform
-                        <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
                         </svg>
                     </a>
@@ -872,392 +272,195 @@
             </div>
         </div>
     </section>
-    
-    <!-- Interactive Demo Section -->
-    <section class="py-32 bg-gray-50">
-        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="text-center mb-16">
-                <div class="inline-block px-6 py-3 bg-blue-50 rounded-full text-sm font-medium text-blue-600 mb-8">
-                    Live Demo
-                </div>
-                <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
-                    Platform in Action
-                </h2>
-                <p class="text-xl text-gray-600">Experience how our AI technology streamlines rental discovery and negotiation</p>
-            </div>
-            
-            <div class="demo-container">
-                <div class="grid lg:grid-cols-2 gap-12 items-center">
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-6">Try the AI Search</h3>
-                        <div class="bg-white rounded-xl p-6 shadow-lg">
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">What are you looking for?</label>
-                                    <input type="text" placeholder="I need a 2-bedroom apartment under $1500 in Toronto" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                </div>
-                                <button onclick="searchRooms()" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-all duration-300">
-                                    Start AI Search
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-6">Live Negotiation Preview</h3>
-                        <div class="bg-white rounded-xl p-6 shadow-lg max-h-80 overflow-y-auto">
-                            <div class="space-y-4">
-                                <div class="flex items-start space-x-3">
-                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <span class="text-white text-sm font-bold">AI</span>
-                                    </div>
-                                    <div class="bg-blue-50 rounded-lg p-3 flex-1">
-                                        <p class="text-sm">Found 3 matching properties! Contacting landlords now...</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-start space-x-3">
-                                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <span class="text-white text-sm font-bold">L</span>
-                                    </div>
-                                    <div class="bg-gray-50 rounded-lg p-3 flex-1">
-                                        <p class="text-sm">Hi! The rent is $1400/month for the 2BR apartment.</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-start space-x-3">
-                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <span class="text-white text-sm font-bold">AI</span>
-                                    </div>
-                                    <div class="bg-blue-50 rounded-lg p-3 flex-1">
-                                        <p class="text-sm">Based on market data, would you consider $1200? My client is qualified and ready to move in.</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-start space-x-3">
-                                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <span class="text-white text-sm font-bold">L</span>
-                                    </div>
-                                    <div class="bg-gray-50 rounded-lg p-3 flex-1">
-                                        <p class="text-sm">That works! Let's proceed with $1200/month.</p>
-                                    </div>
-                                </div>
-                                <div class="bg-green-100 border border-green-200 rounded-lg p-3">
-                                    <p class="text-sm text-green-800 font-medium">✅ Negotiation successful! Saved $200/month ($2,400/year)</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    
+
     <!-- Statistics Section -->
-    <section class="py-32 bg-gray-900">
-        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="text-center mb-20 gsap-fade-up">
-                <div class="inline-block px-6 py-3 bg-blue-600 rounded-full text-sm font-medium text-white mb-8">
+    <section class="py-20 bg-gray-900">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 fade-up">
+                <div class="inline-block bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-6">
                     Platform Analytics
                 </div>
-                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 font-display leading-tight">Performance Metrics</h2>
-                <p class="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">Quantifiable results from our artificial intelligence platform</p>
+                <h2 class="text-4xl lg:text-5xl font-bold text-white mb-6">Performance Metrics</h2>
+                <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+                    Quantifiable results from our artificial intelligence platform
+                </p>
             </div>
             
-            <div class="stats-grid">
-                <div class="stat-card gsap-scale">
-                    <div class="counter">1,247</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3 font-display">Successful Negotiations</h3>
+            <div class="grid md:grid-cols-4 gap-8">
+                <div class="foundation-card p-8 text-center scale-up">
+                    <div class="text-4xl font-bold text-blue-600 mb-2">1,247</div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Successful Negotiations</h3>
                     <p class="text-gray-600">AI-powered deals closed</p>
                 </div>
-                <div class="stat-card gsap-scale">
-                    <div class="counter">$847</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3 font-display">Average Monthly Savings</h3>
+                
+                <div class="foundation-card p-8 text-center scale-up">
+                    <div class="text-4xl font-bold text-blue-600 mb-2">$847</div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Average Monthly Savings</h3>
                     <p class="text-gray-600">Money saved per user</p>
                 </div>
-                <div class="stat-card gsap-scale">
-                    <div class="counter">89%</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3 font-display">Success Rate</h3>
+                
+                <div class="foundation-card p-8 text-center scale-up">
+                    <div class="text-4xl font-bold text-blue-600 mb-2">89%</div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Success Rate</h3>
                     <p class="text-gray-600">Negotiations that succeed</p>
                 </div>
-                <div class="stat-card gsap-scale">
-                    <div class="counter">2.3</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3 font-display">Days Average</h3>
+                
+                <div class="foundation-card p-8 text-center scale-up">
+                    <div class="text-4xl font-bold text-blue-600 mb-2">2.3</div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Days Average</h3>
                     <p class="text-gray-600">To find and secure rental</p>
                 </div>
             </div>
         </div>
     </section>
-    
+
     <!-- Quick Search Section -->
-    <section class="py-32 bg-white">
-        <div class="w-[90%] max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="text-center mb-16 gsap-fade-up">
-                <div class="inline-block px-6 py-3 bg-blue-50 rounded-full text-sm font-medium text-blue-600 mb-8">
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-16 fade-up">
+                <div class="inline-block bg-blue-50 text-blue-600 px-4 py-2 rounded-full text-sm font-medium mb-6">
                     Property Search
                 </div>
-                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-8 font-display leading-tight text-gray-900">
+                <h2 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
                     Property Discovery
                 </h2>
-                <p class="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">Initialize your property search using our advanced AI algorithms</p>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Initialize your property search using our advanced AI algorithms
+                </p>
             </div>
             
-            <div class="bg-white rounded-3xl shadow-xl p-10 sm:p-12 border border-gray-100 gsap-scale">
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    <!-- Location -->
-                    <div class="relative">
-                        <label for="location" class="block text-base font-medium text-gray-700 mb-2">Location</label>
-                        <input type="text" id="location" class="w-full p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base bg-white/50 backdrop-blur-sm" placeholder="Toronto, ON" required autocomplete="off" data-autocomplete="off">
-                        <div id="autocomplete-dropdown" class="custom-autocomplete hidden"></div>
-                    </div>
-                    
-                    <!-- Room Type -->
+            <div class="foundation-card p-12 scale-up">
+                <div class="grid md:grid-cols-3 gap-6 mb-8">
                     <div>
-                        <label for="roomType" class="block text-base font-medium text-gray-700 mb-2">Room Type</label>
-                        <select id="roomType" class="w-full p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base bg-white/50 backdrop-blur-sm" required>
-                            <option value="" disabled selected>Select type</option>
-                            <option value="House">🏠 House</option>
-                            <option value="Apartment">🏢 Apartment</option>
-                            <option value="Condo">🏘️ Condo</option>
-                            <option value="Townhouse">🏡 Townhouse</option>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                        <input type="text" id="location" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Toronto, ON">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Room Type</label>
+                        <select id="roomType" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Select type</option>
+                            <option value="House">House</option>
+                            <option value="Apartment">Apartment</option>
+                            <option value="Condo">Condo</option>
+                            <option value="Townhouse">Townhouse</option>
                         </select>
                     </div>
-                    
-                    <!-- Price -->
                     <div>
-                        <label for="price" class="block text-base font-medium text-gray-700 mb-2">Max Price</label>
-                        <input type="number" id="price" min="0" step="1" class="w-full p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base bg-white/50 backdrop-blur-sm" placeholder="1200" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Max Price</label>
+                        <input type="number" id="price" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="1200">
                     </div>
                 </div>
                 
-                <!-- Optional fields in collapsible section -->
-                <div class="grid md:grid-cols-3 gap-6 mb-10">
-                    <div>
-                        <label for="bedrooms" class="block text-base font-medium text-gray-700 mb-2">Bedrooms</label>
-                        <input type="number" id="bedrooms" min="0" step="1" class="w-full p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base bg-white/50 backdrop-blur-sm" placeholder="Any">
-                    </div>
-                    <div>
-                        <label for="size" class="block text-base font-medium text-gray-700 mb-2">Size (sq ft)</label>
-                        <input type="number" id="size" min="0" step="1" class="w-full p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base bg-white/50 backdrop-blur-sm" placeholder="Any">
-                    </div>
-                    <div>
-                        <label for="amenities" class="block text-base font-medium text-gray-700 mb-2">Amenities</label>
-                        <input type="text" id="amenities" class="w-full p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base bg-white/50 backdrop-blur-sm" placeholder="WiFi, Parking, etc.">
-                    </div>
-                </div>
-                <!-- Premium Action buttons -->
-                <div class="flex flex-col sm:flex-row gap-6">
-                    <button onclick="searchRooms()" class="flex-1 bg-blue-600 text-white py-5 px-8 text-lg font-semibold rounded-xl hover:bg-blue-700 hover:transform hover:translateY(-1px) transition-all duration-200">Search Properties</button>
-                    <button onclick="askAI()" class="flex-1 bg-gray-900 text-white py-5 px-8 rounded-xl hover:bg-black hover:transform hover:translateY(-1px) transition-all duration-200 font-semibold text-lg">AI Assistant</button>
-                    <button onclick="addRoom()" class="flex-1 bg-white border-2 border-gray-900 text-gray-900 py-5 px-8 rounded-xl hover:bg-gray-900 hover:text-white hover:transform hover:translateY(-1px) transition-all duration-200 font-semibold text-lg">Add Property</button>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button onclick="searchProperties()" class="flex-1 bg-blue-600 text-white py-4 px-8 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                        Search Properties
+                    </button>
+                    <button onclick="askAI()" class="flex-1 bg-gray-900 text-white py-4 px-8 rounded-lg hover:bg-black transition-colors font-semibold">
+                        AI Assistant
+                    </button>
+                    <button onclick="addProperty()" class="flex-1 border-2 border-gray-900 text-gray-900 py-4 px-8 rounded-lg hover:bg-gray-900 hover:text-white transition-colors font-semibold">
+                        Add Property
+                    </button>
                 </div>
             </div>
-        </div>
-    </section>
-    
-    <!-- Room List Section -->
-    <section class="py-8 bg-gray-50">
-        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div id="roomList" class="space-y-4"></div>
         </div>
     </section>
 
     <!-- Success Stories Section -->
-    <section id="about" class="py-32 bg-gray-50">
-        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="text-center mb-20 gsap-fade-up">
-                <div class="inline-block px-6 py-3 bg-blue-50 rounded-full text-sm font-medium text-blue-600 mb-8">
+    <section id="about" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 fade-up">
+                <div class="inline-block bg-blue-50 text-blue-600 px-4 py-2 rounded-full text-sm font-medium mb-6">
                     User Success
                 </div>
-                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-8 font-display leading-tight">User Outcomes</h2>
-                <p class="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">Documented results from platform users</p>
+                <h2 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">User Outcomes</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Documented results from platform users
+                </p>
             </div>
             
-            <!-- Rotating Stories Container -->
-            <div class="relative max-w-5xl mx-auto">
-                <div id="stories-container" class="overflow-hidden">
-                    <div id="stories-track" class="flex transition-transform duration-500 ease-in-out">
-                        <!-- Story 1 -->
-                        <div class="w-full flex-shrink-0 grid md:grid-cols-3 gap-8">
-                            <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
-                                <div class="flex items-center mb-6">
-                                    <img src="https://via.placeholder.com/60/4F46E5/FFFFFF?text=S" alt="Sarah" class="w-12 h-12 rounded-full mr-4">
-                                    <div>
-                                        <h3 class="font-semibold text-gray-900">Sarah Chen</h3>
-                                        <p class="text-gray-600 text-sm">Toronto, ON</p>
-                                    </div>
-                                </div>
-                                <blockquote class="text-gray-700 mb-4">
-                                    "The AI negotiator saved me $300/month on my downtown apartment. It handled everything while I was at work!"
-                                </blockquote>
-                                <div class="text-green-600 font-semibold">Saved: $3,600/year</div>
-                            </div>
-                            
-                            <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
-                                <div class="flex items-center mb-6">
-                                    <img src="https://via.placeholder.com/60/10B981/FFFFFF?text=M" alt="Mike" class="w-12 h-12 rounded-full mr-4">
-                                    <div>
-                                        <h3 class="font-semibold text-gray-900">Mike Rodriguez</h3>
-                                        <p class="text-gray-600 text-sm">Vancouver, BC</p>
-                                    </div>
-                                </div>
-                                <blockquote class="text-gray-700 mb-4">
-                                    "Found my perfect 2-bedroom condo in just 2 days. The AI searched multiple sites and negotiated the best price."
-                                </blockquote>
-                                <div class="text-green-600 font-semibold">Saved: $450/month</div>
-                            </div>
-                            
-                            <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
-                                <div class="flex items-center mb-6">
-                                    <img src="https://via.placeholder.com/60/F59E0B/FFFFFF?text=A" alt="Amanda" class="w-12 h-12 rounded-full mr-4">
-                                    <div>
-                                        <h3 class="font-semibold text-gray-900">Amanda Foster</h3>
-                                        <p class="text-gray-600 text-sm">Montreal, QC</p>
-                                    </div>
-                                </div>
-                                <blockquote class="text-gray-700 mb-4">
-                                    "As a busy grad student, having AI handle the negotiations was a game-changer. Highly recommend!"
-                                </blockquote>
-                                <div class="text-green-600 font-semibold">Saved: $275/month</div>
-                            </div>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="foundation-card p-8 scale-up">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mr-4">
+                            <span class="text-white font-bold">SC</span>
                         </div>
-                        
-                        <!-- Story 2 -->
-                        <div class="w-full flex-shrink-0 grid md:grid-cols-3 gap-8">
-                            <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
-                                <div class="flex items-center mb-6">
-                                    <img src="https://via.placeholder.com/60/8B5CF6/FFFFFF?text=J" alt="James" class="w-12 h-12 rounded-full mr-4">
-                                    <div>
-                                        <h3 class="font-semibold text-gray-900">James Wilson</h3>
-                                        <p class="text-gray-600 text-sm">Calgary, AB</p>
-                                    </div>
-                                </div>
-                                <blockquote class="text-gray-700 mb-4">
-                                    "RoomFinderAI found me a luxury apartment $400 under budget. The AI negotiator is incredibly effective!"
-                                </blockquote>
-                                <div class="text-green-600 font-semibold">Saved: $4,800/year</div>
-                            </div>
-                            
-                            <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
-                                <div class="flex items-center mb-6">
-                                    <img src="https://via.placeholder.com/60/EF4444/FFFFFF?text=L" alt="Lisa" class="w-12 h-12 rounded-full mr-4">
-                                    <div>
-                                        <h3 class="font-semibold text-gray-900">Lisa Thompson</h3>
-                                        <p class="text-gray-600 text-sm">Ottawa, ON</p>
-                                    </div>
-                                </div>
-                                <blockquote class="text-gray-700 mb-4">
-                                    "Moving to a new city was stressful, but RoomFinderAI made finding housing effortless. Saved me weeks of searching!"
-                                </blockquote>
-                                <div class="text-green-600 font-semibold">Saved: $320/month</div>
-                            </div>
-                            
-                            <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
-                                <div class="flex items-center mb-6">
-                                    <img src="https://via.placeholder.com/60/06B6D4/FFFFFF?text=D" alt="David" class="w-12 h-12 rounded-full mr-4">
-                                    <div>
-                                        <h3 class="font-semibold text-gray-900">David Park</h3>
-                                        <p class="text-gray-600 text-sm">Winnipeg, MB</p>
-                                    </div>
-                                </div>
-                                <blockquote class="text-gray-700 mb-4">
-                                    "The AI found properties I never would have discovered myself. Negotiated a great deal on my dream home!"
-                                </blockquote>
-                                <div class="text-green-600 font-semibold">Saved: $380/month</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Story 3 -->
-                        <div class="w-full flex-shrink-0 grid md:grid-cols-3 gap-8">
-                            <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
-                                <div class="flex items-center mb-6">
-                                    <img src="https://via.placeholder.com/60/F97316/FFFFFF?text=E" alt="Emma" class="w-12 h-12 rounded-full mr-4">
-                                    <div>
-                                        <h3 class="font-semibold text-gray-900">Emma Davis</h3>
-                                        <p class="text-gray-600 text-sm">Halifax, NS</p>
-                                    </div>
-                                </div>
-                                <blockquote class="text-gray-700 mb-4">
-                                    "Professional, fast, and incredibly effective. The AI negotiated my rent down by 20% - I couldn't believe it!"
-                                </blockquote>
-                                <div class="text-green-600 font-semibold">Saved: $360/month</div>
-                            </div>
-                            
-                            <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
-                                <div class="flex items-center mb-6">
-                                    <img src="https://via.placeholder.com/60/84CC16/FFFFFF?text=R" alt="Ryan" class="w-12 h-12 rounded-full mr-4">
-                                    <div>
-                                        <h3 class="font-semibold text-gray-900">Ryan Kumar</h3>
-                                        <p class="text-gray-600 text-sm">Edmonton, AB</p>
-                                    </div>
-                                </div>
-                                <blockquote class="text-gray-700 mb-4">
-                                    "Being new to Canada, I was worried about finding good housing. RoomFinderAI made the process seamless and affordable!"
-                                </blockquote>
-                                <div class="text-green-600 font-semibold">Saved: $420/month</div>
-                            </div>
-                            
-                            <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
-                                <div class="flex items-center mb-6">
-                                    <img src="https://via.placeholder.com/60/EC4899/FFFFFF?text=N" alt="Nicole" class="w-12 h-12 rounded-full mr-4">
-                                    <div>
-                                        <h3 class="font-semibold text-gray-900">Nicole Brown</h3>
-                                        <p class="text-gray-600 text-sm">Quebec City, QC</p>
-                                    </div>
-                                </div>
-                                <blockquote class="text-gray-700 mb-4">
-                                    "The market insights were invaluable. I got a beautiful apartment in the perfect neighborhood at an amazing price!"
-                                </blockquote>
-                                <div class="text-green-600 font-semibold">Saved: $290/month</div>
-                            </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Sarah Chen</h3>
+                            <p class="text-gray-600 text-sm">Toronto, ON</p>
                         </div>
                     </div>
+                    <p class="text-gray-700 mb-4">
+                        "The AI negotiator saved me $300/month on my downtown apartment. It handled everything while I was at work!"
+                    </p>
+                    <div class="text-green-600 font-semibold">Saved: $3,600/year</div>
                 </div>
                 
-                <!-- Navigation Dots -->
-                <div class="flex justify-center mt-10 space-x-3">
-                    <button id="dot-0" class="story-dot w-3 h-3 rounded-full bg-blue-600 transition-all duration-300"></button>
-                    <button id="dot-1" class="story-dot w-3 h-3 rounded-full bg-gray-300 hover:bg-gray-400 transition-all duration-300"></button>
-                    <button id="dot-2" class="story-dot w-3 h-3 rounded-full bg-gray-300 hover:bg-gray-400 transition-all duration-300"></button>
+                <div class="foundation-card p-8 scale-up">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center mr-4">
+                            <span class="text-white font-bold">MR</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Mike Rodriguez</h3>
+                            <p class="text-gray-600 text-sm">Vancouver, BC</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 mb-4">
+                        "Found my perfect 2-bedroom condo in just 2 days. The AI searched multiple sites and negotiated the best price."
+                    </p>
+                    <div class="text-green-600 font-semibold">Saved: $450/month</div>
+                </div>
+                
+                <div class="foundation-card p-8 scale-up">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mr-4">
+                            <span class="text-white font-bold">AF</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Amanda Foster</h3>
+                            <p class="text-gray-600 text-sm">Montreal, QC</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 mb-4">
+                        "As a busy grad student, having AI handle the negotiations was a game-changer. Highly recommend!"
+                    </p>
+                    <div class="text-green-600 font-semibold">Saved: $275/month</div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- CTA Section -->
-    <section id="contact" class="relative py-32 text-white overflow-hidden">
-        <!-- Background Image -->
-        <div class="absolute inset-0 z-0">
-            <img src="https://images.unsplash.com/photo-1560448204-603b3fc33ddc?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80" alt="Modern Home at Night" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-gray-900/80"></div>
-        </div>
-        <div class="w-[90%] max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-            <h2 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-8 leading-tight">Advanced Rental Intelligence</h2>
-            <p class="text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
+    <section class="py-20 bg-gray-900">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <h2 class="text-4xl lg:text-5xl font-bold text-white mb-6">
+                Advanced Rental Intelligence
+            </h2>
+            <p class="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
                 Experience next-generation property discovery through artificial intelligence and automated negotiation systems.
             </p>
-            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
-                <button onclick="window.location.href='/free-trial'" class="bg-blue-600 text-white px-10 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-300 text-lg">
+            <div class="flex flex-col sm:flex-row gap-6 justify-center">
+                <button onclick="window.location.href='/free-trial'" class="bg-blue-600 text-white px-10 py-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg">
                     Initialize Trial
                 </button>
-                <button onclick="window.location.href='/ai-negotiator'" class="bg-transparent border-2 border-white text-white px-10 py-4 rounded-lg font-semibold hover:bg-white hover:text-gray-900 transition-all duration-300 text-lg">
+                <button onclick="window.location.href='/ai-negotiator'" class="border-2 border-white text-white px-10 py-4 rounded-lg hover:bg-white hover:text-gray-900 transition-colors font-semibold text-lg">
                     Access Platform
                 </button>
             </div>
-            <p class="text-sm text-gray-400">
-                No credit card required • Cancel anytime • 
-                <a href="mailto:support@roomfinderai.com" class="underline hover:text-white">Contact Support</a>
-            </p>
         </div>
     </section>
 
-    <!-- Minimalist Footer -->
-    <footer class="bg-gray-900 text-white py-12">
-        <div class="w-full max-w-7xl mx-auto px-6 lg:px-8">
+    <!-- Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto px-6 py-12">
             <div class="grid md:grid-cols-4 gap-8 mb-8">
                 <div>
-                    <div class="font-bold text-xl mb-4">RoomFinderAI</div>
+                    <div class="font-bold text-xl mb-4 text-white">RoomFinderAI</div>
                     <p class="text-gray-400 text-sm leading-relaxed">AI-powered rental search and negotiation platform.</p>
                 </div>
                 <div>
-                    <h4 class="font-semibold mb-4">Product</h4>
+                    <h4 class="font-semibold mb-4 text-white">Product</h4>
                     <div class="space-y-2">
                         <a href="/ai-negotiator" class="block text-gray-400 hover:text-white transition-colors text-sm">AI Search</a>
                         <a href="/sublease" class="block text-gray-400 hover:text-white transition-colors text-sm">Sublease</a>
@@ -1265,15 +468,15 @@
                     </div>
                 </div>
                 <div>
-                    <h4 class="font-semibold mb-4">Company</h4>
+                    <h4 class="font-semibold mb-4 text-white">Company</h4>
                     <div class="space-y-2">
-                        <a href="/index#about" class="block text-gray-400 hover:text-white transition-colors text-sm">About</a>
-                        <a href="/index#contact" class="block text-gray-400 hover:text-white transition-colors text-sm">Contact</a>
+                        <a href="#about" class="block text-gray-400 hover:text-white transition-colors text-sm">About</a>
+                        <a href="#contact" class="block text-gray-400 hover:text-white transition-colors text-sm">Contact</a>
                         <a href="#" class="block text-gray-400 hover:text-white transition-colors text-sm">Privacy</a>
                     </div>
                 </div>
                 <div>
-                    <h4 class="font-semibold mb-4">Support</h4>
+                    <h4 class="font-semibold mb-4 text-white">Support</h4>
                     <div class="space-y-2">
                         <a href="/free-trial" class="block text-gray-400 hover:text-white transition-colors text-sm">Free Trial</a>
                         <a href="mailto:support@roomfinderai.com" class="block text-gray-400 hover:text-white transition-colors text-sm">Help</a>
@@ -1286,637 +489,39 @@
         </div>
     </footer>
 
-    <!-- AI Negotiator Button -->
+    <!-- AI Negotiator Corner Button -->
     <div class="fixed bottom-6 right-6 z-50">
-        <div class="relative group">
-            <!-- Subtle Ring Animation -->
-            <div class="absolute inset-0 rounded-full bg-blue-600 opacity-20 animate-pulse"></div>
-            
-            <!-- Main Button -->
-            <button id="aiButton" onclick="window.location.href='/ai-negotiator'" class="relative bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition-all duration-300 flex items-center justify-center w-16 h-16 hover:scale-105">
-                <!-- Icon -->
-                <div class="flex flex-col items-center">
-                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                    </svg>
-                    <span class="text-xs font-semibold">AI</span>
-                </div>
-            </button>
-            
-            <!-- Tooltip -->
-            <div class="absolute bottom-full right-0 mb-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                AI Negotiator
-                <div class="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+        <button onclick="window.location.href='/ai-negotiator'" class="bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition-all duration-300 group">
+            <div class="flex flex-col items-center">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+                <span class="text-xs font-semibold">AI</span>
             </div>
-        </div>
+        </button>
     </div>
 
     <script>
-        // Premium UI Enhancements and Animations
-        document.addEventListener('DOMContentLoaded', () => {
-            // Scroll-triggered animations
-            const observerOptions = {
-                threshold: 0.1,
-                rootMargin: '0px 0px -50px 0px'
-            };
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('active');
-                    }
-                });
-            }, observerOptions);
-
-            // Observe all reveal elements
-            document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .scale-in').forEach(el => {
-                observer.observe(el);
-            });
-
-            // Premium header scroll effect
-            const header = document.getElementById('header');
-            let lastScrollY = window.scrollY;
-            
-            window.addEventListener('scroll', () => {
-                const currentScrollY = window.scrollY;
-                
-                if (currentScrollY > 100) {
-                    header.classList.add('scrolled');
-                } else {
-                    header.classList.remove('scrolled');
-                }
-                
-                lastScrollY = currentScrollY;
-            });
-
-            // Animated counters
-            const animateCounters = () => {
-                const counters = document.querySelectorAll('.counter');
-                
-                counters.forEach(counter => {
-                    const target = parseInt(counter.textContent.replace(/[^0-9]/g, ''));
-                    const suffix = counter.textContent.replace(/[0-9]/g, '');
-                    let current = 0;
-                    const increment = target / 100;
-                    const timer = setInterval(() => {
-                        current += increment;
-                        if (current >= target) {
-                            counter.textContent = target + suffix;
-                            clearInterval(timer);
-                        } else {
-                            counter.textContent = Math.floor(current) + suffix;
-                        }
-                    }, 20);
-                });
-            };
-
-            // Trigger counter animation when stats section is visible
-            const statsObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        animateCounters();
-                        statsObserver.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.5 });
-
-            const statsSection = document.querySelector('.stats-grid');
-            if (statsSection) {
-                statsObserver.observe(statsSection);
-            }
-
-            // Magnetic button effect
-            const magneticButtons = document.querySelectorAll('.magnetic-btn');
-            
-            magneticButtons.forEach(btn => {
-                btn.addEventListener('mousemove', (e) => {
-                    const rect = btn.getBoundingClientRect();
-                    const x = e.clientX - rect.left - rect.width / 2;
-                    const y = e.clientY - rect.top - rect.height / 2;
-                    
-                    btn.style.transform = `translate(${x * 0.1}px, ${y * 0.1}px)`;
-                });
-                
-                btn.addEventListener('mouseleave', () => {
-                    btn.style.transform = 'translate(0, 0)';
-                });
-            });
-
-            // Chat bubble animation sequence
-            const animateChatBubbles = () => {
-                const chatBubbles = document.querySelectorAll('.chat-bubble');
-                chatBubbles.forEach((bubble, index) => {
-                    setTimeout(() => {
-                        bubble.style.opacity = '0';
-                        bubble.style.transform = 'translateY(20px)';
-                        setTimeout(() => {
-                            bubble.style.opacity = '1';
-                            bubble.style.transform = 'translateY(0)';
-                        }, 100);
-                    }, index * 1000);
-                });
-            };
-
-            // Start chat animation every 8 seconds
-            setInterval(animateChatBubbles, 8000);
-
-            // Success Stories Rotation
-            let currentStory = 0;
-            const totalStories = 3;
-            
-            const rotateStories = () => {
-                const track = document.getElementById('stories-track');
-                const dots = document.querySelectorAll('.story-dot');
-                
-                if (track && dots.length > 0) {
-                    currentStory = (currentStory + 1) % totalStories;
-                    track.style.transform = `translateX(-${currentStory * 100}%)`;
-                    
-                    // Update dots
-                    dots.forEach((dot, index) => {
-                        if (index === currentStory) {
-                            dot.classList.remove('bg-gray-300');
-                            dot.classList.add('bg-blue-600');
-                        } else {
-                            dot.classList.remove('bg-blue-600');
-                            dot.classList.add('bg-gray-300');
-                        }
-                    });
-                }
-            };
-
-            // Auto-rotate stories every 5 seconds
-            setInterval(rotateStories, 5000);
-
-            // Manual story navigation
-            const dots = document.querySelectorAll('.story-dot');
-            dots.forEach((dot, index) => {
-                dot.addEventListener('click', () => {
-                    currentStory = index;
-                    const track = document.getElementById('stories-track');
-                    if (track) {
-                        track.style.transform = `translateX(-${currentStory * 100}%)`;
-                        
-                        // Update dots
-                        dots.forEach((d, i) => {
-                            if (i === currentStory) {
-                                d.classList.remove('bg-gray-300');
-                                d.classList.add('bg-blue-600');
-                            } else {
-                                d.classList.remove('bg-blue-600');
-                                d.classList.add('bg-gray-300');
-                            }
-                        });
-                    }
-                });
-            });
-
-            // Live Typing Simulation for Demo
-            const messages = [
-                { type: 'ai', text: '🤖 Found 3 apartments under $1500 in Toronto. Negotiating prices now...', delay: 1000 },
-                { type: 'user', text: 'Great! What\'s the best deal?', delay: 2000 },
-                { type: 'ai', text: '✅ Negotiated $1200/month (was $1400) for 2BR downtown apartment!', delay: 3000 }
-            ];
-
-            const createLiveTypingDemo = () => {
-                const demoContainer = document.querySelector('.glass-card .space-y-4');
-                if (!demoContainer) return;
-
-                // Clear existing messages
-                demoContainer.innerHTML = '';
-
-                let messageIndex = 0;
-                
-                const showNextMessage = () => {
-                    if (messageIndex >= messages.length) {
-                        // Reset after showing all messages
-                        setTimeout(() => {
-                            messageIndex = 0;
-                            createLiveTypingDemo();
-                        }, 3000);
-                        return;
-                    }
-
-                    const message = messages[messageIndex];
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = `chat-bubble ${message.type === 'user' ? 'user' : ''}`;
-                    messageDiv.style.opacity = '0';
-                    
-                    demoContainer.appendChild(messageDiv);
-
-                    // Animate message appearance
-                    setTimeout(() => {
-                        messageDiv.style.opacity = '1';
-                        
-                        // Typing effect
-                        let charIndex = 0;
-                        const typeMessage = () => {
-                            if (charIndex < message.text.length) {
-                                messageDiv.textContent = message.text.substring(0, charIndex + 1);
-                                charIndex++;
-                                setTimeout(typeMessage, 50);
-                            } else {
-                                messageIndex++;
-                                setTimeout(showNextMessage, 1000);
-                            }
-                        };
-                        typeMessage();
-                    }, 500);
-                };
-
-                setTimeout(showNextMessage, 1000);
-            };
-
-            // Start live typing demo
-            createLiveTypingDemo();
-            // Restart demo every 15 seconds
-            setInterval(createLiveTypingDemo, 15000);
-
-        // Update authentication section based on login status
-            const profileImages = [
-                'https://via.placeholder.com/40/FF6B6B',
-                'https://via.placeholder.com/40/4ECDC4',
-                'https://via.placeholder.com/40/FFE66D',
-                'https://via.placeholder.com/40/6B7280',
-                'https://via.placeholder.com/40/FF9F1C'
-            ];
-            let currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            const authSection = document.getElementById('authSection');
-
-            if (currentUser) {
-                if (!currentUser.profileImage) {
-                    currentUser.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
-                    let users = JSON.parse(localStorage.getItem('users')) || [];
-                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                    localStorage.setItem('users', JSON.stringify(users));
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                }
-                authSection.innerHTML = `
-                    <div class="flex items-center space-x-4">
-                        <a href="/profile">
-                            <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
-                        </a>
-                    </div>
-                `;
-            } else {
-                authSection.innerHTML = `
-                    <div class="flex items-center space-x-4">
-                        <a href="/login" class="nav-link login-link">Login</a>
-                        <a href="/free-trial" class="cta-button magnetic-btn text-sm px-6 py-3">Start Free Trial</a>
-                    </div>
-                `;
-            }
-        });
-
-        let rooms = [];
-        const typo = new Typo('en_US', false, false, {
-            dictionaryPath: 'https://unpkg.com/typo-js@1.2.3/dictionaries'
-        });
-
-        // Add custom dictionary entries
-        typo.dictionary['roomfinder'] = 1;
-        typo.dictionary['wifi'] = 1;
-        typo.dictionary['appartment'] = 1;
-        typo.dictionary['condo'] = 1;
-        typo.dictionary['sublease'] = 1;
-        typo.dictionary['negoitator'] = 1;
-
-        // Load cities.json
-        let cities = [];
-        fetch('https://unpkg.com/cities.json@1.1.0/cities.json')
-            .then(response => response.json())
-            .then(data => {
-                cities = data;
-                console.log('Cities loaded:', cities.length);
-            })
-            .catch(error => {
-                console.error('Error loading cities:', error);
-                alert('Failed to load city data. Please enter locations manually.');
-                document.getElementById('location').placeholder = 'Enter location manually (e.g., Toronto, Ontario, Canada)';
-            });
-
-        // Custom autocomplete logic
-        const locationInput = document.getElementById('location');
-        const dropdown = document.getElementById('autocomplete-dropdown');
-        let debounceTimeout;
-
-        function showSuggestions(input) {
-            dropdown.innerHTML = '';
-            dropdown.classList.add('hidden');
-            if (!input || cities.length === 0) return;
-
-            const filtered = cities
-                .filter(city => 
-                    city.name.toLowerCase().startsWith(input.toLowerCase()) ||
-                    city.name.toLowerCase().includes(input.toLowerCase())
-                )
-                .slice(0, 10)
-                .map(city => ({
-                    display: `${city.name}${city.admin_name ? `, ${city.admin_name}` : ''}, ${city.country}`,
-                    value: city
-                }));
-
-            if (filtered.length === 0) {
-                const item = document.createElement('div');
-                item.className = 'autocomplete-item text-gray-500';
-                item.textContent = 'No matching cities';
-                dropdown.appendChild(item);
-                dropdown.classList.remove('hidden');
-                return;
-            }
-
-            filtered.forEach(loc => {
-                const item = document.createElement('div');
-                item.className = 'autocomplete-item';
-                item.textContent = loc.display;
-                item.addEventListener('click', () => {
-                    locationInput.value = loc.display;
-                    dropdown.classList.add('hidden');
-                    console.log('Selected location:', loc.display);
-                });
-                dropdown.appendChild(item);
-            });
-
-            dropdown.classList.remove('hidden');
-            console.log('Showing suggestions for:', input, filtered.map(f => f.display));
-        }
-
-        locationInput.addEventListener('input', () => {
-            clearTimeout(debounceTimeout);
-            debounceTimeout = setTimeout(() => {
-                const value = locationInput.value.trim();
-                console.log('Input event:', value);
-                showSuggestions(value);
-            }, 300);
-        });
-
-        locationInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !dropdown.classList.contains('hidden')) {
-                const firstItem = dropdown.querySelector('.autocomplete-item:not(.text-gray-500)');
-                if (firstItem) {
-                    locationInput.value = firstItem.textContent;
-                    dropdown.classList.add('hidden');
-                    console.log('Enter key selected:', firstItem.textContent);
-                }
-                e.preventDefault();
-            }
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!locationInput.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.add('hidden');
-                console.log('Dropdown hidden');
-            }
-        });
-
-        function autocorrectInput(input) {
-            if (typeof input !== 'string' || !input) return input;
-            const words = input.split(' ');
-            const correctedWords = words.map(word => {
-                if (typo.check(word)) return word;
-                const suggestions = typo.suggest(word);
-                console.log(`Autocorrect: ${word} -> ${suggestions.length > 0 ? suggestions[0] : word}`);
-                return suggestions.length > 0 ? suggestions[0] : word;
-            });
-            return correctedWords.join(' ');
-        }
-
-        function sanitizeInput(input) {
-            if (typeof input !== 'string') return '';
-            return input.replace(/[^a-zA-Z0-9\s,.-]/g, '').trim();
-        }
-
-        function addRoom() {
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            if (!currentUser) {
-                alert('Please log in to add a room.');
-                window.location.href = '/login';
-                return;
-            }
-            const location = autocorrectInput(sanitizeInput(document.getElementById('location').value));
-            const roomType = document.getElementById('roomType').value;
-            const price = document.getElementById('price').value;
-            const size = document.getElementById('size').value;
-            const bedrooms = document.getElementById('bedrooms').value;
-            const amenities = autocorrectInput(sanitizeInput(document.getElementById('amenities').value));
-
-            if (!location || !roomType || !price) {
-                alert('Please fill in all required fields (Location, Room Type, Price).');
-                console.error('Add room failed: Missing required fields', { location, roomType, price });
-                return;
-            }
-
-            const room = { 
-                location, 
-                roomType,
-                price: parseInt(price), 
-                size: size ? parseInt(size) : null, 
-                bedrooms: bedrooms ? parseInt(bedrooms) : null, 
-                amenities: amenities || null 
-            };
-            rooms.push(room);
-            renderRooms();
-
-            document.getElementById('location').value = '';
-            document.getElementById('roomType').value = '';
-            document.getElementById('price').value = '';
-            document.getElementById('size').value = '';
-            document.getElementById('bedrooms').value = '';
-            document.getElementById('amenities').value = '';
-        }
-
-        function askAI() {
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            if (!currentUser) {
-                alert('Please log in to use the AI Negotiator.');
-                window.location.href = '/login';
-                return;
-            }
-            const location = autocorrectInput(sanitizeInput(document.getElementById('location').value));
-            const roomType = document.getElementById('roomType').value;
-            const price = document.getElementById('price').value;
-            const size = document.getElementById('size').value;
-            const bedrooms = document.getElementById('bedrooms').value;
-            const amenities = autocorrectInput(sanitizeInput(document.getElementById('amenities').value));
-
-            if (!location) {
-                alert('Please enter a valid location (e.g., Toronto, Ontario, Canada).');
-                console.error('askAI: Location is empty or invalid', { location });
-                return;
-            }
-            if (!roomType) {
-                alert('Please select a room type.');
-                console.error('askAI: Room type is not selected', { roomType });
-                return;
-            }
-            if (!price || isNaN(price) || parseInt(price) <= 0) {
-                alert('Please enter a valid price greater than 0.');
-                console.error('askAI: Price is invalid', { price });
-                return;
-            }
-
-            const searchData = {
-                location,
-                roomType,
-                price: parseInt(price),
-                size: size && !isNaN(size) && parseInt(size) > 0 ? parseInt(size) : null,
-                bedrooms: bedrooms && !isNaN(bedrooms) && parseInt(bedrooms) >= 0 ? parseInt(bedrooms) : null,
-                amenities: amenities || null
-            };
-
-            console.log('askAI: Collected searchData', searchData);
-
-            try {
-                const encodedSearch = encodeURIComponent(JSON.stringify(searchData));
-                const targetUrl = `/ai-negotiator?roomData=${encodedSearch}`;
-                console.log('askAI: Navigating to', targetUrl);
-                window.location.href = targetUrl;
-            } catch (error) {
-                console.error('askAI: Error encoding or navigating', error);
-                alert('Error processing your request. Please try again.');
-            }
-        }
-
-        function renderRooms() {
-            const roomList = document.getElementById('roomList');
-            roomList.innerHTML = '';
-
-            rooms.forEach(room => {
-                const roomCard = document.createElement('div');
-                roomCard.className = 'room-card bg-white p-6 rounded-lg shadow-md';
-                roomCard.innerHTML = `
-                    <h2 class="text-xl font-semibold text-gray-800">${room.location}</h2>
-                    <p class="text-gray-600">Type: ${room.roomType}</p>
-                    <p class="text-gray-600">Price: $${room.price.toLocaleString()}/month</p>
-                    ${room.size ? `<p class="text-gray-600">Size: ${room.size.toLocaleString()} sq ft</p>` : ''}
-                    ${room.bedrooms ? `<p class="text-gray-600">Bedrooms: ${room.bedrooms}</p>` : ''}
-                    ${room.amenities ? `<p class="text-gray-600">Amenities: ${room.amenities}</p>` : ''}
-                `;
-                roomList.appendChild(roomCard);
-            });
-        }
-
-        async function searchRooms() {
-            const location = autocorrectInput(sanitizeInput(document.getElementById('location').value));
-            const roomType = document.getElementById('roomType').value;
-            const price = document.getElementById('price').value;
-            const size = document.getElementById('size').value;
-            const bedrooms = document.getElementById('bedrooms').value;
-            const amenities = autocorrectInput(sanitizeInput(document.getElementById('amenities').value));
-
-            if (!location || !roomType || !price || isNaN(price) || parseInt(price) <= 0) {
-                alert('Please fill in all required fields (Location, Room Type, Price) with valid values.');
-                console.error('searchRooms: Validation failed', { location, roomType, price });
-                return;
-            }
-
-            const requestBody = { 
-                location, 
-                roomType, 
-                price: parseInt(price), 
-                size: size ? parseInt(size) : null, 
-                bedrooms: bedrooms ? parseInt(bedrooms) : null, 
-                amenities: amenities || null 
-            };
-            let kijijiUrl = '', marketplaceUrl = '';
-
-            try {
-                const button = document.querySelector('button[onclick="searchRooms()"]');
-                button.disabled = true;
-                button.textContent = 'Searching...';
-
-                const kijijiResponse = await fetch('/api/predict/kijiji', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody)
-                });
-                if (kijijiResponse.ok) {
-                    const { url } = await kijijiResponse.json();
-                    kijijiUrl = url;
-                } else {
-                    const errorData = await kijijiResponse.json();
-                    console.warn(`searchRooms: Kijiji fetch failed: ${errorData.error || 'Unknown error'}`);
-                }
-                console.log('searchRooms: Kijiji URL', kijijiUrl);
-
-                const marketplaceResponse = await fetch('/api/predict/marketplace', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody)
-                });
-                if (marketplaceResponse.ok) {
-                    const { url } = await marketplaceResponse.json();
-                    marketplaceUrl = url;
-                } else {
-                    const errorData = await marketplaceResponse.json();
-                    console.warn(`searchRooms: Marketplace fetch failed: ${errorData.error || 'Unknown error'}`);
-                }
-                console.log('searchRooms: Marketplace URL', marketplaceUrl);
-
-                if (kijijiUrl) window.open(kijijiUrl, '_blank');
-                if (marketplaceUrl) window.open(marketplaceUrl, '_blank');
-                if (!kijijiUrl && !marketplaceUrl) {
-                    throw new Error('Failed to generate URLs for both Kijiji and Marketplace');
-                }
-
-                document.getElementById('location').value = '';
-                document.getElementById('roomType').value = '';
-                document.getElementById('price').value = '';
-                document.getElementById('size').value = '';
-                document.getElementById('bedrooms').value = '';
-                document.getElementById('amenities').value = '';
-            } catch (error) {
-                alert(`Error searching: ${error.message}`);
-                console.error('searchRooms: Error', error);
-            } finally {
-                const button = document.querySelector('button[onclick="searchRooms()"]');
-                button.disabled = false;
-                button.textContent = 'Search All Sites';
-            }
-        }
-        
-        // Foundation House-style GSAP Animations
+        // Register GSAP plugins
         gsap.registerPlugin(ScrollTrigger);
-        
-        // Hero section animations
+
+        // Foundation House-style animations
         gsap.timeline()
-            .from(".hero-content h1", {
+            .from(".fade-left", {
                 duration: 1.2,
-                y: 50,
+                x: -50,
                 opacity: 0,
                 ease: "power3.out"
             })
-            .from(".hero-content p", {
-                duration: 1,
-                y: 30,
+            .from(".fade-right", {
+                duration: 1.2,
+                x: 50,
                 opacity: 0,
                 ease: "power3.out"
-            }, "-=0.8")
-            .from(".hero-content button", {
-                duration: 0.8,
-                y: 20,
-                opacity: 0,
-                stagger: 0.2,
-                ease: "power3.out"
-            }, "-=0.6")
-            .from(".hero-content .grid", {
-                duration: 1,
-                y: 30,
-                opacity: 0,
-                ease: "power3.out"
-            }, "-=0.4");
-        
-        // AI Negotiation Preview animation
-        gsap.from(".reveal-right", {
-            duration: 1.2,
-            x: 50,
-            opacity: 0,
-            ease: "power3.out",
-            delay: 0.5
-        });
-        
-        // Section animations with ScrollTrigger
-        gsap.utils.toArray(".reveal").forEach((element) => {
+            }, "-=0.8");
+
+        // Scroll-triggered animations
+        gsap.utils.toArray(".fade-up").forEach((element) => {
             gsap.from(element, {
                 duration: 1,
                 y: 50,
@@ -1929,75 +534,49 @@
                 }
             });
         });
-        
-        // Feature cards stagger animation
-        gsap.from(".feature-card", {
-            duration: 0.8,
-            y: 40,
-            opacity: 0,
-            stagger: 0.2,
-            ease: "power3.out",
-            scrollTrigger: {
-                trigger: ".feature-card",
-                start: "top 80%",
-                toggleActions: "play none none reverse"
-            }
-        });
-        
-        // Statistics counter animation
-        gsap.utils.toArray(".counter").forEach((counter) => {
-            const target = parseInt(counter.textContent.replace(/[^0-9]/g, ''));
-            gsap.from(counter, {
-                duration: 2,
-                textContent: 0,
-                ease: "power2.out",
-                snap: { textContent: 1 },
+
+        gsap.utils.toArray(".scale-up").forEach((element, index) => {
+            gsap.from(element, {
+                duration: 0.8,
+                scale: 0.95,
+                opacity: 0,
+                ease: "power3.out",
+                delay: index * 0.1,
                 scrollTrigger: {
-                    trigger: counter,
+                    trigger: element,
                     start: "top 80%",
                     toggleActions: "play none none reverse"
-                },
-                onUpdate: function() {
-                    const current = Math.ceil(this.targets()[0].textContent);
-                    const original = counter.textContent;
-                    if (original.includes('$')) {
-                        counter.textContent = '$' + current;
-                    } else if (original.includes('%')) {
-                        counter.textContent = current + '%';
-                    } else {
-                        counter.textContent = current.toLocaleString();
-                    }
                 }
             });
         });
-        
-        // Smooth scrolling for navigation links
+
+        // Smooth scroll for navigation
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) {
                     gsap.to(window, {
-                        duration: 1.5,
+                        duration: 1,
                         scrollTo: { y: target, offsetY: 100 },
                         ease: "power3.inOut"
                     });
                 }
             });
         });
-        
-        // Header scroll effect
-        gsap.to("#header", {
-            backgroundColor: "rgba(255, 255, 255, 0.98)",
-            backdropFilter: "blur(20px)",
-            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-            scrollTrigger: {
-                trigger: "body",
-                start: "top -100px",
-                end: "bottom top",
-                toggleActions: "play none none reverse"
-            }
-        });
+
+        // Simple function placeholders
+        function searchProperties() {
+            alert('Property search functionality would be implemented here');
+        }
+
+        function askAI() {
+            alert('AI assistant functionality would be implemented here');
+        }
+
+        function addProperty() {
+            alert('Add property functionality would be implemented here');
+        }
     </script>
 </body>
 </html>
