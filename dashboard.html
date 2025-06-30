@@ -159,7 +159,7 @@
                     </button>
                 </div>
                 <a href="/profile" aria-label="View user profile">
-                    <img id="profileLogo" src="https://via.placeholder.com/40" alt="Profile" class="w-10 h-10 rounded-full transition-transform hover:scale-110">
+                    <img id="profileLogo" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM2MzY2RjEiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xNiAxNlY0LjVDMTYgNC4yMjM4NiAxNS43NzYxIDQgMTUuNSA0SDguNUM4LjIyMzg2IDQgOCA0LjIyMzg2IDggNC41VjE2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0xMiAxNEM5Ljc5MDg2IDE0IDggMTUuNzkwOSA4IDE4QzggMjAuMjA5MSA5Ljc5MDg2IDIyIDEyIDIyQzE0LjIwOTEgMjIgMTYgMjAuMjA5MSAxNiAxOEMxNiAxNS43OTA5IDE0LjIwOTEgMTQgMTIgMTQiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cjwvc3ZnPgo=" alt="Profile" class="w-10 h-10 rounded-full transition-transform hover:scale-110">
                 </a>
             </div>
         </nav>
@@ -337,6 +337,20 @@
             <div id="verification-tab" class="tab-content hidden">
                 <div class="glass-card p-6">
                     <h3 class="text-xl font-bold text-gray-900 mb-6">Account Verification</h3>
+                    
+                    <!-- Service Status Warning -->
+                    <div id="verificationServiceWarning" class="hidden mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-orange-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <div>
+                                <h4 class="text-sm font-semibold text-orange-800 mb-1">Verification Services Limited</h4>
+                                <p class="text-sm text-orange-600">ID verification services are currently unavailable. This feature requires Azure Cognitive Services to be configured.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="space-y-6">
                         <div class="flex items-center justify-between p-4 bg-white rounded-lg border">
                             <div class="flex items-center">
@@ -526,6 +540,9 @@
 
             // Load dashboard data
             await loadDashboardData();
+            
+            // Check verification service availability
+            await checkVerificationServices();
         }
 
         async function loadDashboardData() {
@@ -1103,7 +1120,12 @@
                     // Update main button status
                     updateIdVerificationStatus('verified');
                 } else {
-                    throw new Error(result.error || 'Upload failed');
+                    // Check if it's a service unavailable error
+                    if (response.status === 503 && result.serviceAvailable === false) {
+                        throw new Error('The ID verification service is currently unavailable. Please try again later or contact support.');
+                    } else {
+                        throw new Error(result.error || 'Upload failed');
+                    }
                 }
                 
             } catch (error) {
@@ -1152,6 +1174,50 @@
                 button.classList.add('bg-green-600', 'hover:bg-green-700');
                 button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 button.onclick = null; // Disable clicking
+            } else if (status === 'unavailable') {
+                button.textContent = 'Service Unavailable';
+                button.classList.add('bg-gray-400', 'cursor-not-allowed');
+                button.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'modern-button');
+                button.disabled = true;
+                button.onclick = null;
+            }
+        }
+        
+        async function checkVerificationServices() {
+            try {
+                // First check service status
+                const serviceResponse = await fetch('/api/verify/service-status');
+                const serviceStatus = await serviceResponse.json();
+                
+                // Then check user verification status
+                const response = await fetch(`/api/verify/status/${encodeURIComponent(currentUser.email)}`);
+                const result = await response.json();
+                
+                if (!serviceStatus.documentIntelligence.available) {
+                    // Show warning banner
+                    document.getElementById('verificationServiceWarning').classList.remove('hidden');
+                    
+                    // Update ID verification button
+                    updateIdVerificationStatus('unavailable');
+                    
+                    // Update the ID verification row to show service unavailable
+                    const idVerificationRow = document.querySelector('#uploadIdBtn').parentElement.parentElement;
+                    const descriptionElement = idVerificationRow.querySelector('.text-gray-600');
+                    if (descriptionElement) {
+                        descriptionElement.textContent = 'ID verification service is currently unavailable';
+                        descriptionElement.classList.add('text-orange-600');
+                    }
+                } else if (result.verification && result.verification.id_verification_status === 'verified') {
+                    updateIdVerificationStatus('verified');
+                }
+                
+                // Check face verification service
+                if (!serviceStatus.faceAPI.available) {
+                    // Disable face verification if we add it later
+                    console.log('Face verification service not available');
+                }
+            } catch (error) {
+                console.error('Error checking verification services:', error);
             }
         }
     </script>
