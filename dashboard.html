@@ -369,6 +369,21 @@
 
                         <div class="flex items-center justify-between p-4 bg-white rounded-lg border">
                             <div class="flex items-center">
+                                <div id="bankVerificationIcon" class="bg-gray-400 p-2 rounded-lg mr-4">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">Bank Information</h4>
+                                    <p id="bankVerificationDesc" class="text-sm text-gray-600">Add your banking information for payments</p>
+                                </div>
+                            </div>
+                            <button id="addBankBtn" class="modern-button" onclick="openBankInfoModal()">Add Bank Info</button>
+                        </div>
+
+                        <div class="flex items-center justify-between p-4 bg-white rounded-lg border">
+                            <div class="flex items-center">
                                 <div class="bg-gray-400 p-2 rounded-lg mr-4">
                                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 118 0v2m-4 0a2 2 0 104 0m-4 0a2 2 0 014 0z"></path>
@@ -502,6 +517,153 @@
         </div>
     </div>
 
+    <!-- Bank Information Modal -->
+    <div id="bankInfoModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 transform transition-all">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Add Bank Information</h3>
+                    <button onclick="closeBankInfoModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div id="bankFormSection" class="space-y-4">
+                    <p class="text-gray-600 text-sm mb-4">Please provide your banking information for payment processing. All information is encrypted and securely stored.</p>
+                    
+                    <form id="bankInfoForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Account Holder Name</label>
+                            <input type="text" id="accountHolderName" name="accountHolderName" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Full name as it appears on your bank account">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+                            <input type="text" id="bankName" name="bankName" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Your bank's name">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                                <input type="text" id="accountNumber" name="accountNumber" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       placeholder="Account number">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Routing Number</label>
+                                <input type="text" id="routingNumber" name="routingNumber" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       placeholder="Routing number">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Account Type</label>
+                            <select id="accountType" name="accountType" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select account type</option>
+                                <option value="checking">Checking</option>
+                                <option value="savings">Savings</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">SWIFT Code (Optional)</label>
+                            <input type="text" id="swiftCode" name="swiftCode"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="For international transfers">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Bank Address (Optional)</label>
+                            <textarea id="bankAddress" name="bankAddress" rows="3"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="Bank's full address"></textarea>
+                        </div>
+                        
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                <div>
+                                    <p class="text-sm text-yellow-800 font-medium">Security Notice</p>
+                                    <p class="text-xs text-yellow-700 mt-1">Your banking information is encrypted using industry-standard security protocols and will only be used for payment processing.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex space-x-3 pt-4">
+                            <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                Save Bank Information
+                            </button>
+                            <button type="button" onclick="closeBankInfoModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors font-medium">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Loading Section -->
+                <div id="bankLoadingSection" class="hidden text-center space-y-4">
+                    <div class="animate-spin mx-auto h-12 w-12 text-blue-600">
+                        <svg fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-medium text-gray-900">Saving your bank information...</p>
+                        <p class="text-sm text-gray-600">Please wait while we securely process your information</p>
+                    </div>
+                </div>
+                
+                <!-- Success Section -->
+                <div id="bankSuccessSection" class="hidden text-center space-y-4">
+                    <div class="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-medium text-gray-900">Bank Information Saved!</p>
+                        <p class="text-sm text-gray-600">Your banking information has been securely stored and is pending verification.</p>
+                    </div>
+                    <button onclick="closeBankInfoModal()" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                        Continue
+                    </button>
+                </div>
+                
+                <!-- Error Section -->
+                <div id="bankErrorSection" class="hidden text-center space-y-4">
+                    <div class="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-medium text-gray-900">Error Saving Information</p>
+                        <p id="bankErrorMessage" class="text-sm text-gray-600">Something went wrong. Please try again.</p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button onclick="resetBankModal()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            Try Again
+                        </button>
+                        <button onclick="closeBankInfoModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Initialize configuration variables
         let configData;
@@ -543,6 +705,9 @@
             
             // Check verification service availability
             await checkVerificationServices();
+            
+            // Load bank information
+            await loadBankInformation();
         }
 
         async function loadDashboardData() {
@@ -1220,6 +1385,120 @@
                 console.error('Error checking verification services:', error);
             }
         }
+
+        // Bank Information Functions
+        async function loadBankInformation() {
+            try {
+                const response = await fetch(`/api/bank-info/${encodeURIComponent(currentUser.email)}`);
+                const result = await response.json();
+                
+                if (response.ok && result.bankInfo) {
+                    updateBankVerificationStatus('verified', result.bankInfo);
+                }
+            } catch (error) {
+                console.error('Error loading bank information:', error);
+            }
+        }
+
+        function openBankInfoModal() {
+            document.getElementById('bankInfoModal').classList.remove('hidden');
+            resetBankModal();
+        }
+
+        function closeBankInfoModal() {
+            document.getElementById('bankInfoModal').classList.add('hidden');
+        }
+
+        function resetBankModal() {
+            // Hide all sections
+            document.getElementById('bankFormSection').classList.remove('hidden');
+            document.getElementById('bankLoadingSection').classList.add('hidden');
+            document.getElementById('bankSuccessSection').classList.add('hidden');
+            document.getElementById('bankErrorSection').classList.add('hidden');
+            
+            // Reset form
+            document.getElementById('bankInfoForm').reset();
+        }
+
+        function showBankError(message) {
+            document.getElementById('bankLoadingSection').classList.add('hidden');
+            document.getElementById('bankErrorSection').classList.remove('hidden');
+            document.getElementById('bankErrorMessage').textContent = message;
+        }
+
+        function updateBankVerificationStatus(status, bankInfo = null) {
+            const icon = document.getElementById('bankVerificationIcon');
+            const button = document.getElementById('addBankBtn');
+            const description = document.getElementById('bankVerificationDesc');
+            
+            if (status === 'verified' || status === 'pending') {
+                icon.classList.remove('bg-gray-400');
+                icon.classList.add('gradient-bg-green');
+                
+                button.textContent = '✓ Bank Added';
+                button.classList.add('bg-green-600', 'hover:bg-green-700');
+                button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                button.onclick = () => openBankInfoModal(); // Allow editing
+                
+                if (bankInfo) {
+                    description.textContent = `${bankInfo.bank_name} - ${bankInfo.account_type} (${bankInfo.verification_status})`;
+                    description.classList.add('text-green-600');
+                    description.classList.remove('text-gray-600');
+                }
+            }
+        }
+
+        // Handle bank info form submission
+        document.getElementById('bankInfoForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            try {
+                // Show loading section
+                document.getElementById('bankFormSection').classList.add('hidden');
+                document.getElementById('bankLoadingSection').classList.remove('hidden');
+                
+                // Get form data
+                const formData = new FormData(event.target);
+                const bankData = {
+                    userEmail: currentUser.email,
+                    accountHolderName: formData.get('accountHolderName'),
+                    bankName: formData.get('bankName'),
+                    accountNumber: formData.get('accountNumber'),
+                    routingNumber: formData.get('routingNumber'),
+                    accountType: formData.get('accountType'),
+                    swiftCode: formData.get('swiftCode'),
+                    bankAddress: formData.get('bankAddress')
+                };
+                
+                console.log('Submitting bank information:', { ...bankData, accountNumber: '***', routingNumber: '***' });
+                
+                // Submit to backend
+                const response = await fetch('/api/bank-info/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(bankData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Show success
+                    document.getElementById('bankLoadingSection').classList.add('hidden');
+                    document.getElementById('bankSuccessSection').classList.remove('hidden');
+                    
+                    // Update main button status
+                    updateBankVerificationStatus('pending', result.bankInfo);
+                } else {
+                    throw new Error(result.error || 'Failed to save bank information');
+                }
+                
+            } catch (error) {
+                console.error('Bank info submission error:', error);
+                showBankError(error.message);
+            }
+        });
     </script>
 </body>
 </html>
