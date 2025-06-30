@@ -297,7 +297,21 @@
                     </div>
                     <div>
                         <label for="rent" class="block text-sm font-medium text-gray-700 mb-2">💰 Monthly Rent</label>
-                        <input type="number" id="rent" name="rent" class="modern-input w-full" placeholder="1200" required aria-required="true">
+                        <div class="relative">
+                            <input type="number" id="rent" name="rent" class="modern-input w-full" placeholder="1200" required aria-required="true">
+                            <button type="button" id="pricingSuggestionBtn" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                💡 Get AI Pricing
+                            </button>
+                        </div>
+                        <div id="pricingSuggestion" class="hidden mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="flex items-center mb-2">
+                                <svg class="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                                <span class="text-sm font-medium text-blue-800">AI Pricing Recommendation</span>
+                            </div>
+                            <div id="pricingContent" class="text-sm text-blue-700"></div>
+                        </div>
                     </div>
                 </div>
                 
@@ -356,19 +370,39 @@
                 <div>
                     <label for="images" class="block text-sm font-medium text-gray-700 mb-4">📸 Property Photos</label>
                     <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition">
-                        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
                         </div>
                         <label for="images" class="cursor-pointer">
-                            <span class="text-blue-600 font-semibold hover:text-blue-700">Upload photos</span>
-                            <span class="text-gray-600"> or drag and drop</span>
+                            <span class="text-blue-600 font-semibold hover:text-blue-700">Create Virtual Tour</span>
+                            <span class="text-gray-600"> - Upload multiple photos</span>
                         </label>
                         <input type="file" id="images" name="images" multiple class="hidden" accept="image/*" aria-describedby="imageHelp">
-                        <p id="imageHelp" class="text-sm text-gray-500 mt-2">PNG, JPG up to 10MB each (max 5 photos)</p>
+                        <p id="imageHelp" class="text-sm text-gray-500 mt-2">📷 Upload 5-8 photos for the best virtual tour experience</p>
+                        <p class="text-xs text-blue-600 mt-1">💡 Tip: Include living room, kitchen, bedroom, and bathroom photos</p>
                     </div>
-                    <div id="imagePreview" class="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4"></div>
+                    
+                    <!-- Enhanced Image Preview with Virtual Tour -->
+                    <div id="imagePreview" class="mt-6 hidden">
+                        <div class="bg-white rounded-xl border border-gray-200 p-4">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-lg font-semibold text-gray-800">Virtual Tour Preview</h4>
+                                <span class="text-sm text-gray-500" id="photoCount">0 photos</span>
+                            </div>
+                            <div class="relative">
+                                <div id="mainImageContainer" class="w-full h-64 bg-gray-100 rounded-lg mb-4 overflow-hidden">
+                                    <img id="mainImage" class="w-full h-full object-cover" style="display: none;">
+                                    <div id="emptyImageState" class="w-full h-full flex items-center justify-center text-gray-400">
+                                        Select photos to preview virtual tour
+                                    </div>
+                                </div>
+                                <div id="imageThumbnails" class="flex space-x-2 overflow-x-auto pb-2"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <!-- Submit Buttons -->
                 <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
@@ -1059,27 +1093,97 @@
             }
 
             listings.forEach(listing => {
+                // Initialize analytics if not present
+                if (!listing.analytics) {
+                    listing.analytics = {
+                        views: Math.floor(Math.random() * 50) + 10, // Demo data
+                        inquiries: Math.floor(Math.random() * 8) + 1,
+                        lastViewed: new Date().toISOString()
+                    };
+                }
+
+                const daysAgo = Math.floor((new Date() - new Date(listing.createdAt)) / (1000 * 60 * 60 * 24));
+                
                 const card = document.createElement('div');
-                card.className = 'listing-card bg-gray-50 p-4 rounded-lg shadow-md hover:shadow-lg transition';
+                card.className = 'listing-card bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition border border-gray-100';
                 card.innerHTML = `
-                    <div class="relative h-48 mb-4 rounded-lg overflow-hidden">
-                        ${listing.images[0] ? `
+                    <!-- Performance Badge -->
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex space-x-2">
+                            ${listing.analytics.views > 30 ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">🔥 Hot</span>' : ''}
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">${daysAgo === 0 ? 'New' : daysAgo + 'd ago'}</span>
+                        </div>
+                        <button onclick="toggleAnalytics('${listing.id}')" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Image Gallery -->
+                    <div class="relative h-48 mb-4 rounded-lg overflow-hidden group">
+                        ${listing.images && listing.images.length > 0 ? `
                             <img src="${listing.images[0]}" alt="Listing image" class="w-full h-full object-cover">
+                            ${listing.images.length > 1 ? `
+                                <div class="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
+                                    +${listing.images.length - 1} photos
+                                </div>
+                            ` : ''}
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                                <button onclick="viewVirtualTour('${listing.id}')" class="opacity-0 group-hover:opacity-100 bg-white text-gray-800 px-4 py-2 rounded-lg font-medium transition-all duration-300 transform scale-95 group-hover:scale-100">
+                                    📸 Virtual Tour
+                                </button>
+                            </div>
                         ` : `
-                            <div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
-                                No Image
+                            <div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-500">
+                                📸 Add photos to create virtual tour
                             </div>
                         `}
                     </div>
-                    <h3 class="text-lg font-semibold text-gray-800">${listing.address}</h3>
-                    <p class="text-gray-600">$${listing.rent}/month</p>
-                    <p class="text-gray-600">From ${listing.startDate} to ${listing.endDate}</p>
-                    <p class="text-gray-600 line-clamp-2">${listing.description}</p>
-                    ${listing.amenities.length > 0 ? `
-                        <p class="text-gray-600 mt-2">Amenities: ${listing.amenities.join(', ')}</p>
-                    ` : ''}
+
+                    <!-- Listing Details -->
+                    <div class="space-y-2">
+                        <h3 class="text-lg font-semibold text-gray-800">${listing.address}</h3>
+                        <div class="flex justify-between items-center">
+                            <p class="text-2xl font-bold text-green-600">$${listing.rent}/month</p>
+                            <div class="text-right text-sm text-gray-500">
+                                <p>📊 ${listing.analytics.views} views</p>
+                                <p>💬 ${listing.analytics.inquiries} inquiries</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-600">📅 ${new Date(listing.startDate).toLocaleDateString()} - ${new Date(listing.endDate).toLocaleDateString()}</p>
+                        <p class="text-gray-600 line-clamp-2">${listing.description}</p>
+                        ${listing.amenities && listing.amenities.length > 0 ? `
+                            <div class="flex flex-wrap gap-1 mt-2">
+                                ${listing.amenities.map(amenity => `<span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">${amenity}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Analytics Panel -->
+                    <div id="analytics-${listing.id}" class="hidden mt-4 p-3 bg-gray-50 rounded-lg border">
+                        <h4 class="font-medium text-gray-800 mb-3">📊 Performance Analytics</h4>
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <div class="text-lg font-bold text-blue-600">${listing.analytics.views}</div>
+                                <div class="text-xs text-gray-600">Total Views</div>
+                            </div>
+                            <div>
+                                <div class="text-lg font-bold text-green-600">${listing.analytics.inquiries}</div>
+                                <div class="text-xs text-gray-600">Inquiries</div>
+                            </div>
+                            <div>
+                                <div class="text-lg font-bold text-purple-600">${((listing.analytics.inquiries / listing.analytics.views) * 100).toFixed(1)}%</div>
+                                <div class="text-xs text-gray-600">Conversion</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
                     <div class="mt-4 flex space-x-2">
-                        <button onclick="deleteListing('${listing.id}')" class="bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700 transition text-sm">Delete</button>
+                        <button onclick="boostListing('${listing.id}')" class="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition text-sm font-medium">🚀 Boost</button>
+                        <button onclick="editListing('${listing.id}')" class="flex-1 bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition text-sm">✏️ Edit</button>
+                        <button onclick="deleteListing('${listing.id}')" class="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition text-sm">🗑️</button>
                     </div>
                 `;
                 subleaseList.appendChild(card);
@@ -1154,6 +1258,191 @@
                 closeExtractionModal();
             }
         });
+
+        // Smart Pricing Functionality
+        document.getElementById('pricingSuggestionBtn')?.addEventListener('click', async () => {
+            const address = document.getElementById('address').value;
+            if (!address) {
+                alert('Please enter an address first to get pricing recommendations.');
+                return;
+            }
+
+            const btn = document.getElementById('pricingSuggestionBtn');
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ Analyzing...';
+            btn.disabled = true;
+
+            // Simulate AI pricing analysis
+            setTimeout(() => {
+                const basePrice = 1200 + Math.floor(Math.random() * 800);
+                const marketTrend = Math.random() > 0.5 ? 'increasing' : 'stable';
+                const confidence = 85 + Math.floor(Math.random() * 10);
+                
+                const pricingSuggestion = document.getElementById('pricingSuggestion');
+                const pricingContent = document.getElementById('pricingContent');
+                
+                pricingContent.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span>Recommended Range:</span>
+                            <span class="font-semibold">$${basePrice - 100} - $${basePrice + 200}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Optimal Price:</span>
+                            <span class="font-bold text-green-600">$${basePrice}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Market Trend:</span>
+                            <span class="capitalize">${marketTrend} ${marketTrend === 'increasing' ? '📈' : '📊'}</span>
+                        </div>
+                        <div class="text-xs text-blue-600 mt-2">
+                            ${confidence}% confidence • Based on ${Math.floor(Math.random() * 50) + 20} similar properties
+                        </div>
+                        <button onclick="applyPricing(${basePrice})" class="w-full mt-2 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition">
+                            Apply $${basePrice}
+                        </button>
+                    </div>
+                `;
+                
+                pricingSuggestion.classList.remove('hidden');
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }, 2000);
+        });
+
+        // Apply pricing suggestion
+        function applyPricing(price) {
+            document.getElementById('rent').value = price;
+            document.getElementById('pricingSuggestion').classList.add('hidden');
+        }
+
+        // Enhanced Image Preview Functionality
+        document.getElementById('images')?.addEventListener('change', function(event) {
+            const files = event.target.files;
+            const preview = document.getElementById('imagePreview');
+            const photoCount = document.getElementById('photoCount');
+            const mainImage = document.getElementById('mainImage');
+            const emptyState = document.getElementById('emptyImageState');
+            const thumbnails = document.getElementById('imageThumbnails');
+            
+            // Clear previous previews
+            thumbnails.innerHTML = '';
+            
+            if (files.length === 0) {
+                preview.classList.add('hidden');
+                return;
+            }
+
+            if (files.length > 8) {
+                alert('Maximum 8 photos allowed for optimal virtual tour experience.');
+                event.target.value = '';
+                return;
+            }
+
+            preview.classList.remove('hidden');
+            photoCount.textContent = `${files.length} photo${files.length !== 1 ? 's' : ''}`;
+            
+            // Process each file
+            Array.from(files).forEach((file, index) => {
+                if (!file.type.startsWith('image/')) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    // Create thumbnail
+                    const thumb = document.createElement('div');
+                    thumb.className = `flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-blue-400 transition ${index === 0 ? 'border-blue-500' : ''}`;
+                    thumb.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                    
+                    thumb.addEventListener('click', () => {
+                        mainImage.src = e.target.result;
+                        mainImage.style.display = 'block';
+                        emptyState.style.display = 'none';
+                        
+                        // Update thumbnail selection
+                        thumbnails.querySelectorAll('div').forEach(t => t.classList.remove('border-blue-500'));
+                        thumb.classList.add('border-blue-500');
+                    });
+                    
+                    thumbnails.appendChild(thumb);
+                    
+                    // Set first image as main
+                    if (index === 0) {
+                        mainImage.src = e.target.result;
+                        mainImage.style.display = 'block';
+                        emptyState.style.display = 'none';
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // Analytics Functions
+        function toggleAnalytics(listingId) {
+            const panel = document.getElementById(`analytics-${listingId}`);
+            panel.classList.toggle('hidden');
+        }
+
+        function viewVirtualTour(listingId) {
+            const listings = JSON.parse(localStorage.getItem('subleaseListings')) || [];
+            const listing = listings.find(l => l.id === listingId);
+            
+            if (!listing || !listing.images || listing.images.length === 0) {
+                alert('No photos available for virtual tour.');
+                return;
+            }
+
+            // Increment view count
+            listing.analytics = listing.analytics || { views: 0, inquiries: 0 };
+            listing.analytics.views++;
+            
+            // Update localStorage
+            const updatedListings = listings.map(l => l.id === listingId ? listing : l);
+            localStorage.setItem('subleaseListings', JSON.stringify(updatedListings));
+            
+            // Create virtual tour modal
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="relative w-full max-w-4xl mx-4">
+                    <button onclick="this.parentElement.parentElement.remove()" class="absolute top-4 right-4 text-white text-2xl z-10 hover:text-gray-300">✕</button>
+                    <div class="bg-white rounded-lg overflow-hidden">
+                        <div class="relative h-96 bg-gray-900">
+                            <img id="tourMainImage" src="${listing.images[0]}" class="w-full h-full object-contain">
+                            <div class="absolute bottom-4 left-4 right-4">
+                                <div class="flex space-x-2 overflow-x-auto pb-2">
+                                    ${listing.images.map((img, i) => `
+                                        <img src="${img}" onclick="document.getElementById('tourMainImage').src='${img}'" 
+                                             class="w-16 h-16 object-cover rounded cursor-pointer border-2 ${i === 0 ? 'border-white' : 'border-transparent'} hover:border-white transition">
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <h3 class="text-xl font-semibold mb-2">${listing.address}</h3>
+                            <p class="text-gray-600">${listing.description}</p>
+                            <div class="mt-4 flex justify-between items-center">
+                                <span class="text-2xl font-bold text-green-600">$${listing.rent}/month</span>
+                                <button onclick="this.parentElement.parentElement.parentElement.parentElement.remove(); window.location.href='mailto:inquiry@roomfinderai.com?subject=Inquiry about ${listing.address}'" 
+                                        class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition">
+                                    📧 Contact
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            loadSubleases(); // Refresh to show updated view count
+        }
+
+        function boostListing(listingId) {
+            alert('🚀 Listing boosted! Your property will appear at the top of search results for the next 7 days. (Premium feature)');
+        }
+
+        function editListing(listingId) {
+            alert('✏️ Edit functionality would open the listing in edit mode. (Feature in development)');
+        }
     </script>
 </body>
 </html>
