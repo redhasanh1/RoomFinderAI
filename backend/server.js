@@ -1106,6 +1106,179 @@ app.get('/api/bank-info/:email', async (req, res) => {
     }
 });
 
+// API: Get user payment methods
+app.get('/api/payment-methods/:userId', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
+        }
+
+        const { userId } = req.params;
+        console.log('Fetching payment methods for user:', userId);
+        
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const { data: paymentMethods, error } = await supabase
+            .from('user_payment_methods')
+            .select('*')
+            .eq('user_id', userId)
+            .order('is_default', { ascending: false })
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching payment methods:', error);
+            return res.status(500).json({ error: 'Failed to fetch payment methods', details: error.message });
+        }
+
+        res.json({ paymentMethods: paymentMethods || [] });
+
+    } catch (error) {
+        console.error('Error in payment methods fetch endpoint:', error);
+        res.status(500).json({ error: 'Failed to fetch payment methods', details: error.message });
+    }
+});
+
+// API: Add payment method
+app.post('/api/payment-methods', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
+        }
+
+        const { 
+            user_id,
+            stripe_payment_method_id,
+            card_brand,
+            card_last4,
+            card_exp_month,
+            card_exp_year,
+            is_default
+        } = req.body;
+
+        console.log('Adding payment method for user:', user_id);
+        
+        if (!user_id || !stripe_payment_method_id || !card_brand || !card_last4 || !card_exp_month || !card_exp_year) {
+            return res.status(400).json({ error: 'Required fields are missing' });
+        }
+
+        // Insert new payment method
+        const { data: paymentMethod, error } = await supabase
+            .from('user_payment_methods')
+            .insert([{
+                user_id,
+                stripe_payment_method_id,
+                card_brand,
+                card_last4,
+                card_exp_month,
+                card_exp_year,
+                is_default: is_default || false
+            }])
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error adding payment method:', error);
+            return res.status(500).json({ error: 'Failed to add payment method', details: error.message });
+        }
+
+        console.log('Payment method added successfully:', paymentMethod.id);
+        res.json({ 
+            success: true, 
+            message: 'Payment method added successfully',
+            paymentMethod
+        });
+
+    } catch (error) {
+        console.error('Error in payment method add endpoint:', error);
+        res.status(500).json({ error: 'Failed to add payment method', details: error.message });
+    }
+});
+
+// API: Update default payment method
+app.put('/api/payment-methods/:id/default', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
+        }
+
+        const { id } = req.params;
+        const { user_id } = req.body;
+        
+        console.log('Setting default payment method:', id);
+        
+        if (!id || !user_id) {
+            return res.status(400).json({ error: 'Payment method ID and user ID are required' });
+        }
+
+        // Update the payment method to be default
+        const { data: paymentMethod, error } = await supabase
+            .from('user_payment_methods')
+            .update({ is_default: true })
+            .eq('id', id)
+            .eq('user_id', user_id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error updating default payment method:', error);
+            return res.status(500).json({ error: 'Failed to update default payment method', details: error.message });
+        }
+
+        console.log('Default payment method updated successfully');
+        res.json({ 
+            success: true, 
+            message: 'Default payment method updated successfully',
+            paymentMethod
+        });
+
+    } catch (error) {
+        console.error('Error in default payment method update endpoint:', error);
+        res.status(500).json({ error: 'Failed to update default payment method', details: error.message });
+    }
+});
+
+// API: Delete payment method
+app.delete('/api/payment-methods/:id', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
+        }
+
+        const { id } = req.params;
+        const { user_id } = req.body;
+        
+        console.log('Deleting payment method:', id);
+        
+        if (!id || !user_id) {
+            return res.status(400).json({ error: 'Payment method ID and user ID are required' });
+        }
+
+        // Delete the payment method
+        const { error } = await supabase
+            .from('user_payment_methods')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user_id);
+
+        if (error) {
+            console.error('Error deleting payment method:', error);
+            return res.status(500).json({ error: 'Failed to delete payment method', details: error.message });
+        }
+
+        console.log('Payment method deleted successfully');
+        res.json({ 
+            success: true, 
+            message: 'Payment method deleted successfully'
+        });
+
+    } catch (error) {
+        console.error('Error in payment method delete endpoint:', error);
+        res.status(500).json({ error: 'Failed to delete payment method', details: error.message });
+    }
+});
+
 // Test endpoint for Supabase connection
 app.get('/api/test-supabase', async (req, res) => {
     try {
