@@ -300,8 +300,28 @@ class AINegotiationEngine {
                 return true;
             }
             
-            console.log('❌ AI user not found, but skipping creation to avoid errors');
-            console.log('⚠️ Please manually create AI user with email:', aiEmail);
+            console.log('❌ AI user not found, creating AI user...');
+            
+            // Create AI user
+            const { data: newUser, error: createError } = await this.supabase
+                .from('users')
+                .insert({
+                    email: aiEmail,
+                    first_name: 'AI',
+                    last_name: 'Negotiator',
+                    password: 'dummy-password-not-used'
+                })
+                .select()
+                .single();
+
+            if (createError) {
+                console.error('❌ Error creating AI user:', createError);
+                console.log('⚠️ Continuing without AI user - messages will use fallback email');
+                this.aiUserInitialized = true;
+                return true;
+            }
+
+            console.log('✅ AI user created successfully:', newUser);
             this.aiUserInitialized = true;
             return true;
 
@@ -1965,6 +1985,9 @@ class AINegotiationEngine {
             
             const senderEmail = 'ai-negotiator@roomfinder.com';
             
+            console.log('📤 Attempting to send message as:', senderEmail);
+            console.log('📤 Message content preview:', message.substring(0, 50) + '...');
+            
             const { error } = await this.supabase
                 .from('messages')
                 .insert({
@@ -1974,7 +1997,8 @@ class AINegotiationEngine {
                 });
 
             if (error) {
-                console.error('Error sending negotiation message with AI email:', error);
+                console.error('❌ Error sending negotiation message with AI email:', error);
+                console.error('❌ Error details:', error.message);
                 
                 // Fallback: try using the user's email instead
                 console.log('Retrying with user email...');
@@ -2012,9 +2036,12 @@ class AINegotiationEngine {
                     table: 'messages'
                 }, async (payload) => {
                     const newMessage = payload.new;
-                    console.log('🔔 [AI NEGOTIATION] New message received:', newMessage);
+                    console.log('🔔 [AI NEGOTIATION] ========== NEW MESSAGE RECEIVED ==========');
+                    console.log('🔔 Message ID:', newMessage.id);
                     console.log('🔔 Message sender:', newMessage.sender_email);
                     console.log('🔔 Message content:', newMessage.content);
+                    console.log('🔔 Conversation ID:', newMessage.conversation_id);
+                    console.log('🔔 Created at:', newMessage.created_at);
                     
                     // Check if this is a reply to an AI negotiation
                     if (newMessage.sender_email !== 'ai-negotiator@roomfinder.com') {
@@ -2044,31 +2071,55 @@ class AINegotiationEngine {
                         // If not directly AI conversation, check if AI has sent messages in this conversation
                         if (!isAIConversation && conversation) {
                             console.log('📨 Checking for AI messages in this conversation...');
-                            const { data: aiMessages } = await this.supabase
+                            console.log('📨 Query: Looking for sender_email = ai-negotiator@roomfinder.com OR content containing "AI Negotiator on behalf"');
+                            
+                            const { data: aiMessages, error: aiMsgError } = await this.supabase
                                 .from('messages')
                                 .select('*')
                                 .eq('conversation_id', conversation.id)
                                 .or('sender_email.eq.ai-negotiator@roomfinder.com,content.ilike.%AI Negotiator on behalf%')
                                 .limit(5);
                             
+                            if (aiMsgError) {
+                                console.log('📨 Error querying AI messages:', aiMsgError);
+                            }
+                            
+                            console.log('📨 AI Messages query result:', aiMessages);
+                            
                             if (aiMessages && aiMessages.length > 0) {
-                                console.log('📨 Found AI messages in conversation:', aiMessages.length);
+                                console.log('📨 ✅ Found AI messages in conversation:', aiMessages.length);
+                                aiMessages.forEach((msg, i) => {
+                                    console.log(`📨   ${i+1}. From: ${msg.sender_email} | Content: "${msg.content.substring(0, 50)}..."`);
+                                });
                                 isAIConversation = true;
                             } else {
                                 // Fallback: Check if this looks like a rental negotiation
-                                console.log('📨 No AI messages found, checking for rental negotiation patterns...');
-                                const { data: allMessages } = await this.supabase
+                                console.log('📨 ❌ No AI messages found, checking for rental negotiation patterns...');
+                                const { data: allMessages, error: allMsgError } = await this.supabase
                                     .from('messages')
-                                    .select('content')
+                                    .select('content, sender_email')
                                     .eq('conversation_id', conversation.id)
                                     .limit(10);
+                                
+                                if (allMsgError) {
+                                    console.log('📨 Error querying all messages:', allMsgError);
+                                }
+                                
+                                console.log('📨 All messages in conversation:', allMessages);
                                 
                                 const conversationText = (allMessages || []).map(m => m.content).join(' ').toLowerCase();
                                 const rentalKeywords = ['apartment', 'bedroom', 'interested', 'qualified tenant', 'ready to move', 'discuss terms', 'rent', 'property', 'house', 'condo', 'lease'];
                                 
-                                if (rentalKeywords.some(keyword => conversationText.includes(keyword))) {
-                                    console.log('📨 Detected rental negotiation content, treating as AI conversation');
+                                console.log('📨 Conversation text for analysis:', conversationText);
+                                console.log('📨 Looking for keywords:', rentalKeywords);
+                                
+                                const matchedKeywords = rentalKeywords.filter(keyword => conversationText.includes(keyword));
+                                
+                                if (matchedKeywords.length > 0) {
+                                    console.log('📨 ✅ Detected rental negotiation content! Matched keywords:', matchedKeywords);
                                     isAIConversation = true;
+                                } else {
+                                    console.log('📨 ❌ No rental keywords found in conversation');
                                 }
                             }
                         }
