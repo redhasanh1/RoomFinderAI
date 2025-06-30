@@ -966,7 +966,8 @@ class AINegotiationEngine {
         }
         
         // First check for simple acceptance patterns IMMEDIATELY
-        const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)$/i.test(simpleReply);
+        const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)$/i.test(simpleReply) ||
+                                  /^(i can discuss|can discuss|i'm open|open to|let's discuss|we can discuss)$/i.test(simpleReply);
         
         if (isSimpleAcceptance) {
             console.log('🎯 IMMEDIATE ACCEPTANCE DETECTED:', simpleReply);
@@ -2053,13 +2054,40 @@ class AINegotiationEngine {
                             if (aiMessages && aiMessages.length > 0) {
                                 console.log('📨 Found AI messages in conversation:', aiMessages.length);
                                 isAIConversation = true;
+                            } else {
+                                // Fallback: Check if this looks like a rental negotiation
+                                console.log('📨 No AI messages found, checking for rental negotiation patterns...');
+                                const { data: allMessages } = await this.supabase
+                                    .from('messages')
+                                    .select('content')
+                                    .eq('conversation_id', conversation.id)
+                                    .limit(10);
+                                
+                                const conversationText = (allMessages || []).map(m => m.content).join(' ').toLowerCase();
+                                const rentalKeywords = ['apartment', 'bedroom', 'interested', 'qualified tenant', 'ready to move', 'discuss terms', 'rent', 'property', 'house', 'condo', 'lease'];
+                                
+                                if (rentalKeywords.some(keyword => conversationText.includes(keyword))) {
+                                    console.log('📨 Detected rental negotiation content, treating as AI conversation');
+                                    isAIConversation = true;
+                                }
                             }
                         }
                         
                         console.log('📨 Is AI conversation?', isAIConversation);
+                        console.log('📨 DEBUG - Conversation details:', {
+                            id: conversation?.id,
+                            sender: conversation?.sender_email,
+                            receiver: conversation?.receiver_email,
+                            listing_id: conversation?.listing_id,
+                            message_content: newMessage.content,
+                            message_sender: newMessage.sender_email
+                        });
                         
                         if (!isAIConversation) {
                             console.log('📨 Not an AI negotiation conversation, skipping');
+                            console.log('📨 TROUBLESHOOT: To make this an AI conversation, ensure:');
+                            console.log('   - Initial message contains rental keywords (apartment, bedroom, etc.)');
+                            console.log('   - OR conversation involves ai-negotiator@roomfinder.com');
                             return;
                         }
 
