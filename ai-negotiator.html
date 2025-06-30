@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="./ai-chat.js?v=8"></script>
-    <script src="./ai-negotiation.js?v=2"></script>
+    <script src="./ai-negotiation.js?v=3"></script>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -352,15 +352,29 @@
                         <p>The app will continue to work with limited functionality.</p>
                     </div>
                 `;
-                // Create a mock supabase object so the app doesn't crash
+                // Create a more robust mock supabase object for offline functionality
+                console.log('🔧 Creating mock Supabase client for limited functionality...');
+                const mockQuery = {
+                    select: () => mockQuery,
+                    insert: () => mockQuery,
+                    eq: () => mockQuery,
+                    or: () => mockQuery,
+                    lte: () => mockQuery,
+                    neq: () => mockQuery,
+                    gte: () => mockQuery,
+                    in: () => mockQuery,
+                    order: () => mockQuery,
+                    limit: () => mockQuery,
+                    single: () => Promise.resolve({ data: null, error: new Error('Supabase offline mode') }),
+                    maybeSingle: () => Promise.resolve({ data: null, error: new Error('Supabase offline mode') }),
+                    then: () => Promise.resolve({ data: [], error: new Error('Supabase offline mode') })
+                };
+                
                 supabase = {
-                    from: () => ({
-                        select: () => Promise.resolve({ data: [], error: new Error('Supabase not available') }),
-                        insert: () => Promise.resolve({ error: new Error('Supabase not available') }),
-                        eq: () => this,
-                        or: () => this,
-                        lte: () => this,
-                        neq: () => this
+                    from: () => mockQuery,
+                    channel: () => ({
+                        on: () => ({ subscribe: () => {} }),
+                        subscribe: () => {}
                     })
                 };
             }
@@ -377,14 +391,36 @@
             aiNegotiator = new AIChatHandler(supabase, configData);
             aiNegotiator.init(currentUser);
 
-            // Initialize AI Negotiation Engine
-            console.log('🔧 Creating AINegotiationEngine instance...');
+            // Initialize AI Negotiation Engine with detailed debugging
+            console.log('🔧 Attempting to create AINegotiationEngine instance...');
+            console.log('🔧 AINegotiationEngine class available?', typeof AINegotiationEngine !== 'undefined');
+            console.log('🔧 Supabase object type:', typeof supabase);
+            console.log('🔧 Config data available?', !!configData);
+            
             if (typeof AINegotiationEngine !== 'undefined') {
-                aiNegotiationEngine = new AINegotiationEngine(supabase, configData);
-                aiNegotiator.setNegotiationEngine(aiNegotiationEngine);
-                console.log('✅ AI Negotiation Engine initialized');
+                try {
+                    console.log('🔧 Calling AINegotiationEngine constructor...');
+                    aiNegotiationEngine = new AINegotiationEngine(supabase, configData);
+                    
+                    console.log('🔧 Setting negotiation engine in AI chat...');
+                    aiNegotiator.setNegotiationEngine(aiNegotiationEngine);
+                    
+                    console.log('🔧 Testing aiNegotiationEngine object...');
+                    console.log('🔧 aiNegotiationEngine type:', typeof aiNegotiationEngine);
+                    console.log('🔧 aiNegotiationEngine methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(aiNegotiationEngine)));
+                    
+                    // Make it globally accessible for testing
+                    window.aiNegotiationEngine = aiNegotiationEngine;
+                    
+                    console.log('✅ AI Negotiation Engine initialized successfully');
+                    console.log('✅ AI Negotiation Engine available globally as window.aiNegotiationEngine');
+                } catch (engineError) {
+                    console.error('❌ Error creating AI Negotiation Engine:', engineError);
+                    aiNegotiationEngine = null;
+                }
             } else {
-                console.warn('⚠️ AINegotiationEngine class not found - negotiation features disabled');
+                console.error('❌ AINegotiationEngine class not found in global scope');
+                console.error('❌ Available global objects:', Object.keys(window).filter(key => key.includes('AI')));
             }
 
             // Add a small delay to ensure everything is loaded
@@ -983,9 +1019,23 @@
 
         // Test OpenAI API specifically
         async function testOpenAI() {
-            if (!aiNegotiationEngine) {
-                console.error('❌ AI Negotiation Engine not initialized');
-                alert('AI Negotiation Engine not available');
+            // Try multiple ways to access the engine
+            let engine = aiNegotiationEngine || window.aiNegotiationEngine;
+            
+            console.log('🧪 Testing OpenAI - Checking engine availability...');
+            console.log('🧪 aiNegotiationEngine:', typeof aiNegotiationEngine);
+            console.log('🧪 window.aiNegotiationEngine:', typeof window.aiNegotiationEngine);
+            console.log('🧪 Selected engine:', typeof engine);
+            
+            if (!engine) {
+                console.error('❌ AI Negotiation Engine not available in any form');
+                aiNegotiator.appendMessage('AI', '❌ AI Negotiation Engine not available. Check console for debugging info.', 'left');
+                
+                // Show debugging info
+                console.log('🔍 Debugging info:');
+                console.log('  - AINegotiationEngine class available?', typeof AINegotiationEngine !== 'undefined');
+                console.log('  - aiNegotiationEngine variable:', aiNegotiationEngine);
+                console.log('  - window.aiNegotiationEngine:', window.aiNegotiationEngine);
                 return;
             }
             
@@ -993,7 +1043,7 @@
             aiNegotiator.appendMessage('AI', '🤖 Testing OpenAI API connectivity...', 'left', true);
             
             try {
-                const success = await aiNegotiationEngine.testOpenAIConnectivity();
+                const success = await engine.testOpenAIConnectivity();
                 aiNegotiator.removeTypingIndicator();
                 
                 if (success) {
