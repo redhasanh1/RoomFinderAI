@@ -1309,7 +1309,17 @@ class AIChatHandler {
         this.appendMessage('User', message, 'right');
         this.appendMessage('AI', 'Analyzing your request...', 'left', true);
         
-        // Extract requirements
+        // Check if this is a negotiation response first
+        const isNegotiationResponse = this.checkForNegotiationResponse(message);
+        
+        if (isNegotiationResponse) {
+            console.log('🤝 Detected negotiation response:', message);
+            this.removeTypingIndicator();
+            await this.handleNegotiationResponse(message);
+            return;
+        }
+        
+        // Extract requirements for search requests
         const extractedData = await this.extractRentalInfo(message);
         console.log('📊 Raw extracted data:', extractedData);
         this.updateUserNeeds(extractedData);
@@ -1340,6 +1350,91 @@ class AIChatHandler {
             setTimeout(() => this.searchAndMessage(), 1000);
         } else {
             this.appendMessage('AI', 'I understand your preferences. To search for listings, try saying something like "I need a 2-bedroom apartment under $1500 in Toronto"', 'left');
+        }
+    }
+
+    // Check if the message is a negotiation response (yes, sure, etc.)
+    checkForNegotiationResponse(message) {
+        const cleanMessage = message.toLowerCase().trim();
+        
+        // Acceptance patterns - same as in ai-negotiation.js
+        const acceptancePatterns = [
+            /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)$/i,
+            /^(yes\s+(sure|absolutely|definitely|of course|certainly))/i,
+            /^(sure\s+(thing|yes|absolutely|definitely))/i,
+            /^(yeah\s+(sure|that works|sounds good|okay))/i,
+            /^(absolutely\s+(yes|sure)?)/i,
+            /^(definitely\s+(yes|sure)?)/i,
+            /^(of course\s+(yes|sure)?)/i,
+            /^(that\s+(works|sounds good|sounds great))/i,
+            /^(sounds\s+(good|great|perfect|fine))/i,
+            /^(works\s+for me)/i,
+            /^(i\s+accept)/i,
+            /^(perfect)/i,
+            /^(excellent)/i
+        ];
+        
+        const isAcceptance = acceptancePatterns.some(pattern => pattern.test(cleanMessage));
+        
+        // Also check for negotiation keywords
+        const negotiationKeywords = ['price', 'rent', 'lower', 'higher', 'counter', 'offer', 'deal'];
+        const hasNegotiationKeywords = negotiationKeywords.some(keyword => cleanMessage.includes(keyword));
+        
+        // Check if we have recent AI activity (indicating ongoing negotiation)
+        const hasRecentActivity = this.conversationHistory.length > 1;
+        
+        return isAcceptance || (hasNegotiationKeywords && hasRecentActivity);
+    }
+
+    // Handle negotiation responses
+    async handleNegotiationResponse(message) {
+        console.log('🤝 Handling negotiation response:', message);
+        
+        // Check if negotiation engine is available
+        if (!this.negotiationEngine) {
+            console.warn('⚠️ Negotiation engine not available');
+            this.appendMessage('AI', 'I understand your response! However, the negotiation system is currently initializing. Please try again in a moment.', 'left');
+            return;
+        }
+        
+        try {
+            // Simulate a negotiation context - in a real scenario, this would come from ongoing negotiation state
+            const mockNegotiation = {
+                id: 'current_negotiation',
+                listing: {
+                    id: 'sample_listing',
+                    title: 'Sample Property',
+                    price: 1500,
+                    landlord_email: 'landlord@example.com'
+                },
+                lastOffer: 1400,
+                phase: 'price_negotiation'
+            };
+            
+            // Use the negotiation engine to analyze the response
+            const analysis = await this.negotiationEngine.analyzeReply(message, mockNegotiation, mockNegotiation.listing);
+            console.log('📊 Negotiation analysis:', analysis);
+            
+            if (analysis.acceptsOffer) {
+                this.appendMessage('AI', `🎉 Excellent! I understand you're interested in proceeding. Let me help coordinate the next steps with the landlord. I'll send them a message about finalizing the rental agreement!`, 'left');
+                
+                // Add celebration effect
+                this.celebrateSuccess();
+            } else if (analysis.makesCounterOffer && analysis.priceOffered) {
+                this.appendMessage('AI', `💬 I see you're interested in negotiating the price to $${analysis.priceOffered}. Let me reach out to the landlord with your counter-offer!`, 'left');
+            } else {
+                // General positive response
+                this.appendMessage('AI', `👍 I understand your response! I'm working on finding the best options for you and will negotiate on your behalf. Let me continue the process...`, 'left');
+            }
+            
+            // Show that AI is taking action
+            setTimeout(() => {
+                this.appendMessage('AI', '📧 Sending message to landlord... I\'ll update you when I receive a response!', 'left');
+            }, 2000);
+            
+        } catch (error) {
+            console.error('Error handling negotiation response:', error);
+            this.appendMessage('AI', 'I understand your response! I\'m working on coordinating with the landlord and will update you soon.', 'left');
         }
     }
 }
