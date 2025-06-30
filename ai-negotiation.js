@@ -1,7 +1,8 @@
 // AI Negotiation Engine
 // Handles real-time negotiation with landlords using market data and OpenAI
 
-const AILearningSystem = require('./ai-learning');
+// Note: AILearningSystem temporarily disabled for browser compatibility
+// const AILearningSystem = require('./ai-learning');
 
 class AINegotiationEngine {
     constructor(supabase, config) {
@@ -14,8 +15,9 @@ class AINegotiationEngine {
         this.responseTemplates = this.initializeResponseTemplates();
         
         // Initialize AI Learning System
-        this.learningSystem = new AILearningSystem(this.supabase);
-        this.learningEnabled = true;
+        // this.learningSystem = new AILearningSystem(this.supabase);
+        this.learningSystem = null; // Temporarily disabled for browser compatibility
+        this.learningEnabled = false;
         
         // Validate OpenAI configuration
         this.validateOpenAIConfig();
