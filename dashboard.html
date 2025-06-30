@@ -718,8 +718,7 @@
 
                 availablePlansContainer.innerHTML = plans.map(plan => {
                     const isCurrentPlan = currentSubscription && 
-                        currentSubscription.plan_type === plan.name.toLowerCase() && 
-                        hasActiveSubscription;
+                        currentSubscription.plan_type === plan.name.toLowerCase();
                     
                     const isCancelled = currentSubscription && 
                         currentSubscription.status === 'canceled' && 
@@ -728,6 +727,10 @@
                     const isPendingCancellation = isCancelled && 
                         currentSubscription.end_date && 
                         new Date(currentSubscription.end_date) > new Date();
+                        
+                    const isActive = currentSubscription && 
+                        currentSubscription.status === 'active' && 
+                        currentSubscription.plan_type === plan.name.toLowerCase();
 
                     return `
                         <div class="glass-card p-6 relative ${plan.recommended ? 'ring-2 ring-blue-500' : ''}">
@@ -755,16 +758,23 @@
                             <div class="space-y-2">
                                 ${isCurrentPlan ? `
                                     <div class="w-full text-center">
-                                        <span class="inline-block w-full py-2 px-4 bg-green-100 text-green-800 rounded-lg font-medium">
-                                            Current Plan
-                                        </span>
                                         ${isPendingCancellation ? `
+                                            <span class="inline-block w-full py-2 px-4 bg-orange-100 text-orange-800 rounded-lg font-medium">
+                                                Current Plan - Cancelling
+                                            </span>
                                             <p class="text-orange-600 text-sm mt-2">Ending on ${new Date(currentSubscription.end_date).toLocaleDateString()}</p>
-                                        ` : `
+                                        ` : isActive ? `
+                                            <span class="inline-block w-full py-2 px-4 bg-green-100 text-green-800 rounded-lg font-medium">
+                                                Current Plan
+                                            </span>
                                             <button onclick="cancelSubscriptionForPlan('${plan.name.toLowerCase()}')" 
                                                     class="w-full mt-2 py-2 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition duration-200">
                                                 Cancel Subscription
                                             </button>
+                                        ` : `
+                                            <span class="inline-block w-full py-2 px-4 bg-gray-100 text-gray-800 rounded-lg font-medium">
+                                                Current Plan
+                                            </span>
                                         `}
                                     </div>
                                 ` : `
@@ -812,8 +822,15 @@
 
                 if (response.ok) {
                     alert(result.message);
-                    // Reload subscription info to show updated status
-                    loadSubscriptionInfo();
+                    // Force reload subscription info multiple times to ensure color update
+                    console.log('Reloading subscription info after cancellation...');
+                    await loadSubscriptionInfo();
+                    
+                    // Add a small delay and reload again to ensure backend change is reflected
+                    setTimeout(async () => {
+                        console.log('Second reload after cancellation...');
+                        await loadSubscriptionInfo();
+                    }, 1000);
                 } else {
                     alert('Failed to cancel subscription: ' + (result.error || 'Unknown error'));
                 }
