@@ -13,9 +13,22 @@ class AINegotiationEngine {
         this.conversationalMemory = new Map(); // Track used responses per negotiation
         this.responseTemplates = this.initializeResponseTemplates();
         
-        // Initialize AI Learning System
-        this.learningSystem = new AILearningSystem(this.supabase);
-        this.learningEnabled = true;
+        // Initialize AI Learning System (optional, may not be available in browser)
+        try {
+            if (typeof AILearningSystem !== 'undefined') {
+                this.learningSystem = new AILearningSystem(this.supabase);
+                this.learningEnabled = true;
+                console.log('✅ AI Learning System initialized');
+            } else {
+                console.log('ℹ️ AI Learning System not available (browser mode)');
+                this.learningSystem = null;
+                this.learningEnabled = false;
+            }
+        } catch (error) {
+            console.warn('⚠️ AI Learning System initialization failed:', error.message);
+            this.learningSystem = null;
+            this.learningEnabled = false;
+        }
         
         // Conversation state management
         this.conversationStates = new Map(); // Track conversation phases
@@ -2349,13 +2362,15 @@ class AINegotiationEngine {
         let templateIndex;
         
         // Use AI Learning System for intelligent template selection
-        if (this.learningEnabled) {
+        if (this.learningEnabled && this.learningSystem) {
             try {
                 const context = await this.buildLearningContext('counter_offer_acceptance', negotiation, listing);
                 const optimalTemplate = await this.learningSystem.getOptimalTemplate(context);
                 
-                templateIndex = optimalTemplate.templateId;
-                selectedTemplate = templates[templateIndex];
+                if (optimalTemplate && optimalTemplate.templateId) {
+                    templateIndex = optimalTemplate.templateId;
+                    selectedTemplate = templates[templateIndex];
+                }
                 
                 console.log('🧠 AI Learning selected template:', templateIndex, 'Reason:', optimalTemplate.reason);
             } catch (error) {
@@ -4804,8 +4819,10 @@ class AINegotiationEngine {
                 created_at: new Date().toISOString()
             };
 
-            await this.learningSystem.processConversation(conversationData);
-            console.log('✅ Recorded negotiation outcome for learning system');
+            if (this.learningSystem) {
+                await this.learningSystem.processConversation(conversationData);
+                console.log('✅ Recorded negotiation outcome for learning system');
+            }
         } catch (error) {
             console.error('❌ Failed to record negotiation outcome:', error);
         }
@@ -4868,12 +4885,18 @@ class AINegotiationEngine {
         }
 
         try {
-            const context = await this.buildLearningContext(strategyType, negotiation, listing);
-            const optimalTemplate = await this.learningSystem.getOptimalTemplate(context);
+            if (this.learningSystem) {
+                const context = await this.buildLearningContext(strategyType, negotiation, listing);
+                const optimalTemplate = await this.learningSystem.getOptimalTemplate(context);
+                
+                if (optimalTemplate && optimalTemplate.templateId) {
+                    console.log(`🧠 Learning system selected template ${optimalTemplate.templateId} for ${strategyType}: ${optimalTemplate.reason}`);
+                    return templates[optimalTemplate.templateId] || templates[0];
+                }
+            }
             
-            console.log(`🧠 Learning system selected template ${optimalTemplate.templateId} for ${strategyType}: ${optimalTemplate.reason}`);
-            
-            return templates[optimalTemplate.templateId] || templates[0];
+            // Fallback to random selection if learning system not available
+            return templates[Math.floor(Math.random() * templates.length)];
         } catch (error) {
             console.error(`❌ Template selection failed for ${strategyType}, using random:`, error);
             return templates[Math.floor(Math.random() * templates.length)];
@@ -4885,7 +4908,11 @@ class AINegotiationEngine {
         if (!this.learningEnabled) return null;
 
         try {
-            return await this.learningSystem.getPerformanceMetrics();
+            if (this.learningSystem) {
+                return await this.learningSystem.getPerformanceMetrics();
+            } else {
+                return { enabled: false, message: 'Learning system not available' };
+            }
         } catch (error) {
             console.error('Failed to get learning metrics:', error);
             return null;
@@ -4897,9 +4924,14 @@ class AINegotiationEngine {
         if (!this.learningEnabled) return;
 
         try {
-            const result = await this.learningSystem.updateLearning();
-            console.log('🔄 Learning system optimization completed:', result);
-            return result;
+            if (this.learningSystem) {
+                const result = await this.learningSystem.updateLearning();
+                console.log('🔄 Learning system optimization completed:', result);
+                return result;
+            } else {
+                console.log('ℹ️ Learning system not available for optimization');
+                return { enabled: false };
+            }
         } catch (error) {
             console.error('Learning system optimization failed:', error);
         }

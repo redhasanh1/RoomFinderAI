@@ -15,7 +15,8 @@
       "Bash(npm run lint)",
       "Bash(npm run:*)",
       "Bash(git fetch:*)",
-      "Bash(timeout 30 git push origin hasan)"
+      "Bash(timeout 30 git push origin hasan)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }
