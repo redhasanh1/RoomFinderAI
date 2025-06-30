@@ -10,7 +10,10 @@
       "Bash(grep:*)",
       "Bash(find:*)",
       "Bash(git pull:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run:*)"
     ],
     "deny": []
   }
