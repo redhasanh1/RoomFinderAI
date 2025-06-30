@@ -32,11 +32,19 @@ try {
 
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
-const { DocumentIntelligenceClient, AzureKeyCredential } = require('@azure-rest/ai-document-intelligence');
-const { createFaceClient, AzureKeyCredential: FaceCredential } = require('@azure-rest/ai-vision-face');
+const { DocumentAnalysisClient, AzureKeyCredential } = require('@azure/ai-form-recognizer');
+const { FaceClient } = require('@azure/cognitiveservices-face');
+const { CognitiveServicesCredentials } = require('@azure/ms-rest-azure-js');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Log environment variables immediately at startup
+console.log('🚀 Server starting - Environment variable check:');
+console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING');
+console.log('- AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:', process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'MISSING');
+console.log('- AZURE_FACE_KEY:', process.env.AZURE_FACE_KEY ? `Present (${process.env.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING');
+console.log('- AZURE_FACE_ENDPOINT:', process.env.AZURE_FACE_ENDPOINT || 'MISSING');
 
 // Initialize Stripe with error handling
 let stripe;
@@ -74,11 +82,11 @@ try {
     console.log('- ENDPOINT value:', config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'undefined');
     
     if (config.AZURE_DOCUMENT_INTELLIGENCE_KEY && config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
-        documentClient = DocumentIntelligenceClient(
+        documentClient = new DocumentAnalysisClient(
             config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
             new AzureKeyCredential(config.AZURE_DOCUMENT_INTELLIGENCE_KEY)
         );
-        console.log('✅ Azure Document Intelligence initialized successfully');
+        console.log('✅ Azure Document Analysis initialized successfully');
     } else {
         console.log('⚠️ Azure Document Intelligence not initialized - missing credentials');
         console.log('  - KEY missing:', !config.AZURE_DOCUMENT_INTELLIGENCE_KEY);
@@ -86,7 +94,8 @@ try {
     }
 } catch (error) {
     console.log('❌ Azure Document Intelligence initialization failed:', error.message);
-    console.log('❌ Full error:', error);
+    console.log('❌ Full error details:', error);
+    console.log('❌ Stack trace:', error.stack);
 }
 
 // Initialize Azure Face client
@@ -99,10 +108,8 @@ try {
     console.log('- ENDPOINT value:', config.AZURE_FACE_ENDPOINT || 'undefined');
     
     if (config.AZURE_FACE_KEY && config.AZURE_FACE_ENDPOINT) {
-        faceClient = createFaceClient(
-            config.AZURE_FACE_ENDPOINT,
-            new FaceCredential(config.AZURE_FACE_KEY)
-        );
+        const credentials = new CognitiveServicesCredentials(config.AZURE_FACE_KEY);
+        faceClient = new FaceClient(credentials, config.AZURE_FACE_ENDPOINT);
         console.log('✅ Azure Face API initialized successfully');
     } else {
         console.log('⚠️ Azure Face API not initialized - missing credentials');
@@ -111,7 +118,8 @@ try {
     }
 } catch (error) {
     console.log('❌ Azure Face API initialization failed:', error.message);
-    console.log('❌ Full error:', error);
+    console.log('❌ Full error details:', error);
+    console.log('❌ Stack trace:', error.stack);
 }
 
 // Configure multer for file uploads
@@ -824,14 +832,46 @@ app.get('/api/subscription/:email', async (req, res) => {
             return res.status(400).json({ error: 'Email is required' });
         }
 
-        const { data: subscription, error } = await supabase
+        // Get the most recent subscription regardless of status
+        const { data: allSubs, error: allError } = await supabase
             .from('subscriptions')
             .select('*')
             .eq('email', email)
-            .in('status', ['active', 'canceled'])
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
+            .order('created_at', { ascending: false });
+
+        if (allError) {
+            console.error('Error fetching subscriptions:', allError);
+            return res.status(500).json({ error: 'Failed to fetch subscription', details: allError.message });
+        }
+
+        let subscription = null;
+        let error = null;
+
+        if (allSubs && allSubs.length > 0) {
+            // Prioritize active subscriptions first
+            const activeSub = allSubs.find(sub => sub.status === 'active');
+            
+            if (activeSub) {
+                subscription = activeSub;
+            } else {
+                // If no active subscription, find the most recent canceled subscription
+                // that hasn't ended yet (pending cancellation)
+                const pendingCancellationSub = allSubs.find(sub => 
+                    sub.status === 'canceled' && 
+                    sub.end_date && 
+                    new Date(sub.end_date) > new Date()
+                );
+                
+                if (pendingCancellationSub) {
+                    subscription = pendingCancellationSub;
+                } else {
+                    // No active or pending cancellation subscriptions
+                    error = { code: 'PGRST116' };
+                }
+            }
+        } else {
+            error = { code: 'PGRST116' };
+        }
 
         console.log('Supabase subscription query result:', { subscription, error });
 
@@ -855,47 +895,70 @@ app.post('/api/subscription/cancel', async (req, res) => {
             return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
         }
 
-        const { email } = req.body;
+        const { email, subscription_id, cancellation_reason } = req.body;
         console.log('Canceling subscription for email:', email);
         
         if (!email) {
             return res.status(400).json({ error: 'Email is required' });
         }
 
-        // Update subscription status to 'canceled'
-        const { data: subscription, error } = await supabase
+        // Get current subscription
+        const { data: currentSub, error: fetchError } = await supabase
             .from('subscriptions')
-            .update({ status: 'canceled' })
+            .select('*')
             .eq('email', email)
             .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+            
+        if (fetchError || !currentSub) {
+            console.error('Subscription not found:', fetchError);
+            return res.status(404).json({ error: 'Subscription not found' });
+        }
+        
+        // Calculate cancellation effective date (end of current billing period)
+        const startDate = new Date(currentSub.start_date);
+        const cancelEffectiveDate = new Date(startDate);
+        cancelEffectiveDate.setMonth(cancelEffectiveDate.getMonth() + 1);
+        
+        // For now, since the schema might not have the new columns, let's update just the status
+        // and store cancellation info in a way that's compatible with current schema
+        const updateData = {
+            status: 'canceled', // Use existing status value
+            end_date: cancelEffectiveDate.toISOString() // Use existing end_date field
+        };
+        
+        // Use fallback approach with existing schema fields
+        // Mark as canceled and set end_date to the cancellation effective date
+        const { data: subscription, error } = await supabase
+            .from('subscriptions')
+            .update({
+                status: 'canceled',
+                end_date: cancelEffectiveDate.toISOString()
+            })
+            .eq('id', currentSub.id)
+            .eq('email', email)
             .select()
             .single();
 
         if (error) {
             console.error('Error canceling subscription:', error);
-            return res.status(500).json({ error: 'Failed to cancel subscription', details: error.message });
+            return res.status(500).json({ error: 'Failed to schedule subscription cancellation', details: error.message });
         }
-
-        if (!subscription) {
-            return res.status(404).json({ error: 'No active subscription found to cancel' });
-        }
-
-        // Log subscription cancellation activity
-        await logUserActivity(email, 'subscription_renewed', `Canceled ${subscription.plan_type} subscription`, {
-            plan_type: subscription.plan_type,
-            canceled_at: new Date().toISOString(),
-            subscription_id: subscription.id
-        });
-
-        console.log('Subscription canceled successfully:', subscription.id);
-        res.json({ 
+        
+        console.log('Subscription cancelled successfully:', subscription.id, 'effective date:', cancelEffectiveDate.toISOString());
+        
+        return res.json({ 
             success: true, 
-            message: 'Subscription canceled successfully. It will remain active until the next billing cycle.',
-            subscription: subscription 
+            message: `Subscription cancelled. You'll continue to have access until ${cancelEffectiveDate.toLocaleDateString()}`,
+            subscription: subscription,
+            cancellation_effective_date: cancelEffectiveDate.toISOString()
         });
+        
     } catch (error) {
-        console.error('Error in cancel subscription endpoint:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Error in /api/subscription/cancel:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -1081,8 +1144,16 @@ function formatTimeAgo(date) {
 // API: Upload and verify government ID
 app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) => {
     try {
+        // Try to reinitialize Azure clients if they're not available
+        reinitializeAzureClients();
+        
         if (!documentClient) {
-            return res.status(503).json({ error: 'ID verification service not available - Azure Document Intelligence not configured' });
+            console.log('⚠️ ID verification attempted but Azure Document Intelligence not configured');
+            return res.status(503).json({ 
+                error: 'ID verification service not available',
+                message: 'The ID verification service is currently not configured. Please contact support.',
+                serviceAvailable: false
+            });
         }
 
         if (!req.file) {
@@ -1187,8 +1258,16 @@ app.post('/api/verify/face-match', upload.fields([
     { name: 'facePhoto', maxCount: 1 }
 ]), async (req, res) => {
     try {
+        // Try to reinitialize Azure clients if they're not available
+        reinitializeAzureClients();
+        
         if (!faceClient) {
-            return res.status(503).json({ error: 'Face verification service not available - Azure Face API not configured' });
+            console.log('⚠️ Face verification attempted but Azure Face API not configured');
+            return res.status(503).json({ 
+                error: 'Face verification service not available',
+                message: 'The face verification service is currently not configured. Please contact support.',
+                serviceAvailable: false
+            });
         }
 
         if (!req.files || !req.files.idDocument || !req.files.facePhoto) {
@@ -1206,33 +1285,18 @@ app.post('/api/verify/face-match', upload.fields([
         const faceFile = req.files.facePhoto[0];
 
         // Detect faces in both images
-        const [idFaceResponse, userFaceResponse] = await Promise.all([
-            faceClient.path('/detect').post({
-                body: idFile.buffer,
-                contentType: idFile.mimetype,
-                queryParameters: {
-                    returnFaceId: true,
-                    returnFaceLandmarks: false,
-                    returnFaceAttributes: false
-                }
+        const [idFaces, userFaces] = await Promise.all([
+            faceClient.face.detectWithStream(idFile.buffer, {
+                returnFaceId: true,
+                returnFaceLandmarks: false,
+                returnFaceAttributes: []
             }),
-            faceClient.path('/detect').post({
-                body: faceFile.buffer,
-                contentType: faceFile.mimetype,
-                queryParameters: {
-                    returnFaceId: true,
-                    returnFaceLandmarks: false,
-                    returnFaceAttributes: false
-                }
+            faceClient.face.detectWithStream(faceFile.buffer, {
+                returnFaceId: true,
+                returnFaceLandmarks: false,
+                returnFaceAttributes: []
             })
         ]);
-
-        if (idFaceResponse.status !== '200' || userFaceResponse.status !== '200') {
-            return res.status(400).json({ error: 'Failed to detect faces in one or both images' });
-        }
-
-        const idFaces = idFaceResponse.body;
-        const userFaces = userFaceResponse.body;
 
         if (!idFaces || idFaces.length === 0) {
             return res.status(400).json({ error: 'No face detected in ID document' });
@@ -1243,18 +1307,11 @@ app.post('/api/verify/face-match', upload.fields([
         }
 
         // Compare the faces
-        const verifyResponse = await faceClient.path('/verify').post({
-            body: {
-                faceId1: idFaces[0].faceId,
-                faceId2: userFaces[0].faceId
-            }
-        });
+        const comparison = await faceClient.face.verifyFaceToFace(
+            idFaces[0].faceId,
+            userFaces[0].faceId
+        );
 
-        if (verifyResponse.status !== '200') {
-            return res.status(500).json({ error: 'Face comparison failed' });
-        }
-
-        const comparison = verifyResponse.body;
         const isMatch = comparison.isIdentical;
         const confidence = comparison.confidence;
 
@@ -1320,13 +1377,20 @@ app.get('/api/verify/status/:email', async (req, res) => {
             console.error('Error fetching verification status:', error);
             return res.status(500).json({ error: 'Failed to fetch verification status' });
         }
+        
+        // Include service availability status
+        const servicesAvailable = {
+            documentIntelligence: !!documentClient,
+            faceAPI: !!faceClient
+        };
 
         res.json({
             verification: verification || {
                 user_email: email,
                 id_verification_status: 'pending',
                 face_verification_status: 'pending'
-            }
+            },
+            servicesAvailable: servicesAvailable
         });
 
     } catch (error) {
@@ -1335,13 +1399,97 @@ app.get('/api/verify/status/:email', async (req, res) => {
     }
 });
 
+// Function to reinitialize Azure clients if they failed initially
+function reinitializeAzureClients() {
+    console.log('🔄 Attempting Azure client reinitialization...');
+    
+    // Force reload config from environment variables
+    const currentConfig = {
+        AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim(),
+        AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim(),
+        AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim(),
+        AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim()
+    };
+    
+    console.log('🔍 Current environment variables:');
+    console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING');
+    console.log('- AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:', currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'MISSING');
+    console.log('- AZURE_FACE_KEY:', currentConfig.AZURE_FACE_KEY ? `Present (${currentConfig.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING');
+    console.log('- AZURE_FACE_ENDPOINT:', currentConfig.AZURE_FACE_ENDPOINT || 'MISSING');
+    
+    // Update global config with fresh environment variables
+    config.AZURE_DOCUMENT_INTELLIGENCE_KEY = currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY;
+    config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT = currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT;
+    config.AZURE_FACE_KEY = currentConfig.AZURE_FACE_KEY;
+    config.AZURE_FACE_ENDPOINT = currentConfig.AZURE_FACE_ENDPOINT;
+    
+    // Try to reinitialize Document Intelligence if it's not available
+    if (!documentClient && currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY && currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
+        try {
+            documentClient = new DocumentAnalysisClient(
+                currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
+                new AzureKeyCredential(currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY)
+            );
+            console.log('✅ Azure Document Analysis reinitialized successfully');
+        } catch (error) {
+            console.log('❌ Azure Document Intelligence reinitialization failed:', error.message);
+            console.log('❌ Full error details:', error);
+        }
+    }
+    
+    // Try to reinitialize Face API if it's not available
+    if (!faceClient && currentConfig.AZURE_FACE_KEY && currentConfig.AZURE_FACE_ENDPOINT) {
+        try {
+            const credentials = new CognitiveServicesCredentials(currentConfig.AZURE_FACE_KEY);
+            faceClient = new FaceClient(credentials, currentConfig.AZURE_FACE_ENDPOINT);
+            console.log('✅ Azure Face API reinitialized successfully');
+        } catch (error) {
+            console.log('❌ Azure Face API reinitialization failed:', error.message);
+            console.log('❌ Full error details:', error);
+        }
+    }
+    
+    // Log final status
+    console.log('🏁 Reinitialization complete:');
+    console.log('- Document Intelligence available:', !!documentClient);
+    console.log('- Face API available:', !!faceClient);
+}
+
+// API: Check verification services availability
+app.get('/api/verify/service-status', (req, res) => {
+    // Try to reinitialize Azure clients if they're not available
+    reinitializeAzureClients();
+    
+    const status = {
+        documentIntelligence: {
+            available: !!documentClient,
+            configured: !!(config.AZURE_DOCUMENT_INTELLIGENCE_KEY && config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT),
+            message: documentClient ? 'Service is available' : 'Service not configured - Azure Document Intelligence credentials missing'
+        },
+        faceAPI: {
+            available: !!faceClient,
+            configured: !!(config.AZURE_FACE_KEY && config.AZURE_FACE_ENDPOINT),
+            message: faceClient ? 'Service is available' : 'Service not configured - Azure Face API credentials missing'
+        },
+        overallStatus: !!(documentClient && faceClient)
+    };
+    
+    res.json(status);
+});
+
 // API endpoint to serve client-safe configuration
 app.get('/api/config', (req, res) => {
+    // Try to reinitialize Azure clients if they're not available
+    reinitializeAzureClients();
     console.log('📋 Config endpoint called - checking environment variables:');
     console.log('- OPENAI_API_KEY:', config.OPENAI_API_KEY ? `Present (${config.OPENAI_API_KEY.substring(0, 10)}...)` : 'MISSING');
     console.log('- OPENAI_ORG_ID:', config.OPENAI_ORG_ID ? `Present (${config.OPENAI_ORG_ID})` : 'MISSING');
     console.log('- SUPABASE_URL:', config.SUPABASE_URL ? `Present (${config.SUPABASE_URL.substring(0, 30)}...)` : 'MISSING');
     console.log('- SUPABASE_ANON_KEY:', config.SUPABASE_ANON_KEY ? `Present (${config.SUPABASE_ANON_KEY.substring(0, 10)}...)` : 'MISSING');
+    console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', config.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${config.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING');
+    console.log('- AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:', config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT ? `Present (${config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT})` : 'MISSING');
+    console.log('- AZURE_FACE_KEY:', config.AZURE_FACE_KEY ? `Present (${config.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING');
+    console.log('- AZURE_FACE_ENDPOINT:', config.AZURE_FACE_ENDPOINT ? `Present (${config.AZURE_FACE_ENDPOINT})` : 'MISSING');
     
     const configData = {
         STRIPE_PUBLISHABLE_KEY: config.STRIPE_PUBLISHABLE_KEY,
@@ -1351,6 +1499,11 @@ app.get('/api/config', (req, res) => {
         OPENAI_API_KEY: config.OPENAI_API_KEY,
         OPENAI_ORG_ID: config.OPENAI_ORG_ID,
         OPENAI_MODEL: config.OPENAI_MODEL,
+        // Azure service status (without exposing keys)
+        azureServicesAvailable: {
+            documentIntelligence: !!documentClient,
+            faceAPI: !!faceClient
+        },
         // Add debug info about missing variables
         _debug: {
             missingVars: config.getMissingVars ? config.getMissingVars() : [],
@@ -1359,6 +1512,36 @@ app.get('/api/config', (req, res) => {
     };
     
     res.json(configData);
+});
+
+// Debug endpoint to check Azure configuration status
+app.get('/api/debug/azure', (req, res) => {
+    console.log('🔍 Azure debug endpoint called');
+    
+    // Force reinitialization
+    reinitializeAzureClients();
+    
+    const azureStatus = {
+        environmentVariables: {
+            AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING',
+            AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'MISSING',
+            AZURE_FACE_KEY: process.env.AZURE_FACE_KEY ? `Present (${process.env.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING',
+            AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT || 'MISSING'
+        },
+        configObject: {
+            AZURE_DOCUMENT_INTELLIGENCE_KEY: config.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${config.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING',
+            AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'MISSING',
+            AZURE_FACE_KEY: config.AZURE_FACE_KEY ? `Present (${config.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING',
+            AZURE_FACE_ENDPOINT: config.AZURE_FACE_ENDPOINT || 'MISSING'
+        },
+        clients: {
+            documentClient: !!documentClient,
+            faceClient: !!faceClient
+        },
+        ready: !!documentClient && !!faceClient
+    };
+    
+    res.json(azureStatus);
 });
 
 // Health check route for Railway monitoring - MUST BE BEFORE /:page
