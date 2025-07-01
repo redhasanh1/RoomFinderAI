@@ -373,6 +373,9 @@
             console.log('🔧 Creating AIChatHandler instance...');
             aiNegotiator = new AIChatHandler(supabase, configData);
             aiNegotiator.init(currentUser);
+            
+            // Make aiChat globally accessible for sidebar button clicks
+            window.aiChat = aiNegotiator;
 
             // Initialize AI Negotiation Engine
             console.log('🔧 [ENGINE INIT] Starting AINegotiationEngine initialization...');
