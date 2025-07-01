@@ -562,148 +562,257 @@
         }
 
         /* Foundation-inspired 3D Models */
-        /* Foundation-style Static House Models - Bigger & More Visible */
+        /* WhatsApp House Models - Exact Replicas */
         .foundation-house-model {
             position: fixed;
-            width: 350px;
-            height: 280px;
+            width: 400px;
+            height: 320px;
             pointer-events: none;
             z-index: 5;
-            opacity: 0.85;
+            opacity: 0.9;
             will-change: transform, opacity;
         }
         
-        /* Modern Isometric House - Foundation Style */
-        .modern-house {
+        /* Modern Brick House - Image 1 Style */
+        .modern-brick-house {
             position: relative;
             width: 100%;
             height: 100%;
-            transform: perspective(600px) rotateX(60deg) rotateY(-45deg);
+            transform: perspective(800px) rotateX(60deg) rotateY(-45deg);
             transform-style: preserve-3d;
         }
         
-        /* Main House Structure */
-        .house-main {
+        /* Brick House Main Structure */
+        .brick-house-main {
             position: absolute;
-            width: 200px;
-            height: 120px;
-            background: linear-gradient(45deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+            width: 220px;
+            height: 140px;
+            background: linear-gradient(45deg, #d4a574 0%, #c49968 50%, #b8905c 100%);
             bottom: 0;
             left: 50%;
             transform: translateX(-50%) translateZ(0);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            border: 2px solid #94a3b8;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            border: 1px solid #a67c52;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0,0,0,0.1) 8px, rgba(0,0,0,0.1) 9px),
+                repeating-linear-gradient(90deg, transparent, transparent 15px, rgba(0,0,0,0.1) 15px, rgba(0,0,0,0.1) 16px);
         }
         
-        /* House Side Wall */
-        .house-side {
+        /* Brick House Side */
+        .brick-house-side {
             position: absolute;
-            width: 80px;
-            height: 120px;
-            background: linear-gradient(45deg, #e2e8f0 0%, #cbd5e1 100%);
+            width: 100px;
+            height: 140px;
+            background: linear-gradient(45deg, #c49968 0%, #b8905c 100%);
             bottom: 0;
-            right: -78px;
+            right: -98px;
             transform: rotateY(90deg) translateZ(0);
             transform-origin: left center;
-            border: 2px solid #94a3b8;
+            border: 1px solid #a67c52;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0,0,0,0.1) 8px, rgba(0,0,0,0.1) 9px),
+                repeating-linear-gradient(90deg, transparent, transparent 15px, rgba(0,0,0,0.1) 15px, rgba(0,0,0,0.1) 16px);
         }
         
-        /* Modern Flat Roof */
-        .house-roof-main {
+        /* Dark Slanted Roof */
+        .slanted-roof {
             position: absolute;
-            width: 200px;
-            height: 80px;
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            top: -2px;
+            width: 0;
+            height: 0;
+            border-left: 130px solid transparent;
+            border-right: 130px solid transparent;
+            border-bottom: 80px solid #2d3748;
+            bottom: 140px;
             left: 50%;
-            transform: translateX(-50%) rotateX(90deg) translateZ(60px);
-            transform-origin: center bottom;
-            border: 2px solid #4f46e5;
+            transform: translateX(-50%) translateZ(1px);
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4));
+        }
+        
+        /* Brick Chimney */
+        .brick-chimney {
+            position: absolute;
+            width: 25px;
+            height: 60px;
+            background: linear-gradient(45deg, #a67c52 0%, #9c6f4a 100%);
+            bottom: 180px;
+            left: 60%;
+            transform: translateX(-50%) translateZ(2px);
+            border: 1px solid #8b5a3c;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 6px, rgba(0,0,0,0.2) 6px, rgba(0,0,0,0.2) 7px);
+        }
+        
+        /* Chimney Top */
+        .chimney-top {
+            position: absolute;
+            width: 100%;
+            height: 8px;
+            background: #2d3748;
+            top: -4px;
+            border: 1px solid #1a202c;
         }
         
         /* Large Modern Windows */
-        .modern-window {
+        .brick-window {
             position: absolute;
-            background: linear-gradient(45deg, #3b82f6 0%, #1d4ed8 100%);
-            border: 1px solid #1e40af;
+            background: linear-gradient(45deg, #2d3748 0%, #1a202c 100%);
+            border: 2px solid #4a5568;
         }
         
-        .window-large-1 { 
-            width: 60px; 
-            height: 40px; 
+        .brick-window-1 { 
+            width: 50px; 
+            height: 60px; 
             bottom: 40px; 
             left: 30px; 
         }
-        .window-large-2 { 
-            width: 60px; 
-            height: 40px; 
+        .brick-window-2 { 
+            width: 50px; 
+            height: 60px; 
             bottom: 40px; 
             right: 30px; 
         }
+        .brick-window-3 { 
+            width: 80px; 
+            height: 35px; 
+            bottom: 80px; 
+            left: 70px; 
+        }
         
-        /* Modern Apartment Building */
-        .apartment-building {
+        /* Wooden Deck */
+        .wooden-deck {
+            position: absolute;
+            width: 140px;
+            height: 60px;
+            background: linear-gradient(45deg, #d4a574 0%, #c49968 100%);
+            bottom: -8px;
+            left: -60px;
+            transform: translateZ(-1px);
+            border: 1px solid #a67c52;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(0,0,0,0.1) 4px, rgba(0,0,0,0.1) 5px);
+        }
+        
+        /* Purple House - Image 4 Style */
+        .purple-brick-house {
             position: relative;
             width: 100%;
             height: 100%;
-            transform: perspective(600px) rotateX(60deg) rotateY(-45deg);
+            transform: perspective(800px) rotateX(60deg) rotateY(-45deg);
             transform-style: preserve-3d;
         }
         
-        .building-main {
+        .purple-house-main {
             position: absolute;
-            width: 120px;
-            height: 200px;
-            background: linear-gradient(45deg, #f1f5f9 0%, #e2e8f0 50%, #cbd5e1 100%);
+            width: 220px;
+            height: 140px;
+            background: linear-gradient(45deg, #9d4edd 0%, #7209b7 50%, #560bad 100%);
             bottom: 0;
             left: 50%;
             transform: translateX(-50%) translateZ(0);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25);
-            border: 2px solid #94a3b8;
+            box-shadow: 0 25px 50px rgba(86, 11, 173, 0.4);
+            border: 1px solid #480ca8;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0,0,0,0.2) 8px, rgba(0,0,0,0.2) 9px),
+                repeating-linear-gradient(90deg, transparent, transparent 15px, rgba(0,0,0,0.2) 15px, rgba(0,0,0,0.2) 16px);
         }
         
-        .building-side {
+        .purple-house-side {
             position: absolute;
-            width: 60px;
-            height: 200px;
-            background: linear-gradient(45deg, #e2e8f0 0%, #cbd5e1 100%);
+            width: 100px;
+            height: 140px;
+            background: linear-gradient(45deg, #7209b7 0%, #560bad 100%);
             bottom: 0;
-            right: -58px;
+            right: -98px;
             transform: rotateY(90deg) translateZ(0);
             transform-origin: left center;
-            border: 2px solid #94a3b8;
+            border: 1px solid #480ca8;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0,0,0,0.2) 8px, rgba(0,0,0,0.2) 9px),
+                repeating-linear-gradient(90deg, transparent, transparent 15px, rgba(0,0,0,0.2) 15px, rgba(0,0,0,0.2) 16px);
         }
         
-        .building-roof {
+        .purple-roof {
             position: absolute;
-            width: 120px;
-            height: 60px;
-            background: linear-gradient(45deg, #8b5cf6 0%, #7c3aed 100%);
-            top: -2px;
+            width: 0;
+            height: 0;
+            border-left: 130px solid transparent;
+            border-right: 130px solid transparent;
+            border-bottom: 80px solid #3a0ca3;
+            bottom: 140px;
             left: 50%;
-            transform: translateX(-50%) rotateX(90deg) translateZ(30px);
-            transform-origin: center bottom;
-            border: 2px solid #6d28d9;
+            transform: translateX(-50%) translateZ(1px);
+            filter: drop-shadow(0 8px 16px rgba(58, 12, 163, 0.4));
         }
         
-        /* Building Window Grid */
-        .building-window {
+        /* Traditional Blue House - Image 5 Style */
+        .traditional-blue-house {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform: perspective(800px) rotateX(60deg) rotateY(-45deg);
+            transform-style: preserve-3d;
+        }
+        
+        .blue-house-main {
             position: absolute;
-            width: 15px;
-            height: 20px;
-            background: linear-gradient(45deg, #1e40af 0%, #1e3a8a 100%);
-            border: 1px solid #1e3a8a;
+            width: 200px;
+            height: 120px;
+            background: linear-gradient(45deg, #3182ce 0%, #2c5aa0 50%, #2a4a7c 100%);
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) translateZ(0);
+            box-shadow: 0 20px 40px rgba(49, 130, 206, 0.3);
+            border: 2px solid #ffffff;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 6px, rgba(255,255,255,0.1) 6px, rgba(255,255,255,0.1) 7px);
         }
         
-        /* Window Grid Layout */
-        .floor-1-windows .building-window { bottom: 20px; }
-        .floor-2-windows .building-window { bottom: 60px; }
-        .floor-3-windows .building-window { bottom: 100px; }
-        .floor-4-windows .building-window { bottom: 140px; }
+        .blue-house-side {
+            position: absolute;
+            width: 90px;
+            height: 120px;
+            background: linear-gradient(45deg, #2c5aa0 0%, #2a4a7c 100%);
+            bottom: 0;
+            right: -88px;
+            transform: rotateY(90deg) translateZ(0);
+            transform-origin: left center;
+            border: 2px solid #ffffff;
+        }
         
-        .win-left { left: 25px; }
-        .win-center { left: 52px; }
-        .win-right { left: 80px; }
+        .orange-tile-roof {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 120px solid transparent;
+            border-right: 120px solid transparent;
+            border-bottom: 70px solid #cc5500;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%) translateZ(1px);
+            filter: drop-shadow(0 6px 12px rgba(204, 85, 0, 0.4));
+            background-image: 
+                repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 4px);
+        }
+        
+        .blue-window {
+            position: absolute;
+            background: #ffffff;
+            border: 2px solid #2d3748;
+        }
+        
+        .blue-window-1 { width: 35px; height: 45px; bottom: 40px; left: 25px; }
+        .blue-window-2 { width: 35px; height: 45px; bottom: 40px; right: 25px; }
+        .blue-window-3 { width: 25px; height: 30px; bottom: 70px; left: 87px; }
+        
+        .orange-door {
+            position: absolute;
+            width: 30px;
+            height: 50px;
+            background: #cc5500;
+            bottom: 0;
+            left: 85px;
+            border: 2px solid #aa4400;
+        }
         
         /* Static Model Positioning */
         .model-1 { top: 20%; left: 5%; }
@@ -949,95 +1058,83 @@
         </div>
     </section>
 
-    <!-- Foundation-Style Static House Models - Bigger & More Visible -->
+    <!-- WhatsApp House Models - Exact Replicas -->
     <div class="foundation-house-model model-1">
-        <div class="modern-house">
-            <div class="house-main">
-                <div class="modern-window window-large-1"></div>
-                <div class="modern-window window-large-2"></div>
+        <div class="modern-brick-house">
+            <div class="brick-house-main">
+                <div class="brick-window brick-window-1"></div>
+                <div class="brick-window brick-window-2"></div>
+                <div class="brick-window brick-window-3"></div>
             </div>
-            <div class="house-side"></div>
-            <div class="house-roof-main"></div>
+            <div class="brick-house-side"></div>
+            <div class="slanted-roof"></div>
+            <div class="brick-chimney">
+                <div class="chimney-top"></div>
+            </div>
+            <div class="wooden-deck"></div>
         </div>
     </div>
     
     <div class="foundation-house-model model-2">
-        <div class="apartment-building">
-            <div class="building-main">
-                <div class="floor-1-windows">
-                    <div class="building-window win-left"></div>
-                    <div class="building-window win-center"></div>
-                    <div class="building-window win-right"></div>
-                </div>
-                <div class="floor-2-windows">
-                    <div class="building-window win-left"></div>
-                    <div class="building-window win-center"></div>
-                    <div class="building-window win-right"></div>
-                </div>
-                <div class="floor-3-windows">
-                    <div class="building-window win-left"></div>
-                    <div class="building-window win-center"></div>
-                    <div class="building-window win-right"></div>
-                </div>
-                <div class="floor-4-windows">
-                    <div class="building-window win-left"></div>
-                    <div class="building-window win-center"></div>
-                    <div class="building-window win-right"></div>
-                </div>
+        <div class="modern-brick-house">
+            <div class="brick-house-main">
+                <div class="brick-window brick-window-1"></div>
+                <div class="brick-window brick-window-2"></div>
+                <div class="brick-window brick-window-3"></div>
             </div>
-            <div class="building-side"></div>
-            <div class="building-roof"></div>
+            <div class="brick-house-side"></div>
+            <div class="slanted-roof"></div>
+            <div class="brick-chimney">
+                <div class="chimney-top"></div>
+            </div>
+            <div class="wooden-deck"></div>
         </div>
     </div>
     
     <div class="foundation-house-model model-3">
-        <div class="modern-house">
-            <div class="house-main" style="background: linear-gradient(45deg, #fef3c7 0%, #fed7aa 50%, #fdba74 100%); border-color: #f59e0b;">
-                <div class="modern-window window-large-1"></div>
-                <div class="modern-window window-large-2"></div>
+        <div class="modern-brick-house">
+            <div class="brick-house-main">
+                <div class="brick-window brick-window-1"></div>
+                <div class="brick-window brick-window-2"></div>
+                <div class="brick-window brick-window-3"></div>
             </div>
-            <div class="house-side" style="background: linear-gradient(45deg, #fed7aa 0%, #fdba74 100%); border-color: #f59e0b;"></div>
-            <div class="house-roof-main" style="background: linear-gradient(45deg, #f59e0b 0%, #d97706 100%); border-color: #b45309;"></div>
+            <div class="brick-house-side"></div>
+            <div class="slanted-roof"></div>
+            <div class="brick-chimney">
+                <div class="chimney-top"></div>
+            </div>
+            <div class="wooden-deck"></div>
         </div>
     </div>
     
     <div class="foundation-house-model model-4">
-        <div class="apartment-building">
-            <div class="building-main" style="background: linear-gradient(45deg, #fce7f3 0%, #fbcfe8 50%, #f9a8d4 100%); border-color: #ec4899;">
-                <div class="floor-1-windows">
-                    <div class="building-window win-left"></div>
-                    <div class="building-window win-center"></div>
-                    <div class="building-window win-right"></div>
-                </div>
-                <div class="floor-2-windows">
-                    <div class="building-window win-left"></div>
-                    <div class="building-window win-center"></div>
-                    <div class="building-window win-right"></div>
-                </div>
-                <div class="floor-3-windows">
-                    <div class="building-window win-left"></div>
-                    <div class="building-window win-center"></div>
-                    <div class="building-window win-right"></div>
-                </div>
-                <div class="floor-4-windows">
-                    <div class="building-window win-left"></div>
-                    <div class="building-window win-center"></div>
-                    <div class="building-window win-right"></div>
-                </div>
+        <div class="purple-brick-house">
+            <div class="purple-house-main">
+                <div class="brick-window brick-window-1"></div>
+                <div class="brick-window brick-window-2"></div>
+                <div class="brick-window brick-window-3"></div>
             </div>
-            <div class="building-side" style="background: linear-gradient(45deg, #fbcfe8 0%, #f9a8d4 100%); border-color: #ec4899;"></div>
-            <div class="building-roof" style="background: linear-gradient(45deg, #ec4899 0%, #be185d 100%); border-color: #9d174d;"></div>
+            <div class="purple-house-side"></div>
+            <div class="purple-roof"></div>
+            <div class="brick-chimney" style="background: linear-gradient(45deg, #7209b7 0%, #560bad 100%); border-color: #480ca8;">
+                <div class="chimney-top"></div>
+            </div>
         </div>
     </div>
     
     <div class="foundation-house-model model-5">
-        <div class="modern-house">
-            <div class="house-main" style="background: linear-gradient(45deg, #dcfce7 0%, #bbf7d0 50%, #86efac 100%); border-color: #22c55e;">
-                <div class="modern-window window-large-1"></div>
-                <div class="modern-window window-large-2"></div>
+        <div class="traditional-blue-house">
+            <div class="blue-house-main">
+                <div class="blue-window blue-window-1"></div>
+                <div class="blue-window blue-window-2"></div>
+                <div class="blue-window blue-window-3"></div>
+                <div class="orange-door"></div>
             </div>
-            <div class="house-side" style="background: linear-gradient(45deg, #bbf7d0 0%, #86efac 100%); border-color: #22c55e;"></div>
-            <div class="house-roof-main" style="background: linear-gradient(45deg, #22c55e 0%, #16a34a 100%); border-color: #15803d;"></div>
+            <div class="blue-house-side"></div>
+            <div class="orange-tile-roof"></div>
+            <div class="brick-chimney" style="background: linear-gradient(45deg, #a67c52 0%, #9c6f4a 100%); border-color: #8b5a3c;">
+                <div class="chimney-top"></div>
+            </div>
         </div>
     </div>
 
