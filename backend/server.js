@@ -7,28 +7,35 @@ const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 
 // Load config with error handling
-let config;
+// Load configuration with environment variables taking priority
+let config = {};
 try {
-    config = require('../config.js');
-    console.log('✅ Config loaded successfully');
+    // First, try to load from config file as fallback
+    const fileConfig = require('../config.js');
+    config = { ...fileConfig };
+    console.log('✅ Config file loaded as fallback');
 } catch (error) {
-    console.log('⚠️ Config file not found, using environment variables directly');
-    config = {
-        STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY?.trim(),
-        STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY?.trim(),
-        GOOGLE_API_KEY: process.env.GOOGLE_API_KEY?.trim(),
-        SUPABASE_URL: process.env.SUPABASE_URL?.trim(),
-        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.trim(),
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim(),
-        OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim(),
-        OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || 'gpt-3.5-turbo',
-        BREVO_API_KEY: process.env.BREVO_API_KEY?.trim(),
-        AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim(),
-        AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim(),
-        AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim(),
-        AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim()
-    };
+    console.log('⚠️ Config file not found, using environment variables only');
 }
+
+// Override with environment variables (these take priority)
+config = {
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY?.trim() || config.STRIPE_SECRET_KEY,
+    STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY?.trim() || config.STRIPE_PUBLISHABLE_KEY,
+    GOOGLE_API_KEY: process.env.GOOGLE_API_KEY?.trim() || config.GOOGLE_API_KEY,
+    SUPABASE_URL: process.env.SUPABASE_URL?.trim() || config.SUPABASE_URL,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.trim() || config.SUPABASE_ANON_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim() || config.OPENAI_API_KEY,
+    OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim() || config.OPENAI_ORG_ID,
+    OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || config.OPENAI_MODEL || 'gpt-3.5-turbo',
+    BREVO_API_KEY: process.env.BREVO_API_KEY?.trim() || config.BREVO_API_KEY,
+    AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_KEY,
+    AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
+    AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim() || config.AZURE_FACE_KEY,
+    AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim() || config.AZURE_FACE_ENDPOINT
+};
+
+console.log('🔧 Configuration priority: Environment variables > Config file > Defaults');
 
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
@@ -1792,6 +1799,18 @@ async function logUserActivity(userEmail, activityType, description, metadata = 
             return;
         }
 
+        // First check if user exists to avoid foreign key constraint violation
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('email')
+            .eq('email', userEmail)
+            .single();
+
+        if (userError || !user) {
+            console.log(`⚠️ Cannot log activity - User ${userEmail} not found in users table`);
+            return;
+        }
+
         await supabase.rpc('set_current_user_email', { email: userEmail });
         
         const { error } = await supabase
@@ -1973,6 +1992,24 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
             if (document.fields.CountryRegion?.content) {
                 extractedData.country = document.fields.CountryRegion.content;
             }
+        }
+
+        // Validate that this is actually a government ID document
+        // Check if we have at least the essential fields that every government ID should have
+        const hasRequiredFields = extractedData.firstName && extractedData.lastName && 
+                                 (extractedData.dateOfBirth || extractedData.documentNumber);
+        
+        if (!hasRequiredFields) {
+            return res.status(400).json({ 
+                error: 'This image does not appear to be a valid government ID document. Please upload a clear photo of your driver\'s license, passport, or state ID.' 
+            });
+        }
+
+        // Additional validation: check document confidence
+        if (document.confidence && document.confidence < 0.5) {
+            return res.status(400).json({ 
+                error: 'Document quality is too low or document type not recognized. Please upload a clear, high-quality photo of your government ID.' 
+            });
         }
 
         // Store verification status in database
