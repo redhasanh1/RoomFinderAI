@@ -1703,20 +1703,96 @@
             
             // Update circle color based on step
             const circle = document.getElementById('faceCircle');
-            if (currentScanStep === 0) {
-                circle.className = 'w-48 h-48 rounded-full border-4 border-blue-500 border-dashed animate-pulse';
-            } else {
-                circle.className = 'w-48 h-48 rounded-full border-4 border-green-500 border-solid';
-            }
+            circle.className = 'w-48 h-48 rounded-full border-4 border-blue-500 border-dashed animate-pulse';
             
-            // Auto-capture after 3 seconds
-            setTimeout(() => {
-                if (scanningInProgress) {
-                    captureScanStep();
-                }
-            }, 3000);
+            // Start real-time head pose detection
+            startHeadPoseDetection(step.direction);
         }
 
+        let headPoseInterval = null;
+        let lastDetectionTime = 0;
+        const DETECTION_INTERVAL = 1000; // Check every 1 second
+        
+        function startHeadPoseDetection(expectedDirection) {
+            if (headPoseInterval) {
+                clearInterval(headPoseInterval);
+            }
+            
+            headPoseInterval = setInterval(async () => {
+                if (!scanningInProgress) {
+                    clearInterval(headPoseInterval);
+                    return;
+                }
+                
+                const now = Date.now();
+                if (now - lastDetectionTime < DETECTION_INTERVAL) {
+                    return;
+                }
+                lastDetectionTime = now;
+                
+                try {
+                    const isCorrectDirection = await checkHeadPose(expectedDirection);
+                    
+                    if (isCorrectDirection) {
+                        // Direction is correct, capture the image
+                        clearInterval(headPoseInterval);
+                        captureScanStep();
+                    }
+                } catch (error) {
+                    console.error('Head pose detection error:', error);
+                }
+            }, 500); // Check every 500ms for responsiveness
+        }
+        
+        async function checkHeadPose(expectedDirection) {
+            const video = document.getElementById('faceVideo');
+            const canvas = document.getElementById('faceCanvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            
+            return new Promise((resolve) => {
+                canvas.toBlob(async (blob) => {
+                    try {
+                        const formData = new FormData();
+                        formData.append('facePhoto', blob, 'temp-face.jpg');
+                        formData.append('expectedDirection', expectedDirection);
+                        
+                        const response = await fetch('/api/verify/head-pose', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (response.ok) {
+                            // Update UI based on detection result
+                            const circle = document.getElementById('faceCircle');
+                            const instruction = document.getElementById('currentInstruction');
+                            
+                            if (result.isCorrectDirection) {
+                                circle.className = 'w-48 h-48 rounded-full border-4 border-green-500 border-solid';
+                                instruction.textContent = `Perfect! Capturing ${expectedDirection} pose...`;
+                                resolve(true);
+                            } else {
+                                circle.className = 'w-48 h-48 rounded-full border-4 border-yellow-500 border-dashed animate-pulse';
+                                instruction.textContent = result.message || `Please look ${expectedDirection}`;
+                                resolve(false);
+                            }
+                        } else {
+                            console.error('Head pose detection failed:', result.error);
+                            resolve(false);
+                        }
+                    } catch (error) {
+                        console.error('Head pose check error:', error);
+                        resolve(false);
+                    }
+                }, 'image/jpeg', 0.8);
+            });
+        }
+        
         function captureScanStep() {
             const video = document.getElementById('faceVideo');
             const canvas = document.getElementById('faceCanvas');
@@ -1736,8 +1812,17 @@
                 
                 console.log(`✅ Captured scan step ${currentScanStep + 1}: ${step.direction}`);
                 
-                currentScanStep++;
-                showNextScanStep();
+                // Show success feedback
+                const circle = document.getElementById('faceCircle');
+                const instruction = document.getElementById('currentInstruction');
+                circle.className = 'w-48 h-48 rounded-full border-4 border-green-500 border-solid';
+                instruction.textContent = `✓ ${step.direction} pose captured!`;
+                
+                // Move to next step after brief delay
+                setTimeout(() => {
+                    currentScanStep++;
+                    showNextScanStep();
+                }, 1000);
             }, 'image/jpeg', 0.8);
         }
 
@@ -1752,6 +1837,10 @@
 
         function cancelFaceScan() {
             scanningInProgress = false;
+            if (headPoseInterval) {
+                clearInterval(headPoseInterval);
+                headPoseInterval = null;
+            }
             stopFaceCamera();
             resetFaceModal();
         }
@@ -1760,6 +1849,10 @@
             if (faceStream) {
                 faceStream.getTracks().forEach(track => track.stop());
                 faceStream = null;
+            }
+            if (headPoseInterval) {
+                clearInterval(headPoseInterval);
+                headPoseInterval = null;
             }
             document.getElementById('faceVideo').classList.add('hidden');
             document.getElementById('faceScanOverlay').classList.add('hidden');
