@@ -550,34 +550,34 @@
         }
 
         /* Foundation-inspired 3D Models */
-        .foundation-3d {
-            perspective: 800px;
-            transform-style: preserve-3d;
-        }
-        
-        .property-model {
-            width: 80px;
-            height: 80px;
+        /* Foundation-style 3D House Images */
+        .foundation-house {
+            width: 120px;
+            height: 100px;
             position: relative;
-            transform-style: preserve-3d;
-            animation: float-rotate 15s infinite ease-in-out;
+            animation: float-gentle 8s infinite ease-in-out;
+            filter: drop-shadow(0 10px 20px rgba(102, 126, 234, 0.2));
         }
         
-        .property-face {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.05));
-            border: 1px solid rgba(102, 126, 234, 0.2);
+        .house-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
         }
         
-        .face-front { transform: rotateY(0deg) translateZ(40px); }
-        .face-back { transform: rotateY(180deg) translateZ(40px); }
-        .face-right { transform: rotateY(90deg) translateZ(40px); }
-        .face-left { transform: rotateY(-90deg) translateZ(40px); }
-        .face-top { transform: rotateX(90deg) translateZ(40px); }
-        .face-bottom { transform: rotateX(-90deg) translateZ(40px); }
+        .foundation-house:hover .house-image {
+            transform: scale(1.05) rotateY(5deg);
+        }
+        
+        @keyframes float-gentle {
+            0%, 100% { transform: translateY(0px) rotateX(0deg); }
+            50% { transform: translateY(-10px) rotateX(2deg); }
+        }
         
         @keyframes float-rotate {
             0%, 100% { transform: rotateY(0deg) rotateX(0deg) translateY(0px); }
@@ -739,29 +739,15 @@
             <div class="grid lg:grid-cols-3 gap-8 items-center">
                 <div class="lg:col-span-2 hero-content reveal-left">
                     <div class="flex items-center gap-4 mb-8">
-                        <div class="foundation-3d">
-                            <div class="property-model">
-                                <div class="property-face face-front"></div>
-                                <div class="property-face face-back"></div>
-                                <div class="property-face face-right"></div>
-                                <div class="property-face face-left"></div>
-                                <div class="property-face face-top"></div>
-                                <div class="property-face face-bottom"></div>
-                            </div>
+                        <div class="foundation-house">
+                            <img src="https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=200&h=150&fit=crop&auto=format" alt="Modern House" class="house-image" style="animation-delay: 0s;">
                         </div>
                         <h1 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight font-display">
                             <span class="block">Find Your Perfect</span>
                             <span class="block typing-animation" style="min-width: fit-content;">Rental with AI</span>
                         </h1>
-                        <div class="foundation-3d">
-                            <div class="property-model" style="animation-delay: -5s;">
-                                <div class="property-face face-front"></div>
-                                <div class="property-face face-back"></div>
-                                <div class="property-face face-right"></div>
-                                <div class="property-face face-left"></div>
-                                <div class="property-face face-top"></div>
-                                <div class="property-face face-bottom"></div>
-                            </div>
+                        <div class="foundation-house">
+                            <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=200&h=150&fit=crop&auto=format" alt="Modern Apartment" class="house-image" style="animation-delay: -4s;">
                         </div>
                     </div>
                     <p class="text-lg sm:text-xl mb-8 text-white/90 leading-relaxed max-w-2xl">
@@ -1424,23 +1410,7 @@
                 });
             });
 
-            // Chat bubble animation sequence
-            const animateChatBubbles = () => {
-                const chatBubbles = document.querySelectorAll('.chat-bubble');
-                chatBubbles.forEach((bubble, index) => {
-                    setTimeout(() => {
-                        bubble.style.opacity = '0';
-                        bubble.style.transform = 'translateY(20px)';
-                        setTimeout(() => {
-                            bubble.style.opacity = '1';
-                            bubble.style.transform = 'translateY(0)';
-                        }, 100);
-                    }, index * 1000);
-                });
-            };
-
-            // Start chat animation every 8 seconds
-            setInterval(animateChatBubbles, 8000);
+            // Static chat bubbles - no animations
 
             // Success Stories Rotation
             let currentStory = 0;
@@ -1493,66 +1463,7 @@
                 });
             });
 
-            // Live Typing Simulation for Demo
-            const messages = [
-                { type: 'ai', text: '🤖 Found 3 apartments under $1500 in Toronto. Negotiating prices now...', delay: 1000 },
-                { type: 'user', text: 'Great! What\'s the best deal?', delay: 2000 },
-                { type: 'ai', text: '✅ Negotiated $1200/month (was $1400) for 2BR downtown apartment!', delay: 3000 }
-            ];
-
-            const createLiveTypingDemo = () => {
-                const demoContainer = document.querySelector('.glass-card .space-y-4');
-                if (!demoContainer) return;
-
-                // Clear existing messages
-                demoContainer.innerHTML = '';
-
-                let messageIndex = 0;
-                
-                const showNextMessage = () => {
-                    if (messageIndex >= messages.length) {
-                        // Reset after showing all messages
-                        setTimeout(() => {
-                            messageIndex = 0;
-                            createLiveTypingDemo();
-                        }, 3000);
-                        return;
-                    }
-
-                    const message = messages[messageIndex];
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = `chat-bubble ${message.type === 'user' ? 'user' : ''}`;
-                    messageDiv.style.opacity = '0';
-                    
-                    demoContainer.appendChild(messageDiv);
-
-                    // Animate message appearance
-                    setTimeout(() => {
-                        messageDiv.style.opacity = '1';
-                        
-                        // Typing effect
-                        let charIndex = 0;
-                        const typeMessage = () => {
-                            if (charIndex < message.text.length) {
-                                messageDiv.textContent = message.text.substring(0, charIndex + 1);
-                                charIndex++;
-                                setTimeout(typeMessage, 50);
-                            } else {
-                                messageIndex++;
-                                setTimeout(showNextMessage, 1000);
-                            }
-                        };
-                        typeMessage();
-                    }, 500);
-                };
-
-                setTimeout(showNextMessage, 1000);
-            };
-
-            // Start live typing demo
-            createLiveTypingDemo();
-            // Restart demo every 15 seconds
-            setInterval(createLiveTypingDemo, 15000);
+            // Static AI Demo - No dynamic typing or animations
 
         // Update authentication section based on login status
             const profileImages = [
