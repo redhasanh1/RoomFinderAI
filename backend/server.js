@@ -43,6 +43,7 @@ const multer = require('multer');
 const { DocumentAnalysisClient, AzureKeyCredential } = require('@azure/ai-form-recognizer');
 const { FaceClient } = require('@azure/cognitiveservices-face');
 const { CognitiveServicesCredentials } = require('@azure/ms-rest-azure-js');
+// FormData and fetch are available globally in Node.js 18+
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -2089,35 +2090,37 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         console.log('✅ Created govdocs bucket successfully:', newBucket);
                     }
 
-                    // Upload to govdocs subfolder within govdocs bucket
-                    const folderPath = `govdocs/${fileName}`; // Changed 'pics' to 'govdocs'
-                    console.log('📁 Uploading to govdocs bucket path:', folderPath);
+                    // Upload to govdocs bucket using direct API (same approach as listings)
+                    console.log('📁 Uploading to govdocs bucket, filename:', fileName);
+                    const storageApiUrl = `${process.env.SUPABASE_URL || config.SUPABASE_URL}/storage/v1/object/govdocs`;
                     
-                    const { data: uploadData, error: uploadError } = await supabase.storage
-                        .from('govdocs')
-                        .upload(fileName, req.file.buffer, {
-                            contentType: req.file.mimetype,
-                            upsert: false
-                        });
+                    const formData = new FormData();
+                    const fileBlob = new Blob([req.file.buffer], { type: req.file.mimetype });
+                    formData.append('file', fileBlob, fileName);
+                    formData.append('cacheControl', '3600');
+                    formData.append('upsert', 'false');
 
-                    if (uploadError) {
-                        console.error('❌ Supabase Storage upload error:', uploadError);
-                        console.log('📝 Upload error details:', {
-                            message: uploadError.message,
-                            error: uploadError.error,
-                            statusCode: uploadError.statusCode,
-                            details: uploadError.details,
-                            hint: uploadError.hint,
-                            code: uploadError.code
-                        });
-                        console.log('📁 Attempted upload path:', fileName);
-                        console.log('📊 File buffer size:', req.file.buffer.length);
-                        throw uploadError;
+                    const uploadResponse = await fetch(`${storageApiUrl}/${fileName}`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || config.SUPABASE_ANON_KEY}`,
+                            'apikey': process.env.SUPABASE_ANON_KEY || config.SUPABASE_ANON_KEY
+                        },
+                        body: formData
+                    });
+
+                    if (!uploadResponse.ok) {
+                        const errorText = await uploadResponse.text();
+                        console.error('❌ Direct API upload error:', errorText);
+                        throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
                     }
 
-                    idDocumentPath = uploadData.path;
-                    console.log('✅ ID document uploaded to storage:', uploadData.path);
-                    console.log('📊 Upload data:', uploadData);
+                    idDocumentPath = fileName;
+                    console.log('✅ ID document uploaded to govdocs storage:', fileName);
+                    
+                    // Verify upload by checking the file exists
+                    const publicUrl = `${process.env.SUPABASE_URL || config.SUPABASE_URL}/storage/v1/object/govdocs/${fileName}`;
+                    console.log('📊 Document stored at:', publicUrl);
                     
                     // Verify the file was actually uploaded by trying to list it
                     const { data: listData, error: fileListError } = await supabase.storage
