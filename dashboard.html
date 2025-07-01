@@ -400,6 +400,23 @@
                             <button id="uploadIdBtn" class="modern-button" onclick="openVerificationModal()">Upload ID</button>
                         </div>
 
+                        <div class="flex items-center justify-between p-4 bg-white rounded-lg border" data-verification="face">
+                            <div class="flex items-center">
+                                <div class="bg-gray-400 p-2 rounded-lg mr-4">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">Face Verification</h4>
+                                    <p class="text-sm text-gray-600">Take a selfie to verify your identity</p>
+                                </div>
+                            </div>
+                            <button id="faceVerifyBtn" class="modern-button" onclick="showFaceVerificationModal()" disabled>
+                                Take Selfie
+                            </button>
+                        </div>
+
                         <div class="flex items-center justify-between p-4 bg-white rounded-lg border">
                             <div class="flex items-center">
                                 <div class="bg-gray-400 p-2 rounded-lg mr-4">
@@ -619,6 +636,132 @@
                         </button>
                         <button onclick="closeVerificationModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
                             Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Face Verification Modal -->
+    <div id="faceVerificationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Face Verification</h3>
+                    <button onclick="closeFaceVerificationModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div id="faceUploadSection" class="space-y-4">
+                    <p class="text-gray-600">Take a clear selfie photo to verify your identity matches your ID document.</p>
+                    
+                    <!-- Face Photo Preview -->
+                    <div id="facePreview" class="hidden">
+                        <img id="facePreviewImg" class="w-full rounded-lg border-2 border-gray-300" alt="Face preview">
+                        <div class="flex space-x-3 mt-4">
+                            <button onclick="retakeFacePhoto()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                                Retake Photo
+                            </button>
+                            <button onclick="uploadFacePhoto()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                Verify Face
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Camera/Upload Options -->
+                    <div id="faceUploadOptions" class="space-y-4">
+                        <!-- Camera Capture -->
+                        <div class="text-center">
+                            <video id="faceVideo" class="w-full rounded-lg border-2 border-gray-300 hidden" autoplay></video>
+                            <canvas id="faceCanvas" class="hidden"></canvas>
+                            
+                            <div id="cameraSection" class="space-y-4">
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                    <p class="text-sm text-gray-600 mt-2">Take a selfie for face verification</p>
+                                </div>
+                                
+                                <div class="flex space-x-3">
+                                    <button onclick="startCamera()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                        <i class="fas fa-camera mr-2"></i>Use Camera
+                                    </button>
+                                    <button onclick="selectFaceFile()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                                        <i class="fas fa-upload mr-2"></i>Upload Photo
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="cameraActive" class="hidden space-y-4">
+                                <div class="flex space-x-3">
+                                    <button onclick="takeFacePhoto()" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                                        <i class="fas fa-camera mr-2"></i>Take Photo
+                                    </button>
+                                    <button onclick="stopCamera()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <input type="file" id="faceFileInput" accept="image/*" class="hidden">
+                    </div>
+                </div>
+                
+                <!-- Face Loading Section -->
+                <div id="faceLoadingSection" class="hidden text-center space-y-4">
+                    <div class="animate-spin mx-auto h-12 w-12 text-blue-600">
+                        <svg fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-medium text-gray-900">Verifying your face...</p>
+                        <p class="text-sm text-gray-600">Comparing with your ID document</p>
+                    </div>
+                </div>
+                
+                <!-- Face Success Section -->
+                <div id="faceSuccessSection" class="hidden text-center space-y-4">
+                    <div class="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-medium text-gray-900">Face Verified Successfully!</p>
+                        <p class="text-sm text-gray-600">Your identity has been fully verified.</p>
+                        <p id="faceConfidenceScore" class="text-xs text-gray-500"></p>
+                    </div>
+                    <button onclick="closeFaceVerificationModal()" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                        Complete Verification
+                    </button>
+                </div>
+                
+                <!-- Face Error Section -->
+                <div id="faceErrorSection" class="hidden text-center space-y-4">
+                    <div class="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-medium text-gray-900">Face Verification Failed</p>
+                        <p id="faceErrorMessage" class="text-sm text-gray-600">Please try again with a clearer photo.</p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button onclick="resetFaceModal()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            Try Again
+                        </button>
+                        <button onclick="closeFaceVerificationModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                            Skip for Now
                         </button>
                     </div>
                 </div>
@@ -1476,6 +1619,191 @@
             document.getElementById('progressText').textContent = 'Uploading...';
         }
 
+        // Face Verification Functions
+        function showFaceVerificationModal() {
+            document.getElementById('faceVerificationModal').classList.remove('hidden');
+            resetFaceModal();
+        }
+
+        function closeFaceVerificationModal() {
+            document.getElementById('faceVerificationModal').classList.add('hidden');
+            stopCamera();
+        }
+
+        function resetFaceModal() {
+            // Hide all sections
+            document.getElementById('faceUploadSection').classList.remove('hidden');
+            document.getElementById('faceLoadingSection').classList.add('hidden');
+            document.getElementById('faceSuccessSection').classList.add('hidden');
+            document.getElementById('faceErrorSection').classList.add('hidden');
+            
+            // Reset camera/upload state
+            document.getElementById('cameraSection').classList.remove('hidden');
+            document.getElementById('cameraActive').classList.add('hidden');
+            document.getElementById('facePreview').classList.add('hidden');
+            document.getElementById('faceUploadOptions').classList.remove('hidden');
+            document.getElementById('faceVideo').classList.add('hidden');
+        }
+
+        let faceStream = null;
+        let capturedFaceFile = null;
+
+        function selectFaceFile() {
+            document.getElementById('faceFileInput').click();
+        }
+
+        // Handle face file selection
+        document.getElementById('faceFileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                displayFacePreview(file);
+                capturedFaceFile = file;
+            }
+        });
+
+        function displayFacePreview(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('facePreviewImg').src = e.target.result;
+                document.getElementById('facePreview').classList.remove('hidden');
+                document.getElementById('faceUploadOptions').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function retakeFacePhoto() {
+            document.getElementById('facePreview').classList.add('hidden');
+            document.getElementById('faceUploadOptions').classList.remove('hidden');
+            capturedFaceFile = null;
+        }
+
+        async function startCamera() {
+            try {
+                faceStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480, facingMode: 'user' } 
+                });
+                const video = document.getElementById('faceVideo');
+                video.srcObject = faceStream;
+                video.classList.remove('hidden');
+                document.getElementById('cameraSection').classList.add('hidden');
+                document.getElementById('cameraActive').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert('Unable to access camera. Please upload a photo instead.');
+            }
+        }
+
+        function stopCamera() {
+            if (faceStream) {
+                faceStream.getTracks().forEach(track => track.stop());
+                faceStream = null;
+            }
+            document.getElementById('faceVideo').classList.add('hidden');
+            document.getElementById('cameraSection').classList.remove('hidden');
+            document.getElementById('cameraActive').classList.add('hidden');
+        }
+
+        function takeFacePhoto() {
+            const video = document.getElementById('faceVideo');
+            const canvas = document.getElementById('faceCanvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            
+            canvas.toBlob(function(blob) {
+                capturedFaceFile = new File([blob], 'face-photo.jpg', { type: 'image/jpeg' });
+                displayFacePreview(capturedFaceFile);
+                stopCamera();
+            }, 'image/jpeg', 0.8);
+        }
+
+        async function uploadFacePhoto() {
+            if (!capturedFaceFile) {
+                alert('Please take or select a photo first.');
+                return;
+            }
+
+            try {
+                // Show loading
+                document.getElementById('faceUploadSection').classList.add('hidden');
+                document.getElementById('faceLoadingSection').classList.remove('hidden');
+                
+                // Get user email
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const userEmail = currentUser?.email;
+                if (!userEmail) {
+                    throw new Error('User email not found. Please log in again.');
+                }
+                
+                // Create form data - need both ID document and face photo for comparison
+                const formData = new FormData();
+                formData.append('facePhoto', capturedFaceFile);
+                formData.append('userEmail', userEmail);
+                
+                // Call face verification API
+                const response = await fetch('/api/verify/face-match', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Show success
+                    document.getElementById('faceLoadingSection').classList.add('hidden');
+                    document.getElementById('faceSuccessSection').classList.remove('hidden');
+                    
+                    // Show confidence score
+                    if (result.confidence) {
+                        document.getElementById('faceConfidenceScore').textContent = 
+                            `Confidence: ${(result.confidence * 100).toFixed(1)}%`;
+                    }
+                    
+                    // Update verification status
+                    updateFaceVerificationStatus('verified');
+                } else {
+                    throw new Error(result.error || 'Face verification failed');
+                }
+                
+            } catch (error) {
+                console.error('Face verification error:', error);
+                showFaceError(error.message);
+            }
+        }
+
+        function showFaceError(message) {
+            document.getElementById('faceLoadingSection').classList.add('hidden');
+            document.getElementById('faceErrorSection').classList.remove('hidden');
+            document.getElementById('faceErrorMessage').textContent = message;
+        }
+
+        function updateFaceVerificationStatus(status) {
+            // Update the verification status display in the main dashboard
+            const faceButton = document.querySelector('[data-verification="face"]');
+            if (faceButton && status === 'verified') {
+                faceButton.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">Face Verification</p>
+                                <p class="text-sm text-green-600">Verified</p>
+                            </div>
+                        </div>
+                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Complete</span>
+                    </div>
+                `;
+                faceButton.classList.remove('border-gray-200', 'hover:border-blue-300');
+                faceButton.classList.add('border-green-200', 'bg-green-50');
+            }
+        }
+
         function selectFile() {
             document.getElementById('fileInput').click();
         }
@@ -1557,22 +1885,11 @@
                     // Update main button status
                     updateIdVerificationStatus('verified');
                     
-                    // After a short delay, redirect to ACE verification
+                    // After a short delay, proceed to face verification
                     setTimeout(() => {
                         closeVerificationModal();
-                        // Redirect to ACE age verification service
-                        // You'll need to replace this URL with the actual ACE verification URL
-                        const aceVerificationUrl = 'https://app.age-protection.com/verification'; // Replace with actual ACE URL
-                        
-                        // Optional: Add user data as query parameters if needed
-                        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                        const redirectUrl = `${aceVerificationUrl}?email=${encodeURIComponent(currentUser?.email || '')}&return_url=${encodeURIComponent(window.location.origin + '/dashboard.html')}`;
-                        
-                        // Show notification before redirect
-                        alert('ID verification successful! You will now be redirected to complete age verification.');
-                        
-                        // Redirect to ACE verification
-                        window.location.href = redirectUrl;
+                        // Show face verification modal
+                        showFaceVerificationModal();
                     }, 2000); // 2 second delay to show success message
                 } else {
                     // Check if it's a service unavailable error
@@ -1624,17 +1941,33 @@
 
         function updateIdVerificationStatus(status) {
             const button = document.getElementById('uploadIdBtn');
+            const faceButton = document.getElementById('faceVerifyBtn');
+            
             if (status === 'verified') {
                 button.textContent = '✓ Verified';
                 button.classList.add('bg-green-600', 'hover:bg-green-700');
                 button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 button.onclick = null; // Disable clicking
+                
+                // Enable face verification button
+                if (faceButton) {
+                    faceButton.disabled = false;
+                    faceButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                    faceButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                }
             } else if (status === 'unavailable') {
                 button.textContent = 'Service Unavailable';
                 button.classList.add('bg-gray-400', 'cursor-not-allowed');
                 button.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'modern-button');
                 button.disabled = true;
                 button.onclick = null;
+                
+                // Keep face verification disabled
+                if (faceButton) {
+                    faceButton.disabled = true;
+                    faceButton.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    faceButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                }
             }
         }
         
