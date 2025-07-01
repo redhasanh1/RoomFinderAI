@@ -1726,22 +1726,28 @@
                 
                 const now = Date.now();
                 if (now - lastDetectionTime < DETECTION_INTERVAL) {
-                    return;
+                    return; // Don't check too frequently
                 }
                 lastDetectionTime = now;
                 
                 try {
-                    const isCorrectDirection = await checkHeadPose(expectedDirection);
+                    // checkHeadPose will now handle its own UI updates for incorrect poses
+                    // and will only resolve with true if the direction is correct.
+                    const directionCorrect = await checkHeadPose(expectedDirection);
                     
-                    if (isCorrectDirection) {
-                        // Direction is correct, capture the image
-                        clearInterval(headPoseInterval);
-                        captureScanStep();
+                    if (directionCorrect) {
+                        clearInterval(headPoseInterval); // Stop checking for this direction
+                        headPoseInterval = null;
+                        captureScanStep(); // Proceed to capture and move to the next step
                     }
+                    // If directionCorrect is false, checkHeadPose would have updated the UI,
+                    // and the interval will continue for the next check.
                 } catch (error) {
                     console.error('Head pose detection error:', error);
+                    // Optionally, update UI to show a generic error and maybe stop the scan
+                    // For now, we'll let it keep trying or rely on checkHeadPose to handle UI.
                 }
-            }, 500); // Check every 500ms for responsiveness
+            }, 500); // Check every 500ms for responsiveness, API call itself adds latency.
         }
         
         async function checkHeadPose(expectedDirection) {
@@ -1749,12 +1755,22 @@
             const canvas = document.getElementById('faceCanvas');
             const context = canvas.getContext('2d');
             
+            if (!video.videoWidth || !video.videoHeight) {
+                console.warn("Video dimensions not available yet.");
+                return false; // Cannot proceed if video is not ready
+            }
+
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0);
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             return new Promise((resolve) => {
                 canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        console.error('Failed to create blob from canvas.');
+                        resolve(false);
+                        return;
+                    }
                     try {
                         const formData = new FormData();
                         formData.append('facePhoto', blob, 'temp-face.jpg');
@@ -1766,28 +1782,31 @@
                         });
                         
                         const result = await response.json();
+                        const circle = document.getElementById('faceCircle');
+                        const instructionElement = document.getElementById('currentInstruction'); // Renamed for clarity
                         
                         if (response.ok) {
-                            // Update UI based on detection result
-                            const circle = document.getElementById('faceCircle');
-                            const instruction = document.getElementById('currentInstruction');
-                            
                             if (result.isCorrectDirection) {
-                                circle.className = 'w-48 h-48 rounded-full border-4 border-green-500 border-solid';
-                                instruction.textContent = `Perfect! Capturing ${expectedDirection} pose...`;
-                                resolve(true);
+                                circle.className = 'w-48 h-48 rounded-full border-4 border-green-500 border-solid'; // Green for correct
+                                instructionElement.textContent = `Great! ${expectedDirection.charAt(0).toUpperCase() + expectedDirection.slice(1)} pose detected.`;
+                                resolve(true); // Correct direction
                             } else {
-                                circle.className = 'w-48 h-48 rounded-full border-4 border-yellow-500 border-dashed animate-pulse';
-                                instruction.textContent = result.message || `Please look ${expectedDirection}`;
-                                resolve(false);
+                                circle.className = 'w-48 h-48 rounded-full border-4 border-yellow-500 border-dashed animate-pulse'; // Yellow for try again
+                                instructionElement.textContent = result.message || `Please look ${expectedDirection}. Trying again...`;
+                                resolve(false); // Incorrect direction, keep trying
                             }
                         } else {
-                            console.error('Head pose detection failed:', result.error);
-                            resolve(false);
+                            console.error('Head pose detection API error:', result.error);
+                            instructionElement.textContent = `Error: ${result.error || 'Detection service failed.'} Retrying...`;
+                            circle.className = 'w-48 h-48 rounded-full border-4 border-red-500 border-dashed'; // Red for API error
+                            resolve(false); // API error, keep trying or handle critical failure
                         }
                     } catch (error) {
-                        console.error('Head pose check error:', error);
-                        resolve(false);
+                        console.error('Error in checkHeadPose during fetch or processing:', error);
+                        const instructionElement = document.getElementById('currentInstruction');
+                        instructionElement.textContent = 'A network error occurred. Retrying...';
+                        document.getElementById('faceCircle').className = 'w-48 h-48 rounded-full border-4 border-red-500 border-dashed';
+                        resolve(false); // Network or other error, keep trying
                     }
                 }, 'image/jpeg', 0.8);
             });
