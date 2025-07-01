@@ -197,10 +197,7 @@
                 <div>
                     <button type="submit" id="submitButton" class="w-full auth-button">Sign In</button>
                 </div>
-                <div class="text-center space-y-3">
-                    <div id="forgotPasswordLink" class="hidden">
-                        <a href="/forgot-password" class="text-sm text-blue-600 hover:text-blue-700 font-medium">Forgot your password?</a>
-                    </div>
+                <div class="text-center">
                     <button type="button" id="toggleForm" class="toggle-button">Don't have an account? Register</button>
                 </div>
             </form>
@@ -302,15 +299,11 @@
 
         toggleForm.addEventListener('click', () => {
             isLogin = !isLogin;
-            formTitle.textContent = isLogin ? 'Welcome Back' : 'Create Account';
-            submitButton.textContent = isLogin ? 'Sign In' : 'Register';
+            formTitle.textContent = isLogin ? 'Login' : 'Register';
+            submitButton.textContent = isLogin ? 'Login' : 'Register';
             toggleForm.textContent = isLogin ? "Don't have an account? Register" : 'Already have an account? Login';
             nameFields.classList.toggle('hidden', isLogin);
-            document.getElementById('forgotPasswordLink').classList.toggle('hidden', !isLogin);
         });
-        
-        // Show forgot password link on page load for login view
-        document.getElementById('forgotPasswordLink').classList.remove('hidden');
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
