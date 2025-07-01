@@ -127,9 +127,52 @@ class AIChatHandler {
             // Store channel reference for cleanup
             this.subscriptionChannel = channel;
             
+            // Also set up subscription for regular messages (conversations)
+            this.setupMessagesSubscription();
+            
         } catch (error) {
             console.error('Error setting up real-time subscription:', error);
             this.setupFallbackPolling();
+        }
+    }
+
+    // Setup subscription for regular conversation messages
+    setupMessagesSubscription() {
+        try {
+            console.log('🔔 Setting up messages subscription...');
+            
+            const messagesChannel = this.supabase
+                .channel(`messages_updates_${Date.now()}`)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages'
+                }, (payload) => {
+                    console.log('📬 Received message update:', payload);
+                    try {
+                        const newMessage = payload.new;
+                        
+                        // Check if this message is relevant to current user's conversations
+                        if (newMessage.sender_email !== this.currentUser.email) {
+                            console.log('📨 New landlord reply detected in conversation:', newMessage.conversation_id);
+                            this.appendMessage('AI', `💬 New reply received from landlord! Check the conversation for details.`, 'left');
+                            this.highlightNewMessage();
+                        }
+                    } catch (error) {
+                        console.error('Error processing message update:', error);
+                    }
+                })
+                .subscribe((status, err) => {
+                    console.log('📡 Messages subscription status:', status);
+                    if (err) {
+                        console.error('❌ Messages subscription error:', err);
+                    }
+                });
+
+            this.messagesSubscriptionChannel = messagesChannel;
+            
+        } catch (error) {
+            console.error('Error setting up messages subscription:', error);
         }
     }
 
@@ -268,7 +311,8 @@ class AIChatHandler {
         let successCount = 0;
         for (const listing of listings.slice(0, 3)) { // Limit to first 3 to avoid spam
             try {
-                this.appendMessage('AI', `📧 Contacting landlord for: ${listing.title} ($${listing.price}/month)`, 'left');
+                const priceDisplay = listing.price && listing.price > 0 ? `$${listing.price}/month` : 'price available on request';
+                this.appendMessage('AI', `📧 Contacting landlord for: ${listing.title} (${priceDisplay})`, 'left');
                 
                 const success = await this.negotiateWithLandlord(listing);
                 if (success) {
@@ -410,8 +454,16 @@ class AIChatHandler {
             return openAIResult;
         } catch (error) {
             console.log('⚠️ OpenAI extraction failed:', error.message);
-            console.log('❌ NO MANUAL FALLBACK - OpenAI extraction required');
-            throw new Error(`OpenAI extraction failed: ${error.message}`);
+            console.log('🔄 Falling back to manual extraction...');
+            
+            try {
+                const manualResult = this.extractManually(message);
+                console.log('🎯 Manual extraction result:', manualResult);
+                return manualResult;
+            } catch (manualError) {
+                console.error('❌ Both OpenAI and manual extraction failed:', manualError);
+                throw new Error(`Extraction failed: ${error.message}`);
+            }
         }
     }
 
@@ -919,7 +971,8 @@ class AIChatHandler {
                 const bedText = listing.bedrooms ? `${listing.bedrooms} bed` : 'unknown bed';
                 const typeText = listing.house_type || 'property';
                 const utilitiesText = listing.utilities ? ` (utilities ${listing.utilities})` : '';
-                this.appendMessage('AI', `🏠 "${listing.title}" - $${listing.price}/month (${bedText} ${typeText})${utilitiesText}`, 'left');
+                const priceText = listing.price && listing.price > 0 ? `$${listing.price}/month` : 'price available on request';
+                this.appendMessage('AI', `🏠 "${listing.title}" - ${priceText} (${bedText} ${typeText})${utilitiesText}`, 'left');
             }
             
             // Automatically start negotiations if negotiation engine is available
@@ -1044,7 +1097,8 @@ class AIChatHandler {
                 
                 const descText = listing.description ? listing.description.substring(0, 30) + '...' : 'No description';
                 const locationText = listing.city ? ` in ${listing.city}` : '';
-                this.appendMessage('AI', `📋 "${listing.title}" - $${listing.price}/month (${listing.bedrooms} bed ${listing.house_type})${locationText} - ${descText}`, 'left');
+                const priceDisplay = listing.price && listing.price > 0 ? `$${listing.price}/month` : 'price available on request';
+                this.appendMessage('AI', `📋 "${listing.title}" - ${priceDisplay} (${listing.bedrooms} bed ${listing.house_type})${locationText} - ${descText}`, 'left');
                 shownCount++;
                 
                 if (shownCount >= 3) break;
@@ -1296,15 +1350,28 @@ class AIChatHandler {
         this.appendMessage('User', message, 'right');
         this.appendMessage('AI', 'Analyzing your request...', 'left', true);
         
-        // Extract requirements
-        const extractedData = await this.extractRentalInfo(message);
-        console.log('📊 Raw extracted data:', extractedData);
-        this.updateUserNeeds(extractedData);
-        console.log('🎯 Final user needs after update:', this.userNeeds);
-        console.log('🔍 Location that will be used in search:', this.userNeeds.preferredLocation);
-        
-        this.removeTypingIndicator();
-        
+        try {
+            // Extract requirements
+            const extractedData = await this.extractRentalInfo(message);
+            console.log('📊 Raw extracted data:', extractedData);
+            this.updateUserNeeds(extractedData);
+            console.log('🎯 Final user needs after update:', this.userNeeds);
+            console.log('🔍 Location that will be used in search:', this.userNeeds.preferredLocation);
+            
+            this.removeTypingIndicator();
+            
+            // Continue with normal processing...
+            await this.processExtractedData(message, extractedData);
+            
+        } catch (error) {
+            console.error('❌ Error in message processing:', error);
+            this.removeTypingIndicator();
+            this.appendMessage('AI', 'I had trouble understanding your request. Could you try rephrasing it? For example: "I need a 2-bedroom apartment under $1500 in Toronto"', 'left');
+        }
+    }
+
+    // Process extracted data (split from processMessage for better error handling)
+    async processExtractedData(message, extractedData) {
         // Check if user is expressing needs
         const needsKeywords = ['looking for', 'need', 'want', 'searching for', 'find me', 'find', 'search'];
         const isSearchRequest = needsKeywords.some(keyword => message.toLowerCase().includes(keyword));
@@ -1327,6 +1394,29 @@ class AIChatHandler {
             setTimeout(() => this.searchAndMessage(), 1000);
         } else {
             this.appendMessage('AI', 'I understand your preferences. To search for listings, try saying something like "I need a 2-bedroom apartment under $1500 in Toronto"', 'left');
+        }
+    }
+
+    // Cleanup method for subscriptions
+    cleanup() {
+        console.log('🧹 Cleaning up AI chat subscriptions...');
+        
+        if (this.subscriptionChannel) {
+            this.subscriptionChannel.unsubscribe();
+            this.subscriptionChannel = null;
+            console.log('✅ Unsubscribed from AI chats channel');
+        }
+        
+        if (this.messagesSubscriptionChannel) {
+            this.messagesSubscriptionChannel.unsubscribe();
+            this.messagesSubscriptionChannel = null;
+            console.log('✅ Unsubscribed from messages channel');
+        }
+        
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+            console.log('✅ Stopped fallback polling');
         }
     }
 }

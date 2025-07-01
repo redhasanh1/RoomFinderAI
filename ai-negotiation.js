@@ -1234,7 +1234,7 @@ class AINegotiationEngine {
                 }
                 
                 console.log('🎉 GENERATING FINAL ACCEPTANCE RESPONSE - Price:', finalPrice);
-                return this.generateVariedAcceptanceResponse(finalPrice, negotiationId, roundNumber);
+                return await this.generateVariedAcceptanceResponse(finalPrice, negotiationId, roundNumber);
             }
 
             if (analysis.makesCounterOffer && analysis.priceOffered) {
@@ -1299,7 +1299,7 @@ class AINegotiationEngine {
     }
 
     // Generate varied acceptance response to prevent repetition
-    generateVariedAcceptanceResponse(finalPrice, negotiationId, roundNumber) {
+    async generateVariedAcceptanceResponse(finalPrice, negotiationId, roundNumber) {
         // CRITICAL: Ensure finalPrice is never null/undefined/0
         if (!finalPrice || finalPrice <= 0) {
             console.error('❌ CRITICAL: Invalid finalPrice detected:', finalPrice);
