@@ -2788,10 +2788,13 @@ async function initializeStorage() {
     }
 }
 
+// Declare server variable in global scope
+let server;
+
 // Initialize storage and start server
 initializeStorage().then(() => {
     // Simplified startup with better error handling
-    const server = app.listen(port, '0.0.0.0', () => {
+    server = app.listen(port, '0.0.0.0', () => {
         console.log(`✅ RoomFinderAI Server running on port ${port}`);
         console.log(`🏥 Health check: http://localhost:${port}/health`);
         console.log(`🌐 Server ready at http://0.0.0.0:${port}`);
@@ -2807,36 +2810,48 @@ initializeStorage().then(() => {
 }).catch((error) => {
     console.error('❌ Failed to initialize storage, starting server anyway:', error);
     
-    const server = app.listen(port, '0.0.0.0', () => {
+    server = app.listen(port, '0.0.0.0', () => {
         console.log(`✅ RoomFinderAI Server running on port ${port} (without storage init)`);
         console.log(`🏥 Health check: http://localhost:${port}/health`);
         console.log(`🌐 Server ready at http://0.0.0.0:${port}`);
     });
 });
 
-// Handle server errors
-server.on('error', (err) => {
-    console.error('❌ Server error:', err);
-    if (err.code === 'EADDRINUSE') {
-        console.log(`Port ${port} is busy, trying alternative...`);
-        server.listen(port + 1, '0.0.0.0');
+// Handle server errors (only if server is defined)
+process.nextTick(() => {
+    if (server) {
+        server.on('error', (err) => {
+            console.error('❌ Server error:', err);
+            if (err.code === 'EADDRINUSE') {
+                console.log(`Port ${port} is busy, trying alternative...`);
+                server.listen(port + 1, '0.0.0.0');
+            }
+        });
     }
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
     console.log('🔄 Received SIGTERM, shutting down gracefully');
-    server.close(() => {
-        console.log('✅ Server closed');
+    if (server) {
+        server.close(() => {
+            console.log('✅ Server closed');
+            process.exit(0);
+        });
+    } else {
         process.exit(0);
-    });
+    }
 });
 
 process.on('SIGINT', () => {
     console.log('🔄 Received SIGINT, shutting down gracefully');
-    server.close(() => {
-        console.log('✅ Server closed');
+    if (server) {
+        server.close(() => {
+            console.log('✅ Server closed');
+            process.exit(0);
+        });
+    } else {
         process.exit(0);
-    });
+    }
 });
 // Force update
