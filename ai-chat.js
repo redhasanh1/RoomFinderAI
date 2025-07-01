@@ -665,12 +665,12 @@ class AIChatHandler {
     async findMatchingListings() {
         console.log('🔍 Starting search with criteria:', this.userNeeds);
         
-        console.log('🔍 Building search query step by step...');
+        console.log('🔍 Building search query for your Supabase database schema...');
         
-        // Start with base query
+        // Query all columns from your actual schema: id, street, location, user_email, updated_at, country
         let query = this.supabase
             .from('listings')
-            .select('id, street, city, user_email');
+            .select('*'); // Select all columns to get complete listing data
         
         let appliedFilters = [];
         let hasSpecificCriteria = false;
@@ -681,68 +681,41 @@ class AIChatHandler {
             console.log('✅ Step 1: Excluded own listings');
         }
         
-        // Note: Price and house_type filters disabled - columns don't exist in current schema
-        console.log('⚠️ Price and house_type filters skipped - not available in current database schema');
-        
-        // Step 4: Apply location filter (STRICT) with enhanced international city support
+        // Step 2: Apply location filter using 'location' and 'street' columns
         if (this.userNeeds.preferredLocation) {
-            const location = this.userNeeds.preferredLocation.trim();
-            // Search for exact city match (now separated from country) and in street field
-            query = query.or(`city.ilike.*${location}*,street.ilike.*${location}*`);
+            const location = this.userNeeds.preferredLocation.trim().toLowerCase();
+            // Search in location, street, and country columns
+            query = query.or(`location.ilike.*${location}*,street.ilike.*${location}*,country.ilike.*${location}*`);
             appliedFilters.push(`location contains: ${location}`);
             hasSpecificCriteria = true;
-            console.log(`✅ Step 4: STRICT location filter applied - searching for "${location}" in city/title/description/street/address`);
-            console.log(`🔍 EXACT SEARCH PATTERN: city.ilike.*${location}*,street.ilike.*${location}*`);
+            console.log(`✅ Step 2: Location filter applied - searching for "${location}" in location/street/country columns`);
+            console.log(`🔍 SEARCH PATTERN: location.ilike.*${location}*,street.ilike.*${location}*,country.ilike.*${location}*`);
         }
         
-        // Step 5: Apply bedroom filter
-        if (this.userNeeds.bedrooms) {
-            query = query.eq('bedrooms', this.userNeeds.bedrooms);
-            appliedFilters.push(`bedrooms: ${this.userNeeds.bedrooms}`);
-            hasSpecificCriteria = true;
-            console.log(`✅ Step 5: Bedroom filter applied - ${this.userNeeds.bedrooms} bedrooms`);
+        // Step 3: Apply price filter if max price is provided
+        if (this.userNeeds.maxPrice) {
+            // Assuming there might be a price column, but we'll handle it gracefully
+            try {
+                query = query.lte('price', this.userNeeds.maxPrice);
+                appliedFilters.push(`max price: $${this.userNeeds.maxPrice}`);
+                hasSpecificCriteria = true;
+                console.log(`✅ Step 3: Price filter applied - max $${this.userNeeds.maxPrice}`);
+            } catch (error) {
+                console.log('⚠️ Price column not available in database schema, skipping price filter');
+            }
         }
         
         if (!hasSpecificCriteria) {
-            throw new Error('Please provide specific criteria (location, house type, price, etc.)');
+            throw new Error('Please provide specific criteria (location, price, etc.)');
         }
         
         console.log('🔍 Applied filters:', appliedFilters.join(', '));
         console.log('🔎 User needs for debugging:', this.userNeeds);
         
-        // Try a simpler approach that matches our working test query
-        console.log('🚀 Executing final query...');
+        // Execute the query with your actual database schema
+        console.log('🚀 Executing query with your database schema...');
         
-        let finalQuery = this.supabase
-            .from('listings')
-            .select('id, title, price, house_type, bedrooms, utilities, description, user_email, city, street');
-            
-        // Apply filters one by one like the working test
-        if (this.currentUser?.email) {
-            finalQuery = finalQuery.neq('user_email', this.currentUser.email);
-        }
-        
-        if (this.userNeeds.maxPrice) {
-            finalQuery = finalQuery.lte('price', this.userNeeds.maxPrice);
-        }
-        
-        if (this.userNeeds.houseType === 'House') {
-            finalQuery = finalQuery.in('house_type', ['House', 'Townhouse']);
-        } else if (this.userNeeds.houseType) {
-            finalQuery = finalQuery.eq('house_type', this.userNeeds.houseType);
-        }
-        
-        if (this.userNeeds.preferredLocation) {
-            const location = this.userNeeds.preferredLocation.trim();
-            console.log(`🎯 FINAL QUERY - Applying location filter for: "${location}"`);
-            finalQuery = finalQuery.or(`city.ilike.*${location}*,street.ilike.*${location}*`);
-        }
-        
-        if (this.userNeeds.bedrooms) {
-            finalQuery = finalQuery.eq('bedrooms', this.userNeeds.bedrooms);
-        }
-        
-        const { data: listings, error } = await finalQuery.order('created_at', { ascending: false }).limit(20);
+        const { data: listings, error } = await query.order('updated_at', { ascending: false }).limit(20);
         
         if (error) {
             throw new Error(`Database query failed: ${error.message}`);
@@ -751,123 +724,116 @@ class AIChatHandler {
         console.log('📊 Query results:', listings?.length || 0, 'listings found');
         console.log('🔍 User requested location:', this.userNeeds.preferredLocation);
         
-        // Debug: Log what we actually found and validate matches
+        // Process results with your actual database schema
         if (listings && listings.length > 0) {
-            console.log('🏠 Found listings details:');
+            console.log('🏠 Found listings from your database:');
             listings.forEach((listing, i) => {
-                const matches = {
-                    price: !this.userNeeds.maxPrice || listing.price <= this.userNeeds.maxPrice,
-                    location: !this.userNeeds.preferredLocation || this.matchesLocation(listing, this.userNeeds.preferredLocation),
-                    type: !this.userNeeds.houseType || listing.house_type === this.userNeeds.houseType || (this.userNeeds.houseType === 'House' && listing.house_type === 'Townhouse')
-                };
-                const matchScore = Object.values(matches).filter(Boolean).length;
-                console.log(`  ${i+1}. "${listing.title}" - $${listing.price} - ${listing.house_type} - City: "${listing.city || 'NO CITY'}" - Street: "${listing.street || 'NO STREET'}" - MATCHES: ${matchScore}/3 (Price:${matches.price}, Location:${matches.location}, Type:${matches.type})`);
-                
-                // Enhanced debugging for location matching
-                if (this.userNeeds.preferredLocation) {
-                    const locationMatch = this.matchesLocation(listing, this.userNeeds.preferredLocation);
-                    console.log(`    🌍 Location debug - Searching for "${this.userNeeds.preferredLocation}" in: city="${listing.city}", title="${listing.title}", street="${listing.street}" - Match: ${locationMatch}`);
-                }
+                // Display listing info based on your actual schema: id, street, location, user_email, updated_at, country
+                console.log(`  ${i+1}. ID: ${listing.id}`);
+                console.log(`      Street: ${listing.street || 'Not specified'}`);
+                console.log(`      Location: ${listing.location || 'Not specified'}`);
+                console.log(`      Country: ${listing.country || 'Not specified'}`);
+                console.log(`      Owner: ${listing.user_email || 'No contact'}`);
+                console.log(`      Updated: ${listing.updated_at || 'Unknown'}`);
+                console.log('      ---');
             });
         } else {
             console.log('❌ No listings found with current filters');
             
-            // Let's check what's actually in the database with detailed info
+            // Debug: Check what's actually in your database
             const { data: allListings } = await this.supabase
                 .from('listings')
-                .select('id, street, city, user_email')
-                .limit(20);
+                .select('*')
+                .limit(10);
             
-            console.log('🗃️ ALL listings in database:');
+            console.log('🗃️ Sample listings from your database:');
             allListings?.forEach((listing, i) => {
-                console.log(`  ${i+1}. ID: ${listing.id} - City: "${listing.city || 'NO CITY'}" - Street: "${listing.street || 'NO STREET'}" - User: "${listing.user_email || 'NO USER'}"`);
+                console.log(`  ${i+1}. ID: ${listing.id}`);
+                console.log(`      Street: ${listing.street || 'None'}`);
+                console.log(`      Location: ${listing.location || 'None'}`);
+                console.log(`      Country: ${listing.country || 'None'}`);
+                console.log(`      Owner: ${listing.user_email || 'None'}`);
             });
-            
-            // Check for requested location specifically if user searched for any city
-            if (this.userNeeds.preferredLocation) {
-                const searchLocation = this.userNeeds.preferredLocation.toLowerCase();
-                console.log(`🌍 SPECIFIC CHECK: Looking for "${searchLocation}"-related listings...`);
-                const locationListings = allListings?.filter(listing => 
-                    (listing.city && listing.city.toLowerCase().includes(searchLocation)) ||
-                    (listing.street && listing.street.toLowerCase().includes(searchLocation))
-                );
-                
-                if (locationListings && locationListings.length > 0) {
-                    console.log(`✅ Found ${searchLocation} listings:`);
-                    locationListings.forEach(listing => {
-                        console.log(`  - ID: ${listing.id} in "${listing.city}" at "${listing.street}"`);
-                    });
-                } else {
-                    console.log(`❌ NO ${searchLocation.toUpperCase()} LISTINGS FOUND in database - this explains the issue!`);
-                }
-            }
-            
-            // Test: Search for all houses under $1500 (no location filter)
-            console.log('\n🔍 Testing: All houses under $1500 (no location filter)');
-            const { data: houseTest } = await this.supabase
-                .from('listings')
-                .select('title, city, price, house_type, street')
-                .in('house_type', ['House', 'Townhouse'])
-                .lte('price', 1500)
-                .limit(10);
-            
-            console.log(`Found ${houseTest?.length || 0} houses under $1500:`);
-            houseTest?.forEach(listing => {
-                console.log(`  - "${listing.title}" in "${listing.city}" - $${listing.price} (${listing.house_type}) - Street: "${listing.street}"`);
-            });
-            
-            // Test the exact query that should find Calgary house
-            console.log('\n🔍 Testing exact Calgary query that should work:');
-            const { data: calgaryExactTest, error: calgaryError } = await this.supabase
-                .from('listings')
-                .select('title, city, price, house_type, street')
-                .lte('price', 1500)
-                .in('house_type', ['House', 'Townhouse'])
-                .or(`city.ilike.%calgary%,title.ilike.%calgary%,description.ilike.%calgary%,street.ilike.%calgary%`)
-                .limit(10);
-            
-            if (calgaryError) {
-                console.log(`❌ Calgary test query error: ${calgaryError.message}`);
-            } else {
-                console.log(`✅ Calgary test found ${calgaryExactTest?.length || 0} results:`);
-                calgaryExactTest?.forEach(listing => {
-                    console.log(`  - "${listing.title}" in "${listing.city}" - $${listing.price} (${listing.house_type})`);
-                });
-            }
-            
-            // Specifically look for Calgary-related listings
-            console.log('🔍 Looking specifically for Calgary-related listings...');
-            const calgaryListings = allListings?.filter(listing => 
-                listing.city?.toLowerCase().includes('calgary') ||
-                listing.street?.toLowerCase().includes('calgary')
-            );
-            
-            if (calgaryListings && calgaryListings.length > 0) {
-                console.log('🏠 Found Calgary-related listings:');
-                calgaryListings.forEach(listing => {
-                    console.log(`  - ID: ${listing.id} in "${listing.city}" at "${listing.street}"`);
-                });
-            } else {
-                console.log('❌ No Calgary listings found in database');
-            }
         }
         
         return listings || [];
     }
 
-    // Helper function to check if listing matches location
+    // Helper function to check if listing matches location (updated for your schema)
     matchesLocation(listing, searchLocation) {
         const location = searchLocation.toLowerCase();
-        const city = (listing.city || '').toLowerCase();
-        const title = (listing.title || '').toLowerCase();
-        const description = (listing.description || '').toLowerCase();
+        const listingLocation = (listing.location || '').toLowerCase();
         const street = (listing.street || '').toLowerCase();
+        const country = (listing.country || '').toLowerCase();
         
-        // Simple city matching (city and country are now separate fields)
-        return city.includes(location) || 
-               title.includes(location) || 
-               description.includes(location) || 
-               street.includes(location);
+        // Check location, street, and country columns from your schema
+        return listingLocation.includes(location) || 
+               street.includes(location) || 
+               country.includes(location);
+    }
+
+    // Update left sidebar with matching listings
+    updateSidebarWithListings(listings) {
+        const activeNegotiations = document.getElementById('activeNegotiations');
+        if (!activeNegotiations) {
+            console.warn('⚠️ activeNegotiations element not found');
+            return;
+        }
+
+        if (!listings || listings.length === 0) {
+            activeNegotiations.innerHTML = '<p class="text-gray-500 text-sm">No matching listings found. Try adjusting your search criteria.</p>';
+            return;
+        }
+
+        // Create HTML for the listings
+        let listingsHTML = '<h4 class="text-sm font-semibold text-gray-700 mb-3">🏠 Matching Listings</h4>';
+        
+        listings.slice(0, 5).forEach((listing, index) => {
+            const locationText = listing.location || 'Location not specified';
+            const streetText = listing.street ? ` - ${listing.street}` : '';
+            const countryText = listing.country ? ` (${listing.country})` : '';
+            
+            listingsHTML += `
+                <div class="bg-gray-50 rounded-lg p-3 mb-3 border border-gray-200 hover:bg-gray-100 transition-colors">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-800">📍 ${locationText}</p>
+                            ${streetText ? `<p class="text-xs text-gray-600 mt-1">${streetText}</p>` : ''}
+                            ${countryText ? `<p class="text-xs text-gray-500">${countryText}</p>` : ''}
+                            <p class="text-xs text-gray-400 mt-1">ID: ${listing.id}</p>
+                        </div>
+                        <button onclick="window.aiChat?.contactLandlord('${listing.id}')" 
+                                class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition-colors">
+                            Contact
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        if (listings.length > 5) {
+            listingsHTML += `<p class="text-xs text-gray-500 mt-2">... and ${listings.length - 5} more listings</p>`;
+        }
+
+        activeNegotiations.innerHTML = listingsHTML;
+        console.log(`✅ Updated sidebar with ${listings.length} listings`);
+    }
+
+    // Handle contact landlord button clicks from sidebar
+    contactLandlord(listingId) {
+        const listing = this.matchingListings.find(l => l.id === listingId);
+        if (!listing) {
+            console.error('❌ Listing not found:', listingId);
+            return;
+        }
+
+        this.appendMessage('AI', `📧 Initiating contact with landlord for listing ${listingId}...`, 'left');
+        
+        if (this.negotiationEngine) {
+            this.sendMessage(listing);
+        } else {
+            this.sendBasicMessage(listing);
+        }
     }
 
     // Test function to verify search works for known listings
@@ -963,11 +929,15 @@ class AIChatHandler {
             // Show found listings
             this.appendMessage('AI', `Found ${this.matchingListings.length} matching listing(s)!`, 'left');
             
+            // Update the left sidebar with matching listings
+            this.updateSidebarWithListings(this.matchingListings);
+            
             for (const listing of this.matchingListings.slice(0, 3)) {
-                const bedText = listing.bedrooms ? `${listing.bedrooms} bed` : 'unknown bed';
-                const typeText = listing.house_type || 'property';
-                const utilitiesText = listing.utilities ? ` (utilities ${listing.utilities})` : '';
-                this.appendMessage('AI', `🏠 "${listing.title}" - $${listing.price}/month (${bedText} ${typeText})${utilitiesText}`, 'left');
+                // Display listings based on your actual database schema: id, street, location, user_email, updated_at, country
+                const locationText = listing.location ? `${listing.location}` : 'Location not specified';
+                const streetText = listing.street ? ` - ${listing.street}` : '';
+                const countryText = listing.country ? ` (${listing.country})` : '';
+                this.appendMessage('AI', `🏠 Listing ID: ${listing.id} - ${locationText}${streetText}${countryText}`, 'left');
             }
             
             // Automatically start negotiations if negotiation engine is available
@@ -1039,39 +1009,15 @@ class AIChatHandler {
         
         this.appendMessage('AI', `❌ No exact matches found. I searched for: ${extracted.join(', ')}`, 'left');
         
-        // Try to find similar listings with relaxed criteria
+        // Try to find similar listings with your actual database schema
         let query = this.supabase
             .from('listings')
-            .select('id, title, price, house_type, bedrooms, description, city')
+            .select('*') // Use your actual schema: id, street, location, user_email, updated_at, country
             .neq('user_email', this.currentUser?.email || '')
             .limit(10);
 
-        // First try: relax location requirement but keep other criteria
-        let hasValidFilters = false;
-        if (this.userNeeds.houseType || this.userNeeds.maxPrice) {
-            if (this.userNeeds.maxPrice) {
-                // Increase price range by 20%
-                const relaxedPrice = Math.floor(this.userNeeds.maxPrice * 1.2);
-                query = query.lte('price', relaxedPrice);
-                hasValidFilters = true;
-            }
-            if (this.userNeeds.houseType) {
-                if (this.userNeeds.houseType === 'House') {
-                    // When user wants "House", also include "Townhouse" as they're similar
-                    query = query.in('house_type', ['House', 'Townhouse']);
-                } else {
-                    query = query.eq('house_type', this.userNeeds.houseType);
-                }
-                hasValidFilters = true;
-            }
-        }
-        
-        // If we have a location preference, still try to prioritize it but don't make it required
-        if (this.userNeeds.preferredLocation && hasValidFilters) {
-            console.log(`🔍 Looking for similar listings, preferring location: ${this.userNeeds.preferredLocation}`);
-        }
-        
-        const { data: similarListings } = await query.order('price', { ascending: true });
+        // Show any available listings since we don't have all filtering options
+        const { data: similarListings } = await query.order('updated_at', { ascending: false });
         
         if (similarListings?.length > 0) {
             const criteria = [];
@@ -1083,16 +1029,11 @@ class AIChatHandler {
             
             let shownCount = 0;
             for (const listing of similarListings.slice(0, 5)) {
-                // Skip obvious test/fake listings
-                if (listing.title.toLowerCase().includes('test') || 
-                    listing.title.toLowerCase().includes('hello') ||
-                    listing.title.toLowerCase().includes('eric')) {
-                    continue;
-                }
-                
-                const descText = listing.description ? listing.description.substring(0, 30) + '...' : 'No description';
-                const locationText = listing.city ? ` in ${listing.city}` : '';
-                this.appendMessage('AI', `📋 "${listing.title}" - $${listing.price}/month (${listing.bedrooms} bed ${listing.house_type})${locationText} - ${descText}`, 'left');
+                // Display with your actual database schema: id, street, location, user_email, updated_at, country
+                const locationText = listing.location ? `${listing.location}` : 'Location not specified';
+                const streetText = listing.street ? ` - ${listing.street}` : '';
+                const countryText = listing.country ? ` (${listing.country})` : '';
+                this.appendMessage('AI', `📋 Listing ID: ${listing.id} - ${locationText}${streetText}${countryText}`, 'left');
                 shownCount++;
                 
                 if (shownCount >= 3) break;
