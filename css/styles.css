@@ -1,0 +1,402 @@
+/* Grand UI Global Styles - Purple Theme */
+:root {
+    --purple-primary: #667eea;
+    --purple-dark: #764ba2;
+    --purple-light: #a78bfa;
+    --purple-ultralight: #e9d5ff;
+    --purple-shadow: rgba(102, 126, 234, 0.3);
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-reverse: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    --gradient-radial: radial-gradient(circle at 30% 20%, #667eea, #764ba2);
+    --gradient-mesh: radial-gradient(at 40% 20%, #667eea 0px, transparent 50%), 
+                     radial-gradient(at 80% 0%, #e9d5ff 0px, transparent 50%), 
+                     radial-gradient(at 0% 50%, #764ba2 0px, transparent 50%);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1a202c;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* Grand Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-weight: 700;
+}
+
+/* Animation Classes */
+.animate-in {
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Grand Glass Effects */
+.glass-grand {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.1);
+}
+
+/* Grand Hover Effects */
+.hover-lift {
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+}
+
+.hover-lift:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 30px 60px rgba(102, 126, 234, 0.25);
+}
+
+/* Grand Glow Effects */
+.glow-purple {
+    box-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+}
+
+.glow-purple-intense {
+    box-shadow: 0 0 50px rgba(102, 126, 234, 0.8),
+                0 0 100px rgba(118, 75, 162, 0.4);
+}
+
+/* Text Gradient Animation */
+.text-gradient-animated {
+    background: var(--gradient-primary);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+    animation: gradient-shift 5s ease infinite;
+}
+
+@keyframes gradient-shift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Magnetic Button Effect */
+.magnetic-button {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.magnetic-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    border-radius: inherit;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.magnetic-button:hover::before {
+    opacity: 1;
+    width: 120%;
+    height: 120%;
+}
+
+/* Parallax Layers */
+.parallax-layer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+.parallax-bg {
+    transform: translateZ(-2px) scale(3);
+}
+
+.parallax-mid {
+    transform: translateZ(-1px) scale(2);
+}
+
+.parallax-front {
+    transform: translateZ(0) scale(1);
+}
+
+/* Grand Loading Animation */
+.loading-grand {
+    position: relative;
+    overflow: hidden;
+}
+
+.loading-grand::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
+    animation: loading-sweep 2s infinite;
+}
+
+@keyframes loading-sweep {
+    to {
+        left: 100%;
+    }
+}
+
+/* Floating Animation */
+.float-animation {
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    33% {
+        transform: translateY(-20px) rotate(2deg);
+    }
+    66% {
+        transform: translateY(10px) rotate(-1deg);
+    }
+}
+
+/* Pulse Animation */
+.pulse-animation {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Grand Card Styles */
+.card-3d {
+    transform-style: preserve-3d;
+    transition: transform 0.5s;
+}
+
+.card-3d:hover {
+    transform: rotateY(10deg) rotateX(10deg);
+}
+
+/* Neon Glow Text */
+.neon-text {
+    text-shadow: 0 0 10px var(--purple-primary),
+                 0 0 20px var(--purple-primary),
+                 0 0 30px var(--purple-primary),
+                 0 0 40px var(--purple-dark);
+}
+
+/* Grand Input Styles */
+.input-grand {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.input-grand:focus {
+    outline: none;
+    border-color: var(--purple-primary);
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1),
+                0 4px 20px rgba(102, 126, 234, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Grand Badge */
+.badge-grand {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* Shimmer Effect */
+.shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.shimmer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    to {
+        left: 100%;
+    }
+}
+
+/* Grand Divider */
+.divider-grand {
+    height: 2px;
+    background: var(--gradient-primary);
+    margin: 3rem 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.divider-grand::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, white, transparent);
+    animation: divider-shine 3s infinite;
+}
+
+@keyframes divider-shine {
+    to {
+        left: 100%;
+    }
+}
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+    .grand-title {
+        font-size: clamp(2.5rem, 6vw, 4rem);
+    }
+    
+    .btn-grand {
+        padding: 1rem 2rem;
+        font-size: 1rem;
+    }
+    
+    .feature-card-grand {
+        padding: 2rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+
+/* Accessibility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Focus Visible */
+*:focus-visible {
+    outline: 2px solid var(--purple-primary);
+    outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+    background: var(--purple-primary);
+    color: white;
+}
+
+::-moz-selection {
+    background: var(--purple-primary);
+    color: white;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--gradient-primary);
+    border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--purple-dark);
+}
+
+/* Page Loader */
+.page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease;
+}
+
+.loader-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(102, 126, 234, 0.1);
+    border-top-color: var(--purple-primary);
+    border-radius: 50%;
+    animation: spinner 0.8s linear infinite;
+}
+
+@keyframes spinner {
+    to {
+        transform: rotate(360deg);
+    }
+}

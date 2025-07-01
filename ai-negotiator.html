@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Negotiator - RoomFinderAI</title>
+    <title>Negotiation Assistant - RoomFinderAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="./ai-chat.js?v=9"></script>
@@ -88,12 +88,21 @@
         <nav class="w-[80%] mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-6">
                 <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
+<<<<<<< HEAD
                 <a href="/index" class="text-gray-700 hover:text-blue-600 transition">Home</a>
                 <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition">About</a>
                 <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition">Sublease</a>
                 <a href="/listings" class="text-gray-700 hover:text-blue-600 transition">Listings</a>
                 <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition">Pricing</a>
                 <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition">Contact Us</a>
+=======
+                <div class="hidden md:flex space-x-4">
+                    <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
+                    <a href="/dashboard" class="text-gray-700 hover:text-blue-600 transition font-medium">Dashboard</a>
+                    <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
+                    <a href="/ai-negotiator" class="text-blue-600 font-semibold">Negotiation Assistant</a>
+                </div>
+>>>>>>> 8d17bac4aa6a5c44b79251881e45686902656303
             </div>
             <div id="authSection">
                 <a href="/login" class="text-gray-700 hover:text-blue-600 transition">Login/Register</a>
@@ -101,7 +110,18 @@
         </nav>
     </header>
 
+<<<<<<< HEAD
     <main class="flex-grow w-[90%] mx-auto px-4 py-8">
+=======
+    <!-- Main Content -->
+    <main class="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">🤖 Negotiation Assistant</h1>
+            <p class="text-gray-600">Get expert advice and coaching to negotiate better rental deals with landlords</p>
+        </div>
+
+>>>>>>> 8d17bac4aa6a5c44b79251881e45686902656303
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Left Sidebar - Search & Filters -->
             <div class="lg:col-span-1">
@@ -156,6 +176,7 @@
 
             <!-- Center - AI Chat -->
             <div class="lg:col-span-2">
+<<<<<<< HEAD
                 <section class="chat-container">
                     <div class="bg-white rounded-xl shadow-lg">
                         <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-t-xl">
@@ -184,6 +205,52 @@
                                 <button onclick="clearChat()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors" title="Clear chat history">
                                     🗑️ Clear
                                 </button>
+=======
+                <div class="glass-card h-[700px] flex flex-col">
+                    <!-- Chat Header -->
+                    <div class="p-6 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                                    <span class="text-white font-bold text-lg">AI</span>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900">Negotiation Assistant</h3>
+                                    <p class="text-sm text-green-600 flex items-center">
+                                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                        Ready to Help
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button id="clearChat" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition font-medium">
+                                    Clear Chat
+                                </button>
+                                <button id="saveChat" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium">
+                                    Save Chat
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Messages -->
+                    <div id="chatContainer" class="flex-1 p-6 overflow-y-auto chat-container">
+                        <div id="chatMessages">
+                            <!-- Welcome message -->
+                            <div class="chat-bubble ai">
+                                <div class="font-semibold text-sm text-gray-500 mb-1">Negotiation Assistant</div>
+                                <p>Hi! I'm here to help you negotiate better rental deals. Whether you're looking at a specific property or need general negotiation advice, I can provide strategic guidance, help you craft compelling messages, and coach you through the process. What rental situation would you like help with?</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Typing indicator (hidden by default) -->
+                        <div id="typingIndicator" class="typing-indicator hidden">
+                            <span class="text-sm text-gray-500 mr-3">Assistant is typing</span>
+                            <div class="typing-dots">
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+>>>>>>> 8d17bac4aa6a5c44b79251881e45686902656303
                             </div>
                         </div>
                     </div>
@@ -288,6 +355,7 @@
             } catch (error) {
                 console.error('❌ Railway API failed:', error);
                 
+<<<<<<< HEAD
                 // Show detailed error to help debug
                 document.getElementById('chatMessages').innerHTML = `
                     <div style="color: red; padding: 1rem; border: 2px solid red; border-radius: 8px; margin: 1rem 0;">
@@ -317,6 +385,80 @@
                             🧪 Test Connectivity
                         </button>
                     </div>
+=======
+                this.chatMessages.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+            
+            formatMessage(message) {
+                // Simple text formatting (you can enhance this)
+                return message
+                    .replace(/\n/g, '<br>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            }
+            
+            showTypingIndicator() {
+                this.isTyping = true;
+                this.typingIndicator.classList.remove('hidden');
+                this.scrollToBottom();
+            }
+            
+            hideTypingIndicator() {
+                this.isTyping = false;
+                this.typingIndicator.classList.add('hidden');
+            }
+            
+            scrollToBottom() {
+                setTimeout(() => {
+                    this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+                }, 100);
+            }
+            
+            clearChat() {
+                if (confirm('Are you sure you want to clear the chat history?')) {
+                    this.chatMessages.innerHTML = `
+                        <div class="chat-bubble ai">
+                            <div class="font-semibold text-sm text-gray-500 mb-1">Negotiation Assistant</div>
+                            <p>Hi! I'm here to help you negotiate better rental deals. Whether you're looking at a specific property or need general negotiation advice, I can provide strategic guidance, help you craft compelling messages, and coach you through the process. What rental situation would you like help with?</p>
+                        </div>
+                    `;
+                    this.conversationHistory = [{
+                        role: 'assistant',
+                        content: "Hi! I'm here to help you negotiate better rental deals. Whether you're looking at a specific property or need general negotiation advice, I can provide strategic guidance, help you craft compelling messages, and coach you through the process. What rental situation would you like help with?"
+                    }];
+                }
+            }
+            
+            saveChat() {
+                const chatData = {
+                    timestamp: new Date().toISOString(),
+                    messages: this.conversationHistory,
+                    listing: {
+                        location: 'Central District, Hong Kong',
+                        rent: '$1,500',
+                        size: '450 sq ft',
+                        type: 'Studio Apartment'
+                    }
+                };
+                
+                const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `negotiation-assistant-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Show success message
+                const successMsg = document.createElement('div');
+                successMsg.className = 'chat-bubble ai';
+                successMsg.innerHTML = `
+                    <div class="font-semibold text-sm text-gray-500 mb-1">System</div>
+                    <p>💾 Chat history saved successfully!</p>
+>>>>>>> 8d17bac4aa6a5c44b79251881e45686902656303
                 `;
                 return;
             }
