@@ -16,8 +16,8 @@ class AINegotiationEngine {
         
         // Initialize AI Learning System
         // this.learningSystem = new AILearningSystem(this.supabase);
-        this.learningSystem = null; // Temporarily disabled for browser compatibility
-        this.learningEnabled = false;
+        this.learningSystem = this.initializeLearningSystem();
+        this.learningEnabled = true;
         
         // Validate OpenAI configuration
         this.validateOpenAIConfig();
@@ -100,34 +100,123 @@ class AINegotiationEngine {
         };
     }
 
+    // Initialize simple learning system for browser compatibility
+    initializeLearningSystem() {
+        return {
+            // Track successful negotiation patterns
+            successfulPatterns: new Map(),
+            failedPatterns: new Map(),
+            
+            // Learn from negotiation outcome
+            learnFromOutcome: (negotiationData, outcome) => {
+                const pattern = {
+                    propertyType: negotiationData.listing?.house_type,
+                    location: negotiationData.listing?.city,
+                    priceRange: Math.floor((negotiationData.originalPrice || 1500) / 500) * 500,
+                    discountOffered: negotiationData.originalPrice ? 
+                        ((negotiationData.originalPrice - (negotiationData.finalPrice || negotiationData.originalPrice)) / negotiationData.originalPrice) : 0,
+                    messageStyle: negotiationData.messageStyle || 'balanced',
+                    responseTime: negotiationData.responseTime || 'normal'
+                };
+                
+                const patternKey = `${pattern.propertyType}_${pattern.location}_${pattern.priceRange}`;
+                
+                if (outcome.success) {
+                    console.log('📚 Learning: Success pattern recorded for', patternKey);
+                    this.successfulPatterns.set(patternKey, {
+                        ...pattern,
+                        successCount: (this.successfulPatterns.get(patternKey)?.successCount || 0) + 1,
+                        lastSuccess: new Date()
+                    });
+                } else {
+                    console.log('📚 Learning: Failed pattern recorded for', patternKey);
+                    this.failedPatterns.set(patternKey, {
+                        ...pattern,
+                        failCount: (this.failedPatterns.get(patternKey)?.failCount || 0) + 1,
+                        lastFail: new Date()
+                    });
+                }
+            },
+            
+            // Get optimal strategy based on learned patterns
+            getOptimalStrategy: (listing, userBudget) => {
+                const patternKey = `${listing.house_type}_${listing.city}_${Math.floor((listing.price || 1500) / 500) * 500}`;
+                const successPattern = this.successfulPatterns.get(patternKey);
+                const failPattern = this.failedPatterns.get(patternKey);
+                
+                if (successPattern && successPattern.successCount > 0) {
+                    console.log('📚 Learning: Using successful pattern for', patternKey);
+                    return {
+                        recommendedDiscount: successPattern.discountOffered,
+                        messageStyle: successPattern.messageStyle,
+                        confidence: Math.min(successPattern.successCount / 5, 1.0)
+                    };
+                } else if (failPattern) {
+                    console.log('📚 Learning: Avoiding failed pattern for', patternKey);
+                    return {
+                        recommendedDiscount: Math.max(0.05, failPattern.discountOffered - 0.02),
+                        messageStyle: failPattern.messageStyle === 'aggressive' ? 'balanced' : 'professional',
+                        confidence: 0.3
+                    };
+                }
+                
+                // Default strategy for new patterns
+                return {
+                    recommendedDiscount: 0.05,
+                    messageStyle: 'balanced',
+                    confidence: 0.1
+                };
+            }
+        };
+    }
+
     // Get AI learning insights for personalized negotiation
     async getLearningInsights(listing, userBudget) {
         try {
-            // Query successful negotiations from database
-            const { data: successfulNegotiations, error } = await this.supabase
-                .from('ai_chats')
-                .select('*')
-                .eq('metadata->success', true)
-                .ilike('listing_type', `%${listing.house_type}%`)
-                .limit(20);
-
-            if (error) {
-                console.log('Learning insights query failed, using defaults');
+            if (!this.learningEnabled || !this.learningSystem) {
                 return this.getDefaultLearningInsights();
             }
 
-            // Analyze successful patterns
-            const insights = {
-                successfulStrategies: this.analyzeSuccessfulStrategies(successfulNegotiations),
-                optimalTiming: this.analyzeOptimalTiming(successfulNegotiations),
-                valueProps: this.analyzeValuePropositions(successfulNegotiations),
-                landlordBehavior: this.analyzeLandlordBehavior(successfulNegotiations)
+            // Use the new learning system to get optimal strategy
+            const strategy = this.learningSystem.getOptimalStrategy(listing, userBudget);
+            
+            return {
+                successfulStrategies: `Recommended discount: ${(strategy.recommendedDiscount * 100).toFixed(1)}% (confidence: ${(strategy.confidence * 100).toFixed(0)}%)`,
+                optimalTiming: strategy.messageStyle === 'aggressive' ? 'Fast response' : 'Measured approach',
+                valueProps: strategy.messageStyle === 'professional' ? 'Professional credentials' : 'Personal connection',
+                landlordBehavior: `Pattern confidence: ${(strategy.confidence * 100).toFixed(0)}%`
             };
-
-            return insights;
         } catch (error) {
             console.error('Error getting learning insights:', error);
             return this.getDefaultLearningInsights();
+        }
+    }
+
+    // Learn from negotiation outcome
+    learnFromNegotiation(negotiation, outcome) {
+        if (!this.learningEnabled || !this.learningSystem) {
+            return;
+        }
+
+        try {
+            // Prepare negotiation data for learning
+            const learningData = {
+                listing: {
+                    house_type: negotiation.listing?.house_type || 'Unknown',
+                    city: negotiation.listing?.city || 'Unknown'
+                },
+                originalPrice: negotiation.originalPrice,
+                finalPrice: outcome.finalPrice || negotiation.finalPrice,
+                messageStyle: negotiation.messageStyle || 'balanced',
+                responseTime: 'normal' // Could be enhanced to track actual timing
+            };
+
+            // Let the learning system learn from this outcome
+            this.learningSystem.learnFromOutcome(learningData, outcome);
+            
+            console.log('📚 Learning system updated with negotiation outcome');
+        } catch (error) {
+            console.error('Error learning from negotiation:', error);
         }
     }
 
@@ -514,58 +603,14 @@ class AINegotiationEngine {
             const contextualLearning = await this.getContextualLearning(listing.house_type, listing.city);
 
             const enhancedPrompt = `
-            You are an advanced AI negotiation expert with access to learning data from successful negotiations. Generate a highly optimized negotiation message:
+            Write a friendly, natural message from a prospective tenant to a landlord. Be casual and human-like:
 
-            LISTING DETAILS:
-            - Title: ${listing.title}
-            - Current Price: $${listing.price}/month
-            - Type: ${listing.house_type}
-            - Bedrooms: ${listing.bedrooms}
-            - Location: ${listing.city || 'Not specified'}
-            - Utilities: ${listing.utilities}
+            Property: ${listing.title} - $${listing.price}/month
+            Budget: $${userBudget}
 
-            USER PROFILE & PREFERENCES:
-            - Budget: $${userBudget}
-            - Looking for: ${listing.house_type}
-            - Negotiation History: ${conversationHistory.length} previous conversations
+            Write a short message (1-2 sentences) expressing interest. If budget is lower than asking price, make a reasonable offer. Be friendly and mention being a qualified tenant ready to move quickly.
 
-            ENHANCED MARKET INTELLIGENCE:
-            - Average market price: $${marketData.average}
-            - Market range: $${marketData.min} - $${marketData.max}
-            - Data source: ${marketData.source}
-            - Market analysis: ${marketData.analysis || 'Standard market conditions'}
-            - Comparable properties: ${marketData.negotiationTips || 'Standard pricing'}
-
-            AI LEARNING INSIGHTS:
-            - Successful price reduction patterns: ${learningInsights.successfulStrategies}
-            - Optimal timing for offers: ${learningInsights.optimalTiming}
-            - Effective value propositions: ${learningInsights.valueProps}
-            - Landlord response patterns: ${learningInsights.landlordBehavior}
-
-            CONTEXTUAL LEARNING DATA:
-            - Similar property negotiations: ${contextualLearning.similarNegotiations}
-            - Successful strategies in ${listing.city}: ${contextualLearning.locationStrategies}
-            - ${listing.house_type} specific tactics: ${contextualLearning.propertyTypeStrategies}
-
-            ADVANCED NEGOTIATION STRATEGY:
-            1. Personalize approach based on successful patterns
-            2. Use data-driven market justification
-            3. Emphasize qualified tenant status with speed to close
-            4. Apply psychological principles from successful cases
-            5. Incorporate location-specific insights
-            6. Optimize message length based on success data
-            7. Use proven language patterns that convert
-
-            DYNAMIC PRICING STRATEGY:
-            - Apply learned discount ranges for this property type
-            - Consider market momentum and seasonal factors
-            - Use successful negotiation anchoring techniques
-            - Optimize offer based on conversion probability
-
-            CONVERSATION MEMORY:
-            ${conversationHistory.length > 0 ? `Previous context: ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join(' | ')}` : 'Initial contact'}
-
-            Generate a message that maximizes negotiation success probability based on learned patterns. Be specific, data-driven, and compelling:
+            Example style: "Hi! I'm interested in your apartment. I'm a qualified tenant with good references and can move in quickly. Would you consider $X/month?"
             `;
 
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -584,10 +629,10 @@ class AINegotiationEngine {
                         },
                         {
                             role: 'user',
-                            content: `Generate an optimized negotiation message for this ${listing.house_type} in ${listing.city} priced at $${listing.price}. My budget is $${userBudget}. Use your learning data to maximize success probability.`
+                            content: `Property: ${listing.title} - $${listing.price}/month. Budget: $${userBudget}`
                         }
                     ],
-                    max_tokens: 150,
+                    max_tokens: 50,
                     temperature: 0.7,
                     top_p: 0.9,
                     frequency_penalty: 0.3,
@@ -791,6 +836,9 @@ class AINegotiationEngine {
                             
                             negotiation.finalPrice = finalPrice;
                             console.log('🎉 NEGOTIATION FINALIZED at $', negotiation.finalPrice);
+                            
+                            // Learn from successful negotiation
+                            this.learnFromNegotiation(negotiation, { success: true, finalPrice });
                             
                             // PRIORITY 1: Direct UI update (immediate feedback)
                             const savings = negotiation.originalPrice - negotiation.finalPrice;
@@ -1532,10 +1580,17 @@ class AINegotiationEngine {
             listing.bedrooms
         );
         
-        const adjustedOffer = Math.min(
-            userBudget, 
+        let adjustedOffer = Math.min(
+            userBudget || listing.price, 
             Math.round((dynamicMarketData?.adjustedAverage || listing.price) * 0.96)
         );
+        
+        // CRITICAL: Ensure adjustedOffer is never null/undefined/0
+        if (!adjustedOffer || adjustedOffer <= 0) {
+            console.error('❌ CRITICAL: Invalid adjustedOffer detected:', adjustedOffer);
+            adjustedOffer = userBudget || listing.price || 1500;
+            console.log('✅ Using fallback price for strategic response:', adjustedOffer);
+        }
         
         const strategicResponses = [
             `I understand your position. Let me present a comprehensive offer: $${adjustedOffer}/month with excellent references, immediate occupancy, and long-term reliability. This reflects both market conditions and my value as a tenant.`,
@@ -1597,6 +1652,13 @@ class AINegotiationEngine {
 
     // Generate casual progressive responses
     generateCasualProgressiveResponse(price, round, listing) {
+        // CRITICAL: Ensure price is never null/undefined/0
+        if (!price || price <= 0) {
+            console.error('❌ CRITICAL: Invalid price in casual response:', price);
+            price = listing.price || 1500;
+            console.log('✅ Using fallback price for casual response:', price);
+        }
+        
         const casualResponses = [
             `Hey! Thanks for getting back to me. I'm really interested in the ${listing.house_type}. How about $${price}/month? I'm a great tenant - clean, quiet, and always on time with rent.`,
             `I appreciate you considering my offer! Would $${price}/month work? I'm flexible and really love the place. Plus, I'm super reliable and take great care of properties.`,
@@ -1609,6 +1671,13 @@ class AINegotiationEngine {
 
     // Generate professional progressive responses
     generateProfessionalProgressiveResponse(price, round, listing) {
+        // CRITICAL: Ensure price is never null/undefined/0
+        if (!price || price <= 0) {
+            console.error('❌ CRITICAL: Invalid price in professional response:', price);
+            price = listing.price || 1500;
+            console.log('✅ Using fallback price for professional response:', price);
+        }
+        
         const professionalResponses = [
             `Thank you for your consideration. I would like to propose $${price}/month for the ${listing.house_type}. I am a qualified professional tenant with excellent credit and references.`,
             `I appreciate your response. My offer is $${price}/month, reflecting both market conditions and my credentials as a reliable, long-term tenant with verifiable income and references.`,
@@ -1621,6 +1690,13 @@ class AINegotiationEngine {
 
     // Generate balanced progressive responses
     generateBalancedProgressiveResponse(price, round, listing) {
+        // CRITICAL: Ensure price is never null/undefined/0
+        if (!price || price <= 0) {
+            console.error('❌ CRITICAL: Invalid price in balanced response:', price);
+            price = listing.price || 1500;
+            console.log('✅ Using fallback price for balanced response:', price);
+        }
+        
         const balancedResponses = [
             `Thank you for your reply. I'd like to offer $${price}/month for this ${listing.house_type}. I'm a responsible tenant with excellent references and I'm ready to move forward quickly.`,
             `I appreciate your consideration. Would $${price}/month work for you? I can provide strong references and I'm committed to maintaining the property in excellent condition.`,
@@ -2307,17 +2383,28 @@ class AINegotiationEngine {
         try {
             console.log('🚀 Starting negotiation for:', listing.title);
             
-            // Prevent duplicate negotiations for the same listing
+            // Check for existing negotiations but allow continuation
             const existingNegotiation = Array.from(this.activeNegotiations.values())
                 .find(neg => neg.listingId === listing.id && neg.userEmail === userEmail);
             
             if (existingNegotiation) {
-                console.log('⚠️ Negotiation already exists for this listing, skipping duplicate');
-                return {
-                    success: false,
-                    message: 'Negotiation already in progress for this listing',
-                    marketData: existingNegotiation.marketData
-                };
+                console.log('🔄 Found existing negotiation, checking if it can continue...');
+                
+                // Allow continuation if the negotiation is still active and not finalized
+                if (existingNegotiation.status !== 'finalized' && existingNegotiation.status !== 'failed') {
+                    console.log('✅ Continuing existing negotiation');
+                    // Return the existing negotiation data to continue
+                    return {
+                        success: true,
+                        message: `Continuing our conversation about ${listing.title}. What would you like to discuss?`,
+                        marketData: existingNegotiation.marketData,
+                        existingNegotiation: true
+                    };
+                } else {
+                    console.log('⚠️ Previous negotiation was finalized, starting fresh');
+                    // Remove the old negotiation and start fresh
+                    this.activeNegotiations.delete(existingNegotiation.negotiationId);
+                }
             }
 
             // Clean up location data before getting market data
