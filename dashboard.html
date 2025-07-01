@@ -1556,6 +1556,24 @@
                     
                     // Update main button status
                     updateIdVerificationStatus('verified');
+                    
+                    // After a short delay, redirect to ACE verification
+                    setTimeout(() => {
+                        closeVerificationModal();
+                        // Redirect to ACE age verification service
+                        // You'll need to replace this URL with the actual ACE verification URL
+                        const aceVerificationUrl = 'https://app.age-protection.com/verification'; // Replace with actual ACE URL
+                        
+                        // Optional: Add user data as query parameters if needed
+                        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                        const redirectUrl = `${aceVerificationUrl}?email=${encodeURIComponent(currentUser?.email || '')}&return_url=${encodeURIComponent(window.location.origin + '/dashboard.html')}`;
+                        
+                        // Show notification before redirect
+                        alert('ID verification successful! You will now be redirected to complete age verification.');
+                        
+                        // Redirect to ACE verification
+                        window.location.href = redirectUrl;
+                    }, 2000); // 2 second delay to show success message
                 } else {
                     // Check if it's a service unavailable error
                     if (response.status === 503 && result.serviceAvailable === false) {
