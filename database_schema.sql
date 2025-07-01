@@ -64,6 +64,11 @@ CREATE TABLE IF NOT EXISTS messages (
     conversation_id UUID NOT NULL,
     sender_email VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
+    message_type VARCHAR(50) DEFAULT 'text' CHECK (message_type IN ('text', 'file', 'lease')),
+    file_url TEXT,
+    file_name VARCHAR(255),
+    file_size INTEGER,
+    file_type VARCHAR(100),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
     FOREIGN KEY (sender_email) REFERENCES users(email) ON DELETE CASCADE

@@ -2730,11 +2730,85 @@ console.log('- SUPABASE_ANON_KEY:', !!process.env.SUPABASE_ANON_KEY);
 console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', !!process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY);
 console.log('- AZURE_FACE_KEY:', !!process.env.AZURE_FACE_KEY);
 
-// Simplified startup with better error handling
-const server = app.listen(port, '0.0.0.0', () => {
-    console.log(`✅ RoomFinderAI Server running on port ${port}`);
-    console.log(`🏥 Health check: http://localhost:${port}/health`);
-    console.log(`🌐 Server ready at http://0.0.0.0:${port}`);
+// Initialize storage buckets
+async function initializeStorage() {
+    try {
+        console.log('📦 Initializing storage buckets...');
+        
+        const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+        
+        if (listError) {
+            console.error('❌ Error listing buckets:', listError);
+            return;
+        }
+        
+        // Check for chat-documents bucket
+        const chatDocsBucketExists = buckets?.some(bucket => bucket.name === 'chat-documents');
+        console.log('🔍 chat-documents bucket exists:', chatDocsBucketExists);
+        
+        if (!chatDocsBucketExists) {
+            console.log('📦 Creating chat-documents bucket...');
+            const { data: newBucket, error: createError } = await supabase.storage.createBucket('chat-documents', {
+                public: true,
+                allowedMimeTypes: ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+                fileSizeLimit: 5242880 // 5MB
+            });
+            
+            if (createError) {
+                console.error('❌ Failed to create chat-documents bucket:', createError);
+            } else {
+                console.log('✅ Created chat-documents bucket successfully');
+            }
+        }
+        
+        // Check for lease-documents bucket (for lease agreements)
+        const leaseDocsBucketExists = buckets?.some(bucket => bucket.name === 'lease-documents');
+        console.log('🔍 lease-documents bucket exists:', leaseDocsBucketExists);
+        
+        if (!leaseDocsBucketExists) {
+            console.log('📦 Creating lease-documents bucket...');
+            const { data: newBucket, error: createError } = await supabase.storage.createBucket('lease-documents', {
+                public: true,
+                allowedMimeTypes: ['application/pdf'],
+                fileSizeLimit: 10485760 // 10MB
+            });
+            
+            if (createError) {
+                console.error('❌ Failed to create lease-documents bucket:', createError);
+            } else {
+                console.log('✅ Created lease-documents bucket successfully');
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Storage initialization failed:', error);
+    }
+}
+
+// Initialize storage and start server
+initializeStorage().then(() => {
+    // Simplified startup with better error handling
+    const server = app.listen(port, '0.0.0.0', () => {
+        console.log(`✅ RoomFinderAI Server running on port ${port}`);
+        console.log(`🏥 Health check: http://localhost:${port}/health`);
+        console.log(`🌐 Server ready at http://0.0.0.0:${port}`);
+    });
+    
+    // Handle server errors
+    server.on('error', (err) => {
+        console.error('❌ Server error:', err);
+        if (err.code === 'EADDRINUSE') {
+            console.log(`Port ${port} is busy, trying alternative...`);
+        }
+    });
+}).catch((error) => {
+    console.error('❌ Failed to initialize storage, starting server anyway:', error);
+    
+    const server = app.listen(port, '0.0.0.0', () => {
+        console.log(`✅ RoomFinderAI Server running on port ${port} (without storage init)`);
+        console.log(`🏥 Health check: http://localhost:${port}/health`);
+        console.log(`🌐 Server ready at http://0.0.0.0:${port}`);
+    });
 });
 
 // Handle server errors
