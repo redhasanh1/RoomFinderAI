@@ -6,8 +6,9 @@
 "scripts": {
   "start": "node backend/server.js",
   "dev": "node backend/server.js",
-  "build": "echo 'No build step required'",
-  "test": "echo 'No tests specified'"
+  "build": "npm install --prefix backend --production",
+  "test": "echo 'No tests specified'",
+  "postinstall": "npm install --prefix backend --production"
 },
 
   "keywords": [
