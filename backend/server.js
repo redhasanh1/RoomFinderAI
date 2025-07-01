@@ -375,6 +375,66 @@ app.get('/api/listings/:id', (req, res) => {
     }
 });
 
+// API: Update listing by ID
+app.put('/api/listings/:id', (req, res) => {
+    try {
+        const listingIndex = listings.findIndex(l => l.id === req.params.id);
+        if (listingIndex === -1) {
+            return res.status(404).json({ error: 'Listing not found' });
+        }
+
+        const { title, price, city, street, postalCode, houseType, bedrooms, utilities, description } = req.body;
+        
+        // Validate required fields
+        const errors = [];
+        if (!title) errors.push('Title is required');
+        if (!price || price <= 0) errors.push('Valid price is required');
+        if (!city) errors.push('City is required');
+        
+        if (errors.length > 0) {
+            return res.status(400).json({ errors });
+        }
+
+        // Update listing
+        listings[listingIndex] = {
+            ...listings[listingIndex],
+            title,
+            price: parseFloat(price),
+            city,
+            street: street || listings[listingIndex].street,
+            postalCode: postalCode || listings[listingIndex].postalCode,
+            houseType: houseType || listings[listingIndex].houseType,
+            bedrooms: bedrooms ? parseInt(bedrooms) : listings[listingIndex].bedrooms,
+            utilities: utilities || listings[listingIndex].utilities,
+            description: description || listings[listingIndex].description,
+            updatedAt: new Date().toISOString()
+        };
+
+        res.json({ message: 'Listing updated successfully', listing: listings[listingIndex] });
+    } catch (error) {
+        console.error('Error in PUT /api/listings/:id:', error.message);
+        res.status(500).json({ error: 'Failed to update listing' });
+    }
+});
+
+// API: Delete listing by ID
+app.delete('/api/listings/:id', (req, res) => {
+    try {
+        const listingIndex = listings.findIndex(l => l.id === req.params.id);
+        if (listingIndex === -1) {
+            return res.status(404).json({ error: 'Listing not found' });
+        }
+
+        // Remove listing from array
+        const deletedListing = listings.splice(listingIndex, 1)[0];
+
+        res.json({ message: 'Listing deleted successfully', listing: deletedListing });
+    } catch (error) {
+        console.error('Error in DELETE /api/listings/:id:', error.message);
+        res.status(500).json({ error: 'Failed to delete listing' });
+    }
+});
+
 // Helper: Generate 6-digit verification code
 function generateVerificationCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
