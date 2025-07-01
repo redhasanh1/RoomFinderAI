@@ -2031,6 +2031,26 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                 let idDocumentBase64 = null;
                 
                 try {
+                    // First, ensure the govdocs bucket exists
+                    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+                    const govdocsBucketExists = buckets?.some(bucket => bucket.name === 'govdocs');
+                    
+                    if (!govdocsBucketExists) {
+                        console.log('📦 Creating govdocs bucket...');
+                        const { data: newBucket, error: createError } = await supabase.storage.createBucket('govdocs', {
+                            public: false,
+                            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'],
+                            fileSizeLimit: 10485760 // 10MB
+                        });
+                        
+                        if (createError) {
+                            console.error('❌ Failed to create govdocs bucket:', createError);
+                            throw new Error('Failed to create secure storage bucket');
+                        }
+                        
+                        console.log('✅ Created govdocs bucket successfully');
+                    }
+
                     const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('govdocs')
                         .upload(fileName, req.file.buffer, {
