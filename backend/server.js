@@ -951,7 +951,151 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
-// API: AI Negotiator chat (placeholder)
+// API: AI Negotiator chat with OpenAI integration
+app.post('/api/ai-negotiate', async (req, res) => {
+    try {
+        const { message, conversationHistory, userEmail } = req.body;
+        
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+
+        // Check if OpenAI is configured
+        if (!config.OPENAI_API_KEY) {
+            return res.status(503).json({ error: 'AI service not available - OpenAI not configured' });
+        }
+
+        // Build the conversation context for OpenAI
+        const systemPrompt = buildNegotiationSystemPrompt();
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            ...(conversationHistory || []).slice(-8) // Keep last 8 messages for context
+        ];
+
+        // Add the current user message
+        messages.push({ role: 'user', content: message });
+
+        console.log('🤖 Sending OpenAI request for negotiation...');
+        
+        // Call OpenAI API
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${config.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json',
+                ...(config.OPENAI_ORG_ID && { 'OpenAI-Organization': config.OPENAI_ORG_ID })
+            },
+            body: JSON.stringify({
+                model: config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                messages: messages,
+                max_tokens: 300,
+                temperature: 0.8,
+                presence_penalty: 0.1,
+                frequency_penalty: 0.1
+            })
+        });
+
+        if (!openaiResponse.ok) {
+            const errorData = await openaiResponse.json().catch(() => ({}));
+            console.error('❌ OpenAI API error:', errorData);
+            throw new Error(`OpenAI API error: ${openaiResponse.status}`);
+        }
+
+        const data = await openaiResponse.json();
+        
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            throw new Error('Invalid OpenAI response format');
+        }
+
+        const aiResponse = data.choices[0].message.content.trim();
+        
+        // Log AI negotiator usage
+        if (userEmail) {
+            await logUserActivity(userEmail, 'ai_negotiation', `Used AI negotiator for property negotiation`, {
+                message_length: message.length,
+                response_length: aiResponse.length,
+                model_used: config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                tokens_used: data.usage?.total_tokens || 0
+            });
+        }
+
+        // Store conversation in database if Supabase is available
+        if (supabase && userEmail) {
+            try {
+                await supabase.from('ai_negotiations').insert({
+                    user_email: userEmail,
+                    user_message: message,
+                    ai_response: aiResponse,
+                    listing_details: {
+                        location: 'Central District, Hong Kong',
+                        rent: 1500,
+                        type: 'Studio Apartment',
+                        size: '450 sq ft'
+                    },
+                    tokens_used: data.usage?.total_tokens || 0,
+                    created_at: new Date().toISOString()
+                });
+            } catch (dbError) {
+                console.error('Error storing negotiation in database:', dbError);
+            }
+        }
+        
+        console.log('✅ AI negotiation response generated successfully');
+        res.json({ 
+            response: aiResponse,
+            tokensUsed: data.usage?.total_tokens || 0
+        });
+        
+    } catch (error) {
+        console.error('❌ Error in /api/ai-negotiate:', error.message);
+        res.status(500).json({ error: 'Failed to process AI negotiation request' });
+    }
+});
+
+// Helper function to build the negotiation system prompt
+function buildNegotiationSystemPrompt() {
+    return `You are an experienced property landlord in Hong Kong who owns a studio apartment in Central District. You are professional, friendly, but also business-minded. 
+
+PROPERTY DETAILS:
+- Location: Central District, Hong Kong  
+- Monthly Rent: HK$1,500 (your starting price)
+- Size: 450 sq ft
+- Type: Studio apartment
+- Amenities: Air conditioning, furnished, city view, near MTR
+- Available: Immediately
+
+NEGOTIATION PERSONALITY & STRATEGY:
+- You're willing to negotiate but not desperate
+- Your absolute minimum rent is HK$1,200/month
+- You prefer long-term tenants (12+ months lease)
+- You value responsible, professional tenants
+- You can offer small discounts for:
+  * Longer lease commitments (12+ months: 5-10% discount)
+  * Immediate move-in
+  * Excellent references
+  * Upfront payment (6+ months)
+
+NEGOTIATION BEHAVIOR:
+- Start firm at HK$1,500
+- Use anchoring - mention market rates are higher
+- Show flexibility for the right tenant
+- Ask questions about their background, lease length, move-in date
+- Emphasize the property's strengths (location, amenities)
+- Create mild urgency ("other interested parties")
+- Be professional but personable
+
+RESPONSE STYLE:
+- Keep responses conversational and realistic
+- Use Hong Kong context and terminology appropriately  
+- Be direct but polite
+- Ask follow-up questions to gather information
+- Show interest in finding the right tenant
+- Vary your responses naturally
+
+Remember: You want to get the best rent possible while finding a reliable tenant. Negotiate strategically but remain professional throughout.`;
+}
+
+// Keep the old endpoint for backward compatibility
 app.post('/api/ai-negotiator', async (req, res) => {
     try {
         const { message, userEmail } = req.body;
@@ -959,18 +1103,16 @@ app.post('/api/ai-negotiator', async (req, res) => {
             return res.status(400).json({ error: 'Message is required' });
         }
 
-        // Placeholder: In production, integrate with an AI model
-        const response = `AI Negotiator: I received your message: "${message}". How can I assist you with pricing tips, negotiation strategies, or adding a listing?`;
+        // Redirect to new negotiation endpoint
+        const response = await fetch(`${req.protocol}://${req.get('host')}/api/ai-negotiate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, userEmail })
+        });
         
-        // Log AI negotiator usage
-        if (userEmail) {
-            await logUserActivity(userEmail, 'message_sent', `Used AI negotiator for assistance`, {
-                message_length: message.length,
-                type: 'ai_negotiator'
-            });
-        }
+        const data = await response.json();
+        res.json(data);
         
-        res.json({ response });
     } catch (error) {
         console.error('Error in /api/ai-negotiator:', error.message);
         res.status(500).json({ error: 'Failed to process AI request' });
