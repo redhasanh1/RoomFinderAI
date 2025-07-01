@@ -562,106 +562,198 @@
         }
 
         /* Foundation-inspired 3D Models */
-        /* WhatsApp House Images - Section-Based Placement */
+        /* WhatsApp House Images - Foundation Style */
         .house-image-section {
             position: absolute;
             width: 280px;
             height: auto;
             pointer-events: none;
             z-index: 3;
-            opacity: 0.75;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-            filter: brightness(1.1) contrast(0.95);
+            opacity: 0.8;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 25px 60px rgba(0, 0, 0, 0.08),
+                0 10px 20px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            filter: brightness(1.05) contrast(1.05) saturate(1.1);
+            transform: translateZ(0);
+            will-change: transform, opacity, filter;
         }
         
-        /* Section-specific positioning to avoid overlap */
+        /* Foundation-style positioning for each house */
         .house-hero-corner { 
             position: absolute;
-            top: 5vh; 
-            right: 5%; 
-            width: 250px;
+            top: 8vh; 
+            right: 3%; 
+            width: 260px;
             height: auto;
-            opacity: 0.6;
+            opacity: 0.75;
             z-index: 3;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-            filter: brightness(1.1) contrast(0.95);
+            border-radius: 28px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+            backdrop-filter: blur(15px);
+            box-shadow: 
+                0 30px 80px rgba(0, 0, 0, 0.06),
+                0 15px 25px rgba(0, 0, 0, 0.03),
+                inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            filter: brightness(1.08) contrast(1.08) saturate(1.15);
             pointer-events: none;
+            transform: translateZ(0) rotateX(1deg) rotateY(-2deg);
+            animation: foundation-float-1 12s ease-in-out infinite;
         }
         
         .house-features-left { 
             position: absolute;
-            top: 10%; 
-            left: -50px; 
-            width: 300px;
+            top: 12%; 
+            left: -45px; 
+            width: 320px;
             height: auto;
-            opacity: 0.7;
+            opacity: 0.8;
             z-index: 3;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-            filter: brightness(1.1) contrast(0.95);
+            border-radius: 26px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+            backdrop-filter: blur(12px);
+            box-shadow: 
+                0 35px 75px rgba(0, 0, 0, 0.08),
+                0 12px 20px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            filter: brightness(1.06) contrast(1.1) saturate(1.12);
             pointer-events: none;
+            transform: translateZ(0) rotateX(-1deg) rotateY(3deg);
+            animation: foundation-float-2 14s ease-in-out infinite;
         }
         
         .house-success-right { 
             position: absolute;
-            top: 15%; 
-            right: -60px; 
-            width: 320px;
+            top: 18%; 
+            right: -55px; 
+            width: 340px;
             height: auto;
-            opacity: 0.65;
+            opacity: 0.72;
             z-index: 3;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-            filter: brightness(1.1) contrast(0.95);
+            border-radius: 30px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06));
+            backdrop-filter: blur(18px);
+            box-shadow: 
+                0 40px 85px rgba(0, 0, 0, 0.07),
+                0 18px 30px rgba(0, 0, 0, 0.03),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            filter: brightness(1.1) contrast(1.06) saturate(1.18);
             pointer-events: none;
+            transform: translateZ(0) rotateX(2deg) rotateY(-1deg);
+            animation: foundation-float-3 16s ease-in-out infinite;
         }
         
         .house-search-corner { 
             position: absolute;
-            bottom: 10%; 
-            left: 3%; 
-            width: 260px;
+            bottom: 12%; 
+            left: 2%; 
+            width: 280px;
             height: auto;
-            opacity: 0.7;
+            opacity: 0.78;
             z-index: 3;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-            filter: brightness(1.1) contrast(0.95);
+            border-radius: 25px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05));
+            backdrop-filter: blur(14px);
+            box-shadow: 
+                0 28px 70px rgba(0, 0, 0, 0.07),
+                0 14px 22px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.22);
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            filter: brightness(1.07) contrast(1.09) saturate(1.14);
             pointer-events: none;
+            transform: translateZ(0) rotateX(-2deg) rotateY(2deg);
+            animation: foundation-float-4 13s ease-in-out infinite;
         }
         
         .house-footer-corner { 
             position: absolute;
-            bottom: 20px; 
-            right: 2%; 
-            width: 240px;
+            bottom: 25px; 
+            right: 3%; 
+            width: 250px;
             height: auto;
-            opacity: 0.6;
+            opacity: 0.7;
             z-index: 3;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-            filter: brightness(1.1) contrast(0.95);
+            border-radius: 24px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07));
+            backdrop-filter: blur(16px);
+            box-shadow: 
+                0 32px 75px rgba(0, 0, 0, 0.06),
+                0 16px 28px rgba(0, 0, 0, 0.03),
+                inset 0 1px 0 rgba(255, 255, 255, 0.28);
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            filter: brightness(1.05) contrast(1.07) saturate(1.16);
             pointer-events: none;
+            transform: translateZ(0) rotateX(1deg) rotateY(-3deg);
+            animation: foundation-float-5 15s ease-in-out infinite;
         }
         
-        /* Blend with background sections */
+        /* Foundation-style floating animations */
+        @keyframes foundation-float-1 {
+            0%, 100% { 
+                transform: translateZ(0) rotateX(1deg) rotateY(-2deg) translateY(0px); 
+            }
+            50% { 
+                transform: translateZ(0) rotateX(1.5deg) rotateY(-2.5deg) translateY(-8px); 
+            }
+        }
+        
+        @keyframes foundation-float-2 {
+            0%, 100% { 
+                transform: translateZ(0) rotateX(-1deg) rotateY(3deg) translateY(0px); 
+            }
+            50% { 
+                transform: translateZ(0) rotateX(-1.5deg) rotateY(3.5deg) translateY(-6px); 
+            }
+        }
+        
+        @keyframes foundation-float-3 {
+            0%, 100% { 
+                transform: translateZ(0) rotateX(2deg) rotateY(-1deg) translateY(0px); 
+            }
+            50% { 
+                transform: translateZ(0) rotateX(2.5deg) rotateY(-1.5deg) translateY(-10px); 
+            }
+        }
+        
+        @keyframes foundation-float-4 {
+            0%, 100% { 
+                transform: translateZ(0) rotateX(-2deg) rotateY(2deg) translateY(0px); 
+            }
+            50% { 
+                transform: translateZ(0) rotateX(-2.5deg) rotateY(2.5deg) translateY(-7px); 
+            }
+        }
+        
+        @keyframes foundation-float-5 {
+            0%, 100% { 
+                transform: translateZ(0) rotateX(1deg) rotateY(-3deg) translateY(0px); 
+            }
+            50% { 
+                transform: translateZ(0) rotateX(1.5deg) rotateY(-3.5deg) translateY(-9px); 
+            }
+        }
+        
+        /* Foundation-style hover effects */
         .house-hero-corner:hover,
         .house-features-left:hover,
         .house-success-right:hover,
         .house-search-corner:hover,
         .house-footer-corner:hover {
             opacity: 0.95;
-            transform: translateY(-5px) scale(1.02);
-            filter: brightness(1.15) contrast(1);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            transform: translateZ(0) scale(1.03) translateY(-12px) rotateX(0deg) rotateY(0deg);
+            filter: brightness(1.18) contrast(1.08) saturate(1.25);
+            box-shadow: 
+                0 50px 100px rgba(0, 0, 0, 0.12),
+                0 25px 40px rgba(0, 0, 0, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(25px);
         }
         
         /* Responsive adjustments */
@@ -852,7 +944,7 @@
                         Smart room searching meets intelligent price negotiation. Let our AI find and negotiate the best rental deals automatically.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-6 mb-12">
-                        <button onclick="document.getElementById('ai-negotiator-section').scrollIntoView({behavior: 'smooth', block: 'center'});" class="ai-btn-minimal text-lg px-8 py-4">
+                        <button onclick="document.getElementById('roomfinder-in-action').scrollIntoView({behavior: 'smooth', block: 'center'});" class="ai-btn-minimal text-lg px-8 py-4">
                             🤖 Try AI Negotiator
                         </button>
                         <button onclick="document.getElementById('quick-search-section').scrollIntoView({behavior: 'smooth'});" class="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-8 py-4 rounded-full font-semibold hover:bg-white/30 hover:transform hover:scale-105 transition-all duration-300">
@@ -1015,7 +1107,7 @@
     </section>
     
     <!-- Interactive Demo Section -->
-    <section class="py-20 bg-gray-50">
+    <section id="roomfinder-in-action" class="py-20 bg-gray-50">
         <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
@@ -1420,7 +1512,7 @@
             <div class="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 opacity-20 blur-sm group-hover:opacity-30 transition-opacity duration-300"></div>
             
             <!-- Main Button -->
-            <button id="aiButton" onclick="document.getElementById('ai-negotiator-section').scrollIntoView({behavior: 'smooth', block: 'center'});" class="relative bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full p-6 shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center w-20 h-20 hover:scale-105">
+            <button id="aiButton" onclick="document.getElementById('roomfinder-in-action').scrollIntoView({behavior: 'smooth', block: 'center'});" class="relative bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full p-6 shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center w-20 h-20 hover:scale-105">
                 <!-- Glow Effect -->
                 <div class="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>
                 
