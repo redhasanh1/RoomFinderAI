@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Negotiator - RoomFinderAI</title>
+    <title>Negotiation Assistant - RoomFinderAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -210,7 +210,7 @@
                     <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
                     <a href="/dashboard" class="text-gray-700 hover:text-blue-600 transition font-medium">Dashboard</a>
                     <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
-                    <a href="/ai-negotiator" class="text-blue-600 font-semibold">AI Negotiator</a>
+                    <a href="/ai-negotiator" class="text-blue-600 font-semibold">Negotiation Assistant</a>
                 </div>
             </div>
             <div class="flex items-center space-x-4">
@@ -225,8 +225,8 @@
     <main class="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Page Header -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">🤖 AI Negotiator</h1>
-            <p class="text-gray-600">Practice your negotiation skills with our AI-powered landlord simulator</p>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">🤖 Negotiation Assistant</h1>
+            <p class="text-gray-600">Get expert advice and coaching to negotiate better rental deals with landlords</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -304,10 +304,10 @@
                                     <span class="text-white font-bold text-lg">AI</span>
                                 </div>
                                 <div>
-                                    <h3 class="font-semibold text-gray-900">AI Landlord</h3>
+                                    <h3 class="font-semibold text-gray-900">Negotiation Assistant</h3>
                                     <p class="text-sm text-green-600 flex items-center">
                                         <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                        Online
+                                        Ready to Help
                                     </p>
                                 </div>
                             </div>
@@ -327,14 +327,14 @@
                         <div id="chatMessages">
                             <!-- Welcome message -->
                             <div class="chat-bubble ai">
-                                <div class="font-semibold text-sm text-gray-500 mb-1">AI Landlord</div>
-                                <p>Hello! I'm the owner of the studio apartment you're interested in. The rent is $1,500 per month. What would you like to know about the property, or would you like to discuss the terms?</p>
+                                <div class="font-semibold text-sm text-gray-500 mb-1">Negotiation Assistant</div>
+                                <p>Hi! I'm here to help you negotiate better rental deals. Whether you're looking at a specific property or need general negotiation advice, I can provide strategic guidance, help you craft compelling messages, and coach you through the process. What rental situation would you like help with?</p>
                             </div>
                         </div>
                         
                         <!-- Typing indicator (hidden by default) -->
                         <div id="typingIndicator" class="typing-indicator hidden">
-                            <span class="text-sm text-gray-500 mr-3">AI Landlord is typing</span>
+                            <span class="text-sm text-gray-500 mr-3">Assistant is typing</span>
                             <div class="typing-dots">
                                 <div class="typing-dot"></div>
                                 <div class="typing-dot"></div>
@@ -532,13 +532,13 @@
                 if (confirm('Are you sure you want to clear the chat history?')) {
                     this.chatMessages.innerHTML = `
                         <div class="chat-bubble ai">
-                            <div class="font-semibold text-sm text-gray-500 mb-1">AI Landlord</div>
-                            <p>Hello! I'm the owner of the studio apartment you're interested in. The rent is $1,500 per month. What would you like to know about the property, or would you like to discuss the terms?</p>
+                            <div class="font-semibold text-sm text-gray-500 mb-1">Negotiation Assistant</div>
+                            <p>Hi! I'm here to help you negotiate better rental deals. Whether you're looking at a specific property or need general negotiation advice, I can provide strategic guidance, help you craft compelling messages, and coach you through the process. What rental situation would you like help with?</p>
                         </div>
                     `;
                     this.conversationHistory = [{
                         role: 'assistant',
-                        content: "Hello! I'm the owner of the studio apartment you're interested in. The rent is $1,500 per month. What would you like to know about the property, or would you like to discuss the terms?"
+                        content: "Hi! I'm here to help you negotiate better rental deals. Whether you're looking at a specific property or need general negotiation advice, I can provide strategic guidance, help you craft compelling messages, and coach you through the process. What rental situation would you like help with?"
                     }];
                 }
             }
@@ -559,7 +559,7 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `ai-negotiation-${new Date().toISOString().split('T')[0]}.json`;
+                a.download = `negotiation-assistant-${new Date().toISOString().split('T')[0]}.json`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
