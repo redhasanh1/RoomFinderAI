@@ -113,6 +113,12 @@ class AIChatHandler {
             return false;
         }
 
+        // If user is logged in (not anonymous), assume they can message
+        if (this.currentUser.email !== 'anonymous@user.com') {
+            console.log('✅ User is logged in, messaging enabled:', this.currentUser.email);
+            return true;
+        }
+
         try {
             const { data: profile, error } = await this.supabase
                 .from('profiles')
@@ -121,7 +127,7 @@ class AIChatHandler {
                 .single();
 
             if (error) {
-                console.log('⚠️ Profile not found, creating basic profile for messaging');
+                console.log('⚠️ Profile not found for anonymous user');
                 return false;
             }
 
@@ -544,6 +550,9 @@ class AIChatHandler {
             // Ask if user wants to negotiate
             this.appendMessage('AI', 'Would you like me to help you negotiate with any of these landlords? I can send professional messages on your behalf using market data and negotiation strategies!', 'left');
             
+            // Set pending response context so "yes" will trigger negotiations
+            this.pendingUserResponse = 'negotiate_offer';
+            
         } catch (error) {
             this.removeTypingIndicator();
             console.error('Search error:', error);
@@ -627,6 +636,9 @@ class AIChatHandler {
             if (isAffirmative && this.matchingListings.length > 0) {
                 console.log('✅ [NEGOTIATION CHECK] Affirmative response detected, starting negotiations');
                 this.appendMessage('AI', '🤖 Great! I\'ll contact the landlords for you using smart negotiation strategies...', 'left');
+                
+                // Clear pending response
+                this.pendingUserResponse = null;
                 
                 // Start negotiations for all matching listings
                 setTimeout(() => this.startNegotiationsForAllListings(), 1000);
