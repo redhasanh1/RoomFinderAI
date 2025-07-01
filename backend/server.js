@@ -2078,13 +2078,12 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         console.log('✅ Created govdocs bucket successfully:', newBucket);
                     }
 
-                    // Upload to pics subfolder within govdocs bucket
-                    const folderPath = `pics/${fileName}`;
-                    console.log('📁 Uploading to govdocs bucket path:', folderPath);
+                    // Upload directly to govdocs bucket (no subfolder)
+                    console.log('📁 Uploading to govdocs bucket path:', fileName);
                     
                     const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('govdocs')
-                        .upload(folderPath, req.file.buffer, {
+                        .upload(fileName, req.file.buffer, {
                             contentType: req.file.mimetype,
                             upsert: false
                         });
@@ -2094,13 +2093,30 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         console.log('📝 Upload error details:', {
                             message: uploadError.message,
                             error: uploadError.error,
-                            statusCode: uploadError.statusCode
+                            statusCode: uploadError.statusCode,
+                            details: uploadError.details,
+                            hint: uploadError.hint,
+                            code: uploadError.code
                         });
+                        console.log('📁 Attempted upload path:', fileName);
+                        console.log('📊 File buffer size:', req.file.buffer.length);
                         throw uploadError;
                     }
 
                     idDocumentPath = uploadData.path;
                     console.log('✅ ID document uploaded to storage:', uploadData.path);
+                    console.log('📊 Upload data:', uploadData);
+                    
+                    // Verify the file was actually uploaded by trying to list it
+                    const { data: listData, error: listError } = await supabase.storage
+                        .from('govdocs')
+                        .list('', { limit: 10 });
+                    
+                    if (listError) {
+                        console.error('❌ Error listing files in govdocs:', listError);
+                    } else {
+                        console.log('📋 Files in govdocs bucket:', listData?.map(f => f.name) || 'None');
+                    }
                 } catch (storageError) {
                     console.log('⚠️ Storage upload failed, falling back to base64 storage');
                     console.error('Storage error details:', storageError);
