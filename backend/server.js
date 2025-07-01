@@ -158,25 +158,15 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// URL decode middleware to handle spaces in filenames
-app.use((req, res, next) => {
-    try {
-        req.url = decodeURIComponent(req.url);
-    } catch (e) {
-        // If decoding fails, continue with original URL
-    }
-    next();
-});
-
 // Serve static files from parent directory (frontend files)
 const staticPath = path.join(__dirname, '..');
 console.log('📁 Serving static files from:', staticPath);
-app.use(express.static(staticPath));
-
-// Specifically handle 3D House Models folder with spaces
-const houseModelsPath = path.join(__dirname, '..', '3D House Models');
-console.log('🏠 Serving house models from:', houseModelsPath);
-app.use('/3D\ House\ Models', express.static(houseModelsPath));
+app.use(express.static(staticPath, {
+    setHeaders: (res, path) => {
+        // Allow CORS for images
+        res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+}));
 
 // Google Maps API key from config
 const GOOGLE_API_KEY = config.GOOGLE_API_KEY;
@@ -2662,31 +2652,12 @@ app.get('/api/debug/azure', (req, res) => {
     res.json(azureStatus);
 });
 
-// Specific route to serve house model images
-app.get('/3D\ House\ Models/:filename', (req, res) => {
+// Simple route to serve house model images
+app.get('/house-models/:filename', (req, res) => {
     try {
-        const filename = decodeURIComponent(req.params.filename);
+        const filename = req.params.filename;
         const imagePath = path.join(__dirname, '..', '3D House Models', filename);
-        console.log('🏀 Serving house image:', imagePath);
-        
-        if (fs.existsSync(imagePath)) {
-            res.sendFile(imagePath);
-        } else {
-            console.log('❌ House image not found:', imagePath);
-            res.status(404).send('Image not found');
-        }
-    } catch (error) {
-        console.error('❌ Error serving house image:', error);
-        res.status(500).send('Server error');
-    }
-});
-
-// Alternative route with URL encoded spaces
-app.get('/3D%20House%20Models/:filename', (req, res) => {
-    try {
-        const filename = decodeURIComponent(req.params.filename);
-        const imagePath = path.join(__dirname, '..', '3D House Models', filename);
-        console.log('🏀 Serving house image (encoded):', imagePath);
+        console.log('🏠 Serving house image:', imagePath);
         
         if (fs.existsSync(imagePath)) {
             res.sendFile(imagePath);
@@ -2702,23 +2673,7 @@ app.get('/3D%20House%20Models/:filename', (req, res) => {
 
 // Health check route for Railway monitoring - MUST BE BEFORE /:page
 app.get('/health', (req, res) => {
-    try {
-        const healthStatus = {
-            status: 'healthy',
-            timestamp: new Date().toISOString(),
-            services: {
-                supabase: !!supabase,
-                stripe: !!stripe,
-                documentClient: !!documentClient,
-                faceClient: !!faceClient
-            }
-        };
-        
-        res.status(200).json(healthStatus);
-    } catch (error) {
-        console.error('Health check error:', error);
-        res.status(200).send('✅ RoomFinderAI server is running');
-    }
+    res.status(200).send('✅ RoomFinderAI server is running');
 });
 
 // Serve main website at root
