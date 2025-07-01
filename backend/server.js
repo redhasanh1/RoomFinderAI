@@ -2061,7 +2061,8 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         const { data: newBucket, error: createError } = await supabase.storage.createBucket('govdocs', {
                             public: false,
                             allowedMimeTypes: ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'],
-                            fileSizeLimit: 10485760 // 10MB
+                            fileSizeLimit: 10485760, // 10MB
+                            avoidDuplicates: false
                         });
                         
                         if (createError) {
@@ -2094,13 +2095,30 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         console.log('📝 Upload error details:', {
                             message: uploadError.message,
                             error: uploadError.error,
-                            statusCode: uploadError.statusCode
+                            statusCode: uploadError.statusCode,
+                            details: uploadError.details,
+                            hint: uploadError.hint,
+                            code: uploadError.code
                         });
+                        console.log('📁 Attempted upload path:', folderPath);
+                        console.log('📊 File buffer size:', req.file.buffer.length);
                         throw uploadError;
                     }
 
                     idDocumentPath = uploadData.path;
                     console.log('✅ ID document uploaded to storage:', uploadData.path);
+                    console.log('📊 Upload data:', uploadData);
+                    
+                    // Verify the file was actually uploaded by trying to list it
+                    const { data: listData, error: listError } = await supabase.storage
+                        .from('govdocs')
+                        .list('pics', { limit: 10 });
+                    
+                    if (listError) {
+                        console.error('❌ Error listing files in govdocs/pics:', listError);
+                    } else {
+                        console.log('📋 Files in govdocs/pics:', listData?.map(f => f.name) || 'None');
+                    }
                 } catch (storageError) {
                     console.log('⚠️ Storage upload failed, falling back to base64 storage');
                     console.error('Storage error details:', storageError);
