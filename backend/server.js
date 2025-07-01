@@ -2040,15 +2040,15 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         size: req.file.size
                     });
                     
-                    const { data: buckets, error: bucketsListError } = await supabase.storage.listBuckets();
+                    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
                     
-                    if (bucketsListError) {
-                        console.error('❌ Error listing buckets:', bucketsListError);
+                    if (listError) {
+                        console.error('❌ Error listing buckets:', listError);
                         console.log('📝 List buckets error details:', {
-                            message: bucketsListError.message,
-                            details: bucketsListError.details,
-                            hint: bucketsListError.hint,
-                            code: bucketsListError.code
+                            message: listError.message,
+                            details: listError.details,
+                            hint: listError.hint,
+                            code: listError.code
                         });
                     }
                     
@@ -2078,8 +2078,8 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         console.log('✅ Created govdocs bucket successfully:', newBucket);
                     }
 
-                    // Upload to pics subfolder within govdocs bucket
-                    const folderPath = `pics/${fileName}`;
+                    // Upload to govdocs subfolder within govdocs bucket
+                    const folderPath = `govdocs/${fileName}`; // Changed 'pics' to 'govdocs'
                     console.log('📁 Uploading to govdocs bucket path:', folderPath);
                     
                     const { data: uploadData, error: uploadError } = await supabase.storage
