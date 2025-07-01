@@ -2022,15 +2022,22 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
             });
         }
 
-        // Store verification status in database
+        // Store verification status in database with ID document image for face comparison
         if (supabase) {
             try {
+                // Convert image buffer to base64 for storage
+                const idDocumentBase64 = req.file.buffer.toString('base64');
+                
                 const { error: verificationError } = await supabase
                     .from('user_verifications')
                     .upsert({
                         user_email: userEmail,
                         id_verification_status: 'verified',
-                        id_verification_data: extractedData,
+                        id_verification_data: {
+                            ...extractedData,
+                            id_document_image: idDocumentBase64,
+                            id_document_mimetype: req.file.mimetype
+                        },
                         id_verified_at: new Date().toISOString()
                     });
 
@@ -2091,7 +2098,7 @@ app.post('/api/verify/face-match', upload.single('facePhoto'), async (req, res) 
 
         console.log('Processing face verification for:', userEmail);
 
-        // First, check if user has completed ID verification
+        // First, check if user has completed ID verification and get the stored ID document
         if (!supabase) {
             return res.status(503).json({ error: 'Database service not available' });
         }
@@ -2108,25 +2115,51 @@ app.post('/api/verify/face-match', upload.single('facePhoto'), async (req, res) 
             });
         }
 
-        // For face verification, we'll use a simpler approach:
-        // Just verify the face photo has a clear face, since we already verified the ID document
-        const userFaces = await faceClient.face.detectWithStream(req.file.buffer, {
-            returnFaceId: true,
-            returnFaceLandmarks: false,
-            returnFaceAttributes: ['age', 'emotion']
-        });
+        // Get the stored ID document image
+        const idDocumentImage = verification.id_verification_data?.id_document_image;
+        if (!idDocumentImage) {
+            return res.status(400).json({ 
+                error: 'ID document image not found. Please complete ID verification again.' 
+            });
+        }
+
+        // Convert base64 back to buffer for Azure Face API
+        const idDocumentBuffer = Buffer.from(idDocumentImage, 'base64');
+
+        // Detect faces in both ID document and selfie photo
+        const [idFaces, userFaces] = await Promise.all([
+            faceClient.face.detectWithStream(idDocumentBuffer, {
+                returnFaceId: true,
+                returnFaceLandmarks: false,
+                returnFaceAttributes: []
+            }),
+            faceClient.face.detectWithStream(req.file.buffer, {
+                returnFaceId: true,
+                returnFaceLandmarks: false,
+                returnFaceAttributes: []
+            })
+        ]);
+
+        if (!idFaces || idFaces.length === 0) {
+            return res.status(400).json({ error: 'No face detected in your ID document. Please upload a clearer ID photo.' });
+        }
 
         if (!userFaces || userFaces.length === 0) {
             return res.status(400).json({ error: 'No face detected in selfie photo. Please take a clearer photo.' });
         }
 
         if (userFaces.length > 1) {
-            return res.status(400).json({ error: 'Multiple faces detected. Please take a photo with only your face visible.' });
+            return res.status(400).json({ error: 'Multiple faces detected in selfie. Please take a photo with only your face visible.' });
         }
 
-        // Consider verification successful if we detect exactly one clear face
-        const isMatch = true; // Since ID was already verified, we trust the selfie verification
-        const confidence = 0.85; // Assign a reasonable confidence score
+        // Compare the faces using Azure Face API
+        const comparison = await faceClient.face.verifyFaceToFace(
+            idFaces[0].faceId,
+            userFaces[0].faceId
+        );
+
+        const isMatch = comparison.isIdentical;
+        const confidence = comparison.confidence;
 
         // Store face verification status
         if (supabase) {
