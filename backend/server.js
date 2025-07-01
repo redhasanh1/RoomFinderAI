@@ -2032,8 +2032,22 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                 
                 try {
                     // First, ensure the govdocs bucket exists
+                    console.log('🔍 Checking for govdocs bucket...');
                     const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+                    
+                    if (listError) {
+                        console.error('❌ Error listing buckets:', listError);
+                        console.log('📝 List buckets error details:', {
+                            message: listError.message,
+                            details: listError.details,
+                            hint: listError.hint,
+                            code: listError.code
+                        });
+                    }
+                    
+                    console.log('📋 Available buckets:', buckets?.map(b => b.name) || 'None');
                     const govdocsBucketExists = buckets?.some(bucket => bucket.name === 'govdocs');
+                    console.log('🔍 govdocs bucket exists:', govdocsBucketExists);
                     
                     if (!govdocsBucketExists) {
                         console.log('📦 Creating govdocs bucket...');
@@ -2045,10 +2059,16 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         
                         if (createError) {
                             console.error('❌ Failed to create govdocs bucket:', createError);
-                            throw new Error('Failed to create secure storage bucket');
+                            console.log('📝 Create bucket error details:', {
+                                message: createError.message,
+                                details: createError.details,
+                                hint: createError.hint,
+                                code: createError.code
+                            });
+                            throw new Error(`Failed to create secure storage bucket: ${createError.message}`);
                         }
                         
-                        console.log('✅ Created govdocs bucket successfully');
+                        console.log('✅ Created govdocs bucket successfully:', newBucket);
                     }
 
                     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -2352,6 +2372,87 @@ app.get('/api/verify/status/:email', async (req, res) => {
     } catch (error) {
         console.error('Error in verification status endpoint:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// API: Real-time head pose detection for face scanning
+app.post('/api/verify/head-pose', upload.single('facePhoto'), async (req, res) => {
+    try {
+        reinitializeAzureClients();
+        
+        if (!faceClient) {
+            return res.status(503).json({ error: 'Face detection service not available' });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ error: 'Face photo is required' });
+        }
+
+        const { expectedDirection } = req.body;
+        
+        // Detect face and head pose
+        const faceResult = await faceClient.face.detectWithStream(req.file.buffer, {
+            returnFaceId: false,
+            returnFaceLandmarks: false,
+            returnFaceAttributes: ['headPose']
+        });
+
+        if (!faceResult || faceResult.length === 0) {
+            return res.status(400).json({ 
+                error: 'No face detected', 
+                isCorrectDirection: false 
+            });
+        }
+
+        if (faceResult.length > 1) {
+            return res.status(400).json({ 
+                error: 'Multiple faces detected', 
+                isCorrectDirection: false 
+            });
+        }
+
+        const headPose = faceResult[0].faceAttributes.headPose;
+        const { yaw, pitch, roll } = headPose;
+        
+        console.log(`🎯 Head pose detected - Yaw: ${yaw}°, Pitch: ${pitch}°, Roll: ${roll}°`);
+        console.log(`📍 Expected direction: ${expectedDirection}`);
+
+        // Define direction thresholds (in degrees)
+        const thresholds = {
+            center: { yaw: [-15, 15], pitch: [-15, 15] },
+            up: { yaw: [-20, 20], pitch: [-45, -10] },
+            down: { yaw: [-20, 20], pitch: [10, 45] },
+            left: { yaw: [-45, -15], pitch: [-20, 20] },
+            right: { yaw: [15, 45], pitch: [-20, 20] }
+        };
+
+        const threshold = thresholds[expectedDirection];
+        let isCorrectDirection = false;
+
+        if (threshold) {
+            const yawInRange = yaw >= threshold.yaw[0] && yaw <= threshold.yaw[1];
+            const pitchInRange = pitch >= threshold.pitch[0] && pitch <= threshold.pitch[1];
+            isCorrectDirection = yawInRange && pitchInRange;
+        }
+
+        console.log(`✅ Direction match: ${isCorrectDirection}`);
+
+        res.json({
+            success: true,
+            isCorrectDirection,
+            headPose: { yaw, pitch, roll },
+            expectedDirection,
+            message: isCorrectDirection 
+                ? `Perfect! Looking ${expectedDirection}` 
+                : `Please look ${expectedDirection}`
+        });
+
+    } catch (error) {
+        console.error('Head pose detection error:', error);
+        res.status(500).json({ 
+            error: 'Head pose detection failed', 
+            isCorrectDirection: false 
+        });
     }
 });
 
