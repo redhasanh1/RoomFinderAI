@@ -2078,8 +2078,9 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         console.log('✅ Created govdocs bucket successfully:', newBucket);
                     }
 
-                    // Upload directly to govdocs bucket (no subfolder)
-                    console.log('📁 Uploading to govdocs bucket path:', fileName);
+                    // Upload to govdocs subfolder within govdocs bucket
+                    const folderPath = `govdocs/${fileName}`; // Changed 'pics' to 'govdocs'
+                    console.log('📁 Uploading to govdocs bucket path:', folderPath);
                     
                     const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('govdocs')
