@@ -562,268 +562,32 @@
         }
 
         /* Foundation-inspired 3D Models */
-        /* WhatsApp House Models - Exact Replicas */
-        .foundation-house-model {
+        /* WhatsApp House Images - Direct Placement */
+        .house-image-float {
             position: fixed;
-            width: 400px;
-            height: 320px;
+            width: 350px;
+            height: auto;
             pointer-events: none;
             z-index: 5;
-            opacity: 0.9;
-            will-change: transform, opacity;
-        }
-        
-        /* Modern Brick House - Image 1 Style */
-        .modern-brick-house {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            transform: perspective(800px) rotateX(60deg) rotateY(-45deg);
-            transform-style: preserve-3d;
-        }
-        
-        /* Brick House Main Structure */
-        .brick-house-main {
-            position: absolute;
-            width: 220px;
-            height: 140px;
-            background: linear-gradient(45deg, #d4a574 0%, #c49968 50%, #b8905c 100%);
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%) translateZ(0);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-            border: 1px solid #a67c52;
-            background-image: 
-                repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0,0,0,0.1) 8px, rgba(0,0,0,0.1) 9px),
-                repeating-linear-gradient(90deg, transparent, transparent 15px, rgba(0,0,0,0.1) 15px, rgba(0,0,0,0.1) 16px);
-        }
-        
-        /* Brick House Side */
-        .brick-house-side {
-            position: absolute;
-            width: 100px;
-            height: 140px;
-            background: linear-gradient(45deg, #c49968 0%, #b8905c 100%);
-            bottom: 0;
-            right: -98px;
-            transform: rotateY(90deg) translateZ(0);
-            transform-origin: left center;
-            border: 1px solid #a67c52;
-            background-image: 
-                repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0,0,0,0.1) 8px, rgba(0,0,0,0.1) 9px),
-                repeating-linear-gradient(90deg, transparent, transparent 15px, rgba(0,0,0,0.1) 15px, rgba(0,0,0,0.1) 16px);
-        }
-        
-        /* Dark Slanted Roof */
-        .slanted-roof {
-            position: absolute;
-            width: 0;
-            height: 0;
-            border-left: 130px solid transparent;
-            border-right: 130px solid transparent;
-            border-bottom: 80px solid #2d3748;
-            bottom: 140px;
-            left: 50%;
-            transform: translateX(-50%) translateZ(1px);
-            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4));
-        }
-        
-        /* Brick Chimney */
-        .brick-chimney {
-            position: absolute;
-            width: 25px;
-            height: 60px;
-            background: linear-gradient(45deg, #a67c52 0%, #9c6f4a 100%);
-            bottom: 180px;
-            left: 60%;
-            transform: translateX(-50%) translateZ(2px);
-            border: 1px solid #8b5a3c;
-            background-image: 
-                repeating-linear-gradient(0deg, transparent, transparent 6px, rgba(0,0,0,0.2) 6px, rgba(0,0,0,0.2) 7px);
-        }
-        
-        /* Chimney Top */
-        .chimney-top {
-            position: absolute;
-            width: 100%;
-            height: 8px;
-            background: #2d3748;
-            top: -4px;
-            border: 1px solid #1a202c;
-        }
-        
-        /* Large Modern Windows */
-        .brick-window {
-            position: absolute;
-            background: linear-gradient(45deg, #2d3748 0%, #1a202c 100%);
-            border: 2px solid #4a5568;
-        }
-        
-        .brick-window-1 { 
-            width: 50px; 
-            height: 60px; 
-            bottom: 40px; 
-            left: 30px; 
-        }
-        .brick-window-2 { 
-            width: 50px; 
-            height: 60px; 
-            bottom: 40px; 
-            right: 30px; 
-        }
-        .brick-window-3 { 
-            width: 80px; 
-            height: 35px; 
-            bottom: 80px; 
-            left: 70px; 
-        }
-        
-        /* Wooden Deck */
-        .wooden-deck {
-            position: absolute;
-            width: 140px;
-            height: 60px;
-            background: linear-gradient(45deg, #d4a574 0%, #c49968 100%);
-            bottom: -8px;
-            left: -60px;
-            transform: translateZ(-1px);
-            border: 1px solid #a67c52;
-            background-image: 
-                repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(0,0,0,0.1) 4px, rgba(0,0,0,0.1) 5px);
-        }
-        
-        /* Purple House - Image 4 Style */
-        .purple-brick-house {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            transform: perspective(800px) rotateX(60deg) rotateY(-45deg);
-            transform-style: preserve-3d;
-        }
-        
-        .purple-house-main {
-            position: absolute;
-            width: 220px;
-            height: 140px;
-            background: linear-gradient(45deg, #9d4edd 0%, #7209b7 50%, #560bad 100%);
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%) translateZ(0);
-            box-shadow: 0 25px 50px rgba(86, 11, 173, 0.4);
-            border: 1px solid #480ca8;
-            background-image: 
-                repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0,0,0,0.2) 8px, rgba(0,0,0,0.2) 9px),
-                repeating-linear-gradient(90deg, transparent, transparent 15px, rgba(0,0,0,0.2) 15px, rgba(0,0,0,0.2) 16px);
-        }
-        
-        .purple-house-side {
-            position: absolute;
-            width: 100px;
-            height: 140px;
-            background: linear-gradient(45deg, #7209b7 0%, #560bad 100%);
-            bottom: 0;
-            right: -98px;
-            transform: rotateY(90deg) translateZ(0);
-            transform-origin: left center;
-            border: 1px solid #480ca8;
-            background-image: 
-                repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0,0,0,0.2) 8px, rgba(0,0,0,0.2) 9px),
-                repeating-linear-gradient(90deg, transparent, transparent 15px, rgba(0,0,0,0.2) 15px, rgba(0,0,0,0.2) 16px);
-        }
-        
-        .purple-roof {
-            position: absolute;
-            width: 0;
-            height: 0;
-            border-left: 130px solid transparent;
-            border-right: 130px solid transparent;
-            border-bottom: 80px solid #3a0ca3;
-            bottom: 140px;
-            left: 50%;
-            transform: translateX(-50%) translateZ(1px);
-            filter: drop-shadow(0 8px 16px rgba(58, 12, 163, 0.4));
-        }
-        
-        /* Traditional Blue House - Image 5 Style */
-        .traditional-blue-house {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            transform: perspective(800px) rotateX(60deg) rotateY(-45deg);
-            transform-style: preserve-3d;
-        }
-        
-        .blue-house-main {
-            position: absolute;
-            width: 200px;
-            height: 120px;
-            background: linear-gradient(45deg, #3182ce 0%, #2c5aa0 50%, #2a4a7c 100%);
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%) translateZ(0);
-            box-shadow: 0 20px 40px rgba(49, 130, 206, 0.3);
-            border: 2px solid #ffffff;
-            background-image: 
-                repeating-linear-gradient(0deg, transparent, transparent 6px, rgba(255,255,255,0.1) 6px, rgba(255,255,255,0.1) 7px);
-        }
-        
-        .blue-house-side {
-            position: absolute;
-            width: 90px;
-            height: 120px;
-            background: linear-gradient(45deg, #2c5aa0 0%, #2a4a7c 100%);
-            bottom: 0;
-            right: -88px;
-            transform: rotateY(90deg) translateZ(0);
-            transform-origin: left center;
-            border: 2px solid #ffffff;
-        }
-        
-        .orange-tile-roof {
-            position: absolute;
-            width: 0;
-            height: 0;
-            border-left: 120px solid transparent;
-            border-right: 120px solid transparent;
-            border-bottom: 70px solid #cc5500;
-            bottom: 120px;
-            left: 50%;
-            transform: translateX(-50%) translateZ(1px);
-            filter: drop-shadow(0 6px 12px rgba(204, 85, 0, 0.4));
-            background-image: 
-                repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 4px);
-        }
-        
-        .blue-window {
-            position: absolute;
-            background: #ffffff;
-            border: 2px solid #2d3748;
-        }
-        
-        .blue-window-1 { width: 35px; height: 45px; bottom: 40px; left: 25px; }
-        .blue-window-2 { width: 35px; height: 45px; bottom: 40px; right: 25px; }
-        .blue-window-3 { width: 25px; height: 30px; bottom: 70px; left: 87px; }
-        
-        .orange-door {
-            position: absolute;
-            width: 30px;
-            height: 50px;
-            background: #cc5500;
-            bottom: 0;
-            left: 85px;
-            border: 2px solid #aa4400;
-        }
-        
-        /* Static Model Positioning */
-        .model-1 { top: 20%; left: 5%; }
-        .model-2 { top: 60%; right: 8%; }
-        .model-3 { top: 35%; left: 85%; }
-        .model-4 { top: 75%; left: 15%; }
-        .model-5 { top: 25%; right: 25%; }
-        
-        /* Smooth Visibility Transitions */
-        .foundation-house-model {
+            opacity: 0.85;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             transition: opacity 0.5s ease;
+        }
+        
+        /* Clean up - All CSS models removed, using actual images now */
+        
+        /* Strategic Image Positioning */
+        .house-1 { top: 15%; left: 5%; }
+        .house-2 { top: 45%; right: 8%; }
+        .house-3 { top: 70%; left: 12%; }
+        .house-4 { top: 25%; right: 20%; }
+        .house-5 { top: 55%; left: 75%; }
+        
+        /* House images hover effects */
+        .house-image-float:hover {
+            opacity: 1;
+            transform: scale(1.02);
         }
         
         @keyframes float-rotate {
@@ -1058,85 +822,26 @@
         </div>
     </section>
 
-    <!-- WhatsApp House Models - Exact Replicas -->
-    <div class="foundation-house-model model-1">
-        <div class="modern-brick-house">
-            <div class="brick-house-main">
-                <div class="brick-window brick-window-1"></div>
-                <div class="brick-window brick-window-2"></div>
-                <div class="brick-window brick-window-3"></div>
-            </div>
-            <div class="brick-house-side"></div>
-            <div class="slanted-roof"></div>
-            <div class="brick-chimney">
-                <div class="chimney-top"></div>
-            </div>
-            <div class="wooden-deck"></div>
-        </div>
-    </div>
+    <!-- WhatsApp House Images - Direct Placement -->
+    <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.18.07 (1).jpeg" 
+         alt="Modern Brick House" 
+         class="house-image-float house-1">
     
-    <div class="foundation-house-model model-2">
-        <div class="modern-brick-house">
-            <div class="brick-house-main">
-                <div class="brick-window brick-window-1"></div>
-                <div class="brick-window brick-window-2"></div>
-                <div class="brick-window brick-window-3"></div>
-            </div>
-            <div class="brick-house-side"></div>
-            <div class="slanted-roof"></div>
-            <div class="brick-chimney">
-                <div class="chimney-top"></div>
-            </div>
-            <div class="wooden-deck"></div>
-        </div>
-    </div>
+    <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.18.07.jpeg" 
+         alt="Contemporary Brick Home" 
+         class="house-image-float house-2">
     
-    <div class="foundation-house-model model-3">
-        <div class="modern-brick-house">
-            <div class="brick-house-main">
-                <div class="brick-window brick-window-1"></div>
-                <div class="brick-window brick-window-2"></div>
-                <div class="brick-window brick-window-3"></div>
-            </div>
-            <div class="brick-house-side"></div>
-            <div class="slanted-roof"></div>
-            <div class="brick-chimney">
-                <div class="chimney-top"></div>
-            </div>
-            <div class="wooden-deck"></div>
-        </div>
-    </div>
+    <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.18.08.jpeg" 
+         alt="Modern Architecture House" 
+         class="house-image-float house-3">
     
-    <div class="foundation-house-model model-4">
-        <div class="purple-brick-house">
-            <div class="purple-house-main">
-                <div class="brick-window brick-window-1"></div>
-                <div class="brick-window brick-window-2"></div>
-                <div class="brick-window brick-window-3"></div>
-            </div>
-            <div class="purple-house-side"></div>
-            <div class="purple-roof"></div>
-            <div class="brick-chimney" style="background: linear-gradient(45deg, #7209b7 0%, #560bad 100%); border-color: #480ca8;">
-                <div class="chimney-top"></div>
-            </div>
-        </div>
-    </div>
+    <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.21.11.jpeg" 
+         alt="Purple Brick House" 
+         class="house-image-float house-4">
     
-    <div class="foundation-house-model model-5">
-        <div class="traditional-blue-house">
-            <div class="blue-house-main">
-                <div class="blue-window blue-window-1"></div>
-                <div class="blue-window blue-window-2"></div>
-                <div class="blue-window blue-window-3"></div>
-                <div class="orange-door"></div>
-            </div>
-            <div class="blue-house-side"></div>
-            <div class="orange-tile-roof"></div>
-            <div class="brick-chimney" style="background: linear-gradient(45deg, #a67c52 0%, #9c6f4a 100%); border-color: #8b5a3c;">
-                <div class="chimney-top"></div>
-            </div>
-        </div>
-    </div>
+    <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.23.59.jpeg" 
+         alt="Traditional Blue House" 
+         class="house-image-float house-5">
 
     <!-- Premium Features Section -->
     <section class="py-32 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
