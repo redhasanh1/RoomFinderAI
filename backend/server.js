@@ -168,6 +168,11 @@ app.use(express.static(staticPath, {
     }
 }));
 
+// Specifically serve 3D House Models folder with URL encoding support
+const houseModelsPath = path.join(__dirname, '..', '3D House Models');
+console.log('🏠 Serving 3D House Models from:', houseModelsPath);
+app.use('/3D%20House%20Models', express.static(houseModelsPath));
+
 // Google Maps API key from config
 const GOOGLE_API_KEY = config.GOOGLE_API_KEY;
 
