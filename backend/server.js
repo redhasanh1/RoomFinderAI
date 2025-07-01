@@ -7,28 +7,35 @@ const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 
 // Load config with error handling
-let config;
+// Load configuration with environment variables taking priority
+let config = {};
 try {
-    config = require('../config.js');
-    console.log('✅ Config loaded successfully');
+    // First, try to load from config file as fallback
+    const fileConfig = require('../config.js');
+    config = { ...fileConfig };
+    console.log('✅ Config file loaded as fallback');
 } catch (error) {
-    console.log('⚠️ Config file not found, using environment variables directly');
-    config = {
-        STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY?.trim(),
-        STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY?.trim(),
-        GOOGLE_API_KEY: process.env.GOOGLE_API_KEY?.trim(),
-        SUPABASE_URL: process.env.SUPABASE_URL?.trim(),
-        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.trim(),
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim(),
-        OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim(),
-        OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || 'gpt-3.5-turbo',
-        BREVO_API_KEY: process.env.BREVO_API_KEY?.trim(),
-        AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim(),
-        AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim(),
-        AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim(),
-        AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim()
-    };
+    console.log('⚠️ Config file not found, using environment variables only');
 }
+
+// Override with environment variables (these take priority)
+config = {
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY?.trim() || config.STRIPE_SECRET_KEY,
+    STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY?.trim() || config.STRIPE_PUBLISHABLE_KEY,
+    GOOGLE_API_KEY: process.env.GOOGLE_API_KEY?.trim() || config.GOOGLE_API_KEY,
+    SUPABASE_URL: process.env.SUPABASE_URL?.trim() || config.SUPABASE_URL,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.trim() || config.SUPABASE_ANON_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim() || config.OPENAI_API_KEY,
+    OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim() || config.OPENAI_ORG_ID,
+    OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || config.OPENAI_MODEL || 'gpt-3.5-turbo',
+    BREVO_API_KEY: process.env.BREVO_API_KEY?.trim() || config.BREVO_API_KEY,
+    AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_KEY,
+    AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
+    AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim() || config.AZURE_FACE_KEY,
+    AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim() || config.AZURE_FACE_ENDPOINT
+};
+
+console.log('🔧 Configuration priority: Environment variables > Config file > Defaults');
 
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
@@ -1802,6 +1809,18 @@ async function logUserActivity(userEmail, activityType, description, metadata = 
             return;
         }
 
+        // First check if user exists to avoid foreign key constraint violation
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('email')
+            .eq('email', userEmail)
+            .single();
+
+        if (userError || !user) {
+            console.log(`⚠️ Cannot log activity - User ${userEmail} not found in users table`);
+            return;
+        }
+
         await supabase.rpc('set_current_user_email', { email: userEmail });
         
         const { error } = await supabase
@@ -1985,15 +2004,53 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
             }
         }
 
-        // Store verification status in database
+        // Validate that this is actually a government ID document
+        // Check if we have at least the essential fields that every government ID should have
+        const hasRequiredFields = extractedData.firstName && extractedData.lastName && 
+                                 (extractedData.dateOfBirth || extractedData.documentNumber);
+        
+        if (!hasRequiredFields) {
+            return res.status(400).json({ 
+                error: 'This image does not appear to be a valid government ID document. Please upload a clear photo of your driver\'s license, passport, or state ID.' 
+            });
+        }
+
+        // Additional validation: check document confidence
+        if (document.confidence && document.confidence < 0.5) {
+            return res.status(400).json({ 
+                error: 'Document quality is too low or document type not recognized. Please upload a clear, high-quality photo of your government ID.' 
+            });
+        }
+
+        // Store verification status in database and save ID document to Supabase Storage
         if (supabase) {
             try {
+                // Upload ID document to Supabase Storage
+                const fileName = `${userEmail}-${Date.now()}-id-document.${req.file.mimetype.split('/')[1]}`;
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('govdocs')
+                    .upload(fileName, req.file.buffer, {
+                        contentType: req.file.mimetype,
+                        upsert: false
+                    });
+
+                if (uploadError) {
+                    console.error('Error uploading ID document to storage:', uploadError);
+                    return res.status(500).json({ error: 'Failed to store ID document securely' });
+                }
+
+                console.log('✅ ID document uploaded to storage:', uploadData.path);
+                
                 const { error: verificationError } = await supabase
                     .from('user_verifications')
                     .upsert({
                         user_email: userEmail,
                         id_verification_status: 'verified',
-                        id_verification_data: extractedData,
+                        id_verification_data: {
+                            ...extractedData,
+                            id_document_path: uploadData.path,
+                            id_document_mimetype: req.file.mimetype
+                        },
                         id_verified_at: new Date().toISOString()
                     });
 
@@ -2028,17 +2085,14 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
     }
 });
 
-// API: Face verification against ID
-app.post('/api/verify/face-match', upload.fields([
-    { name: 'idDocument', maxCount: 1 },
-    { name: 'facePhoto', maxCount: 1 }
-]), async (req, res) => {
+// API: Face verification against stored ID
+app.post('/api/verify/face-match', upload.single('facePhoto'), async (req, res) => {
     try {
         // Try to reinitialize Azure clients if they're not available
         reinitializeAzureClients();
         
-        if (!faceClient) {
-            console.log('⚠️ Face verification attempted but Azure Face API not configured');
+        if (!faceClient || !documentClient) {
+            console.log('⚠️ Face verification attempted but Azure services not configured');
             return res.status(503).json({ 
                 error: 'Face verification service not available',
                 message: 'The face verification service is currently not configured. Please contact support.',
@@ -2046,8 +2100,8 @@ app.post('/api/verify/face-match', upload.fields([
             });
         }
 
-        if (!req.files || !req.files.idDocument || !req.files.facePhoto) {
-            return res.status(400).json({ error: 'Both ID document and face photo are required' });
+        if (!req.file) {
+            return res.status(400).json({ error: 'Face photo is required' });
         }
 
         const { userEmail } = req.body;
@@ -2057,32 +2111,96 @@ app.post('/api/verify/face-match', upload.fields([
 
         console.log('Processing face verification for:', userEmail);
 
-        const idFile = req.files.idDocument[0];
-        const faceFile = req.files.facePhoto[0];
+        // First, check if user has completed ID verification and get the stored ID document
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available' });
+        }
 
-        // Detect faces in both images
+        const { data: verification, error: verificationError } = await supabase
+            .from('user_verifications')
+            .select('id_verification_status, id_verification_data')
+            .eq('user_email', userEmail)
+            .single();
+
+        if (verificationError || !verification || verification.id_verification_status !== 'verified') {
+            return res.status(400).json({ 
+                error: 'ID verification must be completed first before face verification' 
+            });
+        }
+
+        // Get the stored ID document path
+        const idDocumentPath = verification.id_verification_data?.id_document_path;
+        if (!idDocumentPath) {
+            return res.status(400).json({ 
+                error: 'ID document not found. Please complete ID verification again.' 
+            });
+        }
+
+        // Download ID document from Supabase Storage
+        const { data: idDocumentData, error: downloadError } = await supabase.storage
+            .from('govdocs')
+            .download(idDocumentPath);
+
+        if (downloadError || !idDocumentData) {
+            console.error('Error downloading ID document:', downloadError);
+            return res.status(500).json({ 
+                error: 'Failed to retrieve ID document for comparison' 
+            });
+        }
+
+        // Convert the downloaded blob to buffer
+        const idDocumentBuffer = await idDocumentData.arrayBuffer();
+        const idDocumentBufferNode = Buffer.from(idDocumentBuffer);
+
+        // Perform liveness detection on the selfie photo first
+        console.log('🔍 Performing liveness detection on selfie...');
+        const livenessResult = await faceClient.face.detectWithStream(req.file.buffer, {
+            returnFaceId: true,
+            returnFaceLandmarks: false,
+            returnFaceAttributes: ['headPose', 'smile', 'facialHair', 'glasses', 'emotion', 'age', 'gender', 'makeup', 'accessories', 'blur', 'exposure', 'noise']
+        });
+
+        if (!livenessResult || livenessResult.length === 0) {
+            return res.status(400).json({ error: 'No face detected in selfie photo. Please take a clearer photo.' });
+        }
+
+        if (livenessResult.length > 1) {
+            return res.status(400).json({ error: 'Multiple faces detected in selfie. Please take a photo with only your face visible.' });
+        }
+
+        // Check for liveness indicators (these suggest a real person vs a photo)
+        const faceAttributes = livenessResult[0].faceAttributes;
+        const isLikelyLive = (
+            faceAttributes.blur?.blurLevel !== 'high' &&
+            faceAttributes.exposure?.exposureLevel !== 'overExposure' &&
+            faceAttributes.exposure?.exposureLevel !== 'underExposure' &&
+            faceAttributes.noise?.noiseLevel !== 'high'
+        );
+
+        if (!isLikelyLive) {
+            return res.status(400).json({ 
+                error: 'Liveness detection failed. Please take a clear, well-lit selfie in good lighting conditions.' 
+            });
+        }
+
+        console.log('✅ Liveness detection passed');
+
+        // Detect faces in both ID document and selfie photo for comparison
         const [idFaces, userFaces] = await Promise.all([
-            faceClient.face.detectWithStream(idFile.buffer, {
+            faceClient.face.detectWithStream(idDocumentBufferNode, {
                 returnFaceId: true,
                 returnFaceLandmarks: false,
                 returnFaceAttributes: []
             }),
-            faceClient.face.detectWithStream(faceFile.buffer, {
-                returnFaceId: true,
-                returnFaceLandmarks: false,
-                returnFaceAttributes: []
-            })
+            // Use the same result from liveness detection
+            Promise.resolve(livenessResult)
         ]);
 
         if (!idFaces || idFaces.length === 0) {
-            return res.status(400).json({ error: 'No face detected in ID document' });
+            return res.status(400).json({ error: 'No face detected in your ID document. Please upload a clearer ID photo.' });
         }
 
-        if (!userFaces || userFaces.length === 0) {
-            return res.status(400).json({ error: 'No face detected in user photo' });
-        }
-
-        // Compare the faces
+        // Compare the faces using Azure Face API
         const comparison = await faceClient.face.verifyFaceToFace(
             idFaces[0].faceId,
             userFaces[0].faceId

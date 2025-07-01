@@ -6,6 +6,8 @@
     <title>Negotiation Assistant - RoomFinderAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="./ai-chat.js?v=10"></script>
+    <script src="./ai-negotiation.js?v=2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -230,65 +232,13 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Listing Information Panel -->
+            <!-- Left Sidebar - Found Listings Only -->
             <div class="lg:col-span-1">
-                <div class="listing-card sticky top-24">
-                    <div class="p-6">
-                        <h3 class="text-xl font-bold text-gray-900 mb-4">🏠 Current Listing</h3>
-                        
-                        <!-- Listing Image -->
-                        <div class="w-full h-48 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg mb-4 flex items-center justify-center">
-                            <div class="text-white text-center">
-                                <div class="text-4xl mb-2">🏙️</div>
-                                <div class="text-sm font-medium">Hong Kong Apartment</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Listing Details -->
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600 font-medium">Location:</span>
-                                <span class="text-gray-900 font-semibold">Central District, Hong Kong</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600 font-medium">Monthly Rent:</span>
-                                <span class="text-2xl font-bold gradient-text">$1,500</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600 font-medium">Size:</span>
-                                <span class="text-gray-900">450 sq ft</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600 font-medium">Type:</span>
-                                <span class="text-gray-900">Studio Apartment</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600 font-medium">Available:</span>
-                                <span class="text-green-600 font-semibold">Immediately</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Amenities -->
-                        <div class="mt-4 pt-4 border-t border-gray-200">
-                            <h4 class="font-semibold text-gray-900 mb-2">Amenities:</h4>
-                            <div class="flex flex-wrap gap-2">
-                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">Air Conditioning</span>
-                                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Furnished</span>
-                                <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">City View</span>
-                                <span class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">Near MTR</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Negotiation Tips -->
-                        <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-                            <h4 class="font-semibold text-gray-900 mb-2">💡 Negotiation Tips:</h4>
-                            <ul class="text-sm text-gray-700 space-y-1">
-                                <li>• Be polite and professional</li>
-                                <li>• Research market prices</li>
-                                <li>• Highlight your strengths as a tenant</li>
-                                <li>• Consider lease length as leverage</li>
-                            </ul>
-                        </div>
+                <!-- Found Listings Panel -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">🏠 Found Listings</h3>
+                    <div id="activeNegotiations" class="space-y-3">
+                        <p class="text-gray-500 text-sm">Use the AI chat to search for properties!</p>
                     </div>
                 </div>
             </div>
@@ -300,11 +250,8 @@
                     <div class="p-6 border-b border-gray-200">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                                    <span class="text-white font-bold text-lg">AI</span>
-                                </div>
                                 <div>
-                                    <h3 class="font-semibold text-gray-900">Negotiation Assistant</h3>
+                                    <h3 class="font-semibold text-gray-900">AI Negotiation Assistant</h3>
                                     <p class="text-sm text-green-600 flex items-center">
                                         <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
                                         Ready to Help
@@ -327,8 +274,8 @@
                         <div id="chatMessages">
                             <!-- Welcome message -->
                             <div class="chat-bubble ai">
-                                <div class="font-semibold text-sm text-gray-500 mb-1">Negotiation Assistant</div>
-                                <p>Hi! I'm here to help you negotiate better rental deals. Whether you're looking at a specific property or need general negotiation advice, I can provide strategic guidance, help you craft compelling messages, and coach you through the process. What rental situation would you like help with?</p>
+                                <div class="font-semibold text-sm text-gray-500 mb-1">AI Assistant</div>
+                                <p>Hello! I'm your AI assistant. Tell me what you're looking for (e.g., "I want a house in Hong Kong for $1500") and I'll search our database for matching listings and help you negotiate with landlords!</p>
                             </div>
                         </div>
                         
@@ -371,221 +318,209 @@
 
     <!-- JavaScript -->
     <script>
-        class AINegotiator {
-            constructor() {
-                this.chatContainer = document.getElementById('chatContainer');
-                this.chatMessages = document.getElementById('chatMessages');
-                this.messageInput = document.getElementById('messageInput');
-                this.sendButton = document.getElementById('sendButton');
-                this.typingIndicator = document.getElementById('typingIndicator');
-                this.charCount = document.getElementById('charCount');
-                this.clearChatBtn = document.getElementById('clearChat');
-                this.saveChatBtn = document.getElementById('saveChat');
+        // Global variables
+        let currentUser = null;
+        let aiNegotiator = null;
+        let supabase = null;
+        let configData = null;
+
+        // Initialize the application
+        async function initializeApp() {
+            try {
+                console.log('🚀 Initializing AI Negotiator with Supabase integration...');
                 
-                this.conversationHistory = [];
-                this.isTyping = false;
+                // Load configuration from Railway API
+                console.log('🔧 Loading configuration from Railway...');
+                const configResponse = await fetch('/api/config');
                 
-                this.init();
-            }
-            
-            init() {
-                // Event listeners
-                this.sendButton.addEventListener('click', () => this.sendMessage());
-                this.messageInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        this.sendMessage();
-                    }
-                });
-                
-                this.messageInput.addEventListener('input', () => {
-                    const length = this.messageInput.value.length;
-                    this.charCount.textContent = `${length}/500`;
-                    
-                    if (length > 450) {
-                        this.charCount.classList.add('text-red-500');
-                        this.charCount.classList.remove('text-gray-400');
-                    } else {
-                        this.charCount.classList.remove('text-red-500');
-                        this.charCount.classList.add('text-gray-400');
-                    }
-                });
-                
-                this.clearChatBtn.addEventListener('click', () => this.clearChat());
-                this.saveChatBtn.addEventListener('click', () => this.saveChat());
-                
-                // Initialize welcome message in conversation history
-                this.conversationHistory.push({
-                    role: 'assistant',
-                    content: "Hello! I'm the owner of the studio apartment you're interested in. The rent is $1,500 per month. What would you like to know about the property, or would you like to discuss the terms?"
-                });
-            }
-            
-            async sendMessage() {
-                const message = this.messageInput.value.trim();
-                if (!message || this.isTyping) return;
-                
-                // Add user message to chat
-                this.addMessageToChat('user', message);
-                this.conversationHistory.push({ role: 'user', content: message });
-                
-                // Clear input and disable send button
-                this.messageInput.value = '';
-                this.charCount.textContent = '0/500';
-                this.sendButton.disabled = true;
-                
-                // Show typing indicator
-                this.showTypingIndicator();
-                
-                try {
-                    // Send to AI API
-                    const response = await this.callAIAPI(message);
-                    
-                    // Hide typing indicator
-                    this.hideTypingIndicator();
-                    
-                    // Add AI response to chat
-                    this.addMessageToChat('ai', response);
-                    this.conversationHistory.push({ role: 'assistant', content: response });
-                    
-                } catch (error) {
-                    console.error('Error calling AI API:', error);
-                    this.hideTypingIndicator();
-                    this.addMessageToChat('ai', "I'm sorry, I'm having trouble responding right now. Please try again in a moment.");
-                } finally {
-                    this.sendButton.disabled = false;
-                }
-            }
-            
-            async callAIAPI(message) {
-                try {
-                    const response = await fetch('/api/ai-negotiate', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            message: message,
-                            conversationHistory: this.conversationHistory.slice(-10) // Send last 10 messages for context
-                        })
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
-                    const data = await response.json();
-                    return data.response;
-                    
-                } catch (error) {
-                    console.error('AI API call failed:', error);
-                    throw error;
-                }
-            }
-            
-            addMessageToChat(sender, message) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `chat-bubble ${sender}`;
-                
-                if (sender === 'ai') {
-                    messageDiv.innerHTML = `
-                        <div class="font-semibold text-sm text-gray-500 mb-1">AI Landlord</div>
-                        <p>${this.formatMessage(message)}</p>
-                    `;
-                } else {
-                    messageDiv.innerHTML = `
-                        <div class="font-semibold text-sm text-blue-200 mb-1">You</div>
-                        <p>${this.formatMessage(message)}</p>
-                    `;
+                if (!configResponse.ok) {
+                    throw new Error('Failed to load configuration');
                 }
                 
-                this.chatMessages.appendChild(messageDiv);
-                this.scrollToBottom();
-            }
-            
-            formatMessage(message) {
-                // Simple text formatting (you can enhance this)
-                return message
-                    .replace(/\n/g, '<br>')
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*(.*?)\*/g, '<em>$1</em>');
-            }
-            
-            showTypingIndicator() {
-                this.isTyping = true;
-                this.typingIndicator.classList.remove('hidden');
-                this.scrollToBottom();
-            }
-            
-            hideTypingIndicator() {
-                this.isTyping = false;
-                this.typingIndicator.classList.add('hidden');
-            }
-            
-            scrollToBottom() {
-                setTimeout(() => {
-                    this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
-                }, 100);
-            }
-            
-            clearChat() {
-                if (confirm('Are you sure you want to clear the chat history?')) {
-                    this.chatMessages.innerHTML = `
-                        <div class="chat-bubble ai">
-                            <div class="font-semibold text-sm text-gray-500 mb-1">Negotiation Assistant</div>
-                            <p>Hi! I'm here to help you negotiate better rental deals. Whether you're looking at a specific property or need general negotiation advice, I can provide strategic guidance, help you craft compelling messages, and coach you through the process. What rental situation would you like help with?</p>
-                        </div>
-                    `;
-                    this.conversationHistory = [{
-                        role: 'assistant',
-                        content: "Hi! I'm here to help you negotiate better rental deals. Whether you're looking at a specific property or need general negotiation advice, I can provide strategic guidance, help you craft compelling messages, and coach you through the process. What rental situation would you like help with?"
-                    }];
+                configData = await configResponse.json();
+                console.log('✅ Configuration loaded successfully');
+                
+                // Initialize Supabase
+                if (!window.supabase) {
+                    throw new Error('Supabase library not loaded from CDN');
                 }
-            }
-            
-            saveChat() {
-                const chatData = {
-                    timestamp: new Date().toISOString(),
-                    messages: this.conversationHistory,
-                    listing: {
-                        location: 'Central District, Hong Kong',
-                        rent: '$1,500',
-                        size: '450 sq ft',
-                        type: 'Studio Apartment'
-                    }
-                };
                 
-                const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `negotiation-assistant-${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
+                console.log('✅ Supabase client initialized');
                 
-                // Show success message
-                const successMsg = document.createElement('div');
-                successMsg.className = 'chat-bubble ai';
-                successMsg.innerHTML = `
-                    <div class="font-semibold text-sm text-gray-500 mb-1">System</div>
-                    <p>💾 Chat history saved successfully!</p>
+                // Test Supabase connection
+                await supabase.from('listings').select('count', { count: 'exact', head: true });
+                console.log('✅ Supabase connection test successful');
+                
+                // Get current user (or create anonymous session)
+                currentUser = JSON.parse(localStorage.getItem('user')) || { email: 'anonymous@user.com', name: 'Anonymous User' };
+                console.log('👤 Current user:', currentUser.email);
+                
+                // Check if AIChatHandler class is available
+                if (typeof AIChatHandler === 'undefined') {
+                    console.error('❌ AIChatHandler class not found! ai-chat.js not loaded properly');
+                    throw new Error('AI Chat module not loaded');
+                }
+                
+                // Initialize AI Negotiator with database integration
+                console.log('🔧 Creating AIChatHandler instance...');
+                aiNegotiator = new AIChatHandler(supabase, configData);
+                await aiNegotiator.init(currentUser);
+                
+                // Make aiChat globally accessible for sidebar button clicks
+                window.aiChat = aiNegotiator;
+                
+                // Setup message input handling
+                setupMessageHandling();
+                
+                console.log('✅ AI Negotiator initialized successfully with database integration!');
+                
+            } catch (error) {
+                console.error('❌ Failed to initialize AI Negotiator:', error);
+                document.getElementById('chatMessages').innerHTML = `
+                    <div style="color: red; padding: 1rem; border: 2px solid red; border-radius: 8px; margin: 1rem 0;">
+                        <h3>❌ Initialization Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>Please check that all environment variables are set correctly in Railway.</p>
+                        <button onclick="window.location.reload()" style="background: #667eea; color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; margin-top: 8px;">
+                            🔄 Retry
+                        </button>
+                    </div>
                 `;
-                this.chatMessages.appendChild(successMsg);
-                this.scrollToBottom();
-                
-                // Remove success message after 3 seconds
-                setTimeout(() => {
-                    successMsg.remove();
-                }, 3000);
             }
         }
-        
-        // Initialize the AI Negotiator when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            new AINegotiator();
-        });
+
+        // Setup message input handling
+        function setupMessageHandling() {
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const charCount = document.getElementById('charCount');
+            const clearChatBtn = document.getElementById('clearChat');
+            const saveChatBtn = document.getElementById('saveChat');
+
+            if (!messageInput || !sendButton) {
+                console.error('Message input elements not found');
+                return;
+            }
+
+            // Send button click handler
+            sendButton.addEventListener('click', sendMessage);
+            
+            // Enter key handler
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Character count handler
+            if (charCount) {
+                messageInput.addEventListener('input', () => {
+                    const length = messageInput.value.length;
+                    charCount.textContent = `${length}/500`;
+                    
+                    if (length > 450) {
+                        charCount.classList.add('text-red-500');
+                        charCount.classList.remove('text-gray-400');
+                    } else {
+                        charCount.classList.remove('text-red-500');
+                        charCount.classList.add('text-gray-400');
+                    }
+                });
+            }
+            
+            // Clear chat handler
+            if (clearChatBtn) {
+                clearChatBtn.addEventListener('click', () => {
+                    if (aiNegotiator) {
+                        aiNegotiator.clearConversationHistory();
+                        document.getElementById('chatMessages').innerHTML = `
+                            <div class="chat-bubble ai">
+                                <div class="font-semibold text-sm text-gray-500 mb-1">AI Assistant</div>
+                                <p>Hello! I'm your AI assistant. Tell me what you're looking for (e.g., "I want a house in Hong Kong for $1500") and I'll search our database for matching listings and help you negotiate with landlords!</p>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
+            // Save chat handler
+            if (saveChatBtn) {
+                saveChatBtn.addEventListener('click', () => {
+                    if (aiNegotiator && aiNegotiator.conversationHistory) {
+                        const chatData = {
+                            timestamp: new Date().toISOString(),
+                            messages: aiNegotiator.conversationHistory
+                        };
+                        
+                        const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `ai-negotiator-chat-${new Date().toISOString().split('T')[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        
+                        aiNegotiator.appendMessage('AI', '💾 Chat history saved successfully!', 'left');
+                    }
+                });
+            }
+        }
+
+        // Send message function
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            
+            if (!messageInput || !aiNegotiator) return;
+            
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            // Clear input and disable send button temporarily
+            messageInput.value = '';
+            const charCount = document.getElementById('charCount');
+            if (charCount) charCount.textContent = '0/500';
+            sendButton.disabled = true;
+            
+            try {
+                // Process message with AI chat handler
+                await aiNegotiator.processMessage(message);
+            } catch (error) {
+                console.error('Error processing message:', error);
+                aiNegotiator.appendMessage('AI', 'Sorry, I encountered an error processing your message. Please try again.', 'left');
+            } finally {
+                sendButton.disabled = false;
+            }
+        }
+
+        // Quick search function for sidebar form
+        function performQuickSearch() {
+            const location = document.getElementById('filterLocation').value;
+            const price = document.getElementById('filterPrice').value;
+            const type = document.getElementById('filterType').value;
+            
+            let searchQuery = '';
+            if (location) searchQuery += `I want in ${location}`;
+            if (price) searchQuery += ` under $${price}`;
+            if (type) searchQuery += ` ${type.toLowerCase()}`;
+            
+            if (searchQuery.trim()) {
+                document.getElementById('messageInput').value = searchQuery.trim();
+                sendMessage();
+                
+                // Clear form
+                document.getElementById('filterLocation').value = '';
+                document.getElementById('filterPrice').value = '';
+                document.getElementById('filterType').value = '';
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
 </html>
