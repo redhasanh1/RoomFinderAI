@@ -549,16 +549,24 @@
         
         /* Enhanced typing animation - Foundation style */
         .typing-animation {
-            border-right: 3px solid rgba(255,255,255,0.75);
             white-space: nowrap;
-            animation: blink-caret 1s step-end infinite;
             min-width: fit-content;
             display: inline-block;
+            position: relative;
+        }
+        
+        .typing-cursor {
+            display: inline-block;
+            background-color: rgba(255,255,255,0.75);
+            width: 3px;
+            height: 1em;
+            margin-left: 2px;
+            animation: blink-caret 1s step-end infinite;
         }
         
         @keyframes blink-caret {
-            from, to { border-color: transparent; }
-            50% { border-color: rgba(255,255,255,0.75); }
+            from, to { opacity: 1; }
+            50% { opacity: 0; }
         }
 
         /* Foundation-inspired 3D Models */
@@ -601,7 +609,9 @@
             pointer-events: none;
             transform: translateZ(0);
             animation: foundation-float-1 12s ease-in-out infinite;
-            mix-blend-mode: multiply;
+            mix-blend-mode: normal;
+            object-fit: contain;
+            background-color: transparent;
         }
         
         .house-features-left { 
@@ -621,7 +631,9 @@
             pointer-events: none;
             transform: translateZ(0);
             animation: foundation-float-2 14s ease-in-out infinite;
-            mix-blend-mode: multiply;
+            mix-blend-mode: normal;
+            object-fit: contain;
+            background-color: transparent;
         }
         
         .house-success-right { 
@@ -641,7 +653,9 @@
             pointer-events: none;
             transform: translateZ(0);
             animation: foundation-float-3 16s ease-in-out infinite;
-            mix-blend-mode: multiply;
+            mix-blend-mode: normal;
+            object-fit: contain;
+            background-color: transparent;
         }
         
         .house-search-corner { 
@@ -661,7 +675,9 @@
             pointer-events: none;
             transform: translateZ(0);
             animation: foundation-float-4 13s ease-in-out infinite;
-            mix-blend-mode: multiply;
+            mix-blend-mode: normal;
+            object-fit: contain;
+            background-color: transparent;
         }
         
         .house-footer-corner { 
@@ -681,7 +697,9 @@
             pointer-events: none;
             transform: translateZ(0) rotateX(1deg) rotateY(-3deg);
             animation: foundation-float-5 15s ease-in-out infinite;
-            mix-blend-mode: multiply;
+            mix-blend-mode: normal;
+            object-fit: contain;
+            background-color: transparent;
         }
         
         /* Foundation-style floating animations */
@@ -746,7 +764,9 @@
             pointer-events: none;
             transform: translateZ(0);
             animation: foundation-float-6 15s ease-in-out infinite;
-            mix-blend-mode: multiply;
+            mix-blend-mode: normal;
+            object-fit: contain;
+            background-color: transparent;
         }
         
         .house-about-right {
@@ -765,7 +785,9 @@
             pointer-events: none;
             transform: translateZ(0);
             animation: foundation-float-7 17s ease-in-out infinite;
-            mix-blend-mode: multiply;
+            mix-blend-mode: normal;
+            object-fit: contain;
+            background-color: transparent;
         }
         
         @keyframes foundation-float-6 {
@@ -1734,18 +1756,26 @@
                 let currentIndex = 0;
                 let isTypingComplete = false;
                 
+                // Create cursor element
+                const cursor = document.createElement('span');
+                cursor.className = 'typing-cursor';
+                
                 const typeNextLetter = () => {
                     if (currentIndex < textToType.length && !isTypingComplete) {
-                        typingElement.textContent = textToType.substring(0, currentIndex + 1);
+                        const currentText = textToType.substring(0, currentIndex + 1);
+                        typingElement.innerHTML = currentText + cursor.outerHTML;
                         currentIndex++;
                         setTimeout(typeNextLetter, 150); // 150ms delay between letters
                     } else {
                         // Animation complete - remove cursor and stop
                         isTypingComplete = true;
-                        typingElement.style.borderRight = 'none';
+                        typingElement.textContent = textToType;
                         typingElement.classList.remove('typing-animation');
                     }
                 };
+                
+                // Start with cursor
+                typingElement.innerHTML = cursor.outerHTML;
                 
                 // Start typing after a short delay
                 setTimeout(typeNextLetter, 1000);
