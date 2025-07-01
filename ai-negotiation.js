@@ -440,7 +440,38 @@ class AINegotiationEngine {
             }
 
             const data = await response.json();
-            const marketData = JSON.parse(data.choices[0].message.content.trim());
+            let marketData;
+            
+            try {
+                const content = data.choices[0]?.message?.content?.trim();
+                if (!content) {
+                    throw new Error('No content in OpenAI market data response');
+                }
+                
+                // Validate JSON format
+                if (!content.startsWith('{') || !content.endsWith('}')) {
+                    throw new Error('OpenAI market data response is not valid JSON');
+                }
+                
+                marketData = JSON.parse(content);
+                
+                // Validate required market data fields
+                if (!marketData.hasOwnProperty('average')) {
+                    throw new Error('Market data response missing required fields');
+                }
+                
+            } catch (parseError) {
+                console.warn('⚠️ Failed to parse OpenAI market data response:', parseError.message);
+                console.warn('⚠️ Raw market data content:', data.choices[0]?.message?.content);
+                
+                // Fallback to default market data
+                marketData = {
+                    average: 1500,
+                    min: 1200,
+                    max: 1800,
+                    source: 'fallback_estimate'
+                };
+            }
             
             return {
                 ...marketData,
@@ -1107,7 +1138,31 @@ class AINegotiationEngine {
             }
 
             const data = await response.json();
-            let analysis = JSON.parse(data.choices[0].message.content.trim());
+            let analysis;
+            
+            try {
+                const content = data.choices[0]?.message?.content?.trim();
+                if (!content) {
+                    throw new Error('No content in OpenAI response');
+                }
+                
+                // Validate that it looks like JSON before parsing
+                if (!content.startsWith('{') || !content.endsWith('}')) {
+                    throw new Error('OpenAI response is not valid JSON format');
+                }
+                
+                analysis = JSON.parse(content);
+                
+                // Validate required fields
+                if (!analysis.hasOwnProperty('shouldRespond')) {
+                    throw new Error('OpenAI response missing required fields');
+                }
+                
+            } catch (parseError) {
+                console.warn('⚠️ Failed to parse OpenAI response as JSON:', parseError.message);
+                console.warn('⚠️ Raw OpenAI content:', data.choices[0]?.message?.content);
+                throw new Error('Invalid OpenAI response format');
+            }
             
             // Double-check for acceptance patterns in AI response too
             if (/\b(sure|yes|ok|okay|sounds good|works|fine|agreed|deal)\b/i.test(simpleReply)) {
