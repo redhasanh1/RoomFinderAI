@@ -2033,6 +2033,13 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                 try {
                     // First, ensure the govdocs bucket exists
                     console.log('🔍 Checking for govdocs bucket...');
+                    console.log('📧 User email:', userEmail);
+                    console.log('📄 File details:', {
+                        originalname: req.file.originalname,
+                        mimetype: req.file.mimetype,
+                        size: req.file.size
+                    });
+                    
                     const { data: buckets, error: listError } = await supabase.storage.listBuckets();
                     
                     if (listError) {
@@ -2071,9 +2078,13 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         console.log('✅ Created govdocs bucket successfully:', newBucket);
                     }
 
+                    // Upload to pics subfolder within govdocs bucket
+                    const folderPath = `pics/${fileName}`;
+                    console.log('📁 Uploading to govdocs bucket path:', folderPath);
+                    
                     const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('govdocs')
-                        .upload(fileName, req.file.buffer, {
+                        .upload(folderPath, req.file.buffer, {
                             contentType: req.file.mimetype,
                             upsert: false
                         });
