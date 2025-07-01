@@ -2114,12 +2114,12 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                     console.log('📊 Upload data:', uploadData);
                     
                     // Verify the file was actually uploaded by trying to list it
-                    const { data: listData, error: listError } = await supabase.storage
+                    const { data: listData, error: fileListError } = await supabase.storage
                         .from('govdocs')
                         .list('', { limit: 10 });
                     
-                    if (listError) {
-                        console.error('❌ Error listing files in govdocs:', listError);
+                    if (fileListError) {
+                        console.error('❌ Error listing files in govdocs:', fileListError);
                     } else {
                         console.log('📋 Files in govdocs bucket:', listData?.map(f => f.name) || 'None');
                     }
