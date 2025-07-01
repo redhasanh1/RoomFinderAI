@@ -2135,84 +2135,128 @@ class AINegotiationEngine {
                         
                         console.log('📨 Found conversation:', conversation);
                         
-                        // Check if this conversation involves the AI negotiator
-                        // Look for either direct AI involvement OR check if recent messages were from AI
-                        let isAIConversation = conversation && (
+                        // Enhanced AI conversation detection
+                        let isAIConversation = false;
+                        
+                        // Method 1: Check if conversation directly involves AI
+                        if (conversation && (
                             conversation.sender_email === 'ai-negotiator@roomfinder.com' || 
                             conversation.receiver_email === 'ai-negotiator@roomfinder.com'
-                        );
+                        )) {
+                            console.log('📨 ✅ Direct AI conversation detected');
+                            isAIConversation = true;
+                        }
                         
-                        // If not directly AI conversation, check if AI has sent messages in this conversation
+                        // Method 2: Check if AI has sent messages in this conversation (more reliable)
                         if (!isAIConversation && conversation) {
                             console.log('📨 Checking for AI messages in this conversation...');
-                            console.log('📨 Query: Looking for sender_email = ai-negotiator@roomfinder.com OR content containing "AI Negotiator on behalf"');
                             
                             const { data: aiMessages, error: aiMsgError } = await this.supabase
                                 .from('messages')
-                                .select('*')
+                                .select('sender_email, content, created_at')
                                 .eq('conversation_id', conversation.id)
-                                .or('sender_email.eq.ai-negotiator@roomfinder.com,content.ilike.%AI Negotiator on behalf%')
-                                .limit(5);
+                                .eq('sender_email', 'ai-negotiator@roomfinder.com')
+                                .limit(1);
                             
-                            if (aiMsgError) {
-                                console.log('📨 Error querying AI messages:', aiMsgError);
-                            }
-                            
-                            console.log('📨 AI Messages query result:', aiMessages);
-                            
-                            if (aiMessages && aiMessages.length > 0) {
+                            if (!aiMsgError && aiMessages && aiMessages.length > 0) {
                                 console.log('📨 ✅ Found AI messages in conversation:', aiMessages.length);
-                                aiMessages.forEach((msg, i) => {
-                                    console.log(`📨   ${i+1}. From: ${msg.sender_email} | Content: "${msg.content.substring(0, 50)}..."`);
-                                });
                                 isAIConversation = true;
-                            } else {
-                                // Fallback: Check if this looks like a rental negotiation
-                                console.log('📨 ❌ No AI messages found, checking for rental negotiation patterns...');
-                                const { data: allMessages, error: allMsgError } = await this.supabase
-                                    .from('messages')
-                                    .select('content, sender_email')
-                                    .eq('conversation_id', conversation.id)
-                                    .limit(10);
-                                
-                                if (allMsgError) {
-                                    console.log('📨 Error querying all messages:', allMsgError);
-                                }
-                                
-                                console.log('📨 All messages in conversation:', allMessages);
-                                
-                                const conversationText = (allMessages || []).map(m => m.content).join(' ').toLowerCase();
-                                const rentalKeywords = ['apartment', 'bedroom', 'interested', 'qualified tenant', 'ready to move', 'discuss terms', 'rent', 'property', 'house', 'condo', 'lease'];
-                                
-                                console.log('📨 Conversation text for analysis:', conversationText);
-                                console.log('📨 Looking for keywords:', rentalKeywords);
-                                
-                                const matchedKeywords = rentalKeywords.filter(keyword => conversationText.includes(keyword));
-                                
-                                if (matchedKeywords.length > 0) {
-                                    console.log('📨 ✅ Detected rental negotiation content! Matched keywords:', matchedKeywords);
+                            }
+                        }
+                        
+                        // Method 3: Check conversation metadata for AI negotiation flag
+                        if (!isAIConversation && conversation) {
+                            try {
+                                const metadata = conversation.metadata ? JSON.parse(conversation.metadata) : {};
+                                if (metadata.ai_negotiation || metadata.ai_initiated) {
+                                    console.log('📨 ✅ Conversation metadata indicates AI negotiation');
                                     isAIConversation = true;
-                                } else {
-                                    console.log('📨 ❌ No rental keywords found in conversation');
+                                }
+                            } catch (error) {
+                                console.log('📨 Could not parse conversation metadata:', error.message);
+                            }
+                        }
+                        
+                        // Method 4: Check if this conversation has active negotiations tracked
+                        if (!isAIConversation && conversation) {
+                            const hasActiveNegotiation = this.activeNegotiations.has(conversation.id);
+                            if (hasActiveNegotiation) {
+                                console.log('📨 ✅ Found active negotiation for this conversation');
+                                isAIConversation = true;
+                            }
+                        }
+                        
+                        // Method 5: Enhanced content-based detection
+                        if (!isAIConversation && conversation) {
+                            console.log('📨 Performing enhanced content analysis...');
+                            
+                            const { data: allMessages, error: allMsgError } = await this.supabase
+                                .from('messages')
+                                .select('content, sender_email')
+                                .eq('conversation_id', conversation.id)
+                                .limit(15);
+                            
+                            if (!allMsgError && allMessages) {
+                                const conversationText = allMessages.map(m => m.content).join(' ').toLowerCase();
+                                
+                                // Enhanced keyword detection
+                                const negotiationKeywords = [
+                                    'negotiate', 'negotiation', 'counter offer', 'counter-offer', 'counteroffer',
+                                    'price', 'rent', 'monthly', 'budget', 'offer', 'deal',
+                                    'apartment', 'bedroom', 'bedrooms', 'house', 'condo', 'property',
+                                    'qualified tenant', 'references', 'move in', 'lease', 'rental',
+                                    'market data', 'market rate', 'comparable', 'interested',
+                                    'security deposit', 'first month', 'available'
+                                ];
+                                
+                                // Check for AI negotiation patterns
+                                const aiPatterns = [
+                                    'ai negotiator', 'market analysis', 'based on comparable',
+                                    'qualified tenant with', 'ready to move', 'market data shows'
+                                ];
+                                
+                                const keywordMatches = negotiationKeywords.filter(keyword => 
+                                    conversationText.includes(keyword)
+                                ).length;
+                                
+                                const aiPatternMatches = aiPatterns.filter(pattern => 
+                                    conversationText.includes(pattern)
+                                ).length;
+                                
+                                console.log('📨 Keyword matches:', keywordMatches, 'AI pattern matches:', aiPatternMatches);
+                                
+                                // More lenient detection: 2+ keywords or 1+ AI pattern
+                                if (keywordMatches >= 2 || aiPatternMatches >= 1) {
+                                    console.log('📨 ✅ Enhanced content detection: negotiation conversation detected');
+                                    isAIConversation = true;
                                 }
                             }
                         }
                         
-                        console.log('📨 Is AI conversation?', isAIConversation);
-                        console.log('📨 DEBUG - Conversation details:', {
-                            id: conversation?.id,
-                            sender: conversation?.sender_email,
-                            receiver: conversation?.receiver_email,
-                            listing_id: conversation?.listing_id,
-                            message_content: newMessage.content,
-                            message_sender: newMessage.sender_email
-                        });
+                        // Method 6: Check current message content for immediate response patterns
+                        if (!isAIConversation) {
+                            const messageText = newMessage.content.toLowerCase();
+                            const responsePatterns = [
+                                'sure', 'ok', 'okay', 'yes', 'accept', 'agree', 'deal',
+                                'sounds good', 'works for me', 'perfect', 'great',
+                                'counter', 'how about', 'what about', 'can you',
+                                'interested', 'maybe', 'consider', 'think about'
+                            ];
+                            
+                            const hasResponsePattern = responsePatterns.some(pattern => 
+                                messageText.includes(pattern)
+                            );
+                            
+                            if (hasResponsePattern && conversation?.listing_id) {
+                                console.log('📨 ✅ Response pattern detected in message with listing context');
+                                isAIConversation = true;
+                            }
+                        }
+                        
+                        console.log('📨 Final decision - Is AI conversation?', isAIConversation);
                         
                         if (!isAIConversation) {
                             console.log('📨 Not an AI negotiation conversation, skipping');
-                            console.log('📨 TROUBLESHOOT: To make this an AI conversation, ensure:');
-                            console.log('   - Initial message contains rental keywords (apartment, bedroom, etc.)');
-                            console.log('   - OR conversation involves ai-negotiator@roomfinder.com');
                             return;
                         }
 
@@ -2259,7 +2303,7 @@ class AINegotiationEngine {
     }
 
     // Start a new negotiation
-    async startNegotiation(listing, userBudget, userEmail) {
+    async startNegotiation(listing, userBudget, userEmail, conversationId = null) {
         try {
             console.log('🚀 Starting negotiation for:', listing.title);
             
@@ -2292,7 +2336,7 @@ class AINegotiationEngine {
             // Create negotiation tracking
             const negotiationId = `neg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             
-            this.activeNegotiations.set(negotiationId, {
+            const negotiationData = {
                 listingId: listing.id,
                 listingTitle: listing.title,
                 originalPrice: listing.price,
@@ -2302,12 +2346,21 @@ class AINegotiationEngine {
                 marketData: marketData,
                 status: 'active',
                 startTime: new Date(),
+                conversationId: conversationId,
                 messages: [{
                     sender: 'ai',
                     content: message,
                     timestamp: new Date()
                 }]
-            });
+            };
+            
+            this.activeNegotiations.set(negotiationId, negotiationData);
+            
+            // Also track by conversation ID if available for faster lookup
+            if (conversationId) {
+                this.activeNegotiations.set(conversationId, negotiationData);
+                console.log('✅ Negotiation tracked by both negotiation ID and conversation ID');
+            }
 
             return {
                 message,
