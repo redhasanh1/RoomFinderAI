@@ -2040,15 +2040,15 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         size: req.file.size
                     });
                     
-                    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+                    const { data: buckets, error: bucketsListError } = await supabase.storage.listBuckets();
                     
-                    if (listError) {
-                        console.error('❌ Error listing buckets:', listError);
+                    if (bucketsListError) {
+                        console.error('❌ Error listing buckets:', bucketsListError);
                         console.log('📝 List buckets error details:', {
-                            message: listError.message,
-                            details: listError.details,
-                            hint: listError.hint,
-                            code: listError.code
+                            message: bucketsListError.message,
+                            details: bucketsListError.details,
+                            hint: bucketsListError.hint,
+                            code: bucketsListError.code
                         });
                     }
                     
