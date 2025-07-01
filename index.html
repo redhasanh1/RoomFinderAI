@@ -530,12 +530,13 @@
             transform: scale(1);
         }
         
-        /* Premium typing animation */
+        /* Enhanced typing animation - Foundation style */
         .typing-animation {
             overflow: hidden;
             border-right: 3px solid rgba(255,255,255,0.75);
             white-space: nowrap;
             animation: typing 6s steps(20, end), blink-caret 0.75s step-end infinite;
+            min-width: 100%;
         }
         
         @keyframes typing {
@@ -548,59 +549,62 @@
             50% { border-color: rgba(255,255,255,0.75); }
         }
 
-        /* 3D House Models */
-        .model-3d {
-            perspective: 1200px;
+        /* Foundation-inspired 3D Models */
+        .foundation-3d {
+            perspective: 800px;
             transform-style: preserve-3d;
         }
         
-        .house-model {
-            width: 120px;
-            height: 120px;
+        .property-model {
+            width: 80px;
+            height: 80px;
             position: relative;
             transform-style: preserve-3d;
-            animation: rotate3d 20s infinite linear;
+            animation: float-rotate 15s infinite ease-in-out;
         }
         
-        .house-face {
+        .property-face {
             position: absolute;
-            width: 120px;
-            height: 120px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.05));
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            backdrop-filter: blur(10px);
         }
         
-        .house-front { transform: rotateY(0deg) translateZ(60px); }
-        .house-back { transform: rotateY(180deg) translateZ(60px); }
-        .house-right { transform: rotateY(90deg) translateZ(60px); }
-        .house-left { transform: rotateY(-90deg) translateZ(60px); }
-        .house-top { transform: rotateX(90deg) translateZ(60px); }
-        .house-bottom { transform: rotateX(-90deg) translateZ(60px); }
+        .face-front { transform: rotateY(0deg) translateZ(40px); }
+        .face-back { transform: rotateY(180deg) translateZ(40px); }
+        .face-right { transform: rotateY(90deg) translateZ(40px); }
+        .face-left { transform: rotateY(-90deg) translateZ(40px); }
+        .face-top { transform: rotateX(90deg) translateZ(40px); }
+        .face-bottom { transform: rotateX(-90deg) translateZ(40px); }
         
-        @keyframes rotate3d {
-            0% { transform: rotateX(0deg) rotateY(0deg); }
-            25% { transform: rotateX(20deg) rotateY(90deg); }
-            50% { transform: rotateX(0deg) rotateY(180deg); }
-            75% { transform: rotateX(-20deg) rotateY(270deg); }
-            100% { transform: rotateX(0deg) rotateY(360deg); }
+        @keyframes float-rotate {
+            0%, 100% { transform: rotateY(0deg) rotateX(0deg) translateY(0px); }
+            25% { transform: rotateY(90deg) rotateX(10deg) translateY(-5px); }
+            50% { transform: rotateY(180deg) rotateX(0deg) translateY(0px); }
+            75% { transform: rotateY(270deg) rotateX(-10deg) translateY(-5px); }
         }
 
         /* Minimalistic AI Button */
         .ai-btn-minimal {
-            background: rgba(102, 126, 234, 0.1);
-            border: 1px solid rgba(102, 126, 234, 0.3);
+            background: rgba(102, 126, 234, 0.08);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 500;
             color: #667eea;
-            padding: 0.75rem 1.5rem;
-            border-radius: 12px;
-            font-weight: 600;
             transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.1);
         }
         
         .ai-btn-minimal:hover {
-            background: rgba(102, 126, 234, 0.2);
-            border-color: rgba(102, 126, 234, 0.5);
+            background: rgba(102, 126, 234, 0.12);
+            border-color: rgba(102, 126, 234, 0.3);
             transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
         }
         
         /* Interactive demo enhancements */
@@ -709,14 +713,12 @@
                     <a href="ai-negotiator.html" class="nav-link">AI Negotiator</a>
                     <a href="listings.html" class="nav-link">Listings</a>
                     <a href="pricing.html" class="nav-link">Pricing</a>
-                    <a href="dashboard.html" class="nav-link">Dashboard</a>
-                    <a href="profile.html" class="nav-link">Profile</a>
                     <a href="index.html#contact" class="nav-link">Contact</a>
                 </div>
             </div>
             <div id="authSection" class="flex items-center space-x-4">
                 <a href="login.html" class="nav-link login-link">Login</a>
-                <a href="signup.html" class="cta-button magnetic-btn text-sm px-6 py-3">Start Free Trial</a>
+                <a href="free-trial.html" class="cta-button magnetic-btn text-sm px-6 py-3">Start Free Trial</a>
             </div>
         </nav>
     </header>
@@ -734,13 +736,35 @@
         </div>
         
         <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
-            <div class="grid lg:grid-cols-2 gap-16 items-center">
-                <div class="hero-content reveal-left">
-                    <h1 class="text-6xl sm:text-7xl lg:text-8xl font-extrabold mb-8 leading-tight font-display">
-                        <span class="block">Find Your Perfect</span>
-                        <span class="block typing-animation">Rental with AI</span>
-                    </h1>
-                    <p class="text-xl sm:text-2xl mb-10 text-white/90 leading-relaxed max-w-2xl">
+            <div class="grid lg:grid-cols-3 gap-8 items-center">
+                <div class="lg:col-span-2 hero-content reveal-left">
+                    <div class="flex items-center gap-4 mb-8">
+                        <div class="foundation-3d">
+                            <div class="property-model">
+                                <div class="property-face face-front"></div>
+                                <div class="property-face face-back"></div>
+                                <div class="property-face face-right"></div>
+                                <div class="property-face face-left"></div>
+                                <div class="property-face face-top"></div>
+                                <div class="property-face face-bottom"></div>
+                            </div>
+                        </div>
+                        <h1 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight font-display">
+                            <span class="block">Find Your Perfect</span>
+                            <span class="block typing-animation" style="min-width: fit-content;">Rental with AI</span>
+                        </h1>
+                        <div class="foundation-3d">
+                            <div class="property-model" style="animation-delay: -5s;">
+                                <div class="property-face face-front"></div>
+                                <div class="property-face face-back"></div>
+                                <div class="property-face face-right"></div>
+                                <div class="property-face face-left"></div>
+                                <div class="property-face face-top"></div>
+                                <div class="property-face face-bottom"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-lg sm:text-xl mb-8 text-white/90 leading-relaxed max-w-2xl">
                         Smart room searching meets intelligent price negotiation. Let our AI find and negotiate the best rental deals automatically.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-6 mb-12">
@@ -770,7 +794,7 @@
                 </div>
                 
                 <div class="relative reveal-right">
-                    <!-- Static AI Demo Preview with 3D Models -->
+                    <!-- Enhanced AI Demo Preview -->
                     <div class="glass-card p-8 float-animation">
                         <div class="mb-6">
                             <div class="flex items-center justify-between mb-4">
@@ -778,24 +802,15 @@
                                     <div class="w-3 h-3 bg-red-400 rounded-full mr-2"></div>
                                     <div class="w-3 h-3 bg-yellow-400 rounded-full mr-2"></div>
                                     <div class="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
-                                    <span class="text-sm text-white/80 ml-3 font-medium">AI Negotiator Demo</span>
+                                    <span class="text-sm text-white/80 ml-3 font-medium">AI Negotiator Live Demo</span>
                                 </div>
-                                <div class="flex items-center space-x-4">
-                                    <!-- 3D House Model -->
-                                    <div class="model-3d">
-                                        <div class="house-model">
-                                            <div class="house-face house-front bg-gradient-to-br from-blue-400/20 to-purple-400/20"></div>
-                                            <div class="house-face house-back bg-gradient-to-br from-purple-400/20 to-pink-400/20"></div>
-                                            <div class="house-face house-right bg-gradient-to-br from-green-400/20 to-blue-400/20"></div>
-                                            <div class="house-face house-left bg-gradient-to-br from-yellow-400/20 to-green-400/20"></div>
-                                            <div class="house-face house-top bg-gradient-to-br from-pink-400/20 to-red-400/20"></div>
-                                            <div class="house-face house-bottom bg-gradient-to-br from-red-400/20 to-orange-400/20"></div>
-                                        </div>
-                                    </div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                    <span class="text-xs text-white/60">Live</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="space-y-4 max-h-80 overflow-y-auto">
+                        <div class="space-y-4">
                             <div class="chat-bubble">
                                 🤖 Found 3 apartments under $1500 in Toronto. Negotiating prices now...
                             </div>
@@ -805,15 +820,9 @@
                             <div class="chat-bubble">
                                 ✅ Negotiated $1200/month (was $1400) for 2BR downtown apartment!
                             </div>
-                            <div class="chat-bubble user">
-                                Perfect! Can you help with the lease terms?
-                            </div>
-                            <div class="chat-bubble">
-                                🔍 Analyzing lease agreement... Negotiated flexible move-out clause and reduced security deposit from $1400 to $600!
-                            </div>
                             <div class="flex justify-center mt-6">
                                 <div class="bg-green-500/20 border border-green-400/30 rounded-lg px-4 py-2">
-                                    <span class="text-green-300 font-semibold text-sm">💰 Total Saved: $3,200/year</span>
+                                    <span class="text-green-300 font-semibold text-sm">💰 Saved $200/month ($2,400/year)</span>
                                 </div>
                             </div>
                         </div>
@@ -831,31 +840,9 @@
                 <div class="inline-block px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full text-sm font-medium text-gray-600 mb-6">
                     🌟 Premium Features
                 </div>
-                <div class="flex items-center justify-center gap-8 mb-8">
-                    <div class="model-3d">
-                        <div class="house-model">
-                            <div class="house-face house-front bg-gradient-to-br from-green-400/20 to-blue-400/20"></div>
-                            <div class="house-face house-back bg-gradient-to-br from-blue-400/20 to-purple-400/20"></div>
-                            <div class="house-face house-right bg-gradient-to-br from-purple-400/20 to-pink-400/20"></div>
-                            <div class="house-face house-left bg-gradient-to-br from-pink-400/20 to-red-400/20"></div>
-                            <div class="house-face house-top bg-gradient-to-br from-red-400/20 to-orange-400/20"></div>
-                            <div class="house-face house-bottom bg-gradient-to-br from-orange-400/20 to-yellow-400/20"></div>
-                        </div>
-                    </div>
-                    <h2 class="text-5xl sm:text-6xl font-black text-gray-900 font-display">
-                        Why Choose <span class="gradient-text">RoomFinderAI</span>?
-                    </h2>
-                    <div class="model-3d">
-                        <div class="house-model" style="animation-delay: -5s;">
-                            <div class="house-face house-front bg-gradient-to-br from-yellow-400/20 to-green-400/20"></div>
-                            <div class="house-face house-back bg-gradient-to-br from-green-400/20 to-blue-400/20"></div>
-                            <div class="house-face house-right bg-gradient-to-br from-blue-400/20 to-purple-400/20"></div>
-                            <div class="house-face house-left bg-gradient-to-br from-purple-400/20 to-pink-400/20"></div>
-                            <div class="house-face house-top bg-gradient-to-br from-pink-400/20 to-red-400/20"></div>
-                            <div class="house-face house-bottom bg-gradient-to-br from-red-400/20 to-orange-400/20"></div>
-                        </div>
-                    </div>
-                </div>
+                <h2 class="text-5xl sm:text-6xl font-black text-gray-900 mb-8 font-display">
+                    Why Choose <span class="gradient-text">RoomFinderAI</span>?
+                </h2>
                 <p class="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
                     Experience the future of rental searching with AI-powered features that save you time and money.
                 </p>
@@ -905,7 +892,7 @@
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">📊 Market Analysis</h3>
                     <p class="text-gray-600 mb-8 leading-relaxed">Get real-time market insights and fair price recommendations based on current rental data.</p>
-                    <a href="pricing.html" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-red-700 transition-all duration-300 group">
+                    <a href="/pricing" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-red-700 transition-all duration-300 group">
                         View Pricing
                         <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
@@ -1136,7 +1123,7 @@
                         <div class="w-full flex-shrink-0 grid md:grid-cols-3 gap-8">
                             <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
                                 <div class="flex items-center mb-6">
-                                    <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Sarah" class="w-12 h-12 rounded-full mr-4 object-cover">
+                                    <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Sarah" class="w-12 h-12 rounded-full mr-4">
                                     <div>
                                         <h3 class="font-semibold text-gray-900">Sarah Chen</h3>
                                         <p class="text-gray-600 text-sm">Toronto, ON</p>
@@ -1150,7 +1137,7 @@
                             
                             <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
                                 <div class="flex items-center mb-6">
-                                    <img src="https://randomuser.me/api/portraits/men/44.jpg" alt="Mike" class="w-12 h-12 rounded-full mr-4 object-cover">
+                                    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Mike" class="w-12 h-12 rounded-full mr-4">
                                     <div>
                                         <h3 class="font-semibold text-gray-900">Mike Rodriguez</h3>
                                         <p class="text-gray-600 text-sm">Vancouver, BC</p>
@@ -1164,7 +1151,7 @@
                             
                             <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
                                 <div class="flex items-center mb-6">
-                                    <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Amanda" class="w-12 h-12 rounded-full mr-4 object-cover">
+                                    <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Amanda" class="w-12 h-12 rounded-full mr-4">
                                     <div>
                                         <h3 class="font-semibold text-gray-900">Amanda Foster</h3>
                                         <p class="text-gray-600 text-sm">Montreal, QC</p>
@@ -1181,7 +1168,7 @@
                         <div class="w-full flex-shrink-0 grid md:grid-cols-3 gap-8">
                             <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
                                 <div class="flex items-center mb-6">
-                                    <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="James" class="w-12 h-12 rounded-full mr-4 object-cover">
+                                    <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="James" class="w-12 h-12 rounded-full mr-4">
                                     <div>
                                         <h3 class="font-semibold text-gray-900">James Wilson</h3>
                                         <p class="text-gray-600 text-sm">Calgary, AB</p>
@@ -1195,7 +1182,7 @@
                             
                             <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
                                 <div class="flex items-center mb-6">
-                                    <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Lisa" class="w-12 h-12 rounded-full mr-4 object-cover">
+                                    <img src="https://randomuser.me/api/portraits/women/23.jpg" alt="Lisa" class="w-12 h-12 rounded-full mr-4">
                                     <div>
                                         <h3 class="font-semibold text-gray-900">Lisa Thompson</h3>
                                         <p class="text-gray-600 text-sm">Ottawa, ON</p>
@@ -1209,7 +1196,7 @@
                             
                             <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
                                 <div class="flex items-center mb-6">
-                                    <img src="https://randomuser.me/api/portraits/men/15.jpg" alt="David" class="w-12 h-12 rounded-full mr-4 object-cover">
+                                    <img src="https://randomuser.me/api/portraits/men/15.jpg" alt="David" class="w-12 h-12 rounded-full mr-4">
                                     <div>
                                         <h3 class="font-semibold text-gray-900">David Park</h3>
                                         <p class="text-gray-600 text-sm">Winnipeg, MB</p>
@@ -1226,7 +1213,7 @@
                         <div class="w-full flex-shrink-0 grid md:grid-cols-3 gap-8">
                             <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
                                 <div class="flex items-center mb-6">
-                                    <img src="https://randomuser.me/api/portraits/women/25.jpg" alt="Emma" class="w-12 h-12 rounded-full mr-4 object-cover">
+                                    <img src="https://randomuser.me/api/portraits/women/87.jpg" alt="Emma" class="w-12 h-12 rounded-full mr-4">
                                     <div>
                                         <h3 class="font-semibold text-gray-900">Emma Davis</h3>
                                         <p class="text-gray-600 text-sm">Halifax, NS</p>
@@ -1240,7 +1227,7 @@
                             
                             <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
                                 <div class="flex items-center mb-6">
-                                    <img src="https://randomuser.me/api/portraits/men/35.jpg" alt="Ryan" class="w-12 h-12 rounded-full mr-4 object-cover">
+                                    <img src="https://randomuser.me/api/portraits/men/41.jpg" alt="Ryan" class="w-12 h-12 rounded-full mr-4">
                                     <div>
                                         <h3 class="font-semibold text-gray-900">Ryan Kumar</h3>
                                         <p class="text-gray-600 text-sm">Edmonton, AB</p>
@@ -1254,7 +1241,7 @@
                             
                             <div class="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
                                 <div class="flex items-center mb-6">
-                                    <img src="https://randomuser.me/api/portraits/women/55.jpg" alt="Nicole" class="w-12 h-12 rounded-full mr-4 object-cover">
+                                    <img src="https://randomuser.me/api/portraits/women/56.jpg" alt="Nicole" class="w-12 h-12 rounded-full mr-4">
                                     <div>
                                         <h3 class="font-semibold text-gray-900">Nicole Brown</h3>
                                         <p class="text-gray-600 text-sm">Quebec City, QC</p>
@@ -1287,10 +1274,10 @@
                 Join thousands of smart renters who use AI to find better deals. Start your search today and let our AI negotiate the best price for you.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-                <button onclick="window.location.href='signup.html'" class="cta-button text-lg px-8 py-4">
+                <button onclick="window.location.href='/free-trial'" class="cta-button text-lg px-8 py-4">
                     ✨ Start Free Trial
                 </button>
-                <button onclick="window.location.href='ai-negotiator.html'" class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-gray-900 transition-all duration-300">
+                <button onclick="window.location.href='/ai-negotiator'" class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-gray-900 transition-all duration-300">
                     Try AI Negotiator
                 </button>
             </div>
@@ -1312,8 +1299,6 @@
                 <a href="ai-negotiator.html" class="hover:text-blue-400">AI Negotiator</a>
                 <a href="listings.html" class="hover:text-blue-400">Listings</a>
                 <a href="pricing.html" class="hover:text-blue-400">Pricing</a>
-                <a href="dashboard.html" class="hover:text-blue-400">Dashboard</a>
-                <a href="profile.html" class="hover:text-blue-400">Profile</a>
                 <a href="index.html#contact" class="hover:text-blue-400">Contact</a>
             </div>
         </div>
@@ -1327,7 +1312,7 @@
             <div class="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 opacity-50 animate-pulse"></div>
             
             <!-- Main Button -->
-            <button id="aiButton" onclick="window.location.href='ai-negotiator.html'" class="relative bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full p-6 shadow-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex items-center justify-center w-20 h-20 hover:scale-110 hover:shadow-3xl group-hover:animate-bounce">
+            <button id="aiButton" onclick="window.location.href='ai-negotiator.html'" class="relative bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full p-4 shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex items-center justify-center w-14 h-14 hover:scale-105 hover:shadow-xl">
                 <!-- Glow Effect -->
                 <div class="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>
                 
@@ -1564,7 +1549,10 @@
                 setTimeout(showNextMessage, 1000);
             };
 
-            // Live typing demo removed - static demo now used
+            // Start live typing demo
+            createLiveTypingDemo();
+            // Restart demo every 15 seconds
+            setInterval(createLiveTypingDemo, 15000);
 
         // Update authentication section based on login status
             const profileImages = [
@@ -1587,7 +1575,7 @@
                 }
                 authSection.innerHTML = `
                     <div class="flex items-center space-x-4">
-                        <a href="/profile">
+                        <a href="profile.html">
                             <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
                         </a>
                     </div>
@@ -1595,8 +1583,8 @@
             } else {
                 authSection.innerHTML = `
                     <div class="flex items-center space-x-4">
-                        <a href="/login" class="nav-link login-link">Login</a>
-                        <a href="/free-trial" class="cta-button magnetic-btn text-sm px-6 py-3">Start Free Trial</a>
+                        <a href="login.html" class="nav-link login-link">Login</a>
+                        <a href="free-trial.html" class="cta-button magnetic-btn text-sm px-6 py-3">Start Free Trial</a>
                     </div>
                 `;
             }
