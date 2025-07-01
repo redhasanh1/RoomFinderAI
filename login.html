@@ -3,314 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoomFinderAI - Login</title>
+    <title>RoomFinder AI - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        /* Grand Background */
+        .grand-bg {
+            position: fixed;
+            inset: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            z-index: -2;
         }
         
-        /* Auth container */
-        .auth-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+            z-index: -1;
         }
         
-        /* Gradient text */
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        /* Animated orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.5;
+            animation: float-orb 20s infinite ease-in-out;
         }
         
-        /* Modern input styling */
-        .modern-input {
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(102, 126, 234, 0.3);
+            top: -200px;
+            right: -200px;
+        }
+        
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: rgba(118, 75, 162, 0.3);
+            bottom: -150px;
+            left: -150px;
+            animation-delay: -5s;
+        }
+        
+        @keyframes float-orb {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        
+        /* Grand Auth container */
+        .auth-container-grand {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 32px;
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.1),
+                0 20px 40px rgba(102, 126, 234, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+        }
+        
+        .auth-container-grand::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent);
+            animation: shimmer 3s infinite;
+        }
+        
+        .auth-container-grand:hover {
+            transform: translateY(-5px);
+            box-shadow: 
+                0 40px 80px rgba(0, 0, 0, 0.15),
+                0 30px 50px rgba(102, 126, 234, 0.2);
+        }
+        
+        /* Social buttons */
+        .social-btn {
             background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        }
-        
-        .modern-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
-            outline: none;
-        }
-        
-        /* Modern button */
-        .auth-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 1rem 2rem;
-            color: white;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .auth-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
-        }
-        
-        .auth-button:disabled {
-            background: #9ca3af;
-            transform: none;
-            box-shadow: none;
-            cursor: not-allowed;
-        }
-        
-        /* Toggle button */
-        .toggle-button {
-            background: transparent;
-            border: 2px solid #667eea;
-            color: #667eea;
-            border-radius: 12px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
             padding: 0.75rem 1.5rem;
+            border-radius: 50px;
             font-weight: 600;
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
         
-        .toggle-button:hover {
-            background: #667eea;
-            color: white;
-            transform: translateY(-1px);
-        }
-        
-        /* Modern header */
-        .modern-header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        /* Floating card effect */
-        .floating-card {
-            animation: float 6s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-        
-        /* Form animations */
-        .form-container {
-            transition: all 0.3s ease-in-out;
-        }
-        
-        .form-container button {
-            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-        
-        /* Error styling */
-        .error-input {
-            border-color: #ef4444 !important;
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2) !important;
-        }
-        
-        /* Success styling */
-        .success-message {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            padding: 1rem;
-            border-radius: 12px;
-            animation: slideIn 0.5s ease;
-        }
-        
-        /* Verification code styling */
-        .letter-spacing-wide {
-            letter-spacing: 0.5rem;
-        }
-        
-        #verificationCode:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        #aiButton {
-            transition: transform 0.3s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-        #aiButton:hover {
+        .social-btn:hover {
+            border-color: var(--purple-primary);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+        }
+        
+        /* Success animation */
+        @keyframes success-pulse {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .success-icon {
+            animation: success-pulse 0.5s ease-out;
         }
     </style>
 </head>
-<body class="flex flex-col min-h-screen">
-    <!-- Header -->
-    <header class="sticky top-0 modern-header shadow-lg z-10">
-        <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-6">
-                <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
-                <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
-                <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
-                <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
-                <a href="/ai-negotiator" class="text-gray-700 hover:text-blue-600 transition font-medium">AI Negotiator</a>
-                <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
-                <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition font-medium">Pricing</a>
-                <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
-            </div>
-        </nav>
-    </header>
+<body>
+    <!-- Grand Background -->
+    <div class="grand-bg"></div>
+    <div class="bg-pattern"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
 
     <!-- Main Content -->
-    <main class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <section class="auth-container floating-card p-8 sm:p-10 max-w-lg mx-auto">
+    <div class="min-h-screen flex items-center justify-center px-4 py-12">
+        <div class="auth-container-grand w-full max-w-md p-8 sm:p-12">
+            <!-- Logo Section -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-purple-600 to-purple-800 rounded-2xl mb-4 shadow-lg">
+                    <i class="fas fa-home text-white text-3xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
+                    RoomFinder AI
+                </h1>
+            </div>
+
+            <!-- Auth Form Container -->
             <div id="authFormContainer">
-                <h2 id="formTitle" class="text-4xl font-bold gradient-text mb-8 text-center">Welcome Back</h2>
-                <form id="authForm" class="space-y-6 form-container">
-                <div id="nameFields" class="hidden space-y-6">
+                <h2 id="formTitle" class="text-2xl font-bold text-gray-800 mb-2 text-center">Welcome Back</h2>
+                <p class="text-gray-600 text-center mb-8">Find your perfect room with AI</p>
+                
+                <form id="authForm" class="space-y-6">
+                    <!-- Name Fields (Hidden for Login) -->
+                    <div id="nameFields" class="hidden space-y-4">
+                        <div>
+                            <label for="firstName" class="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+                            <input type="text" id="firstName" name="firstName" class="input-grand w-full" placeholder="John">
+                        </div>
+                        <div>
+                            <label for="lastName" class="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+                            <input type="text" id="lastName" name="lastName" class="input-grand w-full" placeholder="Doe">
+                        </div>
+                    </div>
+                    
+                    <!-- Email Field -->
                     <div>
-                        <label for="firstName" class="block text-sm font-medium text-gray-700">First Name</label>
-                        <input type="text" id="firstName" name="firstName" class="modern-input w-full mt-1" placeholder="e.g., John">
+                        <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                        <div class="relative">
+                            <input type="email" id="email" name="email" required class="input-grand w-full pl-12" placeholder="john@example.com">
+                            <i class="fas fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400"></i>
+                        </div>
                     </div>
+                    
+                    <!-- Password Field -->
                     <div>
-                        <label for="lastName" class="block text-sm font-medium text-gray-700">Last Name</label>
-                        <input type="text" id="lastName" name="lastName" class="modern-input w-full mt-1" placeholder="e.g., Doe">
+                        <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                        <div class="relative">
+                            <input type="password" id="password" name="password" required class="input-grand w-full pl-12" placeholder="••••••••">
+                            <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400"></i>
+                        </div>
                     </div>
-                </div>
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" id="email" name="email" required class="modern-input w-full mt-1" placeholder="e.g., john.doe@example.com">
-                </div>
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" id="password" name="password" required class="modern-input w-full mt-1" placeholder="Enter your password">
-                </div>
-                <div>
-                    <button type="submit" id="submitButton" class="w-full auth-button">Sign In</button>
-                </div>
-                <div class="text-center space-y-3">
-                    <div id="forgotPasswordLink" class="hidden">
-                        <a href="/forgot-password" class="text-sm text-blue-600 hover:text-blue-700 font-medium">Forgot your password?</a>
+                    
+                    <!-- Remember Me & Forgot Password -->
+                    <div id="loginOptions" class="flex items-center justify-between">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                            <span class="ml-2 text-sm text-gray-600">Remember me</span>
+                        </label>
+                        <a href="/forgot-password" class="text-sm text-purple-600 hover:text-purple-800 font-medium">Forgot password?</a>
                     </div>
-                    <button type="button" id="toggleForm" class="toggle-button">Don't have an account? Register</button>
-                </div>
-            </form>
+                    
+                    <!-- Submit Button -->
+                    <button type="submit" id="submitButton" class="btn-grand w-full">
+                        Sign In
+                    </button>
+                    
+                    <!-- Social Login -->
+                    <div class="mt-6">
+                        <div class="relative">
+                            <div class="absolute inset-0 flex items-center">
+                                <div class="w-full border-t border-gray-300"></div>
+                            </div>
+                            <div class="relative flex justify-center text-sm">
+                                <span class="px-4 bg-white text-gray-500">Or continue with</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 grid grid-cols-2 gap-4">
+                            <button type="button" class="social-btn flex items-center justify-center">
+                                <i class="fab fa-google text-red-500 mr-2"></i>
+                                Google
+                            </button>
+                            <button type="button" class="social-btn flex items-center justify-center">
+                                <i class="fab fa-github text-gray-800 mr-2"></i>
+                                GitHub
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Toggle Form -->
+                    <div class="text-center mt-8">
+                        <span class="text-gray-600">
+                            <span id="toggleText">Don't have an account?</span>
+                            <button type="button" id="toggleForm" class="text-purple-600 hover:text-purple-800 font-semibold ml-1">
+                                Register now
+                            </button>
+                        </span>
+                    </div>
+                </form>
             </div>
             
-            <!-- Email Verification Section (hidden by default) -->
+            <!-- Email Verification Section (Hidden) -->
             <div id="verificationSection" class="hidden">
-                <h2 class="text-3xl font-bold gradient-text mb-6 text-center">Verify Your Email</h2>
-                <div class="text-center mb-6">
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                        <svg class="mx-auto h-12 w-12 text-blue-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                        </svg>
-                        <p class="text-gray-700">We've sent a 6-digit verification code to:</p>
-                        <p id="verificationEmail" class="font-semibold text-blue-600 mt-1"></p>
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full mb-4 success-icon">
+                        <i class="fas fa-envelope-open-text text-white text-3xl"></i>
                     </div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Verify Your Email</h2>
+                    <p class="text-gray-600">We've sent a verification code to</p>
+                    <p id="verificationEmail" class="text-purple-600 font-semibold mt-1"></p>
                 </div>
                 
                 <form id="verificationForm" class="space-y-6">
                     <div>
-                        <label for="verificationCode" class="block text-sm font-medium text-gray-700 text-center mb-2">Enter Verification Code</label>
+                        <label for="verificationCode" class="block text-sm font-semibold text-gray-700 mb-2 text-center">
+                            Enter 6-digit code
+                        </label>
                         <input type="text" id="verificationCode" name="verificationCode" required 
-                               class="modern-input w-full text-center text-2xl font-bold letter-spacing-wide" 
-                               placeholder="123456" maxlength="6" pattern="[0-9]{6}">
+                               class="input-grand w-full text-center text-2xl font-bold tracking-wider" 
+                               placeholder="000000" maxlength="6" pattern="[0-9]{6}"
+                               style="letter-spacing: 0.5rem;">
                         <p class="text-sm text-gray-500 text-center mt-2">Code expires in 10 minutes</p>
                     </div>
-                    <div>
-                        <button type="submit" id="verifyButton" class="w-full auth-button">Verify Email</button>
-                    </div>
-                    <div class="text-center">
-                        <button type="button" id="resendCode" class="toggle-button">Didn't receive code? Resend</button>
-                    </div>
-                    <div class="text-center">
-                        <button type="button" id="backToRegistration" class="text-sm text-gray-600 hover:text-gray-800">← Back to Registration</button>
+                    
+                    <button type="submit" class="btn-grand w-full">
+                        Verify Email
+                    </button>
+                    
+                    <div class="text-center space-y-3">
+                        <button type="button" id="resendCode" class="text-purple-600 hover:text-purple-800 font-medium">
+                            Didn't receive code? Resend
+                        </button>
+                        <br>
+                        <button type="button" id="backToRegistration" class="text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to registration
+                        </button>
                     </div>
                 </form>
             </div>
-        </section>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-8">
-        <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
-            <div class="mt-4 flex justify-center space-x-4">
-                <a href="/index" class="hover:text-blue-400">Home</a>
-                <a href="/index#about" class="hover:text-blue-400">About</a>
-                <a href="/sublease" class="hover:text-blue-400">Sublease</a>
-                <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
-                <a href="/listings" class="hover:text-blue-400">Listings</a>
-                <a href="/index#contact" class="hover:text-blue-400">Contact</a>
-            </div>
         </div>
-    </footer>
+    </div>
 
+    <!-- Back to Home -->
+    <a href="index.html" class="fixed top-6 left-6 text-white hover:text-purple-200 transition-colors">
+        <i class="fas fa-arrow-left mr-2"></i>Back to Home
+    </a>
 
-    <script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-            return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-                try {
-                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                    var firstSheetName = workbook.SheetNames[0];
-                    var worksheet = workbook.Sheets[firstSheetName];
-                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                    var filteredData = jsonData.filter(row => row.some(filledCell));
-                    var headerRowIndex = filteredData.findIndex((row, index) =>
-                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                    );
-                    if (headerRowIndex === -1 || headerRowIndex > 25) {
-                        headerRowIndex = 0;
-                    }
-                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                    return csv;
-                } catch (e) {
-                    console.error(e);
-                    return "";
-                }
-            }
-            return gk_fileData[filename] || "";
-        }
-    </script>
+    <script src="js/main.js"></script>
     <script>
-        // We'll use the backend API instead of direct Supabase calls
-        // const supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-
+        // Initialize form handling
         const form = document.getElementById('authForm');
         const formTitle = document.getElementById('formTitle');
         const submitButton = document.getElementById('submitButton');
         const toggleForm = document.getElementById('toggleForm');
+        const toggleText = document.getElementById('toggleText');
         const nameFields = document.getElementById('nameFields');
+        const loginOptions = document.getElementById('loginOptions');
         let isLogin = true;
 
         toggleForm.addEventListener('click', () => {
             isLogin = !isLogin;
             formTitle.textContent = isLogin ? 'Welcome Back' : 'Create Account';
-            submitButton.textContent = isLogin ? 'Sign In' : 'Register';
-            toggleForm.textContent = isLogin ? "Don't have an account? Register" : 'Already have an account? Login';
+            submitButton.textContent = isLogin ? 'Sign In' : 'Create Account';
+            toggleText.textContent = isLogin ? "Don't have an account?" : 'Already have an account?';
+            toggleForm.textContent = isLogin ? 'Register now' : 'Sign in';
             nameFields.classList.toggle('hidden', isLogin);
-            document.getElementById('forgotPasswordLink').classList.toggle('hidden', !isLogin);
+            loginOptions.classList.toggle('hidden', !isLogin);
         });
-        
-        // Show forgot password link on page load for login view
-        document.getElementById('forgotPasswordLink').classList.remove('hidden');
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -318,20 +303,17 @@
             const password = document.getElementById('password').value;
 
             if (isLogin) {
-                // Login using secure backend API
+                // Login logic
                 try {
                     const response = await fetch('/api/login', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email, password })
                     });
 
                     const result = await response.json();
                     
                     if (response.ok) {
-                        // Create user object for localStorage compatibility
                         const user = {
                             firstName: 'User',
                             lastName: 'Name',
@@ -341,7 +323,7 @@
                             listings: []
                         };
                         localStorage.setItem('currentUser', JSON.stringify(user));
-                        window.location.href = '/index';
+                        window.location.href = 'index.html';
                     } else {
                         alert(result.error || 'Login failed');
                     }
@@ -350,85 +332,58 @@
                     alert('Login failed. Please try again.');
                 }
             } else {
-                // Registration using secure backend API
+                // Registration logic
                 const firstName = document.getElementById('firstName').value.trim();
                 const lastName = document.getElementById('lastName').value.trim();
+                
                 if (!firstName || !lastName) {
                     alert('Please fill in all fields.');
                     return;
                 }
 
                 try {
-                    console.log('Sending registration request...', { firstName, lastName, email });
-                    
-                    // Disable submit button to prevent double submission
                     submitButton.disabled = true;
-                    submitButton.textContent = 'Sending...';
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
                     
-                    // Send verification email instead of direct registration
                     const response = await fetch('/api/send-verification', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ firstName, lastName, email, password })
                     });
 
                     const result = await response.json();
-                    console.log('Registration response:', response.status, result);
                     
                     if (response.ok) {
-                        console.log('Registration successful, showing verification section');
-                        // Show verification section
                         showVerificationSection(email, { firstName, lastName, email, password });
                     } else {
-                        console.error('Registration failed:', result);
                         alert(result.error || 'Failed to send verification email');
                     }
                 } catch (error) {
                     console.error('Registration error:', error);
-                    alert('Registration failed. Please try again. Error: ' + error.message);
+                    alert('Registration failed. Please try again.');
                 } finally {
-                    // Re-enable submit button
                     submitButton.disabled = false;
-                    submitButton.textContent = 'Register';
+                    submitButton.innerHTML = 'Create Account';
                 }
             }
         });
 
-        // Store user data temporarily for verification
+        // Verification handling
         let pendingUserData = null;
 
-        // Show verification section
         function showVerificationSection(email, userData) {
-            console.log('Showing verification section for:', email);
             pendingUserData = userData;
-            
-            const authFormContainer = document.getElementById('authFormContainer');
-            const verificationSection = document.getElementById('verificationSection');
-            const verificationEmailElement = document.getElementById('verificationEmail');
-            
-            console.log('Elements found:', {
-                authFormContainer: !!authFormContainer,
-                verificationSection: !!verificationSection,
-                verificationEmailElement: !!verificationEmailElement
-            });
-            
-            authFormContainer.classList.add('hidden');
-            verificationSection.classList.remove('hidden');
-            verificationEmailElement.textContent = email;
-            
-            console.log('Verification section should now be visible');
+            document.getElementById('authFormContainer').classList.add('hidden');
+            document.getElementById('verificationSection').classList.remove('hidden');
+            document.getElementById('verificationEmail').textContent = email;
         }
 
-        // Hide verification section and show registration form
         function hideVerificationSection() {
             document.getElementById('authFormContainer').classList.remove('hidden');
             document.getElementById('verificationSection').classList.add('hidden');
             pendingUserData = null;
         }
 
-        // Handle verification form submission
         document.getElementById('verificationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -439,27 +394,16 @@
 
             const code = document.getElementById('verificationCode').value.trim();
             
-            if (!code || code.length !== 6) {
-                alert('Please enter a valid 6-digit code.');
-                return;
-            }
-
             try {
                 const response = await fetch('/api/verify-email', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        email: pendingUserData.email, 
-                        code: code 
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: pendingUserData.email, code })
                 });
 
                 const result = await response.json();
                 
                 if (response.ok) {
-                    // Create user object for localStorage compatibility
                     const user = {
                         firstName: pendingUserData.firstName,
                         lastName: pendingUserData.lastName,
@@ -470,8 +414,8 @@
                         emailVerified: true
                     };
                     localStorage.setItem('currentUser', JSON.stringify(user));
-                    alert('Email verified successfully! Welcome to RoomFinderAI.');
-                    window.location.href = '/index';
+                    alert('Email verified successfully! Welcome to RoomFinder AI.');
+                    window.location.href = 'index.html';
                 } else {
                     alert(result.error || 'Verification failed');
                 }
@@ -481,7 +425,6 @@
             }
         });
 
-        // Handle resend code
         document.getElementById('resendCode').addEventListener('click', async () => {
             if (!pendingUserData) {
                 alert('No pending verification. Please try registering again.');
@@ -491,9 +434,7 @@
             try {
                 const response = await fetch('/api/send-verification', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(pendingUserData)
                 });
 
@@ -506,17 +447,13 @@
                     alert(result.error || 'Failed to resend verification code');
                 }
             } catch (error) {
-                console.error('Resend error:', error);
                 alert('Failed to resend verification code. Please try again.');
             }
         });
 
-        // Handle back to registration
-        document.getElementById('backToRegistration').addEventListener('click', () => {
-            hideVerificationSection();
-        });
+        document.getElementById('backToRegistration').addEventListener('click', hideVerificationSection);
 
-        // Auto-format verification code input (numbers only)
+        // Format verification code input
         document.getElementById('verificationCode').addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/[^0-9]/g, '');
         });
