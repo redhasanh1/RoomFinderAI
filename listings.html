@@ -1865,59 +1865,64 @@
                 }
             });
 
-            // File upload functionality
-            const fileInput = document.getElementById('fileInput');
-            const selectedFilesContainer = document.getElementById('selectedFiles');
+            // File upload functionality - only for landlords
             let selectedFiles = [];
+            let isCurrentUserLandlord = false;
 
-            fileInput.addEventListener('change', (e) => {
-                const files = Array.from(e.target.files);
-                selectedFiles = files;
-                displaySelectedFiles(files);
-            });
+            // Initialize file functionality
+            function initializeFileUpload() {
+                const fileInput = document.getElementById('fileInput');
+                const selectedFilesContainer = document.getElementById('selectedFiles');
+                const fileUploadBtn = document.getElementById('fileUploadBtn');
 
-            function displaySelectedFiles(files) {
-                if (files.length === 0) {
-                    selectedFilesContainer.classList.add('hidden');
+                if (!fileInput || !selectedFilesContainer || !fileUploadBtn) {
+                    console.warn('File upload elements not found');
                     return;
                 }
 
-                selectedFilesContainer.classList.remove('hidden');
-                selectedFilesContainer.innerHTML = files.map((file, index) => `
-                    <div class="flex items-center justify-between bg-gray-100 p-2 rounded">
-                        <div class="flex items-center space-x-2">
-                            <span class="text-sm">📎</span>
-                            <span class="text-sm text-gray-700">${file.name}</span>
-                            <span class="text-xs text-gray-500">(${formatFileSize(file.size)})</span>
+                fileInput.addEventListener('change', (e) => {
+                    const files = Array.from(e.target.files);
+                    selectedFiles = files;
+                    displaySelectedFiles(files);
+                });
+
+                function displaySelectedFiles(files) {
+                    if (files.length === 0) {
+                        selectedFilesContainer.classList.add('hidden');
+                        return;
+                    }
+
+                    selectedFilesContainer.classList.remove('hidden');
+                    selectedFilesContainer.innerHTML = files.map((file, index) => `
+                        <div class="flex items-center justify-between bg-gray-100 p-2 rounded">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm">📎</span>
+                                <span class="text-sm text-gray-700">${file.name}</span>
+                                <span class="text-xs text-gray-500">(${formatFileSize(file.size)})</span>
+                            </div>
+                            <button onclick="window.removeFileFromChat(${index})" class="text-red-500 hover:text-red-700 text-sm">×</button>
                         </div>
-                        <button onclick="removeFile(${index})" class="text-red-500 hover:text-red-700 text-sm">×</button>
-                    </div>
-                `).join('');
+                    `).join('');
+                }
+
+                // Global function for removing files
+                window.removeFileFromChat = function(index) {
+                    selectedFiles.splice(index, 1);
+                    displaySelectedFiles(selectedFiles);
+                    
+                    // Update file input
+                    const dt = new DataTransfer();
+                    selectedFiles.forEach(file => dt.items.add(file));
+                    fileInput.files = dt.files;
+                };
             }
 
-            window.removeFile = function(index) {
-                selectedFiles.splice(index, 1);
-                displaySelectedFiles(selectedFiles);
-                
-                // Update file input
-                const dt = new DataTransfer();
-                selectedFiles.forEach(file => dt.items.add(file));
-                fileInput.files = dt.files;
-            };
-
-            function formatFileSize(bytes) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            }
-
-            // Modified send message function to handle files
-            async function sendMessageWithFiles() {
+            // Enhanced send message function to handle both text and files
+            async function sendMessage() {
                 const messageContent = chatInput.value.trim();
                 
-                if (!messageContent && selectedFiles.length === 0) {
+                // Check if we have content or files to send
+                if (!messageContent && (!selectedFiles || selectedFiles.length === 0)) {
                     console.warn('No message content or files to send');
                     return;
                 }
@@ -1934,21 +1939,23 @@
                     // Send text message if there's content
                     if (messageContent) {
                         await sendTextMessage(messageContent, currentUser, timestamp);
+                        chatInput.value = '';
                     }
 
-                    // Send files if any are selected
-                    if (selectedFiles.length > 0) {
+                    // Send files if any are selected and user is landlord
+                    if (selectedFiles && selectedFiles.length > 0 && isCurrentUserLandlord) {
                         for (const file of selectedFiles) {
                             await sendFileMessage(file, currentUser, timestamp);
                         }
                         
                         // Clear selected files
                         selectedFiles = [];
-                        fileInput.value = '';
-                        selectedFilesContainer.classList.add('hidden');
+                        const fileInput = document.getElementById('fileInput');
+                        if (fileInput) fileInput.value = '';
+                        const selectedFilesContainer = document.getElementById('selectedFiles');
+                        if (selectedFilesContainer) selectedFilesContainer.classList.add('hidden');
                     }
 
-                    chatInput.value = '';
                 } catch (error) {
                     console.error('❌ Error sending message/files:', error);
                     alert('Failed to send message: ' + error.message);
@@ -1958,7 +1965,7 @@
             async function sendTextMessage(messageContent, currentUser, timestamp) {
                 // Instant UI update
                 const messageElement = document.createElement('div');
-                messageElement.className = 'message user-message';
+                messageElement.className = 'message sent';
                 messageElement.innerHTML = `
                     <p>${sanitizeInput(messageContent)}</p>
                     <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
@@ -1979,6 +1986,7 @@
 
                 if (error) {
                     messageElement.remove();
+                    chatInput.value = messageContent; // Restore message
                     throw error;
                 }
             }
@@ -1991,14 +1999,14 @@
 
                 // Show uploading status
                 const messageElement = document.createElement('div');
-                messageElement.className = 'message user-message';
+                messageElement.className = 'message sent';
                 messageElement.innerHTML = `
-                    <div class="file-message">
+                    <div class="file-message bg-blue-50 p-3 rounded">
                         <div class="flex items-center space-x-2">
                             <span class="text-lg">📎</span>
                             <div>
-                                <p class="font-medium">${file.name}</p>
-                                <p class="text-sm text-gray-500">Uploading... (${formatFileSize(file.size)})</p>
+                                <p class="font-medium text-blue-900">${file.name}</p>
+                                <p class="text-sm text-blue-600">Uploading... (${formatFileSize(file.size)})</p>
                             </div>
                         </div>
                     </div>
@@ -2049,18 +2057,20 @@
 
                     // Update UI with download link
                     messageElement.innerHTML = `
-                        <div class="file-message">
+                        <div class="file-message bg-blue-50 p-3 rounded">
                             <div class="flex items-center space-x-2">
                                 <span class="text-lg">📎</span>
                                 <div>
-                                    <p class="font-medium">${file.name}</p>
-                                    <p class="text-sm text-gray-500">${formatFileSize(file.size)}</p>
-                                    <a href="${urlData.publicUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">Download</a>
+                                    <p class="font-medium text-blue-900">${file.name}</p>
+                                    <p class="text-sm text-blue-600">${formatFileSize(file.size)}</p>
+                                    <a href="${urlData.publicUrl}" target="_blank" class="text-blue-800 hover:text-blue-900 text-sm font-medium">📥 Download</a>
                                 </div>
                             </div>
                         </div>
                         <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
                     `;
+
+                    console.log('✅ File sent successfully:', file.name);
 
                 } catch (error) {
                     messageElement.remove();
@@ -2068,21 +2078,8 @@
                 }
             }
 
-            // Update the send button to use the new function
-            chatSendBtn.removeEventListener('click', sendMessage);
-            chatSendBtn.addEventListener('click', sendMessageWithFiles);
-
-            // Update enter key handler
-            chatInput.removeEventListener('keydown', handleEnterKey);
-            
-            function handleEnterKey(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessageWithFiles();
-                }
-            }
-            
-            chatInput.addEventListener('keydown', handleEnterKey);
+            // Initialize file upload functionality
+            initializeFileUpload();
 
             // SIMPLIFIED Real-time subscription with better debugging
             const messageChannel = supabase
@@ -2672,16 +2669,17 @@
                 
                 // Show file upload button only for listing owners
                 const fileUploadBtn = document.getElementById('fileUploadBtn');
-                const isListingOwner = currentUser.email === listing.user_email;
+                isCurrentUserLandlord = currentUser.email === listing.user_email;
                 if (fileUploadBtn) {
-                    if (isListingOwner) {
+                    if (isCurrentUserLandlord) {
                         fileUploadBtn.classList.remove('hidden');
-                        console.log('📎 File upload enabled for listing owner');
+                        console.log('📎 File upload enabled for listing owner (landlord)');
                     } else {
                         fileUploadBtn.classList.add('hidden');
-                        console.log('📎 File upload disabled for non-owner');
+                        console.log('📎 File upload disabled for non-owner (tenant)');
                     }
                 }
+                console.log('🏠 User role:', isCurrentUserLandlord ? 'Landlord' : 'Tenant');
                 
                 chatModal.classList.add('active');
                 console.log('✅ Chat modal opened for conversation:', conversation.id);
@@ -2758,14 +2756,15 @@
                     // Handle different message types
                     let messageContent;
                     if (message.message_type === 'file' && message.file_url) {
+                        const isOwner = message.sender_email === currentUser.email;
                         messageContent = `
-                            <div class="file-message">
+                            <div class="file-message ${isOwner ? 'bg-blue-50' : 'bg-gray-50'} p-3 rounded">
                                 <div class="flex items-center space-x-2">
                                     <span class="text-lg">📎</span>
                                     <div>
-                                        <p class="font-medium">${sanitizeInput(message.file_name || 'File')}</p>
-                                        <p class="text-sm text-gray-500">${message.file_size ? formatFileSize(message.file_size) : ''}</p>
-                                        <a href="${message.file_url}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">Download</a>
+                                        <p class="font-medium ${isOwner ? 'text-blue-900' : 'text-gray-900'}">${sanitizeInput(message.file_name || 'File')}</p>
+                                        <p class="text-sm ${isOwner ? 'text-blue-600' : 'text-gray-600'}">${message.file_size ? formatFileSize(message.file_size) : ''}</p>
+                                        <a href="${message.file_url}" target="_blank" class="${isOwner ? 'text-blue-800 hover:text-blue-900' : 'text-gray-800 hover:text-gray-900'} text-sm font-medium">📥 Download</a>
                                     </div>
                                 </div>
                             </div>
