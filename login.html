@@ -179,24 +179,6 @@
                             <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400"></i>
                         </div>
                     </div>
-<<<<<<< HEAD
-                </div>
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" id="email" name="email" required class="modern-input w-full mt-1" placeholder="e.g., john.doe@example.com">
-                </div>
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" id="password" name="password" required class="modern-input w-full mt-1" placeholder="Enter your password">
-                </div>
-                <div>
-                    <button type="submit" id="submitButton" class="w-full auth-button">Sign In</button>
-                </div>
-                <div class="text-center">
-                    <button type="button" id="toggleForm" class="toggle-button">Don't have an account? Register</button>
-                </div>
-            </form>
-=======
                     
                     <!-- Remember Me & Forgot Password -->
                     <div id="loginOptions" class="flex items-center justify-between">
@@ -245,7 +227,6 @@
                         </span>
                     </div>
                 </form>
->>>>>>> 8d17bac4aa6a5c44b79251881e45686902656303
             </div>
             
             <!-- Email Verification Section (Hidden) -->
@@ -308,19 +289,12 @@
 
         toggleForm.addEventListener('click', () => {
             isLogin = !isLogin;
-<<<<<<< HEAD
-            formTitle.textContent = isLogin ? 'Login' : 'Register';
-            submitButton.textContent = isLogin ? 'Login' : 'Register';
-            toggleForm.textContent = isLogin ? "Don't have an account? Register" : 'Already have an account? Login';
-            nameFields.classList.toggle('hidden', isLogin);
-=======
             formTitle.textContent = isLogin ? 'Welcome Back' : 'Create Account';
             submitButton.textContent = isLogin ? 'Sign In' : 'Create Account';
             toggleText.textContent = isLogin ? "Don't have an account?" : 'Already have an account?';
             toggleForm.textContent = isLogin ? 'Register now' : 'Sign in';
             nameFields.classList.toggle('hidden', isLogin);
             loginOptions.classList.toggle('hidden', !isLogin);
->>>>>>> 8d17bac4aa6a5c44b79251881e45686902656303
         });
 
         form.addEventListener('submit', async (e) => {
