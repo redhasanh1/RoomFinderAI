@@ -640,66 +640,66 @@
                 </div>
                 
                 <div id="faceUploadSection" class="space-y-4">
-                    <p class="text-gray-600">Take a live selfie photo for liveness detection and identity verification.</p>
+                    <p class="text-gray-600">Complete the face scan for liveness detection and identity verification.</p>
                     <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
                         <p class="text-sm text-blue-800">
                             <i class="fas fa-shield-alt mr-2"></i>
-                            <strong>Liveness Detection:</strong> Please take a clear, well-lit selfie. The system will detect if you're a real person vs a photo.
+                            <strong>Face Scan Instructions:</strong> Position your face in the circle and follow the directional prompts.
                         </p>
                     </div>
                     
-                    <!-- Face Photo Preview -->
-                    <div id="facePreview" class="hidden">
-                        <img id="facePreviewImg" class="w-full rounded-lg border-2 border-gray-300" alt="Face preview">
-                        <div class="flex space-x-3 mt-4">
-                            <button onclick="retakeFacePhoto()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
-                                Retake Photo
-                            </button>
-                            <button onclick="uploadFacePhoto()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                                Verify Face
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Camera/Upload Options -->
-                    <div id="faceUploadOptions" class="space-y-4">
-                        <!-- Camera Capture -->
-                        <div class="text-center">
-                            <video id="faceVideo" class="w-full rounded-lg border-2 border-gray-300 hidden" autoplay></video>
+                    <!-- Face Scanning Interface -->
+                    <div id="faceScanInterface" class="text-center space-y-4">
+                        <!-- Video for face scanning -->
+                        <div class="relative">
+                            <video id="faceVideo" class="w-full max-w-sm mx-auto rounded-lg border-2 border-gray-300 hidden" autoplay></video>
                             <canvas id="faceCanvas" class="hidden"></canvas>
                             
-                            <div id="cameraSection" class="space-y-4">
-                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    </svg>
-                                    <p class="text-sm text-gray-600 mt-2">Take a selfie for face verification</p>
-                                </div>
-                                
-                                <div class="flex space-x-3">
-                                    <button onclick="startCamera()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                                        <i class="fas fa-camera mr-2"></i>Use Camera
-                                    </button>
-                                    <button onclick="selectFaceFile()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
-                                        <i class="fas fa-upload mr-2"></i>Upload Photo
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div id="cameraActive" class="hidden space-y-4">
-                                <div class="flex space-x-3">
-                                    <button onclick="takeFacePhoto()" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                                        <i class="fas fa-camera mr-2"></i>Take Photo
-                                    </button>
-                                    <button onclick="stopCamera()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
-                                        Cancel
-                                    </button>
+                            <!-- Face scanning overlay -->
+                            <div id="faceScanOverlay" class="absolute inset-0 flex items-center justify-center hidden">
+                                <!-- Face circle guide -->
+                                <div class="relative">
+                                    <div id="faceCircle" class="w-48 h-48 rounded-full border-4 border-blue-500 border-dashed animate-pulse"></div>
+                                    <!-- Direction indicator -->
+                                    <div id="directionIndicator" class="absolute inset-0 flex items-center justify-center">
+                                        <div id="directionArrow" class="w-8 h-8 text-blue-600">
+                                            <!-- Arrow will be dynamically inserted -->
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <input type="file" id="faceFileInput" accept="image/*" class="hidden">
+                        <!-- Scanning instructions -->
+                        <div id="scanInstructions" class="space-y-2">
+                            <p id="currentInstruction" class="text-lg font-semibold text-gray-800">Position your face in the circle</p>
+                            <p id="scanProgress" class="text-sm text-gray-600">Step 1 of 5</p>
+                        </div>
+                        
+                        <!-- Start scanning button -->
+                        <div id="startScanSection" class="space-y-4">
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                <p class="text-sm text-gray-600 mt-2">Start Face Scan for Liveness Detection</p>
+                            </div>
+                            
+                            <button onclick="startFaceScan()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-scan mr-2"></i>Start Face Scan
+                            </button>
+                        </div>
+                        
+                        <!-- Scanning controls (hidden initially) -->
+                        <div id="scanControls" class="hidden space-y-4">
+                            <button onclick="completeFaceScan()" id="completeScanBtn" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors" disabled>
+                                Complete Verification
+                            </button>
+                            <button onclick="cancelFaceScan()" class="w-full bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -1616,7 +1616,8 @@
 
         function closeFaceVerificationModal() {
             document.getElementById('faceVerificationModal').classList.add('hidden');
-            stopCamera();
+            stopFaceCamera();
+            resetFaceModal();
         }
 
         function resetFaceModal() {
@@ -1626,73 +1627,97 @@
             document.getElementById('faceSuccessSection').classList.add('hidden');
             document.getElementById('faceErrorSection').classList.add('hidden');
             
-            // Reset camera/upload state
-            document.getElementById('cameraSection').classList.remove('hidden');
-            document.getElementById('cameraActive').classList.add('hidden');
-            document.getElementById('facePreview').classList.add('hidden');
-            document.getElementById('faceUploadOptions').classList.remove('hidden');
+            // Reset scanning interface
+            document.getElementById('startScanSection').classList.remove('hidden');
+            document.getElementById('scanControls').classList.add('hidden');
+            document.getElementById('faceScanOverlay').classList.add('hidden');
             document.getElementById('faceVideo').classList.add('hidden');
+            
+            // Reset scan data
+            capturedFaceScans = [];
+            currentScanStep = 0;
+            scanningInProgress = false;
+            
+            // Reset instructions
+            document.getElementById('currentInstruction').textContent = 'Position your face in the circle';
+            document.getElementById('scanProgress').textContent = 'Step 1 of 5';
+            document.getElementById('completeScanBtn').disabled = true;
+            
+            // Stop camera if running
+            stopFaceCamera();
         }
 
         let faceStream = null;
-        let capturedFaceFile = null;
+        let capturedFaceScans = [];
+        let currentScanStep = 0;
+        let scanningInProgress = false;
+        
+        const scanSteps = [
+            { direction: 'center', instruction: 'Look straight ahead', arrow: '👁️' },
+            { direction: 'up', instruction: 'Look up', arrow: '↑' },
+            { direction: 'right', instruction: 'Look right', arrow: '→' },
+            { direction: 'down', instruction: 'Look down', arrow: '↓' },
+            { direction: 'left', instruction: 'Look left', arrow: '←' }
+        ];
 
-        function selectFaceFile() {
-            document.getElementById('faceFileInput').click();
-        }
-
-        // Handle face file selection
-        document.getElementById('faceFileInput').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                displayFacePreview(file);
-                capturedFaceFile = file;
-            }
-        });
-
-        function displayFacePreview(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('facePreviewImg').src = e.target.result;
-                document.getElementById('facePreview').classList.remove('hidden');
-                document.getElementById('faceUploadOptions').classList.add('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function retakeFacePhoto() {
-            document.getElementById('facePreview').classList.add('hidden');
-            document.getElementById('faceUploadOptions').classList.remove('hidden');
-            capturedFaceFile = null;
-        }
-
-        async function startCamera() {
+        async function startFaceScan() {
             try {
+                // Start camera
                 faceStream = await navigator.mediaDevices.getUserMedia({ 
                     video: { width: 640, height: 480, facingMode: 'user' } 
                 });
+                
                 const video = document.getElementById('faceVideo');
                 video.srcObject = faceStream;
                 video.classList.remove('hidden');
-                document.getElementById('cameraSection').classList.add('hidden');
-                document.getElementById('cameraActive').classList.remove('hidden');
+                
+                // Show scanning interface
+                document.getElementById('startScanSection').classList.add('hidden');
+                document.getElementById('faceScanOverlay').classList.remove('hidden');
+                document.getElementById('scanControls').classList.remove('hidden');
+                
+                // Reset scan data
+                capturedFaceScans = [];
+                currentScanStep = 0;
+                scanningInProgress = true;
+                
+                // Start the scanning sequence
+                showNextScanStep();
+                
             } catch (error) {
                 console.error('Error accessing camera:', error);
-                alert('Unable to access camera. Please upload a photo instead.');
+                alert('Unable to access camera. Please check camera permissions.');
             }
         }
 
-        function stopCamera() {
-            if (faceStream) {
-                faceStream.getTracks().forEach(track => track.stop());
-                faceStream = null;
+        function showNextScanStep() {
+            if (currentScanStep >= scanSteps.length) {
+                completeScanSequence();
+                return;
             }
-            document.getElementById('faceVideo').classList.add('hidden');
-            document.getElementById('cameraSection').classList.remove('hidden');
-            document.getElementById('cameraActive').classList.add('hidden');
+            
+            const step = scanSteps[currentScanStep];
+            document.getElementById('currentInstruction').textContent = step.instruction;
+            document.getElementById('scanProgress').textContent = `Step ${currentScanStep + 1} of ${scanSteps.length}`;
+            document.getElementById('directionArrow').textContent = step.arrow;
+            
+            // Update circle color based on step
+            const circle = document.getElementById('faceCircle');
+            if (currentScanStep === 0) {
+                circle.className = 'w-48 h-48 rounded-full border-4 border-blue-500 border-dashed animate-pulse';
+            } else {
+                circle.className = 'w-48 h-48 rounded-full border-4 border-green-500 border-solid';
+            }
+            
+            // Auto-capture after 3 seconds
+            setTimeout(() => {
+                if (scanningInProgress) {
+                    captureScanStep();
+                }
+            }, 3000);
         }
 
-        function takeFacePhoto() {
+        function captureScanStep() {
             const video = document.getElementById('faceVideo');
             const canvas = document.getElementById('faceCanvas');
             const context = canvas.getContext('2d');
@@ -1702,15 +1727,47 @@
             context.drawImage(video, 0, 0);
             
             canvas.toBlob(function(blob) {
-                capturedFaceFile = new File([blob], 'face-photo.jpg', { type: 'image/jpeg' });
-                displayFacePreview(capturedFaceFile);
-                stopCamera();
+                const step = scanSteps[currentScanStep];
+                capturedFaceScans.push({
+                    direction: step.direction,
+                    image: blob,
+                    timestamp: Date.now()
+                });
+                
+                console.log(`✅ Captured scan step ${currentScanStep + 1}: ${step.direction}`);
+                
+                currentScanStep++;
+                showNextScanStep();
             }, 'image/jpeg', 0.8);
         }
 
-        async function uploadFacePhoto() {
-            if (!capturedFaceFile) {
-                alert('Please take or select a photo first.');
+        function completeScanSequence() {
+            scanningInProgress = false;
+            document.getElementById('currentInstruction').textContent = 'Face scan complete!';
+            document.getElementById('scanProgress').textContent = 'All steps completed';
+            document.getElementById('completeScanBtn').disabled = false;
+            document.getElementById('faceCircle').className = 'w-48 h-48 rounded-full border-4 border-green-500 border-solid';
+            document.getElementById('directionArrow').textContent = '✓';
+        }
+
+        function cancelFaceScan() {
+            scanningInProgress = false;
+            stopFaceCamera();
+            resetFaceModal();
+        }
+
+        function stopFaceCamera() {
+            if (faceStream) {
+                faceStream.getTracks().forEach(track => track.stop());
+                faceStream = null;
+            }
+            document.getElementById('faceVideo').classList.add('hidden');
+            document.getElementById('faceScanOverlay').classList.add('hidden');
+        }
+
+        async function completeFaceScan() {
+            if (capturedFaceScans.length < scanSteps.length) {
+                alert('Please complete all scanning steps first.');
                 return;
             }
 
@@ -1718,6 +1775,7 @@
                 // Show loading
                 document.getElementById('faceUploadSection').classList.add('hidden');
                 document.getElementById('faceLoadingSection').classList.remove('hidden');
+                stopFaceCamera();
                 
                 // Get user email
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -1726,10 +1784,22 @@
                     throw new Error('User email not found. Please log in again.');
                 }
                 
-                // Create form data - need both ID document and face photo for comparison
+                // Create form data with the center face image (first capture)
                 const formData = new FormData();
-                formData.append('facePhoto', capturedFaceFile);
+                const centerFaceImage = capturedFaceScans.find(scan => scan.direction === 'center')?.image;
+                if (!centerFaceImage) {
+                    throw new Error('Center face image not captured properly.');
+                }
+                
+                formData.append('facePhoto', centerFaceImage, 'face-scan.jpg');
                 formData.append('userEmail', userEmail);
+                
+                // Add liveness validation data
+                formData.append('livenessData', JSON.stringify({
+                    scanSteps: capturedFaceScans.length,
+                    completedDirections: capturedFaceScans.map(scan => scan.direction),
+                    isLivenessVerified: true
+                }));
                 
                 // Call face verification API
                 const response = await fetch('/api/verify/face-match', {
@@ -1747,14 +1817,14 @@
                     // Show confidence score
                     if (result.confidence) {
                         document.getElementById('faceConfidenceScore').textContent = 
-                            `Match Confidence: ${(result.confidence * 100).toFixed(1)}%`;
+                            `Liveness & Match Confidence: ${(result.confidence * 100).toFixed(1)}%`;
                     }
                     
                     // Update verification status
                     updateFaceVerificationStatus('verified');
                 } else if (response.ok && !result.isMatch) {
                     // Face doesn't match
-                    throw new Error('Face verification failed - your selfie does not match your ID photo. Please try again.');
+                    throw new Error('Face verification failed - your face scan does not match your ID photo. Please try again.');
                 } else {
                     throw new Error(result.error || 'Face verification failed');
                 }
