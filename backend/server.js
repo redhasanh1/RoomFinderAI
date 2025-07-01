@@ -101,8 +101,8 @@ try {
     }
 } catch (error) {
     console.log('❌ Azure Document Intelligence initialization failed:', error.message);
-    console.log('❌ Full error details:', error);
-    console.log('❌ Stack trace:', error.stack);
+    console.log('⚠️ Server will continue without Azure Document Intelligence');
+    documentClient = null;
 }
 
 // Initialize Azure Face client
@@ -125,8 +125,8 @@ try {
     }
 } catch (error) {
     console.log('❌ Azure Face API initialization failed:', error.message);
-    console.log('❌ Full error details:', error);
-    console.log('❌ Stack trace:', error.stack);
+    console.log('⚠️ Server will continue without Azure Face API');
+    faceClient = null;
 }
 
 // Configure multer for file uploads
@@ -2649,7 +2649,23 @@ app.get('/api/debug/azure', (req, res) => {
 
 // Health check route for Railway monitoring - MUST BE BEFORE /:page
 app.get('/health', (req, res) => {
-    res.status(200).send('✅ RoomFinderAI server is running');
+    try {
+        const healthStatus = {
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            services: {
+                supabase: !!supabase,
+                stripe: !!stripe,
+                documentClient: !!documentClient,
+                faceClient: !!faceClient
+            }
+        };
+        
+        res.status(200).json(healthStatus);
+    } catch (error) {
+        console.error('Health check error:', error);
+        res.status(200).send('✅ RoomFinderAI server is running');
+    }
 });
 
 // Serve main website at root
@@ -2700,9 +2716,28 @@ console.log('- SUPABASE_ANON_KEY:', !!process.env.SUPABASE_ANON_KEY);
 console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', !!process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY);
 console.log('- AZURE_FACE_KEY:', !!process.env.AZURE_FACE_KEY);
 
-app.listen(port, '0.0.0.0', () => {
-    console.log(`✅ Server running on port ${port}`);
-    console.log(`🏥 Health check available at http://localhost:${port}/health`);
-    console.log(`🌐 Server accessible at http://0.0.0.0:${port}`);
+// Add graceful error handling for server startup
+process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught Exception:', error);
+    console.log('Server will continue running...');
 });
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+    console.log('Server will continue running...');
+});
+
+try {
+    app.listen(port, '0.0.0.0', () => {
+        console.log(`✅ Server running on port ${port}`);
+        console.log(`🏥 Health check available at http://localhost:${port}/health`);
+        console.log(`🌐 Server accessible at http://0.0.0.0:${port}`);
+    }).on('error', (err) => {
+        console.error('❌ Server startup error:', err);
+        process.exit(1);
+    });
+} catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+}
 // Force update
