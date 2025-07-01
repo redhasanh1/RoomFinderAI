@@ -10,7 +10,8 @@
       "Bash(grep:*)",
       "Bash(find:*)",
       "Bash(git pull:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
