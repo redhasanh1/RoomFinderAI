@@ -280,7 +280,7 @@
                             <span class="font-medium text-gray-700">AI Negotiator</span>
                         </a>
                         
-                        <button onclick="switchTab('subscriptions', document.querySelector('[onclick*=subscriptions]'))" class="flex items-center p-4 bg-white rounded-lg hover:shadow-lg transition">
+                        <button onclick="openBillingModal()" class="flex items-center p-4 bg-white rounded-lg hover:shadow-lg transition">
                             <div class="gradient-bg-green p-2 rounded-lg mr-3">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
@@ -765,6 +765,166 @@
                             Try Again
                         </button>
                         <button onclick="closeBankInfoModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Billing Management Modal -->
+    <div id="billingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 transform transition-all">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Billing Management</h3>
+                    <button onclick="closeBillingModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Loading Section -->
+                <div id="billingLoadingSection" class="text-center space-y-4">
+                    <div class="animate-spin mx-auto h-12 w-12 text-blue-600">
+                        <svg fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-gray-600">Loading payment methods...</p>
+                </div>
+                
+                <!-- No Cards Section -->
+                <div id="billingNoCardsSection" class="hidden space-y-4">
+                    <div class="text-center py-8">
+                        <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-lg font-medium text-gray-900 mb-2">No Payment Method Added</h4>
+                        <p class="text-gray-600 mb-6">You haven't added any credit or debit card to your account yet.</p>
+                        <button onclick="openAddCardSection()" class="modern-button">
+                            <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add Payment Method
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Cards List Section -->
+                <div id="billingCardsSection" class="hidden space-y-4">
+                    <div class="space-y-3" id="cardsList">
+                        <!-- Cards will be populated here -->
+                    </div>
+                    <div class="pt-4 border-t">
+                        <button onclick="openAddCardSection()" class="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add New Card
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Add Card Section -->
+                <div id="billingAddCardSection" class="hidden space-y-4">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <p class="text-sm text-blue-800">Your card information is securely processed and stored using industry-standard encryption.</p>
+                    </div>
+                    <form id="addCardForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                            <input type="text" id="cardNumber" name="cardNumber" required maxlength="19"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="1234 5678 9012 3456">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                                <input type="text" id="cardExpiry" name="cardExpiry" required maxlength="5"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       placeholder="MM/YY">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">CVV</label>
+                                <input type="text" id="cardCVV" name="cardCVV" required maxlength="4"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       placeholder="123">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
+                            <input type="text" id="cardholderName" name="cardholderName" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="John Doe">
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <input type="checkbox" id="setAsDefault" name="setAsDefault" class="mr-2">
+                            <label for="setAsDefault" class="text-sm text-gray-700">Set as default payment method</label>
+                        </div>
+                        
+                        <div class="flex space-x-3 pt-4">
+                            <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                Add Card
+                            </button>
+                            <button type="button" onclick="closeBillingModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Processing Section -->
+                <div id="billingProcessingSection" class="hidden text-center space-y-4">
+                    <div class="animate-spin mx-auto h-12 w-12 text-blue-600">
+                        <svg fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-gray-600">Processing payment method...</p>
+                </div>
+                
+                <!-- Success Section -->
+                <div id="billingSuccessSection" class="hidden text-center space-y-4">
+                    <div class="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-medium text-gray-900">Payment Method Added!</p>
+                        <p class="text-sm text-gray-600">Your card has been securely saved to your account.</p>
+                    </div>
+                    <button onclick="closeBillingModal()" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                        Done
+                    </button>
+                </div>
+                
+                <!-- Error Section -->
+                <div id="billingErrorSection" class="hidden text-center space-y-4">
+                    <div class="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-medium text-gray-900">Error Processing Card</p>
+                        <p id="billingErrorMessage" class="text-sm text-gray-600">Something went wrong. Please try again.</p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button onclick="resetBillingModal()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            Try Again
+                        </button>
+                        <button onclick="closeBillingModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
                             Cancel
                         </button>
                     </div>
@@ -1558,6 +1718,245 @@
                     description.classList.remove('text-gray-600');
                 }
             }
+        }
+
+        // Billing Modal Functions
+        async function openBillingModal() {
+            document.getElementById('billingModal').classList.remove('hidden');
+            await loadPaymentMethods();
+        }
+
+        function closeBillingModal() {
+            document.getElementById('billingModal').classList.add('hidden');
+            resetBillingModal();
+        }
+
+        function resetBillingModal() {
+            // Hide all sections
+            document.getElementById('billingLoadingSection').classList.add('hidden');
+            document.getElementById('billingNoCardsSection').classList.add('hidden');
+            document.getElementById('billingCardsSection').classList.add('hidden');
+            document.getElementById('billingAddCardSection').classList.add('hidden');
+            document.getElementById('billingProcessingSection').classList.add('hidden');
+            document.getElementById('billingSuccessSection').classList.add('hidden');
+            document.getElementById('billingErrorSection').classList.add('hidden');
+            
+            // Reset form
+            document.getElementById('addCardForm').reset();
+        }
+
+        async function loadPaymentMethods() {
+            resetBillingModal();
+            document.getElementById('billingLoadingSection').classList.remove('hidden');
+            
+            try {
+                // Fetch payment methods from API
+                const response = await fetch(`/api/payment-methods/${currentUser.id}`);
+                const result = await response.json();
+
+                if (!response.ok) throw new Error(result.error || 'Failed to load payment methods');
+
+                document.getElementById('billingLoadingSection').classList.add('hidden');
+
+                if (!result.paymentMethods || result.paymentMethods.length === 0) {
+                    document.getElementById('billingNoCardsSection').classList.remove('hidden');
+                } else {
+                    displayPaymentMethods(result.paymentMethods);
+                    document.getElementById('billingCardsSection').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading payment methods:', error);
+                document.getElementById('billingLoadingSection').classList.add('hidden');
+                document.getElementById('billingNoCardsSection').classList.remove('hidden');
+            }
+        }
+
+        function displayPaymentMethods(paymentMethods) {
+            const cardsList = document.getElementById('cardsList');
+            cardsList.innerHTML = '';
+
+            paymentMethods.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors';
+                
+                const cardBrandIcon = getCardBrandIcon(card.card_brand);
+                const isDefault = card.is_default;
+
+                cardElement.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-8 bg-gray-100 rounded flex items-center justify-center">
+                            ${cardBrandIcon}
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900">
+                                ${card.card_brand} •••• ${card.card_last4}
+                                ${isDefault ? '<span class="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Default</span>' : ''}
+                            </p>
+                            <p class="text-sm text-gray-600">Expires ${card.card_exp_month}/${card.card_exp_year}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        ${!isDefault ? `<button onclick="setDefaultCard('${card.id}')" class="text-blue-600 hover:text-blue-700 text-sm font-medium">Set as Default</button>` : ''}
+                        <button onclick="removeCard('${card.id}')" class="text-red-600 hover:text-red-700 text-sm font-medium">Remove</button>
+                    </div>
+                `;
+                
+                cardsList.appendChild(cardElement);
+            });
+        }
+
+        function getCardBrandIcon(brand) {
+            const icons = {
+                'Visa': '<svg class="w-8 h-5" viewBox="0 0 48 30" fill="none"><rect width="48" height="30" rx="4" fill="#1A1F71"/><path d="M20.5 20L16.5 10H13L17 20H20.5Z" fill="white"/></svg>',
+                'Mastercard': '<svg class="w-8 h-5" viewBox="0 0 48 30" fill="none"><circle cx="19" cy="15" r="8" fill="#EB001B"/><circle cx="29" cy="15" r="8" fill="#F79E1B"/></svg>',
+                'American Express': '<svg class="w-8 h-5" viewBox="0 0 48 30" fill="none"><rect width="48" height="30" rx="4" fill="#2E77BB"/></svg>',
+                'Discover': '<svg class="w-8 h-5" viewBox="0 0 48 30" fill="none"><rect width="48" height="30" rx="4" fill="#FF6000"/></svg>'
+            };
+            return icons[brand] || '<svg class="w-8 h-5" viewBox="0 0 48 30" fill="none"><rect width="48" height="30" rx="4" fill="#718096"/></svg>';
+        }
+
+        function openAddCardSection() {
+            resetBillingModal();
+            document.getElementById('billingAddCardSection').classList.remove('hidden');
+        }
+
+        async function setDefaultCard(cardId) {
+            try {
+                const response = await fetch(`/api/payment-methods/${cardId}/default`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ user_id: currentUser.id })
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Failed to set default card');
+
+                await loadPaymentMethods();
+            } catch (error) {
+                console.error('Error setting default card:', error);
+                showBillingError('Failed to set default card');
+            }
+        }
+
+        async function removeCard(cardId) {
+            if (!confirm('Are you sure you want to remove this payment method?')) return;
+
+            try {
+                const response = await fetch(`/api/payment-methods/${cardId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ user_id: currentUser.id })
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Failed to remove card');
+
+                await loadPaymentMethods();
+            } catch (error) {
+                console.error('Error removing card:', error);
+                showBillingError('Failed to remove card');
+            }
+        }
+
+        function showBillingError(message) {
+            resetBillingModal();
+            document.getElementById('billingErrorSection').classList.remove('hidden');
+            document.getElementById('billingErrorMessage').textContent = message;
+        }
+
+        // Card input formatting
+        document.getElementById('cardNumber').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
+        });
+
+        document.getElementById('cardExpiry').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2, 4);
+            }
+            e.target.value = value;
+        });
+
+        document.getElementById('cardCVV').addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+
+        // Handle add card form submission
+        document.getElementById('addCardForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            try {
+                // Show processing
+                document.getElementById('billingAddCardSection').classList.add('hidden');
+                document.getElementById('billingProcessingSection').classList.remove('hidden');
+                
+                // Get form data
+                const formData = new FormData(event.target);
+                const cardNumber = formData.get('cardNumber').replace(/\s/g, '');
+                const [expMonth, expYear] = formData.get('cardExpiry').split('/');
+                
+                // Detect card brand
+                const cardBrand = detectCardBrand(cardNumber);
+                
+                // Create payment method data
+                const paymentMethodData = {
+                    user_id: currentUser.id,
+                    stripe_payment_method_id: 'pm_' + Date.now(), // In production, this would come from Stripe
+                    card_brand: cardBrand,
+                    card_last4: cardNumber.slice(-4),
+                    card_exp_month: parseInt(expMonth),
+                    card_exp_year: parseInt('20' + expYear),
+                    is_default: formData.get('setAsDefault') === 'on'
+                };
+                
+                // Save to database via API
+                const response = await fetch('/api/payment-methods', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(paymentMethodData)
+                });
+                
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Failed to add payment method');
+                
+                // Show success
+                document.getElementById('billingProcessingSection').classList.add('hidden');
+                document.getElementById('billingSuccessSection').classList.remove('hidden');
+                
+                // Reload payment methods after 2 seconds
+                setTimeout(() => {
+                    loadPaymentMethods();
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error adding card:', error);
+                showBillingError('Failed to add payment method. Please try again.');
+            }
+        });
+
+        function detectCardBrand(cardNumber) {
+            const patterns = {
+                'Visa': /^4/,
+                'Mastercard': /^5[1-5]/,
+                'American Express': /^3[47]/,
+                'Discover': /^6(?:011|5)/
+            };
+            
+            for (const [brand, pattern] of Object.entries(patterns)) {
+                if (pattern.test(cardNumber)) {
+                    return brand;
+                }
+            }
+            
+            return 'Unknown';
         }
 
         // Handle bank info form submission
