@@ -7,28 +7,35 @@ const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 
 // Load config with error handling
-let config;
+// Load configuration with environment variables taking priority
+let config = {};
 try {
-    config = require('../config.js');
-    console.log('✅ Config loaded successfully');
+    // First, try to load from config file as fallback
+    const fileConfig = require('../config.js');
+    config = { ...fileConfig };
+    console.log('✅ Config file loaded as fallback');
 } catch (error) {
-    console.log('⚠️ Config file not found, using environment variables directly');
-    config = {
-        STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY?.trim(),
-        STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY?.trim(),
-        GOOGLE_API_KEY: process.env.GOOGLE_API_KEY?.trim(),
-        SUPABASE_URL: process.env.SUPABASE_URL?.trim(),
-        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.trim(),
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim(),
-        OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim(),
-        OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || 'gpt-3.5-turbo',
-        BREVO_API_KEY: process.env.BREVO_API_KEY?.trim(),
-        AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim(),
-        AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim(),
-        AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim(),
-        AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim()
-    };
+    console.log('⚠️ Config file not found, using environment variables only');
 }
+
+// Override with environment variables (these take priority)
+config = {
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY?.trim() || config.STRIPE_SECRET_KEY,
+    STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY?.trim() || config.STRIPE_PUBLISHABLE_KEY,
+    GOOGLE_API_KEY: process.env.GOOGLE_API_KEY?.trim() || config.GOOGLE_API_KEY,
+    SUPABASE_URL: process.env.SUPABASE_URL?.trim() || config.SUPABASE_URL,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.trim() || config.SUPABASE_ANON_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim() || config.OPENAI_API_KEY,
+    OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim() || config.OPENAI_ORG_ID,
+    OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || config.OPENAI_MODEL || 'gpt-3.5-turbo',
+    BREVO_API_KEY: process.env.BREVO_API_KEY?.trim() || config.BREVO_API_KEY,
+    AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_KEY,
+    AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
+    AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim() || config.AZURE_FACE_KEY,
+    AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim() || config.AZURE_FACE_ENDPOINT
+};
+
+console.log('🔧 Configuration priority: Environment variables > Config file > Defaults');
 
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
@@ -163,6 +170,7 @@ const GOOGLE_API_KEY = config.GOOGLE_API_KEY;
 const listings = [];
 const users = [];
 const emailVerificationCodes = new Map(); // Store verification codes with expiration
+const passwordResetCodes = new Map(); // Store password reset codes with expiration
 
 // Location overrides for problematic North American cities
 const locationOverrides = {
@@ -516,6 +524,89 @@ async function sendVerificationEmail(email, code, firstName) {
         return { success: true };
     } catch (error) {
         console.error('❌ Error sending verification email:', error.response?.data || error.message);
+        return { success: false, error: error.message };
+    }
+}
+
+// Function to send password reset email
+async function sendPasswordResetEmail(email, code, firstName) {
+    try {
+        console.log('📧 Sending password reset email to:', email);
+        
+        const emailData = {
+            sender: {
+                name: "RoomFinderAI",
+                email: "wilmahenning01@gmail.com"
+            },
+            to: [{
+                email: email,
+                name: firstName
+            }],
+            subject: "Reset your RoomFinderAI password",
+            htmlContent: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Password Reset</title>
+                </head>
+                <body style="font-family: 'Inter', Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px;">
+                    <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); overflow: hidden;">
+                        <!-- Header -->
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">RoomFinderAI</h1>
+                            <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0; font-size: 16px;">Password Reset Request</p>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div style="padding: 40px 30px;">
+                            <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hi ${firstName}!</h2>
+                            <p style="color: #64748b; line-height: 1.6; margin: 0 0 30px 0; font-size: 16px;">
+                                We received a request to reset your password. Use the code below to complete the process:
+                            </p>
+                            
+                            <!-- Reset Code -->
+                            <div style="text-align: center; margin: 40px 0;">
+                                <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 20px; border-radius: 12px; border: 2px dashed #667eea; display: inline-block;">
+                                    <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px; font-weight: 600;">RESET CODE</p>
+                                    <p style="margin: 0; font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 4px;">${code}</p>
+                                </div>
+                            </div>
+                            
+                            <p style="color: #64748b; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                                Enter this code on the password reset page. This code will expire in <strong>10 minutes</strong> for security reasons.
+                            </p>
+                            
+                            <p style="color: #64748b; line-height: 1.6; margin: 0; font-size: 14px;">
+                                If you didn't request a password reset, please ignore this email. Your password won't be changed unless you enter this code.
+                            </p>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div style="background: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <p style="margin: 0; color: #64748b; font-size: 14px;">
+                                © 2025 RoomFinderAI. All rights reserved.
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `
+        };
+
+        const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+            headers: {
+                'accept': 'application/json',
+                'api-key': config.BREVO_API_KEY,
+                'content-type': 'application/json'
+            }
+        });
+
+        console.log('✅ Password reset email sent successfully to:', email);
+        return { success: true };
+    } catch (error) {
+        console.error('❌ Error sending password reset email:', error.response?.data || error.message);
         return { success: false, error: error.message };
     }
 }
@@ -1029,18 +1120,16 @@ app.post('/api/ai-negotiator', async (req, res) => {
             return res.status(400).json({ error: 'Message is required' });
         }
 
-        // Placeholder: In production, integrate with an AI model
-        const response = `AI Negotiator: I received your message: "${message}". How can I assist you with pricing tips, negotiation strategies, or adding a listing?`;
+        // Redirect to new negotiation endpoint
+        const response = await fetch(`${req.protocol}://${req.get('host')}/api/ai-negotiate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, userEmail })
+        });
         
-        // Log AI negotiator usage
-        if (userEmail) {
-            await logUserActivity(userEmail, 'message_sent', `Used AI negotiator for assistance`, {
-                message_length: message.length,
-                type: 'ai_negotiator'
-            });
-        }
+        const data = await response.json();
+        res.json(data);
         
-        res.json({ response });
     } catch (error) {
         console.error('Error in /api/ai-negotiator:', error.message);
         res.status(500).json({ error: 'Failed to process AI request' });
@@ -1483,6 +1572,179 @@ app.get('/api/bank-info/:email', async (req, res) => {
     }
 });
 
+// API: Get user payment methods
+app.get('/api/payment-methods/:userId', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
+        }
+
+        const { userId } = req.params;
+        console.log('Fetching payment methods for user:', userId);
+        
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const { data: paymentMethods, error } = await supabase
+            .from('user_payment_methods')
+            .select('*')
+            .eq('user_id', userId)
+            .order('is_default', { ascending: false })
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching payment methods:', error);
+            return res.status(500).json({ error: 'Failed to fetch payment methods', details: error.message });
+        }
+
+        res.json({ paymentMethods: paymentMethods || [] });
+
+    } catch (error) {
+        console.error('Error in payment methods fetch endpoint:', error);
+        res.status(500).json({ error: 'Failed to fetch payment methods', details: error.message });
+    }
+});
+
+// API: Add payment method
+app.post('/api/payment-methods', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
+        }
+
+        const { 
+            user_id,
+            stripe_payment_method_id,
+            card_brand,
+            card_last4,
+            card_exp_month,
+            card_exp_year,
+            is_default
+        } = req.body;
+
+        console.log('Adding payment method for user:', user_id);
+        
+        if (!user_id || !stripe_payment_method_id || !card_brand || !card_last4 || !card_exp_month || !card_exp_year) {
+            return res.status(400).json({ error: 'Required fields are missing' });
+        }
+
+        // Insert new payment method
+        const { data: paymentMethod, error } = await supabase
+            .from('user_payment_methods')
+            .insert([{
+                user_id,
+                stripe_payment_method_id,
+                card_brand,
+                card_last4,
+                card_exp_month,
+                card_exp_year,
+                is_default: is_default || false
+            }])
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error adding payment method:', error);
+            return res.status(500).json({ error: 'Failed to add payment method', details: error.message });
+        }
+
+        console.log('Payment method added successfully:', paymentMethod.id);
+        res.json({ 
+            success: true, 
+            message: 'Payment method added successfully',
+            paymentMethod
+        });
+
+    } catch (error) {
+        console.error('Error in payment method add endpoint:', error);
+        res.status(500).json({ error: 'Failed to add payment method', details: error.message });
+    }
+});
+
+// API: Update default payment method
+app.put('/api/payment-methods/:id/default', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
+        }
+
+        const { id } = req.params;
+        const { user_id } = req.body;
+        
+        console.log('Setting default payment method:', id);
+        
+        if (!id || !user_id) {
+            return res.status(400).json({ error: 'Payment method ID and user ID are required' });
+        }
+
+        // Update the payment method to be default
+        const { data: paymentMethod, error } = await supabase
+            .from('user_payment_methods')
+            .update({ is_default: true })
+            .eq('id', id)
+            .eq('user_id', user_id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error updating default payment method:', error);
+            return res.status(500).json({ error: 'Failed to update default payment method', details: error.message });
+        }
+
+        console.log('Default payment method updated successfully');
+        res.json({ 
+            success: true, 
+            message: 'Default payment method updated successfully',
+            paymentMethod
+        });
+
+    } catch (error) {
+        console.error('Error in default payment method update endpoint:', error);
+        res.status(500).json({ error: 'Failed to update default payment method', details: error.message });
+    }
+});
+
+// API: Delete payment method
+app.delete('/api/payment-methods/:id', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database service not available - Supabase not configured' });
+        }
+
+        const { id } = req.params;
+        const { user_id } = req.body;
+        
+        console.log('Deleting payment method:', id);
+        
+        if (!id || !user_id) {
+            return res.status(400).json({ error: 'Payment method ID and user ID are required' });
+        }
+
+        // Delete the payment method
+        const { error } = await supabase
+            .from('user_payment_methods')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user_id);
+
+        if (error) {
+            console.error('Error deleting payment method:', error);
+            return res.status(500).json({ error: 'Failed to delete payment method', details: error.message });
+        }
+
+        console.log('Payment method deleted successfully');
+        res.json({ 
+            success: true, 
+            message: 'Payment method deleted successfully'
+        });
+
+    } catch (error) {
+        console.error('Error in payment method delete endpoint:', error);
+        res.status(500).json({ error: 'Failed to delete payment method', details: error.message });
+    }
+});
+
 // Test endpoint for Supabase connection
 app.get('/api/test-supabase', async (req, res) => {
     try {
@@ -1544,6 +1806,18 @@ async function logUserActivity(userEmail, activityType, description, metadata = 
     try {
         if (!supabase) {
             console.log('⚠️ Cannot log activity - Supabase not initialized');
+            return;
+        }
+
+        // First check if user exists to avoid foreign key constraint violation
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('email')
+            .eq('email', userEmail)
+            .single();
+
+        if (userError || !user) {
+            console.log(`⚠️ Cannot log activity - User ${userEmail} not found in users table`);
             return;
         }
 
@@ -1728,6 +2002,24 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
             if (document.fields.CountryRegion?.content) {
                 extractedData.country = document.fields.CountryRegion.content;
             }
+        }
+
+        // Validate that this is actually a government ID document
+        // Check if we have at least the essential fields that every government ID should have
+        const hasRequiredFields = extractedData.firstName && extractedData.lastName && 
+                                 (extractedData.dateOfBirth || extractedData.documentNumber);
+        
+        if (!hasRequiredFields) {
+            return res.status(400).json({ 
+                error: 'This image does not appear to be a valid government ID document. Please upload a clear photo of your driver\'s license, passport, or state ID.' 
+            });
+        }
+
+        // Additional validation: check document confidence
+        if (document.confidence && document.confidence < 0.5) {
+            return res.status(400).json({ 
+                error: 'Document quality is too low or document type not recognized. Please upload a clear, high-quality photo of your government ID.' 
+            });
         }
 
         // Store verification status in database
