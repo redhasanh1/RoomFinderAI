@@ -1,0 +1,25 @@
+# Ignore unnecessary files for deployment
+node_modules/
+.git/
+.env*
+*.log
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+README.md
+MIGRATION_GUIDE.md
+RAILWAY_DEPLOYMENT.md
+deploy-to-railway.md
+*.md
+.vscode/
+.idea/
+
+# Keep only essential files
+!package.json
+!backend/
+!index.html
+!*.html
+!css/
+!js/
+!3D House Models/
