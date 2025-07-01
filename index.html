@@ -562,32 +562,126 @@
         }
 
         /* Foundation-inspired 3D Models */
-        /* WhatsApp House Images - Direct Placement */
-        .house-image-float {
-            position: fixed;
-            width: 350px;
+        /* WhatsApp House Images - Section-Based Placement */
+        .house-image-section {
+            position: absolute;
+            width: 280px;
             height: auto;
             pointer-events: none;
-            z-index: 5;
-            opacity: 0.85;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            transition: opacity 0.5s ease;
+            z-index: 3;
+            opacity: 0.75;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            filter: brightness(1.1) contrast(0.95);
         }
         
-        /* Clean up - All CSS models removed, using actual images now */
+        /* Section-specific positioning to avoid overlap */
+        .house-hero-corner { 
+            position: absolute;
+            top: 5vh; 
+            right: 5%; 
+            width: 250px;
+            height: auto;
+            opacity: 0.6;
+            z-index: 3;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            filter: brightness(1.1) contrast(0.95);
+            pointer-events: none;
+        }
         
-        /* Strategic Image Positioning */
-        .house-1 { top: 15%; left: 5%; }
-        .house-2 { top: 45%; right: 8%; }
-        .house-3 { top: 70%; left: 12%; }
-        .house-4 { top: 25%; right: 20%; }
-        .house-5 { top: 55%; left: 75%; }
+        .house-features-left { 
+            position: absolute;
+            top: 10%; 
+            left: -50px; 
+            width: 300px;
+            height: auto;
+            opacity: 0.7;
+            z-index: 3;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            filter: brightness(1.1) contrast(0.95);
+            pointer-events: none;
+        }
         
-        /* House images hover effects */
-        .house-image-float:hover {
-            opacity: 1;
-            transform: scale(1.02);
+        .house-success-right { 
+            position: absolute;
+            top: 15%; 
+            right: -60px; 
+            width: 320px;
+            height: auto;
+            opacity: 0.65;
+            z-index: 3;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            filter: brightness(1.1) contrast(0.95);
+            pointer-events: none;
+        }
+        
+        .house-search-corner { 
+            position: absolute;
+            bottom: 10%; 
+            left: 3%; 
+            width: 260px;
+            height: auto;
+            opacity: 0.7;
+            z-index: 3;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            filter: brightness(1.1) contrast(0.95);
+            pointer-events: none;
+        }
+        
+        .house-footer-corner { 
+            position: absolute;
+            bottom: 20px; 
+            right: 2%; 
+            width: 240px;
+            height: auto;
+            opacity: 0.6;
+            z-index: 3;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            filter: brightness(1.1) contrast(0.95);
+            pointer-events: none;
+        }
+        
+        /* Blend with background sections */
+        .house-hero-corner:hover,
+        .house-features-left:hover,
+        .house-success-right:hover,
+        .house-search-corner:hover,
+        .house-footer-corner:hover {
+            opacity: 0.95;
+            transform: translateY(-5px) scale(1.02);
+            filter: brightness(1.15) contrast(1);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .house-hero-corner { width: 180px; }
+            .house-features-left { width: 220px; }
+            .house-success-right { width: 240px; }
+            .house-search-corner { width: 180px; }
+            .house-footer-corner { width: 160px; }
+        }
+        
+        @media (max-width: 768px) {
+            .house-hero-corner,
+            .house-features-left,
+            .house-success-right,
+            .house-search-corner,
+            .house-footer-corner {
+                opacity: 0.4;
+                width: 120px;
+            }
         }
         
         @keyframes float-rotate {
@@ -758,7 +852,7 @@
                         Smart room searching meets intelligent price negotiation. Let our AI find and negotiate the best rental deals automatically.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-6 mb-12">
-                        <button onclick="document.getElementById('ai-negotiator-section').scrollIntoView({behavior: 'smooth'});" class="ai-btn-minimal text-lg px-8 py-4">
+                        <button onclick="document.getElementById('ai-negotiator-section').scrollIntoView({behavior: 'smooth', block: 'center'});" class="ai-btn-minimal text-lg px-8 py-4">
                             🤖 Try AI Negotiator
                         </button>
                         <button onclick="document.getElementById('quick-search-section').scrollIntoView({behavior: 'smooth'});" class="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-8 py-4 rounded-full font-semibold hover:bg-white/30 hover:transform hover:scale-105 transition-all duration-300">
@@ -820,28 +914,12 @@
                 </div>
             </div>
         </div>
+        
+        <!-- House Image in Hero Section -->
+        <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.23.59.jpeg" 
+             alt="Traditional Blue House" 
+             class="house-hero-corner">
     </section>
-
-    <!-- WhatsApp House Images - Direct Placement -->
-    <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.18.07 (1).jpeg" 
-         alt="Modern Brick House" 
-         class="house-image-float house-1">
-    
-    <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.18.07.jpeg" 
-         alt="Contemporary Brick Home" 
-         class="house-image-float house-2">
-    
-    <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.18.08.jpeg" 
-         alt="Modern Architecture House" 
-         class="house-image-float house-3">
-    
-    <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.21.11.jpeg" 
-         alt="Purple Brick House" 
-         class="house-image-float house-4">
-    
-    <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.23.59.jpeg" 
-         alt="Traditional Blue House" 
-         class="house-image-float house-5">
 
     <!-- Premium Features Section -->
     <section class="py-32 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
@@ -929,6 +1007,11 @@
                 </div>
             </div>
         </div>
+        
+        <!-- House Image in Features Section -->
+        <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.18.08.jpeg" 
+             alt="Modern Architecture House" 
+             class="house-features-left">
     </section>
     
     <!-- Interactive Demo Section -->
@@ -1106,6 +1189,11 @@
                 </div>
             </div>
         </div>
+        
+        <!-- House Image in Quick Search Section -->
+        <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.18.07.jpeg" 
+             alt="Contemporary Brick Home" 
+             class="house-search-corner">
     </section>
     
     <!-- Room List Section -->
@@ -1275,6 +1363,11 @@
                 </div>
             </div>
         </div>
+        
+        <!-- House Image in Success Stories Section -->
+        <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.21.11.jpeg" 
+             alt="Purple Brick House" 
+             class="house-success-right">
     </section>
 
     <!-- CTA Section -->
@@ -1299,6 +1392,11 @@
         </div>
     </section>
 
+    <!-- House Image Near Footer -->
+    <img src="3D House Models/WhatsApp Image 2025-07-01 at 12.18.07 (1).jpeg" 
+         alt="Modern Brick House" 
+         class="house-footer-corner">
+
     <!-- Footer -->
     <footer class="bg-gray-800 text-white py-8">
         <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -1322,7 +1420,7 @@
             <div class="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 opacity-20 blur-sm group-hover:opacity-30 transition-opacity duration-300"></div>
             
             <!-- Main Button -->
-            <button id="aiButton" onclick="document.getElementById('ai-negotiator-section').scrollIntoView({behavior: 'smooth'});" class="relative bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full p-6 shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center w-20 h-20 hover:scale-105">
+            <button id="aiButton" onclick="document.getElementById('ai-negotiator-section').scrollIntoView({behavior: 'smooth', block: 'center'});" class="relative bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full p-6 shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center w-20 h-20 hover:scale-105">
                 <!-- Glow Effect -->
                 <div class="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>
                 
