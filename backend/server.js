@@ -704,9 +704,6 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-<<<<<<< HEAD
-// API: AI Negotiator chat (placeholder)
-=======
 // API: Send password reset code
 app.post('/api/send-reset-code', async (req, res) => {
     try {
@@ -1025,7 +1022,6 @@ Remember: Your goal is to empower users to negotiate confidently and successfull
 }
 
 // Keep the old endpoint for backward compatibility
->>>>>>> 8d17bac4aa6a5c44b79251881e45686902656303
 app.post('/api/ai-negotiator', async (req, res) => {
     try {
         const { message, userEmail } = req.body;
