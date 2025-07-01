@@ -6,7 +6,6 @@
     <title>Dashboard - RoomFinderAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -191,9 +190,6 @@
                 </button>
                 <button class="tab-button" onclick="switchTab('ai-analytics', this)">
                     🎯 AI Analytics
-                </button>
-                <button class="tab-button" onclick="switchTab('market-data', this)">
-                    📈 Market Data
                 </button>
             </div>
         </div>
@@ -522,163 +518,6 @@
                             <div class="flex items-start space-x-3">
                                 <div class="bg-yellow-500 w-2 h-2 rounded-full mt-2"></div>
                                 <p class="text-sm text-gray-700">Recommendation: Continue emphasizing value propositions in negotiations</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Market Data Tab -->
-            <div id="market-data-tab" class="tab-content hidden">
-                <div class="glass-card p-6">
-                    <h3 class="text-xl font-bold text-gray-900 mb-6">📈 Market Intelligence</h3>
-                    
-                    <!-- Market Overview Stats -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div class="stats-card bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-blue-700">Hong Kong Avg Price</p>
-                                    <p id="hkAvgPrice" class="text-2xl font-bold text-blue-900">$1,000</p>
-                                    <p class="text-xs text-blue-600 mt-1">per sq ft</p>
-                                </div>
-                                <div class="bg-blue-500 p-3 rounded-lg">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="stats-card bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-green-700">Market Trend</p>
-                                    <p id="marketTrend" class="text-2xl font-bold text-green-900">+2.5%</p>
-                                    <p class="text-xs text-green-600 mt-1">vs last quarter</p>
-                                </div>
-                                <div class="bg-green-500 p-3 rounded-lg">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="stats-card bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-purple-700">Properties Listed</p>
-                                    <p id="propertiesListed" class="text-2xl font-bold text-purple-900">12,450</p>
-                                    <p class="text-xs text-purple-600 mt-1">active listings</p>
-                                </div>
-                                <div class="bg-purple-500 p-3 rounded-lg">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="stats-card bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border border-orange-200">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-orange-700">Median Days on Market</p>
-                                    <p id="daysOnMarket" class="text-2xl font-bold text-orange-900">28</p>
-                                    <p class="text-xs text-orange-600 mt-1">days average</p>
-                                </div>
-                                <div class="bg-orange-500 p-3 rounded-lg">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Charts Section -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                        <div class="bg-gray-50 p-6 rounded-xl">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">📊 Price Trends (Last 12 Months)</h3>
-                            <div id="priceTrendChart" class="h-64 flex items-center justify-center text-gray-500">
-                                <canvas id="marketChart" width="400" height="200"></canvas>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-gray-50 p-6 rounded-xl">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">🏘️ Property Types Distribution</h3>
-                            <div id="propertyTypeChart" class="h-64 flex items-center justify-center text-gray-500">
-                                <canvas id="propertyChart" width="400" height="200"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Property Valuation Calculator -->
-                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">🏠 Property Valuation Calculator</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                                <select id="location" class="w-full p-2 border border-gray-300 rounded-lg">
-                                    <option value="hong-kong">Hong Kong</option>
-                                    <option value="singapore">Singapore</option>
-                                    <option value="tokyo">Tokyo</option>
-                                    <option value="london">London</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Square Feet</label>
-                                <input type="number" id="sqft" placeholder="1000" class="w-full p-2 border border-gray-300 rounded-lg">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
-                                <select id="propertyType" class="w-full p-2 border border-gray-300 rounded-lg">
-                                    <option value="apartment">Apartment</option>
-                                    <option value="house">House</option>
-                                    <option value="condo">Condo</option>
-                                    <option value="studio">Studio</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
-                                <select id="bedrooms" class="w-full p-2 border border-gray-300 rounded-lg">
-                                    <option value="1">1 BR</option>
-                                    <option value="2">2 BR</option>
-                                    <option value="3">3 BR</option>
-                                    <option value="4">4+ BR</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <button onclick="calculatePropertyValue()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                                Calculate Value
-                            </button>
-                            <div id="calculatedValue" class="text-right">
-                                <p class="text-sm text-gray-600">Estimated Value</p>
-                                <p class="text-2xl font-bold text-blue-900">$0</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Market Insights -->
-                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">📋 Market Insights</h3>
-                        <div id="marketInsights" class="space-y-3">
-                            <div class="flex items-start space-x-3">
-                                <div class="bg-green-500 w-2 h-2 rounded-full mt-2"></div>
-                                <p class="text-sm text-gray-700">Hong Kong property prices showing steady growth of 2.5% this quarter</p>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <div class="bg-blue-500 w-2 h-2 rounded-full mt-2"></div>
-                                <p class="text-sm text-gray-700">High demand for 2-bedroom apartments in central districts</p>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <div class="bg-yellow-500 w-2 h-2 rounded-full mt-2"></div>
-                                <p class="text-sm text-gray-700">Best negotiation opportunities in properties listed over 30 days</p>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <div class="bg-purple-500 w-2 h-2 rounded-full mt-2"></div>
-                                <p class="text-sm text-gray-700">AI recommends highlighting comparable sales data in negotiations</p>
                             </div>
                         </div>
                     </div>
@@ -1870,39 +1709,54 @@
             startHeadPoseDetection(step.direction);
         }
 
-        let headPoseInterval = null;
-        let lastDetectionTime = 0;
-        const DETECTION_INTERVAL = 1000; // Check every 1 second
+        let headPoseDetectionTimeout = null; // Use timeout for recursive polling
+        const POLLING_INTERVAL = 1000; // Check every 1 second
         
         function startHeadPoseDetection(expectedDirection) {
-            if (headPoseInterval) {
-                clearInterval(headPoseInterval);
+            if (!scanningInProgress) return;
+
+            // Clear any existing timeout to prevent multiple loops
+            if (headPoseDetectionTimeout) {
+                clearTimeout(headPoseDetectionTimeout);
             }
-            
-            headPoseInterval = setInterval(async () => {
-                if (!scanningInProgress) {
-                    clearInterval(headPoseInterval);
-                    return;
-                }
-                
-                const now = Date.now();
-                if (now - lastDetectionTime < DETECTION_INTERVAL) {
-                    return;
-                }
-                lastDetectionTime = now;
-                
+
+            // Update UI immediately for the current expected direction
+            const step = scanSteps[currentScanStep]; // currentScanStep should be managed by showNextScanStep
+            if (step && step.direction === expectedDirection) {
+                 document.getElementById('currentInstruction').textContent = step.instruction;
+                 document.getElementById('scanProgress').textContent = `Step ${currentScanStep + 1} of ${scanSteps.length}`;
+                 document.getElementById('directionArrow').textContent = step.arrow;
+                 document.getElementById('faceCircle').className = 'w-48 h-48 rounded-full border-4 border-blue-500 border-dashed animate-pulse';
+            }
+
+
+            async function poll() {
+                if (!scanningInProgress) return;
+
                 try {
+                    console.log(`[Frontend] Checking head pose for: ${expectedDirection}`);
                     const isCorrectDirection = await checkHeadPose(expectedDirection);
                     
                     if (isCorrectDirection) {
-                        // Direction is correct, capture the image
-                        clearInterval(headPoseInterval);
+                        // Direction is correct, capture the image and stop polling for this step
                         captureScanStep();
+                    } else {
+                        // Direction not correct, continue polling after POLLING_INTERVAL
+                        if (scanningInProgress) { // Check again, as captureScanStep might change it
+                           headPoseDetectionTimeout = setTimeout(poll, POLLING_INTERVAL);
+                        }
                     }
                 } catch (error) {
-                    console.error('Head pose detection error:', error);
+                    console.error('Head pose detection error during poll:', error);
+                    // Optionally, handle error more gracefully, e.g., retry a few times or show error to user
+                    if (scanningInProgress) {
+                        headPoseDetectionTimeout = setTimeout(poll, POLLING_INTERVAL * 2); // Longer delay on error
+                    }
                 }
-            }, 500); // Check every 500ms for responsiveness
+            }
+
+            // Start the polling
+            poll();
         }
         
         async function checkHeadPose(expectedDirection) {
@@ -2011,7 +1865,13 @@
                 faceStream.getTracks().forEach(track => track.stop());
                 faceStream = null;
             }
-            if (headPoseInterval) {
+            // Clear the timeout used for polling
+            if (headPoseDetectionTimeout) {
+                clearTimeout(headPoseDetectionTimeout);
+                headPoseDetectionTimeout = null;
+            }
+            // This was the old interval, ensure it's also cleared if somehow missed
+            if (typeof headPoseInterval !== 'undefined' && headPoseInterval) {
                 clearInterval(headPoseInterval);
                 headPoseInterval = null;
             }
@@ -2771,302 +2631,6 @@
                 });
             }
         }
-
-        // Market Data Functions
-        let marketChart = null;
-        let propertyChart = null;
-
-        async function initializeMarketData() {
-            try {
-                // Initialize charts when Market Data tab is opened
-                createMarketTrendChart();
-                createPropertyTypeChart();
-                loadMarketData();
-            } catch (error) {
-                console.error('Error initializing market data:', error);
-            }
-        }
-
-        async function loadMarketData() {
-            try {
-                // Load data from multiple free APIs
-                await Promise.all([
-                    loadHongKongData(),
-                    loadGlobalMarketData(),
-                    updateMarketInsights()
-                ]);
-            } catch (error) {
-                console.error('Error loading market data:', error);
-            }
-        }
-
-        async function loadHongKongData() {
-            try {
-                // Using FRED API for Hong Kong residential property prices
-                const fredUrl = 'https://api.stlouisfed.org/fred/series/observations';
-                const fredParams = new URLSearchParams({
-                    series_id: 'QHKN628BIS',
-                    api_key: 'your_fred_api_key', // Replace with actual API key
-                    file_type: 'json',
-                    limit: '12',
-                    sort_order: 'desc'
-                });
-
-                // For demo purposes, using mock data
-                const mockHKData = {
-                    avgPrice: 1000,
-                    trend: 2.5,
-                    priceHistory: [
-                        { month: 'Jan', price: 980 },
-                        { month: 'Feb', price: 985 },
-                        { month: 'Mar', price: 995 },
-                        { month: 'Apr', price: 1005 },
-                        { month: 'May', price: 1010 },
-                        { month: 'Jun', price: 1015 },
-                        { month: 'Jul', price: 1020 },
-                        { month: 'Aug', price: 1025 },
-                        { month: 'Sep', price: 1030 },
-                        { month: 'Oct', price: 1035 },
-                        { month: 'Nov', price: 1040 },
-                        { month: 'Dec', price: 1000 }
-                    ]
-                };
-
-                // Update UI with Hong Kong data
-                document.getElementById('hkAvgPrice').textContent = `$${mockHKData.avgPrice}`;
-                document.getElementById('marketTrend').textContent = `+${mockHKData.trend}%`;
-                
-                // Update price trend chart
-                if (marketChart) {
-                    marketChart.data.labels = mockHKData.priceHistory.map(d => d.month);
-                    marketChart.data.datasets[0].data = mockHKData.priceHistory.map(d => d.price);
-                    marketChart.update();
-                }
-            } catch (error) {
-                console.error('Error loading Hong Kong data:', error);
-            }
-        }
-
-        async function loadGlobalMarketData() {
-            try {
-                // Mock data for global market statistics
-                const mockGlobalData = {
-                    propertiesListed: 12450,
-                    daysOnMarket: 28,
-                    propertyTypes: [
-                        { type: 'Apartments', count: 5500 },
-                        { type: 'Houses', count: 3200 },
-                        { type: 'Condos', count: 2800 },
-                        { type: 'Studios', count: 950 }
-                    ]
-                };
-
-                // Update UI
-                document.getElementById('propertiesListed').textContent = mockGlobalData.propertiesListed.toLocaleString();
-                document.getElementById('daysOnMarket').textContent = mockGlobalData.daysOnMarket;
-
-                // Update property type chart
-                if (propertyChart) {
-                    propertyChart.data.labels = mockGlobalData.propertyTypes.map(d => d.type);
-                    propertyChart.data.datasets[0].data = mockGlobalData.propertyTypes.map(d => d.count);
-                    propertyChart.update();
-                }
-            } catch (error) {
-                console.error('Error loading global market data:', error);
-            }
-        }
-
-        function createMarketTrendChart() {
-            const ctx = document.getElementById('marketChart');
-            if (!ctx) return;
-
-            marketChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                    datasets: [{
-                        label: 'Average Price per Sq Ft ($)',
-                        data: [980, 985, 995, 1005, 1010, 1015, 1020, 1025, 1030, 1035, 1040, 1000],
-                        borderColor: 'rgb(59, 130, 246)',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function createPropertyTypeChart() {
-            const ctx = document.getElementById('propertyChart');
-            if (!ctx) return;
-
-            propertyChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Apartments', 'Houses', 'Condos', 'Studios'],
-                    datasets: [{
-                        data: [5500, 3200, 2800, 950],
-                        backgroundColor: [
-                            'rgba(59, 130, 246, 0.8)',
-                            'rgba(16, 185, 129, 0.8)',
-                            'rgba(245, 158, 11, 0.8)',
-                            'rgba(239, 68, 68, 0.8)'
-                        ],
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function calculatePropertyValue() {
-            try {
-                const location = document.getElementById('location').value;
-                const sqft = parseFloat(document.getElementById('sqft').value);
-                const propertyType = document.getElementById('propertyType').value;
-                const bedrooms = document.getElementById('bedrooms').value;
-
-                if (!sqft || sqft <= 0) {
-                    alert('Please enter a valid square footage');
-                    return;
-                }
-
-                // Base prices per sq ft for different locations
-                const basePrices = {
-                    'hong-kong': 1000,
-                    'singapore': 800,
-                    'tokyo': 600,
-                    'london': 700
-                };
-
-                // Property type multipliers
-                const typeMultipliers = {
-                    'apartment': 1.0,
-                    'house': 1.2,
-                    'condo': 1.1,
-                    'studio': 0.8
-                };
-
-                // Bedroom multipliers
-                const bedroomMultipliers = {
-                    '1': 1.0,
-                    '2': 1.3,
-                    '3': 1.6,
-                    '4': 2.0
-                };
-
-                const basePrice = basePrices[location] || 500;
-                const typeMultiplier = typeMultipliers[propertyType] || 1.0;
-                const bedroomMultiplier = bedroomMultipliers[bedrooms] || 1.0;
-
-                const estimatedValue = Math.round(sqft * basePrice * typeMultiplier * bedroomMultiplier);
-
-                // Update display
-                document.querySelector('#calculatedValue p:last-child').textContent = `$${estimatedValue.toLocaleString()}`;
-
-                // Add some visual feedback
-                const valueElement = document.querySelector('#calculatedValue p:last-child');
-                valueElement.style.color = '#1d4ed8';
-                valueElement.style.animation = 'pulse 0.5s';
-
-            } catch (error) {
-                console.error('Error calculating property value:', error);
-                alert('Error calculating property value. Please try again.');
-            }
-        }
-
-        async function updateMarketInsights() {
-            try {
-                const insights = [
-                    'Hong Kong property prices showing steady growth of 2.5% this quarter',
-                    'High demand for 2-bedroom apartments in central districts',
-                    'Best negotiation opportunities in properties listed over 30 days',
-                    'AI recommends highlighting comparable sales data in negotiations',
-                    'Luxury market showing resilience despite economic uncertainties',
-                    'First-time buyer incentives driving increased market activity'
-                ];
-
-                // Randomly select 4 insights
-                const selectedInsights = insights.sort(() => 0.5 - Math.random()).slice(0, 4);
-                const colors = ['green', 'blue', 'yellow', 'purple'];
-
-                const insightsContainer = document.getElementById('marketInsights');
-                insightsContainer.innerHTML = '';
-
-                selectedInsights.forEach((insight, index) => {
-                    const insightElement = document.createElement('div');
-                    insightElement.className = 'flex items-start space-x-3';
-                    insightElement.innerHTML = `
-                        <div class="bg-${colors[index]}-500 w-2 h-2 rounded-full mt-2"></div>
-                        <p class="text-sm text-gray-700">${insight}</p>
-                    `;
-                    insightsContainer.appendChild(insightElement);
-                });
-            } catch (error) {
-                console.error('Error updating market insights:', error);
-            }
-        }
-
-        // Update the switchTab function to handle market data initialization
-        const originalSwitchTab = window.switchTab;
-        window.switchTab = function(tabName, buttonElement) {
-            if (originalSwitchTab) {
-                originalSwitchTab(tabName, buttonElement);
-            } else {
-                // Original switchTab implementation
-                document.querySelectorAll('.tab-content').forEach(tab => {
-                    tab.classList.add('hidden');
-                });
-                document.querySelectorAll('.tab-button').forEach(button => {
-                    button.classList.remove('active');
-                });
-                
-                document.getElementById(tabName + '-tab').classList.remove('hidden');
-                buttonElement.classList.add('active');
-            }
-            
-            // Initialize market data when market data tab is opened
-            if (tabName === 'market-data') {
-                setTimeout(() => {
-                    initializeMarketData();
-                }, 100);
-            }
-        };
     </script>
 </body>
 </html>

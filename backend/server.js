@@ -2061,8 +2061,7 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         const { data: newBucket, error: createError } = await supabase.storage.createBucket('govdocs', {
                             public: false,
                             allowedMimeTypes: ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'],
-                            fileSizeLimit: 10485760, // 10MB
-                            avoidDuplicates: false
+                            fileSizeLimit: 10485760 // 10MB
                         });
                         
                         if (createError) {
@@ -2095,30 +2094,13 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         console.log('📝 Upload error details:', {
                             message: uploadError.message,
                             error: uploadError.error,
-                            statusCode: uploadError.statusCode,
-                            details: uploadError.details,
-                            hint: uploadError.hint,
-                            code: uploadError.code
+                            statusCode: uploadError.statusCode
                         });
-                        console.log('📁 Attempted upload path:', folderPath);
-                        console.log('📊 File buffer size:', req.file.buffer.length);
                         throw uploadError;
                     }
 
                     idDocumentPath = uploadData.path;
                     console.log('✅ ID document uploaded to storage:', uploadData.path);
-                    console.log('📊 Upload data:', uploadData);
-                    
-                    // Verify the file was actually uploaded by trying to list it
-                    const { data: listData, error: listError } = await supabase.storage
-                        .from('govdocs')
-                        .list('pics', { limit: 10 });
-                    
-                    if (listError) {
-                        console.error('❌ Error listing files in govdocs/pics:', listError);
-                    } else {
-                        console.log('📋 Files in govdocs/pics:', listData?.map(f => f.name) || 'None');
-                    }
                 } catch (storageError) {
                     console.log('⚠️ Storage upload failed, falling back to base64 storage');
                     console.error('Storage error details:', storageError);
@@ -2443,41 +2425,59 @@ app.post('/api/verify/head-pose', upload.single('facePhoto'), async (req, res) =
         const headPose = faceResult[0].faceAttributes.headPose;
         const { yaw, pitch, roll } = headPose;
         
-        console.log(`🎯 Head pose detected - Yaw: ${yaw}°, Pitch: ${pitch}°, Roll: ${roll}°`);
-        console.log(`📍 Expected direction: ${expectedDirection}`);
+        // More detailed logging
+        console.log(`[HeadPose API] Expected: ${expectedDirection} | Actual Yaw: ${yaw.toFixed(2)}°, Pitch: ${pitch.toFixed(2)}°, Roll: ${roll.toFixed(2)}°`);
 
-        // Define direction thresholds (in degrees)
+        // Define stricter direction thresholds (in degrees)
         const thresholds = {
-            center: { yaw: [-15, 15], pitch: [-15, 15] },
-            up: { yaw: [-20, 20], pitch: [-45, -10] },
-            down: { yaw: [-20, 20], pitch: [10, 45] },
-            left: { yaw: [-45, -15], pitch: [-20, 20] },
-            right: { yaw: [15, 45], pitch: [-20, 20] }
+            center: { yaw: [-12, 12], pitch: [-12, 12] },    // Narrowed center
+            up:     { yaw: [-20, 20], pitch: [-50, -15] }, // Stricter min pitch, wider max
+            down:   { yaw: [-20, 20], pitch: [15, 50] },   // Stricter min pitch, wider max
+            left:   { yaw: [-50, -20], pitch: [-20, 20] }, // Stricter min yaw, wider max
+            right:  { yaw: [20, 50], pitch: [-20, 20] }   // Stricter min yaw, wider max
         };
 
-        const threshold = thresholds[expectedDirection];
+        const currentThreshold = thresholds[expectedDirection];
         let isCorrectDirection = false;
+        let yawInRange = false;
+        let pitchInRange = false;
 
-        if (threshold) {
-            const yawInRange = yaw >= threshold.yaw[0] && yaw <= threshold.yaw[1];
-            const pitchInRange = pitch >= threshold.pitch[0] && pitch <= threshold.pitch[1];
+        if (currentThreshold) {
+            yawInRange = yaw >= currentThreshold.yaw[0] && yaw <= currentThreshold.yaw[1];
+            pitchInRange = pitch >= currentThreshold.pitch[0] && pitch <= currentThreshold.pitch[1];
             isCorrectDirection = yawInRange && pitchInRange;
+
+            console.log(`[HeadPose API] Thresholds for ${expectedDirection}: Yaw[${currentThreshold.yaw.join(', ')}], Pitch[${currentThreshold.pitch.join(', ')}]`);
+            console.log(`[HeadPose API] Yaw in range: ${yawInRange}, Pitch in range: ${pitchInRange}`);
+        } else {
+            console.log(`[HeadPose API] No threshold found for expected direction: ${expectedDirection}`);
         }
 
-        console.log(`✅ Direction match: ${isCorrectDirection}`);
+        console.log(`[HeadPose API] Direction match for ${expectedDirection}: ${isCorrectDirection}`);
+
+        let message = `Please look ${expectedDirection}.`;
+        if (isCorrectDirection) {
+            message = `Perfect! Looking ${expectedDirection}.`;
+        } else if (currentThreshold) {
+            if (expectedDirection === "up" || expectedDirection === "down") {
+                if (!pitchInRange) message = `Look further ${expectedDirection}.`;
+                else if (!yawInRange) message = `Keep looking ${expectedDirection}, but center your head.`;
+            } else if (expectedDirection === "left" || expectedDirection === "right") {
+                if (!yawInRange) message = `Look further ${expectedDirection}.`;
+                else if (!pitchInRange) message = `Keep looking ${expectedDirection}, but level your head.`;
+            }
+        }
 
         res.json({
             success: true,
             isCorrectDirection,
             headPose: { yaw, pitch, roll },
             expectedDirection,
-            message: isCorrectDirection 
-                ? `Perfect! Looking ${expectedDirection}` 
-                : `Please look ${expectedDirection}`
+            message: message
         });
 
     } catch (error) {
-        console.error('Head pose detection error:', error);
+        console.error('[HeadPose API] Error:', error);
         res.status(500).json({ 
             error: 'Head pose detection failed', 
             isCorrectDirection: false 
