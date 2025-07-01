@@ -1,0 +1,13 @@
+# Nixpacks configuration for RoomFinderAI
+[start]
+cmd = "node backend/server.js"
+
+[build]
+cmds = [
+    "npm install --production",
+    "npm install --prefix backend --production"
+]
+
+[variables]
+NODE_ENV = "production"
+NPM_CONFIG_PRODUCTION = "true"

@@ -7,19 +7,19 @@ node_modules/
 Thumbs.db
 *.tmp
 *.temp
-README.md
-MIGRATION_GUIDE.md
-RAILWAY_DEPLOYMENT.md
-deploy-to-railway.md
 *.md
 .vscode/
 .idea/
+.next/
+coverage/
 
-# Keep only essential files
+# Keep essential files
 !package.json
 !backend/
-!index.html
 !*.html
 !css/
 !js/
 !3D House Models/
+!nixpacks.toml
+!Dockerfile
+!railway.json

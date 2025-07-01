@@ -1,6 +1,9 @@
 # Use Node.js LTS version
 FROM node:18-alpine
 
+# Install curl for health checks
+RUN apk add --no-cache curl
+
 # Set working directory
 WORKDIR /app
 
@@ -10,7 +13,7 @@ COPY backend/package*.json ./backend/
 
 # Install dependencies
 RUN npm install --production
-RUN cd backend && npm install --production
+RUN npm install --prefix backend --production
 
 # Copy application files
 COPY . .

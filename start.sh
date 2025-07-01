@@ -9,8 +9,8 @@ npm install --production
 
 # Install backend dependencies
 echo "📦 Installing backend dependencies..."
-cd backend && npm install --production && cd ..
+npm install --prefix backend --production
 
 # Start the server
 echo "🌟 Starting server..."
-cd backend && node server.js
+node backend/server.js
