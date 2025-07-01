@@ -2724,28 +2724,36 @@ console.log('- SUPABASE_ANON_KEY:', !!process.env.SUPABASE_ANON_KEY);
 console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', !!process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY);
 console.log('- AZURE_FACE_KEY:', !!process.env.AZURE_FACE_KEY);
 
-// Add graceful error handling for server startup
-process.on('uncaughtException', (error) => {
-    console.error('❌ Uncaught Exception:', error);
-    console.log('Server will continue running...');
+// Simplified startup with better error handling
+const server = app.listen(port, '0.0.0.0', () => {
+    console.log(`✅ RoomFinderAI Server running on port ${port}`);
+    console.log(`🏥 Health check: http://localhost:${port}/health`);
+    console.log(`🌐 Server ready at http://0.0.0.0:${port}`);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-    console.log('Server will continue running...');
+// Handle server errors
+server.on('error', (err) => {
+    console.error('❌ Server error:', err);
+    if (err.code === 'EADDRINUSE') {
+        console.log(`Port ${port} is busy, trying alternative...`);
+        server.listen(port + 1, '0.0.0.0');
+    }
 });
 
-try {
-    app.listen(port, '0.0.0.0', () => {
-        console.log(`✅ Server running on port ${port}`);
-        console.log(`🏥 Health check available at http://localhost:${port}/health`);
-        console.log(`🌐 Server accessible at http://0.0.0.0:${port}`);
-    }).on('error', (err) => {
-        console.error('❌ Server startup error:', err);
-        process.exit(1);
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('🔄 Received SIGTERM, shutting down gracefully');
+    server.close(() => {
+        console.log('✅ Server closed');
+        process.exit(0);
     });
-} catch (error) {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
-}
+});
+
+process.on('SIGINT', () => {
+    console.log('🔄 Received SIGINT, shutting down gracefully');
+    server.close(() => {
+        console.log('✅ Server closed');
+        process.exit(0);
+    });
+});
 // Force update
