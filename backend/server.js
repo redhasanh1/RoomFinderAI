@@ -374,6 +374,66 @@ app.get('/api/listings/:id', (req, res) => {
     }
 });
 
+// API: Update listing by ID
+app.put('/api/listings/:id', (req, res) => {
+    try {
+        const listingIndex = listings.findIndex(l => l.id === req.params.id);
+        if (listingIndex === -1) {
+            return res.status(404).json({ error: 'Listing not found' });
+        }
+
+        const { title, price, city, street, postalCode, houseType, bedrooms, utilities, description } = req.body;
+        
+        // Validate required fields
+        const errors = [];
+        if (!title) errors.push('Title is required');
+        if (!price || price <= 0) errors.push('Valid price is required');
+        if (!city) errors.push('City is required');
+        
+        if (errors.length > 0) {
+            return res.status(400).json({ errors });
+        }
+
+        // Update listing
+        listings[listingIndex] = {
+            ...listings[listingIndex],
+            title,
+            price: parseFloat(price),
+            city,
+            street: street || listings[listingIndex].street,
+            postalCode: postalCode || listings[listingIndex].postalCode,
+            houseType: houseType || listings[listingIndex].houseType,
+            bedrooms: bedrooms ? parseInt(bedrooms) : listings[listingIndex].bedrooms,
+            utilities: utilities || listings[listingIndex].utilities,
+            description: description || listings[listingIndex].description,
+            updatedAt: new Date().toISOString()
+        };
+
+        res.json({ message: 'Listing updated successfully', listing: listings[listingIndex] });
+    } catch (error) {
+        console.error('Error in PUT /api/listings/:id:', error.message);
+        res.status(500).json({ error: 'Failed to update listing' });
+    }
+});
+
+// API: Delete listing by ID
+app.delete('/api/listings/:id', (req, res) => {
+    try {
+        const listingIndex = listings.findIndex(l => l.id === req.params.id);
+        if (listingIndex === -1) {
+            return res.status(404).json({ error: 'Listing not found' });
+        }
+
+        // Remove listing from array
+        const deletedListing = listings.splice(listingIndex, 1)[0];
+
+        res.json({ message: 'Listing deleted successfully', listing: deletedListing });
+    } catch (error) {
+        console.error('Error in DELETE /api/listings/:id:', error.message);
+        res.status(500).json({ error: 'Failed to delete listing' });
+    }
+});
+
 // Helper: Generate 6-digit verification code
 function generateVerificationCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -644,7 +704,328 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+<<<<<<< HEAD
 // API: AI Negotiator chat (placeholder)
+=======
+// API: Send password reset code
+app.post('/api/send-reset-code', async (req, res) => {
+    try {
+        console.log('📧 Received password reset request for:', req.body.email);
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        // Check if user exists
+        const user = users.find(u => u.email === email);
+        if (!user) {
+            // Don't reveal if user exists or not for security
+            return res.json({ 
+                message: 'If an account exists with this email, a reset code will be sent.',
+                sessionId: uuidv4()
+            });
+        }
+
+        // Check if Brevo API key is available
+        if (!config.BREVO_API_KEY) {
+            console.log('❌ BREVO_API_KEY not found in config');
+            return res.status(500).json({ error: 'Email service not configured' });
+        }
+
+        // Generate reset code
+        const code = generateVerificationCode();
+        const sessionId = uuidv4();
+        const expirationTime = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+        // Store reset code
+        passwordResetCodes.set(email, {
+            code,
+            sessionId,
+            expirationTime,
+            verified: false
+        });
+
+        console.log('📤 Sending password reset email to:', email);
+        // Send reset email
+        const emailResult = await sendPasswordResetEmail(email, code, user.firstName);
+        
+        if (emailResult.success) {
+            console.log('✅ Password reset email sent successfully');
+            res.json({ 
+                message: 'Reset code sent to your email',
+                sessionId: sessionId
+            });
+        } else {
+            console.log('❌ Failed to send reset email:', emailResult.error);
+            passwordResetCodes.delete(email);
+            res.status(500).json({ error: 'Failed to send reset email' });
+        }
+    } catch (error) {
+        console.error('❌ Error in /api/send-reset-code:', error.message);
+        res.status(500).json({ error: 'Failed to send reset code' });
+    }
+});
+
+// API: Verify password reset code
+app.post('/api/verify-reset-code', async (req, res) => {
+    try {
+        const { email, code, sessionId } = req.body;
+        
+        if (!email || !code || !sessionId) {
+            return res.status(400).json({ error: 'Email, code, and sessionId are required' });
+        }
+
+        // Get stored reset data
+        const resetData = passwordResetCodes.get(email);
+        
+        if (!resetData) {
+            return res.status(400).json({ error: 'No reset code found for this email' });
+        }
+
+        // Check session ID
+        if (resetData.sessionId !== sessionId) {
+            return res.status(400).json({ error: 'Invalid session' });
+        }
+
+        // Check if code has expired
+        if (Date.now() > resetData.expirationTime) {
+            passwordResetCodes.delete(email);
+            return res.status(400).json({ error: 'Reset code has expired. Please request a new one.' });
+        }
+
+        // Check if code matches
+        if (resetData.code !== code) {
+            return res.status(400).json({ error: 'Invalid reset code' });
+        }
+
+        // Mark as verified
+        resetData.verified = true;
+        passwordResetCodes.set(email, resetData);
+
+        res.json({ message: 'Code verified successfully' });
+    } catch (error) {
+        console.error('Error in /api/verify-reset-code:', error.message);
+        res.status(500).json({ error: 'Failed to verify code' });
+    }
+});
+
+// API: Reset password
+app.post('/api/reset-password', async (req, res) => {
+    try {
+        const { email, code, newPassword, sessionId } = req.body;
+        
+        if (!email || !code || !newPassword || !sessionId) {
+            return res.status(400).json({ error: 'All fields are required' });
+        }
+
+        // Get stored reset data
+        const resetData = passwordResetCodes.get(email);
+        
+        if (!resetData || !resetData.verified) {
+            return res.status(400).json({ error: 'Invalid or unverified reset request' });
+        }
+
+        // Verify session and code again
+        if (resetData.sessionId !== sessionId || resetData.code !== code) {
+            return res.status(400).json({ error: 'Invalid reset credentials' });
+        }
+
+        // Find user and update password
+        const user = users.find(u => u.email === email);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        
+        // Update in Supabase if available
+        if (supabase) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ password: hashedPassword })
+                    .eq('email', email);
+                
+                if (error) {
+                    console.error('Error updating password in Supabase:', error);
+                }
+            } catch (dbError) {
+                console.error('Database update error:', dbError);
+            }
+        }
+
+        // Clean up reset code
+        passwordResetCodes.delete(email);
+
+        // Log password reset
+        await logUserActivity(email, 'password_reset', 'Password successfully reset');
+
+        res.json({ message: 'Password reset successfully' });
+    } catch (error) {
+        console.error('Error in /api/reset-password:', error.message);
+        res.status(500).json({ error: 'Failed to reset password' });
+    }
+});
+
+// API: AI Negotiator chat with OpenAI integration
+app.post('/api/ai-negotiate', async (req, res) => {
+    try {
+        const { message, conversationHistory, userEmail } = req.body;
+        
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+
+        // Check if OpenAI is configured
+        if (!config.OPENAI_API_KEY) {
+            return res.status(503).json({ error: 'AI service not available - OpenAI not configured' });
+        }
+
+        // Build the conversation context for OpenAI
+        const systemPrompt = buildNegotiationSystemPrompt();
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            ...(conversationHistory || []).slice(-8) // Keep last 8 messages for context
+        ];
+
+        // Add the current user message
+        messages.push({ role: 'user', content: message });
+
+        console.log('🤖 Sending OpenAI request for negotiation...');
+        
+        // Call OpenAI API
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${config.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json',
+                ...(config.OPENAI_ORG_ID && { 'OpenAI-Organization': config.OPENAI_ORG_ID })
+            },
+            body: JSON.stringify({
+                model: config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                messages: messages,
+                max_tokens: 300,
+                temperature: 0.8,
+                presence_penalty: 0.1,
+                frequency_penalty: 0.1
+            })
+        });
+
+        if (!openaiResponse.ok) {
+            const errorData = await openaiResponse.json().catch(() => ({}));
+            console.error('❌ OpenAI API error:', errorData);
+            throw new Error(`OpenAI API error: ${openaiResponse.status}`);
+        }
+
+        const data = await openaiResponse.json();
+        
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            throw new Error('Invalid OpenAI response format');
+        }
+
+        const aiResponse = data.choices[0].message.content.trim();
+        
+        // Log AI negotiation assistant usage
+        if (userEmail) {
+            await logUserActivity(userEmail, 'ai_negotiation_assistant', `Used AI negotiation assistant for rental advice`, {
+                message_length: message.length,
+                response_length: aiResponse.length,
+                model_used: config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                tokens_used: data.usage?.total_tokens || 0
+            });
+        }
+
+        // Store conversation in database if Supabase is available
+        if (supabase && userEmail) {
+            try {
+                await supabase.from('ai_negotiations').insert({
+                    user_email: userEmail,
+                    user_message: message,
+                    ai_response: aiResponse,
+                    session_type: 'negotiation_assistant',
+                    listing_details: {
+                        location: 'Central District, Hong Kong',
+                        rent: 1500,
+                        type: 'Studio Apartment',
+                        size: '450 sq ft'
+                    },
+                    tokens_used: data.usage?.total_tokens || 0,
+                    created_at: new Date().toISOString()
+                });
+            } catch (dbError) {
+                console.error('Error storing negotiation assistant session in database:', dbError);
+            }
+        }
+        
+        console.log('✅ AI negotiation assistant response generated successfully');
+        res.json({ 
+            response: aiResponse,
+            tokensUsed: data.usage?.total_tokens || 0
+        });
+        
+    } catch (error) {
+        console.error('❌ Error in /api/ai-negotiate:', error.message);
+        res.status(500).json({ error: 'Failed to process AI negotiation request' });
+    }
+});
+
+// Helper function to build the negotiation system prompt
+function buildNegotiationSystemPrompt() {
+    return `You are an expert rental negotiation assistant helping users secure better deals with landlords in Hong Kong. You provide strategic advice, coaching, and sample responses to help users negotiate effectively.
+
+SAMPLE PROPERTY CONTEXT (for practice):
+- Location: Central District, Hong Kong  
+- Listed Rent: HK$1,500/month
+- Size: 450 sq ft
+- Type: Studio apartment
+- Amenities: Air conditioning, furnished, city view, near MTR
+
+YOUR ROLE AS NEGOTIATION ASSISTANT:
+- Help users craft compelling negotiation messages
+- Provide strategic advice on timing and approach
+- Suggest reasonable counter-offers based on market knowledge
+- Coach users on landlord psychology and motivations
+- Help identify negotiation leverage points
+
+NEGOTIATION STRATEGIES TO TEACH:
+- Research market rates for similar properties
+- Highlight your strengths as a tenant (stable income, good references, etc.)
+- Offer value-adds (longer lease, immediate move-in, upfront payment)
+- Use anchoring techniques with realistic lower offers
+- Create win-win scenarios for both parties
+- Show genuine interest while maintaining leverage
+
+COACHING APPROACH:
+- Ask clarifying questions about their situation
+- Provide 2-3 strategic options for each scenario
+- Explain the reasoning behind each recommendation
+- Help craft specific message templates
+- Warn about common negotiation mistakes
+- Boost confidence while maintaining realism
+
+RESPONSE STYLE:
+- Be supportive and encouraging
+- Provide actionable, specific advice
+- Use Hong Kong rental market context
+- Give concrete examples and templates
+- Explain landlord perspectives to help users understand
+- Balance optimism with realistic expectations
+
+MARKET KNOWLEDGE TO SHARE:
+- Typical negotiation ranges (5-15% for good tenants)
+- Seasonal rental patterns in Hong Kong
+- What landlords value most (stability, cleanliness, prompt payment)
+- Common lease terms and what's negotiable
+- Red flags to avoid in negotiations
+
+Remember: Your goal is to empower users to negotiate confidently and successfully while maintaining good relationships with landlords.`;
+}
+
+// Keep the old endpoint for backward compatibility
+>>>>>>> 8d17bac4aa6a5c44b79251881e45686902656303
 app.post('/api/ai-negotiator', async (req, res) => {
     try {
         const { message, userEmail } = req.body;
