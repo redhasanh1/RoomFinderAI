@@ -2025,32 +2025,60 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
         // Store verification status in database and save ID document to Supabase Storage
         if (supabase) {
             try {
-                // Upload ID document to Supabase Storage
+                // Try to upload ID document to Supabase Storage, fallback to base64 if needed
                 const fileName = `${userEmail}-${Date.now()}-id-document.${req.file.mimetype.split('/')[1]}`;
-                const { data: uploadData, error: uploadError } = await supabase.storage
-                    .from('govdocs')
-                    .upload(fileName, req.file.buffer, {
-                        contentType: req.file.mimetype,
-                        upsert: false
-                    });
+                let idDocumentPath = null;
+                let idDocumentBase64 = null;
+                
+                try {
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('govdocs')
+                        .upload(fileName, req.file.buffer, {
+                            contentType: req.file.mimetype,
+                            upsert: false
+                        });
 
-                if (uploadError) {
-                    console.error('Error uploading ID document to storage:', uploadError);
-                    return res.status(500).json({ error: 'Failed to store ID document securely' });
+                    if (uploadError) {
+                        console.error('❌ Supabase Storage upload error:', uploadError);
+                        console.log('📝 Upload error details:', {
+                            message: uploadError.message,
+                            error: uploadError.error,
+                            statusCode: uploadError.statusCode
+                        });
+                        throw uploadError;
+                    }
+
+                    idDocumentPath = uploadData.path;
+                    console.log('✅ ID document uploaded to storage:', uploadData.path);
+                } catch (storageError) {
+                    console.log('⚠️ Storage upload failed, falling back to base64 storage');
+                    console.error('Storage error details:', storageError);
+                    
+                    // Fallback: store as base64 in database
+                    idDocumentBase64 = req.file.buffer.toString('base64');
+                    console.log('📦 Using base64 fallback storage');
+                }
+                
+                // Store verification data with either storage path or base64
+                const verificationData = {
+                    ...extractedData,
+                    id_document_mimetype: req.file.mimetype
+                };
+
+                if (idDocumentPath) {
+                    verificationData.id_document_path = idDocumentPath;
+                    verificationData.storage_method = 'supabase_storage';
+                } else if (idDocumentBase64) {
+                    verificationData.id_document_image = idDocumentBase64;
+                    verificationData.storage_method = 'base64';
                 }
 
-                console.log('✅ ID document uploaded to storage:', uploadData.path);
-                
                 const { error: verificationError } = await supabase
                     .from('user_verifications')
                     .upsert({
                         user_email: userEmail,
                         id_verification_status: 'verified',
-                        id_verification_data: {
-                            ...extractedData,
-                            id_document_path: uploadData.path,
-                            id_document_mimetype: req.file.mimetype
-                        },
+                        id_verification_data: verificationData,
                         id_verified_at: new Date().toISOString()
                     });
 
@@ -2128,29 +2156,43 @@ app.post('/api/verify/face-match', upload.single('facePhoto'), async (req, res) 
             });
         }
 
-        // Get the stored ID document path
+        // Get the stored ID document (either from storage or base64)
+        const storageMethod = verification.id_verification_data?.storage_method;
         const idDocumentPath = verification.id_verification_data?.id_document_path;
-        if (!idDocumentPath) {
+        const idDocumentBase64 = verification.id_verification_data?.id_document_image;
+        
+        let idDocumentBufferNode;
+
+        if (storageMethod === 'supabase_storage' && idDocumentPath) {
+            // Download from Supabase Storage
+            console.log('📥 Downloading ID document from Supabase Storage:', idDocumentPath);
+            const { data: idDocumentData, error: downloadError } = await supabase.storage
+                .from('govdocs')
+                .download(idDocumentPath);
+
+            if (downloadError || !idDocumentData) {
+                console.error('Error downloading ID document:', downloadError);
+                return res.status(500).json({ 
+                    error: 'Failed to retrieve ID document for comparison' 
+                });
+            }
+
+            // Convert the downloaded blob to buffer
+            const idDocumentBuffer = await idDocumentData.arrayBuffer();
+            idDocumentBufferNode = Buffer.from(idDocumentBuffer);
+            console.log('✅ ID document retrieved from storage');
+            
+        } else if (storageMethod === 'base64' && idDocumentBase64) {
+            // Convert base64 to buffer
+            console.log('📦 Using base64 stored ID document');
+            idDocumentBufferNode = Buffer.from(idDocumentBase64, 'base64');
+            console.log('✅ ID document retrieved from base64');
+            
+        } else {
             return res.status(400).json({ 
                 error: 'ID document not found. Please complete ID verification again.' 
             });
         }
-
-        // Download ID document from Supabase Storage
-        const { data: idDocumentData, error: downloadError } = await supabase.storage
-            .from('govdocs')
-            .download(idDocumentPath);
-
-        if (downloadError || !idDocumentData) {
-            console.error('Error downloading ID document:', downloadError);
-            return res.status(500).json({ 
-                error: 'Failed to retrieve ID document for comparison' 
-            });
-        }
-
-        // Convert the downloaded blob to buffer
-        const idDocumentBuffer = await idDocumentData.arrayBuffer();
-        const idDocumentBufferNode = Buffer.from(idDocumentBuffer);
 
         // Perform liveness detection on the selfie photo first
         console.log('🔍 Performing liveness detection on selfie...');
