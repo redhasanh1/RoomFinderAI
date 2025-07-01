@@ -1092,19 +1092,20 @@ class AIChatHandler {
                 return await this.sendBasicMessage(listing);
             }
 
-            // Use the advanced negotiation engine
-            const negotiationResult = await this.negotiationEngine.startNegotiation(
-                listing, 
-                this.userNeeds.maxPrice, 
-                this.currentUser.email
-            );
-
-            // Create or get conversation
+            // Create or get conversation first
             const conversation = await this.getOrCreateConversation(listing);
             if (!conversation) {
                 console.error('Failed to create conversation');
                 return false;
             }
+
+            // Use the advanced negotiation engine with conversation ID
+            const negotiationResult = await this.negotiationEngine.startNegotiation(
+                listing, 
+                this.userNeeds.maxPrice, 
+                this.currentUser.email,
+                conversation.id
+            );
 
             // Send the negotiation message
             const success = await this.negotiationEngine.sendNegotiationMessage(
@@ -1199,14 +1200,20 @@ class AIChatHandler {
 
             console.log('📝 Creating new conversation...');
             
-            // Create new conversation with correct schema
+            // Create new conversation with correct schema and AI negotiation metadata
             const { data: newConv, error } = await this.supabase
                 .from('conversations')
                 .insert({
                     listing_id: listing.id,
                     sender_email: this.currentUser.email,
                     receiver_email: listing.user_email,
-                    created_at: new Date().toISOString()
+                    created_at: new Date().toISOString(),
+                    metadata: JSON.stringify({
+                        ai_negotiation: true,
+                        ai_initiated: true,
+                        user_budget: this.userNeeds.maxPrice,
+                        negotiation_started: new Date().toISOString()
+                    })
                 })
                 .select()
                 .single();
