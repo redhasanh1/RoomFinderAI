@@ -354,7 +354,7 @@ class AIChatHandler {
         
         console.log('🔍 Building search query for your Supabase database...');
         
-        // Query all columns from your actual schema: id, street, location, user_email, updated_at, country
+        // Query all columns from your actual schema: id, title, price, city, street, postal_code, house_type, bedrooms, utilities, description, media, user_email, created_at, updated_at
         let query = this.supabase
             .from('listings')
             .select('*');
@@ -368,23 +368,31 @@ class AIChatHandler {
             console.log('✅ Step 1: Excluded own listings');
         }
         
-        // Step 2: Apply location filter using 'location' and 'street' columns
+        // Step 2: Apply location filter using 'city' and 'street' columns
         if (this.userNeeds.preferredLocation) {
             const location = this.userNeeds.preferredLocation.trim().toLowerCase();
-            // Search in location, street, and country columns
-            query = query.or(`location.ilike.*${location}*,street.ilike.*${location}*,country.ilike.*${location}*`);
+            // Search in city, street, and title columns
+            query = query.or(`city.ilike.*${location}*,street.ilike.*${location}*,title.ilike.*${location}*`);
             appliedFilters.push(`location contains: ${location}`);
             hasSpecificCriteria = true;
-            console.log(`✅ Step 2: Location filter applied - searching for "${location}" in location/street/country columns`);
+            console.log(`✅ Step 2: Location filter applied - searching for "${location}" in city/street/title columns`);
         }
         
-        // Step 3: Apply price filter if max price is provided
+        // Step 3: Apply house type filter
+        if (this.userNeeds.houseType) {
+            query = query.eq('house_type', this.userNeeds.houseType);
+            appliedFilters.push(`house type: ${this.userNeeds.houseType}`);
+            hasSpecificCriteria = true;
+            console.log(`✅ Step 3: House type filter applied - ${this.userNeeds.houseType}`);
+        }
+        
+        // Step 4: Apply price filter if max price is provided
         if (this.userNeeds.maxPrice) {
             try {
                 query = query.lte('price', this.userNeeds.maxPrice);
                 appliedFilters.push(`max price: $${this.userNeeds.maxPrice}`);
                 hasSpecificCriteria = true;
-                console.log(`✅ Step 3: Price filter applied - max $${this.userNeeds.maxPrice}`);
+                console.log(`✅ Step 4: Price filter applied - max $${this.userNeeds.maxPrice}`);
             } catch (error) {
                 console.log('⚠️ Price column not available in database schema, skipping price filter');
             }
@@ -414,9 +422,11 @@ class AIChatHandler {
             console.log('🏠 Found listings from your database:');
             listings.forEach((listing, i) => {
                 console.log(`  ${i+1}. ID: ${listing.id}`);
+                console.log(`      Title: ${listing.title || 'Not specified'}`);
+                console.log(`      City: ${listing.city || 'Not specified'}`);
                 console.log(`      Street: ${listing.street || 'Not specified'}`);
-                console.log(`      Location: ${listing.location || 'Not specified'}`);
-                console.log(`      Country: ${listing.country || 'Not specified'}`);
+                console.log(`      Price: $${listing.price || 'Not specified'}`);
+                console.log(`      Type: ${listing.house_type || 'Not specified'}`);
                 console.log(`      Owner: ${listing.user_email || 'No contact'}`);
                 console.log(`      Updated: ${listing.updated_at || 'Unknown'}`);
             });
@@ -432,9 +442,11 @@ class AIChatHandler {
             console.log('🗃️ Sample listings from your database:');
             allListings?.forEach((listing, i) => {
                 console.log(`  ${i+1}. ID: ${listing.id}`);
+                console.log(`      Title: ${listing.title || 'None'}`);
+                console.log(`      City: ${listing.city || 'None'}`);
                 console.log(`      Street: ${listing.street || 'None'}`);
-                console.log(`      Location: ${listing.location || 'None'}`);
-                console.log(`      Country: ${listing.country || 'None'}`);
+                console.log(`      Price: $${listing.price || 'None'}`);
+                console.log(`      Type: ${listing.house_type || 'None'}`);
                 console.log(`      Owner: ${listing.user_email || 'None'}`);
             });
         }
@@ -445,14 +457,14 @@ class AIChatHandler {
     // Helper function to check if listing matches location (updated for your schema)
     matchesLocation(listing, searchLocation) {
         const location = searchLocation.toLowerCase();
-        const listingLocation = (listing.location || '').toLowerCase();
+        const listingCity = (listing.city || '').toLowerCase();
         const street = (listing.street || '').toLowerCase();
-        const country = (listing.country || '').toLowerCase();
+        const title = (listing.title || '').toLowerCase();
         
-        // Check location, street, and country columns from your schema
-        return listingLocation.includes(location) || 
+        // Check city, street, and title columns from your schema
+        return listingCity.includes(location) || 
                street.includes(location) || 
-               country.includes(location);
+               title.includes(location);
     }
 
     // Update left sidebar with matching listings
@@ -472,17 +484,19 @@ class AIChatHandler {
         let listingsHTML = '<h4 class="text-sm font-semibold text-gray-700 mb-3">🏠 Matching Listings</h4>';
         
         listings.slice(0, 5).forEach((listing) => {
-            const locationText = listing.location || 'Location not specified';
+            const titleText = listing.title || 'Untitled Property';
+            const cityText = listing.city || 'City not specified';
             const streetText = listing.street ? ` - ${listing.street}` : '';
-            const countryText = listing.country ? ` (${listing.country})` : '';
+            const priceText = listing.price ? `$${listing.price}` : 'Price not listed';
+            const typeText = listing.house_type || 'Type not specified';
             
             listingsHTML += `
                 <div class="bg-gray-50 rounded-lg p-3 mb-3 border border-gray-200 hover:bg-gray-100 transition-colors">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-800">📍 ${locationText}</p>
-                            ${streetText ? `<p class="text-xs text-gray-600 mt-1">${streetText}</p>` : ''}
-                            ${countryText ? `<p class="text-xs text-gray-500">${countryText}</p>` : ''}
+                            <p class="text-sm font-medium text-gray-800">🏠 ${titleText}</p>
+                            <p class="text-xs text-gray-600 mt-1">📍 ${cityText}${streetText}</p>
+                            <p class="text-xs text-blue-600 font-medium">💰 ${priceText} • ${typeText}</p>
                             <p class="text-xs text-gray-400 mt-1">ID: ${listing.id}</p>
                         </div>
                         <button onclick="window.aiChat?.contactLandlord('${listing.id}')" 
@@ -541,10 +555,12 @@ class AIChatHandler {
             
             for (const listing of this.matchingListings.slice(0, 3)) {
                 // Display listings based on your actual database schema
-                const locationText = listing.location ? `${listing.location}` : 'Location not specified';
+                const titleText = listing.title || 'Untitled Property';
+                const cityText = listing.city || 'City not specified';
                 const streetText = listing.street ? ` - ${listing.street}` : '';
-                const countryText = listing.country ? ` (${listing.country})` : '';
-                this.appendMessage('AI', `🏠 Listing ID: ${listing.id} - ${locationText}${streetText}${countryText}`, 'left');
+                const priceText = listing.price ? ` - $${listing.price}` : '';
+                const typeText = listing.house_type ? ` (${listing.house_type})` : '';
+                this.appendMessage('AI', `🏠 ${titleText} - ${cityText}${streetText}${priceText}${typeText}`, 'left');
             }
             
             // Ask if user wants to negotiate
@@ -591,10 +607,12 @@ class AIChatHandler {
             let shownCount = 0;
             for (const listing of similarListings.slice(0, 5)) {
                 // Display with your actual database schema
-                const locationText = listing.location ? `${listing.location}` : 'Location not specified';
+                const titleText = listing.title || 'Untitled Property';
+                const cityText = listing.city || 'City not specified';
                 const streetText = listing.street ? ` - ${listing.street}` : '';
-                const countryText = listing.country ? ` (${listing.country})` : '';
-                this.appendMessage('AI', `📋 Listing ID: ${listing.id} - ${locationText}${streetText}${countryText}`, 'left');
+                const priceText = listing.price ? ` - $${listing.price}` : '';
+                const typeText = listing.house_type ? ` (${listing.house_type})` : '';
+                this.appendMessage('AI', `📋 ${titleText} - ${cityText}${streetText}${priceText}${typeText}`, 'left');
                 shownCount++;
                 
                 if (shownCount >= 3) break;
@@ -689,7 +707,7 @@ class AIChatHandler {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    message: `I'm interested in listing ${listing.id} at ${listing.location || listing.street}. Please help me negotiate a good deal.`,
+                    message: `I'm interested in listing ${listing.id} - ${listing.title || 'Property'} in ${listing.city || listing.street}. Please help me negotiate a good deal.`,
                     conversationHistory: this.conversationHistory.slice(-5),
                     userEmail: this.currentUser?.email,
                     listingData: listing
