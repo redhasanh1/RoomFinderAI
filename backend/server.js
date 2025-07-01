@@ -2022,11 +2022,24 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
             });
         }
 
-        // Store verification status in database with ID document image for face comparison
+        // Store verification status in database and save ID document to Supabase Storage
         if (supabase) {
             try {
-                // Convert image buffer to base64 for storage
-                const idDocumentBase64 = req.file.buffer.toString('base64');
+                // Upload ID document to Supabase Storage
+                const fileName = `${userEmail}-${Date.now()}-id-document.${req.file.mimetype.split('/')[1]}`;
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('govdocs')
+                    .upload(fileName, req.file.buffer, {
+                        contentType: req.file.mimetype,
+                        upsert: false
+                    });
+
+                if (uploadError) {
+                    console.error('Error uploading ID document to storage:', uploadError);
+                    return res.status(500).json({ error: 'Failed to store ID document securely' });
+                }
+
+                console.log('✅ ID document uploaded to storage:', uploadData.path);
                 
                 const { error: verificationError } = await supabase
                     .from('user_verifications')
@@ -2035,7 +2048,7 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                         id_verification_status: 'verified',
                         id_verification_data: {
                             ...extractedData,
-                            id_document_image: idDocumentBase64,
+                            id_document_path: uploadData.path,
                             id_document_mimetype: req.file.mimetype
                         },
                         id_verified_at: new Date().toISOString()
@@ -2115,41 +2128,76 @@ app.post('/api/verify/face-match', upload.single('facePhoto'), async (req, res) 
             });
         }
 
-        // Get the stored ID document image
-        const idDocumentImage = verification.id_verification_data?.id_document_image;
-        if (!idDocumentImage) {
+        // Get the stored ID document path
+        const idDocumentPath = verification.id_verification_data?.id_document_path;
+        if (!idDocumentPath) {
             return res.status(400).json({ 
-                error: 'ID document image not found. Please complete ID verification again.' 
+                error: 'ID document not found. Please complete ID verification again.' 
             });
         }
 
-        // Convert base64 back to buffer for Azure Face API
-        const idDocumentBuffer = Buffer.from(idDocumentImage, 'base64');
+        // Download ID document from Supabase Storage
+        const { data: idDocumentData, error: downloadError } = await supabase.storage
+            .from('govdocs')
+            .download(idDocumentPath);
 
-        // Detect faces in both ID document and selfie photo
+        if (downloadError || !idDocumentData) {
+            console.error('Error downloading ID document:', downloadError);
+            return res.status(500).json({ 
+                error: 'Failed to retrieve ID document for comparison' 
+            });
+        }
+
+        // Convert the downloaded blob to buffer
+        const idDocumentBuffer = await idDocumentData.arrayBuffer();
+        const idDocumentBufferNode = Buffer.from(idDocumentBuffer);
+
+        // Perform liveness detection on the selfie photo first
+        console.log('🔍 Performing liveness detection on selfie...');
+        const livenessResult = await faceClient.face.detectWithStream(req.file.buffer, {
+            returnFaceId: true,
+            returnFaceLandmarks: false,
+            returnFaceAttributes: ['headPose', 'smile', 'facialHair', 'glasses', 'emotion', 'age', 'gender', 'makeup', 'accessories', 'blur', 'exposure', 'noise']
+        });
+
+        if (!livenessResult || livenessResult.length === 0) {
+            return res.status(400).json({ error: 'No face detected in selfie photo. Please take a clearer photo.' });
+        }
+
+        if (livenessResult.length > 1) {
+            return res.status(400).json({ error: 'Multiple faces detected in selfie. Please take a photo with only your face visible.' });
+        }
+
+        // Check for liveness indicators (these suggest a real person vs a photo)
+        const faceAttributes = livenessResult[0].faceAttributes;
+        const isLikelyLive = (
+            faceAttributes.blur?.blurLevel !== 'high' &&
+            faceAttributes.exposure?.exposureLevel !== 'overExposure' &&
+            faceAttributes.exposure?.exposureLevel !== 'underExposure' &&
+            faceAttributes.noise?.noiseLevel !== 'high'
+        );
+
+        if (!isLikelyLive) {
+            return res.status(400).json({ 
+                error: 'Liveness detection failed. Please take a clear, well-lit selfie in good lighting conditions.' 
+            });
+        }
+
+        console.log('✅ Liveness detection passed');
+
+        // Detect faces in both ID document and selfie photo for comparison
         const [idFaces, userFaces] = await Promise.all([
-            faceClient.face.detectWithStream(idDocumentBuffer, {
+            faceClient.face.detectWithStream(idDocumentBufferNode, {
                 returnFaceId: true,
                 returnFaceLandmarks: false,
                 returnFaceAttributes: []
             }),
-            faceClient.face.detectWithStream(req.file.buffer, {
-                returnFaceId: true,
-                returnFaceLandmarks: false,
-                returnFaceAttributes: []
-            })
+            // Use the same result from liveness detection
+            Promise.resolve(livenessResult)
         ]);
 
         if (!idFaces || idFaces.length === 0) {
             return res.status(400).json({ error: 'No face detected in your ID document. Please upload a clearer ID photo.' });
-        }
-
-        if (!userFaces || userFaces.length === 0) {
-            return res.status(400).json({ error: 'No face detected in selfie photo. Please take a clearer photo.' });
-        }
-
-        if (userFaces.length > 1) {
-            return res.status(400).json({ error: 'Multiple faces detected in selfie. Please take a photo with only your face visible.' });
         }
 
         // Compare the faces using Azure Face API
