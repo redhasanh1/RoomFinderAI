@@ -719,6 +719,160 @@
                         </div>
                     </div>
 
+                    <!-- NEIGHBORHOOD INTELLIGENCE DASHBOARD -->
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-200 mb-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">🧠 Neighborhood Intelligence Hub</h3>
+                        
+                        <!-- Address Search for Intelligence -->
+                        <div class="mb-6">
+                            <div class="flex gap-4">
+                                <input type="text" id="intelligenceAddress" placeholder="Enter property address for complete neighborhood analysis..." class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                <button onclick="runNeighborhoodIntelligence()" id="intelligenceBtn" class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium">
+                                    🔍 Analyze
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Intelligence Results -->
+                        <div id="intelligenceResults" class="hidden">
+                            <!-- Safety & Security Intelligence -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                <div class="bg-white p-6 rounded-xl border border-red-200">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                        👮 Safety & Security Intelligence
+                                        <span id="safetyScore" class="ml-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-bold">-</span>
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Crime Rate:</span>
+                                            <span id="crimeRate" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Violent Crime:</span>
+                                            <span id="violentCrime" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Property Crime:</span>
+                                            <span id="propertyCrime" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Safety Grade:</span>
+                                            <span id="safetyGrade" class="font-semibold text-green-600">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-6 rounded-xl border border-blue-200">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                        🎓 Education Excellence
+                                        <span id="schoolScore" class="ml-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-bold">-</span>
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Average Rating:</span>
+                                            <span id="schoolRating" class="font-semibold">-/10</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Test Scores:</span>
+                                            <span id="testScores" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Graduation Rate:</span>
+                                            <span id="graduationRate" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Teacher/Student:</span>
+                                            <span id="teacherRatio" class="font-semibold">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Environmental & Risk Intelligence -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                <div class="bg-white p-6 rounded-xl border border-green-200">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                        🌦️ Climate & Weather
+                                        <span id="climateScore" class="ml-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-bold">-</span>
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Current Weather:</span>
+                                            <span id="currentWeather" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Flood Risk:</span>
+                                            <span id="floodRisk" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Hurricane Risk:</span>
+                                            <span id="hurricaneRisk" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Tornado Risk:</span>
+                                            <span id="tornadoRisk" class="font-semibold">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-6 rounded-xl border border-purple-200">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                        🌊 Flood Zone Analysis
+                                        <span id="floodZoneRisk" class="ml-2 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-bold">-</span>
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">FEMA Zone:</span>
+                                            <span id="femaZone" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Insurance Required:</span>
+                                            <span id="insuranceRequired" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Risk Level:</span>
+                                            <span id="floodRiskLevel" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Last Updated:</span>
+                                            <span id="floodDataDate" class="font-semibold text-sm">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- AI Negotiation Intelligence -->
+                            <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">🤖 AI Negotiation Intelligence</h4>
+                                <div id="negotiationInsights" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="text-center">
+                                        <div id="overallScore" class="text-3xl font-bold text-orange-600 mb-1">-</div>
+                                        <div class="text-sm text-gray-600">Overall Location Score</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div id="negotiationLeverage" class="text-3xl font-bold text-orange-600 mb-1">-</div>
+                                        <div class="text-sm text-gray-600">Negotiation Leverage</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div id="recommendedDiscount" class="text-3xl font-bold text-orange-600 mb-1">-</div>
+                                        <div class="text-sm text-gray-600">Suggested Discount %</div>
+                                    </div>
+                                </div>
+                                <div id="intelligenceKeyPoints" class="mt-4 space-y-2">
+                                    <!-- AI insights will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status Display -->
+                        <div id="intelligenceStatus" class="mt-4 p-3 bg-indigo-100 border border-indigo-200 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <div id="intelligenceStatusIndicator" class="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                                <span class="text-sm text-indigo-700">Neighborhood Intelligence Ready - Enter address to analyze</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Market Insights and API Status -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- Market Insights -->
@@ -3308,6 +3462,324 @@
             // Update the main market stats with RentCast data
             if (propertyData.rentEstimate) {
                 document.getElementById('hkAvgPrice').textContent = `$${Math.round(propertyData.rentEstimate / 800)}`; // Convert to per sqft estimate
+            }
+        }
+
+        // ========================================
+        // NEIGHBORHOOD INTELLIGENCE FUNCTIONS
+        // ========================================
+
+        // Main Intelligence Analysis Function
+        async function runNeighborhoodIntelligence() {
+            const address = document.getElementById('intelligenceAddress').value.trim();
+            const analysisBtn = document.getElementById('intelligenceBtn');
+            const statusDiv = document.getElementById('intelligenceStatus');
+            const resultsDiv = document.getElementById('intelligenceResults');
+
+            if (!address) {
+                alert('Please enter a property address for analysis');
+                return;
+            }
+
+            // Show loading state
+            analysisBtn.textContent = '🔄 Analyzing...';
+            analysisBtn.disabled = true;
+            statusDiv.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                    <span class="text-sm text-yellow-700">🧠 Running comprehensive neighborhood intelligence analysis...</span>
+                </div>
+            `;
+
+            try {
+                // Get coordinates for the address first
+                const coordinates = await getCoordinatesFromAddress(address);
+                const { lat, lon, state } = coordinates;
+
+                // Run all intelligence APIs in parallel for speed
+                const [crimeData, schoolData, weatherData, floodData] = await Promise.all([
+                    fetchCrimeIntelligence(state),
+                    fetchSchoolIntelligence(state, address),
+                    fetchWeatherIntelligence(lat, lon),
+                    fetchFloodIntelligence(lat, lon)
+                ]);
+
+                // Display all the intelligence data
+                displaySafetyIntelligence(crimeData);
+                displayEducationIntelligence(schoolData);
+                displayClimateIntelligence(weatherData);
+                displayFloodIntelligence(floodData);
+
+                // Generate AI negotiation insights
+                const aiInsights = generateAINegotiationIntelligence(crimeData, schoolData, weatherData, floodData);
+                displayAINegotiationIntelligence(aiInsights);
+
+                // Show results
+                resultsDiv.classList.remove('hidden');
+
+                // Update status
+                statusDiv.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span class="text-sm text-green-700">✅ Neighborhood intelligence analysis complete!</span>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('❌ Intelligence analysis error:', error);
+                statusDiv.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span class="text-sm text-red-700">❌ Analysis error: ${error.message}</span>
+                    </div>
+                `;
+            } finally {
+                analysisBtn.textContent = '🔍 Analyze';
+                analysisBtn.disabled = false;
+            }
+        }
+
+        // Get coordinates from address (simplified)
+        async function getCoordinatesFromAddress(address) {
+            // For demo purposes, return mock coordinates based on common cities
+            const cityCoords = {
+                'new york': { lat: 40.7128, lon: -74.0060, state: 'NY' },
+                'los angeles': { lat: 34.0522, lon: -118.2437, state: 'CA' },
+                'chicago': { lat: 41.8781, lon: -87.6298, state: 'IL' },
+                'houston': { lat: 29.7604, lon: -95.3698, state: 'TX' },
+                'miami': { lat: 25.7617, lon: -80.1918, state: 'FL' }
+            };
+
+            const addressLower = address.toLowerCase();
+            for (const [city, coords] of Object.entries(cityCoords)) {
+                if (addressLower.includes(city)) {
+                    return coords;
+                }
+            }
+
+            // Default to NYC coordinates if no city found
+            return { lat: 40.7128, lon: -74.0060, state: 'NY' };
+        }
+
+        // Fetch Crime Intelligence
+        async function fetchCrimeIntelligence(state) {
+            try {
+                const response = await fetch(`/api/fbi/crime?state=${state}`);
+                const result = await response.json();
+                return result.success ? result.data : null;
+            } catch (error) {
+                console.error('Crime intelligence error:', error);
+                return null;
+            }
+        }
+
+        // Fetch School Intelligence
+        async function fetchSchoolIntelligence(state, address) {
+            try {
+                const response = await fetch(`/api/greatschools?state=${state}&city=${encodeURIComponent(address)}`);
+                const result = await response.json();
+                return result.success ? result.data : null;
+            } catch (error) {
+                console.error('School intelligence error:', error);
+                return null;
+            }
+        }
+
+        // Fetch Weather Intelligence
+        async function fetchWeatherIntelligence(lat, lon) {
+            try {
+                const response = await fetch(`/api/weather/nws?lat=${lat}&lon=${lon}`);
+                const result = await response.json();
+                return result.success ? result.data : null;
+            } catch (error) {
+                console.error('Weather intelligence error:', error);
+                return null;
+            }
+        }
+
+        // Fetch Flood Intelligence
+        async function fetchFloodIntelligence(lat, lon) {
+            try {
+                const response = await fetch(`/api/fema/flood?lat=${lat}&lon=${lon}`);
+                const result = await response.json();
+                return result.success ? result.data : null;
+            } catch (error) {
+                console.error('Flood intelligence error:', error);
+                return null;
+            }
+        }
+
+        // Display Functions
+        function displaySafetyIntelligence(crimeData) {
+            if (!crimeData) return;
+
+            document.getElementById('safetyScore').textContent = crimeData.safetyScore || 75;
+            document.getElementById('crimeRate').textContent = crimeData.crimeRate ? `${crimeData.crimeRate}/100k` : 'N/A';
+            document.getElementById('violentCrime').textContent = crimeData.violentCrime ? crimeData.violentCrime.toLocaleString() : 'N/A';
+            document.getElementById('propertyCrime').textContent = crimeData.propertyCrime ? crimeData.propertyCrime.toLocaleString() : 'N/A';
+            
+            const safetyGrade = getSafetyGrade(crimeData.safetyScore);
+            document.getElementById('safetyGrade').textContent = safetyGrade;
+            
+            // Update safety score badge color
+            const safetyBadge = document.getElementById('safetyScore');
+            if (crimeData.safetyScore >= 80) {
+                safetyBadge.className = 'ml-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-bold';
+            } else if (crimeData.safetyScore >= 60) {
+                safetyBadge.className = 'ml-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold';
+            } else {
+                safetyBadge.className = 'ml-2 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-bold';
+            }
+        }
+
+        function displayEducationIntelligence(schoolData) {
+            if (!schoolData) return;
+
+            document.getElementById('schoolScore').textContent = schoolData.schoolQualityScore || schoolData.averageRating * 10 || 75;
+            document.getElementById('schoolRating').textContent = `${schoolData.averageRating || 7}/10`;
+            document.getElementById('testScores').textContent = schoolData.testScores ? 
+                `${Math.round((schoolData.testScores.math + schoolData.testScores.reading + schoolData.testScores.science) / 3)}%` : 'N/A';
+            document.getElementById('graduationRate').textContent = schoolData.graduationRate ? `${schoolData.graduationRate}%` : 'N/A';
+            document.getElementById('teacherRatio').textContent = schoolData.teacherStudentRatio ? `1:${schoolData.teacherStudentRatio}` : 'N/A';
+        }
+
+        function displayClimateIntelligence(weatherData) {
+            if (!weatherData) return;
+
+            document.getElementById('currentWeather').textContent = 
+                weatherData.currentConditions ? `${weatherData.currentConditions.shortForecast} ${weatherData.currentConditions.temperature}°F` : 'N/A';
+            document.getElementById('floodRisk').textContent = weatherData.climateRisks?.floodRisk || 'Unknown';
+            document.getElementById('hurricaneRisk').textContent = weatherData.climateRisks?.hurricaneRisk || 'Unknown';
+            document.getElementById('tornadoRisk').textContent = weatherData.climateRisks?.tornadoRisk || 'Unknown';
+            
+            // Calculate climate score
+            const climateScore = calculateClimateScore(weatherData.climateRisks);
+            document.getElementById('climateScore').textContent = climateScore;
+        }
+
+        function displayFloodIntelligence(floodData) {
+            if (!floodData) return;
+
+            document.getElementById('femaZone').textContent = floodData.floodZone || 'Unknown';
+            document.getElementById('insuranceRequired').textContent = floodData.insuranceRequired ? 'Yes' : 'No';
+            document.getElementById('floodRiskLevel').textContent = floodData.floodRisk || 'Unknown';
+            document.getElementById('floodDataDate').textContent = floodData.effectiveDate || 'N/A';
+            
+            // Update flood zone risk badge
+            const riskBadge = document.getElementById('floodZoneRisk');
+            const riskLevel = floodData.floodRisk || 'Unknown';
+            riskBadge.textContent = riskLevel;
+            
+            if (riskLevel === 'Minimal' || riskLevel === 'Low') {
+                riskBadge.className = 'ml-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-bold';
+            } else if (riskLevel === 'Moderate') {
+                riskBadge.className = 'ml-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold';
+            } else {
+                riskBadge.className = 'ml-2 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-bold';
+            }
+        }
+
+        function generateAINegotiationIntelligence(crimeData, schoolData, weatherData, floodData) {
+            const safetyScore = crimeData?.safetyScore || 75;
+            const schoolScore = schoolData?.schoolQualityScore || schoolData?.averageRating * 10 || 75;
+            const climateScore = calculateClimateScore(weatherData?.climateRisks);
+            const floodScore = calculateFloodScore(floodData?.floodRisk);
+
+            const overallScore = Math.round((safetyScore + schoolScore + climateScore + floodScore) / 4);
+            
+            // Calculate negotiation leverage based on scores
+            let leverage = 'Medium';
+            let discount = 2;
+            
+            if (overallScore >= 85) {
+                leverage = 'Low';
+                discount = 1;
+            } else if (overallScore >= 70) {
+                leverage = 'Medium';
+                discount = 3;
+            } else {
+                leverage = 'High';
+                discount = 7;
+            }
+
+            // Generate key insights
+            const insights = [];
+            
+            if (safetyScore >= 80) {
+                insights.push('✅ Excellent safety record strengthens property value');
+            } else if (safetyScore < 60) {
+                insights.push('⚠️ Safety concerns provide negotiation leverage');
+            }
+            
+            if (schoolScore >= 80) {
+                insights.push('🎓 Outstanding schools justify premium pricing');
+            } else if (schoolScore < 60) {
+                insights.push('📚 Below-average schools may impact property value');
+            }
+            
+            if (floodData?.insuranceRequired) {
+                insights.push('🌊 Flood insurance required - factor into total costs');
+            }
+            
+            if (climateScore < 70) {
+                insights.push('🌪️ Climate risks may affect long-term value');
+            }
+
+            return {
+                overallScore,
+                leverage,
+                discount,
+                insights
+            };
+        }
+
+        function displayAINegotiationIntelligence(aiInsights) {
+            document.getElementById('overallScore').textContent = aiInsights.overallScore;
+            document.getElementById('negotiationLeverage').textContent = aiInsights.leverage;
+            document.getElementById('recommendedDiscount').textContent = `${aiInsights.discount}%`;
+            
+            const keyPointsContainer = document.getElementById('intelligenceKeyPoints');
+            keyPointsContainer.innerHTML = aiInsights.insights.map(insight => `
+                <div class="flex items-start space-x-2 p-2 bg-white rounded-lg">
+                    <span class="text-sm text-gray-700">${insight}</span>
+                </div>
+            `).join('');
+        }
+
+        // Helper Functions
+        function getSafetyGrade(score) {
+            if (score >= 90) return 'A+';
+            if (score >= 80) return 'A';
+            if (score >= 70) return 'B';
+            if (score >= 60) return 'C';
+            return 'D';
+        }
+
+        function calculateClimateScore(climateRisks) {
+            if (!climateRisks) return 75;
+            
+            let score = 100;
+            const risks = [climateRisks.floodRisk, climateRisks.hurricaneRisk, climateRisks.tornadoRisk];
+            
+            risks.forEach(risk => {
+                if (risk === 'High') score -= 15;
+                else if (risk === 'Medium') score -= 8;
+                else if (risk === 'Low') score -= 3;
+            });
+            
+            return Math.max(score, 30);
+        }
+
+        function calculateFloodScore(floodRisk) {
+            if (!floodRisk) return 75;
+            
+            switch (floodRisk) {
+                case 'Minimal': return 95;
+                case 'Low': return 85;
+                case 'Moderate': return 70;
+                case 'High': return 55;
+                case 'Very High': return 40;
+                default: return 75;
             }
         }
 
