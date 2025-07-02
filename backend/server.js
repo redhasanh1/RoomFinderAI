@@ -16,27 +16,7 @@ try {
     config = { ...fileConfig };
     console.log('✅ Config file loaded as fallback');
 } catch (error) {
-<<<<<<< Updated upstream
     console.log('⚠️ Config file not found, using environment variables only');
-=======
-    console.log('⚠️ Config file not found, using environment variables directly');
-    config = {
-        STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY?.trim(),
-        STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY?.trim(),
-        GOOGLE_API_KEY: process.env.GOOGLE_API_KEY?.trim(),
-        SUPABASE_URL: process.env.SUPABASE_URL?.trim(),
-        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.trim(),
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim(),
-        OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim(),
-        OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || 'gpt-3.5-turbo',
-        BREVO_API_KEY: process.env.BREVO_API_KEY?.trim(),
-        AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim(),
-        AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim(),
-        AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim(),
-        AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim(),
-        RENTCAST_KEY: process.env.RENTCAST_KEY?.trim()
-    };
->>>>>>> Stashed changes
 }
 
 // Override with environment variables (these take priority)
@@ -74,7 +54,6 @@ console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', process.env.AZURE_DOCUMENT_INT
 console.log('- AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:', process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'MISSING');
 console.log('- AZURE_FACE_KEY:', process.env.AZURE_FACE_KEY ? `Present (${process.env.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING');
 console.log('- AZURE_FACE_ENDPOINT:', process.env.AZURE_FACE_ENDPOINT || 'MISSING');
-console.log('- RENTCAST_KEY:', process.env.RENTCAST_KEY ? `Present (${process.env.RENTCAST_KEY.substring(0, 10)}...)` : 'MISSING');
 
 // Initialize Stripe with error handling
 let stripe;
@@ -2628,7 +2607,6 @@ app.get('/api/config', (req, res) => {
     console.log('- AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:', config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT ? `Present (${config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT})` : 'MISSING');
     console.log('- AZURE_FACE_KEY:', config.AZURE_FACE_KEY ? `Present (${config.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING');
     console.log('- AZURE_FACE_ENDPOINT:', config.AZURE_FACE_ENDPOINT ? `Present (${config.AZURE_FACE_ENDPOINT})` : 'MISSING');
-    console.log('- RENTCAST_KEY:', config.RENTCAST_KEY ? `Present (${config.RENTCAST_KEY.substring(0, 10)}...)` : 'MISSING');
     
     const configData = {
         STRIPE_PUBLISHABLE_KEY: config.STRIPE_PUBLISHABLE_KEY,
@@ -2638,7 +2616,6 @@ app.get('/api/config', (req, res) => {
         OPENAI_API_KEY: config.OPENAI_API_KEY,
         OPENAI_ORG_ID: config.OPENAI_ORG_ID,
         OPENAI_MODEL: config.OPENAI_MODEL,
-        RENTCAST_KEY: config.RENTCAST_KEY,
         // Azure service status (without exposing keys)
         azureServicesAvailable: {
             documentIntelligence: !!documentClient,
