@@ -11,7 +11,8 @@
       "Bash(find:*)",
       "Bash(git pull:*)",
       "Bash(git stash:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(python3:*)"
     ],
     "deny": []
   }
