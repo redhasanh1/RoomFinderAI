@@ -17,11 +17,6 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'healthy' });
-});
-
 // Test endpoint
 app.get('/api/test', (req, res) => {
     res.json({ message: 'API is working' });
