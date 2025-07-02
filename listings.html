@@ -4,30 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RoomFinderAI - Listings</title>
-    
-    <!-- External Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<<<<<<< Updated upstream
-    
-    <!-- Leaflet Map -->
-=======
-<<<<<<< HEAD
-=======
-    
-    <!-- Leaflet Map -->
->>>>>>> 9bca3b94c265ae4173fe424b186415b08da1a346
->>>>>>> Stashed changes
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
     <!-- Application CSS -->
     <link rel="stylesheet" href="/css/listings.css">
     
@@ -42,27 +27,39 @@
     <script src="/js/chat.js"></script>
     <script src="/js/chat-health.js"></script>
     <script src="/js/main.js"></script>
-=======
->>>>>>> Stashed changes
-    <!-- Custom Styles -->
-    <link rel="stylesheet" href="listings-styles.css">
-    
-    <!-- Initialization Script -->
-    <script src="listings-init.js"></script>
-<<<<<<< Updated upstream
-=======
->>>>>>> 9bca3b94c265ae4173fe424b186415b08da1a346
->>>>>>> Stashed changes
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
-    
-    <!-- Include Header -->
-    <div id="headerContainer"></div>
+<body class="bg-gray-50 flex flex-col min-h-screen"> <!-- Body background updated -->
+    <!-- Header -->
+    <header class="sticky top-0 bg-white shadow-md z-10"> <!-- Header style updated -->
+        <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-6">
+                <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
+                <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
+                <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
+                <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
+                <a href="/ai-negotiator" class="text-gray-700 hover:text-blue-600 transition font-medium">AI Negotiator</a>
+                <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
+                <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition font-medium">Pricing</a>
+                <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
+            </div>
+            <div id="authSection">
+                <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="text-white py-20 text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"> <!-- Hero background updated -->
+        <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 class="text-4xl sm:text-5xl font-extrabold mb-4">Explore Our Listings</h1>
+            <p class="text-lg sm:text-xl mb-6">Discover and add rental properties tailored to your needs with Room Finder.</p>
+        </div>
+    </section>
 
     <!-- Main Content -->
     <main class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <!-- Add Listing Form -->
-        <section class="bg-white rounded-xl shadow-lg p-6 sm:p-8 mb-12">
+        <section class="bg-white rounded-xl shadow-lg p-6 sm:p-8 mb-12"> <!-- Shadow updated -->
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Add a New Listing</h2>
             <p class="text-lg text-gray-600 mb-6 text-center">Fill out the form below to manually add a listing or use the AI Negotiator to create one automatically.</p>
             <form id="listingForm" class="space-y-6">
@@ -124,13 +121,13 @@
                     <div id="mediaPreview" class="media-preview flex flex-wrap mt-2"></div>
                 </div>
                 <div>
-                    <button type="submit" class="w-full brand-cta-button px-8 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg">Add Listing</button>
+                    <button type="submit" class="w-full brand-cta-button px-8 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg">Add Listing</button> <!-- Button style updated -->
                 </div>
             </form>
         </section>
 
         <!-- Listings Display -->
-        <section class="bg-white rounded-xl shadow-lg p-6 sm:p-8">
+        <section class="bg-white rounded-xl shadow-lg p-6 sm:p-8"> <!-- Shadow updated -->
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Available Listings</h2>
             
             <!-- Search and Filter Controls -->
@@ -166,14 +163,14 @@
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="applySearchFilters()" class="brand-cta-button px-6 py-2 rounded-lg font-semibold">Search & Filter</button>
-                    <button onclick="clearSearchFilters()" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 transition font-semibold">Clear Filters</button>
+                    <button onclick="applySearchFilters()" class="brand-cta-button px-6 py-2 rounded-lg font-semibold">Search & Filter</button> <!-- Button style updated -->
+                    <button onclick="clearSearchFilters()" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 transition font-semibold">Clear Filters</button> <!-- Button style updated -->
                 </div>
             </div>
             
             <div class="mb-4 flex gap-4">
                 <button onclick="displayListings()" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Refresh Listings</button>
-                <button onclick="refreshMapOnly()" class="bg-green-500 text-white px-8 py-3 rounded-lg hover:bg-green-600 transition font-semibold shadow-md hover:shadow-lg">Refresh Map</button>
+                <button onclick="refreshMapOnly()" class="bg-green-500 text-white px-8 py-3 rounded-lg hover:bg-green-600 transition font-semibold shadow-md hover:shadow-lg">Refresh Map</button> <!-- Button style updated -->
             </div>
             <div id="listingsContainer" class="listing-grid"></div>
             <div id="map"></div>
@@ -191,7 +188,7 @@
                 <div id="modalDetails" class="text-gray-600 mb-4"></div>
                 <p id="modalDescription" class="text-gray-600 mb-4"></p>
                 <div id="modalMedia" class="modal-media flex flex-wrap mb-4"></div>
-                <a id="modalViewDetails" href="#" class="inline-block brand-cta-button px-8 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg text-center w-full">View Details</a>
+                <a id="modalViewDetails" href="#" class="inline-block brand-cta-button px-8 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg text-center w-full">View Details</a> <!-- Button style updated -->
             </div>
         </div>
 
@@ -222,8 +219,20 @@
         </div>
     </main>
 
-    <!-- Include Footer -->
-    <div id="footerContainer"></div>
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
+            <div class="mt-4 flex justify-center space-x-4">
+                <a href="/index" class="hover:text-blue-400">Home</a>
+                <a href="/index#about" class="hover:text-blue-400">About</a>
+                <a href="/sublease" class="hover:text-blue-400">Sublease</a>
+                <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
+                <a href="/listings" class="hover:text-blue-400">Listings</a>
+                <a href="/index#contact" class="hover:text-blue-400">Contact</a>
+            </div>
+        </div>
+    </footer>
 
     <!-- Messaging Panel -->
     <div id="messagingPanel" class="fixed bottom-4 right-4 z-50">
@@ -249,91 +258,5 @@
         </div>
     </div>
 
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-=======
->>>>>>> Stashed changes
-    <!-- Load JavaScript Modules -->
-    <script src="listings-main.js"></script>
-    <script src="listings-chat.js"></script>
-    <script src="listings-forms.js"></script>
-    <script src="listings-modals.js"></script>
-    
-    <!-- Include components and initialize -->
-    <script>
-        // Load header and footer components
-        function loadComponent(url, containerId) {
-            fetch(url)
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById(containerId).innerHTML = html;
-                })
-                .catch(error => {
-                    console.error('Error loading component:', error);
-                });
-        }
-
-        // Main initialization function
-        async function initializeListingsPage() {
-            console.log('🚀 Initializing listings page...');
-            
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            if (!currentUser) {
-                console.log('No current user, redirecting to login');
-                window.location.href = '/login';
-                return;
-            }
-
-            // Set current user email for RLS
-            try {
-                const { error } = await supabase.rpc('set_current_user_email', { email: currentUser.email });
-                if (error) {
-                    console.error('Error setting current user email:', error);
-                    alert('Failed to initialize session: ' + error.message);
-                    return;
-                }
-                console.log('Current user email set for RLS:', currentUser.email);
-            } catch (err) {
-                console.error('RPC call failed:', err);
-                alert('Failed to initialize session. Please check your connection.');
-                return;
-            }
-
-            // Update auth section with profile
-            const authSection = document.getElementById('authSection');
-            if (authSection && currentUser.profileImage) {
-                authSection.innerHTML = `
-                    <div class="flex items-center space-x-2">
-                        <div class="relative">
-                            <span id="profileNotificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hidden z-10">0</span>
-                            <a href="/profile">
-                                <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
-                            </a>
-                        </div>
-                    </div>
-                `;
-            }
-
-            // Initialize all components
-            initMap();
-            setupChat();
-            setupModals();
-            initializeForms();
-            
-            // Load initial data
-            await fetchListings();
-            displayListings();
-            
-            console.log('✅ Listings page initialization complete');
-        }
-
-        // Load components and initialize when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            loadComponent('listings-header.html', 'headerContainer');
-            loadComponent('listings-footer.html', 'footerContainer');
-        });
-    </script>
->>>>>>> 9bca3b94c265ae4173fe424b186415b08da1a346
 </body>
 </html>
