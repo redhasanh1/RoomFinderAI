@@ -997,6 +997,212 @@
                                 </div>
                             </div>
 
+                            <!-- PHASE 4: ADVANCED ANALYTICS DASHBOARD -->
+                            <div class="bg-gradient-to-r from-gray-50 to-slate-50 p-6 rounded-xl border border-gray-200 mb-6">
+                                <h4 class="text-xl font-bold text-gray-800 mb-6">📊 Advanced Property Analytics</h4>
+                                
+                                <!-- Analytics Control Panel -->
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                    <button onclick="generatePropertyAnalytics()" id="analyticsBtn" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-medium">
+                                        📈 Generate Analytics Report
+                                    </button>
+                                    <button onclick="analyzeSentiment()" id="sentimentBtn" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                        💭 Market Sentiment Analysis
+                                    </button>
+                                    <button onclick="fetchBusinessData()" id="businessBtn" class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                                        🏢 Business Intelligence
+                                    </button>
+                                </div>
+
+                                <!-- Analytics Results -->
+                                <div id="analyticsResults" class="hidden">
+                                    <!-- Investment Metrics -->
+                                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+                                        <div class="bg-white p-4 rounded-lg border border-green-200">
+                                            <h5 class="text-sm font-medium text-green-700 mb-1">Cap Rate</h5>
+                                            <p id="capRate" class="text-2xl font-bold text-green-900">-</p>
+                                            <p class="text-xs text-green-600">annual return</p>
+                                        </div>
+                                        <div class="bg-white p-4 rounded-lg border border-blue-200">
+                                            <h5 class="text-sm font-medium text-blue-700 mb-1">Cash Flow</h5>
+                                            <p id="cashFlow" class="text-2xl font-bold text-blue-900">-</p>
+                                            <p class="text-xs text-blue-600">monthly income</p>
+                                        </div>
+                                        <div class="bg-white p-4 rounded-lg border border-purple-200">
+                                            <h5 class="text-sm font-medium text-purple-700 mb-1">Total ROI</h5>
+                                            <p id="totalROI" class="text-2xl font-bold text-purple-900">-</p>
+                                            <p class="text-xs text-purple-600">return on investment</p>
+                                        </div>
+                                        <div class="bg-white p-4 rounded-lg border border-orange-200">
+                                            <h5 class="text-sm font-medium text-orange-700 mb-1">Risk Score</h5>
+                                            <p id="riskScore" class="text-2xl font-bold text-orange-900">-</p>
+                                            <p class="text-xs text-orange-600">investment risk</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Market Performance -->
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                        <div class="bg-white p-6 rounded-xl border border-gray-200">
+                                            <h5 class="text-lg font-semibold text-gray-800 mb-4">📈 Market Performance</h5>
+                                            <div class="space-y-3">
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Appreciation Rate:</span>
+                                                    <span id="appreciationRate" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Rent Growth:</span>
+                                                    <span id="rentGrowthRate" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Vacancy Rate:</span>
+                                                    <span id="vacancyRate" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Market Volatility:</span>
+                                                    <span id="marketVolatility" class="font-semibold">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="bg-white p-6 rounded-xl border border-gray-200">
+                                            <h5 class="text-lg font-semibold text-gray-800 mb-4">👥 Demographics</h5>
+                                            <div class="space-y-3">
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Average Age:</span>
+                                                    <span id="averageAge" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Household Income:</span>
+                                                    <span id="householdIncome" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Education Level:</span>
+                                                    <span id="educationLevel" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Population Growth:</span>
+                                                    <span id="populationGrowth" class="font-semibold">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Future Projections & Business Intelligence -->
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <div class="bg-white p-6 rounded-xl border border-gray-200">
+                                            <h5 class="text-lg font-semibold text-gray-800 mb-4">🔮 Future Projections</h5>
+                                            <div class="space-y-3">
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Price (12mo):</span>
+                                                    <span id="priceProjection" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Rent (12mo):</span>
+                                                    <span id="rentProjection" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Demand Forecast:</span>
+                                                    <span id="demandForecast" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Market Position:</span>
+                                                    <span id="marketPosition" class="font-semibold">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="bg-white p-6 rounded-xl border border-gray-200">
+                                            <h5 class="text-lg font-semibold text-gray-800 mb-4">🏢 Business Environment</h5>
+                                            <div class="space-y-3">
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Total Businesses:</span>
+                                                    <span id="totalBusinesses" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Business Density:</span>
+                                                    <span id="businessDensity" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">New Business Rate:</span>
+                                                    <span id="newBusinessRate" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Quality Score:</span>
+                                                    <span id="businessQualityScore" class="font-semibold">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Market Sentiment Results -->
+                                <div id="sentimentResults" class="hidden">
+                                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                                        <div class="bg-white p-6 rounded-xl border border-blue-200">
+                                            <h5 class="text-lg font-semibold text-gray-800 mb-4">📊 Overall Sentiment</h5>
+                                            <div class="text-center mb-4">
+                                                <div id="sentimentScore" class="text-4xl font-bold text-blue-600 mb-1">-</div>
+                                                <div class="text-sm text-gray-600">Sentiment Score</div>
+                                            </div>
+                                            <div class="space-y-2">
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Trend:</span>
+                                                    <span id="sentimentTrend" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Confidence:</span>
+                                                    <span id="sentimentConfidence" class="font-semibold">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="bg-white p-6 rounded-xl border border-green-200">
+                                            <h5 class="text-lg font-semibold text-gray-800 mb-4">📰 Media Analysis</h5>
+                                            <div class="space-y-3">
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Social Mentions:</span>
+                                                    <span id="socialMentions" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">News Articles:</span>
+                                                    <span id="newsArticles" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Influencer Score:</span>
+                                                    <span id="influencerScore" class="font-semibold">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="bg-white p-6 rounded-xl border border-purple-200">
+                                            <h5 class="text-lg font-semibold text-gray-800 mb-4">🔮 Predictive Signals</h5>
+                                            <div class="space-y-3">
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Search Volume:</span>
+                                                    <span id="searchVolume" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Inquiry Rate:</span>
+                                                    <span id="inquiryRate" class="font-semibold">-</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Price Signals:</span>
+                                                    <span id="priceSignals" class="font-semibold">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Status Display -->
+                                <div id="analyticsStatus" class="mt-4 p-3 bg-gray-100 border border-gray-200 rounded-lg">
+                                    <div class="flex items-center space-x-2">
+                                        <div id="analyticsStatusIndicator" class="w-3 h-3 bg-gray-500 rounded-full"></div>
+                                        <span class="text-sm text-gray-700">Advanced Analytics Ready - Select analysis type</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- AI Negotiation Intelligence -->
                             <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200">
                                 <h4 class="text-lg font-semibold text-gray-800 mb-4">🤖 AI Negotiation Intelligence</h4>
@@ -4172,6 +4378,220 @@
             } else {
                 lifestyleBadge.className = 'ml-2 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-bold';
             }
+        }
+
+        // ========================================
+        // PHASE 4: ADVANCED ANALYTICS FUNCTIONS
+        // ========================================
+
+        // Generate Property Analytics Report
+        async function generatePropertyAnalytics() {
+            const address = document.getElementById('intelligenceAddress').value.trim() || '123 Sample Street, New York, NY';
+            const analyticsBtn = document.getElementById('analyticsBtn');
+            const statusDiv = document.getElementById('analyticsStatus');
+            const resultsDiv = document.getElementById('analyticsResults');
+
+            // Show loading state
+            analyticsBtn.textContent = '📊 Generating...';
+            analyticsBtn.disabled = true;
+            statusDiv.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                    <span class="text-sm text-yellow-700">🔍 Generating comprehensive property analytics...</span>
+                </div>
+            `;
+
+            try {
+                const coordinates = await getCoordinatesFromAddress(address);
+                const { lat, lon } = coordinates;
+
+                const response = await fetch(`/api/analytics/property?address=${encodeURIComponent(address)}&lat=${lat}&lon=${lon}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayPropertyAnalytics(result.data);
+                    resultsDiv.classList.remove('hidden');
+                    
+                    // Hide other results
+                    document.getElementById('sentimentResults').classList.add('hidden');
+
+                    statusDiv.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <span class="text-sm text-green-700">✅ Property analytics generated successfully</span>
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Failed to generate analytics');
+                }
+
+            } catch (error) {
+                console.error('❌ Analytics generation error:', error);
+                statusDiv.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span class="text-sm text-red-700">❌ Analytics error: ${error.message}</span>
+                    </div>
+                `;
+            } finally {
+                analyticsBtn.textContent = '📈 Generate Analytics Report';
+                analyticsBtn.disabled = false;
+            }
+        }
+
+        // Analyze Market Sentiment
+        async function analyzeSentiment() {
+            const sentimentBtn = document.getElementById('sentimentBtn');
+            const statusDiv = document.getElementById('analyticsStatus');
+            const resultsDiv = document.getElementById('sentimentResults');
+
+            // Show loading state
+            sentimentBtn.textContent = '💭 Analyzing...';
+            sentimentBtn.disabled = true;
+            statusDiv.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span class="text-sm text-blue-700">🧠 Analyzing market sentiment and predictive signals...</span>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/api/analytics/sentiment?market=rental&timeframe=30d');
+                const result = await response.json();
+
+                if (result.success) {
+                    displaySentimentAnalysis(result.data);
+                    resultsDiv.classList.remove('hidden');
+                    
+                    // Hide other results
+                    document.getElementById('analyticsResults').classList.add('hidden');
+
+                    statusDiv.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <span class="text-sm text-green-700">✅ Market sentiment analysis complete</span>
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Failed to analyze sentiment');
+                }
+
+            } catch (error) {
+                console.error('❌ Sentiment analysis error:', error);
+                statusDiv.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span class="text-sm text-red-700">❌ Sentiment analysis error: ${error.message}</span>
+                    </div>
+                `;
+            } finally {
+                sentimentBtn.textContent = '💭 Market Sentiment Analysis';
+                sentimentBtn.disabled = false;
+            }
+        }
+
+        // Fetch Business Intelligence Data
+        async function fetchBusinessData() {
+            const address = document.getElementById('intelligenceAddress').value.trim() || '123 Sample Street, New York, NY';
+            const businessBtn = document.getElementById('businessBtn');
+            const statusDiv = document.getElementById('analyticsStatus');
+
+            // Show loading state
+            businessBtn.textContent = '🏢 Analyzing...';
+            businessBtn.disabled = true;
+            statusDiv.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
+                    <span class="text-sm text-purple-700">🏪 Analyzing local business environment...</span>
+                </div>
+            `;
+
+            try {
+                const coordinates = await getCoordinatesFromAddress(address);
+                const { lat, lon } = coordinates;
+
+                const response = await fetch(`/api/business/licenses?lat=${lat}&lon=${lon}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayBusinessIntelligence(result.data);
+                    document.getElementById('analyticsResults').classList.remove('hidden');
+                    
+                    // Hide sentiment results
+                    document.getElementById('sentimentResults').classList.add('hidden');
+
+                    statusDiv.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <span class="text-sm text-green-700">✅ Business intelligence analysis complete</span>
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Failed to fetch business data');
+                }
+
+            } catch (error) {
+                console.error('❌ Business intelligence error:', error);
+                statusDiv.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span class="text-sm text-red-700">❌ Business analysis error: ${error.message}</span>
+                    </div>
+                `;
+            } finally {
+                businessBtn.textContent = '🏢 Business Intelligence';
+                businessBtn.disabled = false;
+            }
+        }
+
+        // Display Property Analytics
+        function displayPropertyAnalytics(data) {
+            // Investment Metrics
+            document.getElementById('capRate').textContent = `${data.investmentMetrics.capRate}%`;
+            document.getElementById('cashFlow').textContent = `$${data.investmentMetrics.cashFlow}`;
+            document.getElementById('totalROI').textContent = `${data.investmentMetrics.totalROI}%`;
+            document.getElementById('riskScore').textContent = data.investmentMetrics.riskScore;
+
+            // Market Performance
+            document.getElementById('appreciationRate').textContent = `${data.marketMetrics.appreciationRate}%`;
+            document.getElementById('rentGrowthRate').textContent = `${data.marketMetrics.rentGrowthRate}%`;
+            document.getElementById('vacancyRate').textContent = `${data.marketMetrics.vacancyRate}%`;
+            document.getElementById('marketVolatility').textContent = data.marketMetrics.marketVolatility;
+
+            // Demographics
+            document.getElementById('averageAge').textContent = data.demographicProfile.averageAge;
+            document.getElementById('householdIncome').textContent = `$${data.demographicProfile.householdIncome.toLocaleString()}`;
+            document.getElementById('educationLevel').textContent = data.demographicProfile.educationLevel;
+            document.getElementById('populationGrowth').textContent = `${data.demographicProfile.populationGrowth}%`;
+
+            // Future Projections
+            document.getElementById('priceProjection').textContent = `+${data.projections.priceProjection12mo}%`;
+            document.getElementById('rentProjection').textContent = `+${data.projections.rentProjection12mo}%`;
+            document.getElementById('demandForecast').textContent = data.projections.demandForecast;
+            document.getElementById('marketPosition').textContent = data.comparativeAnalysis.marketPosition;
+        }
+
+        // Display Business Intelligence
+        function displayBusinessIntelligence(data) {
+            document.getElementById('totalBusinesses').textContent = data.totalBusinesses.toLocaleString();
+            document.getElementById('businessDensity').textContent = `${data.businessDensity}/sq mi`;
+            document.getElementById('newBusinessRate').textContent = `${data.newBusinessRate}%`;
+            document.getElementById('businessQualityScore').textContent = `${data.businessQualityScore}/100`;
+        }
+
+        // Display Sentiment Analysis
+        function displaySentimentAnalysis(data) {
+            document.getElementById('sentimentScore').textContent = data.overallSentiment.score;
+            document.getElementById('sentimentTrend').textContent = data.overallSentiment.trend;
+            document.getElementById('sentimentConfidence').textContent = `${data.overallSentiment.confidence}%`;
+
+            document.getElementById('socialMentions').textContent = data.mediaAnalysis.socialMediaMentions.toLocaleString();
+            document.getElementById('newsArticles').textContent = data.mediaAnalysis.newsArticles.toLocaleString();
+            document.getElementById('influencerScore').textContent = data.mediaAnalysis.influencerScore;
+
+            document.getElementById('searchVolume').textContent = `+${data.predictiveSignals.searchVolume}%`;
+            document.getElementById('inquiryRate').textContent = `+${data.predictiveSignals.inquiryRate}%`;
+            document.getElementById('priceSignals').textContent = data.predictiveSignals.priceSignals;
         }
 
         async function fetchHKGovData() {
