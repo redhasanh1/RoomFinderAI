@@ -16,9 +16,6 @@ try {
     config = { ...fileConfig };
     console.log('✅ Config file loaded as fallback');
 } catch (error) {
-<<<<<<< Updated upstream
-    console.log('⚠️ Config file not found, using environment variables only');
-=======
     console.log('⚠️ Config file not found, using environment variables directly');
     config = {
         STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY?.trim(),
@@ -36,7 +33,6 @@ try {
         AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim(),
         RENTCAST_KEY: process.env.RENTCAST_KEY?.trim()
     };
->>>>>>> Stashed changes
 }
 
 // Override with environment variables (these take priority)
