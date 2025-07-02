@@ -3075,11 +3075,10 @@
             }
 
             // Start polling if real-time doesn't work after 10 seconds
+            // Note: messageChannel is not in scope here, so we'll just start polling as fallback
             setTimeout(() => {
-                if (!messageChannel || !messageChannel.state || messageChannel.state !== 'joined') {
-                    console.log('⚠️ Real-time not working, falling back to polling');
-                    startPolling();
-                }
+                console.log('⚠️ Starting fallback polling for messages');
+                startPolling();
             }, 10000);
         }
 
@@ -3372,15 +3371,19 @@
 
 
         // Real-time subscription to listings
-        supabase
-            .channel('public:listings')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'listings' }, (payload) => {
-                console.log('New listing added:', payload.new);
-                displayListings();
-            })
-            .subscribe((status) => {
-                console.log('Listings channel status:', status);
-            });
+        if (typeof supabase !== 'undefined' && supabase) {
+            supabase
+                .channel('public:listings')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'listings' }, (payload) => {
+                    console.log('New listing added:', payload.new);
+                    displayListings();
+                })
+                .subscribe((status) => {
+                    console.log('Listings channel status:', status);
+                });
+        } else {
+            console.warn('Supabase not initialized for real-time listings subscription');
+        }
     </script>
 </body>
 </html>
