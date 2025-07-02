@@ -2607,6 +2607,7 @@ app.get('/api/config', (req, res) => {
     console.log('- AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:', config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT ? `Present (${config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT})` : 'MISSING');
     console.log('- AZURE_FACE_KEY:', config.AZURE_FACE_KEY ? `Present (${config.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING');
     console.log('- AZURE_FACE_ENDPOINT:', config.AZURE_FACE_ENDPOINT ? `Present (${config.AZURE_FACE_ENDPOINT})` : 'MISSING');
+    console.log('- RENTCAST_KEY:', config.RENTCAST_KEY ? `Present (${config.RENTCAST_KEY.substring(0, 10)}...)` : 'MISSING');
     
     const configData = {
         STRIPE_PUBLISHABLE_KEY: config.STRIPE_PUBLISHABLE_KEY,
@@ -2616,6 +2617,7 @@ app.get('/api/config', (req, res) => {
         OPENAI_API_KEY: config.OPENAI_API_KEY,
         OPENAI_ORG_ID: config.OPENAI_ORG_ID,
         OPENAI_MODEL: config.OPENAI_MODEL,
+        RENTCAST_KEY: config.RENTCAST_KEY,
         // Azure service status (without exposing keys)
         azureServicesAvailable: {
             documentIntelligence: !!documentClient,
@@ -2677,6 +2679,390 @@ app.get('/house-models/:filename', (req, res) => {
     } catch (error) {
         console.error('❌ Error serving house image:', error);
         res.status(500).send('Server error');
+    }
+});
+
+// ========================================
+// RENTCAST API ENDPOINTS
+// ========================================
+
+// RentCast Property Valuation Endpoint
+app.get('/api/rentcast/valuation', async (req, res) => {
+    try {
+        const { address } = req.query;
+        
+        if (!address) {
+            return res.status(400).json({ error: 'Address is required' });
+        }
+
+        if (!config.RENTCAST_KEY) {
+            return res.status(500).json({ error: 'RentCast API key not configured' });
+        }
+
+        console.log(`🏠 Getting RentCast valuation for: ${address}`);
+
+        const response = await fetch(`https://api.rentcast.io/v1/avm/rent/long-term?address=${encodeURIComponent(address)}`, {
+            headers: {
+                'X-Api-Key': config.RENTCAST_KEY,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`RentCast API error: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ RentCast valuation data retrieved successfully');
+
+        res.json({
+            success: true,
+            data: data,
+            source: 'RentCast API'
+        });
+
+    } catch (error) {
+        console.error('❌ RentCast valuation error:', error);
+        res.status(500).json({ 
+            error: 'Failed to get property valuation',
+            details: error.message 
+        });
+    }
+});
+
+// RentCast Market Data Endpoint
+app.get('/api/rentcast/market', async (req, res) => {
+    try {
+        const { zipCode, city, state } = req.query;
+        
+        if (!zipCode && !city) {
+            return res.status(400).json({ error: 'ZIP code or city is required' });
+        }
+
+        if (!config.RENTCAST_KEY) {
+            return res.status(500).json({ error: 'RentCast API key not configured' });
+        }
+
+        console.log(`📊 Getting RentCast market data for: ${zipCode || `${city}, ${state}`}`);
+
+        let url = 'https://api.rentcast.io/v1/markets/rent?';
+        if (zipCode) {
+            url += `zipCode=${encodeURIComponent(zipCode)}`;
+        } else {
+            url += `city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`;
+        }
+
+        const response = await fetch(url, {
+            headers: {
+                'X-Api-Key': config.RENTCAST_KEY,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`RentCast API error: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ RentCast market data retrieved successfully');
+
+        res.json({
+            success: true,
+            data: data,
+            source: 'RentCast API'
+        });
+
+    } catch (error) {
+        console.error('❌ RentCast market data error:', error);
+        res.status(500).json({ 
+            error: 'Failed to get market data',
+            details: error.message 
+        });
+    }
+});
+
+// RentCast Comparable Properties Endpoint
+app.get('/api/rentcast/comparables', async (req, res) => {
+    try {
+        const { address, bedrooms, bathrooms, propertyType } = req.query;
+        
+        if (!address) {
+            return res.status(400).json({ error: 'Address is required' });
+        }
+
+        if (!config.RENTCAST_KEY) {
+            return res.status(500).json({ error: 'RentCast API key not configured' });
+        }
+
+        console.log(`🔍 Getting RentCast comparables for: ${address}`);
+
+        let url = `https://api.rentcast.io/v1/properties/search?address=${encodeURIComponent(address)}`;
+        if (bedrooms) url += `&bedrooms=${bedrooms}`;
+        if (bathrooms) url += `&bathrooms=${bathrooms}`;
+        if (propertyType) url += `&propertyType=${propertyType}`;
+
+        const response = await fetch(url, {
+            headers: {
+                'X-Api-Key': config.RENTCAST_KEY,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`RentCast API error: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ RentCast comparables retrieved successfully');
+
+        res.json({
+            success: true,
+            data: data,
+            source: 'RentCast API'
+        });
+
+    } catch (error) {
+        console.error('❌ RentCast comparables error:', error);
+        res.status(500).json({ 
+            error: 'Failed to get comparable properties',
+            details: error.message 
+        });
+    }
+});
+
+// Unified Market Intelligence Endpoint
+app.get('/api/market-intelligence', async (req, res) => {
+    try {
+        const { address, zipCode } = req.query;
+        
+        if (!address && !zipCode) {
+            return res.status(400).json({ error: 'Address or ZIP code is required' });
+        }
+
+        console.log(`🧠 Getting unified market intelligence for: ${address || zipCode}`);
+
+        const intelligence = {
+            timestamp: new Date().toISOString(),
+            location: address || zipCode,
+            data: {}
+        };
+
+        // Get RentCast data if available
+        if (config.RENTCAST_KEY) {
+            try {
+                if (address) {
+                    const valuationUrl = `${req.protocol}://${req.get('host')}/api/rentcast/valuation?address=${encodeURIComponent(address)}`;
+                    const valuationResponse = await fetch(valuationUrl);
+                    if (valuationResponse.ok) {
+                        const valuationData = await valuationResponse.json();
+                        intelligence.data.rentEstimate = valuationData.data;
+                    }
+                }
+
+                if (zipCode) {
+                    const marketUrl = `${req.protocol}://${req.get('host')}/api/rentcast/market?zipCode=${encodeURIComponent(zipCode)}`;
+                    const marketResponse = await fetch(marketUrl);
+                    if (marketResponse.ok) {
+                        const marketData = await marketResponse.json();
+                        intelligence.data.marketTrends = marketData.data;
+                    }
+                }
+            } catch (error) {
+                console.log('⚠️ RentCast data unavailable:', error.message);
+            }
+        }
+
+        // Add negotiation insights based on collected data
+        intelligence.negotiationInsights = generateNegotiationInsights(intelligence.data);
+
+        res.json({
+            success: true,
+            intelligence: intelligence,
+            sources: ['RentCast', 'Market Analysis']
+        });
+
+    } catch (error) {
+        console.error('❌ Market intelligence error:', error);
+        res.status(500).json({ 
+            error: 'Failed to generate market intelligence',
+            details: error.message 
+        });
+    }
+});
+
+// Helper function to generate negotiation insights
+function generateNegotiationInsights(marketData) {
+    const insights = {
+        leverage: 'medium',
+        suggestedDiscount: 0,
+        marketCondition: 'neutral',
+        keyPoints: []
+    };
+
+    if (marketData.rentEstimate) {
+        const estimate = marketData.rentEstimate;
+        if (estimate.rent_estimate) {
+            insights.keyPoints.push(`Estimated fair rent: $${estimate.rent_estimate.toLocaleString()}`);
+        }
+    }
+
+    if (marketData.marketTrends) {
+        const trends = marketData.marketTrends;
+        if (trends.averageRent) {
+            insights.keyPoints.push(`Market average: $${trends.averageRent.toLocaleString()}`);
+        }
+        
+        // Determine market condition based on trends
+        if (trends.rentTrend && trends.rentTrend < 0) {
+            insights.marketCondition = 'buyer_friendly';
+            insights.leverage = 'high';
+            insights.suggestedDiscount = 5;
+            insights.keyPoints.push('Market trending down - good negotiation opportunity');
+        } else if (trends.rentTrend && trends.rentTrend > 5) {
+            insights.marketCondition = 'seller_friendly';
+            insights.leverage = 'low';
+            insights.keyPoints.push('Hot market - limited negotiation room');
+        }
+    }
+
+    return insights;
+}
+
+// Census Bureau Housing API Endpoint
+app.get('/api/census/housing', async (req, res) => {
+    try {
+        const { state, county } = req.query;
+        
+        if (!state) {
+            return res.status(400).json({ error: 'State is required' });
+        }
+
+        console.log(`🏛️ Getting Census housing data for: ${state}, ${county || 'all counties'}`);
+
+        // Census API is free and doesn't require API key
+        let url = `https://api.census.gov/data/2022/acs/acs5?get=B25077_001E,B25064_001E,B25003_001E&for=state:${state}`;
+        if (county) {
+            url += `&for=county:${county}`;
+        }
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`Census API error: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Census housing data retrieved successfully');
+
+        // Parse Census data (simplified)
+        const processedData = {
+            medianHomeValue: data[1] ? parseInt(data[1][0]) : null,
+            medianRent: data[1] ? parseInt(data[1][1]) : null,
+            totalHousingUnits: data[1] ? parseInt(data[1][2]) : null,
+            source: 'US Census Bureau'
+        };
+
+        res.json({
+            success: true,
+            data: processedData,
+            source: 'US Census Bureau'
+        });
+
+    } catch (error) {
+        console.error('❌ Census API error:', error);
+        res.status(500).json({ 
+            error: 'Failed to get Census housing data',
+            details: error.message 
+        });
+    }
+});
+
+// Walk Score API Endpoint  
+app.get('/api/walkscore', async (req, res) => {
+    try {
+        const { address, lat, lon } = req.query;
+        
+        if (!address || !lat || !lon) {
+            return res.status(400).json({ error: 'Address, latitude, and longitude are required' });
+        }
+
+        console.log(`🚶 Getting Walk Score for: ${address}`);
+
+        // Note: Walk Score API requires registration for API key
+        // For demo purposes, we'll return mock data with realistic values
+        const mockWalkScore = Math.floor(Math.random() * 60) + 40; // 40-100 range
+        const mockTransitScore = Math.floor(Math.random() * 50) + 30; // 30-80 range
+        
+        const walkScoreData = {
+            walkScore: mockWalkScore,
+            transitScore: mockTransitScore,
+            bikeScore: Math.floor(Math.random() * 40) + 30,
+            description: getWalkScoreDescription(mockWalkScore),
+            address: address,
+            source: 'Walk Score API (Demo)'
+        };
+
+        res.json({
+            success: true,
+            data: walkScoreData,
+            source: 'Walk Score API'
+        });
+
+    } catch (error) {
+        console.error('❌ Walk Score API error:', error);
+        res.status(500).json({ 
+            error: 'Failed to get Walk Score data',
+            details: error.message 
+        });
+    }
+});
+
+// Helper function for Walk Score descriptions
+function getWalkScoreDescription(score) {
+    if (score >= 90) return "Walker's Paradise";
+    if (score >= 70) return "Very Walkable";
+    if (score >= 50) return "Somewhat Walkable";
+    if (score >= 25) return "Car-Dependent";
+    return "Car-Dependent";
+}
+
+// Realty Mole API Endpoint (via RapidAPI)
+app.get('/api/realtymole/property', async (req, res) => {
+    try {
+        const { address } = req.query;
+        
+        if (!address) {
+            return res.status(400).json({ error: 'Address is required' });
+        }
+
+        console.log(`🏘️ Getting Realty Mole data for: ${address}`);
+
+        // Note: Requires RapidAPI key for Realty Mole
+        // For demo purposes, return mock property data
+        const mockPropertyData = {
+            propertyType: ['Single Family', 'Condo', 'Townhouse', 'Multi-Family'][Math.floor(Math.random() * 4)],
+            bedrooms: Math.floor(Math.random() * 4) + 1,
+            bathrooms: Math.floor(Math.random() * 3) + 1,
+            sqft: Math.floor(Math.random() * 2000) + 800,
+            yearBuilt: Math.floor(Math.random() * 50) + 1970,
+            lotSize: Math.floor(Math.random() * 0.5 * 10000) / 10000 + 0.1,
+            marketValue: Math.floor(Math.random() * 400000) + 200000,
+            rentEstimate: Math.floor(Math.random() * 2000) + 1200,
+            source: 'Realty Mole API (Demo)'
+        };
+
+        res.json({
+            success: true,
+            data: mockPropertyData,
+            source: 'Realty Mole API'
+        });
+
+    } catch (error) {
+        console.error('❌ Realty Mole API error:', error);
+        res.status(500).json({ 
+            error: 'Failed to get Realty Mole property data',
+            details: error.message 
+        });
     }
 });
 
