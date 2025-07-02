@@ -528,6 +528,161 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Market Data Section -->
+                    <div class="mt-8">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6">🏠 Market Data Intelligence</h3>
+                        
+                        <!-- Market Stats Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                            <div class="stats-card bg-gradient-to-br from-teal-50 to-teal-100 p-6 rounded-xl border border-teal-200">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-medium text-teal-700">Avg Rent Price</p>
+                                        <p id="avgRentPrice" class="text-3xl font-bold text-teal-900">$0</p>
+                                        <p class="text-xs text-teal-600 mt-1">Local market</p>
+                                    </div>
+                                    <div class="bg-teal-500 p-3 rounded-lg">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stats-card bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-xl border border-red-200">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-medium text-red-700">Market Trend</p>
+                                        <p id="marketTrend" class="text-3xl font-bold text-red-900">↗️</p>
+                                        <p class="text-xs text-red-600 mt-1">Last 30 days</p>
+                                    </div>
+                                    <div class="bg-red-500 p-3 rounded-lg">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stats-card bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-xl border border-indigo-200">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-medium text-indigo-700">Vacancy Rate</p>
+                                        <p id="vacancyRate" class="text-3xl font-bold text-indigo-900">0%</p>
+                                        <p class="text-xs text-indigo-600 mt-1">Area average</p>
+                                    </div>
+                                    <div class="bg-indigo-500 p-3 rounded-lg">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stats-card bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 rounded-xl border border-emerald-200">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-medium text-emerald-700">Properties</p>
+                                        <p id="totalProperties" class="text-3xl font-bold text-emerald-900">0</p>
+                                        <p class="text-xs text-emerald-600 mt-1">Available now</p>
+                                    </div>
+                                    <div class="bg-emerald-500 p-3 rounded-lg">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Market Charts Section -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">📊 Rental Price Trends</h3>
+                                <div class="h-64">
+                                    <canvas id="rentTrendChart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">🏘️ Property Types Distribution</h3>
+                                <div class="h-64">
+                                    <canvas id="propertyTypeChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Property Search & Location Analysis -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">🔍 Property Search</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Search Location</label>
+                                        <input type="text" id="locationSearch" placeholder="Enter ZIP code or city..." 
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    </div>
+                                    <button id="searchMarketData" class="modern-button w-full">
+                                        Search Market Data
+                                    </button>
+                                    <div id="searchResults" class="mt-4 space-y-2">
+                                        <!-- Search results will appear here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">📍 Neighborhood Analysis</h3>
+                                <div id="neighborhoodData" class="space-y-3">
+                                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                        <span class="text-sm text-gray-700">Walkability Score</span>
+                                        <span id="walkScore" class="font-bold text-purple-600">-</span>
+                                    </div>
+                                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                        <span class="text-sm text-gray-700">Transit Score</span>
+                                        <span id="transitScore" class="font-bold text-blue-600">-</span>
+                                    </div>
+                                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                        <span class="text-sm text-gray-700">Crime Rate</span>
+                                        <span id="crimeRate" class="font-bold text-green-600">-</span>
+                                    </div>
+                                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                        <span class="text-sm text-gray-700">School Rating</span>
+                                        <span id="schoolRating" class="font-bold text-orange-600">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Comparable Properties -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">🏡 Comparable Properties</h3>
+                            <div id="comparableProperties" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <!-- Comparable properties will be loaded here -->
+                            </div>
+                        </div>
+
+                        <!-- API Status -->
+                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border border-blue-200 mt-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-800">Market Data Sources</h4>
+                                    <p class="text-xs text-gray-600">RentCast API (Railway) • APISCRAPY • Free Tier Active</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <div class="flex items-center space-x-1">
+                                        <div id="rentcastStatus" class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                        <span class="text-xs text-gray-600">RentCast</span>
+                                    </div>
+                                    <div class="flex items-center space-x-1">
+                                        <div id="apiscrapyStatus" class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                        <span class="text-xs text-gray-600">APISCRAPY</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1378,7 +1533,8 @@
             .then(config => {
                 configData = {
                     SUPABASE_URL: config.SUPABASE_URL,
-                    SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY
+                    SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY,
+                    RENTCAST_KEY: config.RENTCAST_KEY
                 };
 
                 // Initialize Supabase
@@ -2820,6 +2976,7 @@
         }
 
         // Market Data Functions
+<<<<<<< Updated upstream
         let marketChart = null;
         let propertyChart = null;
 
@@ -3278,6 +3435,66 @@
                         data: [980, 985, 995, 1005, 1010, 1015, 1020, 1025, 1030, 1035, 1040, 1000],
                         borderColor: 'rgb(59, 130, 246)',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
+=======
+        let rentTrendChart = null;
+        let propertyTypeChart = null;
+        let marketDataCache = {};
+
+        // RentCast API Configuration
+        const RENTCAST_BASE_URL = 'https://api.rentcast.io/v1';
+
+        // Initialize market data when AI Analytics tab is shown
+        function initializeMarketData() {
+            loadMarketDashboard();
+            setupMarketDataEventListeners();
+        }
+
+        // Load market dashboard with default data
+        async function loadMarketDashboard() {
+            try {
+                // Load sample data initially
+                updateMarketStats({
+                    avgRentPrice: 2150,
+                    marketTrend: '↗️ +5.2%',
+                    vacancyRate: '3.2%',
+                    totalProperties: 1247
+                });
+
+                // Initialize charts with sample data
+                initializeCharts();
+                
+                // Update API status
+                updateAPIStatus();
+                
+            } catch (error) {
+                console.error('Error loading market dashboard:', error);
+            }
+        }
+
+        // Update market statistics
+        function updateMarketStats(data) {
+            document.getElementById('avgRentPrice').textContent = `$${data.avgRentPrice.toLocaleString()}`;
+            document.getElementById('marketTrend').textContent = data.marketTrend;
+            document.getElementById('vacancyRate').textContent = data.vacancyRate;
+            document.getElementById('totalProperties').textContent = data.totalProperties.toLocaleString();
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            // Rental Price Trends Chart
+            const rentCtx = document.getElementById('rentTrendChart').getContext('2d');
+            if (rentTrendChart) rentTrendChart.destroy();
+            
+            rentTrendChart = new Chart(rentCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Average Rent Price',
+                        data: [2000, 2050, 2100, 2080, 2120, 2150],
+                        borderColor: 'rgb(99, 102, 241)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+>>>>>>> Stashed changes
                         tension: 0.4,
                         fill: true
                     }]
@@ -3293,6 +3510,7 @@
                     scales: {
                         y: {
                             beginAtZero: false,
+<<<<<<< Updated upstream
                             grid: {
                                 color: 'rgba(0, 0, 0, 0.1)'
                             }
@@ -3300,11 +3518,18 @@
                         x: {
                             grid: {
                                 display: false
+=======
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+>>>>>>> Stashed changes
                             }
                         }
                     }
                 }
             });
+<<<<<<< Updated upstream
         }
 
         function createPropertyTypeChart() {
@@ -3325,6 +3550,25 @@
                         ],
                         borderWidth: 2,
                         borderColor: '#fff'
+=======
+
+            // Property Types Distribution Chart
+            const propertyCtx = document.getElementById('propertyTypeChart').getContext('2d');
+            if (propertyTypeChart) propertyTypeChart.destroy();
+            
+            propertyTypeChart = new Chart(propertyCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Apartments', 'Houses', 'Condos', 'Townhomes'],
+                    datasets: [{
+                        data: [45, 25, 20, 10],
+                        backgroundColor: [
+                            'rgb(99, 102, 241)',
+                            'rgb(34, 197, 94)',
+                            'rgb(251, 146, 60)',
+                            'rgb(168, 85, 247)'
+                        ]
+>>>>>>> Stashed changes
                     }]
                 },
                 options: {
@@ -3332,17 +3576,22 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
+<<<<<<< Updated upstream
                             position: 'bottom',
                             labels: {
                                 usePointStyle: true,
                                 padding: 20
                             }
+=======
+                            position: 'bottom'
+>>>>>>> Stashed changes
                         }
                     }
                 }
             });
         }
 
+<<<<<<< Updated upstream
         async function calculatePropertyValue() {
             try {
                 const location = document.getElementById('location').value;
@@ -3918,6 +4167,191 @@
                 default: return 'th';
             }
         }
+=======
+        // Setup event listeners for market data features
+        function setupMarketDataEventListeners() {
+            // Search market data button
+            document.getElementById('searchMarketData').addEventListener('click', searchMarketData);
+            
+            // Enter key search
+            document.getElementById('locationSearch').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchMarketData();
+                }
+            });
+        }
+
+        // Search market data for location
+        async function searchMarketData() {
+            const location = document.getElementById('locationSearch').value.trim();
+            if (!location) {
+                alert('Please enter a location to search');
+                return;
+            }
+
+            const searchButton = document.getElementById('searchMarketData');
+            const originalText = searchButton.textContent;
+            searchButton.textContent = 'Searching...';
+            searchButton.disabled = true;
+
+            try {
+                // Try RentCast API first
+                const rentcastData = await fetchRentCastData(location);
+                if (rentcastData) {
+                    displaySearchResults(rentcastData, location);
+                    updateNeighborhoodData(rentcastData);
+                    loadComparableProperties(location);
+                } else {
+                    // Fallback to mock data
+                    displayMockSearchResults(location);
+                }
+            } catch (error) {
+                console.error('Error searching market data:', error);
+                displayMockSearchResults(location);
+            } finally {
+                searchButton.textContent = originalText;
+                searchButton.disabled = false;
+            }
+        }
+
+        // Fetch data from RentCast API
+        async function fetchRentCastData(location) {
+            try {
+                // Note: This uses your Railway RENTCAST_KEY environment variable
+                if (!configData.RENTCAST_KEY) {
+                    console.log('RentCast API key not configured, using demo data');
+                    return null;
+                }
+
+                const response = await fetch(`${RENTCAST_BASE_URL}/avm/rent/long-term?address=${encodeURIComponent(location)}`, {
+                    headers: {
+                        'X-Api-Key': configData.RENTCAST_KEY
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    return data;
+                }
+            } catch (error) {
+                console.error('RentCast API error:', error);
+            }
+            return null;
+        }
+
+        // Display search results
+        function displaySearchResults(data, location) {
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = `
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-green-800 mb-2">Market Data for ${location}</h4>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-gray-600">Estimated Rent:</span>
+                            <span class="font-bold text-green-700">$${(data.rent_estimate || 2150).toLocaleString()}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Price Range:</span>
+                            <span class="font-bold text-green-700">$${((data.rent_estimate || 2150) * 0.9).toFixed(0)} - $${((data.rent_estimate || 2150) * 1.1).toFixed(0)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Display mock search results for demo
+        function displayMockSearchResults(location) {
+            const resultsContainer = document.getElementById('searchResults');
+            const mockRent = Math.floor(Math.random() * 1000) + 1500;
+            
+            resultsContainer.innerHTML = `
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-blue-800 mb-2">Demo Data for ${location}</h4>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-gray-600">Estimated Rent:</span>
+                            <span class="font-bold text-blue-700">$${mockRent.toLocaleString()}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Price Range:</span>
+                            <span class="font-bold text-blue-700">$${Math.floor(mockRent * 0.9)} - $${Math.floor(mockRent * 1.1)}</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-blue-600 mt-2">⚡ Set RENTCAST_KEY in Railway environment for real data</p>
+                </div>
+            `;
+        }
+
+        // Update neighborhood data
+        function updateNeighborhoodData(data) {
+            // Mock neighborhood data for demo
+            document.getElementById('walkScore').textContent = Math.floor(Math.random() * 40) + 60;
+            document.getElementById('transitScore').textContent = Math.floor(Math.random() * 30) + 50;
+            document.getElementById('crimeRate').textContent = 'Low';
+            document.getElementById('schoolRating').textContent = Math.floor(Math.random() * 3) + 7 + '/10';
+        }
+
+        // Load comparable properties
+        function loadComparableProperties(location) {
+            const container = document.getElementById('comparableProperties');
+            const mockProperties = [];
+            
+            for (let i = 0; i < 6; i++) {
+                const rent = Math.floor(Math.random() * 800) + 1200;
+                const bedrooms = Math.floor(Math.random() * 3) + 1;
+                const bathrooms = Math.floor(Math.random() * 2) + 1;
+                
+                mockProperties.push({
+                    rent,
+                    bedrooms,
+                    bathrooms,
+                    address: `${Math.floor(Math.random() * 9999) + 1000} Demo St, ${location}`
+                });
+            }
+
+            container.innerHTML = mockProperties.map(property => `
+                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-semibold text-gray-800">$${property.rent.toLocaleString()}/mo</h4>
+                        <span class="text-sm text-gray-500">${property.bedrooms}BR/${property.bathrooms}BA</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">${property.address}</p>
+                    <div class="flex justify-between items-center">
+                        <button class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">View Details</button>
+                        <span class="text-xs text-gray-500">Similar Property</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update API status indicators
+        function updateAPIStatus() {
+            const rentcastStatus = document.getElementById('rentcastStatus');
+            const apiscrapyStatus = document.getElementById('apiscrapyStatus');
+            
+            // Check if API keys are configured
+            if (configData.RENTCAST_KEY) {
+                rentcastStatus.className = 'w-3 h-3 bg-green-500 rounded-full';
+            } else {
+                rentcastStatus.className = 'w-3 h-3 bg-yellow-500 rounded-full';
+            }
+            
+            // APISCRAPY is always available (demo)
+            apiscrapyStatus.className = 'w-3 h-3 bg-green-500 rounded-full';
+        }
+
+        // Modified switchTab function to initialize market data
+        const originalSwitchTab = switchTab;
+        switchTab = function(tabName, buttonElement) {
+            originalSwitchTab(tabName, buttonElement);
+            
+            if (tabName === 'ai-analytics') {
+                setTimeout(() => {
+                    initializeMarketData();
+                }, 100);
+            }
+        };
+>>>>>>> Stashed changes
     </script>
 </body>
 </html>
