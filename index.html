@@ -1205,10 +1205,10 @@
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">What are you looking for?</label>
-                                    <input type="text" placeholder="I need a 2-bedroom apartment under $1500 in Toronto" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <input type="text" id="aiSearchInput" placeholder="I need a 2-bedroom apartment under $1500 in Toronto" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 </div>
-                                <button onclick="searchRooms()" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300">
-                                    🤖 Start AI Search
+                                <button onclick="startAISearch()" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300">
+                                    Start AI Search
                                 </button>
                             </div>
                         </div>
@@ -1366,9 +1366,9 @@
                 </div>
                 <!-- Premium Action buttons -->
                 <div class="flex flex-col sm:flex-row gap-6">
-                    <button onclick="searchRooms()" class="flex-1 cta-button py-5 px-8 text-lg font-semibold rounded-2xl hover:transform hover:translateY(-1px) transition-all duration-200">🔍 Smart Search</button>
-                    <button onclick="askAI()" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-5 px-8 rounded-2xl hover:from-purple-600 hover:to-pink-700 hover:transform hover:translateY(-1px) transition-all duration-200 font-semibold text-lg">🤖 Ask AI</button>
-                    <button onclick="addRoom()" class="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white py-5 px-8 rounded-2xl hover:from-gray-700 hover:to-gray-800 hover:transform hover:translateY(-1px) transition-all duration-200 font-semibold text-lg">➕ Add Listing</button>
+                    <button onclick="smartSearch()" class="flex-1 cta-button py-5 px-8 text-lg font-semibold rounded-2xl hover:transform hover:translateY(-1px) transition-all duration-200">Smart Search</button>
+                    <button onclick="redirectToAI()" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-5 px-8 rounded-2xl hover:from-purple-600 hover:to-pink-700 hover:transform hover:translateY(-1px) transition-all duration-200 font-semibold text-lg">Ask AI</button>
+                    <button onclick="createListing()" class="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white py-5 px-8 rounded-2xl hover:from-gray-700 hover:to-gray-800 hover:transform hover:translateY(-1px) transition-all duration-200 font-semibold text-lg">Add Listing</button>
                 </div>
             </div>
         </div>
@@ -2152,6 +2152,93 @@
                 button.disabled = false;
                 button.textContent = 'Search All Sites';
             }
+        }
+
+        // New function for AI Search in "RoomFinder in Action" section
+        function startAISearch() {
+            const searchText = document.getElementById('aiSearchInput').value.trim();
+            if (!searchText) {
+                alert('Please enter your search requirements');
+                return;
+            }
+            // Redirect to AI Negotiator page with the search text
+            localStorage.setItem('aiSearchQuery', searchText);
+            window.location.href = 'ai-negotiator.html';
+        }
+
+        // New function for Ask AI button
+        function redirectToAI() {
+            const location = document.getElementById('location').value.trim();
+            const roomType = document.getElementById('roomType').value;
+            const price = document.getElementById('price').value.trim();
+            const size = document.getElementById('size').value.trim();
+            const bedrooms = document.getElementById('bedrooms').value;
+            const amenities = document.getElementById('amenities').value.trim();
+
+            // Create a query string from the form data
+            let query = '';
+            if (location || roomType || price || size || bedrooms || amenities) {
+                const parts = [];
+                if (location) parts.push(`in ${location}`);
+                if (roomType) parts.push(`${roomType}`);
+                if (bedrooms) parts.push(`${bedrooms} bedroom${bedrooms > 1 ? 's' : ''}`);
+                if (price) parts.push(`under $${price}`);
+                if (size) parts.push(`${size} sqft`);
+                if (amenities) parts.push(`with ${amenities}`);
+                query = `I need a ${parts.join(', ')}`;
+            }
+
+            // Store the query and redirect
+            if (query) {
+                localStorage.setItem('aiSearchQuery', query);
+            }
+            window.location.href = 'ai-negotiator.html';
+        }
+
+        // New function for Smart Search button
+        function smartSearch() {
+            const location = document.getElementById('location').value.trim();
+            const roomType = document.getElementById('roomType').value;
+            const price = document.getElementById('price').value.trim();
+            const size = document.getElementById('size').value.trim();
+            const bedrooms = document.getElementById('bedrooms').value;
+            const amenities = document.getElementById('amenities').value.trim();
+
+            // Create URL parameters for listings page
+            const params = new URLSearchParams();
+            if (location) params.append('location', location);
+            if (roomType) params.append('roomType', roomType);
+            if (price) params.append('maxPrice', price);
+            if (size) params.append('minSize', size);
+            if (bedrooms) params.append('bedrooms', bedrooms);
+            if (amenities) params.append('amenities', amenities);
+
+            // Redirect to listings page with search parameters
+            const urlParams = params.toString();
+            window.location.href = `listings.html${urlParams ? '#search-section?' + urlParams : '#search-section'}`;
+        }
+
+        // New function for Add Listing button
+        function createListing() {
+            const location = document.getElementById('location').value.trim();
+            const roomType = document.getElementById('roomType').value;
+            const price = document.getElementById('price').value.trim();
+            const size = document.getElementById('size').value.trim();
+            const bedrooms = document.getElementById('bedrooms').value;
+            const amenities = document.getElementById('amenities').value.trim();
+
+            // Store form data for pre-filling the sublease form
+            const listingData = {
+                location: location,
+                roomType: roomType,
+                price: price,
+                size: size,
+                bedrooms: bedrooms,
+                amenities: amenities
+            };
+
+            localStorage.setItem('prefilledListingData', JSON.stringify(listingData));
+            window.location.href = 'sublease.html';
         }
     </script>
 </body>

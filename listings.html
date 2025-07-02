@@ -3369,6 +3369,138 @@
             }
         }
 
+        // Set up search filters and URL parameter handling
+        function setupSearchFilters() {
+            // Handle URL parameters for pre-filling search fields
+            const urlParams = new URLSearchParams(window.location.search);
+            const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+            
+            // Combine URL params and hash params
+            const allParams = new URLSearchParams();
+            for (const [key, value] of urlParams) {
+                allParams.set(key, value);
+            }
+            for (const [key, value] of hashParams) {
+                allParams.set(key, value);
+            }
+            
+            // Pre-fill search fields if parameters exist
+            if (allParams.get('location')) {
+                document.getElementById('searchLocation').value = allParams.get('location');
+            }
+            if (allParams.get('maxPrice')) {
+                document.getElementById('searchMaxPrice').value = allParams.get('maxPrice');
+            }
+            if (allParams.get('roomType')) {
+                document.getElementById('searchRoomType').value = allParams.get('roomType');
+            }
+            if (allParams.get('bedrooms')) {
+                document.getElementById('searchBedrooms').value = allParams.get('bedrooms');
+            }
+            
+            // Set up search event listeners
+            const searchInputs = [
+                document.getElementById('searchLocation'),
+                document.getElementById('searchMaxPrice'),
+                document.getElementById('searchRoomType'),
+                document.getElementById('searchBedrooms')
+            ];
+            
+            searchInputs.forEach(input => {
+                if (input) {
+                    input.addEventListener('input', filterListings);
+                    input.addEventListener('change', filterListings);
+                }
+            });
+            
+            // Initial filter if parameters were provided
+            if (allParams.size > 0) {
+                setTimeout(filterListings, 500); // Allow time for listings to load
+            }
+            
+            // Handle messaging popup if openChat parameter exists
+            if (window.location.href.includes('openChat=true')) {
+                setTimeout(() => {
+                    const messagingBtn = document.querySelector('.messaging-toggle-btn');
+                    if (messagingBtn) {
+                        messagingBtn.click();
+                    }
+                }, 1000);
+            }
+            
+            // Scroll to search section if hash includes search-section
+            if (window.location.hash.includes('search-section')) {
+                setTimeout(() => {
+                    const searchSection = document.querySelector('[id*="search"], .bg-gray-50');
+                    if (searchSection) {
+                        searchSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 500);
+            }
+        }
+        
+        // Filter listings based on search criteria
+        function filterListings() {
+            const location = document.getElementById('searchLocation').value.toLowerCase().trim();
+            const maxPrice = parseInt(document.getElementById('searchMaxPrice').value) || Infinity;
+            const roomType = document.getElementById('searchRoomType').value;
+            const bedrooms = document.getElementById('searchBedrooms').value;
+            
+            const allListings = document.querySelectorAll('.listing-card');
+            let visibleCount = 0;
+            
+            allListings.forEach(card => {
+                let matches = true;
+                
+                // Check location
+                if (location) {
+                    const cardLocation = card.querySelector('.listing-location').textContent.toLowerCase();
+                    if (!cardLocation.includes(location)) {
+                        matches = false;
+                    }
+                }
+                
+                // Check price
+                const priceText = card.querySelector('.listing-price').textContent;
+                const price = parseInt(priceText.replace(/[^\d]/g, ''));
+                if (price > maxPrice) {
+                    matches = false;
+                }
+                
+                // Check room type
+                if (roomType) {
+                    const cardType = card.querySelector('.listing-type').textContent;
+                    if (cardType !== roomType) {
+                        matches = false;
+                    }
+                }
+                
+                // Check bedrooms
+                if (bedrooms) {
+                    const cardBedrooms = card.querySelector('.listing-bedrooms').textContent;
+                    if (!cardBedrooms.includes(bedrooms)) {
+                        matches = false;
+                    }
+                }
+                
+                if (matches) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Update results count
+            const resultsText = document.querySelector('.search-results-count');
+            if (resultsText) {
+                resultsText.textContent = `${visibleCount} listings found`;
+            }
+        }
+        
+        // Initialize search filters after page loads
+        setTimeout(setupSearchFilters, 1000);
+
 
         // Real-time subscription to listings
         if (typeof supabase !== 'undefined' && supabase) {

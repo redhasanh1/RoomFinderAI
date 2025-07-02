@@ -520,7 +520,21 @@
         }
 
         // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            
+            // Check for pre-filled search query from index page
+            const aiSearchQuery = localStorage.getItem('aiSearchQuery');
+            if (aiSearchQuery) {
+                const messageInput = document.getElementById('messageInput');
+                if (messageInput) {
+                    messageInput.value = aiSearchQuery;
+                    messageInput.focus();
+                }
+                // Clear the stored query after using it
+                localStorage.removeItem('aiSearchQuery');
+            }
+        });
     </script>
 </body>
 </html>
