@@ -1186,6 +1186,42 @@
                     `;
                 }
 
+                // Check for pre-filled listing data from index page
+                const prefilledData = localStorage.getItem('prefilledListingData');
+                if (prefilledData) {
+                    try {
+                        const data = JSON.parse(prefilledData);
+                        
+                        // Pre-fill form fields
+                        setTimeout(() => {
+                            if (data.location && document.getElementById('address')) {
+                                document.getElementById('address').value = data.location;
+                            }
+                            if (data.price && document.getElementById('rent')) {
+                                document.getElementById('rent').value = data.price;
+                            }
+                            if (data.bedrooms && document.getElementById('bedrooms')) {
+                                document.getElementById('bedrooms').value = data.bedrooms;
+                            }
+                            if (data.size && document.getElementById('size')) {
+                                document.getElementById('size').value = data.size;
+                            }
+                            if (data.amenities && document.getElementById('amenities')) {
+                                document.getElementById('amenities').value = data.amenities;
+                            }
+                            if (data.roomType && document.getElementById('title')) {
+                                document.getElementById('title').value = `${data.roomType} for Sublease`;
+                            }
+                        }, 500);
+                        
+                        // Clear the stored data after using it
+                        localStorage.removeItem('prefilledListingData');
+                    } catch (error) {
+                        console.error('Error parsing pre-filled data:', error);
+                        localStorage.removeItem('prefilledListingData');
+                    }
+                }
+
                 // Load and display sublease listings
                 loadSubleases();
             } catch (error) {
