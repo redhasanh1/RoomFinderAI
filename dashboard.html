@@ -841,6 +841,162 @@
                                 </div>
                             </div>
 
+                            <!-- PHASE 2: Environmental & Risk Intelligence -->
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                                <div class="bg-white p-6 rounded-xl border border-green-200">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                        🌍 Environmental Intelligence
+                                        <span id="environmentalScore" class="ml-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-bold">-</span>
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Air Quality Index:</span>
+                                            <span id="airQualityIndex" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Water Quality:</span>
+                                            <span id="waterQuality" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Lead Paint Risk:</span>
+                                            <span id="leadPaintRisk" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Hazardous Sites:</span>
+                                            <span id="hazardousSites" class="font-semibold">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-6 rounded-xl border border-orange-200">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                        🌋 Earthquake Risk Analysis
+                                        <span id="earthquakeRisk" class="ml-2 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-bold">-</span>
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Recent Activity:</span>
+                                            <span id="recentEarthquakes" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Max Magnitude:</span>
+                                            <span id="maxMagnitude" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Seismic Zone:</span>
+                                            <span id="seismicZone" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Historical Risk:</span>
+                                            <span id="historicalActivity" class="font-semibold">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-6 rounded-xl border border-blue-200">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                        🌡️ Climate Intelligence
+                                        <span id="climateSuitability" class="ml-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-bold">-</span>
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Avg Temperature:</span>
+                                            <span id="avgTemperature" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Annual Rainfall:</span>
+                                            <span id="annualRainfall" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Hurricane Risk:</span>
+                                            <span id="climateHurricaneRisk" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Drought Risk:</span>
+                                            <span id="droughtRisk" class="font-semibold">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- PHASE 3: Economic & Lifestyle Intelligence -->
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                                <div class="bg-white p-6 rounded-xl border border-purple-200">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                        💼 Economic Intelligence
+                                        <span id="economicHealthScore" class="ml-2 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-bold">-</span>
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Unemployment Rate:</span>
+                                            <span id="unemploymentRate" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Median Income:</span>
+                                            <span id="medianIncome" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Job Growth:</span>
+                                            <span id="jobGrowthRate" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Cost of Living:</span>
+                                            <span id="costOfLivingIndex" class="font-semibold">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-6 rounded-xl border border-teal-200">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                        🚌 Transit & Mobility
+                                        <span id="mobilityScore" class="ml-2 px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-sm font-bold">-</span>
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Transit Score:</span>
+                                            <span id="transitScore" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Walk Score:</span>
+                                            <span id="walkabilityScore" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Bus Stops:</span>
+                                            <span id="nearbyBusStops" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Commute Quality:</span>
+                                            <span id="commuteQuality" class="font-semibold">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-6 rounded-xl border border-yellow-200">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                        📍 Lifestyle & Amenities
+                                        <span id="lifestyleScore" class="ml-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold">-</span>
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Restaurants:</span>
+                                            <span id="nearbyRestaurants" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Grocery Stores:</span>
+                                            <span id="nearbyGrocery" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Parks & Recreation:</span>
+                                            <span id="nearbyParks" class="font-semibold">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Convenience Rating:</span>
+                                            <span id="convenienceRating" class="font-semibold">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- AI Negotiation Intelligence -->
                             <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200">
                                 <h4 class="text-lg font-semibold text-gray-800 mb-4">🤖 AI Negotiation Intelligence</h4>
@@ -3496,12 +3652,25 @@
                 const coordinates = await getCoordinatesFromAddress(address);
                 const { lat, lon, state } = coordinates;
 
-                // Run all intelligence APIs in parallel for speed
-                const [crimeData, schoolData, weatherData, floodData] = await Promise.all([
+                // Run all intelligence APIs in parallel for speed (PHASE 1, 2, 3)
+                const [
+                    crimeData, schoolData, weatherData, floodData,
+                    environmentalData, earthquakeData, climateData,
+                    economicData, transitData, amenitiesData
+                ] = await Promise.all([
+                    // Phase 1 APIs
                     fetchCrimeIntelligence(state),
                     fetchSchoolIntelligence(state, address),
                     fetchWeatherIntelligence(lat, lon),
-                    fetchFloodIntelligence(lat, lon)
+                    fetchFloodIntelligence(lat, lon),
+                    // Phase 2 APIs
+                    fetchEnvironmentalIntelligence(lat, lon),
+                    fetchEarthquakeIntelligence(lat, lon),
+                    fetchClimateDataIntelligence(lat, lon),
+                    // Phase 3 APIs
+                    fetchEconomicIntelligence(state),
+                    fetchTransitIntelligence(lat, lon, address),
+                    fetchAmenitiesIntelligence(lat, lon)
                 ]);
 
                 // Display all the intelligence data
@@ -3509,6 +3678,16 @@
                 displayEducationIntelligence(schoolData);
                 displayClimateIntelligence(weatherData);
                 displayFloodIntelligence(floodData);
+                
+                // Display Phase 2 intelligence
+                displayEnvironmentalIntelligence(environmentalData);
+                displayEarthquakeIntelligence(earthquakeData);
+                displayClimateDataIntelligence(climateData);
+                
+                // Display Phase 3 intelligence
+                displayEconomicIntelligence(economicData);
+                displayTransitIntelligence(transitData);
+                displayAmenitiesIntelligence(amenitiesData);
 
                 // Generate AI negotiation insights
                 const aiInsights = generateAINegotiationIntelligence(crimeData, schoolData, weatherData, floodData);
@@ -3605,6 +3784,86 @@
                 return result.success ? result.data : null;
             } catch (error) {
                 console.error('Flood intelligence error:', error);
+                return null;
+            }
+        }
+
+        // ========================================
+        // PHASE 2: ENVIRONMENTAL & RISK INTELLIGENCE FETCH FUNCTIONS
+        // ========================================
+
+        // Fetch Environmental Intelligence
+        async function fetchEnvironmentalIntelligence(lat, lon) {
+            try {
+                const response = await fetch(`/api/epa/environmental?lat=${lat}&lon=${lon}`);
+                const result = await response.json();
+                return result.success ? result.data : null;
+            } catch (error) {
+                console.error('Environmental intelligence error:', error);
+                return null;
+            }
+        }
+
+        // Fetch Earthquake Intelligence
+        async function fetchEarthquakeIntelligence(lat, lon) {
+            try {
+                const response = await fetch(`/api/usgs/earthquake?lat=${lat}&lon=${lon}`);
+                const result = await response.json();
+                return result.success ? result.data : null;
+            } catch (error) {
+                console.error('Earthquake intelligence error:', error);
+                return null;
+            }
+        }
+
+        // Fetch Climate Data Intelligence
+        async function fetchClimateDataIntelligence(lat, lon) {
+            try {
+                const response = await fetch(`/api/noaa/climate?lat=${lat}&lon=${lon}`);
+                const result = await response.json();
+                return result.success ? result.data : null;
+            } catch (error) {
+                console.error('Climate data intelligence error:', error);
+                return null;
+            }
+        }
+
+        // ========================================
+        // PHASE 3: ECONOMIC & LIFESTYLE INTELLIGENCE FETCH FUNCTIONS
+        // ========================================
+
+        // Fetch Economic Intelligence
+        async function fetchEconomicIntelligence(state) {
+            try {
+                const response = await fetch(`/api/bls/economic?state=${state}`);
+                const result = await response.json();
+                return result.success ? result.data : null;
+            } catch (error) {
+                console.error('Economic intelligence error:', error);
+                return null;
+            }
+        }
+
+        // Fetch Transit Intelligence
+        async function fetchTransitIntelligence(lat, lon, address) {
+            try {
+                const response = await fetch(`/api/transit/score?lat=${lat}&lon=${lon}&address=${encodeURIComponent(address)}`);
+                const result = await response.json();
+                return result.success ? result.data : null;
+            } catch (error) {
+                console.error('Transit intelligence error:', error);
+                return null;
+            }
+        }
+
+        // Fetch Amenities Intelligence
+        async function fetchAmenitiesIntelligence(lat, lon) {
+            try {
+                const response = await fetch(`/api/osm/poi?lat=${lat}&lon=${lon}`);
+                const result = await response.json();
+                return result.success ? result.data : null;
+            } catch (error) {
+                console.error('Amenities intelligence error:', error);
                 return null;
             }
         }
@@ -3780,6 +4039,138 @@
                 case 'High': return 55;
                 case 'Very High': return 40;
                 default: return 75;
+            }
+        }
+
+        // ========================================
+        // PHASE 2 & 3: DISPLAY FUNCTIONS
+        // ========================================
+
+        // Display Environmental Intelligence
+        function displayEnvironmentalIntelligence(environmentalData) {
+            if (!environmentalData) return;
+
+            document.getElementById('environmentalScore').textContent = environmentalData.environmentalScore || 75;
+            document.getElementById('airQualityIndex').textContent = environmentalData.airQualityIndex || 'N/A';
+            document.getElementById('waterQuality').textContent = environmentalData.waterQuality ? `${environmentalData.waterQuality}/100` : 'N/A';
+            document.getElementById('leadPaintRisk').textContent = environmentalData.leadPaint || 'Unknown';
+            document.getElementById('hazardousSites').textContent = environmentalData.proximityToHazardousWaste ? `${environmentalData.proximityToHazardousWaste}m away` : 'N/A';
+            
+            // Update environmental score badge color
+            const envBadge = document.getElementById('environmentalScore');
+            if (environmentalData.environmentalScore >= 80) {
+                envBadge.className = 'ml-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-bold';
+            } else if (environmentalData.environmentalScore >= 60) {
+                envBadge.className = 'ml-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold';
+            } else {
+                envBadge.className = 'ml-2 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-bold';
+            }
+        }
+
+        // Display Earthquake Intelligence
+        function displayEarthquakeIntelligence(earthquakeData) {
+            if (!earthquakeData) return;
+
+            document.getElementById('earthquakeRisk').textContent = earthquakeData.riskLevel || 'Unknown';
+            document.getElementById('recentEarthquakes').textContent = earthquakeData.totalEarthquakes || '0';
+            document.getElementById('maxMagnitude').textContent = earthquakeData.maxMagnitude ? earthquakeData.maxMagnitude.toFixed(1) : 'N/A';
+            document.getElementById('seismicZone').textContent = earthquakeData.seismicZone || 'N/A';
+            document.getElementById('historicalActivity').textContent = earthquakeData.historicalActivity || 'Unknown';
+            
+            // Update earthquake risk badge color
+            const riskBadge = document.getElementById('earthquakeRisk');
+            const riskLevel = earthquakeData.riskLevel || 'Unknown';
+            
+            if (riskLevel === 'Low') {
+                riskBadge.className = 'ml-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-bold';
+            } else if (riskLevel === 'Medium') {
+                riskBadge.className = 'ml-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold';
+            } else if (riskLevel === 'High') {
+                riskBadge.className = 'ml-2 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-bold';
+            }
+        }
+
+        // Display Climate Data Intelligence
+        function displayClimateDataIntelligence(climateData) {
+            if (!climateData) return;
+
+            document.getElementById('climateSuitability').textContent = climateData.climateSuitability || 75;
+            document.getElementById('avgTemperature').textContent = climateData.averageTemperature ? `${climateData.averageTemperature}°F` : 'N/A';
+            document.getElementById('annualRainfall').textContent = climateData.precipitation?.annual ? `${climateData.precipitation.annual}"` : 'N/A';
+            document.getElementById('climateHurricaneRisk').textContent = climateData.extremeWeatherRisk?.hurricane || 'Unknown';
+            document.getElementById('droughtRisk').textContent = climateData.extremeWeatherRisk?.drought || 'Unknown';
+            
+            // Update climate suitability badge color
+            const climateBadge = document.getElementById('climateSuitability');
+            if (climateData.climateSuitability >= 80) {
+                climateBadge.className = 'ml-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-bold';
+            } else if (climateData.climateSuitability >= 60) {
+                climateBadge.className = 'ml-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold';
+            } else {
+                climateBadge.className = 'ml-2 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-bold';
+            }
+        }
+
+        // Display Economic Intelligence
+        function displayEconomicIntelligence(economicData) {
+            if (!economicData) return;
+
+            document.getElementById('economicHealthScore').textContent = economicData.economicHealthScore || 75;
+            document.getElementById('unemploymentRate').textContent = economicData.unemploymentRate ? `${economicData.unemploymentRate}%` : 'N/A';
+            document.getElementById('medianIncome').textContent = economicData.medianIncome ? `$${economicData.medianIncome.toLocaleString()}` : 'N/A';
+            document.getElementById('jobGrowthRate').textContent = economicData.jobGrowthRate ? `${economicData.jobGrowthRate > 0 ? '+' : ''}${economicData.jobGrowthRate}%` : 'N/A';
+            document.getElementById('costOfLivingIndex').textContent = economicData.costOfLivingIndex || 'N/A';
+            
+            // Update economic health badge color
+            const economicBadge = document.getElementById('economicHealthScore');
+            if (economicData.economicHealthScore >= 80) {
+                economicBadge.className = 'ml-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-bold';
+            } else if (economicData.economicHealthScore >= 60) {
+                economicBadge.className = 'ml-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold';
+            } else {
+                economicBadge.className = 'ml-2 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-bold';
+            }
+        }
+
+        // Display Transit Intelligence
+        function displayTransitIntelligence(transitData) {
+            if (!transitData) return;
+
+            document.getElementById('mobilityScore').textContent = transitData.mobilityScore || 75;
+            document.getElementById('transitScore').textContent = transitData.transitScore || 'N/A';
+            document.getElementById('walkabilityScore').textContent = transitData.walkScore || 'N/A';
+            document.getElementById('nearbyBusStops').textContent = transitData.nearbyTransit?.busStops || 'N/A';
+            document.getElementById('commuteQuality').textContent = transitData.commuteQuality ? `${transitData.commuteQuality}/100` : 'N/A';
+            
+            // Update mobility score badge color
+            const mobilityBadge = document.getElementById('mobilityScore');
+            if (transitData.mobilityScore >= 80) {
+                mobilityBadge.className = 'ml-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-bold';
+            } else if (transitData.mobilityScore >= 60) {
+                mobilityBadge.className = 'ml-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold';
+            } else {
+                mobilityBadge.className = 'ml-2 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-bold';
+            }
+        }
+
+        // Display Amenities Intelligence
+        function displayAmenitiesIntelligence(amenitiesData) {
+            if (!amenitiesData) return;
+
+            document.getElementById('lifestyleScore').textContent = amenitiesData.lifestyleScore || 75;
+            document.getElementById('nearbyRestaurants').textContent = amenitiesData.nearbyAmenities?.restaurants || 'N/A';
+            document.getElementById('nearbyGrocery').textContent = amenitiesData.nearbyAmenities?.groceryStores || 'N/A';
+            document.getElementById('nearbyParks').textContent = amenitiesData.nearbyAmenities?.parks || 'N/A';
+            document.getElementById('convenienceRating').textContent = amenitiesData.convenienceRating ? `${amenitiesData.convenienceRating}/100` : 'N/A';
+            
+            // Update lifestyle score badge color
+            const lifestyleBadge = document.getElementById('lifestyleScore');
+            if (amenitiesData.lifestyleScore >= 80) {
+                lifestyleBadge.className = 'ml-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-bold';
+            } else if (amenitiesData.lifestyleScore >= 60) {
+                lifestyleBadge.className = 'ml-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold';
+            } else {
+                lifestyleBadge.className = 'ml-2 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-bold';
             }
         }
 
