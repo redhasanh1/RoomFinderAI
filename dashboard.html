@@ -198,6 +198,9 @@
                 <button class="tab-button" onclick="switchTab('rent-reminders', this)">
                     🏠 Rent Reminders
                 </button>
+                <button class="tab-button" onclick="switchTab('legal', this)">
+                    ⚖️ Legal
+                </button>
             </div>
         </div>
 
@@ -1407,6 +1410,398 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
                                 <p>No active rental contracts</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legal Tab -->
+            <div id="legal-tab" class="tab-content hidden">
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">⚖️ Legal Center</h3>
+                    
+                    <!-- Legal Dashboard Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="stats-card bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-purple-700">Documents Generated</p>
+                                    <p id="documentsGenerated" class="text-2xl font-bold text-purple-900">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-card bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-blue-700">Legal Rights Checked</p>
+                                    <p id="rightsChecked" class="text-2xl font-bold text-blue-900">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-card bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-green-700">Issues Resolved</p>
+                                    <p id="issuesResolved" class="text-2xl font-bold text-green-900">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-card bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-xl border border-red-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-red-700">Active Disputes</p>
+                                    <p id="activeDisputes" class="text-2xl font-bold text-red-900">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                        <!-- AI Document Generator -->
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-gray-800">AI Document Generator</h4>
+                                    <p class="text-sm text-gray-600">Create legal documents instantly</p>
+                                </div>
+                            </div>
+                            <button onclick="openDocumentGenerator()" class="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                                Generate Documents
+                            </button>
+                        </div>
+
+                        <!-- Legal Rights Checker -->
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-gray-800">Know Your Rights</h4>
+                                    <p class="text-sm text-gray-600">State-specific tenant rights</p>
+                                </div>
+                            </div>
+                            <button onclick="openRightsChecker()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                Check Rights
+                            </button>
+                        </div>
+
+                        <!-- Legal Issue Analyzer -->
+                        <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-gray-800">AI Issue Analyzer</h4>
+                                    <p class="text-sm text-gray-600">Analyze legal problems</p>
+                                </div>
+                            </div>
+                            <button onclick="openIssueAnalyzer()" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                                Analyze Issue
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Document Generator Section -->
+                    <div id="documentGeneratorSection" class="hidden mb-8">
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200">
+                            <h4 class="text-xl font-bold text-gray-800 mb-6">🤖 AI Legal Document Generator</h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Document Type</label>
+                                    <select id="documentType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <option value="">Select Document Type</option>
+                                        <option value="lease">Lease Agreement</option>
+                                        <option value="rental-application">Rental Application</option>
+                                        <option value="security-deposit-receipt">Security Deposit Receipt</option>
+                                        <option value="notice-to-quit">Notice to Quit</option>
+                                        <option value="sublease">Sublease Agreement</option>
+                                        <option value="rent-increase-notice">Rent Increase Notice</option>
+                                        <option value="move-out-checklist">Move-Out Checklist</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">State/Jurisdiction</label>
+                                    <select id="documentState" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <option value="">Select State</option>
+                                        <option value="CA">California</option>
+                                        <option value="NY">New York</option>
+                                        <option value="TX">Texas</option>
+                                        <option value="FL">Florida</option>
+                                        <option value="IL">Illinois</option>
+                                        <option value="PA">Pennsylvania</option>
+                                        <option value="OH">Ohio</option>
+                                        <option value="GA">Georgia</option>
+                                        <option value="NC">North Carolina</option>
+                                        <option value="MI">Michigan</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Property Address</label>
+                                    <input type="text" id="propertyAddress" placeholder="123 Main St, City, State" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rent</label>
+                                    <input type="number" id="monthlyRent" placeholder="2500" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                </div>
+                            </div>
+
+                            <button onclick="generateLegalDocument()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium">
+                                🚀 Generate Document with AI
+                            </button>
+
+                            <!-- Generated Document Preview -->
+                            <div id="documentPreview" class="hidden mt-6 p-4 bg-white rounded-lg border border-purple-200">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h5 class="text-lg font-semibold text-gray-800">Generated Document</h5>
+                                    <div class="flex gap-2">
+                                        <button onclick="downloadDocument()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                            📥 Download PDF
+                                        </button>
+                                        <button onclick="emailDocument()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                                            📧 Email
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="documentContent" class="bg-gray-50 p-4 rounded border text-sm font-mono max-h-96 overflow-y-auto">
+                                    <!-- Generated document content will appear here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rights Checker Section -->
+                    <div id="rightsCheckerSection" class="hidden mb-8">
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
+                            <h4 class="text-xl font-bold text-gray-800 mb-6">🛡️ Know Your Legal Rights</h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Your State</label>
+                                    <select id="rightsState" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                        <option value="">Select Your State</option>
+                                        <option value="CA">California</option>
+                                        <option value="NY">New York</option>
+                                        <option value="TX">Texas</option>
+                                        <option value="FL">Florida</option>
+                                        <option value="IL">Illinois</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Situation Type</label>
+                                    <select id="situationType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                        <option value="">Select Situation</option>
+                                        <option value="security-deposit">Security Deposit Issues</option>
+                                        <option value="rent-increase">Rent Increase</option>
+                                        <option value="repairs">Repairs & Maintenance</option>
+                                        <option value="eviction">Eviction Notice</option>
+                                        <option value="discrimination">Discrimination</option>
+                                        <option value="privacy">Privacy Rights</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button onclick="checkLegalRights()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium">
+                                🔍 Check Your Rights
+                            </button>
+
+                            <!-- Rights Results -->
+                            <div id="rightsResults" class="hidden mt-6 space-y-4">
+                                <div class="bg-white p-4 rounded-lg border border-blue-200">
+                                    <h5 class="text-lg font-semibold text-gray-800 mb-3">Your Legal Rights</h5>
+                                    <div id="rightsContent" class="space-y-3">
+                                        <!-- Rights content will be populated here -->
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                                    <h5 class="text-lg font-semibold text-yellow-800 mb-3">⚠️ Important Deadlines</h5>
+                                    <div id="deadlinesContent" class="space-y-2">
+                                        <!-- Deadlines content will be populated here -->
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                    <h5 class="text-lg font-semibold text-green-800 mb-3">✅ Recommended Actions</h5>
+                                    <div id="actionsContent" class="space-y-2">
+                                        <!-- Actions content will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Issue Analyzer Section -->
+                    <div id="issueAnalyzerSection" class="hidden mb-8">
+                        <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
+                            <h4 class="text-xl font-bold text-gray-800 mb-6">🔬 AI Legal Issue Analyzer</h4>
+                            
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Describe Your Legal Issue</label>
+                                <textarea id="legalIssueDescription" rows="4" placeholder="Describe your situation in detail..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Issue Category</label>
+                                    <select id="issueCategory" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                        <option value="">Select Category</option>
+                                        <option value="landlord-dispute">Landlord Dispute</option>
+                                        <option value="tenant-dispute">Tenant Dispute</option>
+                                        <option value="property-damage">Property Damage</option>
+                                        <option value="lease-violation">Lease Violation</option>
+                                        <option value="discrimination">Discrimination</option>
+                                        <option value="harassment">Harassment</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Urgency Level</label>
+                                    <select id="urgencyLevel" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                        <option value="">Select Urgency</option>
+                                        <option value="low">Low - General Question</option>
+                                        <option value="medium">Medium - Need Action Soon</option>
+                                        <option value="high">High - Urgent Legal Issue</option>
+                                        <option value="emergency">Emergency - Immediate Help</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button onclick="analyzeLegalIssue()" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all font-medium">
+                                🚀 Analyze with AI
+                            </button>
+
+                            <!-- Analysis Results -->
+                            <div id="analysisResults" class="hidden mt-6 space-y-4">
+                                <div class="bg-white p-4 rounded-lg border border-green-200">
+                                    <h5 class="text-lg font-semibold text-gray-800 mb-3">AI Analysis Results</h5>
+                                    <div id="analysisContent" class="space-y-3">
+                                        <!-- Analysis content will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Legal Resources Library -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 mb-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">📚 Legal Resources Library</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Free Legal Forms -->
+                            <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                <h5 class="text-lg font-semibold text-purple-800 mb-3">📋 Free Legal Forms</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li><a href="#" class="text-purple-600 hover:text-purple-800">• Lease Agreement Template</a></li>
+                                    <li><a href="#" class="text-purple-600 hover:text-purple-800">• Rental Application Form</a></li>
+                                    <li><a href="#" class="text-purple-600 hover:text-purple-800">• Security Deposit Receipt</a></li>
+                                    <li><a href="#" class="text-purple-600 hover:text-purple-800">• Notice Templates</a></li>
+                                </ul>
+                            </div>
+
+                            <!-- State Law Guides -->
+                            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <h5 class="text-lg font-semibold text-blue-800 mb-3">📖 State Law Guides</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• California Tenant Rights</a></li>
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• New York Housing Laws</a></li>
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• Texas Rental Regulations</a></li>
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• Florida Property Laws</a></li>
+                                </ul>
+                            </div>
+
+                            <!-- Legal Tools -->
+                            <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                                <h5 class="text-lg font-semibold text-green-800 mb-3">🛠️ Legal Tools</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Rent Calculation Tool</a></li>
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Legal Deadline Calculator</a></li>
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Court Filing Assistant</a></li>
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Attorney Finder</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Legal News & Updates -->
+                    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">📰 Latest Legal News & Updates</h4>
+                        
+                        <div id="legalNewsContainer" class="space-y-4">
+                            <!-- Legal news items will be populated here -->
+                            <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
+                                    <div>
+                                        <h5 class="font-semibold text-gray-800">New California Rent Control Laws Take Effect</h5>
+                                        <p class="text-sm text-gray-600 mt-1">New regulations limit rent increases to 5% + CPI, affecting millions of tenants.</p>
+                                        <span class="text-xs text-gray-500">2 days ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                    <div>
+                                        <h5 class="font-semibold text-gray-800">Supreme Court Decision Affects Eviction Moratoriums</h5>
+                                        <p class="text-sm text-gray-600 mt-1">Landlords and tenants should understand new federal guidelines.</p>
+                                        <span class="text-xs text-gray-500">1 week ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                                    <div>
+                                        <h5 class="font-semibold text-gray-800">Security Deposit Law Changes in Texas</h5>
+                                        <p class="text-sm text-gray-600 mt-1">New requirements for deposit returns and documentation.</p>
+                                        <span class="text-xs text-gray-500">2 weeks ago</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -6175,6 +6570,453 @@
                 case 3: return 'rd';
                 default: return 'th';
             }
+        }
+
+        // ========================================
+        // LEGAL SECTION FUNCTIONS
+        // ========================================
+        
+        // Legal section toggle functions
+        function openDocumentGenerator() {
+            console.log('📄 Opening document generator...');
+            hideAllLegalSections();
+            document.getElementById('documentGeneratorSection').classList.remove('hidden');
+            updateLegalStats();
+        }
+        
+        function openRightsChecker() {
+            console.log('⚖️ Opening rights checker...');
+            hideAllLegalSections();
+            document.getElementById('rightsCheckerSection').classList.remove('hidden');
+            updateLegalStats();
+        }
+        
+        function openIssueAnalyzer() {
+            console.log('🔬 Opening issue analyzer...');
+            hideAllLegalSections();
+            document.getElementById('issueAnalyzerSection').classList.remove('hidden');
+            updateLegalStats();
+        }
+        
+        function hideAllLegalSections() {
+            document.getElementById('documentGeneratorSection').classList.add('hidden');
+            document.getElementById('rightsCheckerSection').classList.add('hidden');
+            document.getElementById('issueAnalyzerSection').classList.add('hidden');
+        }
+        
+        // AI Document Generator
+        async function generateLegalDocument() {
+            const documentType = document.getElementById('documentType').value;
+            const documentState = document.getElementById('documentState').value;
+            const propertyAddress = document.getElementById('propertyAddress').value;
+            const monthlyRent = document.getElementById('monthlyRent').value;
+            
+            if (!documentType || !documentState) {
+                alert('Please select document type and state');
+                return;
+            }
+            
+            console.log('🤖 Generating legal document...', { documentType, documentState, propertyAddress, monthlyRent });
+            
+            // Simulate AI document generation
+            const documentContent = generateDocumentTemplate(documentType, documentState, propertyAddress, monthlyRent);
+            
+            // Show preview
+            document.getElementById('documentContent').innerHTML = documentContent;
+            document.getElementById('documentPreview').classList.remove('hidden');
+            
+            // Update stats
+            updateDocumentStats();
+            
+            // Show success message
+            showLegalNotification('✅ Document generated successfully!', 'success');
+        }
+        
+        function generateDocumentTemplate(type, state, address, rent) {
+            const templates = {
+                'lease': `
+                    <h3>RESIDENTIAL LEASE AGREEMENT - ${state}</h3>
+                    <br>
+                    <p><strong>Property Address:</strong> ${address || '[Property Address]'}</p>
+                    <p><strong>Monthly Rent:</strong> $${rent || '[Monthly Rent]'}</p>
+                    <p><strong>State:</strong> ${state}</p>
+                    <br>
+                    <p>This lease agreement is entered into between the Landlord and Tenant for the above property.</p>
+                    <br>
+                    <h4>TERMS AND CONDITIONS:</h4>
+                    <p>1. <strong>Rent Payment:</strong> Tenant agrees to pay $${rent || '[Monthly Rent]'} per month.</p>
+                    <p>2. <strong>Security Deposit:</strong> ${getSecurityDepositRules(state)}</p>
+                    <p>3. <strong>Utilities:</strong> [To be specified]</p>
+                    <p>4. <strong>Lease Term:</strong> [Start Date] to [End Date]</p>
+                    <br>
+                    <p><em>This document is generated for informational purposes. Please consult with a legal professional for specific legal advice.</em></p>
+                `,
+                'rental-application': `
+                    <h3>RENTAL APPLICATION FORM - ${state}</h3>
+                    <br>
+                    <p><strong>Property Address:</strong> ${address || '[Property Address]'}</p>
+                    <p><strong>Monthly Rent:</strong> $${rent || '[Monthly Rent]'}</p>
+                    <br>
+                    <h4>APPLICANT INFORMATION:</h4>
+                    <p>Full Name: ________________________</p>
+                    <p>Phone: ________________________</p>
+                    <p>Email: ________________________</p>
+                    <p>Current Address: ________________________</p>
+                    <br>
+                    <h4>EMPLOYMENT INFORMATION:</h4>
+                    <p>Employer: ________________________</p>
+                    <p>Monthly Income: ________________________</p>
+                    <p>Employment Duration: ________________________</p>
+                    <br>
+                    <h4>REFERENCES:</h4>
+                    <p>Previous Landlord: ________________________</p>
+                    <p>Personal Reference: ________________________</p>
+                `,
+                'security-deposit-receipt': `
+                    <h3>SECURITY DEPOSIT RECEIPT - ${state}</h3>
+                    <br>
+                    <p><strong>Property Address:</strong> ${address || '[Property Address]'}</p>
+                    <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                    <br>
+                    <p>Received from: ________________________</p>
+                    <p>Security Deposit Amount: $________________________</p>
+                    <p>Purpose: Security deposit for the above rental property</p>
+                    <br>
+                    <p><strong>${state} Security Deposit Law:</strong></p>
+                    <p>${getSecurityDepositRules(state)}</p>
+                    <br>
+                    <p>Landlord Signature: ________________________</p>
+                    <p>Date: ________________________</p>
+                `
+            };
+            
+            return templates[type] || 'Document template not found.';
+        }
+        
+        function getSecurityDepositRules(state) {
+            const rules = {
+                'CA': 'Maximum 2 months rent for unfurnished, 3 months for furnished. Must be returned within 21 days.',
+                'NY': 'Maximum 1 month rent. Must be held in separate account and returned within reasonable time.',
+                'TX': 'No statutory limit. Must be returned within 30 days with itemized deductions.',
+                'FL': 'No statutory limit. Must be returned within 15-60 days depending on deductions.',
+                'IL': 'No statutory limit. Must be returned within 45 days with itemized statement.'
+            };
+            return rules[state] || 'Please consult local laws for security deposit requirements.';
+        }
+        
+        // Legal Rights Checker
+        async function checkLegalRights() {
+            const state = document.getElementById('rightsState').value;
+            const situation = document.getElementById('situationType').value;
+            
+            if (!state || !situation) {
+                alert('Please select your state and situation type');
+                return;
+            }
+            
+            console.log('🛡️ Checking legal rights...', { state, situation });
+            
+            const rightsData = getLegalRightsData(state, situation);
+            displayLegalRights(rightsData);
+            
+            document.getElementById('rightsResults').classList.remove('hidden');
+            updateRightsStats();
+            
+            showLegalNotification('✅ Legal rights information retrieved!', 'success');
+        }
+        
+        function getLegalRightsData(state, situation) {
+            const rightsDatabase = {
+                'CA': {
+                    'security-deposit': {
+                        rights: [
+                            'Landlord can charge maximum 2 months rent for unfurnished units',
+                            'Deposit must be returned within 21 days of move-out',
+                            'You have right to itemized list of deductions',
+                            'Interest must be paid if required by local ordinance'
+                        ],
+                        deadlines: [
+                            '21 days for deposit return',
+                            '30 days to dispute deductions in writing'
+                        ],
+                        actions: [
+                            'Request move-out inspection',
+                            'Take photos before moving out',
+                            'Provide forwarding address in writing',
+                            'Keep records of deposit payment'
+                        ]
+                    },
+                    'rent-increase': {
+                        rights: [
+                            'Rent increases limited to 5% + CPI under state law',
+                            'Minimum 30 days notice required for month-to-month tenancy',
+                            'Some cities have stricter rent control laws',
+                            'Cannot increase rent in retaliation'
+                        ],
+                        deadlines: [
+                            '30 days minimum notice for rent increase',
+                            '10 days to respond to increase notice'
+                        ],
+                        actions: [
+                            'Check if property subject to rent control',
+                            'Verify proper notice was given',
+                            'Research local rent stabilization ordinances',
+                            'Consider negotiating with landlord'
+                        ]
+                    }
+                },
+                'NY': {
+                    'security-deposit': {
+                        rights: [
+                            'Maximum 1 month rent for security deposit',
+                            'Deposit must be held in separate NY bank account',
+                            'Right to receive account details in writing',
+                            'Interest must be paid if deposit held over 1 year'
+                        ],
+                        deadlines: [
+                            'Reasonable time for deposit return (typically 30 days)',
+                            '30 days to provide itemized deductions'
+                        ],
+                        actions: [
+                            'Request bank account information',
+                            'Document property condition at move-in/out',
+                            'Send demand letter if deposit not returned',
+                            'File in small claims court if necessary'
+                        ]
+                    },
+                    'eviction': {
+                        rights: [
+                            'Landlord must serve proper legal notice',
+                            'Right to remain until court orders eviction',
+                            'Right to legal representation in housing court',
+                            'Right to raise defenses and counterclaims'
+                        ],
+                        deadlines: [
+                            '14 days for non-payment cases',
+                            '30 days for lease violation cases',
+                            '10 days to answer court petition'
+                        ],
+                        actions: [
+                            'Respond to court petition immediately',
+                            'Contact tenant rights organization',
+                            'Gather evidence for your defense',
+                            'Apply for emergency rental assistance if available'
+                        ]
+                    }
+                }
+            };
+            
+            return rightsDatabase[state]?.[situation] || {
+                rights: ['Please consult local tenant rights organizations for specific information'],
+                deadlines: ['Deadlines vary by jurisdiction'],
+                actions: ['Contact a local attorney for specific guidance']
+            };
+        }
+        
+        function displayLegalRights(data) {
+            // Display rights
+            const rightsContent = document.getElementById('rightsContent');
+            rightsContent.innerHTML = data.rights.map(right => 
+                `<div class="flex items-start space-x-2">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                    <p class="text-sm text-gray-700">${right}</p>
+                </div>`
+            ).join('');
+            
+            // Display deadlines
+            const deadlinesContent = document.getElementById('deadlinesContent');
+            deadlinesContent.innerHTML = data.deadlines.map(deadline => 
+                `<div class="flex items-start space-x-2">
+                    <div class="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
+                    <p class="text-sm text-yellow-800">${deadline}</p>
+                </div>`
+            ).join('');
+            
+            // Display actions
+            const actionsContent = document.getElementById('actionsContent');
+            actionsContent.innerHTML = data.actions.map(action => 
+                `<div class="flex items-start space-x-2">
+                    <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <p class="text-sm text-green-800">${action}</p>
+                </div>`
+            ).join('');
+        }
+        
+        // AI Legal Issue Analyzer
+        async function analyzeLegalIssue() {
+            const description = document.getElementById('legalIssueDescription').value;
+            const category = document.getElementById('issueCategory').value;
+            const urgency = document.getElementById('urgencyLevel').value;
+            
+            if (!description.trim()) {
+                alert('Please describe your legal issue');
+                return;
+            }
+            
+            console.log('🔬 Analyzing legal issue...', { description, category, urgency });
+            
+            // Simulate AI analysis
+            const analysis = generateLegalAnalysis(description, category, urgency);
+            displayLegalAnalysis(analysis);
+            
+            document.getElementById('analysisResults').classList.remove('hidden');
+            updateIssueStats();
+            
+            showLegalNotification('✅ Legal issue analysis completed!', 'success');
+        }
+        
+        function generateLegalAnalysis(description, category, urgency) {
+            const analysisTemplates = {
+                'landlord-dispute': {
+                    severity: urgency === 'emergency' ? 'High Priority' : urgency === 'high' ? 'Urgent' : 'Standard',
+                    recommendations: [
+                        'Document all communications with your landlord',
+                        'Review your lease agreement for relevant clauses',
+                        'Research tenant rights in your state',
+                        'Consider mediation before legal action'
+                    ],
+                    nextSteps: [
+                        'Send written notice to landlord about the issue',
+                        'Allow reasonable time for landlord response',
+                        'Contact local tenant rights organization if needed',
+                        'Consider small claims court for monetary damages'
+                    ]
+                },
+                'property-damage': {
+                    severity: 'Document Required',
+                    recommendations: [
+                        'Take detailed photos of all damage immediately',
+                        'Determine if damage was pre-existing',
+                        'Review lease for damage and repair responsibilities',
+                        'Get written estimates for repair costs'
+                    ],
+                    nextSteps: [
+                        'Notify landlord in writing within required timeframe',
+                        'Request inspection with landlord present',
+                        'Negotiate responsibility for repairs',
+                        'Keep all receipts and documentation'
+                    ]
+                }
+            };
+            
+            const template = analysisTemplates[category] || analysisTemplates['landlord-dispute'];
+            
+            return {
+                summary: `Based on your description, this appears to be a ${category} issue with ${template.severity} priority.`,
+                recommendations: template.recommendations,
+                nextSteps: template.nextSteps,
+                urgencyLevel: urgency
+            };
+        }
+        
+        function displayLegalAnalysis(analysis) {
+            const content = document.getElementById('analysisContent');
+            content.innerHTML = `
+                <div class="p-3 bg-blue-50 rounded-lg border border-blue-200 mb-4">
+                    <h6 class="font-semibold text-blue-800 mb-2">AI Analysis Summary</h6>
+                    <p class="text-sm text-blue-700">${analysis.summary}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="font-semibold text-gray-800 mb-2">💡 Recommendations</h6>
+                    <div class="space-y-2">
+                        ${analysis.recommendations.map(rec => 
+                            `<div class="flex items-start space-x-2">
+                                <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                <p class="text-sm text-gray-700">${rec}</p>
+                            </div>`
+                        ).join('')}
+                    </div>
+                </div>
+                
+                <div>
+                    <h6 class="font-semibold text-gray-800 mb-2">📋 Next Steps</h6>
+                    <div class="space-y-2">
+                        ${analysis.nextSteps.map(step => 
+                            `<div class="flex items-start space-x-2">
+                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                                <p class="text-sm text-gray-700">${step}</p>
+                            </div>`
+                        ).join('')}
+                    </div>
+                </div>
+                
+                ${analysis.urgencyLevel === 'emergency' ? 
+                    '<div class="mt-4 p-3 bg-red-50 rounded-lg border border-red-200"><p class="text-sm text-red-800"><strong>⚠️ Emergency Notice:</strong> This appears to be an urgent legal matter. Consider contacting an attorney immediately.</p></div>' : ''
+                }
+            `;
+        }
+        
+        // Document download and email functions
+        function downloadDocument() {
+            showLegalNotification('📥 Document download feature coming soon!', 'info');
+        }
+        
+        function emailDocument() {
+            showLegalNotification('📧 Email document feature coming soon!', 'info');
+        }
+        
+        // Statistics update functions
+        function updateLegalStats() {
+            // Simulate updating stats from localStorage or API
+            const stats = JSON.parse(localStorage.getItem('legalStats') || '{}');
+            stats.totalViews = (stats.totalViews || 0) + 1;
+            localStorage.setItem('legalStats', JSON.stringify(stats));
+        }
+        
+        function updateDocumentStats() {
+            const stats = JSON.parse(localStorage.getItem('legalStats') || '{}');
+            stats.documentsGenerated = (stats.documentsGenerated || 0) + 1;
+            localStorage.setItem('legalStats', JSON.stringify(stats));
+            document.getElementById('documentsGenerated').textContent = stats.documentsGenerated;
+        }
+        
+        function updateRightsStats() {
+            const stats = JSON.parse(localStorage.getItem('legalStats') || '{}');
+            stats.rightsChecked = (stats.rightsChecked || 0) + 1;
+            localStorage.setItem('legalStats', JSON.stringify(stats));
+            document.getElementById('rightsChecked').textContent = stats.rightsChecked;
+        }
+        
+        function updateIssueStats() {
+            const stats = JSON.parse(localStorage.getItem('legalStats') || '{}');
+            stats.issuesResolved = (stats.issuesResolved || 0) + 1;
+            localStorage.setItem('legalStats', JSON.stringify(stats));
+            document.getElementById('issuesResolved').textContent = stats.issuesResolved;
+        }
+        
+        function initializeLegalStats() {
+            const stats = JSON.parse(localStorage.getItem('legalStats') || '{}');
+            document.getElementById('documentsGenerated').textContent = stats.documentsGenerated || 0;
+            document.getElementById('rightsChecked').textContent = stats.rightsChecked || 0;
+            document.getElementById('issuesResolved').textContent = stats.issuesResolved || 0;
+            document.getElementById('activeDisputes').textContent = stats.activeDisputes || 0;
+        }
+        
+        // Notification system
+        function showLegalNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg max-w-sm transform transition-all duration-300 ${
+                type === 'success' ? 'bg-green-100 border border-green-400 text-green-700' :
+                type === 'error' ? 'bg-red-100 border border-red-400 text-red-700' :
+                'bg-blue-100 border border-blue-400 text-blue-700'
+            }`;
+            
+            notification.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium">${message}</p>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-gray-500 hover:text-gray-700">×</button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
         }
 
         // ========================================
