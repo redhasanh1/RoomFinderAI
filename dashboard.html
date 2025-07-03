@@ -1960,6 +1960,7 @@
         let supabase;
         let currentUser;
         let isOfflineMode = false;
+        let hasRetriedConnection = false;
 
         // Debug function to show connection status
         function updateConnectionStatus(status, message) {
@@ -2021,6 +2022,9 @@
                 
                 updateConnectionStatus('online', 'Connected to server');
                 
+                // Initialize essential functions first
+                initializeEssentialFunctions();
+                
                 // Initialize full dashboard
                 await initializeDashboard();
                 
@@ -2037,11 +2041,14 @@
                 // Initialize essential functions anyway
                 initializeEssentialFunctions();
                 
-                // Try to recover after a delay
-                setTimeout(() => {
-                    console.log('🔄 Attempting to reconnect...');
-                    loadConfigWithFallback();
-                }, 10000); // Retry after 10 seconds
+                // Try to recover after a delay (but only once)
+                if (!hasRetriedConnection) {
+                    hasRetriedConnection = true;
+                    setTimeout(() => {
+                        console.log('🔄 Attempting to reconnect once...');
+                        loadConfigWithFallback();
+                    }, 5000); // Retry after 5 seconds, only once
+                }
             }
         }
 
@@ -2433,9 +2440,6 @@
         }
         
         // REMOVED - This function will be replaced by unified implementation
-
-        // Start initialization
-        loadConfigWithFallback();
 
         async function initializeDashboard() {
             currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -6171,6 +6175,21 @@
                 case 3: return 'rd';
                 default: return 'th';
             }
+        }
+
+        // ========================================
+        // INITIALIZATION - Start after all functions are defined
+        // ========================================
+        
+        // Start initialization when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('📄 DOM ready, starting initialization...');
+                loadConfigWithFallback();
+            });
+        } else {
+            console.log('📄 DOM already ready, starting initialization...');
+            loadConfigWithFallback();
         }
     </script>
 </body>
