@@ -663,79 +663,85 @@
                         </div>
                     </div>
 
-                    <!-- RentCast Market Search -->
-                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200 mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">🏠 RentCast Market Analysis</h3>
+                    <!-- UNIFIED COMPLETE PROPERTY ANALYSIS -->
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 mb-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">🏠 Complete Property Analysis</h3>
                         
-                        <!-- Search Input -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Property Address</label>
-                                <input type="text" id="rentcastAddress" placeholder="Enter full address (e.g., 123 Main St, New York, NY)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <!-- RentCast Usage Tracker -->
+                        <div class="mb-4 p-4 bg-white rounded-lg border border-blue-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">RentCast API Usage</span>
+                                <span id="usageText" class="text-sm text-blue-600 font-semibold">Loading...</span>
                             </div>
-                            <div class="flex items-end">
-                                <button onclick="searchRentCastData()" id="rentcastSearchBtn" class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
-                                    Get Market Data
-                                </button>
+                            <div class="w-full bg-gray-200 rounded-full h-3">
+                                <div id="usageProgressBar" class="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
                             </div>
-                        </div>
-
-                        <!-- Results Display -->
-                        <div id="rentcastResults" class="hidden">
-                            <!-- Market Stats Grid -->
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                                <div class="bg-white p-4 rounded-lg border border-purple-200">
-                                    <h4 class="text-sm font-medium text-purple-700 mb-1">Rent Estimate</h4>
-                                    <p id="rentcastRentEstimate" class="text-2xl font-bold text-purple-900">$0</p>
-                                    <p class="text-xs text-purple-600">per month</p>
-                                </div>
-                                <div class="bg-white p-4 rounded-lg border border-purple-200">
-                                    <h4 class="text-sm font-medium text-purple-700 mb-1">Property Type</h4>
-                                    <p id="rentcastPropertyType" class="text-lg font-semibold text-purple-900">-</p>
-                                    <p class="text-xs text-purple-600" id="rentcastBedroomsBaths">- bed / - bath</p>
-                                </div>
-                                <div class="bg-white p-4 rounded-lg border border-purple-200">
-                                    <h4 class="text-sm font-medium text-purple-700 mb-1">Confidence</h4>
-                                    <p id="rentcastConfidence" class="text-lg font-semibold text-purple-900">-</p>
-                                    <p class="text-xs text-purple-600">reliability score</p>
-                                </div>
-                            </div>
-
-                            <!-- Comparable Properties -->
-                            <div class="bg-white p-4 rounded-lg border border-purple-200">
-                                <h4 class="text-sm font-medium text-purple-700 mb-3">Comparable Properties</h4>
-                                <div id="rentcastComparables" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    <!-- Comparables will be loaded here -->
-                                </div>
+                            <div class="flex justify-between mt-1">
+                                <span class="text-xs text-gray-500">0 calls</span>
+                                <span class="text-xs text-gray-500">40 calls/month</span>
                             </div>
                         </div>
-
-                        <!-- Status Display -->
-                        <div id="rentcastStatus" class="mt-4 p-3 bg-purple-100 border border-purple-200 rounded-lg">
-                            <div class="flex items-center space-x-2">
-                                <div id="rentcastStatusIndicator" class="w-3 h-3 bg-purple-500 rounded-full"></div>
-                                <span class="text-sm text-purple-700">RentCast API Ready</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- NEIGHBORHOOD INTELLIGENCE DASHBOARD -->
-                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-200 mb-6">
-                        <h3 class="text-xl font-bold text-gray-800 mb-6">🧠 Neighborhood Intelligence Hub</h3>
                         
-                        <!-- Address Search for Intelligence -->
+                        <!-- Unified Address Search -->
                         <div class="mb-6">
                             <div class="flex gap-4">
-                                <input type="text" id="intelligenceAddress" placeholder="Enter property address for complete neighborhood analysis..." class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                                <button onclick="runNeighborhoodIntelligence()" id="intelligenceBtn" class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium">
-                                    🔍 Analyze
+                                <input type="text" id="unifiedPropertyAddress" placeholder="Enter property address for complete market & neighborhood analysis..." class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <button onclick="runCompletePropertyAnalysis()" id="completeAnalysisBtn" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium">
+                                    🔍 Analyze Property
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Intelligence Results -->
-                        <div id="intelligenceResults" class="hidden">
-                            <!-- Safety & Security Intelligence -->
+                        <!-- Analysis Results Tabs -->
+                        <div id="unifiedResults" class="hidden">
+                            <!-- Tab Navigation -->
+                            <div class="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+                                <button onclick="switchTab('rentcast')" id="rentcastTab" class="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all bg-white text-blue-600 shadow-sm">
+                                    💰 Market Data
+                                </button>
+                                <button onclick="switchTab('intelligence')" id="intelligenceTab" class="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all text-gray-600 hover:text-gray-800">
+                                    🧠 Intelligence
+                                </button>
+                                <button onclick="switchTab('analytics')" id="analyticsTab" class="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all text-gray-600 hover:text-gray-800">
+                                    📊 Analytics
+                                </button>
+                            </div>
+
+                            <!-- RentCast Market Data Tab -->
+                            <div id="rentcastTabContent" class="tab-content">
+                                <!-- Market Stats Grid -->
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                    <div class="bg-white p-4 rounded-lg border border-blue-200">
+                                        <h4 class="text-sm font-medium text-blue-700 mb-1">Rent Estimate</h4>
+                                        <p id="rentcastRentEstimate" class="text-2xl font-bold text-blue-900">$0</p>
+                                        <p class="text-xs text-blue-600">per month</p>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-lg border border-blue-200">
+                                        <h4 class="text-sm font-medium text-blue-700 mb-1">Property Type</h4>
+                                        <p id="rentcastPropertyType" class="text-lg font-semibold text-blue-900">-</p>
+                                        <p class="text-xs text-blue-600" id="rentcastBedroomsBaths">- bed / - bath</p>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-lg border border-blue-200">
+                                        <h4 class="text-sm font-medium text-blue-700 mb-1">Confidence</h4>
+                                        <p id="rentcastConfidence" class="text-lg font-semibold text-blue-900">-</p>
+                                        <p class="text-xs text-blue-600">reliability score</p>
+                                    </div>
+                                </div>
+
+                                <!-- Comparable Properties -->
+                                <div class="bg-white p-4 rounded-lg border border-blue-200">
+                                    <h4 class="text-sm font-medium text-blue-700 mb-3">Comparable Properties</h4>
+                                    <div id="rentcastComparables" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        <!-- Comparables will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Intelligence Tab Content -->
+                            <div id="intelligenceTabContent" class="tab-content hidden">
+                                <!-- Intelligence Results -->
+                                <div id="intelligenceResults">
+                                    <!-- Safety & Security Intelligence -->
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                                 <div class="bg-white p-6 rounded-xl border border-red-200">
                                     <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -1223,14 +1229,24 @@
                                 <div id="intelligenceKeyPoints" class="mt-4 space-y-2">
                                     <!-- AI insights will be populated here -->
                                 </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Analytics Tab Content -->
+                            <div id="analyticsTabContent" class="tab-content hidden">
+                                <!-- This will contain the advanced analytics content -->
+                                <div class="text-center py-8 text-gray-500">
+                                    <p>Advanced analytics will be shown here when available</p>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Status Display -->
-                        <div id="intelligenceStatus" class="mt-4 p-3 bg-indigo-100 border border-indigo-200 rounded-lg">
+                        <div id="unifiedStatus" class="mt-4 p-3 bg-blue-100 border border-blue-200 rounded-lg">
                             <div class="flex items-center space-x-2">
-                                <div id="intelligenceStatusIndicator" class="w-3 h-3 bg-indigo-500 rounded-full"></div>
-                                <span class="text-sm text-indigo-700">Neighborhood Intelligence Ready - Enter address to analyze</span>
+                                <div id="unifiedStatusIndicator" class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                <span class="text-sm text-blue-700">Complete Property Analysis Ready - Enter address to analyze</span>
                             </div>
                         </div>
                     </div>
@@ -4593,6 +4609,228 @@
             document.getElementById('inquiryRate').textContent = `+${data.predictiveSignals.inquiryRate}%`;
             document.getElementById('priceSignals').textContent = data.predictiveSignals.priceSignals;
         }
+
+        // ========================================
+        // UNIFIED PROPERTY ANALYSIS FUNCTIONS
+        // ========================================
+
+        // Check and update RentCast usage on page load
+        async function updateRentCastUsage() {
+            try {
+                const response = await fetch('/api/rentcast/status');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const { used, remaining, limit, percentage } = result.rateLimitInfo;
+                    
+                    // Update usage display
+                    document.getElementById('usageText').textContent = `${used}/${limit} calls used`;
+                    document.getElementById('usageProgressBar').style.width = `${percentage}%`;
+                    
+                    // Update progress bar color based on usage
+                    const progressBar = document.getElementById('usageProgressBar');
+                    if (percentage >= 90) {
+                        progressBar.className = 'bg-gradient-to-r from-red-500 to-red-600 h-3 rounded-full transition-all duration-300';
+                    } else if (percentage >= 75) {
+                        progressBar.className = 'bg-gradient-to-r from-yellow-500 to-orange-500 h-3 rounded-full transition-all duration-300';
+                    } else {
+                        progressBar.className = 'bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300';
+                    }
+                    
+                    return { used, remaining, limit, percentage };
+                }
+            } catch (error) {
+                console.error('❌ Error checking RentCast usage:', error);
+                document.getElementById('usageText').textContent = 'Usage unavailable';
+            }
+        }
+
+        // Switch between tabs
+        function switchTab(tabName) {
+            // Update tab buttons
+            const tabs = ['rentcast', 'intelligence', 'analytics'];
+            tabs.forEach(tab => {
+                const tabButton = document.getElementById(`${tab}Tab`);
+                const tabContent = document.getElementById(`${tab}TabContent`);
+                
+                if (tab === tabName) {
+                    tabButton.className = 'flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all bg-white text-blue-600 shadow-sm';
+                    tabContent.classList.remove('hidden');
+                } else {
+                    tabButton.className = 'flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all text-gray-600 hover:text-gray-800';
+                    tabContent.classList.add('hidden');
+                }
+            });
+        }
+
+        // Run complete property analysis (unified function)
+        async function runCompletePropertyAnalysis() {
+            const address = document.getElementById('unifiedPropertyAddress').value.trim();
+            const analysisBtn = document.getElementById('completeAnalysisBtn');
+            const statusDiv = document.getElementById('unifiedStatus');
+            const resultsDiv = document.getElementById('unifiedResults');
+
+            if (!address) {
+                alert('Please enter a property address for complete analysis');
+                return;
+            }
+
+            // Show loading state
+            analysisBtn.textContent = '🔄 Analyzing...';
+            analysisBtn.disabled = true;
+            statusDiv.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                    <span class="text-sm text-yellow-700">🔍 Running complete property analysis...</span>
+                </div>
+            `;
+
+            try {
+                // Check rate limit first
+                const usageInfo = await updateRentCastUsage();
+                
+                // Phase 1: Try RentCast data (with rate limiting)
+                let rentcastData = null;
+                let rateLimitExceeded = false;
+                
+                if (usageInfo && usageInfo.remaining > 0) {
+                    try {
+                        statusDiv.innerHTML = `
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                                <span class="text-sm text-blue-700">💰 Fetching RentCast market data...</span>
+                            </div>
+                        `;
+                        
+                        rentcastData = await fetchRentCastData(address);
+                        await updateRentCastUsage(); // Refresh usage after API call
+                    } catch (error) {
+                        if (error.message.includes('limit exceeded')) {
+                            rateLimitExceeded = true;
+                        }
+                        console.log('RentCast data unavailable:', error.message);
+                    }
+                } else {
+                    rateLimitExceeded = true;
+                }
+
+                // Phase 2: Run neighborhood intelligence (always available)
+                statusDiv.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></div>
+                        <span class="text-sm text-indigo-700">🧠 Analyzing neighborhood intelligence...</span>
+                    </div>
+                `;
+                
+                const coordinates = await getCoordinatesFromAddress(address);
+                const { lat, lon, state } = coordinates;
+
+                const [
+                    crimeData, schoolData, weatherData, floodData,
+                    environmentalData, earthquakeData, climateData,
+                    economicData, transitData, amenitiesData
+                ] = await Promise.all([
+                    fetchCrimeIntelligence(state),
+                    fetchSchoolIntelligence(state, address),
+                    fetchWeatherIntelligence(lat, lon),
+                    fetchFloodIntelligence(lat, lon),
+                    fetchEnvironmentalIntelligence(lat, lon),
+                    fetchEarthquakeIntelligence(lat, lon),
+                    fetchClimateDataIntelligence(lat, lon),
+                    fetchEconomicIntelligence(state),
+                    fetchTransitIntelligence(lat, lon, address),
+                    fetchAmenitiesIntelligence(lat, lon)
+                ]);
+
+                // Display results
+                if (rentcastData) {
+                    displayRentCastData(rentcastData);
+                } else if (rateLimitExceeded) {
+                    displayRentCastLimitExceeded();
+                } else {
+                    displayRentCastFallbackData(address);
+                }
+
+                // Display intelligence data
+                displaySafetyIntelligence(crimeData);
+                displayEducationIntelligence(schoolData);
+                displayClimateIntelligence(weatherData);
+                displayFloodIntelligence(floodData);
+                displayEnvironmentalIntelligence(environmentalData);
+                displayEarthquakeIntelligence(earthquakeData);
+                displayClimateDataIntelligence(climateData);
+                displayEconomicIntelligence(economicData);
+                displayTransitIntelligence(transitData);
+                displayAmenitiesIntelligence(amenitiesData);
+
+                // Generate AI insights
+                const aiInsights = generateAINegotiationIntelligence(crimeData, schoolData, weatherData, floodData);
+                displayAINegotiationIntelligence(aiInsights);
+
+                // Show results
+                resultsDiv.classList.remove('hidden');
+                
+                // Update final status
+                let statusMessage = '✅ Complete property analysis finished!';
+                if (rateLimitExceeded) {
+                    statusMessage += ' (RentCast limit reached - showing demo data)';
+                }
+                
+                statusDiv.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span class="text-sm text-green-700">${statusMessage}</span>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('❌ Complete analysis error:', error);
+                statusDiv.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span class="text-sm text-red-700">❌ Analysis error: ${error.message}</span>
+                    </div>
+                `;
+            } finally {
+                analysisBtn.textContent = '🔍 Analyze Property';
+                analysisBtn.disabled = false;
+            }
+        }
+
+        // Display RentCast data in unified interface
+        function displayRentCastData(propertyData) {
+            document.getElementById('rentcastRentEstimate').textContent = `$${propertyData.rentEstimate.toLocaleString()}`;
+            document.getElementById('rentcastPropertyType').textContent = propertyData.propertyType || 'Unknown';
+            document.getElementById('rentcastBedroomsBaths').textContent = `${propertyData.bedrooms || 0} bed / ${propertyData.bathrooms || 0} bath`;
+            document.getElementById('rentcastConfidence').textContent = propertyData.confidence || 'Medium';
+        }
+
+        // Display rate limit exceeded message
+        function displayRentCastLimitExceeded() {
+            document.getElementById('rentcastRentEstimate').textContent = 'Limit Reached';
+            document.getElementById('rentcastPropertyType').textContent = 'Upgrade Required';
+            document.getElementById('rentcastBedroomsBaths').textContent = 'RentCast API limit exceeded';
+            document.getElementById('rentcastConfidence').textContent = 'N/A';
+            
+            // Show upgrade message in comparables section
+            document.getElementById('rentcastComparables').innerHTML = `
+                <div class="col-span-full bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
+                    <h4 class="font-semibold text-orange-800 mb-2">🚫 RentCast API Limit Reached</h4>
+                    <p class="text-sm text-orange-700 mb-3">
+                        You've used all 40 RentCast API calls for this month. 
+                        Limit resets on the 1st of next month.
+                    </p>
+                    <p class="text-xs text-orange-600">
+                        Upgrade to premium for unlimited access to real estate market data.
+                    </p>
+                </div>
+            `;
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            updateRentCastUsage();
+        });
 
         async function fetchHKGovData() {
             try {
