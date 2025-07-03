@@ -509,12 +509,6 @@
                     </svg>
                     Rent Reminders
                 </button>
-                <button class="tab-button" onclick="switchTab('legal', this)">
-                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16l3-1m-3 1l-3-1"></path>
-                    </svg>
-                    Legal
-                </button>
                 <button class="tab-button" onclick="switchTab('mortgage', this)">
                     <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
@@ -1736,56 +1730,20 @@
                 </div>
             </div>
 
-            <!-- Legal Tab -->
-            <div id="legal-tab" class="tab-content hidden">
+            <!-- Mortgage Tab -->
+            <div id="mortgage-tab" class="tab-content hidden">
                 <div class="glass-card p-6">
                     <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16l3-1m-3 1l-3-1"></path>
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                         </svg>
-                        Legal Center
+                        Mortgage Analysis & Negotiation Center
                     </h3>
                     
-                    <!-- Welcome & Getting Started Section -->
-                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 mb-8">
+                    <!-- Welcome & Quick Actions -->
+                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-8 rounded-2xl border border-green-200 mb-8">
                         <div class="text-center mb-6">
-                            <h4 class="text-2xl font-bold text-gray-800 mb-3 flex items-center justify-center gap-3">
-                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                New to Legal Issues?
-                            </h4>
-                            <p class="text-gray-600 max-w-2xl mx-auto">Don't worry! We'll guide you through everything step by step. Most housing legal issues can be resolved with the right information and documents.</p>
-                        </div>
-                        
-                        <!-- 3-Step Process Overview -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                            <div class="text-center">
-                                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <span class="text-white font-bold text-xl">1</span>
-                                </div>
-                                <h5 class="font-semibold text-gray-800 mb-2">Describe Your Situation</h5>
-                                <p class="text-sm text-gray-600">Tell us what's happening in plain English</p>
-                            </div>
-                            <div class="text-center">
-                                <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <span class="text-white font-bold text-xl">2</span>
-                                </div>
-                                <h5 class="font-semibold text-gray-800 mb-2">Get Personalized Guidance</h5>
-                                <p class="text-sm text-gray-600">Receive tailored advice for your specific situation</p>
-                            </div>
-                            <div class="text-center">
-                                <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <span class="text-white font-bold text-xl">3</span>
-                                </div>
-                                <h5 class="font-semibold text-gray-800 mb-2">Take Action with Tools</h5>
-                                <p class="text-sm text-gray-600">Use our tools to resolve your issue</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Quick Start Buttons for Common Scenarios -->
-                        <div class="bg-white p-4 rounded-lg border border-blue-200">
-                            <h6 class="font-semibold text-gray-800 mb-3 text-center">🚀 Quick Start - Common Situations</h6>
+                            <h4 class="text-3xl font-bold text-gray-800 mb-3">AI-Powered Mortgage Optimization</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                                 <button onclick="quickStartScenario('security-deposit')" class="p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-sm">
                                     <div class="font-medium text-red-800">Security Deposit Issue</div>
