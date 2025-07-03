@@ -48,6 +48,80 @@ const { CognitiveServicesCredentials } = require('@azure/ms-rest-azure-js');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// ========================================
+// RENTCAST RATE LIMITING SYSTEM
+// ========================================
+
+// In-memory store for rate limiting (in production, use Redis or database)
+const rateLimitStore = new Map();
+const RENTCAST_MONTHLY_LIMIT = 40;
+
+// Helper function to get user identifier (IP-based for now)
+function getUserId(req) {
+    return req.ip || req.connection.remoteAddress || 'unknown';
+}
+
+// Get current month key for rate limiting
+function getCurrentMonthKey() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Get usage data for user
+function getRentCastUsage(userId) {
+    const monthKey = getCurrentMonthKey();
+    const userKey = `${userId}-${monthKey}`;
+    return rateLimitStore.get(userKey) || 0;
+}
+
+// Increment usage for user
+function incrementRentCastUsage(userId) {
+    const monthKey = getCurrentMonthKey();
+    const userKey = `${userId}-${monthKey}`;
+    const currentUsage = rateLimitStore.get(userKey) || 0;
+    const newUsage = currentUsage + 1;
+    rateLimitStore.set(userKey, newUsage);
+    return newUsage;
+}
+
+// Get reset date (first day of next month)
+function getResetDate() {
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    return nextMonth.toISOString();
+}
+
+// Rate limiting middleware for RentCast endpoints
+function rentCastRateLimitMiddleware(req, res, next) {
+    const userId = getUserId(req);
+    const currentUsage = getRentCastUsage(userId);
+    
+    console.log(`🔄 RentCast rate limit check - User: ${userId}, Usage: ${currentUsage}/${RENTCAST_MONTHLY_LIMIT}`);
+    
+    if (currentUsage >= RENTCAST_MONTHLY_LIMIT) {
+        console.log(`❌ RentCast rate limit exceeded for user: ${userId}`);
+        return res.status(429).json({
+            error: 'RentCast API monthly limit exceeded',
+            limit: RENTCAST_MONTHLY_LIMIT,
+            used: currentUsage,
+            remaining: 0,
+            resetDate: getResetDate(),
+            message: `You have used all ${RENTCAST_MONTHLY_LIMIT} RentCast API calls for this month. Limit resets on the 1st of next month.`
+        });
+    }
+    
+    // Add rate limit info to request for use in endpoints
+    req.rateLimitInfo = {
+        userId: userId,
+        used: currentUsage,
+        remaining: RENTCAST_MONTHLY_LIMIT - currentUsage,
+        limit: RENTCAST_MONTHLY_LIMIT,
+        resetDate: getResetDate()
+    };
+    
+    next();
+}
+
 // Log environment variables immediately at startup
 console.log('🚀 Server starting - Environment variable check:');
 console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING');
@@ -2687,7 +2761,7 @@ app.get('/house-models/:filename', (req, res) => {
 // ========================================
 
 // RentCast Property Valuation Endpoint
-app.get('/api/rentcast/valuation', async (req, res) => {
+app.get('/api/rentcast/valuation', rentCastRateLimitMiddleware, async (req, res) => {
     try {
         const { address } = req.query;
         
@@ -2715,10 +2789,19 @@ app.get('/api/rentcast/valuation', async (req, res) => {
         const data = await response.json();
         console.log('✅ RentCast valuation data retrieved successfully');
 
+        // Increment usage count for successful API call
+        const newUsage = incrementRentCastUsage(req.rateLimitInfo.userId);
+        
         res.json({
             success: true,
             data: data,
-            source: 'RentCast API'
+            source: 'RentCast API',
+            rateLimitInfo: {
+                used: newUsage,
+                remaining: RENTCAST_MONTHLY_LIMIT - newUsage,
+                limit: RENTCAST_MONTHLY_LIMIT,
+                resetDate: req.rateLimitInfo.resetDate
+            }
         });
 
     } catch (error) {
@@ -2731,7 +2814,7 @@ app.get('/api/rentcast/valuation', async (req, res) => {
 });
 
 // RentCast Market Data Endpoint
-app.get('/api/rentcast/market', async (req, res) => {
+app.get('/api/rentcast/market', rentCastRateLimitMiddleware, async (req, res) => {
     try {
         const { zipCode, city, state } = req.query;
         
@@ -2766,10 +2849,19 @@ app.get('/api/rentcast/market', async (req, res) => {
         const data = await response.json();
         console.log('✅ RentCast market data retrieved successfully');
 
+        // Increment usage count for successful API call
+        const newUsage = incrementRentCastUsage(req.rateLimitInfo.userId);
+        
         res.json({
             success: true,
             data: data,
-            source: 'RentCast API'
+            source: 'RentCast API',
+            rateLimitInfo: {
+                used: newUsage,
+                remaining: RENTCAST_MONTHLY_LIMIT - newUsage,
+                limit: RENTCAST_MONTHLY_LIMIT,
+                resetDate: req.rateLimitInfo.resetDate
+            }
         });
 
     } catch (error) {
@@ -2782,7 +2874,7 @@ app.get('/api/rentcast/market', async (req, res) => {
 });
 
 // RentCast Comparable Properties Endpoint
-app.get('/api/rentcast/comparables', async (req, res) => {
+app.get('/api/rentcast/comparables', rentCastRateLimitMiddleware, async (req, res) => {
     try {
         const { address, bedrooms, bathrooms, propertyType } = req.query;
         
@@ -2815,10 +2907,19 @@ app.get('/api/rentcast/comparables', async (req, res) => {
         const data = await response.json();
         console.log('✅ RentCast comparables retrieved successfully');
 
+        // Increment usage count for successful API call
+        const newUsage = incrementRentCastUsage(req.rateLimitInfo.userId);
+        
         res.json({
             success: true,
             data: data,
-            source: 'RentCast API'
+            source: 'RentCast API',
+            rateLimitInfo: {
+                used: newUsage,
+                remaining: RENTCAST_MONTHLY_LIMIT - newUsage,
+                limit: RENTCAST_MONTHLY_LIMIT,
+                resetDate: req.rateLimitInfo.resetDate
+            }
         });
 
     } catch (error) {
@@ -2888,6 +2989,23 @@ app.get('/api/market-intelligence', async (req, res) => {
             details: error.message 
         });
     }
+});
+
+// RentCast Rate Limit Status Endpoint
+app.get('/api/rentcast/status', (req, res) => {
+    const userId = getUserId(req);
+    const currentUsage = getRentCastUsage(userId);
+    
+    res.json({
+        success: true,
+        rateLimitInfo: {
+            used: currentUsage,
+            remaining: RENTCAST_MONTHLY_LIMIT - currentUsage,
+            limit: RENTCAST_MONTHLY_LIMIT,
+            resetDate: getResetDate(),
+            percentage: Math.round((currentUsage / RENTCAST_MONTHLY_LIMIT) * 100)
+        }
+    });
 });
 
 // Helper function to generate negotiation insights
