@@ -4501,10 +4501,14 @@ app.post('/api/sublease/request', async (req, res) => {
 
         if (error) {
             console.error('Sublease request creation error:', error);
+            console.error('Error details:', JSON.stringify(error, null, 2));
+            console.error('Request data:', JSON.stringify(requestData, null, 2));
             return res.status(500).json({ 
                 error: 'Failed to create sublease request',
                 details: error.message,
-                hint: error.hint || 'Check if database tables exist and are properly configured'
+                code: error.code,
+                hint: error.hint || 'Check if database tables exist and are properly configured',
+                requestData: requestData
             });
         }
 
@@ -4801,6 +4805,109 @@ async function findAndCreateMatches(requestId, requestType) {
     } catch (error) {
         console.error('Error in findAndCreateMatches:', error);
     }
+}
+
+// Debug endpoint to check database setup
+app.get('/api/sublease/debug', async (req, res) => {
+    try {
+        console.log('🔍 Debugging sublease database setup...');
+        
+        // Check if tables exist
+        const checks = {
+            supabase_connection: false,
+            sublease_requests_table: false,
+            sublease_matches_table: false,
+            user_context_function: false
+        };
+        
+        // Test Supabase connection
+        try {
+            const { data: connectionTest } = await supabase
+                .from('auth.users')
+                .select('count(*)')
+                .limit(1);
+            checks.supabase_connection = true;
+        } catch (error) {
+            console.log('Supabase connection test failed:', error.message);
+        }
+        
+        // Test sublease_requests table
+        try {
+            const { data, error } = await supabase
+                .from('sublease_requests')
+                .select('count(*)')
+                .limit(1);
+            if (!error) {
+                checks.sublease_requests_table = true;
+            } else {
+                console.log('sublease_requests table error:', error.message);
+            }
+        } catch (error) {
+            console.log('sublease_requests table check failed:', error.message);
+        }
+        
+        // Test sublease_matches table
+        try {
+            const { data, error } = await supabase
+                .from('sublease_matches')
+                .select('count(*)')
+                .limit(1);
+            if (!error) {
+                checks.sublease_matches_table = true;
+            } else {
+                console.log('sublease_matches table error:', error.message);
+            }
+        } catch (error) {
+            console.log('sublease_matches table check failed:', error.message);
+        }
+        
+        // Test user context function
+        try {
+            await supabase.rpc('set_user_context', { user_email: 'test@example.com' });
+            checks.user_context_function = true;
+        } catch (error) {
+            console.log('set_user_context function error:', error.message);
+        }
+        
+        res.json({
+            success: true,
+            checks: checks,
+            recommendations: getRecommendations(checks)
+        });
+        
+    } catch (error) {
+        console.error('Debug endpoint error:', error);
+        res.status(500).json({ 
+            error: 'Debug check failed',
+            details: error.message 
+        });
+    }
+});
+
+function getRecommendations(checks) {
+    const recommendations = [];
+    
+    if (!checks.supabase_connection) {
+        recommendations.push('Fix Supabase connection - check SUPABASE_URL and SUPABASE_ANON_KEY');
+    }
+    
+    if (!checks.sublease_requests_table) {
+        recommendations.push('Create sublease_requests table - run simple_sublease_schema.sql');
+    }
+    
+    if (!checks.sublease_matches_table) {
+        recommendations.push('Create sublease_matches table - run simple_sublease_schema.sql');
+    }
+    
+    if (!checks.user_context_function) {
+        recommendations.push('Create set_user_context function - run simple_sublease_schema.sql');
+    }
+    
+    if (recommendations.length === 0) {
+        recommendations.push('All checks passed! Database should be working correctly.');
+    }
+    
+    return recommendations;
 }
 
 // Search sublease requests
