@@ -971,6 +971,10 @@
                         <button type="button" onclick="submitTransferRequest()" class="mt-6 w-full modern-button">
                             🔄 List My Transfer Request
                         </button>
+                        
+                        <button type="button" onclick="debugDatabase()" class="mt-3 w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition">
+                            🔧 Debug Database Setup
+                        </button>
                     </div>
                 </div>
 
@@ -1149,6 +1153,10 @@
                         
                         <button type="button" onclick="submitSeekingRequest()" class="mt-6 w-full modern-button" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                             🔍 Create My Seeking Request
+                        </button>
+                        
+                        <button type="button" onclick="debugDatabase()" class="mt-3 w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition">
+                            🔧 Debug Database Setup
                         </button>
                     </div>
                 </div>
@@ -2529,7 +2537,8 @@
                 }
             } catch (error) {
                 console.error('Seeking request error:', error);
-                alert('Error creating seeking request. Please try again.');
+                console.error('Full error details:', JSON.stringify(error, null, 2));
+                alert('Error creating seeking request. Please check console for details.');
             }
         }
 
@@ -2643,6 +2652,38 @@
         function displayMatches(matches) {
             // Add logic to display matches in UI
             console.log('Matches found:', matches);
+        }
+
+        // Debug database setup
+        async function debugDatabase() {
+            try {
+                console.log('🔧 Starting database debug check...');
+                
+                const response = await fetch('/api/sublease/debug');
+                const result = await response.json();
+                
+                console.log('Debug result:', result);
+                
+                if (result.success) {
+                    let message = '🔧 Database Debug Results:\n\n';
+                    message += `✅ Supabase Connection: ${result.checks.supabase_connection ? 'OK' : 'FAILED'}\n`;
+                    message += `✅ sublease_requests table: ${result.checks.sublease_requests_table ? 'OK' : 'MISSING'}\n`;
+                    message += `✅ sublease_matches table: ${result.checks.sublease_matches_table ? 'OK' : 'MISSING'}\n`;
+                    message += `✅ set_user_context function: ${result.checks.user_context_function ? 'OK' : 'MISSING'}\n\n`;
+                    
+                    message += 'Recommendations:\n';
+                    result.recommendations.forEach((rec, index) => {
+                        message += `${index + 1}. ${rec}\n`;
+                    });
+                    
+                    alert(message);
+                } else {
+                    alert('Debug check failed: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Debug error:', error);
+                alert('Debug check failed. Check console for details.');
+            }
         }
 
         // Express interest in a match
