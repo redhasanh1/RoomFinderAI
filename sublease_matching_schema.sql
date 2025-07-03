@@ -292,5 +292,5 @@ COMMENT ON TABLE sublease_matches IS 'Tracks compatibility matches between trans
 COMMENT ON TABLE sublease_transfers IS 'Records completed sublease transfers with handover details and feedback';
 
 COMMENT ON COLUMN sublease_requests.type IS 'Either transfer (wanting to get out) or seeking (looking for sublease)';
-COMMENT ON COLUMN sublease_requests.compatibility_score IS 'Overall compatibility score from 0-100';
+COMMENT ON COLUMN sublease_matches.compatibility_score IS 'Overall compatibility score from 0-100';
 COMMENT ON COLUMN sublease_matches.match_status IS 'Progress through the matching and transfer process';
