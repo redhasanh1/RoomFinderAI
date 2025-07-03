@@ -201,6 +201,9 @@
                 <button class="tab-button" onclick="switchTab('legal', this)">
                     ⚖️ Legal
                 </button>
+                <button class="tab-button" onclick="switchTab('mortgage', this)">
+                    💰 Mortgage
+                </button>
             </div>
         </div>
 
@@ -1808,6 +1811,561 @@
                 </div>
             </div>
 
+            <!-- Mortgage Tab -->
+            <div id="mortgage-tab" class="tab-content hidden">
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">💰 Mortgage Analysis & Negotiation Center</h3>
+                    
+                    <!-- Mortgage Dashboard Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="stats-card bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-green-700">Mortgages Analyzed</p>
+                                    <p id="mortgagesAnalyzed" class="text-2xl font-bold text-green-900">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-card bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-blue-700">Potential Savings</p>
+                                    <p id="potentialSavings" class="text-2xl font-bold text-blue-900">$0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-card bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-purple-700">Letters Generated</p>
+                                    <p id="lettersGenerated" class="text-2xl font-bold text-purple-900">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-card bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border border-orange-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-orange-700">Rate Alerts</p>
+                                    <p id="rateAlerts" class="text-2xl font-bold text-orange-900">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM11 7H7a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2V9a2 2 0 00-2-2z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Market Rates Display -->
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-200 mb-8">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">📊 Current Market Rates - July 2025</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- 30-Year Fixed -->
+                            <div class="bg-white p-4 rounded-lg border border-indigo-200">
+                                <div class="text-center">
+                                    <h5 class="text-lg font-semibold text-gray-800 mb-2">30-Year Fixed</h5>
+                                    <div class="text-3xl font-bold text-indigo-600 mb-2">6.68%</div>
+                                    <p class="text-sm text-gray-600">APR</p>
+                                    <div class="mt-3 text-xs text-gray-500">
+                                        <p>• 740+ Credit: 6.50%</p>
+                                        <p>• 680-739: 6.68%</p>
+                                        <p>• 620-679: 7.15%</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 15-Year Fixed -->
+                            <div class="bg-white p-4 rounded-lg border border-indigo-200">
+                                <div class="text-center">
+                                    <h5 class="text-lg font-semibold text-gray-800 mb-2">15-Year Fixed</h5>
+                                    <div class="text-3xl font-bold text-green-600 mb-2">5.71%</div>
+                                    <p class="text-sm text-gray-600">APR</p>
+                                    <div class="mt-3 text-xs text-gray-500">
+                                        <p>• 740+ Credit: 5.55%</p>
+                                        <p>• 680-739: 5.71%</p>
+                                        <p>• 620-679: 6.10%</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Refinance Rates -->
+                            <div class="bg-white p-4 rounded-lg border border-indigo-200">
+                                <div class="text-center">
+                                    <h5 class="text-lg font-semibold text-gray-800 mb-2">Refinance</h5>
+                                    <div class="text-3xl font-bold text-purple-600 mb-2">6.86%</div>
+                                    <p class="text-sm text-gray-600">30-Yr APR</p>
+                                    <div class="mt-3 text-xs text-gray-500">
+                                        <p>• 15-Yr: 6.15%</p>
+                                        <p>• Cash-out: 7.05%</p>
+                                        <p>• FHA: 6.45%</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <p class="text-sm text-yellow-800"><strong>📈 2025 Forecast:</strong> Rates expected to remain between 6.5% - 7.0% throughout 2025. Best time to refinance is when you can save 0.5% or more.</p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Action Tools -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                        <!-- AI Mortgage Analyzer -->
+                        <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-gray-800">AI Mortgage Analyzer</h4>
+                                    <p class="text-sm text-gray-600">Analyze your current mortgage</p>
+                                </div>
+                            </div>
+                            <button onclick="openMortgageAnalyzer()" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                                Analyze My Mortgage
+                            </button>
+                        </div>
+
+                        <!-- Negotiation Letter Generator -->
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-gray-800">Negotiation Letters</h4>
+                                    <p class="text-sm text-gray-600">AI-powered letter templates</p>
+                                </div>
+                            </div>
+                            <button onclick="openNegotiationLetters()" class="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                                Generate Letter
+                            </button>
+                        </div>
+
+                        <!-- Refinance Calculator -->
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-gray-800">ROI Calculator</h4>
+                                    <p class="text-sm text-gray-600">Calculate refinance savings</p>
+                                </div>
+                            </div>
+                            <button onclick="openROICalculator()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                Calculate Savings
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mortgage Analyzer Section -->
+                    <div id="mortgageAnalyzerSection" class="hidden mb-8">
+                        <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
+                            <h4 class="text-xl font-bold text-gray-800 mb-6">🤖 AI Mortgage Analyzer</h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Loan Amount</label>
+                                    <input type="number" id="currentLoanAmount" placeholder="300000" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Interest Rate (%)</label>
+                                    <input type="number" id="currentRate" step="0.01" placeholder="7.25" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Remaining Term (Years)</label>
+                                    <select id="remainingTerm" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                        <option value="">Select Term</option>
+                                        <option value="30">30 Years</option>
+                                        <option value="25">25 Years</option>
+                                        <option value="20">20 Years</option>
+                                        <option value="15">15 Years</option>
+                                        <option value="10">10 Years</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Credit Score Range</label>
+                                    <select id="creditScore" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                        <option value="">Select Credit Score</option>
+                                        <option value="740">740+ (Excellent)</option>
+                                        <option value="680">680-739 (Good)</option>
+                                        <option value="620">620-679 (Fair)</option>
+                                        <option value="580">580-619 (Poor)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Payment</label>
+                                    <input type="number" id="monthlyPayment" placeholder="2000" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
+                                    <input type="number" id="homeValue" placeholder="450000" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                </div>
+                            </div>
+
+                            <button onclick="analyzeMortgage()" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all font-medium">
+                                🚀 Analyze My Mortgage
+                            </button>
+
+                            <!-- Analysis Results -->
+                            <div id="mortgageAnalysisResults" class="hidden mt-6 space-y-4">
+                                <div class="bg-white p-6 rounded-lg border border-green-200">
+                                    <h5 class="text-xl font-semibold text-gray-800 mb-4">📊 Your Mortgage Analysis</h5>
+                                    <div id="analysisContent" class="space-y-4">
+                                        <!-- Analysis content will be populated here -->
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                    <h5 class="text-lg font-semibold text-green-800 mb-3">💰 Potential Savings</h5>
+                                    <div id="savingsBreakdown" class="space-y-2">
+                                        <!-- Savings content will be populated here -->
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                    <h5 class="text-lg font-semibold text-blue-800 mb-3">📋 Recommended Actions</h5>
+                                    <div id="recommendedActions" class="space-y-2">
+                                        <!-- Actions content will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Negotiation Letters Section -->
+                    <div id="negotiationLettersSection" class="hidden mb-8">
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200">
+                            <h4 class="text-xl font-bold text-gray-800 mb-6">✍️ AI Negotiation Letter Generator</h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Letter Type</label>
+                                    <select id="letterType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <option value="">Select Letter Type</option>
+                                        <option value="rate-reduction">Rate Reduction Request</option>
+                                        <option value="refinance-inquiry">Refinance Inquiry</option>
+                                        <option value="payment-modification">Payment Modification</option>
+                                        <option value="competing-offer">Competing Offer Leverage</option>
+                                        <option value="loyalty-discount">Loyalty Customer Discount</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Lender Name</label>
+                                    <input type="text" id="lenderName" placeholder="Wells Fargo" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Rate (%)</label>
+                                    <input type="number" id="letterCurrentRate" step="0.01" placeholder="7.25" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Desired Rate (%)</label>
+                                    <input type="number" id="desiredRate" step="0.01" placeholder="6.50" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                </div>
+                            </div>
+
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Additional Details</label>
+                                <textarea id="additionalDetails" rows="3" placeholder="Mention any competing offers, payment history, home improvements, etc." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"></textarea>
+                            </div>
+
+                            <button onclick="generateNegotiationLetter()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium">
+                                🚀 Generate Negotiation Letter
+                            </button>
+
+                            <!-- Generated Letter Preview -->
+                            <div id="letterPreview" class="hidden mt-6 p-4 bg-white rounded-lg border border-purple-200">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h5 class="text-lg font-semibold text-gray-800">Generated Letter</h5>
+                                    <div class="flex gap-2">
+                                        <button onclick="copyLetter()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                                            📋 Copy
+                                        </button>
+                                        <button onclick="downloadLetter()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                            📥 Download
+                                        </button>
+                                        <button onclick="emailLetter()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm">
+                                            📧 Email
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="letterContent" class="bg-gray-50 p-4 rounded border text-sm max-h-96 overflow-y-auto">
+                                    <!-- Generated letter content will appear here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ROI Calculator Section -->
+                    <div id="roiCalculatorSection" class="hidden mb-8">
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
+                            <h4 class="text-xl font-bold text-gray-800 mb-6">🧮 Refinance ROI Calculator</h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Loan Balance</label>
+                                    <input type="number" id="roiLoanBalance" placeholder="300000" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Rate (%)</label>
+                                    <input type="number" id="roiCurrentRate" step="0.01" placeholder="7.25" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">New Rate (%)</label>
+                                    <input type="number" id="newRate" step="0.01" placeholder="6.50" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Loan Term (Years)</label>
+                                    <select id="roiLoanTerm" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                        <option value="30">30 Years</option>
+                                        <option value="25">25 Years</option>
+                                        <option value="20">20 Years</option>
+                                        <option value="15">15 Years</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Closing Costs</label>
+                                    <input type="number" id="closingCosts" placeholder="5000" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Cash Out Amount (Optional)</label>
+                                    <input type="number" id="cashOut" placeholder="0" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+
+                            <button onclick="calculateROI()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium">
+                                🚀 Calculate ROI
+                            </button>
+
+                            <!-- ROI Results -->
+                            <div id="roiResults" class="hidden mt-6 space-y-4">
+                                <div class="bg-white p-6 rounded-lg border border-blue-200">
+                                    <h5 class="text-xl font-semibold text-gray-800 mb-4">💰 Refinance Analysis</h5>
+                                    <div id="roiBreakdown" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <!-- ROI breakdown will be populated here -->
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                    <h5 class="text-lg font-semibold text-green-800 mb-3">📈 Break-Even Analysis</h5>
+                                    <div id="breakEvenAnalysis" class="space-y-2">
+                                        <!-- Break-even content will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Educational Resources -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 mb-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">📚 Mortgage Resources & Tools</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Refinancing Guides -->
+                            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <h5 class="text-lg font-semibold text-blue-800 mb-3">📖 Refinancing Guides</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• When to Refinance Your Mortgage</a></li>
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• Cash-Out vs Rate-and-Term</a></li>
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• FHA Streamline Refinancing</a></li>
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• VA Interest Rate Reduction</a></li>
+                                </ul>
+                            </div>
+
+                            <!-- Credit Improvement -->
+                            <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                                <h5 class="text-lg font-semibold text-green-800 mb-3">⬆️ Credit Improvement</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Boost Your Credit Score Fast</a></li>
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Credit Report Disputes</a></li>
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Debt-to-Income Optimization</a></li>
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Pre-Qualification Strategies</a></li>
+                                </ul>
+                            </div>
+
+                            <!-- Advanced Tools -->
+                            <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                <h5 class="text-lg font-semibold text-purple-800 mb-3">🛠️ Advanced Tools</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li><a href="#" onclick="openMortgageVsRentCalculator()" class="text-purple-600 hover:text-purple-800 cursor-pointer">• Mortgage vs Rent Calculator</a></li>
+                                    <li><a href="#" onclick="openEarlyPayoffCalculator()" class="text-purple-600 hover:text-purple-800 cursor-pointer">• Early Payoff Calculator</a></li>
+                                    <li><a href="#" onclick="openAffordabilityCalculator()" class="text-purple-600 hover:text-purple-800 cursor-pointer">• Home Affordability Tool</a></li>
+                                    <li><a href="#" onclick="openRateAlertSetup()" class="text-purple-600 hover:text-purple-800 cursor-pointer">• Rate Alert Setup</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rate Alerts & Mortgage Health -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <!-- Rate Alert Setup -->
+                        <div class="bg-gradient-to-r from-orange-50 to-red-50 p-6 rounded-xl border border-orange-200">
+                            <h4 class="text-xl font-bold text-gray-800 mb-6">🔔 Rate Alert System</h4>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Alert When Rate Drops Below</label>
+                                    <input type="number" id="alertTargetRate" step="0.01" placeholder="6.50" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                                    <input type="email" id="alertEmail" placeholder="your@email.com" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Alert Frequency</label>
+                                    <select id="alertFrequency" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="immediate">Immediate</option>
+                                    </select>
+                                </div>
+                                
+                                <button onclick="setupRateAlert()" class="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white px-4 py-2 rounded-lg hover:from-orange-700 hover:to-red-700 transition-all font-medium">
+                                    🚀 Setup Rate Alert
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Mortgage Health Score -->
+                        <div class="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-200">
+                            <h4 class="text-xl font-bold text-gray-800 mb-6">🏥 Mortgage Health Score</h4>
+                            
+                            <div class="text-center mb-4">
+                                <div id="healthScoreDisplay" class="text-4xl font-bold text-teal-600 mb-2">--</div>
+                                <p class="text-sm text-gray-600">Your Mortgage Health Score</p>
+                            </div>
+                            
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between">
+                                    <span>Rate Competitiveness:</span>
+                                    <span id="rateCompetitiveness" class="font-medium">--</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>LTV Ratio:</span>
+                                    <span id="ltvRatio" class="font-medium">--</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Payment Efficiency:</span>
+                                    <span id="paymentEfficiency" class="font-medium">--</span>
+                                </div>
+                            </div>
+                            
+                            <button onclick="calculateHealthScore()" class="w-full mt-4 bg-gradient-to-r from-teal-600 to-cyan-600 text-white px-4 py-2 rounded-lg hover:from-teal-700 hover:to-cyan-700 transition-all font-medium">
+                                Calculate Health Score
+                            </button>
+                            
+                            <div id="healthRecommendations" class="hidden mt-4 p-3 bg-teal-50 rounded-lg border border-teal-200">
+                                <h6 class="font-semibold text-teal-800 mb-2">Improvement Recommendations:</h6>
+                                <div id="healthTips" class="text-sm text-teal-700 space-y-1">
+                                    <!-- Recommendations will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Success Stories & Social Proof -->
+                    <div class="bg-gradient-to-r from-yellow-50 to-amber-50 p-6 rounded-xl border border-yellow-200">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">🌟 Success Stories</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                                    <div>
+                                        <h5 class="font-semibold text-gray-800">Sarah M. - California</h5>
+                                        <p class="text-sm text-gray-600 mt-1">"Saved $3,200 annually by refinancing from 7.8% to 6.2%. The negotiation letter template worked perfectly!"</p>
+                                        <span class="text-xs text-green-600 font-medium">💰 $3,200/year saved</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                    <div>
+                                        <h5 class="font-semibold text-gray-800">Mike R. - Texas</h5>
+                                        <p class="text-sm text-gray-600 mt-1">"The rate alert system notified me when rates dropped. Locked in 6.1% and saved $48,000 over the loan term."</p>
+                                        <span class="text-xs text-blue-600 font-medium">💰 $48,000 total saved</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                                    <div>
+                                        <h5 class="font-semibold text-gray-800">Jennifer L. - Florida</h5>
+                                        <p class="text-sm text-gray-600 mt-1">"Used the mortgage analyzer to negotiate with my current lender. They matched a competitor's rate without refinancing!"</p>
+                                        <span class="text-xs text-purple-600 font-medium">💰 $1,800/year saved</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 text-center">
+                            <p class="text-sm text-gray-600">Over 10,000+ homeowners have saved money using our mortgage tools</p>
+                            <div class="flex justify-center space-x-4 mt-2">
+                                <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">⭐⭐⭐⭐⭐ 4.9/5 Rating</span>
+                                <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">🔒 Bank-Level Security</span>
+                                <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">📞 Expert Support</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -2858,6 +3416,10 @@
             
             // Load bank information
             await loadBankInformation();
+            
+            // Initialize statistics
+            initializeLegalStats();
+            initializeMortgageStats();
         }
 
         async function loadDashboardData() {
@@ -7014,6 +7576,617 @@
             // Auto remove after 5 seconds
             setTimeout(() => {
                 if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // ========================================
+        // MORTGAGE ANALYSIS & NEGOTIATION FUNCTIONS
+        // ========================================
+        
+        // Global mortgage data
+        const MARKET_RATES_2025 = {
+            '30-year-fixed': { excellent: 6.50, good: 6.68, fair: 7.15, poor: 7.65 },
+            '15-year-fixed': { excellent: 5.55, good: 5.71, fair: 6.10, poor: 6.55 },
+            'refinance-30': { excellent: 6.70, good: 6.86, fair: 7.25, poor: 7.75 },
+            'refinance-15': { excellent: 5.95, good: 6.15, fair: 6.50, poor: 6.95 }
+        };
+
+        // Mortgage section navigation functions
+        function hideAllMortgageSections() {
+            document.getElementById('mortgageAnalyzerSection').classList.add('hidden');
+            document.getElementById('negotiationLettersSection').classList.add('hidden');
+            document.getElementById('roiCalculatorSection').classList.add('hidden');
+        }
+
+        function openMortgageAnalyzer() {
+            console.log('🏠 Opening mortgage analyzer...');
+            hideAllMortgageSections();
+            document.getElementById('mortgageAnalyzerSection').classList.remove('hidden');
+            updateMortgageStats();
+        }
+
+        function openNegotiationLetters() {
+            console.log('✍️ Opening negotiation letters...');
+            hideAllMortgageSections();
+            document.getElementById('negotiationLettersSection').classList.remove('hidden');
+            updateMortgageStats();
+        }
+
+        function openROICalculator() {
+            console.log('🧮 Opening ROI calculator...');
+            hideAllMortgageSections();
+            document.getElementById('roiCalculatorSection').classList.remove('hidden');
+            updateMortgageStats();
+        }
+
+        // AI Mortgage Analyzer
+        async function analyzeMortgage() {
+            const loanAmount = parseFloat(document.getElementById('currentLoanAmount').value);
+            const currentRate = parseFloat(document.getElementById('currentRate').value);
+            const remainingTerm = parseInt(document.getElementById('remainingTerm').value);
+            const creditScore = document.getElementById('creditScore').value;
+            const monthlyPayment = parseFloat(document.getElementById('monthlyPayment').value);
+            const homeValue = parseFloat(document.getElementById('homeValue').value);
+
+            if (!loanAmount || !currentRate || !remainingTerm || !creditScore) {
+                showMortgageNotification('Please fill in all required fields', 'error');
+                return;
+            }
+
+            console.log('🤖 Analyzing mortgage...', { 
+                loanAmount, currentRate, remainingTerm, creditScore, monthlyPayment, homeValue 
+            });
+
+            // Get market rate for credit score
+            const creditTier = getCreditTier(parseInt(creditScore));
+            const marketRate = MARKET_RATES_2025['refinance-30'][creditTier];
+            
+            // Calculate potential savings
+            const currentMonthlyPayment = calculateMonthlyPayment(loanAmount, currentRate, remainingTerm);
+            const newMonthlyPayment = calculateMonthlyPayment(loanAmount, marketRate, remainingTerm);
+            const monthlySavings = currentMonthlyPayment - newMonthlyPayment;
+            const totalSavings = monthlySavings * (remainingTerm * 12);
+            
+            // Calculate LTV ratio
+            const ltvRatio = homeValue ? ((loanAmount / homeValue) * 100).toFixed(1) : 'N/A';
+            
+            // Generate analysis
+            const analysis = {
+                currentRate,
+                marketRate,
+                rateDifference: (currentRate - marketRate).toFixed(2),
+                currentPayment: currentMonthlyPayment,
+                newPayment: newMonthlyPayment,
+                monthlySavings,
+                totalSavings,
+                ltvRatio,
+                creditTier,
+                recommendAction: monthlySavings > 100
+            };
+
+            displayMortgageAnalysis(analysis);
+            document.getElementById('mortgageAnalysisResults').classList.remove('hidden');
+            
+            // Update stats
+            updateMortgageAnalysisStats();
+            updatePotentialSavingsStats(totalSavings);
+            
+            showMortgageNotification('✅ Mortgage analysis completed!', 'success');
+        }
+
+        function getCreditTier(score) {
+            if (score >= 740) return 'excellent';
+            if (score >= 680) return 'good';
+            if (score >= 620) return 'fair';
+            return 'poor';
+        }
+
+        function calculateMonthlyPayment(principal, rate, years) {
+            const monthlyRate = rate / 100 / 12;
+            const numPayments = years * 12;
+            const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                           (Math.pow(1 + monthlyRate, numPayments) - 1);
+            return Math.round(payment * 100) / 100;
+        }
+
+        function displayMortgageAnalysis(analysis) {
+            const content = document.getElementById('analysisContent');
+            content.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-3 bg-gray-50 rounded-lg">
+                        <h6 class="font-semibold text-gray-800 mb-2">Current Mortgage</h6>
+                        <p class="text-sm text-gray-600">Rate: ${analysis.currentRate}%</p>
+                        <p class="text-sm text-gray-600">Payment: $${analysis.currentPayment.toLocaleString()}</p>
+                    </div>
+                    <div class="p-3 bg-green-50 rounded-lg">
+                        <h6 class="font-semibold text-green-800 mb-2">Market Rate (${analysis.creditTier})</h6>
+                        <p class="text-sm text-green-600">Rate: ${analysis.marketRate}%</p>
+                        <p class="text-sm text-green-600">Payment: $${analysis.newPayment.toLocaleString()}</p>
+                    </div>
+                </div>
+                
+                <div class="mt-4 p-3 ${analysis.recommendAction ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'} rounded-lg border">
+                    <h6 class="font-semibold ${analysis.recommendAction ? 'text-green-800' : 'text-yellow-800'} mb-2">
+                        Rate Competitiveness: ${analysis.recommendAction ? 'Action Recommended' : 'Monitor Market'}
+                    </h6>
+                    <p class="text-sm ${analysis.recommendAction ? 'text-green-700' : 'text-yellow-700'}">
+                        Your rate is ${analysis.rateDifference}% ${parseFloat(analysis.rateDifference) > 0 ? 'above' : 'below'} current market rates.
+                        ${analysis.ltvRatio !== 'N/A' ? `Your LTV ratio is ${analysis.ltvRatio}%.` : ''}
+                    </p>
+                </div>
+            `;
+
+            // Display savings breakdown
+            const savingsContent = document.getElementById('savingsBreakdown');
+            savingsContent.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Monthly Savings:</span>
+                    <span class="font-medium text-green-600">$${analysis.monthlySavings.toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Annual Savings:</span>
+                    <span class="font-medium text-green-600">$${(analysis.monthlySavings * 12).toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Total Loan Savings:</span>
+                    <span class="font-medium text-green-600">$${analysis.totalSavings.toLocaleString()}</span>
+                </div>
+            `;
+
+            // Display recommended actions
+            const actionsContent = document.getElementById('recommendedActions');
+            const actions = analysis.recommendAction ? [
+                'Contact your current lender to discuss rate reduction',
+                'Get quotes from 3-5 different lenders for comparison',
+                'Consider refinancing if you plan to stay 2+ years',
+                'Use our negotiation letter generator to approach your lender'
+            ] : [
+                'Continue monitoring market rates for opportunities',
+                'Work on improving your credit score for better rates',
+                'Consider bi-weekly payments to pay off faster',
+                'Set up rate alerts for when rates drop significantly'
+            ];
+
+            actionsContent.innerHTML = actions.map(action => 
+                `<div class="flex items-start space-x-2">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                    <p class="text-sm text-gray-700">${action}</p>
+                </div>`
+            ).join('');
+        }
+
+        // Negotiation Letter Generator
+        async function generateNegotiationLetter() {
+            const letterType = document.getElementById('letterType').value;
+            const lenderName = document.getElementById('lenderName').value;
+            const currentRate = document.getElementById('letterCurrentRate').value;
+            const desiredRate = document.getElementById('desiredRate').value;
+            const additionalDetails = document.getElementById('additionalDetails').value;
+
+            if (!letterType || !lenderName || !currentRate) {
+                showMortgageNotification('Please fill in required fields', 'error');
+                return;
+            }
+
+            console.log('✍️ Generating negotiation letter...', { 
+                letterType, lenderName, currentRate, desiredRate, additionalDetails 
+            });
+
+            const letter = generateLetterTemplate(letterType, lenderName, currentRate, desiredRate, additionalDetails);
+            
+            document.getElementById('letterContent').innerHTML = letter;
+            document.getElementById('letterPreview').classList.remove('hidden');
+            
+            updateLetterStats();
+            showMortgageNotification('✅ Negotiation letter generated successfully!', 'success');
+        }
+
+        function generateLetterTemplate(type, lender, currentRate, desiredRate, details) {
+            const today = new Date().toLocaleDateString();
+            const rateDiff = currentRate && desiredRate ? (parseFloat(currentRate) - parseFloat(desiredRate)).toFixed(2) : '0.50';
+            
+            const templates = {
+                'rate-reduction': `
+                    <div class="space-y-4">
+                        <p class="text-right text-sm text-gray-600">${today}</p>
+                        <p><strong>${lender} Customer Service<br>
+                        Re: Request for Interest Rate Reduction - Account #[Your Account Number]</strong></p>
+                        
+                        <p>Dear ${lender} Team,</p>
+                        
+                        <p>I am writing as a valued customer to request consideration for an interest rate reduction on my current mortgage. I have been consistently making on-time payments and believe my account deserves review for a better rate.</p>
+                        
+                        <p><strong>Current Situation:</strong><br>
+                        • Current Interest Rate: ${currentRate}%<br>
+                        • Market rates for qualified borrowers: ${desiredRate}%<br>
+                        • Rate difference: ${rateDiff}% above market</p>
+                        
+                        <p>Given the current market conditions and my strong payment history, I believe a rate reduction to ${desiredRate}% would be fair and in line with current market offerings. This adjustment would demonstrate ${lender}'s commitment to retaining loyal customers.</p>
+                        
+                        ${details ? `<p><strong>Additional Considerations:</strong><br>${details}</p>` : ''}
+                        
+                        <p>I have received competitive offers from other lenders, but I would prefer to continue my relationship with ${lender}. I would appreciate your review of my account and consideration of this request.</p>
+                        
+                        <p>Thank you for your time and consideration. I look forward to your response within 10 business days.</p>
+                        
+                        <p>Sincerely,<br>
+                        [Your Name]<br>
+                        [Your Phone Number]<br>
+                        [Your Email Address]</p>
+                    </div>
+                `,
+                'refinance-inquiry': `
+                    <div class="space-y-4">
+                        <p class="text-right text-sm text-gray-600">${today}</p>
+                        <p><strong>${lender} Refinance Department<br>
+                        Re: Refinance Inquiry - Current Customer</strong></p>
+                        
+                        <p>Dear Refinance Specialist,</p>
+                        
+                        <p>As a current ${lender} mortgage customer, I am interested in exploring refinancing options to take advantage of current market rates and reduce my monthly payment.</p>
+                        
+                        <p><strong>Current Loan Details:</strong><br>
+                        • Current Rate: ${currentRate}%<br>
+                        • Desired Rate: ${desiredRate}%<br>
+                        • Payment History: Excellent (no late payments)</p>
+                        
+                        <p>I have maintained an excellent payment history and my home's value has increased since my original purchase. I believe I qualify for your best rates and would like to discuss:</p>
+                        
+                        <ul class="list-disc ml-6">
+                            <li>Current refinance rates and terms available</li>
+                            <li>Closing costs and any potential fee waivers for existing customers</li>
+                            <li>Timeline for processing and closing</li>
+                            <li>Any customer loyalty discounts available</li>
+                        </ul>
+                        
+                        ${details ? `<p><strong>Additional Information:</strong><br>${details}</p>` : ''}
+                        
+                        <p>I value my relationship with ${lender} and would prefer to refinance with you rather than seek options elsewhere. Please contact me at your earliest convenience to discuss my refinancing options.</p>
+                        
+                        <p>Best regards,<br>
+                        [Your Name]<br>
+                        [Your Phone Number]<br>
+                        [Your Email Address]<br>
+                        [Current Loan Number]</p>
+                    </div>
+                `,
+                'competing-offer': `
+                    <div class="space-y-4">
+                        <p class="text-right text-sm text-gray-600">${today}</p>
+                        <p><strong>${lender} Retention Department<br>
+                        Re: Rate Match Request - Competitive Offer Received</strong></p>
+                        
+                        <p>Dear ${lender} Team,</p>
+                        
+                        <p>I am writing to inform you that I have received a competitive refinance offer from another lender and would like to give ${lender} the opportunity to match or exceed this offer before making my final decision.</p>
+                        
+                        <p><strong>Competitive Offer Details:</strong><br>
+                        • Offered Rate: ${desiredRate}%<br>
+                        • My Current Rate: ${currentRate}%<br>
+                        • Potential Monthly Savings: $[Amount]<br>
+                        • Closing Costs: [Competitive offer details]</p>
+                        
+                        <p>I have been a loyal ${lender} customer and have always made my payments on time. My preference is to remain with ${lender}, but the financial benefit of the competing offer is significant.</p>
+                        
+                        <p><strong>What I'm Looking For:</strong><br>
+                        • Rate match or better than ${desiredRate}%<br>
+                        • Competitive closing costs or fee waivers<br>
+                        • Expedited processing as a current customer</p>
+                        
+                        ${details ? `<p><strong>Additional Details:</strong><br>${details}</p>` : ''}
+                        
+                        <p>I would appreciate a response within 5 business days, as I need to respond to the competing offer by [Date + 7 days]. I'm confident we can find a mutually beneficial solution.</p>
+                        
+                        <p>Thank you for your prompt attention to this matter.</p>
+                        
+                        <p>Sincerely,<br>
+                        [Your Name]<br>
+                        [Your Phone Number]<br>
+                        [Your Email Address]<br>
+                        [Account Number]</p>
+                    </div>
+                `
+            };
+            
+            return templates[type] || templates['rate-reduction'];
+        }
+
+        // ROI Calculator
+        async function calculateROI() {
+            const loanBalance = parseFloat(document.getElementById('roiLoanBalance').value);
+            const currentRate = parseFloat(document.getElementById('roiCurrentRate').value);
+            const newRate = parseFloat(document.getElementById('newRate').value);
+            const loanTerm = parseInt(document.getElementById('roiLoanTerm').value);
+            const closingCosts = parseFloat(document.getElementById('closingCosts').value);
+            const cashOut = parseFloat(document.getElementById('cashOut').value) || 0;
+
+            if (!loanBalance || !currentRate || !newRate || !loanTerm || !closingCosts) {
+                showMortgageNotification('Please fill in all required fields', 'error');
+                return;
+            }
+
+            console.log('🧮 Calculating ROI...', { 
+                loanBalance, currentRate, newRate, loanTerm, closingCosts, cashOut 
+            });
+
+            // Calculate payments
+            const currentPayment = calculateMonthlyPayment(loanBalance, currentRate, loanTerm);
+            const newPayment = calculateMonthlyPayment(loanBalance + cashOut, newRate, loanTerm);
+            const monthlySavings = currentPayment - newPayment;
+            
+            // Calculate break-even
+            const breakEvenMonths = Math.ceil(closingCosts / Math.abs(monthlySavings));
+            const breakEvenYears = (breakEvenMonths / 12).toFixed(1);
+            
+            // Calculate total savings
+            const totalSavings = (monthlySavings * loanTerm * 12) - closingCosts;
+            
+            const roiData = {
+                currentPayment,
+                newPayment,
+                monthlySavings,
+                totalSavings,
+                breakEvenMonths,
+                breakEvenYears,
+                closingCosts,
+                cashOut,
+                isWorthwhile: monthlySavings > 0 && breakEvenMonths <= 60 // 5 years
+            };
+
+            displayROIResults(roiData);
+            document.getElementById('roiResults').classList.remove('hidden');
+            
+            showMortgageNotification('✅ ROI calculation completed!', 'success');
+        }
+
+        function displayROIResults(data) {
+            const breakdown = document.getElementById('roiBreakdown');
+            breakdown.innerHTML = `
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Current Monthly Payment:</span>
+                        <span class="font-medium">$${data.currentPayment.toLocaleString()}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">New Monthly Payment:</span>
+                        <span class="font-medium">$${data.newPayment.toLocaleString()}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Monthly Difference:</span>
+                        <span class="font-medium ${data.monthlySavings >= 0 ? 'text-green-600' : 'text-red-600'}">
+                            ${data.monthlySavings >= 0 ? '$' + data.monthlySavings.toLocaleString() : '-$' + Math.abs(data.monthlySavings).toLocaleString()}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Closing Costs:</span>
+                        <span class="font-medium text-red-600">$${data.closingCosts.toLocaleString()}</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-3 mt-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Total Loan Savings:</span>
+                        <span class="font-medium ${data.totalSavings >= 0 ? 'text-green-600' : 'text-red-600'}">
+                            ${data.totalSavings >= 0 ? '$' + data.totalSavings.toLocaleString() : '-$' + Math.abs(data.totalSavings).toLocaleString()}
+                        </span>
+                    </div>
+                    ${data.cashOut > 0 ? `
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Cash Out Amount:</span>
+                        <span class="font-medium text-blue-600">$${data.cashOut.toLocaleString()}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
+            const breakEvenAnalysis = document.getElementById('breakEvenAnalysis');
+            breakEvenAnalysis.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Break-Even Period:</span>
+                    <span class="font-medium">${data.breakEvenMonths} months (${data.breakEvenYears} years)</span>
+                </div>
+                
+                <div class="mt-3 p-3 ${data.isWorthwhile ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'} rounded-lg border">
+                    <h6 class="font-semibold ${data.isWorthwhile ? 'text-green-800' : 'text-yellow-800'} mb-2">
+                        ${data.isWorthwhile ? '✅ Refinancing Recommended' : '⚠️ Consider Carefully'}
+                    </h6>
+                    <p class="text-sm ${data.isWorthwhile ? 'text-green-700' : 'text-yellow-700'}">
+                        ${data.isWorthwhile 
+                            ? `You'll break even in ${data.breakEvenYears} years and save $${Math.abs(data.totalSavings).toLocaleString()} over the loan term.`
+                            : `Break-even period of ${data.breakEvenYears} years may be too long. Consider if you'll stay in the home that long.`
+                        }
+                    </p>
+                </div>
+            `;
+        }
+
+        // Rate Alert System
+        function setupRateAlert() {
+            const targetRate = document.getElementById('alertTargetRate').value;
+            const email = document.getElementById('alertEmail').value;
+            const frequency = document.getElementById('alertFrequency').value;
+
+            if (!targetRate || !email) {
+                showMortgageNotification('Please fill in target rate and email address', 'error');
+                return;
+            }
+
+            console.log('🔔 Setting up rate alert...', { targetRate, email, frequency });
+
+            // Save alert to localStorage (in real app, would save to backend)
+            const alerts = JSON.parse(localStorage.getItem('mortgageAlerts') || '[]');
+            alerts.push({
+                id: Date.now(),
+                targetRate: parseFloat(targetRate),
+                email,
+                frequency,
+                created: new Date().toISOString()
+            });
+            localStorage.setItem('mortgageAlerts', JSON.stringify(alerts));
+
+            updateRateAlertStats();
+            showMortgageNotification('✅ Rate alert set up successfully! You\'ll be notified when rates drop.', 'success');
+            
+            // Clear form
+            document.getElementById('alertTargetRate').value = '';
+            document.getElementById('alertEmail').value = '';
+        }
+
+        // Mortgage Health Score
+        function calculateHealthScore() {
+            // Get current mortgage data from analyzer if available
+            const currentRate = parseFloat(document.getElementById('currentRate')?.value || 7.0);
+            const homeValue = parseFloat(document.getElementById('homeValue')?.value || 400000);
+            const loanAmount = parseFloat(document.getElementById('currentLoanAmount')?.value || 300000);
+            
+            console.log('🏥 Calculating mortgage health score...', { currentRate, homeValue, loanAmount });
+
+            // Calculate components
+            const marketRate = 6.68; // Average market rate
+            const rateComp = Math.max(0, Math.min(100, 100 - ((currentRate - marketRate) * 20)));
+            const ltvRatio = (loanAmount / homeValue) * 100;
+            const ltvScore = Math.max(0, Math.min(100, 100 - Math.max(0, ltvRatio - 80)));
+            const paymentEffScore = 85; // Assume good payment history
+            
+            const healthScore = Math.round((rateComp + ltvScore + paymentEffScore) / 3);
+            
+            // Display results
+            document.getElementById('healthScoreDisplay').textContent = healthScore;
+            document.getElementById('rateCompetitiveness').textContent = rateComp.toFixed(0) + '/100';
+            document.getElementById('ltvRatio').textContent = ltvRatio.toFixed(1) + '%';
+            document.getElementById('paymentEfficiency').textContent = paymentEffScore + '/100';
+            
+            // Show recommendations
+            const recommendations = [];
+            if (rateComp < 70) recommendations.push('Consider refinancing to a lower rate');
+            if (ltvRatio > 80) recommendations.push('Work on building equity to improve LTV ratio');
+            if (healthScore < 70) recommendations.push('Focus on credit score improvement');
+            
+            if (recommendations.length > 0) {
+                document.getElementById('healthTips').innerHTML = recommendations.map(tip => 
+                    `<p>• ${tip}</p>`
+                ).join('');
+                document.getElementById('healthRecommendations').classList.remove('hidden');
+            }
+            
+            showMortgageNotification('✅ Mortgage health score calculated!', 'success');
+        }
+
+        // Utility functions for letter generation
+        function copyLetter() {
+            const content = document.getElementById('letterContent').innerText;
+            navigator.clipboard.writeText(content).then(() => {
+                showMortgageNotification('📋 Letter copied to clipboard!', 'success');
+            });
+        }
+
+        function downloadLetter() {
+            const content = document.getElementById('letterContent').innerText;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mortgage-negotiation-letter-${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showMortgageNotification('📥 Letter downloaded successfully!', 'success');
+        }
+
+        function emailLetter() {
+            showMortgageNotification('📧 Email feature coming soon!', 'info');
+        }
+
+        // Statistics update functions
+        function updateMortgageStats() {
+            const stats = JSON.parse(localStorage.getItem('mortgageStats') || '{}');
+            stats.totalViews = (stats.totalViews || 0) + 1;
+            localStorage.setItem('mortgageStats', JSON.stringify(stats));
+        }
+
+        function updateMortgageAnalysisStats() {
+            const stats = JSON.parse(localStorage.getItem('mortgageStats') || '{}');
+            stats.mortgagesAnalyzed = (stats.mortgagesAnalyzed || 0) + 1;
+            localStorage.setItem('mortgageStats', JSON.stringify(stats));
+            document.getElementById('mortgagesAnalyzed').textContent = stats.mortgagesAnalyzed;
+        }
+
+        function updatePotentialSavingsStats(amount) {
+            const stats = JSON.parse(localStorage.getItem('mortgageStats') || '{}');
+            stats.potentialSavings = (stats.potentialSavings || 0) + Math.round(amount);
+            localStorage.setItem('mortgageStats', JSON.stringify(stats));
+            document.getElementById('potentialSavings').textContent = '$' + stats.potentialSavings.toLocaleString();
+        }
+
+        function updateLetterStats() {
+            const stats = JSON.parse(localStorage.getItem('mortgageStats') || '{}');
+            stats.lettersGenerated = (stats.lettersGenerated || 0) + 1;
+            localStorage.setItem('mortgageStats', JSON.stringify(stats));
+            document.getElementById('lettersGenerated').textContent = stats.lettersGenerated;
+        }
+
+        function updateRateAlertStats() {
+            const stats = JSON.parse(localStorage.getItem('mortgageStats') || '{}');
+            stats.rateAlerts = (stats.rateAlerts || 0) + 1;
+            localStorage.setItem('mortgageStats', JSON.stringify(stats));
+            document.getElementById('rateAlerts').textContent = stats.rateAlerts;
+        }
+
+        function initializeMortgageStats() {
+            const stats = JSON.parse(localStorage.getItem('mortgageStats') || '{}');
+            document.getElementById('mortgagesAnalyzed').textContent = stats.mortgagesAnalyzed || 0;
+            document.getElementById('potentialSavings').textContent = '$' + (stats.potentialSavings || 0).toLocaleString();
+            document.getElementById('lettersGenerated').textContent = stats.lettersGenerated || 0;
+            document.getElementById('rateAlerts').textContent = stats.rateAlerts || 0;
+        }
+
+        // Advanced tools placeholder functions
+        function openMortgageVsRentCalculator() {
+            showMortgageNotification('🏠 Mortgage vs Rent calculator coming soon!', 'info');
+        }
+
+        function openEarlyPayoffCalculator() {
+            showMortgageNotification('⚡ Early payoff calculator coming soon!', 'info');
+        }
+
+        function openAffordabilityCalculator() {
+            showMortgageNotification('💵 Affordability calculator coming soon!', 'info');
+        }
+
+        function openRateAlertSetup() {
+            // Scroll to rate alert section
+            document.querySelector('[data-alert-setup]')?.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Notification system for mortgage functions
+        function showMortgageNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg max-w-sm transform transition-all duration-300 ${
+                type === 'success' ? 'bg-green-600 text-white' :
+                type === 'error' ? 'bg-red-600 text-white' :
+                type === 'info' ? 'bg-blue-600 text-white' :
+                'bg-gray-600 text-white'
+            }`;
+            
+            notification.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium">${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-white hover:text-gray-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
                     notification.remove();
                 }
             }, 5000);
