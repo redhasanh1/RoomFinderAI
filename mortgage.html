@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mortgage Intelligence Hub - RoomFinderAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --warning-gradient: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+            --neutral-gradient: linear-gradient(135deg, #667db6 0%, #0082c8 100%);
+            
+            --border-radius-sm: 12px;
+            --border-radius-md: 20px;
+            --border-radius-lg: 28px;
+            
+            --shadow-sm: 0 8px 25px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 20px 40px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.15);
+            
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        
+        /* Gradient backgrounds */
+        .gradient-bg {
+            background: var(--primary-gradient);
+        }
+        
+        .gradient-bg-success {
+            background: var(--success-gradient);
+        }
+        
+        /* Gradient text */
+        .gradient-text {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Glass cards */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        /* Premium Header */
+        .premium-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: var(--shadow-soft);
+            transition: var(--transition);
+        }
+        
+        .nav-link {
+            position: relative;
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+            transition: var(--transition);
+        }
+        
+        .nav-link:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Animated elements */
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        /* Tabs */
+        .tab-button {
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tab-button.active {
+            background: var(--primary-gradient);
+            color: white;
+        }
+        
+        .tab-button:not(.active):hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Input styles */
+        .modern-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: white;
+        }
+        
+        .modern-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Charts container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        /* Reveal animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease;
+        }
+        
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Premium Header -->
+    <header class="fixed top-0 w-full premium-header z-50">
+        <nav class="w-[85%] max-w-7xl mx-auto px-6 lg:px-8 py-6 flex justify-between items-center">
+            <div class="flex items-center space-x-8">
+                <a href="index.html" class="text-2xl font-bold gradient-text font-display">RoomFinderAI</a>
+                <div class="hidden lg:flex items-center space-x-1">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="dashboard.html#student" class="nav-link">Student Housing</a>
+                    <a href="dashboard.html#legal" class="nav-link">Legal Center</a>
+                    <a href="mortgage.html" class="nav-link">Mortgage</a>
+                    <a href="sublease.html" class="nav-link">Sublease</a>
+                    <a href="ai-negotiator.html" class="nav-link">AI Negotiator</a>
+                    <a href="listings.html" class="nav-link">Listings</a>
+                    <a href="pricing.html" class="nav-link">Pricing</a>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="login.html" class="nav-link">Login</a>
+                <a href="dashboard.html" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all duration-300">Dashboard</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 gradient-bg text-white relative overflow-hidden">
+        <div class="absolute inset-0 bg-black opacity-10"></div>
+        <div class="w-[90%] max-w-7xl mx-auto px-4 relative z-10">
+            <div class="text-center mb-12">
+                <h1 class="text-5xl md:text-6xl font-bold mb-6 font-display">Mortgage Intelligence Hub</h1>
+                <p class="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">
+                    Save thousands with AI-powered mortgage analysis, rate predictions, and personalized strategies across 50+ Canadian lenders
+                </p>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="grid md:grid-cols-4 gap-6 mt-16">
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
+                    <div class="text-4xl font-bold mb-2">$47K</div>
+                    <div class="text-white/80">Average Savings</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
+                    <div class="text-4xl font-bold mb-2">4.79%</div>
+                    <div class="text-white/80">Best Rate Found</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
+                    <div class="text-4xl font-bold mb-2">95%</div>
+                    <div class="text-white/80">Approval Rate</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
+                    <div class="text-4xl font-bold mb-2">50+</div>
+                    <div class="text-white/80">Lenders Analyzed</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Navigation Tabs -->
+    <section class="py-8 bg-white shadow-sm sticky top-24 z-40">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <div class="flex space-x-4 overflow-x-auto">
+                <button onclick="showTab('calculator')" class="tab-button active" data-tab="calculator">
+                    Mortgage Calculator
+                </button>
+                <button onclick="showTab('rates')" class="tab-button" data-tab="rates">
+                    Rate Comparison
+                </button>
+                <button onclick="showTab('affordability')" class="tab-button" data-tab="affordability">
+                    Affordability Check
+                </button>
+                <button onclick="showTab('preapproval')" class="tab-button" data-tab="preapproval">
+                    Pre-Approval
+                </button>
+                <button onclick="showTab('refinance')" class="tab-button" data-tab="refinance">
+                    Refinance Analysis
+                </button>
+                <button onclick="showTab('stress')" class="tab-button" data-tab="stress">
+                    Stress Test
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tab Content -->
+    <section class="py-16">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            
+            <!-- Mortgage Calculator Tab -->
+            <div id="calculator-tab" class="tab-content">
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <!-- Calculator Form -->
+                    <div class="glass-card p-8">
+                        <h2 class="text-2xl font-bold mb-6">Advanced Mortgage Calculator</h2>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Home Price</label>
+                                <input type="number" id="homePrice" class="modern-input" placeholder="650000" value="650000">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input type="number" id="downPayment" class="modern-input" placeholder="130000" value="130000">
+                                    <select id="downPaymentType" class="modern-input">
+                                        <option value="amount">Amount ($)</option>
+                                        <option value="percent">Percent (%)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Amortization Period</label>
+                                <select id="amortization" class="modern-input">
+                                    <option value="15">15 years</option>
+                                    <option value="20">20 years</option>
+                                    <option value="25" selected>25 years</option>
+                                    <option value="30">30 years</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Interest Rate (%)</label>
+                                <input type="number" id="interestRate" class="modern-input" placeholder="5.89" value="5.89" step="0.01">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Payment Frequency</label>
+                                <select id="paymentFrequency" class="modern-input">
+                                    <option value="monthly" selected>Monthly</option>
+                                    <option value="biweekly">Bi-Weekly</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="accelerated-biweekly">Accelerated Bi-Weekly</option>
+                                    <option value="accelerated-weekly">Accelerated Weekly</option>
+                                </select>
+                            </div>
+                            
+                            <button onclick="calculateMortgage()" class="w-full gradient-bg text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
+                                Calculate Mortgage
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Results Display -->
+                    <div class="space-y-6">
+                        <!-- Payment Breakdown -->
+                        <div class="glass-card p-8">
+                            <h3 class="text-xl font-bold mb-6">Payment Breakdown</h3>
+                            <div id="paymentResults" class="space-y-4">
+                                <div class="flex justify-between py-3 border-b">
+                                    <span class="text-gray-600">Mortgage Amount</span>
+                                    <span class="font-semibold" id="mortgageAmount">$520,000</span>
+                                </div>
+                                <div class="flex justify-between py-3 border-b">
+                                    <span class="text-gray-600">Monthly Payment</span>
+                                    <span class="text-2xl font-bold gradient-text" id="monthlyPayment">$3,089</span>
+                                </div>
+                                <div class="flex justify-between py-3 border-b">
+                                    <span class="text-gray-600">Total Interest</span>
+                                    <span class="font-semibold" id="totalInterest">$406,700</span>
+                                </div>
+                                <div class="flex justify-between py-3">
+                                    <span class="text-gray-600">Total Cost</span>
+                                    <span class="font-semibold" id="totalCost">$926,700</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Amortization Chart -->
+                        <div class="glass-card p-8">
+                            <h3 class="text-xl font-bold mb-6">Amortization Schedule</h3>
+                            <div class="chart-container">
+                                <canvas id="amortizationChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- AI Insights -->
+                        <div class="glass-card p-8 bg-gradient-to-br from-purple-50 to-blue-50">
+                            <h3 class="text-xl font-bold mb-4">AI Insights</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-start">
+                                    <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <p class="text-sm text-gray-700">By making bi-weekly payments, you could save $89,456 in interest and pay off your mortgage 5.5 years earlier.</p>
+                                </div>
+                                <div class="flex items-start">
+                                    <svg class="w-5 h-5 text-blue-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <p class="text-sm text-gray-700">Current market analysis shows rates may drop 0.25% in the next 90 days. Waiting could save you $124/month.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rate Comparison Tab -->
+            <div id="rates-tab" class="tab-content hidden">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold mb-4">Live Rate Comparison</h2>
+                    <p class="text-gray-600">Real-time rates from 50+ Canadian lenders updated every 15 minutes</p>
+                </div>
+                
+                <!-- Filters -->
+                <div class="glass-card p-6 mb-8">
+                    <div class="grid md:grid-cols-4 gap-4">
+                        <select class="modern-input">
+                            <option>All Mortgage Types</option>
+                            <option>Fixed Rate</option>
+                            <option>Variable Rate</option>
+                            <option>Hybrid</option>
+                        </select>
+                        <select class="modern-input">
+                            <option>All Terms</option>
+                            <option>1 Year</option>
+                            <option>2 Years</option>
+                            <option>3 Years</option>
+                            <option>5 Years</option>
+                            <option>10 Years</option>
+                        </select>
+                        <select class="modern-input">
+                            <option>All Lenders</option>
+                            <option>Big 5 Banks</option>
+                            <option>Credit Unions</option>
+                            <option>Online Lenders</option>
+                            <option>Mortgage Brokers</option>
+                        </select>
+                        <button class="gradient-bg text-white px-6 py-3 rounded-xl font-semibold">
+                            Apply Filters
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Rate Cards -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Rate Card 1 -->
+                    <div class="glass-card p-6 border-2 border-green-500 relative">
+                        <div class="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm">
+                            Best Rate
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Tangerine Bank</h3>
+                        <div class="text-3xl font-bold gradient-text mb-4">4.79%</div>
+                        <div class="space-y-2 text-sm text-gray-600 mb-6">
+                            <div class="flex justify-between">
+                                <span>Type:</span>
+                                <span class="font-medium">5-Year Fixed</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Monthly Payment:</span>
+                                <span class="font-medium">$2,847</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Prepayment:</span>
+                                <span class="font-medium">20% Annual</span>
+                            </div>
+                        </div>
+                        <button class="w-full gradient-bg-success text-white py-3 rounded-xl font-semibold">
+                            Apply Now
+                        </button>
+                    </div>
+                    
+                    <!-- Rate Card 2 -->
+                    <div class="glass-card p-6">
+                        <h3 class="text-xl font-bold mb-2">RBC Royal Bank</h3>
+                        <div class="text-3xl font-bold text-gray-900 mb-4">5.34%</div>
+                        <div class="space-y-2 text-sm text-gray-600 mb-6">
+                            <div class="flex justify-between">
+                                <span>Type:</span>
+                                <span class="font-medium">5-Year Fixed</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Monthly Payment:</span>
+                                <span class="font-medium">$3,089</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Prepayment:</span>
+                                <span class="font-medium">10% Annual</span>
+                            </div>
+                        </div>
+                        <button class="w-full bg-gray-200 text-gray-800 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-colors">
+                            View Details
+                        </button>
+                    </div>
+                    
+                    <!-- Rate Card 3 -->
+                    <div class="glass-card p-6">
+                        <h3 class="text-xl font-bold mb-2">TD Bank</h3>
+                        <div class="text-3xl font-bold text-gray-900 mb-4">5.89%</div>
+                        <div class="space-y-2 text-sm text-gray-600 mb-6">
+                            <div class="flex justify-between">
+                                <span>Type:</span>
+                                <span class="font-medium">5-Year Fixed</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Monthly Payment:</span>
+                                <span class="font-medium">$3,256</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Prepayment:</span>
+                                <span class="font-medium">15% Annual</span>
+                            </div>
+                        </div>
+                        <button class="w-full bg-gray-200 text-gray-800 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-colors">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Market Trends -->
+                <div class="glass-card p-8 mt-8">
+                    <h3 class="text-2xl font-bold mb-6">Market Rate Trends</h3>
+                    <div class="chart-container">
+                        <canvas id="rateTrendsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Affordability Check Tab -->
+            <div id="affordability-tab" class="tab-content hidden">
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <!-- Input Section -->
+                    <div class="glass-card p-8">
+                        <h2 class="text-2xl font-bold mb-6">Affordability Calculator</h2>
+                        <p class="text-gray-600 mb-6">Find out how much home you can afford based on your income and expenses</p>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Annual Household Income</label>
+                                <input type="number" id="annualIncome" class="modern-input" placeholder="120000">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Debt Payments</label>
+                                <input type="number" id="monthlyDebt" class="modern-input" placeholder="500">
+                                <p class="text-sm text-gray-500 mt-1">Include car loans, credit cards, student loans, etc.</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Down Payment Available</label>
+                                <input type="number" id="availableDownPayment" class="modern-input" placeholder="100000">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Property Tax Rate (%)</label>
+                                <input type="number" id="propertyTaxRate" class="modern-input" placeholder="1.2" step="0.1" value="1.2">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Utilities & Maintenance</label>
+                                <input type="number" id="monthlyUtilities" class="modern-input" placeholder="400" value="400">
+                            </div>
+                            
+                            <button onclick="calculateAffordability()" class="w-full gradient-bg text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
+                                Calculate Affordability
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Results Section -->
+                    <div class="space-y-6">
+                        <!-- Maximum Purchase Price -->
+                        <div class="glass-card p-8 bg-gradient-to-br from-green-50 to-emerald-50">
+                            <h3 class="text-xl font-bold mb-4">Your Buying Power</h3>
+                            <div class="text-center py-6">
+                                <div class="text-5xl font-bold gradient-text mb-2">$750,000</div>
+                                <p class="text-gray-600">Maximum Home Price</p>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4 mt-6">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-gray-900">$650,000</div>
+                                    <p class="text-sm text-gray-600">Maximum Mortgage</p>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-gray-900">$3,865</div>
+                                    <p class="text-sm text-gray-600">Maximum Monthly Payment</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Debt Ratios -->
+                        <div class="glass-card p-8">
+                            <h3 class="text-xl font-bold mb-4">Debt Service Ratios</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <span class="text-gray-600">GDS Ratio</span>
+                                        <span class="font-semibold">28.5%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-3">
+                                        <div class="bg-green-500 h-3 rounded-full" style="width: 28.5%"></div>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mt-1">Maximum recommended: 32%</p>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <span class="text-gray-600">TDS Ratio</span>
+                                        <span class="font-semibold">36.2%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-3">
+                                        <div class="bg-yellow-500 h-3 rounded-full" style="width: 36.2%"></div>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mt-1">Maximum recommended: 40%</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recommendations -->
+                        <div class="glass-card p-8">
+                            <h3 class="text-xl font-bold mb-4">AI Recommendations</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-start">
+                                    <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <p class="text-sm text-gray-700">Your debt ratios are healthy. You're in a good position to qualify for competitive mortgage rates.</p>
+                                </div>
+                                <div class="flex items-start">
+                                    <svg class="w-5 h-5 text-blue-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <p class="text-sm text-gray-700">Consider keeping your purchase price under $700,000 to maintain a comfortable buffer for unexpected expenses.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pre-Approval Tab -->
+            <div id="preapproval-tab" class="tab-content hidden">
+                <div class="max-w-4xl mx-auto">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold mb-4">Get Pre-Approved in Minutes</h2>
+                        <p class="text-gray-600">Our AI analyzes your profile and matches you with the best lenders instantly</p>
+                    </div>
+                    
+                    <!-- Progress Steps -->
+                    <div class="flex justify-between mb-12">
+                        <div class="flex-1 text-center">
+                            <div class="w-12 h-12 bg-purple-600 text-white rounded-full flex items-center justify-center mx-auto mb-2">1</div>
+                            <p class="text-sm font-medium">Basic Info</p>
+                        </div>
+                        <div class="flex-1 text-center">
+                            <div class="w-12 h-12 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center mx-auto mb-2">2</div>
+                            <p class="text-sm text-gray-500">Financial Details</p>
+                        </div>
+                        <div class="flex-1 text-center">
+                            <div class="w-12 h-12 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center mx-auto mb-2">3</div>
+                            <p class="text-sm text-gray-500">Documentation</p>
+                        </div>
+                        <div class="flex-1 text-center">
+                            <div class="w-12 h-12 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center mx-auto mb-2">4</div>
+                            <p class="text-sm text-gray-500">Results</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Section -->
+                    <div class="glass-card p-8">
+                        <h3 class="text-2xl font-bold mb-6">Basic Information</h3>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                                <input type="text" class="modern-input" placeholder="John">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                                <input type="text" class="modern-input" placeholder="Doe">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                <input type="email" class="modern-input" placeholder="john@example.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                                <input type="tel" class="modern-input" placeholder="(555) 123-4567">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Employment Status</label>
+                                <select class="modern-input">
+                                    <option>Full-Time Employee</option>
+                                    <option>Part-Time Employee</option>
+                                    <option>Self-Employed</option>
+                                    <option>Contract Worker</option>
+                                    <option>Retired</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Credit Score Range</label>
+                                <select class="modern-input">
+                                    <option>800+</option>
+                                    <option>740-799</option>
+                                    <option>670-739</option>
+                                    <option>580-669</option>
+                                    <option>Below 580</option>
+                                    <option>Not Sure</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between mt-8">
+                            <button class="bg-gray-200 text-gray-800 px-6 py-3 rounded-xl font-semibold">
+                                Back
+                            </button>
+                            <button class="gradient-bg text-white px-8 py-3 rounded-xl font-semibold">
+                                Continue to Financial Details
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Benefits Section -->
+                    <div class="grid md:grid-cols-3 gap-6 mt-12">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h4 class="font-semibold mb-2">5-Minute Process</h4>
+                            <p class="text-sm text-gray-600">Get pre-approved faster than making coffee</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                </svg>
+                            </div>
+                            <h4 class="font-semibold mb-2">Bank-Level Security</h4>
+                            <p class="text-sm text-gray-600">Your data is encrypted and protected</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                            </div>
+                            <h4 class="font-semibold mb-2">Better Rates</h4>
+                            <p class="text-sm text-gray-600">Pre-approval gives you negotiating power</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Refinance Analysis Tab -->
+            <div id="refinance-tab" class="tab-content hidden">
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <!-- Current Mortgage Info -->
+                    <div class="glass-card p-8">
+                        <h2 class="text-2xl font-bold mb-6">Current Mortgage Details</h2>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Original Mortgage Amount</label>
+                                <input type="number" class="modern-input" placeholder="500000">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Current Balance</label>
+                                <input type="number" class="modern-input" placeholder="425000">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Current Interest Rate (%)</label>
+                                <input type="number" class="modern-input" placeholder="6.5" step="0.01">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Years Remaining</label>
+                                <input type="number" class="modern-input" placeholder="22">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Current Monthly Payment</label>
+                                <input type="number" class="modern-input" placeholder="3200">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Penalty for Breaking Mortgage</label>
+                                <input type="number" class="modern-input" placeholder="12000">
+                            </div>
+                            
+                            <button onclick="analyzeRefinance()" class="w-full gradient-bg text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
+                                Analyze Refinance Options
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Refinance Analysis Results -->
+                    <div class="space-y-6">
+                        <!-- Savings Summary -->
+                        <div class="glass-card p-8 bg-gradient-to-br from-green-50 to-emerald-50">
+                            <h3 class="text-xl font-bold mb-4">Refinance Savings Analysis</h3>
+                            
+                            <div class="text-center py-6 border-b">
+                                <p class="text-gray-600 mb-2">Total Savings Over Mortgage Term</p>
+                                <div class="text-4xl font-bold gradient-text">$87,456</div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4 mt-6">
+                                <div>
+                                    <p class="text-sm text-gray-600">New Rate</p>
+                                    <p class="text-xl font-bold">4.79%</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">New Payment</p>
+                                    <p class="text-xl font-bold">$2,645</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">Monthly Savings</p>
+                                    <p class="text-xl font-bold text-green-600">$555</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">Break-Even</p>
+                                    <p class="text-xl font-bold">22 months</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recommendation -->
+                        <div class="glass-card p-8">
+                            <h3 class="text-xl font-bold mb-4">AI Recommendation</h3>
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-green-800">Strongly Recommend Refinancing</p>
+                                    <p class="text-sm text-gray-600">Based on current market conditions and your situation</p>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div class="flex items-start">
+                                    <span class="text-green-500 mr-2">✓</span>
+                                    <p class="text-sm">You'll recover the penalty cost in just 22 months</p>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-green-500 mr-2">✓</span>
+                                    <p class="text-sm">Interest rates have dropped significantly since your original mortgage</p>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-green-500 mr-2">✓</span>
+                                    <p class="text-sm">You could pay off your mortgage 3.5 years earlier with the same payment</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Next Steps -->
+                        <div class="glass-card p-8">
+                            <h3 class="text-xl font-bold mb-4">Next Steps</h3>
+                            <div class="space-y-4">
+                                <button class="w-full gradient-bg text-white py-3 rounded-xl font-semibold">
+                                    Get Refinance Pre-Approval
+                                </button>
+                                <button class="w-full bg-gray-200 text-gray-800 py-3 rounded-xl font-semibold">
+                                    Schedule Free Consultation
+                                </button>
+                                <button class="w-full bg-gray-200 text-gray-800 py-3 rounded-xl font-semibold">
+                                    Download Detailed Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stress Test Tab -->
+            <div id="stress-tab" class="tab-content hidden">
+                <div class="max-w-4xl mx-auto">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold mb-4">Mortgage Stress Test Calculator</h2>
+                        <p class="text-gray-600">See if you qualify under Canada's mortgage stress test rules</p>
+                    </div>
+                    
+                    <!-- Stress Test Explanation -->
+                    <div class="glass-card p-8 mb-8 bg-gradient-to-br from-blue-50 to-purple-50">
+                        <h3 class="text-xl font-bold mb-4">What is the Mortgage Stress Test?</h3>
+                        <p class="text-gray-700 mb-4">
+                            The mortgage stress test ensures you can afford your mortgage if interest rates rise. You must qualify at the higher of:
+                        </p>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div class="bg-white rounded-xl p-4">
+                                <p class="font-semibold mb-2">Contract Rate + 2%</p>
+                                <p class="text-sm text-gray-600">Your actual mortgage rate plus 2 percentage points</p>
+                            </div>
+                            <div class="bg-white rounded-xl p-4">
+                                <p class="font-semibold mb-2">5.25% Minimum</p>
+                                <p class="text-sm text-gray-600">The Bank of Canada qualifying rate benchmark</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Calculator -->
+                    <div class="glass-card p-8">
+                        <h3 class="text-2xl font-bold mb-6">Calculate Your Qualification</h3>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Purchase Price</label>
+                                <input type="number" id="stressPurchasePrice" class="modern-input" placeholder="650000">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
+                                <input type="number" id="stressDownPayment" class="modern-input" placeholder="130000">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Contract Interest Rate (%)</label>
+                                <input type="number" id="stressContractRate" class="modern-input" placeholder="4.79" step="0.01">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Annual Income</label>
+                                <input type="number" id="stressIncome" class="modern-input" placeholder="120000">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Debts</label>
+                                <input type="number" id="stressDebts" class="modern-input" placeholder="500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Property Tax (Annual)</label>
+                                <input type="number" id="stressPropertyTax" class="modern-input" placeholder="7800">
+                            </div>
+                        </div>
+                        
+                        <button onclick="calculateStressTest()" class="w-full gradient-bg text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 mt-6">
+                            Run Stress Test
+                        </button>
+                    </div>
+                    
+                    <!-- Results -->
+                    <div class="grid md:grid-cols-2 gap-6 mt-8">
+                        <div class="glass-card p-8">
+                            <h3 class="text-xl font-bold mb-4">Stress Test Results</h3>
+                            
+                            <div class="text-center py-6">
+                                <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <p class="text-2xl font-bold text-green-600">You Qualify!</p>
+                                <p class="text-gray-600 mt-2">You meet the stress test requirements</p>
+                            </div>
+                            
+                            <div class="space-y-3 mt-6">
+                                <div class="flex justify-between py-2 border-b">
+                                    <span class="text-gray-600">Qualifying Rate Used</span>
+                                    <span class="font-semibold">6.79%</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b">
+                                    <span class="text-gray-600">Maximum GDS</span>
+                                    <span class="font-semibold">31.2%</span>
+                                </div>
+                                <div class="flex justify-between py-2">
+                                    <span class="text-gray-600">Maximum TDS</span>
+                                    <span class="font-semibold">38.7%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card p-8">
+                            <h3 class="text-xl font-bold mb-4">Payment Comparison</h3>
+                            
+                            <div class="space-y-4">
+                                <div class="bg-gray-50 rounded-xl p-4">
+                                    <p class="text-sm text-gray-600 mb-1">Actual Payment (at contract rate)</p>
+                                    <p class="text-2xl font-bold">$2,847/month</p>
+                                </div>
+                                
+                                <div class="bg-yellow-50 rounded-xl p-4">
+                                    <p class="text-sm text-gray-600 mb-1">Stress Test Payment (at qualifying rate)</p>
+                                    <p class="text-2xl font-bold">$3,612/month</p>
+                                </div>
+                                
+                                <div class="bg-blue-50 rounded-xl p-4">
+                                    <p class="text-sm text-gray-600 mb-1">Payment Buffer</p>
+                                    <p class="text-2xl font-bold text-blue-600">$765/month</p>
+                                    <p class="text-sm text-gray-600 mt-1">This is your safety margin for rate increases</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Additional Resources Section -->
+    <section class="py-16 bg-gray-100">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <h2 class="text-3xl font-bold mb-8 text-center">Mortgage Resources & Tools</h2>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- First-Time Buyer Guide -->
+                <div class="bg-white rounded-2xl p-6 hover:shadow-lg transition-all duration-300">
+                    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">First-Time Buyer Guide</h3>
+                    <p class="text-gray-600 text-sm mb-4">Complete guide to buying your first home in Canada</p>
+                    <a href="#" class="text-purple-600 font-semibold text-sm hover:text-purple-700">Download Guide →</a>
+                </div>
+                
+                <!-- Mortgage Glossary -->
+                <div class="bg-white rounded-2xl p-6 hover:shadow-lg transition-all duration-300">
+                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Mortgage Glossary</h3>
+                    <p class="text-gray-600 text-sm mb-4">Understand all mortgage terms and jargon</p>
+                    <a href="#" class="text-blue-600 font-semibold text-sm hover:text-blue-700">View Glossary →</a>
+                </div>
+                
+                <!-- Market Reports -->
+                <div class="bg-white rounded-2xl p-6 hover:shadow-lg transition-all duration-300">
+                    <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Market Reports</h3>
+                    <p class="text-gray-600 text-sm mb-4">Monthly Canadian mortgage market analysis</p>
+                    <a href="#" class="text-green-600 font-semibold text-sm hover:text-green-700">Latest Report →</a>
+                </div>
+                
+                <!-- Mobile App -->
+                <div class="bg-white rounded-2xl p-6 hover:shadow-lg transition-all duration-300">
+                    <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Mobile App</h3>
+                    <p class="text-gray-600 text-sm mb-4">Track rates and manage your mortgage on the go</p>
+                    <a href="#" class="text-orange-600 font-semibold text-sm hover:text-orange-700">Download App →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 gradient-bg text-white">
+        <div class="w-[90%] max-w-4xl mx-auto px-4 text-center">
+            <h2 class="text-4xl font-bold mb-6">Ready to Save on Your Mortgage?</h2>
+            <p class="text-xl mb-8 text-white/90">Join 10,000+ Canadians who've optimized their mortgages with AI</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button onclick="showTab('calculator')" class="bg-white text-purple-600 px-8 py-4 rounded-full font-semibold hover:shadow-lg transition-all duration-300">
+                    Start Free Analysis
+                </button>
+                <button onclick="window.location.href='#'" class="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-purple-600 transition-all duration-300">
+                    Book Consultation
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="w-[80%] mx-auto px-4 text-center">
+            <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
+            <div class="mt-4 flex justify-center space-x-4 flex-wrap">
+                <a href="index.html" class="hover:text-blue-400">Home</a>
+                <a href="dashboard.html#student" class="hover:text-blue-400">Student Housing</a>
+                <a href="dashboard.html#legal" class="hover:text-blue-400">Legal Center</a>
+                <a href="mortgage.html" class="hover:text-blue-400">Mortgage</a>
+                <a href="sublease.html" class="hover:text-blue-400">Sublease</a>
+                <a href="ai-negotiator.html" class="hover:text-blue-400">AI Negotiator</a>
+                <a href="listings.html" class="hover:text-blue-400">Listings</a>
+                <a href="pricing.html" class="hover:text-blue-400">Pricing</a>
+                <a href="index.html#contact" class="hover:text-blue-400">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Tab functionality
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+            
+            // Add active class to clicked button
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            // Scroll to tab content
+            document.getElementById(tabName + '-tab').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Mortgage Calculator
+        function calculateMortgage() {
+            const homePrice = parseFloat(document.getElementById('homePrice').value) || 650000;
+            const downPayment = parseFloat(document.getElementById('downPayment').value) || 130000;
+            const amortization = parseInt(document.getElementById('amortization').value) || 25;
+            const interestRate = parseFloat(document.getElementById('interestRate').value) || 5.89;
+            const paymentFrequency = document.getElementById('paymentFrequency').value;
+            
+            const mortgageAmount = homePrice - downPayment;
+            const monthlyRate = interestRate / 100 / 12;
+            const numPayments = amortization * 12;
+            
+            // Calculate monthly payment
+            const monthlyPayment = mortgageAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+            
+            const totalCost = monthlyPayment * numPayments;
+            const totalInterest = totalCost - mortgageAmount;
+            
+            // Update display
+            document.getElementById('mortgageAmount').textContent = '$' + mortgageAmount.toLocaleString();
+            document.getElementById('monthlyPayment').textContent = '$' + Math.round(monthlyPayment).toLocaleString();
+            document.getElementById('totalInterest').textContent = '$' + Math.round(totalInterest).toLocaleString();
+            document.getElementById('totalCost').textContent = '$' + Math.round(totalCost).toLocaleString();
+            
+            // Update chart
+            updateAmortizationChart(mortgageAmount, monthlyPayment, interestRate, amortization);
+        }
+
+        // Update amortization chart
+        function updateAmortizationChart(principal, payment, rate, years) {
+            const ctx = document.getElementById('amortizationChart').getContext('2d');
+            
+            // Generate data for chart
+            const labels = [];
+            const principalData = [];
+            const interestData = [];
+            let balance = principal;
+            const monthlyRate = rate / 100 / 12;
+            
+            for (let year = 0; year <= years; year += 5) {
+                labels.push('Year ' + year);
+                
+                // Calculate remaining balance
+                const monthsPassed = year * 12;
+                let tempBalance = principal;
+                
+                for (let month = 0; month < monthsPassed; month++) {
+                    const interestPayment = tempBalance * monthlyRate;
+                    const principalPayment = payment - interestPayment;
+                    tempBalance -= principalPayment;
+                }
+                
+                principalData.push(Math.max(0, tempBalance));
+                interestData.push(principal - tempBalance);
+            }
+            
+            // Create or update chart
+            if (window.amortizationChart) {
+                window.amortizationChart.destroy();
+            }
+            
+            window.amortizationChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Remaining Principal',
+                            data: principalData,
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        },
+                        {
+                            label: 'Principal Paid',
+                            data: interestData,
+                            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                        },
+                        y: {
+                            stacked: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value / 1000) + 'k';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize rate trends chart
+        function initializeRateTrendsChart() {
+            const ctx = document.getElementById('rateTrendsChart');
+            if (!ctx) return;
+            
+            new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [
+                        {
+                            label: 'Big 5 Banks Average',
+                            data: [6.45, 6.39, 6.25, 6.15, 5.95, 5.89],
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Best Available Rate',
+                            data: [5.89, 5.75, 5.45, 5.25, 4.95, 4.79],
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Affordability Calculator
+        function calculateAffordability() {
+            // Implementation for affordability calculation
+            // This would include GDS/TDS calculations
+        }
+
+        // Refinance Analysis
+        function analyzeRefinance() {
+            // Implementation for refinance analysis
+        }
+
+        // Stress Test Calculator
+        function calculateStressTest() {
+            // Implementation for stress test calculation
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateMortgage();
+            initializeRateTrendsChart();
+            
+            // Add reveal animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.reveal').forEach(el => {
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+</html>
