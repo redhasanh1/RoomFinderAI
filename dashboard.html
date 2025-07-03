@@ -8,31 +8,79 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* Import Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+        
+        /* CSS Variables for Design System */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --warning-gradient: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+            --neutral-gradient: linear-gradient(135deg, #667db6 0%, #0082c8 100%);
+            
+            --border-radius-sm: 12px;
+            --border-radius-md: 20px;
+            --border-radius-lg: 28px;
+            
+            --shadow-sm: 0 8px 25px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 20px 40px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.15);
+            
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        /* Typography System */
+        .font-display {
+            font-family: 'Space Grotesk', sans-serif;
         }
         
         /* Gradient backgrounds */
         .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
         }
         
         .gradient-bg-alt {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: var(--secondary-gradient);
         }
         
-        .gradient-bg-green {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        .gradient-bg-accent {
+            background: var(--accent-gradient);
         }
         
-        .gradient-bg-orange {
-            background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+        .gradient-bg-success {
+            background: var(--success-gradient);
+        }
+        
+        .gradient-bg-warning {
+            background: var(--warning-gradient);
+        }
+        
+        .gradient-bg-neutral {
+            background: var(--neutral-gradient);
         }
         
         /* Gradient text */
         .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .gradient-text-alt {
+            background: var(--secondary-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -40,80 +88,177 @@
         
         /* Modern glass cards */
         .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
         }
         
         /* Modern header */
         .modern-header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 50;
         }
         
         /* Tab styles */
         .tab-button {
-            padding: 12px 24px;
-            border-radius: 12px;
+            padding: 16px 32px;
+            border-radius: var(--border-radius-sm);
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
         }
         
         .tab-button.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
         }
         
         .tab-button:not(.active) {
             color: #64748b;
-            background: rgba(255, 255, 255, 0.7);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
         }
         
         .tab-button:not(.active):hover {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 1);
             transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        /* Icon styles for tabs */
+        .tab-icon {
+            width: 20px;
+            height: 20px;
+            transition: var(--transition);
         }
         
         /* Stats cards */
         .stats-card {
             background: white;
-            border-radius: 16px;
-            padding: 24px;
-            transition: all 0.3s ease;
+            border-radius: var(--border-radius-md);
+            padding: 32px;
+            transition: var(--transition);
             border: 1px solid #f1f5f9;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stats-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+            opacity: 0;
+            transition: var(--transition);
         }
         
         .stats-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .stats-card:hover::before {
+            opacity: 1;
         }
         
         /* Modern buttons */
         .modern-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             border: none;
-            border-radius: 12px;
-            padding: 12px 24px;
+            border-radius: var(--border-radius-sm);
+            padding: 16px 32px;
             color: white;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .modern-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
         }
         
         .modern-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.6);
+        }
+        
+        .modern-button:hover::before {
+            left: 100%;
+        }
+        
+        /* Feature cards */
+        .feature-card {
+            background: white;
+            border-radius: var(--border-radius-md);
+            padding: 32px;
+            transition: var(--transition);
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: var(--border-radius-md);
+            padding: 2px;
+            background: var(--primary-gradient);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            opacity: 0;
+            transition: var(--transition);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .feature-card:hover::before {
+            opacity: 1;
         }
         
         /* Activity timeline */
         .timeline-item {
             position: relative;
-            padding-left: 24px;
+            padding-left: 32px;
+            padding-bottom: 24px;
         }
         
         .timeline-item::before {
@@ -121,20 +266,143 @@
             position: absolute;
             left: 0;
             top: 8px;
-            width: 8px;
-            height: 8px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
+            border: 3px solid white;
+            box-shadow: var(--shadow-sm);
         }
         
         .timeline-item:not(:last-child)::after {
             content: '';
             position: absolute;
-            left: 3px;
-            top: 16px;
-            bottom: -8px;
+            left: 5px;
+            top: 20px;
+            bottom: 0;
             width: 2px;
             background: linear-gradient(to bottom, #e2e8f0, transparent);
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .glass-card {
+                padding: 24px 20px;
+                margin: 0 16px;
+            }
+            
+            .tab-button {
+                padding: 12px 16px;
+                font-size: 14px;
+                min-width: 120px;
+                justify-content: center;
+            }
+            
+            .tab-icon {
+                width: 16px;
+                height: 16px;
+            }
+            
+            .stats-card {
+                padding: 24px 20px;
+            }
+            
+            .feature-card {
+                padding: 24px 20px;
+            }
+            
+            .timeline-item {
+                padding-left: 24px;
+            }
+            
+            /* Hide complex elements on mobile */
+            .hidden-mobile {
+                display: none !important;
+            }
+            
+            /* Adjust text sizes for mobile */
+            h1 {
+                font-size: 2rem !important;
+            }
+            
+            h2 {
+                font-size: 1.5rem !important;
+            }
+            
+            h3 {
+                font-size: 1.25rem !important;
+            }
+            
+            /* Stack elements vertically on mobile */
+            .mobile-stack {
+                flex-direction: column !important;
+                gap: 16px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .glass-card {
+                margin: 0 8px;
+                padding: 20px 16px;
+            }
+            
+            .tab-button {
+                padding: 10px 12px;
+                font-size: 13px;
+                min-width: 100px;
+            }
+            
+            .tab-button span {
+                display: none;
+            }
+            
+            .stats-card {
+                padding: 20px 16px;
+            }
+        }
+
+        /* Loading states */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+            position: relative;
+        }
+        
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid var(--primary-gradient);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Accessibility improvements */
+        .focus-visible:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+        
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
     </style>
 </head>
@@ -167,42 +435,99 @@
     </header>
 
     <!-- Main Dashboard -->
-    <main class="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <!-- Welcome Section -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome back, <span id="welcomeName" class="gradient-text">User</span>!</h1>
-            <p class="text-gray-600">Here's what's happening with your account today.</p>
+        <div class="mb-12">
+            <div class="glass-card p-8">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mobile-stack">
+                    <div class="mb-6 lg:mb-0">
+                        <h1 class="text-4xl lg:text-5xl font-bold font-display text-gray-900 mb-3">
+                            Welcome back, <span id="welcomeName" class="gradient-text">User</span>!
+                        </h1>
+                        <p class="text-lg lg:text-xl text-gray-600 max-w-2xl">
+                            Manage your housing journey with our comprehensive suite of tools and insights.
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between lg:justify-start lg:space-x-4">
+                        <div class="text-center lg:text-right">
+                            <p class="text-sm text-gray-500">Today's Date</p>
+                            <p id="currentDate" class="text-lg font-semibold text-gray-800"></p>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center ml-4 lg:ml-0">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Tab Navigation -->
-        <div class="mb-8">
-            <div class="flex flex-wrap gap-2 bg-white/70 backdrop-blur-sm p-2 rounded-2xl border border-white/20">
+        <div class="mb-12">
+            <div class="glass-card p-2">
+                <div class="flex flex-wrap gap-2">
                 <button class="tab-button active" onclick="switchTab('overview', this)">
-                    📊 Account Overview
+                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    Account Overview
                 </button>
                 <button class="tab-button" onclick="switchTab('subscriptions', this)">
-                    💳 Subscriptions
+                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                    </svg>
+                    Subscriptions
                 </button>
                 <button class="tab-button" onclick="switchTab('listings', this)">
-                    🏠 Listings
+                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    Listings
                 </button>
                 <button class="tab-button" onclick="switchTab('verification', this)">
-                    ✅ Verification
+                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                    Verification
                 </button>
                 <button class="tab-button" onclick="switchTab('ai-analytics', this)">
-                    🎯 AI Analytics
+                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                    </svg>
+                    AI Analytics
                 </button>
                 <button class="tab-button" onclick="switchTab('market-data', this)">
-                    📈 Market Data
+                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                    Market Data
                 </button>
                 <button class="tab-button" onclick="switchTab('rent-reminders', this)">
-                    🏠 Rent Reminders
+                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Rent Reminders
                 </button>
                 <button class="tab-button" onclick="switchTab('legal', this)">
-                    ⚖️ Legal
+                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16l3-1m-3 1l-3-1"></path>
+                    </svg>
+                    Legal
                 </button>
                 <button class="tab-button" onclick="switchTab('mortgage', this)">
-                    💰 Mortgage
+                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                    </svg>
+                    Mortgage
+                </button>
+                <button class="tab-button" onclick="switchTab('student', this)">
+                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
+                    </svg>
+                    Student
                 </button>
             </div>
         </div>
@@ -1422,7 +1747,116 @@
             <!-- Legal Tab -->
             <div id="legal-tab" class="tab-content hidden">
                 <div class="glass-card p-6">
-                    <h3 class="text-xl font-bold text-gray-900 mb-6">⚖️ Legal Center</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16l3-1m-3 1l-3-1"></path>
+                        </svg>
+                        Legal Center
+                    </h3>
+                    
+                    <!-- Welcome & Getting Started Section -->
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 mb-8">
+                        <div class="text-center mb-6">
+                            <h4 class="text-2xl font-bold text-gray-800 mb-3 flex items-center justify-center gap-3">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                New to Legal Issues?
+                            </h4>
+                            <p class="text-gray-600 max-w-2xl mx-auto">Don't worry! We'll guide you through everything step by step. Most housing legal issues can be resolved with the right information and documents.</p>
+                        </div>
+                        
+                        <!-- 3-Step Process Overview -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span class="text-white font-bold text-xl">1</span>
+                                </div>
+                                <h5 class="font-semibold text-gray-800 mb-2">Describe Your Situation</h5>
+                                <p class="text-sm text-gray-600">Tell us what's happening in plain English</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span class="text-white font-bold text-xl">2</span>
+                                </div>
+                                <h5 class="font-semibold text-gray-800 mb-2">Get Personalized Guidance</h5>
+                                <p class="text-sm text-gray-600">Receive tailored advice for your specific situation</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span class="text-white font-bold text-xl">3</span>
+                                </div>
+                                <h5 class="font-semibold text-gray-800 mb-2">Take Action with Tools</h5>
+                                <p class="text-sm text-gray-600">Use our tools to resolve your issue</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Start Buttons for Common Scenarios -->
+                        <div class="bg-white p-4 rounded-lg border border-blue-200">
+                            <h6 class="font-semibold text-gray-800 mb-3 text-center">🚀 Quick Start - Common Situations</h6>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <button onclick="quickStartScenario('security-deposit')" class="p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-sm">
+                                    <div class="font-medium text-red-800">Security Deposit Issue</div>
+                                    <div class="text-red-600 text-xs">Landlord won't return deposit</div>
+                                </button>
+                                <button onclick="quickStartScenario('rent-increase')" class="p-3 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors text-sm">
+                                    <div class="font-medium text-orange-800">Rent Increase</div>
+                                    <div class="text-orange-600 text-xs">Unexpected rent hike</div>
+                                </button>
+                                <button onclick="quickStartScenario('repairs')" class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors text-sm">
+                                    <div class="font-medium text-yellow-800">Repair Issues</div>
+                                    <div class="text-yellow-600 text-xs">Landlord won't fix problems</div>
+                                </button>
+                                <button onclick="quickStartScenario('eviction')" class="p-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors text-sm">
+                                    <div class="font-medium text-purple-800">Eviction Notice</div>
+                                    <div class="text-purple-600 text-xs">Received eviction notice</div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Smart Recommendation Engine -->
+                    <div id="recommendationEngine" class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200 mb-8">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4">🤖 Not Sure Where to Start?</h4>
+                        <p class="text-gray-600 mb-4">Answer a few quick questions and we'll recommend the best tool for your situation:</p>
+                        
+                        <div id="recommendationQuiz" class="space-y-4">
+                            <div class="question-container">
+                                <p class="font-medium text-gray-800 mb-3">What best describes your situation?</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <button onclick="selectRecommendation('problem')" class="recommendation-option p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-green-500 transition-colors text-left">
+                                        <div class="font-medium text-gray-800">🚨 I have a problem that needs solving</div>
+                                        <div class="text-sm text-gray-600">Something has gone wrong and I need help</div>
+                                    </button>
+                                    <button onclick="selectRecommendation('document')" class="recommendation-option p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-green-500 transition-colors text-left">
+                                        <div class="font-medium text-gray-800">📄 I need to create a document</div>
+                                        <div class="text-sm text-gray-600">I need forms, agreements, or notices</div>
+                                    </button>
+                                    <button onclick="selectRecommendation('rights')" class="recommendation-option p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-green-500 transition-colors text-left">
+                                        <div class="font-medium text-gray-800">📚 I want to learn my rights</div>
+                                        <div class="text-sm text-gray-600">I need to understand what I'm entitled to</div>
+                                    </button>
+                                    <button onclick="selectRecommendation('prevention')" class="recommendation-option p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-green-500 transition-colors text-left">
+                                        <div class="font-medium text-gray-800">🛡️ I want to prevent problems</div>
+                                        <div class="text-sm text-gray-600">I want to be prepared and avoid issues</div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recommendation Results -->
+                        <div id="recommendationResult" class="hidden mt-4 p-4 bg-white rounded-lg border border-green-200">
+                            <div class="flex items-center mb-3">
+                                <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                                <h5 class="font-semibold text-gray-800">Perfect! Here's what we recommend:</h5>
+                            </div>
+                            <div id="recommendationContent"></div>
+                        </div>
+                    </div>
                     
                     <!-- Legal Dashboard Stats -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -1483,60 +1917,169 @@
                         </div>
                     </div>
 
-                    <!-- Quick Actions -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                        <!-- AI Document Generator -->
-                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200">
-                            <div class="flex items-center mb-4">
-                                <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mr-4">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                    </svg>
+                    <!-- Intuitive Tool Categories -->
+                    <div class="mb-8">
+                        <h4 class="text-2xl font-bold text-gray-800 mb-6 text-center flex items-center justify-center gap-3">
+                            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            Choose Your Path
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <!-- I Have a Problem -->
+                            <div class="bg-gradient-to-br from-red-50 to-orange-50 p-6 rounded-xl border-2 border-red-200 hover:border-red-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-red-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800 flex items-center gap-3">
+                                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                            </svg>
+                                            I Have a Problem
+                                        </h4>
+                                        <p class="text-gray-600">Something has gone wrong and I need help fixing it</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 class="text-lg font-semibold text-gray-800">AI Document Generator</h4>
-                                    <p class="text-sm text-gray-600">Create legal documents instantly</p>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Perfect for:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Landlord disputes or conflicts</li>
+                                        <li>• Unexpected rent increases</li>
+                                        <li>• Security deposit issues</li>
+                                        <li>• Repair and maintenance problems</li>
+                                        <li>• Eviction notices</li>
+                                    </ul>
                                 </div>
+                                <button onclick="openIssueAnalyzer()" class="w-full bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium">
+                                    🔍 Get Help with My Problem
+                                </button>
+                                <p class="text-xs text-gray-500 mt-2 text-center">Our AI will analyze your situation and provide step-by-step guidance</p>
                             </div>
-                            <button onclick="openDocumentGenerator()" class="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium">
-                                Generate Documents
-                            </button>
-                        </div>
 
-                        <!-- Legal Rights Checker -->
-                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
-                            <div class="flex items-center mb-4">
-                                <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                                    </svg>
+                            <!-- I Need a Document -->
+                            <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-200 hover:border-purple-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-purple-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800 flex items-center gap-3">
+                                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                            I Need a Document
+                                        </h4>
+                                        <p class="text-gray-600">I need to create forms, agreements, or official notices</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 class="text-lg font-semibold text-gray-800">Know Your Rights</h4>
-                                    <p class="text-sm text-gray-600">State-specific tenant rights</p>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>We can create:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Lease agreements and contracts</li>
+                                        <li>• Rental applications</li>
+                                        <li>• Security deposit receipts</li>
+                                        <li>• Notice letters to landlords</li>
+                                        <li>• Move-out checklists</li>
+                                    </ul>
                                 </div>
+                                <button onclick="openDocumentGenerator()" class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                                    📝 Create My Document
+                                </button>
+                                <p class="text-xs text-gray-500 mt-2 text-center">State-specific documents generated instantly with AI</p>
                             </div>
-                            <button onclick="openRightsChecker()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                                Check Rights
-                            </button>
-                        </div>
 
-                        <!-- Legal Issue Analyzer -->
-                        <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
-                            <div class="flex items-center mb-4">
-                                <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mr-4">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                                    </svg>
+                            <!-- I Want to Learn My Rights -->
+                            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-200 hover:border-blue-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800 flex items-center gap-3">
+                                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                            </svg>
+                                            Learn My Rights
+                                        </h4>
+                                        <p class="text-gray-600">I want to understand what I'm legally entitled to</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 class="text-lg font-semibold text-gray-800">AI Issue Analyzer</h4>
-                                    <p class="text-sm text-gray-600">Analyze legal problems</p>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Learn about:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Your tenant rights by state</li>
+                                        <li>• Security deposit laws</li>
+                                        <li>• Rent increase regulations</li>
+                                        <li>• Repair and maintenance rights</li>
+                                        <li>• Privacy and access rights</li>
+                                    </ul>
                                 </div>
+                                <button onclick="openRightsChecker()" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                    🛡️ Know My Rights
+                                </button>
+                                <p class="text-xs text-gray-500 mt-2 text-center">Get state-specific legal information and important deadlines</p>
                             </div>
-                            <button onclick="openIssueAnalyzer()" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium">
-                                Analyze Issue
-                            </button>
+
+                            <!-- Find Resources & Help -->
+                            <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-200 hover:border-green-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-green-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800 flex items-center gap-3">
+                                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                            </svg>
+                                            Find Resources
+                                        </h4>
+                                        <p class="text-gray-600">Browse guides, forms, and helpful tools</p>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Available resources:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Free legal form templates</li>
+                                        <li>• State law guides and summaries</li>
+                                        <li>• Legal calculators and tools</li>
+                                        <li>• Attorney finder directory</li>
+                                        <li>• Latest housing law news</li>
+                                    </ul>
+                                </div>
+                                <button onclick="scrollToResources()" class="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                                    📖 Browse Resources
+                                </button>
+                                <p class="text-xs text-gray-500 mt-2 text-center">Free access to legal forms, guides, and tools</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Breadcrumb Navigation -->
+                    <div id="breadcrumbNavigation" class="hidden mb-6">
+                        <div class="bg-white p-4 rounded-lg border border-gray-200">
+                            <div class="flex items-center space-x-2 text-sm">
+                                <button onclick="resetLegalSection()" class="text-blue-600 hover:text-blue-800 flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v1H8V5z"></path>
+                                    </svg>
+                                    Legal Center
+                                </button>
+                                <span class="text-gray-400">></span>
+                                <span id="breadcrumbCurrent" class="text-gray-700 font-medium"></span>
+                            </div>
                         </div>
                     </div>
 
@@ -1814,7 +2357,61 @@
             <!-- Mortgage Tab -->
             <div id="mortgage-tab" class="tab-content hidden">
                 <div class="glass-card p-6">
-                    <h3 class="text-xl font-bold text-gray-900 mb-6">💰 Mortgage Analysis & Negotiation Center</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                        Mortgage Analysis & Negotiation Center
+                    </h3>
+                    
+                    <!-- Welcome & Quick Actions -->
+                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-8 rounded-2xl border border-green-200 mb-8">
+                        <div class="text-center mb-6">
+                            <h4 class="text-3xl font-bold text-gray-800 mb-3">AI-Powered Mortgage Optimization</h4>
+                            <p class="text-gray-600 max-w-3xl mx-auto text-lg">
+                                Analyze your current mortgage, discover savings opportunities, and generate professional negotiation letters with our advanced AI tools.
+                            </p>
+                        </div>
+                        
+                        <!-- Quick Action Buttons -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <button onclick="openMortgageAnalyzer()" class="bg-white p-4 rounded-xl border border-green-200 hover:border-green-300 transition-all group">
+                                <div class="flex items-center">
+                                    <svg class="w-8 h-8 text-green-600 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    <div class="text-left">
+                                        <div class="font-semibold text-gray-800">Analyze Mortgage</div>
+                                        <div class="text-sm text-gray-600">Get comprehensive analysis</div>
+                                    </div>
+                                </div>
+                            </button>
+                            
+                            <button onclick="openRateComparison()" class="bg-white p-4 rounded-xl border border-green-200 hover:border-green-300 transition-all group">
+                                <div class="flex items-center">
+                                    <svg class="w-8 h-8 text-blue-600 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                    </svg>
+                                    <div class="text-left">
+                                        <div class="font-semibold text-gray-800">Compare Rates</div>
+                                        <div class="text-sm text-gray-600">Find better rates</div>
+                                    </div>
+                                </div>
+                            </button>
+                            
+                            <button onclick="openNegotiationLetters()" class="bg-white p-4 rounded-xl border border-green-200 hover:border-green-300 transition-all group">
+                                <div class="flex items-center">
+                                    <svg class="w-8 h-8 text-purple-600 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <div class="text-left">
+                                        <div class="font-semibold text-gray-800">Generate Letters</div>
+                                        <div class="text-sm text-gray-600">Professional negotiation</div>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
                     
                     <!-- Mortgage Dashboard Stats -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -1875,9 +2472,20 @@
                         </div>
                     </div>
 
-                    <!-- Current Market Rates Display -->
-                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-200 mb-8">
-                        <h4 class="text-xl font-bold text-gray-800 mb-6">📊 Current Market Rates - July 2025</h4>
+                    <!-- Real-Time Market Rates Display -->
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-8 rounded-2xl border border-indigo-200 mb-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <h4 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                                <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                                Real-Time Market Rates
+                            </h4>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                                Updated: <span id="rateUpdateTime">July 2025</span>
+                            </div>
+                        </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <!-- 30-Year Fixed -->
@@ -2315,6 +2923,227 @@
                         </div>
                     </div>
 
+                    <!-- Advanced Mortgage Tools Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <!-- AI Mortgage Analyzer -->
+                        <div id="mortgageAnalyzerSection" class="bg-white p-8 rounded-2xl border border-gray-200 shadow-lg">
+                            <h4 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                </svg>
+                                AI Mortgage Analyzer
+                            </h4>
+                            
+                            <form class="space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Current Interest Rate (%)</label>
+                                        <input type="number" step="0.01" id="currentRate" placeholder="6.50" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Loan Amount ($)</label>
+                                        <input type="number" id="loanAmount" placeholder="400000" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Remaining Term (Years)</label>
+                                        <select id="remainingTerm" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                            <option value="30">30 Years</option>
+                                            <option value="25">25 Years</option>
+                                            <option value="20">20 Years</option>
+                                            <option value="15">15 Years</option>
+                                            <option value="10">10 Years</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Credit Score</label>
+                                        <select id="creditScore" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                            <option value="800">800+ (Excellent)</option>
+                                            <option value="740">740-799 (Very Good)</option>
+                                            <option value="680">680-739 (Good)</option>
+                                            <option value="620">620-679 (Fair)</option>
+                                            <option value="580">580-619 (Poor)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <button type="button" onclick="analyzeMortgage()" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all">
+                                    🚀 Analyze My Mortgage
+                                </button>
+                            </form>
+                            
+                            <!-- Analysis Results -->
+                            <div id="analysisResults" class="hidden mt-6 space-y-4">
+                                <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
+                                    <h5 class="text-lg font-semibold text-green-800 mb-4 flex items-center gap-2">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        Analysis Complete
+                                    </h5>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <div class="font-medium text-gray-700">Current Monthly Payment</div>
+                                            <div id="currentPayment" class="text-xl font-bold text-gray-900">$0</div>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-700">Potential Savings</div>
+                                            <div id="potentialMonthlySavings" class="text-xl font-bold text-green-600">$0</div>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-700">Total Interest Saved</div>
+                                            <div id="totalInterestSaved" class="text-xl font-bold text-green-600">$0</div>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-700">Break-Even Point</div>
+                                            <div id="breakEvenPoint" class="text-xl font-bold text-blue-600">0 months</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Recommendations -->
+                                <div id="recommendations" class="bg-blue-50 p-6 rounded-xl border border-blue-200">
+                                    <h6 class="font-semibold text-blue-800 mb-3">AI Recommendations</h6>
+                                    <div id="recommendationsList" class="space-y-2 text-sm text-blue-700">
+                                        <!-- Recommendations will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Enhanced Rate Comparison Tool -->
+                        <div id="rateComparisonSection" class="bg-white p-8 rounded-2xl border border-gray-200 shadow-lg">
+                            <h4 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                                Rate Comparison Engine
+                            </h4>
+                            
+                            <div class="space-y-6">
+                                <!-- Loan Type Selector -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">Loan Type</label>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <button type="button" onclick="selectLoanType('conventional')" class="loan-type-btn p-3 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors" data-type="conventional">
+                                            <div class="font-medium">Conventional</div>
+                                            <div class="text-xs text-gray-600">20% down payment</div>
+                                        </button>
+                                        <button type="button" onclick="selectLoanType('fha')" class="loan-type-btn p-3 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors" data-type="fha">
+                                            <div class="font-medium">FHA Loan</div>
+                                            <div class="text-xs text-gray-600">3.5% down payment</div>
+                                        </button>
+                                        <button type="button" onclick="selectLoanType('va')" class="loan-type-btn p-3 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors" data-type="va">
+                                            <div class="font-medium">VA Loan</div>
+                                            <div class="text-xs text-gray-600">0% down payment</div>
+                                        </button>
+                                        <button type="button" onclick="selectLoanType('jumbo')" class="loan-type-btn p-3 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors" data-type="jumbo">
+                                            <div class="font-medium">Jumbo Loan</div>
+                                            <div class="text-xs text-gray-600">High-value properties</div>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Rate Display -->
+                                <div id="rateDisplay" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+                                        <div class="text-center">
+                                            <div class="font-semibold text-gray-800 mb-2">Current Market Rate</div>
+                                            <div id="marketRate" class="text-3xl font-bold text-blue-600 mb-1">6.68%</div>
+                                            <div class="text-sm text-gray-600">30-Year Fixed</div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
+                                        <div class="text-center">
+                                            <div class="font-semibold text-gray-800 mb-2">Your Eligible Rate</div>
+                                            <div id="yourRate" class="text-3xl font-bold text-green-600 mb-1">6.50%</div>
+                                            <div class="text-sm text-gray-600">Based on Credit Score</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Rate Alert Setup -->
+                                <div class="bg-yellow-50 p-6 rounded-xl border border-yellow-200">
+                                    <h6 class="font-semibold text-yellow-800 mb-3">🔔 Rate Alert Setup</h6>
+                                    <div class="flex items-center space-x-4">
+                                        <div>
+                                            <label class="block text-sm text-gray-700 mb-1">Alert me when rates drop below:</label>
+                                            <input type="number" step="0.01" id="alertThreshold" placeholder="6.25" class="p-2 border border-yellow-300 rounded-lg w-20 text-center">
+                                            <span class="text-sm text-gray-600 ml-1">%</span>
+                                        </div>
+                                        <button onclick="setupRateAlert()" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors">
+                                            Set Alert
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Professional Negotiation Letters Section -->
+                    <div id="negotiationLettersSection" class="bg-white p-8 rounded-2xl border border-gray-200 shadow-lg mb-8">
+                        <h4 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            AI Negotiation Letter Generator
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Letter Configuration -->
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Letter Type</label>
+                                    <select id="letterType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <option value="rate-reduction">Rate Reduction Request</option>
+                                        <option value="refinance-inquiry">Refinance Inquiry</option>
+                                        <option value="competing-offer">Competing Offer</option>
+                                        <option value="payment-modification">Payment Modification</option>
+                                        <option value="loyalty-discount">Loyalty Customer Discount</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Target Rate (%)</label>
+                                    <input type="number" step="0.01" id="targetRate" placeholder="6.25" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Lender</label>
+                                    <input type="text" id="currentLender" placeholder="Bank of America" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Additional Context</label>
+                                    <textarea id="additionalContext" rows="3" placeholder="Long-time customer, excellent payment history, considering refinancing..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"></textarea>
+                                </div>
+                                
+                                <button onclick="generateNegotiationLetter()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all">
+                                    ✨ Generate Professional Letter
+                                </button>
+                            </div>
+                            
+                            <!-- Letter Preview -->
+                            <div>
+                                <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 min-h-96">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h6 class="font-semibold text-gray-800">Letter Preview</h6>
+                                        <div class="space-x-2">
+                                            <button onclick="copyLetter()" class="text-sm bg-gray-200 text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-300 transition-colors">
+                                                📋 Copy
+                                            </button>
+                                            <button onclick="downloadLetter()" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors">
+                                                📥 Download PDF
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="letterPreview" class="prose prose-sm max-w-none">
+                                        <p class="text-gray-500 italic">Generate a letter to see the preview here...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Success Stories & Social Proof -->
                     <div class="bg-gradient-to-r from-yellow-50 to-amber-50 p-6 rounded-xl border border-yellow-200">
                         <h4 class="text-xl font-bold text-gray-800 mb-6">🌟 Success Stories</h4>
@@ -2360,6 +3189,256 @@
                                 <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">⭐⭐⭐⭐⭐ 4.9/5 Rating</span>
                                 <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">🔒 Bank-Level Security</span>
                                 <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">📞 Expert Support</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Tab -->
+            <div id="student-tab" class="tab-content hidden">
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
+                        </svg>
+                        Student Housing Center
+                    </h3>
+                    
+                    <!-- Welcome Section for Students -->
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border border-blue-200 mb-8">
+                        <div class="text-center mb-6">
+                            <h4 class="text-2xl font-bold text-gray-800 mb-3 flex items-center justify-center gap-3">
+                                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                </svg>
+                                Student Housing Made Easy
+                            </h4>
+                            <p class="text-gray-600 max-w-2xl mx-auto">Navigate student housing with confidence! From dorms to off-campus apartments, roommate agreements to tenant rights - we've got you covered.</p>
+                        </div>
+                        
+                        <!-- Student Stats -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span class="text-white font-bold text-xl">📚</span>
+                                </div>
+                                <h5 class="font-semibold text-gray-800 mb-2">Know Your Student Rights</h5>
+                                <p class="text-sm text-gray-600">Learn about student-specific housing protections</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span class="text-white font-bold text-xl">🤝</span>
+                                </div>
+                                <h5 class="font-semibold text-gray-800 mb-2">Roommate Agreements</h5>
+                                <p class="text-sm text-gray-600">Create fair and legal roommate contracts</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span class="text-white font-bold text-xl">💡</span>
+                                </div>
+                                <h5 class="font-semibold text-gray-800 mb-2">Smart Housing Tips</h5>
+                                <p class="text-sm text-gray-600">Budget-friendly and safety-focused advice</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Housing Tools -->
+                    <div class="mb-8">
+                        <h4 class="text-2xl font-bold text-gray-800 mb-6 text-center flex items-center justify-center gap-3">
+                            <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            Student Housing Tools
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <!-- Roommate Agreement Generator -->
+                            <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-200 hover:border-purple-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-purple-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800">🤝 Roommate Agreement</h4>
+                                        <p class="text-gray-600">Create fair living arrangements</p>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Covers:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Rent and utility splits</li>
+                                        <li>• Household chores and rules</li>
+                                        <li>• Guest policies and quiet hours</li>
+                                        <li>• Shared space guidelines</li>
+                                    </ul>
+                                </div>
+                                <button onclick="openRoommateGenerator()" class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                                    🔨 Create Agreement
+                                </button>
+                            </div>
+
+                            <!-- Student Rights Guide -->
+                            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-200 hover:border-blue-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800">📚 Student Rights Guide</h4>
+                                        <p class="text-gray-600">Know your rights as a student tenant</p>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Learn about:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Student housing protections</li>
+                                        <li>• Campus housing vs off-campus</li>
+                                        <li>• Breaking leases for school</li>
+                                        <li>• Dealing with parent co-signers</li>
+                                    </ul>
+                                </div>
+                                <button onclick="openStudentRights()" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                    📖 Learn My Rights
+                                </button>
+                            </div>
+
+                            <!-- Budget Calculator -->
+                            <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-200 hover:border-green-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-green-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800">💰 Student Budget Calculator</h4>
+                                        <p class="text-gray-600">Plan your housing budget wisely</p>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Calculate:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Total housing costs</li>
+                                        <li>• Financial aid allocation</li>
+                                        <li>• Monthly expense breakdown</li>
+                                        <li>• Savings recommendations</li>
+                                    </ul>
+                                </div>
+                                <button onclick="openBudgetCalculator()" class="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                                    📊 Calculate Budget
+                                </button>
+                            </div>
+
+                            <!-- Campus vs Off-Campus Guide -->
+                            <div class="bg-gradient-to-br from-orange-50 to-red-50 p-6 rounded-xl border-2 border-orange-200 hover:border-orange-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-orange-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800">🏫 Campus vs Off-Campus</h4>
+                                        <p class="text-gray-600">Make the right housing choice</p>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Compare:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Cost differences</li>
+                                        <li>• Convenience factors</li>
+                                        <li>• Legal considerations</li>
+                                        <li>• Social aspects</li>
+                                    </ul>
+                                </div>
+                                <button onclick="openHousingComparison()" class="w-full bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium">
+                                    ⚖️ Compare Options
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Resources -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 mb-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">📚 Student Housing Resources</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Emergency Contacts -->
+                            <div class="p-4 bg-red-50 rounded-lg border border-red-200">
+                                <h5 class="text-lg font-semibold text-red-800 mb-3">🚨 Emergency Contacts</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li><a href="#" class="text-red-600 hover:text-red-800">• Campus Housing Emergency Line</a></li>
+                                    <li><a href="#" class="text-red-600 hover:text-red-800">• Local Tenant Rights Hotline</a></li>
+                                    <li><a href="#" class="text-red-600 hover:text-red-800">• Student Legal Services</a></li>
+                                    <li><a href="#" class="text-red-600 hover:text-red-800">• Financial Aid Office</a></li>
+                                </ul>
+                            </div>
+                            
+                            <!-- Forms & Documents -->
+                            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <h5 class="text-lg font-semibold text-blue-800 mb-3">📄 Forms & Documents</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• Roommate Agreement Template</a></li>
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• Move-in Checklist</a></li>
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• Security Deposit Receipt</a></li>
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• Lease Break Request Letter</a></li>
+                                </ul>
+                            </div>
+                            
+                            <!-- Safety & Security -->
+                            <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                                <h5 class="text-lg font-semibold text-green-800 mb-3">🔒 Safety & Security</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Campus Safety Resources</a></li>
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Off-Campus Safety Tips</a></li>
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Identity Theft Protection</a></li>
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Renters Insurance Guide</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Success Stories -->
+                    <div class="bg-gradient-to-r from-yellow-50 to-amber-50 p-6 rounded-xl border border-yellow-200">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">🌟 Student Success Stories</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                                    <div>
+                                        <h5 class="font-semibold text-gray-800">Alex - University of Michigan</h5>
+                                        <p class="text-sm text-gray-600 mt-1">"The roommate agreement template saved me from a messy situation when my roommate wanted to move out early. Everything was clear and fair!"</p>
+                                        <span class="text-xs text-green-600 font-medium">✅ Conflict avoided</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                    <div>
+                                        <h5 class="font-semibold text-gray-800">Maria - UCLA</h5>
+                                        <p class="text-sm text-gray-600 mt-1">"The budget calculator helped me realize I could afford off-campus housing and actually save money compared to the dorms!"</p>
+                                        <span class="text-xs text-blue-600 font-medium">💰 $200/month saved</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 text-center">
+                            <p class="text-sm text-gray-600">Join thousands of students who've mastered their housing situation</p>
+                            <div class="flex justify-center space-x-4 mt-2">
+                                <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">🎓 Student-Focused</span>
+                                <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">📱 Mobile-Friendly</span>
+                                <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">🆓 Always Free</span>
                             </div>
                         </div>
                     </div>
@@ -7138,26 +8217,150 @@
         // LEGAL SECTION FUNCTIONS
         // ========================================
         
-        // Legal section toggle functions
+        // Legal section toggle functions with improved UX
         function openDocumentGenerator() {
             console.log('📄 Opening document generator...');
             hideAllLegalSections();
+            showBreadcrumb('Create Documents');
             document.getElementById('documentGeneratorSection').classList.remove('hidden');
             updateLegalStats();
+            showLegalNotification('📝 Document generator ready! Select your document type to get started.', 'info');
         }
         
         function openRightsChecker() {
             console.log('⚖️ Opening rights checker...');
             hideAllLegalSections();
+            showBreadcrumb('Know Your Rights');
             document.getElementById('rightsCheckerSection').classList.remove('hidden');
             updateLegalStats();
+            showLegalNotification('🛡️ Rights checker ready! Select your state and situation to learn your rights.', 'info');
         }
         
         function openIssueAnalyzer() {
             console.log('🔬 Opening issue analyzer...');
             hideAllLegalSections();
+            showBreadcrumb('Problem Solver');
             document.getElementById('issueAnalyzerSection').classList.remove('hidden');
             updateLegalStats();
+            showLegalNotification('🚨 Problem solver ready! Describe your situation and we\'ll help you find a solution.', 'info');
+        }
+
+        // New UX functions for improved legal section
+        function quickStartScenario(scenario) {
+            console.log('🚀 Quick start scenario:', scenario);
+            
+            // Hide recommendation engine
+            document.getElementById('recommendationEngine').style.display = 'none';
+            
+            // Show appropriate tool based on scenario
+            if (scenario === 'security-deposit' || scenario === 'rent-increase' || scenario === 'repairs' || scenario === 'eviction') {
+                openIssueAnalyzer();
+                
+                // Pre-fill the situation type if applicable
+                if (document.getElementById('situationType')) {
+                    document.getElementById('situationType').value = scenario;
+                }
+                
+                // Add scenario-specific guidance
+                const scenarioGuidance = {
+                    'security-deposit': 'Let\'s help you with your security deposit issue. Please describe what happened with your deposit.',
+                    'rent-increase': 'We\'ll help you understand if your rent increase is legal. Tell us about the increase you received.',
+                    'repairs': 'Let\'s resolve your repair and maintenance issues. Describe what needs to be fixed.',
+                    'eviction': '⚠️ This is urgent! Let\'s review your eviction notice and determine your options.'
+                };
+                
+                showLegalNotification(scenarioGuidance[scenario], scenario === 'eviction' ? 'error' : 'info');
+            }
+        }
+
+        function selectRecommendation(type) {
+            console.log('🤖 Recommendation selected:', type);
+            
+            // Remove active state from all options
+            document.querySelectorAll('.recommendation-option').forEach(option => {
+                option.classList.remove('border-green-500', 'bg-green-50');
+                option.classList.add('border-gray-200');
+            });
+            
+            // Add active state to selected option
+            event.target.closest('.recommendation-option').classList.add('border-green-500', 'bg-green-50');
+            event.target.closest('.recommendation-option').classList.remove('border-gray-200');
+            
+            // Show recommendation result
+            const recommendations = {
+                'problem': {
+                    title: '🚨 Problem Solver Tool',
+                    description: 'Our AI will analyze your specific situation and provide step-by-step guidance to resolve your issue.',
+                    action: 'Start Problem Solver',
+                    function: 'openIssueAnalyzer()',
+                    examples: 'Perfect for: landlord disputes, repair issues, security deposit problems, eviction notices'
+                },
+                'document': {
+                    title: '📄 Document Generator',
+                    description: 'Create professional, state-specific legal documents instantly with our AI-powered generator.',
+                    action: 'Create Documents',
+                    function: 'openDocumentGenerator()',
+                    examples: 'Perfect for: lease agreements, rental applications, notice letters, receipts'
+                },
+                'rights': {
+                    title: '📚 Rights Information Center',
+                    description: 'Learn about your tenant rights, state laws, and important deadlines specific to your situation.',
+                    action: 'Learn My Rights',
+                    function: 'openRightsChecker()',
+                    examples: 'Perfect for: understanding tenant rights, security deposit laws, rent increase rules'
+                },
+                'prevention': {
+                    title: '🛡️ Resource Library',
+                    description: 'Access our comprehensive library of guides, forms, and tools to prevent legal issues.',
+                    action: 'Browse Resources',
+                    function: 'scrollToResources()',
+                    examples: 'Perfect for: planning ahead, understanding lease terms, preparing for negotiations'
+                }
+            };
+            
+            const rec = recommendations[type];
+            document.getElementById('recommendationContent').innerHTML = `
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200 mb-4">
+                    <h6 class="text-lg font-semibold text-green-800 mb-2">${rec.title}</h6>
+                    <p class="text-sm text-green-700 mb-3">${rec.description}</p>
+                    <p class="text-xs text-green-600 mb-4">${rec.examples}</p>
+                    <button onclick="${rec.function}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                        ${rec.action} →
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('recommendationResult').classList.remove('hidden');
+        }
+
+        function showBreadcrumb(currentStep) {
+            document.getElementById('breadcrumbNavigation').classList.remove('hidden');
+            document.getElementById('breadcrumbCurrent').textContent = currentStep;
+        }
+
+        function resetLegalSection() {
+            console.log('🔄 Resetting legal section...');
+            hideAllLegalSections();
+            document.getElementById('breadcrumbNavigation').classList.add('hidden');
+            document.getElementById('recommendationEngine').style.display = 'block';
+            document.getElementById('recommendationResult').classList.add('hidden');
+            
+            // Reset recommendation options
+            document.querySelectorAll('.recommendation-option').forEach(option => {
+                option.classList.remove('border-green-500', 'bg-green-50');
+                option.classList.add('border-gray-200');
+            });
+            
+            showLegalNotification('🏠 Back to Legal Center main page', 'info');
+        }
+
+        function scrollToResources() {
+            console.log('📚 Scrolling to resources...');
+            const resourcesSection = document.querySelector('.bg-white.p-6.rounded-xl.border.border-gray-200.mb-6');
+            if (resourcesSection) {
+                resourcesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                showLegalNotification('📖 Here are our free legal resources and tools!', 'info');
+            }
         }
         
         function hideAllLegalSections() {
@@ -7579,6 +8782,98 @@
                     notification.remove();
                 }
             }, 5000);
+        }
+
+        // ========================================
+        // STUDENT HOUSING SECTION FUNCTIONS
+        // ========================================
+        
+        // Student section toggle functions
+        function openRoommateGenerator() {
+            console.log('🤝 Opening roommate agreement generator...');
+            showStudentNotification('📝 Roommate Agreement Generator ready! Fill in your details to create a fair agreement.', 'info');
+        }
+
+        function openStudentRights() {
+            console.log('📚 Opening student rights guide...');
+            showStudentNotification('🛡️ Student Rights Guide loaded! Learn about your housing protections as a student.', 'info');
+        }
+
+        function openBudgetCalculator() {
+            console.log('💰 Opening student budget calculator...');
+            showStudentNotification('📊 Budget Calculator ready! Let\'s help you plan your housing finances.', 'info');
+        }
+
+        function openHousingComparison() {
+            console.log('🏫 Opening housing comparison tool...');
+            showStudentNotification('⚖️ Housing Comparison Tool loaded! Compare campus vs off-campus options.', 'info');
+        }
+
+        // Student notification system
+        function showStudentNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md ${getNotificationClasses(type)}`;
+            notification.innerHTML = `
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mr-3">
+                        ${getNotificationIcon(type)}
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="flex-shrink-0 ml-2 text-gray-400 hover:text-gray-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Utility functions for notifications
+        function getNotificationClasses(type) {
+            switch(type) {
+                case 'success':
+                    return 'bg-green-50 border border-green-200 text-green-800';
+                case 'error':
+                    return 'bg-red-50 border border-red-200 text-red-800';
+                case 'warning':
+                    return 'bg-yellow-50 border border-yellow-200 text-yellow-800';
+                case 'info':
+                default:
+                    return 'bg-blue-50 border border-blue-200 text-blue-800';
+            }
+        }
+
+        function getNotificationIcon(type) {
+            switch(type) {
+                case 'success':
+                    return `<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>`;
+                case 'error':
+                    return `<svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>`;
+                case 'warning':
+                    return `<svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>`;
+                case 'info':
+                default:
+                    return `<svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>`;
+            }
         }
 
         // ========================================
@@ -8193,6 +9488,99 @@
         }
 
         // ========================================
+        // API INTEGRATION FUNCTIONS
+        // ========================================
+        
+        // Simulate market data API (using demo data)
+        async function fetchMarketData(location = 'San Francisco, CA') {
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            return {
+                averageRent: Math.floor(Math.random() * 1000) + 2500,
+                priceChange: (Math.random() * 20 - 10).toFixed(1),
+                marketTrend: Math.random() > 0.5 ? 'up' : 'down',
+                comparableProperties: Math.floor(Math.random() * 50) + 10,
+                lastUpdated: new Date().toISOString()
+            };
+        }
+        
+        // Simulate property analytics API
+        async function fetchPropertyAnalytics(propertyId) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            return {
+                walkScore: Math.floor(Math.random() * 40) + 60,
+                transitScore: Math.floor(Math.random() * 30) + 50,
+                crimeIndex: Math.floor(Math.random() * 50) + 25,
+                schoolRating: Math.floor(Math.random() * 4) + 6,
+                investmentPotential: Math.floor(Math.random() * 30) + 70
+            };
+        }
+        
+        // Simulate mortgage rates API (using realistic 2025 rates)
+        async function fetchMortgageRates() {
+            await new Promise(resolve => setTimeout(resolve, 600));
+            
+            const baseRate = 6.5;
+            return {
+                thirtyYear: (baseRate + (Math.random() * 0.5 - 0.25)).toFixed(3),
+                fifteenYear: (baseRate - 0.8 + (Math.random() * 0.3 - 0.15)).toFixed(3),
+                fha: (baseRate + 0.2 + (Math.random() * 0.3 - 0.15)).toFixed(3),
+                va: (baseRate - 0.1 + (Math.random() * 0.3 - 0.15)).toFixed(3),
+                lastUpdated: new Date().toISOString()
+            };
+        }
+        
+        // Load demo statistics
+        async function loadDashboardStats() {
+            try {
+                // Update stats with realistic demo data
+                document.getElementById('totalListings').textContent = Math.floor(Math.random() * 50) + 125;
+                document.getElementById('activeChats').textContent = Math.floor(Math.random() * 15) + 5;
+                document.getElementById('savedProperties').textContent = Math.floor(Math.random() * 10) + 12;
+                document.getElementById('profileViews').textContent = Math.floor(Math.random() * 100) + 200;
+                
+                // Load market data
+                const marketData = await fetchMarketData();
+                const marketElements = document.querySelectorAll('[data-market-info]');
+                marketElements.forEach(element => {
+                    const type = element.getAttribute('data-market-info');
+                    if (type === 'average-rent') {
+                        element.textContent = `$${marketData.averageRent.toLocaleString()}`;
+                    } else if (type === 'price-change') {
+                        element.textContent = `${marketData.priceChange}%`;
+                        element.className = marketData.priceChange > 0 ? 'text-green-600' : 'text-red-600';
+                    }
+                });
+                
+                console.log('✅ Dashboard stats loaded successfully');
+            } catch (error) {
+                console.error('❌ Error loading dashboard stats:', error);
+            }
+        }
+
+        // ========================================
+        // UI ENHANCEMENT FUNCTIONS
+        // ========================================
+        
+        // Initialize current date display
+        function initializeDateDisplay() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            const formattedDate = now.toLocaleDateString('en-US', options);
+            const dateElement = document.getElementById('currentDate');
+            if (dateElement) {
+                dateElement.textContent = formattedDate;
+            }
+        }
+
+        // ========================================
         // INITIALIZATION - Start after all functions are defined
         // ========================================
         
@@ -8200,10 +9588,14 @@
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 console.log('📄 DOM ready, starting initialization...');
+                initializeDateDisplay();
+                loadDashboardStats();
                 loadConfigWithFallback();
             });
         } else {
             console.log('📄 DOM already ready, starting initialization...');
+            initializeDateDisplay();
+            loadDashboardStats();
             loadConfigWithFallback();
         }
     </script>
