@@ -204,6 +204,9 @@
                 <button class="tab-button" onclick="switchTab('mortgage', this)">
                     💰 Mortgage
                 </button>
+                <button class="tab-button" onclick="switchTab('student', this)">
+                    🎓 Student
+                </button>
             </div>
         </div>
 
@@ -1424,6 +1427,105 @@
                 <div class="glass-card p-6">
                     <h3 class="text-xl font-bold text-gray-900 mb-6">⚖️ Legal Center</h3>
                     
+                    <!-- Welcome & Getting Started Section -->
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 mb-8">
+                        <div class="text-center mb-6">
+                            <h4 class="text-2xl font-bold text-gray-800 mb-3">👋 New to Legal Issues?</h4>
+                            <p class="text-gray-600 max-w-2xl mx-auto">Don't worry! We'll guide you through everything step by step. Most housing legal issues can be resolved with the right information and documents.</p>
+                        </div>
+                        
+                        <!-- 3-Step Process Overview -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span class="text-white font-bold text-xl">1</span>
+                                </div>
+                                <h5 class="font-semibold text-gray-800 mb-2">Describe Your Situation</h5>
+                                <p class="text-sm text-gray-600">Tell us what's happening in plain English</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span class="text-white font-bold text-xl">2</span>
+                                </div>
+                                <h5 class="font-semibold text-gray-800 mb-2">Get Personalized Guidance</h5>
+                                <p class="text-sm text-gray-600">Receive tailored advice for your specific situation</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span class="text-white font-bold text-xl">3</span>
+                                </div>
+                                <h5 class="font-semibold text-gray-800 mb-2">Take Action with Tools</h5>
+                                <p class="text-sm text-gray-600">Use our tools to resolve your issue</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Start Buttons for Common Scenarios -->
+                        <div class="bg-white p-4 rounded-lg border border-blue-200">
+                            <h6 class="font-semibold text-gray-800 mb-3 text-center">🚀 Quick Start - Common Situations</h6>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <button onclick="quickStartScenario('security-deposit')" class="p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-sm">
+                                    <div class="font-medium text-red-800">Security Deposit Issue</div>
+                                    <div class="text-red-600 text-xs">Landlord won't return deposit</div>
+                                </button>
+                                <button onclick="quickStartScenario('rent-increase')" class="p-3 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors text-sm">
+                                    <div class="font-medium text-orange-800">Rent Increase</div>
+                                    <div class="text-orange-600 text-xs">Unexpected rent hike</div>
+                                </button>
+                                <button onclick="quickStartScenario('repairs')" class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors text-sm">
+                                    <div class="font-medium text-yellow-800">Repair Issues</div>
+                                    <div class="text-yellow-600 text-xs">Landlord won't fix problems</div>
+                                </button>
+                                <button onclick="quickStartScenario('eviction')" class="p-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors text-sm">
+                                    <div class="font-medium text-purple-800">Eviction Notice</div>
+                                    <div class="text-purple-600 text-xs">Received eviction notice</div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Smart Recommendation Engine -->
+                    <div id="recommendationEngine" class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200 mb-8">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4">🤖 Not Sure Where to Start?</h4>
+                        <p class="text-gray-600 mb-4">Answer a few quick questions and we'll recommend the best tool for your situation:</p>
+                        
+                        <div id="recommendationQuiz" class="space-y-4">
+                            <div class="question-container">
+                                <p class="font-medium text-gray-800 mb-3">What best describes your situation?</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <button onclick="selectRecommendation('problem')" class="recommendation-option p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-green-500 transition-colors text-left">
+                                        <div class="font-medium text-gray-800">🚨 I have a problem that needs solving</div>
+                                        <div class="text-sm text-gray-600">Something has gone wrong and I need help</div>
+                                    </button>
+                                    <button onclick="selectRecommendation('document')" class="recommendation-option p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-green-500 transition-colors text-left">
+                                        <div class="font-medium text-gray-800">📄 I need to create a document</div>
+                                        <div class="text-sm text-gray-600">I need forms, agreements, or notices</div>
+                                    </button>
+                                    <button onclick="selectRecommendation('rights')" class="recommendation-option p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-green-500 transition-colors text-left">
+                                        <div class="font-medium text-gray-800">📚 I want to learn my rights</div>
+                                        <div class="text-sm text-gray-600">I need to understand what I'm entitled to</div>
+                                    </button>
+                                    <button onclick="selectRecommendation('prevention')" class="recommendation-option p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-green-500 transition-colors text-left">
+                                        <div class="font-medium text-gray-800">🛡️ I want to prevent problems</div>
+                                        <div class="text-sm text-gray-600">I want to be prepared and avoid issues</div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recommendation Results -->
+                        <div id="recommendationResult" class="hidden mt-4 p-4 bg-white rounded-lg border border-green-200">
+                            <div class="flex items-center mb-3">
+                                <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                                <h5 class="font-semibold text-gray-800">Perfect! Here's what we recommend:</h5>
+                            </div>
+                            <div id="recommendationContent"></div>
+                        </div>
+                    </div>
+                    
                     <!-- Legal Dashboard Stats -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                         <div class="stats-card bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
@@ -1483,60 +1585,143 @@
                         </div>
                     </div>
 
-                    <!-- Quick Actions -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                        <!-- AI Document Generator -->
-                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200">
-                            <div class="flex items-center mb-4">
-                                <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mr-4">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                    </svg>
+                    <!-- Intuitive Tool Categories -->
+                    <div class="mb-8">
+                        <h4 class="text-2xl font-bold text-gray-800 mb-6 text-center">🛠️ Choose Your Path</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <!-- I Have a Problem -->
+                            <div class="bg-gradient-to-br from-red-50 to-orange-50 p-6 rounded-xl border-2 border-red-200 hover:border-red-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-red-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800">🚨 I Have a Problem</h4>
+                                        <p class="text-gray-600">Something has gone wrong and I need help fixing it</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 class="text-lg font-semibold text-gray-800">AI Document Generator</h4>
-                                    <p class="text-sm text-gray-600">Create legal documents instantly</p>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Perfect for:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Landlord disputes or conflicts</li>
+                                        <li>• Unexpected rent increases</li>
+                                        <li>• Security deposit issues</li>
+                                        <li>• Repair and maintenance problems</li>
+                                        <li>• Eviction notices</li>
+                                    </ul>
                                 </div>
+                                <button onclick="openIssueAnalyzer()" class="w-full bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium">
+                                    🔍 Get Help with My Problem
+                                </button>
+                                <p class="text-xs text-gray-500 mt-2 text-center">Our AI will analyze your situation and provide step-by-step guidance</p>
                             </div>
-                            <button onclick="openDocumentGenerator()" class="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium">
-                                Generate Documents
-                            </button>
-                        </div>
 
-                        <!-- Legal Rights Checker -->
-                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
-                            <div class="flex items-center mb-4">
-                                <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                                    </svg>
+                            <!-- I Need a Document -->
+                            <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-200 hover:border-purple-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-purple-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800">📄 I Need a Document</h4>
+                                        <p class="text-gray-600">I need to create forms, agreements, or official notices</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 class="text-lg font-semibold text-gray-800">Know Your Rights</h4>
-                                    <p class="text-sm text-gray-600">State-specific tenant rights</p>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>We can create:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Lease agreements and contracts</li>
+                                        <li>• Rental applications</li>
+                                        <li>• Security deposit receipts</li>
+                                        <li>• Notice letters to landlords</li>
+                                        <li>• Move-out checklists</li>
+                                    </ul>
                                 </div>
+                                <button onclick="openDocumentGenerator()" class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                                    📝 Create My Document
+                                </button>
+                                <p class="text-xs text-gray-500 mt-2 text-center">State-specific documents generated instantly with AI</p>
                             </div>
-                            <button onclick="openRightsChecker()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                                Check Rights
-                            </button>
-                        </div>
 
-                        <!-- Legal Issue Analyzer -->
-                        <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
-                            <div class="flex items-center mb-4">
-                                <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mr-4">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                                    </svg>
+                            <!-- I Want to Learn My Rights -->
+                            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-200 hover:border-blue-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800">📚 Learn My Rights</h4>
+                                        <p class="text-gray-600">I want to understand what I'm legally entitled to</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 class="text-lg font-semibold text-gray-800">AI Issue Analyzer</h4>
-                                    <p class="text-sm text-gray-600">Analyze legal problems</p>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Learn about:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Your tenant rights by state</li>
+                                        <li>• Security deposit laws</li>
+                                        <li>• Rent increase regulations</li>
+                                        <li>• Repair and maintenance rights</li>
+                                        <li>• Privacy and access rights</li>
+                                    </ul>
                                 </div>
+                                <button onclick="openRightsChecker()" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                    🛡️ Know My Rights
+                                </button>
+                                <p class="text-xs text-gray-500 mt-2 text-center">Get state-specific legal information and important deadlines</p>
                             </div>
-                            <button onclick="openIssueAnalyzer()" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium">
-                                Analyze Issue
-                            </button>
+
+                            <!-- Find Resources & Help -->
+                            <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-200 hover:border-green-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-green-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800">📚 Find Resources</h4>
+                                        <p class="text-gray-600">Browse guides, forms, and helpful tools</p>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Available resources:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Free legal form templates</li>
+                                        <li>• State law guides and summaries</li>
+                                        <li>• Legal calculators and tools</li>
+                                        <li>• Attorney finder directory</li>
+                                        <li>• Latest housing law news</li>
+                                    </ul>
+                                </div>
+                                <button onclick="scrollToResources()" class="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                                    📖 Browse Resources
+                                </button>
+                                <p class="text-xs text-gray-500 mt-2 text-center">Free access to legal forms, guides, and tools</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Breadcrumb Navigation -->
+                    <div id="breadcrumbNavigation" class="hidden mb-6">
+                        <div class="bg-white p-4 rounded-lg border border-gray-200">
+                            <div class="flex items-center space-x-2 text-sm">
+                                <button onclick="resetLegalSection()" class="text-blue-600 hover:text-blue-800 flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v1H8V5z"></path>
+                                    </svg>
+                                    Legal Center
+                                </button>
+                                <span class="text-gray-400">></span>
+                                <span id="breadcrumbCurrent" class="text-gray-700 font-medium"></span>
+                            </div>
                         </div>
                     </div>
 
@@ -2360,6 +2545,239 @@
                                 <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">⭐⭐⭐⭐⭐ 4.9/5 Rating</span>
                                 <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">🔒 Bank-Level Security</span>
                                 <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">📞 Expert Support</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Tab -->
+            <div id="student-tab" class="tab-content hidden">
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">🎓 Student Housing Center</h3>
+                    
+                    <!-- Welcome Section for Students -->
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border border-blue-200 mb-8">
+                        <div class="text-center mb-6">
+                            <h4 class="text-2xl font-bold text-gray-800 mb-3">🏠 Student Housing Made Easy</h4>
+                            <p class="text-gray-600 max-w-2xl mx-auto">Navigate student housing with confidence! From dorms to off-campus apartments, roommate agreements to tenant rights - we've got you covered.</p>
+                        </div>
+                        
+                        <!-- Student Stats -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span class="text-white font-bold text-xl">📚</span>
+                                </div>
+                                <h5 class="font-semibold text-gray-800 mb-2">Know Your Student Rights</h5>
+                                <p class="text-sm text-gray-600">Learn about student-specific housing protections</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span class="text-white font-bold text-xl">🤝</span>
+                                </div>
+                                <h5 class="font-semibold text-gray-800 mb-2">Roommate Agreements</h5>
+                                <p class="text-sm text-gray-600">Create fair and legal roommate contracts</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span class="text-white font-bold text-xl">💡</span>
+                                </div>
+                                <h5 class="font-semibold text-gray-800 mb-2">Smart Housing Tips</h5>
+                                <p class="text-sm text-gray-600">Budget-friendly and safety-focused advice</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Housing Tools -->
+                    <div class="mb-8">
+                        <h4 class="text-2xl font-bold text-gray-800 mb-6 text-center">🛠️ Student Housing Tools</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <!-- Roommate Agreement Generator -->
+                            <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-200 hover:border-purple-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-purple-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800">🤝 Roommate Agreement</h4>
+                                        <p class="text-gray-600">Create fair living arrangements</p>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Covers:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Rent and utility splits</li>
+                                        <li>• Household chores and rules</li>
+                                        <li>• Guest policies and quiet hours</li>
+                                        <li>• Shared space guidelines</li>
+                                    </ul>
+                                </div>
+                                <button onclick="openRoommateGenerator()" class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                                    🔨 Create Agreement
+                                </button>
+                            </div>
+
+                            <!-- Student Rights Guide -->
+                            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-200 hover:border-blue-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800">📚 Student Rights Guide</h4>
+                                        <p class="text-gray-600">Know your rights as a student tenant</p>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Learn about:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Student housing protections</li>
+                                        <li>• Campus housing vs off-campus</li>
+                                        <li>• Breaking leases for school</li>
+                                        <li>• Dealing with parent co-signers</li>
+                                    </ul>
+                                </div>
+                                <button onclick="openStudentRights()" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                    📖 Learn My Rights
+                                </button>
+                            </div>
+
+                            <!-- Budget Calculator -->
+                            <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-200 hover:border-green-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-green-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800">💰 Student Budget Calculator</h4>
+                                        <p class="text-gray-600">Plan your housing budget wisely</p>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Calculate:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Total housing costs</li>
+                                        <li>• Financial aid allocation</li>
+                                        <li>• Monthly expense breakdown</li>
+                                        <li>• Savings recommendations</li>
+                                    </ul>
+                                </div>
+                                <button onclick="openBudgetCalculator()" class="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                                    📊 Calculate Budget
+                                </button>
+                            </div>
+
+                            <!-- Campus vs Off-Campus Guide -->
+                            <div class="bg-gradient-to-br from-orange-50 to-red-50 p-6 rounded-xl border-2 border-orange-200 hover:border-orange-300 transition-colors">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-orange-600 rounded-xl flex items-center justify-center mr-4">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-800">🏫 Campus vs Off-Campus</h4>
+                                        <p class="text-gray-600">Make the right housing choice</p>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-700 mb-3"><strong>Compare:</strong></p>
+                                    <ul class="text-sm text-gray-600 space-y-1 ml-4">
+                                        <li>• Cost differences</li>
+                                        <li>• Convenience factors</li>
+                                        <li>• Legal considerations</li>
+                                        <li>• Social aspects</li>
+                                    </ul>
+                                </div>
+                                <button onclick="openHousingComparison()" class="w-full bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium">
+                                    ⚖️ Compare Options
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Resources -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 mb-6">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">📚 Student Housing Resources</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Emergency Contacts -->
+                            <div class="p-4 bg-red-50 rounded-lg border border-red-200">
+                                <h5 class="text-lg font-semibold text-red-800 mb-3">🚨 Emergency Contacts</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li><a href="#" class="text-red-600 hover:text-red-800">• Campus Housing Emergency Line</a></li>
+                                    <li><a href="#" class="text-red-600 hover:text-red-800">• Local Tenant Rights Hotline</a></li>
+                                    <li><a href="#" class="text-red-600 hover:text-red-800">• Student Legal Services</a></li>
+                                    <li><a href="#" class="text-red-600 hover:text-red-800">• Financial Aid Office</a></li>
+                                </ul>
+                            </div>
+                            
+                            <!-- Forms & Documents -->
+                            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <h5 class="text-lg font-semibold text-blue-800 mb-3">📄 Forms & Documents</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• Roommate Agreement Template</a></li>
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• Move-in Checklist</a></li>
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• Security Deposit Receipt</a></li>
+                                    <li><a href="#" class="text-blue-600 hover:text-blue-800">• Lease Break Request Letter</a></li>
+                                </ul>
+                            </div>
+                            
+                            <!-- Safety & Security -->
+                            <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                                <h5 class="text-lg font-semibold text-green-800 mb-3">🔒 Safety & Security</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Campus Safety Resources</a></li>
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Off-Campus Safety Tips</a></li>
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Identity Theft Protection</a></li>
+                                    <li><a href="#" class="text-green-600 hover:text-green-800">• Renters Insurance Guide</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Success Stories -->
+                    <div class="bg-gradient-to-r from-yellow-50 to-amber-50 p-6 rounded-xl border border-yellow-200">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6">🌟 Student Success Stories</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                                    <div>
+                                        <h5 class="font-semibold text-gray-800">Alex - University of Michigan</h5>
+                                        <p class="text-sm text-gray-600 mt-1">"The roommate agreement template saved me from a messy situation when my roommate wanted to move out early. Everything was clear and fair!"</p>
+                                        <span class="text-xs text-green-600 font-medium">✅ Conflict avoided</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                    <div>
+                                        <h5 class="font-semibold text-gray-800">Maria - UCLA</h5>
+                                        <p class="text-sm text-gray-600 mt-1">"The budget calculator helped me realize I could afford off-campus housing and actually save money compared to the dorms!"</p>
+                                        <span class="text-xs text-blue-600 font-medium">💰 $200/month saved</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 text-center">
+                            <p class="text-sm text-gray-600">Join thousands of students who've mastered their housing situation</p>
+                            <div class="flex justify-center space-x-4 mt-2">
+                                <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">🎓 Student-Focused</span>
+                                <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">📱 Mobile-Friendly</span>
+                                <span class="text-xs bg-white px-3 py-1 rounded-full border border-yellow-300">🆓 Always Free</span>
                             </div>
                         </div>
                     </div>
@@ -7138,26 +7556,150 @@
         // LEGAL SECTION FUNCTIONS
         // ========================================
         
-        // Legal section toggle functions
+        // Legal section toggle functions with improved UX
         function openDocumentGenerator() {
             console.log('📄 Opening document generator...');
             hideAllLegalSections();
+            showBreadcrumb('Create Documents');
             document.getElementById('documentGeneratorSection').classList.remove('hidden');
             updateLegalStats();
+            showLegalNotification('📝 Document generator ready! Select your document type to get started.', 'info');
         }
         
         function openRightsChecker() {
             console.log('⚖️ Opening rights checker...');
             hideAllLegalSections();
+            showBreadcrumb('Know Your Rights');
             document.getElementById('rightsCheckerSection').classList.remove('hidden');
             updateLegalStats();
+            showLegalNotification('🛡️ Rights checker ready! Select your state and situation to learn your rights.', 'info');
         }
         
         function openIssueAnalyzer() {
             console.log('🔬 Opening issue analyzer...');
             hideAllLegalSections();
+            showBreadcrumb('Problem Solver');
             document.getElementById('issueAnalyzerSection').classList.remove('hidden');
             updateLegalStats();
+            showLegalNotification('🚨 Problem solver ready! Describe your situation and we\'ll help you find a solution.', 'info');
+        }
+
+        // New UX functions for improved legal section
+        function quickStartScenario(scenario) {
+            console.log('🚀 Quick start scenario:', scenario);
+            
+            // Hide recommendation engine
+            document.getElementById('recommendationEngine').style.display = 'none';
+            
+            // Show appropriate tool based on scenario
+            if (scenario === 'security-deposit' || scenario === 'rent-increase' || scenario === 'repairs' || scenario === 'eviction') {
+                openIssueAnalyzer();
+                
+                // Pre-fill the situation type if applicable
+                if (document.getElementById('situationType')) {
+                    document.getElementById('situationType').value = scenario;
+                }
+                
+                // Add scenario-specific guidance
+                const scenarioGuidance = {
+                    'security-deposit': 'Let\'s help you with your security deposit issue. Please describe what happened with your deposit.',
+                    'rent-increase': 'We\'ll help you understand if your rent increase is legal. Tell us about the increase you received.',
+                    'repairs': 'Let\'s resolve your repair and maintenance issues. Describe what needs to be fixed.',
+                    'eviction': '⚠️ This is urgent! Let\'s review your eviction notice and determine your options.'
+                };
+                
+                showLegalNotification(scenarioGuidance[scenario], scenario === 'eviction' ? 'error' : 'info');
+            }
+        }
+
+        function selectRecommendation(type) {
+            console.log('🤖 Recommendation selected:', type);
+            
+            // Remove active state from all options
+            document.querySelectorAll('.recommendation-option').forEach(option => {
+                option.classList.remove('border-green-500', 'bg-green-50');
+                option.classList.add('border-gray-200');
+            });
+            
+            // Add active state to selected option
+            event.target.closest('.recommendation-option').classList.add('border-green-500', 'bg-green-50');
+            event.target.closest('.recommendation-option').classList.remove('border-gray-200');
+            
+            // Show recommendation result
+            const recommendations = {
+                'problem': {
+                    title: '🚨 Problem Solver Tool',
+                    description: 'Our AI will analyze your specific situation and provide step-by-step guidance to resolve your issue.',
+                    action: 'Start Problem Solver',
+                    function: 'openIssueAnalyzer()',
+                    examples: 'Perfect for: landlord disputes, repair issues, security deposit problems, eviction notices'
+                },
+                'document': {
+                    title: '📄 Document Generator',
+                    description: 'Create professional, state-specific legal documents instantly with our AI-powered generator.',
+                    action: 'Create Documents',
+                    function: 'openDocumentGenerator()',
+                    examples: 'Perfect for: lease agreements, rental applications, notice letters, receipts'
+                },
+                'rights': {
+                    title: '📚 Rights Information Center',
+                    description: 'Learn about your tenant rights, state laws, and important deadlines specific to your situation.',
+                    action: 'Learn My Rights',
+                    function: 'openRightsChecker()',
+                    examples: 'Perfect for: understanding tenant rights, security deposit laws, rent increase rules'
+                },
+                'prevention': {
+                    title: '🛡️ Resource Library',
+                    description: 'Access our comprehensive library of guides, forms, and tools to prevent legal issues.',
+                    action: 'Browse Resources',
+                    function: 'scrollToResources()',
+                    examples: 'Perfect for: planning ahead, understanding lease terms, preparing for negotiations'
+                }
+            };
+            
+            const rec = recommendations[type];
+            document.getElementById('recommendationContent').innerHTML = `
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200 mb-4">
+                    <h6 class="text-lg font-semibold text-green-800 mb-2">${rec.title}</h6>
+                    <p class="text-sm text-green-700 mb-3">${rec.description}</p>
+                    <p class="text-xs text-green-600 mb-4">${rec.examples}</p>
+                    <button onclick="${rec.function}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                        ${rec.action} →
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('recommendationResult').classList.remove('hidden');
+        }
+
+        function showBreadcrumb(currentStep) {
+            document.getElementById('breadcrumbNavigation').classList.remove('hidden');
+            document.getElementById('breadcrumbCurrent').textContent = currentStep;
+        }
+
+        function resetLegalSection() {
+            console.log('🔄 Resetting legal section...');
+            hideAllLegalSections();
+            document.getElementById('breadcrumbNavigation').classList.add('hidden');
+            document.getElementById('recommendationEngine').style.display = 'block';
+            document.getElementById('recommendationResult').classList.add('hidden');
+            
+            // Reset recommendation options
+            document.querySelectorAll('.recommendation-option').forEach(option => {
+                option.classList.remove('border-green-500', 'bg-green-50');
+                option.classList.add('border-gray-200');
+            });
+            
+            showLegalNotification('🏠 Back to Legal Center main page', 'info');
+        }
+
+        function scrollToResources() {
+            console.log('📚 Scrolling to resources...');
+            const resourcesSection = document.querySelector('.bg-white.p-6.rounded-xl.border.border-gray-200.mb-6');
+            if (resourcesSection) {
+                resourcesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                showLegalNotification('📖 Here are our free legal resources and tools!', 'info');
+            }
         }
         
         function hideAllLegalSections() {
@@ -7579,6 +8121,98 @@
                     notification.remove();
                 }
             }, 5000);
+        }
+
+        // ========================================
+        // STUDENT HOUSING SECTION FUNCTIONS
+        // ========================================
+        
+        // Student section toggle functions
+        function openRoommateGenerator() {
+            console.log('🤝 Opening roommate agreement generator...');
+            showStudentNotification('📝 Roommate Agreement Generator ready! Fill in your details to create a fair agreement.', 'info');
+        }
+
+        function openStudentRights() {
+            console.log('📚 Opening student rights guide...');
+            showStudentNotification('🛡️ Student Rights Guide loaded! Learn about your housing protections as a student.', 'info');
+        }
+
+        function openBudgetCalculator() {
+            console.log('💰 Opening student budget calculator...');
+            showStudentNotification('📊 Budget Calculator ready! Let\'s help you plan your housing finances.', 'info');
+        }
+
+        function openHousingComparison() {
+            console.log('🏫 Opening housing comparison tool...');
+            showStudentNotification('⚖️ Housing Comparison Tool loaded! Compare campus vs off-campus options.', 'info');
+        }
+
+        // Student notification system
+        function showStudentNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md ${getNotificationClasses(type)}`;
+            notification.innerHTML = `
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mr-3">
+                        ${getNotificationIcon(type)}
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="flex-shrink-0 ml-2 text-gray-400 hover:text-gray-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Utility functions for notifications
+        function getNotificationClasses(type) {
+            switch(type) {
+                case 'success':
+                    return 'bg-green-50 border border-green-200 text-green-800';
+                case 'error':
+                    return 'bg-red-50 border border-red-200 text-red-800';
+                case 'warning':
+                    return 'bg-yellow-50 border border-yellow-200 text-yellow-800';
+                case 'info':
+                default:
+                    return 'bg-blue-50 border border-blue-200 text-blue-800';
+            }
+        }
+
+        function getNotificationIcon(type) {
+            switch(type) {
+                case 'success':
+                    return `<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>`;
+                case 'error':
+                    return `<svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>`;
+                case 'warning':
+                    return `<svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>`;
+                case 'info':
+                default:
+                    return `<svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>`;
+            }
         }
 
         // ========================================
