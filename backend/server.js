@@ -4252,6 +4252,559 @@ async function initializeStorage() {
     }
 }
 
+// ========================================
+// SUBLEASE MATCHING SYSTEM ENDPOINTS
+// ========================================
+
+// Helper function to calculate compatibility score between transfer and seeking requests
+function calculateCompatibilityScore(transferRequest, seekingRequest) {
+    let totalScore = 0;
+    let weights = {
+        location: 0.30,
+        budget: 0.25,
+        dates: 0.20,
+        lifestyle: 0.15,
+        amenities: 0.10
+    };
+
+    // Location score (based on city/state match for now)
+    let locationScore = 0;
+    if (transferRequest.city && seekingRequest.city) {
+        if (transferRequest.city.toLowerCase() === seekingRequest.city.toLowerCase()) {
+            locationScore = 100;
+        } else if (transferRequest.state && seekingRequest.state &&
+                   transferRequest.state.toLowerCase() === seekingRequest.state.toLowerCase()) {
+            locationScore = 70;
+        }
+    }
+
+    // Budget score
+    let budgetScore = 0;
+    if (transferRequest.rent_amount && seekingRequest.min_budget && seekingRequest.max_budget) {
+        const rent = parseFloat(transferRequest.rent_amount);
+        const minBudget = parseFloat(seekingRequest.min_budget);
+        const maxBudget = parseFloat(seekingRequest.max_budget);
+        
+        if (rent >= minBudget && rent <= maxBudget) {
+            budgetScore = 100;
+        } else if (rent < minBudget) {
+            const diff = minBudget - rent;
+            budgetScore = Math.max(0, 100 - (diff / minBudget) * 100);
+        } else {
+            const diff = rent - maxBudget;
+            budgetScore = Math.max(0, 100 - (diff / maxBudget) * 100);
+        }
+    }
+
+    // Date overlap score
+    let dateScore = 0;
+    if (transferRequest.available_from && transferRequest.available_until &&
+        seekingRequest.preferred_move_in && seekingRequest.preferred_move_out) {
+        
+        const transferStart = new Date(transferRequest.available_from);
+        const transferEnd = new Date(transferRequest.available_until);
+        const seekingStart = new Date(seekingRequest.preferred_move_in);
+        const seekingEnd = new Date(seekingRequest.preferred_move_out);
+        
+        // Check for date overlap
+        const overlapStart = new Date(Math.max(transferStart.getTime(), seekingStart.getTime()));
+        const overlapEnd = new Date(Math.min(transferEnd.getTime(), seekingEnd.getTime()));
+        
+        if (overlapStart <= overlapEnd) {
+            const overlapDays = (overlapEnd - overlapStart) / (1000 * 60 * 60 * 24);
+            const seekingDuration = (seekingEnd - seekingStart) / (1000 * 60 * 60 * 24);
+            const transferDuration = (transferEnd - transferStart) / (1000 * 60 * 60 * 24);
+            
+            const overlapPercentage = overlapDays / Math.min(seekingDuration, transferDuration);
+            dateScore = Math.min(100, overlapPercentage * 100);
+        }
+    }
+
+    // Lifestyle compatibility score
+    let lifestyleScore = 0;
+    let lifestyleFactors = 0;
+    
+    if (transferRequest.cleanliness_level && seekingRequest.cleanliness_level) {
+        const diff = Math.abs(transferRequest.cleanliness_level - seekingRequest.cleanliness_level);
+        lifestyleScore += (5 - diff) * 20; // 0-100 scale
+        lifestyleFactors++;
+    }
+    
+    if (transferRequest.noise_tolerance && seekingRequest.noise_tolerance) {
+        const diff = Math.abs(transferRequest.noise_tolerance - seekingRequest.noise_tolerance);
+        lifestyleScore += (5 - diff) * 20;
+        lifestyleFactors++;
+    }
+    
+    if (transferRequest.schedule_type && seekingRequest.schedule_type) {
+        if (transferRequest.schedule_type === seekingRequest.schedule_type) {
+            lifestyleScore += 100;
+        } else {
+            lifestyleScore += 50;
+        }
+        lifestyleFactors++;
+    }
+    
+    if (lifestyleFactors > 0) {
+        lifestyleScore = lifestyleScore / lifestyleFactors;
+    }
+
+    // Amenities score
+    let amenityScore = 0;
+    if (transferRequest.amenities && seekingRequest.amenities) {
+        const transferAmenities = new Set(transferRequest.amenities);
+        const seekingAmenities = new Set(seekingRequest.amenities);
+        
+        let matches = 0;
+        for (let amenity of seekingAmenities) {
+            if (transferAmenities.has(amenity)) matches++;
+        }
+        
+        if (seekingAmenities.size > 0) {
+            amenityScore = (matches / seekingAmenities.size) * 100;
+        }
+    }
+
+    // Calculate weighted total score
+    totalScore = (locationScore * weights.location) +
+                 (budgetScore * weights.budget) +
+                 (dateScore * weights.dates) +
+                 (lifestyleScore * weights.lifestyle) +
+                 (amenityScore * weights.amenities);
+
+    return {
+        total: Math.round(totalScore * 100) / 100,
+        location: Math.round(locationScore * 100) / 100,
+        budget: Math.round(budgetScore * 100) / 100,
+        dates: Math.round(dateScore * 100) / 100,
+        lifestyle: Math.round(lifestyleScore * 100) / 100,
+        amenities: Math.round(amenityScore * 100) / 100
+    };
+}
+
+// Create a new sublease request (transfer or seeking)
+app.post('/api/sublease/request', async (req, res) => {
+    try {
+        const userEmail = req.body.userEmail;
+        if (!userEmail) {
+            return res.status(400).json({ error: 'User email is required' });
+        }
+
+        // Set user context for RLS
+        await supabase.rpc('set_user_context', { user_email: userEmail });
+
+        const requestData = {
+            user_email: userEmail,
+            type: req.body.type, // 'transfer' or 'seeking'
+            title: req.body.title,
+            description: req.body.description,
+            address: req.body.address,
+            city: req.body.city,
+            state: req.body.state,
+            zip_code: req.body.zipCode,
+            rent_amount: req.body.rentAmount,
+            min_budget: req.body.minBudget,
+            max_budget: req.body.maxBudget,
+            utilities_included: req.body.utilitiesIncluded || false,
+            security_deposit: req.body.securityDeposit,
+            available_from: req.body.availableFrom,
+            available_until: req.body.availableUntil,
+            preferred_move_in: req.body.preferredMoveIn,
+            preferred_move_out: req.body.preferredMoveOut,
+            duration_months: req.body.durationMonths,
+            flexible_dates: req.body.flexibleDates || false,
+            property_type: req.body.propertyType,
+            bedrooms: req.body.bedrooms,
+            bathrooms: req.body.bathrooms,
+            square_feet: req.body.squareFeet,
+            furnished: req.body.furnished || false,
+            amenities: req.body.amenities || [],
+            pet_friendly: req.body.petFriendly || false,
+            smoking_allowed: req.body.smokingAllowed || false,
+            cleanliness_level: req.body.cleanlinessLevel,
+            noise_tolerance: req.body.noiseTolerance,
+            social_level: req.body.socialLevel,
+            schedule_type: req.body.scheduleType,
+            work_from_home: req.body.workFromHome || false,
+            reason_for_transfer: req.body.reasonForTransfer,
+            urgency_level: req.body.urgencyLevel || 3,
+            photos: req.body.photos || [],
+            contact_method: req.body.contactMethod || 'platform',
+            phone_number: req.body.phoneNumber,
+            verified_lease: req.body.verifiedLease || false,
+            lease_document_url: req.body.leaseDocumentUrl
+        };
+
+        const { data, error } = await supabase
+            .from('sublease_requests')
+            .insert([requestData])
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Sublease request creation error:', error);
+            return res.status(500).json({ error: 'Failed to create sublease request' });
+        }
+
+        // After creating a request, find potential matches
+        await findAndCreateMatches(data.id, data.type);
+
+        res.json({ 
+            success: true, 
+            request: data,
+            message: 'Sublease request created successfully' 
+        });
+
+    } catch (error) {
+        console.error('Sublease request error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get user's sublease requests
+app.get('/api/sublease/requests', async (req, res) => {
+    try {
+        const userEmail = req.query.userEmail;
+        if (!userEmail) {
+            return res.status(400).json({ error: 'User email is required' });
+        }
+
+        // Set user context for RLS
+        await supabase.rpc('set_user_context', { user_email: userEmail });
+
+        const { data, error } = await supabase
+            .from('sublease_requests')
+            .select('*')
+            .eq('user_email', userEmail)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Sublease requests fetch error:', error);
+            return res.status(500).json({ error: 'Failed to fetch sublease requests' });
+        }
+
+        res.json({ success: true, requests: data });
+
+    } catch (error) {
+        console.error('Sublease requests error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Update a sublease request
+app.put('/api/sublease/requests/:id', async (req, res) => {
+    try {
+        const requestId = req.params.id;
+        const userEmail = req.body.userEmail;
+        
+        if (!userEmail) {
+            return res.status(400).json({ error: 'User email is required' });
+        }
+
+        // Set user context for RLS
+        await supabase.rpc('set_user_context', { user_email: userEmail });
+
+        const updateData = { ...req.body };
+        delete updateData.userEmail; // Remove userEmail from update data
+        updateData.updated_at = new Date().toISOString();
+
+        const { data, error } = await supabase
+            .from('sublease_requests')
+            .update(updateData)
+            .eq('id', requestId)
+            .eq('user_email', userEmail)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Sublease request update error:', error);
+            return res.status(500).json({ error: 'Failed to update sublease request' });
+        }
+
+        res.json({ 
+            success: true, 
+            request: data,
+            message: 'Sublease request updated successfully' 
+        });
+
+    } catch (error) {
+        console.error('Sublease request update error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Delete a sublease request
+app.delete('/api/sublease/requests/:id', async (req, res) => {
+    try {
+        const requestId = req.params.id;
+        const userEmail = req.query.userEmail;
+        
+        if (!userEmail) {
+            return res.status(400).json({ error: 'User email is required' });
+        }
+
+        // Set user context for RLS
+        await supabase.rpc('set_user_context', { user_email: userEmail });
+
+        const { error } = await supabase
+            .from('sublease_requests')
+            .delete()
+            .eq('id', requestId)
+            .eq('user_email', userEmail);
+
+        if (error) {
+            console.error('Sublease request deletion error:', error);
+            return res.status(500).json({ error: 'Failed to delete sublease request' });
+        }
+
+        res.json({ 
+            success: true,
+            message: 'Sublease request deleted successfully' 
+        });
+
+    } catch (error) {
+        console.error('Sublease request deletion error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get matches for a specific request
+app.get('/api/sublease/matches/:requestId', async (req, res) => {
+    try {
+        const requestId = req.params.requestId;
+        const userEmail = req.query.userEmail;
+        
+        if (!userEmail) {
+            return res.status(400).json({ error: 'User email is required' });
+        }
+
+        // Set user context for RLS
+        await supabase.rpc('set_user_context', { user_email: userEmail });
+
+        // Get matches where this request is either the transfer or seeking request
+        const { data: matches, error } = await supabase
+            .from('sublease_matches')
+            .select(`
+                *,
+                transfer_request:transfer_request_id(
+                    id, user_email, title, description, address, city, state,
+                    rent_amount, available_from, available_until, property_type,
+                    bedrooms, bathrooms, furnished, amenities, photos,
+                    cleanliness_level, noise_tolerance, schedule_type
+                ),
+                seeking_request:seeking_request_id(
+                    id, user_email, title, description, city, state,
+                    min_budget, max_budget, preferred_move_in, preferred_move_out,
+                    property_type, bedrooms, bathrooms, furnished, amenities,
+                    cleanliness_level, noise_tolerance, schedule_type
+                )
+            `)
+            .or(`transfer_request_id.eq.${requestId},seeking_request_id.eq.${requestId}`)
+            .order('compatibility_score', { ascending: false });
+
+        if (error) {
+            console.error('Matches fetch error:', error);
+            return res.status(500).json({ error: 'Failed to fetch matches' });
+        }
+
+        res.json({ success: true, matches: matches });
+
+    } catch (error) {
+        console.error('Matches error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Express interest in a match
+app.post('/api/sublease/express-interest', async (req, res) => {
+    try {
+        const { matchId, userEmail, requestType } = req.body;
+        
+        if (!userEmail || !matchId || !requestType) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // Set user context for RLS
+        await supabase.rpc('set_user_context', { user_email: userEmail });
+
+        const updateField = requestType === 'transfer' ? 'transfer_user_interested' : 'seeking_user_interested';
+        const viewedField = requestType === 'transfer' ? 'transfer_user_viewed_at' : 'seeking_user_viewed_at';
+        
+        const updateData = {
+            [updateField]: true,
+            [viewedField]: new Date().toISOString(),
+            last_interaction_at: new Date().toISOString()
+        };
+
+        // Check if both users are now interested
+        const { data: currentMatch, error: fetchError } = await supabase
+            .from('sublease_matches')
+            .select('transfer_user_interested, seeking_user_interested')
+            .eq('id', matchId)
+            .single();
+
+        if (fetchError) {
+            console.error('Match fetch error:', fetchError);
+            return res.status(500).json({ error: 'Failed to fetch match details' });
+        }
+
+        // Update match status if both users are interested
+        if ((requestType === 'transfer' && currentMatch.seeking_user_interested) ||
+            (requestType === 'seeking' && currentMatch.transfer_user_interested)) {
+            updateData.match_status = 'mutual_interest';
+        }
+
+        const { data, error } = await supabase
+            .from('sublease_matches')
+            .update(updateData)
+            .eq('id', matchId)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Interest expression error:', error);
+            return res.status(500).json({ error: 'Failed to express interest' });
+        }
+
+        res.json({ 
+            success: true, 
+            match: data,
+            message: 'Interest expressed successfully' 
+        });
+
+    } catch (error) {
+        console.error('Express interest error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Helper function to find and create matches for a request
+async function findAndCreateMatches(requestId, requestType) {
+    try {
+        // Get the current request
+        const { data: currentRequest, error: requestError } = await supabase
+            .from('sublease_requests')
+            .select('*')
+            .eq('id', requestId)
+            .single();
+
+        if (requestError || !currentRequest) {
+            console.error('Error fetching current request:', requestError);
+            return;
+        }
+
+        // Find potential matches (opposite type)
+        const oppositeType = requestType === 'transfer' ? 'seeking' : 'transfer';
+        
+        const { data: potentialMatches, error: matchError } = await supabase
+            .from('sublease_requests')
+            .select('*')
+            .eq('type', oppositeType)
+            .eq('status', 'active')
+            .neq('user_email', currentRequest.user_email);
+
+        if (matchError) {
+            console.error('Error fetching potential matches:', matchError);
+            return;
+        }
+
+        // Calculate compatibility scores and create matches
+        for (const potentialMatch of potentialMatches) {
+            const transferRequest = requestType === 'transfer' ? currentRequest : potentialMatch;
+            const seekingRequest = requestType === 'seeking' ? currentRequest : potentialMatch;
+            
+            const scores = calculateCompatibilityScore(transferRequest, seekingRequest);
+            
+            // Only create matches with score > 30
+            if (scores.total > 30) {
+                const matchData = {
+                    transfer_request_id: transferRequest.id,
+                    seeking_request_id: seekingRequest.id,
+                    compatibility_score: scores.total,
+                    location_score: scores.location,
+                    budget_score: scores.budget,
+                    date_score: scores.dates,
+                    lifestyle_score: scores.lifestyle,
+                    amenity_score: scores.amenities
+                };
+
+                // Insert match (ignore if already exists due to unique constraint)
+                await supabase
+                    .from('sublease_matches')
+                    .insert([matchData])
+                    .select();
+            }
+        }
+
+    } catch (error) {
+        console.error('Error in findAndCreateMatches:', error);
+    }
+}
+
+// Search sublease requests
+app.get('/api/sublease/search', async (req, res) => {
+    try {
+        const { 
+            type, city, state, minRent, maxRent, 
+            propertyType, bedrooms, furnished, 
+            userEmail, page = 1, limit = 20 
+        } = req.query;
+
+        if (!userEmail) {
+            return res.status(400).json({ error: 'User email is required' });
+        }
+
+        // Set user context for RLS
+        await supabase.rpc('set_user_context', { user_email: userEmail });
+
+        let query = supabase
+            .from('sublease_requests')
+            .select('*')
+            .eq('status', 'active')
+            .neq('user_email', userEmail); // Exclude user's own requests
+
+        if (type) query = query.eq('type', type);
+        if (city) query = query.ilike('city', `%${city}%`);
+        if (state) query = query.ilike('state', `%${state}%`);
+        if (propertyType) query = query.eq('property_type', propertyType);
+        if (bedrooms) query = query.eq('bedrooms', parseInt(bedrooms));
+        if (furnished !== undefined) query = query.eq('furnished', furnished === 'true');
+
+        // Budget filtering
+        if (type === 'transfer' && minRent) {
+            query = query.gte('rent_amount', parseFloat(minRent));
+        }
+        if (type === 'transfer' && maxRent) {
+            query = query.lte('rent_amount', parseFloat(maxRent));
+        }
+        if (type === 'seeking' && minRent) {
+            query = query.gte('min_budget', parseFloat(minRent));
+        }
+        if (type === 'seeking' && maxRent) {
+            query = query.lte('max_budget', parseFloat(maxRent));
+        }
+
+        // Pagination
+        const offset = (parseInt(page) - 1) * parseInt(limit);
+        query = query.range(offset, offset + parseInt(limit) - 1);
+        
+        query = query.order('created_at', { ascending: false });
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error('Search error:', error);
+            return res.status(500).json({ error: 'Failed to search requests' });
+        }
+
+        res.json({ success: true, requests: data });
+
+    } catch (error) {
+        console.error('Search error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Declare server variable in global scope
 let server;
 
