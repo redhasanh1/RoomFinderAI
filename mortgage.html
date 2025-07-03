@@ -1362,24 +1362,43 @@
     <script>
         // Tab functionality
         function showTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.add('hidden');
-            });
-            
-            // Remove active class from all buttons
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('active');
-            });
-            
-            // Show selected tab
-            document.getElementById(tabName + '-tab').classList.remove('hidden');
-            
-            // Add active class to clicked button
-            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-            
-            // Scroll to tab content
-            document.getElementById(tabName + '-tab').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            try {
+                console.log('Switching to tab:', tabName);
+                
+                // Hide all tabs
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.add('hidden');
+                });
+                
+                // Remove active class from all buttons
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.classList.remove('active');
+                });
+                
+                // Show selected tab
+                const targetTab = document.getElementById(tabName + '-tab');
+                if (targetTab) {
+                    targetTab.classList.remove('hidden');
+                    console.log('Tab found and shown:', tabName + '-tab');
+                } else {
+                    console.error('Tab not found:', tabName + '-tab');
+                }
+                
+                // Add active class to clicked button
+                const targetButton = document.querySelector(`[data-tab="${tabName}"]`);
+                if (targetButton) {
+                    targetButton.classList.add('active');
+                } else {
+                    console.error('Button not found:', `[data-tab="${tabName}"]`);
+                }
+                
+                // Scroll to tab content
+                if (targetTab) {
+                    targetTab.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            } catch (error) {
+                console.error('Error in showTab:', error);
+            }
         }
 
         // Advanced Mortgage Calculator with PMI Integration
@@ -2161,6 +2180,11 @@ Note: Costs vary by location and property condition.
             calculateMortgage();
             initializeRateTrendsChart();
             
+            // Initialize selling calculator with default values
+            setTimeout(() => {
+                calculateSelling();
+            }, 1000);
+            
             // Fetch real-time rates on page load
             fetchRealTimeRates();
             
@@ -2187,6 +2211,19 @@ Note: Costs vary by location and property condition.
                     element.addEventListener('input', calculateMortgage);
                 }
             });
+            
+            // Add input listeners for selling calculator
+            ['originalPrice', 'mortgageBalance', 'improvements', 'purchaseDate', 'propertyType'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', calculateSelling);
+                    element.addEventListener('change', calculateSelling);
+                }
+            });
+            
+            // Debug: Check if sell tab exists
+            console.log('Sell tab exists:', !!document.getElementById('sell-tab'));
+            console.log('Sell button exists:', !!document.querySelector('[data-tab="sell"]'));
         });
     </script>
 </body>
