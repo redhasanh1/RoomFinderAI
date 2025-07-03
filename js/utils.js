@@ -1,3 +1,94 @@
+// Configuration module - must be defined before Utils
+window.AppConfig = (function() {
+    let SUPABASE_URL = null;
+    let SUPABASE_ANON_KEY = null;
+    let GOOGLE_API_KEY = null;
+    let supabase = null;
+    let isInitialized = false;
+
+    // Initialize configuration with callback
+    async function initialize(callback) {
+        if (isInitialized && callback) {
+            console.log('⚡ Config already initialized, running callback');
+            callback();
+            return;
+        }
+
+        console.log('🔧 Loading configuration...');
+        
+        try {
+            const response = await fetch('/api/config');
+            
+            if (!response.ok) {
+                throw new Error(`Config API returned ${response.status}`);
+            }
+            
+            const config = await response.json();
+            
+            SUPABASE_URL = config.SUPABASE_URL;
+            SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
+            GOOGLE_API_KEY = config.GOOGLE_API_KEY;
+            
+            console.log('📡 Config loaded:', {
+                hasSupabaseURL: !!SUPABASE_URL,
+                hasSupabaseKey: !!SUPABASE_ANON_KEY,
+                hasGoogleKey: !!GOOGLE_API_KEY
+            });
+
+            // Initialize Supabase client
+            if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('✅ Supabase client initialized');
+                isInitialized = true;
+                
+                // Make supabase globally available for compatibility
+                window.supabase = supabase;
+                
+                if (callback) callback();
+            } else {
+                throw new Error('Missing required configuration values');
+            }
+            
+        } catch (error) {
+            console.error('❌ Failed to load configuration:', error);
+            throw error;
+        }
+    }
+
+    // Get Supabase client
+    function getSupabase() {
+        return supabase;
+    }
+
+    // Get configuration values
+    function getConfig() {
+        return {
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY,
+            GOOGLE_API_KEY
+        };
+    }
+
+    // Check if config is loaded
+    function isLoaded() {
+        return isInitialized && supabase !== null;
+    }
+
+    // Public API
+    return {
+        initialize,
+        getSupabase,
+        getConfig,
+        isLoaded,
+        
+        // Direct access for compatibility
+        get supabase() { return supabase; },
+        get SUPABASE_URL() { return SUPABASE_URL; },
+        get SUPABASE_ANON_KEY() { return SUPABASE_ANON_KEY; },
+        get GOOGLE_API_KEY() { return GOOGLE_API_KEY; }
+    };
+})();
+
 // Utility functions module
 window.Utils = (function() {
     
