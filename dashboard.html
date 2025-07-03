@@ -2357,7 +2357,61 @@
             <!-- Mortgage Tab -->
             <div id="mortgage-tab" class="tab-content hidden">
                 <div class="glass-card p-6">
-                    <h3 class="text-xl font-bold text-gray-900 mb-6">💰 Mortgage Analysis & Negotiation Center</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                        Mortgage Analysis & Negotiation Center
+                    </h3>
+                    
+                    <!-- Welcome & Quick Actions -->
+                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-8 rounded-2xl border border-green-200 mb-8">
+                        <div class="text-center mb-6">
+                            <h4 class="text-3xl font-bold text-gray-800 mb-3">AI-Powered Mortgage Optimization</h4>
+                            <p class="text-gray-600 max-w-3xl mx-auto text-lg">
+                                Analyze your current mortgage, discover savings opportunities, and generate professional negotiation letters with our advanced AI tools.
+                            </p>
+                        </div>
+                        
+                        <!-- Quick Action Buttons -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <button onclick="openMortgageAnalyzer()" class="bg-white p-4 rounded-xl border border-green-200 hover:border-green-300 transition-all group">
+                                <div class="flex items-center">
+                                    <svg class="w-8 h-8 text-green-600 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    <div class="text-left">
+                                        <div class="font-semibold text-gray-800">Analyze Mortgage</div>
+                                        <div class="text-sm text-gray-600">Get comprehensive analysis</div>
+                                    </div>
+                                </div>
+                            </button>
+                            
+                            <button onclick="openRateComparison()" class="bg-white p-4 rounded-xl border border-green-200 hover:border-green-300 transition-all group">
+                                <div class="flex items-center">
+                                    <svg class="w-8 h-8 text-blue-600 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                    </svg>
+                                    <div class="text-left">
+                                        <div class="font-semibold text-gray-800">Compare Rates</div>
+                                        <div class="text-sm text-gray-600">Find better rates</div>
+                                    </div>
+                                </div>
+                            </button>
+                            
+                            <button onclick="openNegotiationLetters()" class="bg-white p-4 rounded-xl border border-green-200 hover:border-green-300 transition-all group">
+                                <div class="flex items-center">
+                                    <svg class="w-8 h-8 text-purple-600 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <div class="text-left">
+                                        <div class="font-semibold text-gray-800">Generate Letters</div>
+                                        <div class="text-sm text-gray-600">Professional negotiation</div>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
                     
                     <!-- Mortgage Dashboard Stats -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -2418,9 +2472,20 @@
                         </div>
                     </div>
 
-                    <!-- Current Market Rates Display -->
-                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-200 mb-8">
-                        <h4 class="text-xl font-bold text-gray-800 mb-6">📊 Current Market Rates - July 2025</h4>
+                    <!-- Real-Time Market Rates Display -->
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-8 rounded-2xl border border-indigo-200 mb-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <h4 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                                <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                                Real-Time Market Rates
+                            </h4>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                                Updated: <span id="rateUpdateTime">July 2025</span>
+                            </div>
+                        </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <!-- 30-Year Fixed -->
@@ -2853,6 +2918,227 @@
                                 <h6 class="font-semibold text-teal-800 mb-2">Improvement Recommendations:</h6>
                                 <div id="healthTips" class="text-sm text-teal-700 space-y-1">
                                     <!-- Recommendations will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Mortgage Tools Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <!-- AI Mortgage Analyzer -->
+                        <div id="mortgageAnalyzerSection" class="bg-white p-8 rounded-2xl border border-gray-200 shadow-lg">
+                            <h4 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                </svg>
+                                AI Mortgage Analyzer
+                            </h4>
+                            
+                            <form class="space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Current Interest Rate (%)</label>
+                                        <input type="number" step="0.01" id="currentRate" placeholder="6.50" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Loan Amount ($)</label>
+                                        <input type="number" id="loanAmount" placeholder="400000" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Remaining Term (Years)</label>
+                                        <select id="remainingTerm" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                            <option value="30">30 Years</option>
+                                            <option value="25">25 Years</option>
+                                            <option value="20">20 Years</option>
+                                            <option value="15">15 Years</option>
+                                            <option value="10">10 Years</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Credit Score</label>
+                                        <select id="creditScore" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                            <option value="800">800+ (Excellent)</option>
+                                            <option value="740">740-799 (Very Good)</option>
+                                            <option value="680">680-739 (Good)</option>
+                                            <option value="620">620-679 (Fair)</option>
+                                            <option value="580">580-619 (Poor)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <button type="button" onclick="analyzeMortgage()" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all">
+                                    🚀 Analyze My Mortgage
+                                </button>
+                            </form>
+                            
+                            <!-- Analysis Results -->
+                            <div id="analysisResults" class="hidden mt-6 space-y-4">
+                                <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
+                                    <h5 class="text-lg font-semibold text-green-800 mb-4 flex items-center gap-2">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        Analysis Complete
+                                    </h5>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <div class="font-medium text-gray-700">Current Monthly Payment</div>
+                                            <div id="currentPayment" class="text-xl font-bold text-gray-900">$0</div>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-700">Potential Savings</div>
+                                            <div id="potentialMonthlySavings" class="text-xl font-bold text-green-600">$0</div>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-700">Total Interest Saved</div>
+                                            <div id="totalInterestSaved" class="text-xl font-bold text-green-600">$0</div>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-700">Break-Even Point</div>
+                                            <div id="breakEvenPoint" class="text-xl font-bold text-blue-600">0 months</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Recommendations -->
+                                <div id="recommendations" class="bg-blue-50 p-6 rounded-xl border border-blue-200">
+                                    <h6 class="font-semibold text-blue-800 mb-3">AI Recommendations</h6>
+                                    <div id="recommendationsList" class="space-y-2 text-sm text-blue-700">
+                                        <!-- Recommendations will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Enhanced Rate Comparison Tool -->
+                        <div id="rateComparisonSection" class="bg-white p-8 rounded-2xl border border-gray-200 shadow-lg">
+                            <h4 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                                Rate Comparison Engine
+                            </h4>
+                            
+                            <div class="space-y-6">
+                                <!-- Loan Type Selector -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">Loan Type</label>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <button type="button" onclick="selectLoanType('conventional')" class="loan-type-btn p-3 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors" data-type="conventional">
+                                            <div class="font-medium">Conventional</div>
+                                            <div class="text-xs text-gray-600">20% down payment</div>
+                                        </button>
+                                        <button type="button" onclick="selectLoanType('fha')" class="loan-type-btn p-3 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors" data-type="fha">
+                                            <div class="font-medium">FHA Loan</div>
+                                            <div class="text-xs text-gray-600">3.5% down payment</div>
+                                        </button>
+                                        <button type="button" onclick="selectLoanType('va')" class="loan-type-btn p-3 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors" data-type="va">
+                                            <div class="font-medium">VA Loan</div>
+                                            <div class="text-xs text-gray-600">0% down payment</div>
+                                        </button>
+                                        <button type="button" onclick="selectLoanType('jumbo')" class="loan-type-btn p-3 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors" data-type="jumbo">
+                                            <div class="font-medium">Jumbo Loan</div>
+                                            <div class="text-xs text-gray-600">High-value properties</div>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Rate Display -->
+                                <div id="rateDisplay" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+                                        <div class="text-center">
+                                            <div class="font-semibold text-gray-800 mb-2">Current Market Rate</div>
+                                            <div id="marketRate" class="text-3xl font-bold text-blue-600 mb-1">6.68%</div>
+                                            <div class="text-sm text-gray-600">30-Year Fixed</div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
+                                        <div class="text-center">
+                                            <div class="font-semibold text-gray-800 mb-2">Your Eligible Rate</div>
+                                            <div id="yourRate" class="text-3xl font-bold text-green-600 mb-1">6.50%</div>
+                                            <div class="text-sm text-gray-600">Based on Credit Score</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Rate Alert Setup -->
+                                <div class="bg-yellow-50 p-6 rounded-xl border border-yellow-200">
+                                    <h6 class="font-semibold text-yellow-800 mb-3">🔔 Rate Alert Setup</h6>
+                                    <div class="flex items-center space-x-4">
+                                        <div>
+                                            <label class="block text-sm text-gray-700 mb-1">Alert me when rates drop below:</label>
+                                            <input type="number" step="0.01" id="alertThreshold" placeholder="6.25" class="p-2 border border-yellow-300 rounded-lg w-20 text-center">
+                                            <span class="text-sm text-gray-600 ml-1">%</span>
+                                        </div>
+                                        <button onclick="setupRateAlert()" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors">
+                                            Set Alert
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Professional Negotiation Letters Section -->
+                    <div id="negotiationLettersSection" class="bg-white p-8 rounded-2xl border border-gray-200 shadow-lg mb-8">
+                        <h4 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            AI Negotiation Letter Generator
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Letter Configuration -->
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Letter Type</label>
+                                    <select id="letterType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <option value="rate-reduction">Rate Reduction Request</option>
+                                        <option value="refinance-inquiry">Refinance Inquiry</option>
+                                        <option value="competing-offer">Competing Offer</option>
+                                        <option value="payment-modification">Payment Modification</option>
+                                        <option value="loyalty-discount">Loyalty Customer Discount</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Target Rate (%)</label>
+                                    <input type="number" step="0.01" id="targetRate" placeholder="6.25" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Lender</label>
+                                    <input type="text" id="currentLender" placeholder="Bank of America" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Additional Context</label>
+                                    <textarea id="additionalContext" rows="3" placeholder="Long-time customer, excellent payment history, considering refinancing..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"></textarea>
+                                </div>
+                                
+                                <button onclick="generateNegotiationLetter()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all">
+                                    ✨ Generate Professional Letter
+                                </button>
+                            </div>
+                            
+                            <!-- Letter Preview -->
+                            <div>
+                                <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 min-h-96">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h6 class="font-semibold text-gray-800">Letter Preview</h6>
+                                        <div class="space-x-2">
+                                            <button onclick="copyLetter()" class="text-sm bg-gray-200 text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-300 transition-colors">
+                                                📋 Copy
+                                            </button>
+                                            <button onclick="downloadLetter()" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors">
+                                                📥 Download PDF
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="letterPreview" class="prose prose-sm max-w-none">
+                                        <p class="text-gray-500 italic">Generate a letter to see the preview here...</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
