@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mortgage Calculator - RoomFinderAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        
+        /* Gradient backgrounds */
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .gradient-bg-purple {
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+        }
+        
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Modern glass cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Modern header */
+        .modern-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Calculator input styles */
+        .calc-input {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .calc-input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Result cards */
+        .result-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            border: 1px solid #f1f5f9;
+        }
+        
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Modern buttons */
+        .modern-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .modern-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Slider styles */
+        .slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            outline: none;
+            border-radius: 3px;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Modern Header -->
+    <header class="modern-header shadow-sm sticky top-0 z-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <a href="index.html" class="text-2xl font-bold gradient-text">RoomFinderAI</a>
+                </div>
+                <nav class="flex space-x-8">
+                    <a href="dashboard.html" class="text-gray-700 hover:text-blue-600 transition-colors">Dashboard</a>
+                    <a href="listings.html" class="text-gray-700 hover:text-blue-600 transition-colors">Listings</a>
+                    <a href="sublease.html" class="text-gray-700 hover:text-blue-600 transition-colors">Sublease</a>
+                    <a href="mortgage.html" class="text-blue-600 font-semibold">Mortgage</a>
+                    <a href="profile.html" class="text-gray-700 hover:text-blue-600 transition-colors">Profile</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Page Title -->
+    <section class="py-16 gradient-bg-purple text-white">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Mortgage Calculator</h1>
+            <p class="text-xl opacity-90">Calculate your monthly payments and compare rent vs. buy scenarios</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="py-12">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Calculator Section -->
+                <div class="glass-card p-8">
+                    <h2 class="text-2xl font-bold mb-6 gradient-text">Mortgage Details</h2>
+                    
+                    <form id="mortgageForm" class="space-y-6">
+                        <!-- Home Price -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Home Price</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                                <input type="number" id="homePrice" class="calc-input w-full pl-8" value="500000" min="0">
+                            </div>
+                            <input type="range" id="homePriceSlider" class="slider mt-2" min="100000" max="2000000" value="500000" step="10000">
+                        </div>
+
+                        <!-- Down Payment -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                                    <input type="number" id="downPayment" class="calc-input w-full pl-8" value="100000" min="0">
+                                </div>
+                                <div class="relative">
+                                    <input type="number" id="downPaymentPercent" class="calc-input w-full pr-8" value="20" min="0" max="100">
+                                    <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
+                                </div>
+                            </div>
+                            <input type="range" id="downPaymentSlider" class="slider mt-2" min="0" max="100" value="20" step="1">
+                        </div>
+
+                        <!-- Loan Term -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Loan Term</label>
+                            <select id="loanTerm" class="calc-input w-full">
+                                <option value="15">15 years</option>
+                                <option value="30" selected>30 years</option>
+                            </select>
+                        </div>
+
+                        <!-- Interest Rate -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Interest Rate</label>
+                            <div class="relative">
+                                <input type="number" id="interestRate" class="calc-input w-full pr-8" value="7.5" min="0" max="20" step="0.1">
+                                <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
+                            </div>
+                            <input type="range" id="interestRateSlider" class="slider mt-2" min="0" max="20" value="7.5" step="0.1">
+                        </div>
+
+                        <!-- Property Tax -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Annual Property Tax</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                                <input type="number" id="propertyTax" class="calc-input w-full pl-8" value="6000" min="0">
+                            </div>
+                        </div>
+
+                        <!-- Home Insurance -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Annual Home Insurance</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                                <input type="number" id="homeInsurance" class="calc-input w-full pl-8" value="1200" min="0">
+                            </div>
+                        </div>
+
+                        <!-- HOA Fees -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Monthly HOA Fees</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                                <input type="number" id="hoaFees" class="calc-input w-full pl-8" value="0" min="0">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="modern-button w-full text-lg">Calculate Payment</button>
+                    </form>
+                </div>
+
+                <!-- Results Section -->
+                <div>
+                    <!-- Monthly Payment Breakdown -->
+                    <div class="glass-card p-8 mb-6">
+                        <h2 class="text-2xl font-bold mb-6 gradient-text">Monthly Payment Breakdown</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="result-card">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Principal & Interest</span>
+                                    <span class="text-2xl font-bold" id="principalInterest">$0</span>
+                                </div>
+                            </div>
+
+                            <div class="result-card">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Property Tax</span>
+                                    <span class="text-xl font-semibold" id="monthlyPropertyTax">$0</span>
+                                </div>
+                            </div>
+
+                            <div class="result-card">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Home Insurance</span>
+                                    <span class="text-xl font-semibold" id="monthlyInsurance">$0</span>
+                                </div>
+                            </div>
+
+                            <div class="result-card">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">PMI</span>
+                                    <span class="text-xl font-semibold" id="pmi">$0</span>
+                                </div>
+                            </div>
+
+                            <div class="result-card">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">HOA Fees</span>
+                                    <span class="text-xl font-semibold" id="monthlyHoa">$0</span>
+                                </div>
+                            </div>
+
+                            <div class="result-card gradient-bg text-white">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-lg font-semibold">Total Monthly Payment</span>
+                                    <span class="text-3xl font-bold" id="totalPayment">$0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Chart -->
+                    <div class="glass-card p-8">
+                        <h3 class="text-xl font-bold mb-4">Payment Distribution</h3>
+                        <canvas id="paymentChart" width="400" height="200"></canvas>
+                    </div>
+
+                    <!-- Rent vs Buy Comparison -->
+                    <div class="glass-card p-8 mt-6">
+                        <h3 class="text-xl font-bold mb-4">Rent vs. Buy Analysis</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-sm text-gray-600">Comparable Monthly Rent</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                                    <input type="number" id="comparableRent" class="calc-input w-full pl-8" value="2500" min="0">
+                                </div>
+                            </div>
+                            <div class="result-card bg-green-50 border-green-200">
+                                <p class="text-sm text-gray-600 mb-1">Monthly Savings</p>
+                                <p class="text-2xl font-bold text-green-600" id="monthlySavings">$0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Amortization Schedule -->
+            <div class="glass-card p-8 mt-8">
+                <h2 class="text-2xl font-bold mb-6 gradient-text">Amortization Overview</h2>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="result-card">
+                        <p class="text-sm text-gray-600 mb-1">Total Amount Paid</p>
+                        <p class="text-2xl font-bold" id="totalAmountPaid">$0</p>
+                    </div>
+                    <div class="result-card">
+                        <p class="text-sm text-gray-600 mb-1">Total Interest Paid</p>
+                        <p class="text-2xl font-bold text-red-600" id="totalInterestPaid">$0</p>
+                    </div>
+                    <div class="result-card">
+                        <p class="text-sm text-gray-600 mb-1">Loan Amount</p>
+                        <p class="text-2xl font-bold" id="loanAmount">$0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12 mt-20">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <p>&copy; 2025 RoomFinderAI. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Chart.js
+        let paymentChart;
+        
+        // Calculate mortgage
+        function calculateMortgage() {
+            const homePrice = parseFloat(document.getElementById('homePrice').value);
+            const downPayment = parseFloat(document.getElementById('downPayment').value);
+            const loanTerm = parseInt(document.getElementById('loanTerm').value);
+            const interestRate = parseFloat(document.getElementById('interestRate').value);
+            const propertyTax = parseFloat(document.getElementById('propertyTax').value);
+            const homeInsurance = parseFloat(document.getElementById('homeInsurance').value);
+            const hoaFees = parseFloat(document.getElementById('hoaFees').value);
+            
+            // Calculate loan amount
+            const loanAmount = homePrice - downPayment;
+            const monthlyRate = interestRate / 100 / 12;
+            const numPayments = loanTerm * 12;
+            
+            // Calculate monthly principal & interest
+            let monthlyPI = 0;
+            if (monthlyRate > 0) {
+                monthlyPI = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                           (Math.pow(1 + monthlyRate, numPayments) - 1);
+            } else {
+                monthlyPI = loanAmount / numPayments;
+            }
+            
+            // Calculate PMI (if down payment < 20%)
+            const downPaymentPercent = (downPayment / homePrice) * 100;
+            const pmi = downPaymentPercent < 20 ? (loanAmount * 0.005) : 0;
+            
+            // Calculate monthly amounts
+            const monthlyPropertyTax = propertyTax / 12;
+            const monthlyInsurance = homeInsurance / 12;
+            const totalMonthly = monthlyPI + monthlyPropertyTax + monthlyInsurance + pmi + hoaFees;
+            
+            // Update display
+            document.getElementById('principalInterest').textContent = '$' + monthlyPI.toFixed(2);
+            document.getElementById('monthlyPropertyTax').textContent = '$' + monthlyPropertyTax.toFixed(2);
+            document.getElementById('monthlyInsurance').textContent = '$' + monthlyInsurance.toFixed(2);
+            document.getElementById('pmi').textContent = '$' + pmi.toFixed(2);
+            document.getElementById('monthlyHoa').textContent = '$' + hoaFees.toFixed(2);
+            document.getElementById('totalPayment').textContent = '$' + totalMonthly.toFixed(2);
+            
+            // Calculate amortization
+            const totalAmountPaid = monthlyPI * numPayments;
+            const totalInterestPaid = totalAmountPaid - loanAmount;
+            
+            document.getElementById('totalAmountPaid').textContent = '$' + totalAmountPaid.toFixed(0);
+            document.getElementById('totalInterestPaid').textContent = '$' + totalInterestPaid.toFixed(0);
+            document.getElementById('loanAmount').textContent = '$' + loanAmount.toFixed(0);
+            
+            // Rent vs Buy comparison
+            const comparableRent = parseFloat(document.getElementById('comparableRent').value);
+            const monthlySavings = comparableRent - totalMonthly;
+            const savingsElement = document.getElementById('monthlySavings');
+            
+            if (monthlySavings > 0) {
+                savingsElement.textContent = '+$' + monthlySavings.toFixed(2);
+                savingsElement.className = 'text-2xl font-bold text-green-600';
+            } else {
+                savingsElement.textContent = '-$' + Math.abs(monthlySavings).toFixed(2);
+                savingsElement.className = 'text-2xl font-bold text-red-600';
+            }
+            
+            // Update chart
+            updatePaymentChart(monthlyPI, monthlyPropertyTax, monthlyInsurance, pmi, hoaFees);
+        }
+        
+        // Update payment distribution chart
+        function updatePaymentChart(principal, tax, insurance, pmi, hoa) {
+            const ctx = document.getElementById('paymentChart').getContext('2d');
+            
+            if (paymentChart) {
+                paymentChart.destroy();
+            }
+            
+            paymentChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Principal & Interest', 'Property Tax', 'Insurance', 'PMI', 'HOA'],
+                    datasets: [{
+                        data: [principal, tax, insurance, pmi, hoa],
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(118, 75, 162, 0.8)',
+                            'rgba(236, 72, 153, 0.8)',
+                            'rgba(248, 113, 113, 0.8)',
+                            'rgba(251, 146, 60, 0.8)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Sync sliders with inputs
+        function syncInputs() {
+            // Home price
+            const homePriceInput = document.getElementById('homePrice');
+            const homePriceSlider = document.getElementById('homePriceSlider');
+            
+            homePriceInput.addEventListener('input', function() {
+                homePriceSlider.value = this.value;
+                updateDownPayment();
+                calculateMortgage();
+            });
+            
+            homePriceSlider.addEventListener('input', function() {
+                homePriceInput.value = this.value;
+                updateDownPayment();
+                calculateMortgage();
+            });
+            
+            // Down payment
+            const downPaymentInput = document.getElementById('downPayment');
+            const downPaymentPercent = document.getElementById('downPaymentPercent');
+            const downPaymentSlider = document.getElementById('downPaymentSlider');
+            
+            downPaymentPercent.addEventListener('input', function() {
+                const homePrice = parseFloat(homePriceInput.value);
+                const percent = parseFloat(this.value);
+                const amount = (homePrice * percent) / 100;
+                downPaymentInput.value = amount.toFixed(0);
+                downPaymentSlider.value = percent;
+                calculateMortgage();
+            });
+            
+            downPaymentSlider.addEventListener('input', function() {
+                const homePrice = parseFloat(homePriceInput.value);
+                const percent = parseFloat(this.value);
+                const amount = (homePrice * percent) / 100;
+                downPaymentInput.value = amount.toFixed(0);
+                downPaymentPercent.value = percent;
+                calculateMortgage();
+            });
+            
+            downPaymentInput.addEventListener('input', function() {
+                const homePrice = parseFloat(homePriceInput.value);
+                const amount = parseFloat(this.value);
+                const percent = (amount / homePrice) * 100;
+                downPaymentPercent.value = percent.toFixed(1);
+                downPaymentSlider.value = percent;
+                calculateMortgage();
+            });
+            
+            // Interest rate
+            const interestRateInput = document.getElementById('interestRate');
+            const interestRateSlider = document.getElementById('interestRateSlider');
+            
+            interestRateInput.addEventListener('input', function() {
+                interestRateSlider.value = this.value;
+                calculateMortgage();
+            });
+            
+            interestRateSlider.addEventListener('input', function() {
+                interestRateInput.value = this.value;
+                calculateMortgage();
+            });
+            
+            // Other inputs
+            document.getElementById('loanTerm').addEventListener('change', calculateMortgage);
+            document.getElementById('propertyTax').addEventListener('input', calculateMortgage);
+            document.getElementById('homeInsurance').addEventListener('input', calculateMortgage);
+            document.getElementById('hoaFees').addEventListener('input', calculateMortgage);
+            document.getElementById('comparableRent').addEventListener('input', calculateMortgage);
+        }
+        
+        function updateDownPayment() {
+            const homePrice = parseFloat(document.getElementById('homePrice').value);
+            const percent = parseFloat(document.getElementById('downPaymentPercent').value);
+            const amount = (homePrice * percent) / 100;
+            document.getElementById('downPayment').value = amount.toFixed(0);
+        }
+        
+        // Form submission
+        document.getElementById('mortgageForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            calculateMortgage();
+        });
+        
+        // Initialize
+        syncInputs();
+        calculateMortgage();
+    </script>
+</body>
+</html>
