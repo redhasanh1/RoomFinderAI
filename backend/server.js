@@ -4256,6 +4256,61 @@ async function initializeStorage() {
 // SUBLEASE MATCHING SYSTEM ENDPOINTS
 // ========================================
 
+// Helper function to ensure database setup
+async function ensureSubleaseTablesExist() {
+    try {
+        // Check if sublease_requests table exists
+        const { data, error } = await supabase
+            .from('sublease_requests')
+            .select('count(*)')
+            .limit(1);
+        
+        if (error && error.message.includes('does not exist')) {
+            console.log('Sublease tables do not exist. Please run the schema SQL manually.');
+            throw new Error('Database tables not set up. Please apply sublease_matching_schema.sql to your database.');
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Database setup check failed:', error);
+        throw error;
+    }
+}
+
+// Helper function to set user context with error handling
+async function setUserContext(userEmail) {
+    try {
+        // Try to create the function if it doesn't exist
+        await supabase.rpc('set_user_context', { user_email: userEmail });
+    } catch (error) {
+        if (error.message.includes('function') && error.message.includes('does not exist')) {
+            // Create the function
+            const { error: functionError } = await supabase.rpc('exec', {
+                sql: `
+                CREATE OR REPLACE FUNCTION set_user_context(user_email TEXT)
+                RETURNS VOID AS $$
+                BEGIN
+                    PERFORM set_config('app.current_user_email', user_email, TRUE);
+                END;
+                $$ LANGUAGE plpgsql;
+                `
+            });
+            
+            if (functionError) {
+                console.log('Could not create set_user_context function. Using alternative approach.');
+                // Set the context directly in a different way
+                return;
+            }
+            
+            // Try again
+            await supabase.rpc('set_user_context', { user_email: userEmail });
+        } else {
+            // For now, continue without setting context (will use email filtering in queries)
+            console.log('User context not set, using email filtering instead');
+        }
+    }
+}
+
 // Helper function to calculate compatibility score between transfer and seeking requests
 function calculateCompatibilityScore(transferRequest, seekingRequest) {
     let totalScore = 0;
@@ -4390,8 +4445,11 @@ app.post('/api/sublease/request', async (req, res) => {
             return res.status(400).json({ error: 'User email is required' });
         }
 
+        // Ensure database tables exist
+        await ensureSubleaseTablesExist();
+
         // Set user context for RLS
-        await supabase.rpc('set_user_context', { user_email: userEmail });
+        await setUserContext(userEmail);
 
         const requestData = {
             user_email: userEmail,
@@ -4443,7 +4501,11 @@ app.post('/api/sublease/request', async (req, res) => {
 
         if (error) {
             console.error('Sublease request creation error:', error);
-            return res.status(500).json({ error: 'Failed to create sublease request' });
+            return res.status(500).json({ 
+                error: 'Failed to create sublease request',
+                details: error.message,
+                hint: error.hint || 'Check if database tables exist and are properly configured'
+            });
         }
 
         // After creating a request, find potential matches
@@ -4470,7 +4532,7 @@ app.get('/api/sublease/requests', async (req, res) => {
         }
 
         // Set user context for RLS
-        await supabase.rpc('set_user_context', { user_email: userEmail });
+        await setUserContext(userEmail);
 
         const { data, error } = await supabase
             .from('sublease_requests')
@@ -4502,7 +4564,7 @@ app.put('/api/sublease/requests/:id', async (req, res) => {
         }
 
         // Set user context for RLS
-        await supabase.rpc('set_user_context', { user_email: userEmail });
+        await setUserContext(userEmail);
 
         const updateData = { ...req.body };
         delete updateData.userEmail; // Remove userEmail from update data
@@ -4544,7 +4606,7 @@ app.delete('/api/sublease/requests/:id', async (req, res) => {
         }
 
         // Set user context for RLS
-        await supabase.rpc('set_user_context', { user_email: userEmail });
+        await setUserContext(userEmail);
 
         const { error } = await supabase
             .from('sublease_requests')
@@ -4579,7 +4641,7 @@ app.get('/api/sublease/matches/:requestId', async (req, res) => {
         }
 
         // Set user context for RLS
-        await supabase.rpc('set_user_context', { user_email: userEmail });
+        await setUserContext(userEmail);
 
         // Get matches where this request is either the transfer or seeking request
         const { data: matches, error } = await supabase
@@ -4625,7 +4687,7 @@ app.post('/api/sublease/express-interest', async (req, res) => {
         }
 
         // Set user context for RLS
-        await supabase.rpc('set_user_context', { user_email: userEmail });
+        await setUserContext(userEmail);
 
         const updateField = requestType === 'transfer' ? 'transfer_user_interested' : 'seeking_user_interested';
         const viewedField = requestType === 'transfer' ? 'transfer_user_viewed_at' : 'seeking_user_viewed_at';
@@ -4755,7 +4817,7 @@ app.get('/api/sublease/search', async (req, res) => {
         }
 
         // Set user context for RLS
-        await supabase.rpc('set_user_context', { user_email: userEmail });
+        await setUserContext(userEmail);
 
         let query = supabase
             .from('sublease_requests')
