@@ -972,7 +972,11 @@
                             🔄 List My Transfer Request
                         </button>
                         
-                        <button type="button" onclick="debugDatabase()" class="mt-3 w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition">
+                        <button type="button" onclick="testSupabaseConnection()" class="mt-3 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                            🧪 Test Supabase Connection
+                        </button>
+                        
+                        <button type="button" onclick="debugDatabase()" class="mt-2 w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition">
                             🔧 Debug Database Setup
                         </button>
                     </div>
@@ -1155,7 +1159,11 @@
                             🔍 Create My Seeking Request
                         </button>
                         
-                        <button type="button" onclick="debugDatabase()" class="mt-3 w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition">
+                        <button type="button" onclick="testSupabaseConnection()" class="mt-3 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                            🧪 Test Supabase Connection
+                        </button>
+                        
+                        <button type="button" onclick="debugDatabase()" class="mt-2 w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition">
                             🔧 Debug Database Setup
                         </button>
                     </div>
@@ -2652,6 +2660,27 @@
         function displayMatches(matches) {
             // Add logic to display matches in UI
             console.log('Matches found:', matches);
+        }
+
+        // Test Supabase connection
+        async function testSupabaseConnection() {
+            try {
+                console.log('🧪 Testing Supabase connection...');
+                
+                const response = await fetch('/api/test-supabase');
+                const result = await response.json();
+                
+                console.log('Supabase test result:', result);
+                
+                if (result.success) {
+                    alert('✅ Supabase Connection Test PASSED\n\nConnection is working correctly.\nFound ' + result.rowCount + ' existing records.');
+                } else {
+                    alert('❌ Supabase Connection Test FAILED\n\nError: ' + result.error + '\nCode: ' + result.code + '\n\nThis indicates a database permission or RLS policy issue.');
+                }
+            } catch (error) {
+                console.error('Connection test error:', error);
+                alert('❌ Connection test failed. Check console for details.');
+            }
         }
 
         // Debug database setup

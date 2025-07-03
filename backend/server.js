@@ -4807,6 +4807,44 @@ async function findAndCreateMatches(requestId, requestType) {
     }
 }
 
+// Simple test endpoint to verify Supabase connection
+app.get('/api/test-supabase', async (req, res) => {
+    try {
+        console.log('🧪 Testing Supabase connection...');
+        
+        // Test basic connection
+        const { data, error } = await supabase
+            .from('sublease_requests')
+            .select('id')
+            .limit(1);
+            
+        if (error) {
+            console.error('Supabase test error:', error);
+            return res.json({
+                success: false,
+                error: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint
+            });
+        }
+        
+        console.log('✅ Supabase connection test successful');
+        res.json({
+            success: true,
+            message: 'Supabase connection working',
+            rowCount: data ? data.length : 0
+        });
+        
+    } catch (error) {
+        console.error('Test endpoint error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 // Debug endpoint to check database setup
 app.get('/api/sublease/debug', async (req, res) => {
     try {
