@@ -480,25 +480,128 @@
 <body class="bg-gray-50">
     <!-- Premium Header -->
     <header class="fixed top-0 w-full premium-header z-50">
-        <nav class="w-[85%] max-w-7xl mx-auto px-6 lg:px-8 py-6 flex justify-between items-center">
-            <div class="flex items-center space-x-8">
-                <a href="index.html" class="text-2xl font-bold gradient-text font-display">RoomFinderAI</a>
-                <div class="hidden lg:flex items-center space-x-1">
-                    <a href="index.html" class="nav-link">Home</a>
-                    <a href="student-housing.html" class="nav-link">Student Housing</a>
-                    <a href="legal.html" class="nav-link">Legal Center</a>
-                    <a href="mortgage.html" class="nav-link">Mortgage</a>
-                    <a href="sublease.html" class="nav-link">Sublease</a>
-                    <a href="ai-negotiator.html" class="nav-link">AI Negotiator</a>
-                    <a href="listings.html" class="nav-link">Listings</a>
-                    <a href="pricing.html" class="nav-link">Pricing</a>
+        <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
+            <!-- Mobile Layout -->
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <div class="text-xl md:text-2xl font-bold gradient-text font-display">RoomFinderAI</div>
+                
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+            
+            <!-- Desktop Navigation -->
+            <div class="desktop-nav hidden md:flex items-center space-x-8">
+                <!-- Home - Standalone -->
+                <a href="index.html" class="nav-item">Home</a>
+                
+                <!-- Browse Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
+                        Browse <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="browse-dropdown">
+                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
+                        <a href="sublease.html" class="dropdown-item">Sublease Property</a>
+                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
+                    </div>
+                </div>
+                
+                <!-- Tools Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('tools')">
+                        Tools <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="tools-dropdown">
+                        <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
+                        <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
+                        <a href="legal.html" class="dropdown-item" style="color: #667eea; font-weight: 600;">Legal Center</a>
+                        <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
+                    </div>
+                </div>
+                
+                <!-- About Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('about')">
+                        About <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="about-dropdown">
+                        <a href="index.html#about" class="dropdown-item">About Us</a>
+                        <a href="index.html#contact" class="dropdown-item">Contact</a>
+                        <a href="support.html" class="dropdown-item">Support</a>
+                    </div>
                 </div>
             </div>
-            <div class="flex items-center space-x-4">
-                <a href="login.html" class="nav-link">Login</a>
-                <a href="dashboard.html" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all duration-300">Dashboard</a>
+            
+            <!-- Desktop Auth -->
+            <div class="desktop-auth hidden md:flex items-center space-x-4">
+                <a href="profile.html" aria-label="View user profile">
+                    <img id="profileLogo" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM2MzY2RjEiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xNiAxNlY0LjVDMTYgNC4yMjM4NiAxNS43NzYxIDQgMTUuNSA0SDguNUM4LjIyMzg2IDQgOCA0LjIyMzg2IDggNC41VjE2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0xMiAxNEM5Ljc5MDg2IDE0IDggMTUuNzkwOSA4IDE4QzggMjAuMjA5MSA5Ljc5MDg2IDIyIDEyIDIyQzE0LjIwOTEgMjIgMTYgMjAuMjA5MSAxNiAxOEMxNiAxNS43OTA5IDE0LjIwOTEgMTQgMTIgMTQiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cjwvc3ZnPgo=" alt="Profile" class="w-10 h-10 rounded-full transition-transform hover:scale-110">
+                </a>
+                <a href="login.html" class="auth-link">Login/Register</a>
             </div>
         </nav>
+        
+        <!-- Mobile Navigation Menu -->
+        <div class="mobile-menu" id="mobile-menu">
+            <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+            <div class="mobile-menu-content">
+                <div class="mobile-menu-header">
+                    <div class="text-lg font-bold gradient-text font-display">RoomFinderAI</div>
+                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
+                </div>
+                
+                <div class="mobile-menu-items">
+                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
+                    
+                    <!-- Browse Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
+                            🔍 Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="browse-section">
+                            <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
+                            <a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
+                            <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Tools Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('tools')">
+                            🛠️ Tools <span class="mobile-arrow" id="tools-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="tools-section">
+                            <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
+                            <a href="pricing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing Plans</a>
+                            <a href="legal.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="color: #667eea; font-weight: 600;">Legal Center</a>
+                            <a href="mortgage.html" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
+                        </div>
+                    </div>
+                    
+                    <!-- About Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('about')">
+                            ℹ️ About <span class="mobile-arrow" id="about-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="about-section">
+                            <a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
+                            <a href="index.html#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
+                            <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Auth Section -->
+                    <div class="mobile-section">
+                        <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()">👤 Profile</a>
+                        <a href="login.html" class="mobile-menu-item" onclick="closeMobileMenu()">🔐 Login/Register</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </header>
 
     <!-- Hero Section -->
@@ -1511,6 +1614,104 @@
         }
 
         window.addEventListener('scroll', revealOnScroll);
+        
+        // Dropdown Functions
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId + '-dropdown');
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            
+            // Close all other dropdowns
+            allDropdowns.forEach(menu => {
+                if (menu.id !== dropdownId + '-dropdown') {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                }
+            });
+            
+            // Toggle current dropdown
+            if (dropdown.style.opacity === '1') {
+                dropdown.style.opacity = '0';
+                dropdown.style.visibility = 'hidden';
+                dropdown.style.transform = 'translateY(-10px)';
+            } else {
+                dropdown.style.opacity = '1';
+                dropdown.style.visibility = 'visible';
+                dropdown.style.transform = 'translateY(0)';
+            }
+        }
+        
+        // Mobile Menu Functions
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu.classList.contains('active')) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        }
+        
+        function openMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            mobileMenu.classList.add('active');
+            hamburgerBtn.classList.add('active');
+            body.classList.add('mobile-menu-open');
+        }
+        
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            if (mobileMenu) mobileMenu.classList.remove('active');
+            if (hamburgerBtn) hamburgerBtn.classList.remove('active');
+            if (body) body.classList.remove('mobile-menu-open');
+        }
+        
+        function toggleMobileSection(sectionId) {
+            const section = document.getElementById(sectionId + '-section');
+            const arrow = document.getElementById(sectionId + '-arrow');
+            
+            if (section.classList.contains('expanded')) {
+                section.classList.remove('expanded');
+                arrow.classList.remove('rotated');
+            } else {
+                // Close all other sections first
+                document.querySelectorAll('.mobile-section-content').forEach(s => s.classList.remove('expanded'));
+                document.querySelectorAll('.mobile-arrow').forEach(a => a.classList.remove('rotated'));
+                
+                // Open current section
+                section.classList.add('expanded');
+                arrow.classList.add('rotated');
+            }
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                });
+            }
+        });
+        
+        // Close mobile menu when clicking outside or on overlay
+        document.addEventListener('click', function(event) {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            
+            if (mobileMenu && mobileMenu.classList.contains('active')) {
+                if (event.target.classList.contains('mobile-menu-overlay') || 
+                    (!event.target.closest('.mobile-menu-content') && !event.target.closest('.mobile-menu-btn'))) {
+                    closeMobileMenu();
+                }
+            }
+        });
     </script>
 </body>
 </html>

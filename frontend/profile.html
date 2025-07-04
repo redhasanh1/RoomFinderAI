@@ -1039,6 +1039,130 @@
                 alert('Error deleting listing. Please try again.');
             }
         };
+        
+        // Navigation Functions
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId + '-dropdown');
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            
+            // Close all other dropdowns
+            allDropdowns.forEach(menu => {
+                if (menu.id !== dropdownId + '-dropdown') {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                }
+            });
+            
+            // Toggle current dropdown
+            if (dropdown.style.opacity === '1') {
+                dropdown.style.opacity = '0';
+                dropdown.style.visibility = 'hidden';
+                dropdown.style.transform = 'translateY(-10px)';
+            } else {
+                dropdown.style.opacity = '1';
+                dropdown.style.visibility = 'visible';
+                dropdown.style.transform = 'translateY(0)';
+            }
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.dropdown')) {
+                const allDropdowns = document.querySelectorAll('.dropdown-menu');
+                allDropdowns.forEach(menu => {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                });
+            }
+        });
+        
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            if (mobileMenu.classList.contains('active')) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        }
+        
+        function openMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            mobileMenu.classList.add('active');
+            hamburgerBtn.classList.add('active');
+            body.classList.add('mobile-menu-open');
+        }
+        
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            if (mobileMenu) {
+                mobileMenu.classList.remove('active');
+            }
+            if (hamburgerBtn) {
+                hamburgerBtn.classList.remove('active');
+            }
+            if (body) {
+                body.classList.remove('mobile-menu-open');
+            }
+        }
+        
+        function toggleMobileSection(sectionId) {
+            const section = document.getElementById(sectionId + '-section');
+            const arrow = document.getElementById(sectionId + '-arrow');
+            
+            if (section.classList.contains('expanded')) {
+                section.classList.remove('expanded');
+                arrow.classList.remove('rotated');
+            } else {
+                // Close all other sections first
+                const allSections = document.querySelectorAll('.mobile-section-content');
+                const allArrows = document.querySelectorAll('.mobile-arrow');
+                
+                allSections.forEach(s => s.classList.remove('expanded'));
+                allArrows.forEach(a => a.classList.remove('rotated'));
+                
+                // Open the clicked section
+                section.classList.add('expanded');
+                arrow.classList.add('rotated');
+            }
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) {
+                closeMobileMenu();
+            }
+        });
+        
+        // Touch event handling for better mobile experience
+        document.addEventListener('touchstart', function(event) {
+            // Prevent zoom on double tap for buttons
+            if (event.target.matches('button, .mobile-menu-item, .nav-item')) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+        
+        // Initialize mobile menu on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure mobile menu is closed on page load
+            closeMobileMenu();
+            
+            // Add proper touch handling for iOS
+            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                document.body.style.webkitTouchCallout = 'none';
+                document.body.style.webkitUserSelect = 'none';
+            }
+        });
     </script>
 </body>
 </html>
