@@ -285,6 +285,12 @@
                         <button onclick="switchTab('timeline')" id="tab-timeline" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
                             📅 Timeline & Duration
                         </button>
+                        <button onclick="switchTab('transfer')" id="tab-transfer" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+                            🔄 Transfer My Lease
+                        </button>
+                        <button onclick="switchTab('seeking')" id="tab-seeking" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+                            🔍 Find a Sublease
+                        </button>
                     </nav>
                 </div>
             </div>
@@ -800,6 +806,366 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Transfer My Lease Section -->
+                <div id="section-transfer" class="feature-section hidden">
+                    <div class="bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-xl border-2 border-dashed border-red-300 mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">🔄 Transfer Your Lease</h4>
+                        <p class="text-gray-600 mb-4">Need to get out of your lease? Find someone to take over your sublease with our matching system.</p>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="transferAddress" class="block text-sm font-medium text-gray-700 mb-2">📍 Property Address</label>
+                                <input type="text" id="transferAddress" class="modern-input w-full" placeholder="123 Main St, City, State">
+                            </div>
+                            <div>
+                                <label for="transferRent" class="block text-sm font-medium text-gray-700 mb-2">💰 Monthly Rent</label>
+                                <input type="number" id="transferRent" class="modern-input w-full" placeholder="1200">
+                            </div>
+                            <div>
+                                <label for="transferAvailableFrom" class="block text-sm font-medium text-gray-700 mb-2">📅 Available From</label>
+                                <input type="date" id="transferAvailableFrom" class="modern-input w-full">
+                            </div>
+                            <div>
+                                <label for="transferAvailableUntil" class="block text-sm font-medium text-gray-700 mb-2">📅 Lease Ends</label>
+                                <input type="date" id="transferAvailableUntil" class="modern-input w-full">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label for="transferReason" class="block text-sm font-medium text-gray-700 mb-2">📝 Reason for Transfer</label>
+                            <select id="transferReason" class="modern-input w-full">
+                                <option value="">Select a reason...</option>
+                                <option value="job_relocation">Job Relocation</option>
+                                <option value="financial_hardship">Financial Hardship</option>
+                                <option value="family_reasons">Family Reasons</option>
+                                <option value="graduation">Graduation/School Change</option>
+                                <option value="relationship_change">Relationship Change</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">🏠 Property Type</label>
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="radio" name="transferPropertyType" value="apartment" class="mr-2">
+                                    <span class="text-sm">🏢 Apartment</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="radio" name="transferPropertyType" value="house" class="mr-2">
+                                    <span class="text-sm">🏠 House</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="radio" name="transferPropertyType" value="room" class="mr-2">
+                                    <span class="text-sm">🚪 Room</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="radio" name="transferPropertyType" value="studio" class="mr-2">
+                                    <span class="text-sm">🏠 Studio</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="radio" name="transferPropertyType" value="condo" class="mr-2">
+                                    <span class="text-sm">🏢 Condo</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-3 gap-6 mt-6">
+                            <div>
+                                <label for="transferBedrooms" class="block text-sm font-medium text-gray-700 mb-2">🛏️ Bedrooms</label>
+                                <input type="number" id="transferBedrooms" class="modern-input w-full" min="0" max="10">
+                            </div>
+                            <div>
+                                <label for="transferBathrooms" class="block text-sm font-medium text-gray-700 mb-2">🚿 Bathrooms</label>
+                                <input type="number" id="transferBathrooms" class="modern-input w-full" min="0" max="10" step="0.5">
+                            </div>
+                            <div>
+                                <label for="transferUrgency" class="block text-sm font-medium text-gray-700 mb-2">⚡ Urgency Level</label>
+                                <select id="transferUrgency" class="modern-input w-full">
+                                    <option value="1">1 - No Rush</option>
+                                    <option value="2">2 - Flexible</option>
+                                    <option value="3" selected>3 - Moderate</option>
+                                    <option value="4">4 - Urgent</option>
+                                    <option value="5">5 - Critical</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label for="transferDescription" class="block text-sm font-medium text-gray-700 mb-2">📝 Property Description</label>
+                            <textarea id="transferDescription" rows="4" class="modern-input w-full" placeholder="Describe your space, neighborhood, and what makes it special..."></textarea>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-4">✨ Amenities & Features</label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="wifi" class="mr-3 text-red-600">
+                                    <span class="text-sm">📶 WiFi</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="parking" class="mr-3 text-red-600">
+                                    <span class="text-sm">🚗 Parking</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="furnished" class="mr-3 text-red-600">
+                                    <span class="text-sm">🛋️ Furnished</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="petFriendly" class="mr-3 text-red-600">
+                                    <span class="text-sm">🐕 Pet Friendly</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="laundry" class="mr-3 text-red-600">
+                                    <span class="text-sm">👕 Laundry</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="gym" class="mr-3 text-red-600">
+                                    <span class="text-sm">🏋️ Gym</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="ac" class="mr-3 text-red-600">
+                                    <span class="text-sm">❄️ A/C</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="balcony" class="mr-3 text-red-600">
+                                    <span class="text-sm">🌿 Balcony</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 grid md:grid-cols-3 gap-6">
+                            <div>
+                                <label for="transferCleanliness" class="block text-sm font-medium text-gray-700 mb-2">🧹 Cleanliness Level</label>
+                                <select id="transferCleanliness" class="modern-input w-full">
+                                    <option value="1">1 - Very Relaxed</option>
+                                    <option value="2">2 - Relaxed</option>
+                                    <option value="3" selected>3 - Moderate</option>
+                                    <option value="4">4 - Clean</option>
+                                    <option value="5">5 - Very Clean</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="transferNoise" class="block text-sm font-medium text-gray-700 mb-2">🔊 Noise Tolerance</label>
+                                <select id="transferNoise" class="modern-input w-full">
+                                    <option value="1">1 - Very Quiet</option>
+                                    <option value="2">2 - Quiet</option>
+                                    <option value="3" selected>3 - Moderate</option>
+                                    <option value="4">4 - Social</option>
+                                    <option value="5">5 - Party Friendly</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="transferSchedule" class="block text-sm font-medium text-gray-700 mb-2">⏰ Schedule Type</label>
+                                <select id="transferSchedule" class="modern-input w-full">
+                                    <option value="early_bird">🌅 Early Bird</option>
+                                    <option value="regular" selected>🕐 Regular Hours</option>
+                                    <option value="night_owl">🦉 Night Owl</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button type="button" onclick="submitTransferRequest()" class="mt-6 w-full modern-button">
+                            🔄 List My Transfer Request
+                        </button>
+                        
+                        <button type="button" onclick="testSupabaseConnection()" class="mt-3 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                            🧪 Test Supabase Connection
+                        </button>
+                        
+                        <button type="button" onclick="debugDatabase()" class="mt-2 w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition">
+                            🔧 Debug Database Setup
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Find a Sublease Section -->
+                <div id="section-seeking" class="feature-section hidden">
+                    <div class="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-xl border-2 border-dashed border-green-300 mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">🔍 Find a Sublease</h4>
+                        <p class="text-gray-600 mb-4">Looking for a sublease? Tell us what you need and we'll match you with available transfers.</p>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="seekingCity" class="block text-sm font-medium text-gray-700 mb-2">🏙️ Preferred City</label>
+                                <input type="text" id="seekingCity" class="modern-input w-full" placeholder="Enter city name">
+                            </div>
+                            <div>
+                                <label for="seekingState" class="block text-sm font-medium text-gray-700 mb-2">📍 State/Province</label>
+                                <input type="text" id="seekingState" class="modern-input w-full" placeholder="Enter state or province">
+                            </div>
+                            <div>
+                                <label for="seekingMinBudget" class="block text-sm font-medium text-gray-700 mb-2">💰 Min Budget</label>
+                                <input type="number" id="seekingMinBudget" class="modern-input w-full" placeholder="800">
+                            </div>
+                            <div>
+                                <label for="seekingMaxBudget" class="block text-sm font-medium text-gray-700 mb-2">💰 Max Budget</label>
+                                <input type="number" id="seekingMaxBudget" class="modern-input w-full" placeholder="1500">
+                            </div>
+                            <div>
+                                <label for="seekingMoveIn" class="block text-sm font-medium text-gray-700 mb-2">📅 Preferred Move-in</label>
+                                <input type="date" id="seekingMoveIn" class="modern-input w-full">
+                            </div>
+                            <div>
+                                <label for="seekingMoveOut" class="block text-sm font-medium text-gray-700 mb-2">📅 Preferred Move-out</label>
+                                <input type="date" id="seekingMoveOut" class="modern-input w-full">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">🏠 Property Type Preference</label>
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingPropertyType" value="apartment" class="mr-2">
+                                    <span class="text-sm">🏢 Apartment</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingPropertyType" value="house" class="mr-2">
+                                    <span class="text-sm">🏠 House</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingPropertyType" value="room" class="mr-2">
+                                    <span class="text-sm">🚪 Room</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingPropertyType" value="studio" class="mr-2">
+                                    <span class="text-sm">🏠 Studio</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingPropertyType" value="condo" class="mr-2">
+                                    <span class="text-sm">🏢 Condo</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-3 gap-6 mt-6">
+                            <div>
+                                <label for="seekingBedrooms" class="block text-sm font-medium text-gray-700 mb-2">🛏️ Bedrooms</label>
+                                <select id="seekingBedrooms" class="modern-input w-full">
+                                    <option value="">Any</option>
+                                    <option value="0">Studio</option>
+                                    <option value="1">1 Bedroom</option>
+                                    <option value="2">2 Bedrooms</option>
+                                    <option value="3">3 Bedrooms</option>
+                                    <option value="4">4+ Bedrooms</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="seekingBathrooms" class="block text-sm font-medium text-gray-700 mb-2">🚿 Bathrooms</label>
+                                <select id="seekingBathrooms" class="modern-input w-full">
+                                    <option value="">Any</option>
+                                    <option value="1">1 Bathroom</option>
+                                    <option value="1.5">1.5 Bathrooms</option>
+                                    <option value="2">2 Bathrooms</option>
+                                    <option value="2.5">2.5+ Bathrooms</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="seekingDuration" class="block text-sm font-medium text-gray-700 mb-2">📅 Duration Needed</label>
+                                <select id="seekingDuration" class="modern-input w-full">
+                                    <option value="1">1-2 Months</option>
+                                    <option value="3">3-4 Months</option>
+                                    <option value="6" selected>6 Months</option>
+                                    <option value="12">12+ Months</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label for="seekingDescription" class="block text-sm font-medium text-gray-700 mb-2">📝 What You're Looking For</label>
+                            <textarea id="seekingDescription" rows="4" class="modern-input w-full" placeholder="Describe your ideal living situation, preferences, and any specific requirements..."></textarea>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-4">✨ Must-Have Amenities</label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="wifi" class="mr-3 text-green-600">
+                                    <span class="text-sm">📶 WiFi</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="parking" class="mr-3 text-green-600">
+                                    <span class="text-sm">🚗 Parking</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="furnished" class="mr-3 text-green-600">
+                                    <span class="text-sm">🛋️ Furnished</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="petFriendly" class="mr-3 text-green-600">
+                                    <span class="text-sm">🐕 Pet Friendly</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="laundry" class="mr-3 text-green-600">
+                                    <span class="text-sm">👕 Laundry</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="gym" class="mr-3 text-green-600">
+                                    <span class="text-sm">🏋️ Gym</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="ac" class="mr-3 text-green-600">
+                                    <span class="text-sm">❄️ A/C</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="balcony" class="mr-3 text-green-600">
+                                    <span class="text-sm">🌿 Balcony</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 grid md:grid-cols-3 gap-6">
+                            <div>
+                                <label for="seekingCleanliness" class="block text-sm font-medium text-gray-700 mb-2">🧹 Cleanliness Level</label>
+                                <select id="seekingCleanliness" class="modern-input w-full">
+                                    <option value="1">1 - Very Relaxed</option>
+                                    <option value="2">2 - Relaxed</option>
+                                    <option value="3" selected>3 - Moderate</option>
+                                    <option value="4">4 - Clean</option>
+                                    <option value="5">5 - Very Clean</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="seekingNoise" class="block text-sm font-medium text-gray-700 mb-2">🔊 Noise Tolerance</label>
+                                <select id="seekingNoise" class="modern-input w-full">
+                                    <option value="1">1 - Very Quiet</option>
+                                    <option value="2">2 - Quiet</option>
+                                    <option value="3" selected>3 - Moderate</option>
+                                    <option value="4">4 - Social</option>
+                                    <option value="5">5 - Party Friendly</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="seekingSchedule" class="block text-sm font-medium text-gray-700 mb-2">⏰ Schedule Type</label>
+                                <select id="seekingSchedule" class="modern-input w-full">
+                                    <option value="early_bird">🌅 Early Bird</option>
+                                    <option value="regular" selected>🕐 Regular Hours</option>
+                                    <option value="night_owl">🦉 Night Owl</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="seekingFlexibleDates" class="mr-3 text-green-600">
+                                <span class="text-sm font-medium">📅 I'm flexible with move-in/out dates</span>
+                            </label>
+                        </div>
+                        
+                        <button type="button" onclick="submitSeekingRequest()" class="mt-6 w-full modern-button" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                            🔍 Create My Seeking Request
+                        </button>
+                        
+                        <button type="button" onclick="testSupabaseConnection()" class="mt-3 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                            🧪 Test Supabase Connection
+                        </button>
+                        
+                        <button type="button" onclick="debugDatabase()" class="mt-2 w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition">
+                            🔧 Debug Database Setup
+                        </button>
                     </div>
                 </div>
                 
@@ -2062,7 +2428,326 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Show first tab by default
             switchTab('documents');
+            loadUserRequests();
         });
+
+        // ========================================
+        // SUBLEASE MATCHING SYSTEM FUNCTIONS
+        // ========================================
+
+        // Submit Transfer Request
+        async function submitTransferRequest() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                alert('Please log in to create a transfer request.');
+                return;
+            }
+
+            // Gather form data
+            const transferData = {
+                userEmail: currentUser.email,
+                type: 'transfer',
+                title: `Lease Transfer: ${document.getElementById('transferAddress').value}`,
+                description: document.getElementById('transferDescription').value,
+                address: document.getElementById('transferAddress').value,
+                city: extractCityFromAddress(document.getElementById('transferAddress').value),
+                state: extractStateFromAddress(document.getElementById('transferAddress').value),
+                rentAmount: parseFloat(document.getElementById('transferRent').value),
+                availableFrom: document.getElementById('transferAvailableFrom').value,
+                availableUntil: document.getElementById('transferAvailableUntil').value,
+                propertyType: document.querySelector('input[name="transferPropertyType"]:checked')?.value,
+                bedrooms: parseInt(document.getElementById('transferBedrooms').value) || null,
+                bathrooms: parseFloat(document.getElementById('transferBathrooms').value) || null,
+                furnished: getCheckedValues('transferAmenities').includes('furnished'),
+                amenities: getCheckedValues('transferAmenities'),
+                petFriendly: getCheckedValues('transferAmenities').includes('petFriendly'),
+                cleanlinessLevel: parseInt(document.getElementById('transferCleanliness').value),
+                noiseTolerance: parseInt(document.getElementById('transferNoise').value),
+                scheduleType: document.getElementById('transferSchedule').value,
+                reasonForTransfer: document.getElementById('transferReason').value,
+                urgencyLevel: parseInt(document.getElementById('transferUrgency').value)
+            };
+
+            try {
+                const response = await fetch('/api/sublease/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(transferData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Transfer request created successfully! We\'ll find matches for you.');
+                    clearTransferForm();
+                    loadUserRequests();
+                } else {
+                    alert('Error creating transfer request: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Transfer request error:', error);
+                alert('Error creating transfer request. Please try again.');
+            }
+        }
+
+        // Submit Seeking Request
+        async function submitSeekingRequest() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                alert('Please log in to create a seeking request.');
+                return;
+            }
+
+            // Gather form data
+            const seekingData = {
+                userEmail: currentUser.email,
+                type: 'seeking',
+                title: `Looking for Sublease in ${document.getElementById('seekingCity').value}`,
+                description: document.getElementById('seekingDescription').value,
+                city: document.getElementById('seekingCity').value,
+                state: document.getElementById('seekingState').value,
+                minBudget: parseFloat(document.getElementById('seekingMinBudget').value),
+                maxBudget: parseFloat(document.getElementById('seekingMaxBudget').value),
+                preferredMoveIn: document.getElementById('seekingMoveIn').value,
+                preferredMoveOut: document.getElementById('seekingMoveOut').value,
+                propertyType: getCheckedValues('seekingPropertyType')[0] || null,
+                bedrooms: document.getElementById('seekingBedrooms').value ? parseInt(document.getElementById('seekingBedrooms').value) : null,
+                bathrooms: document.getElementById('seekingBathrooms').value ? parseFloat(document.getElementById('seekingBathrooms').value) : null,
+                durationMonths: parseInt(document.getElementById('seekingDuration').value),
+                furnished: getCheckedValues('seekingAmenities').includes('furnished'),
+                amenities: getCheckedValues('seekingAmenities'),
+                petFriendly: getCheckedValues('seekingAmenities').includes('petFriendly'),
+                cleanlinessLevel: parseInt(document.getElementById('seekingCleanliness').value),
+                noiseTolerance: parseInt(document.getElementById('seekingNoise').value),
+                scheduleType: document.getElementById('seekingSchedule').value,
+                flexibleDates: document.getElementById('seekingFlexibleDates').checked
+            };
+
+            try {
+                const response = await fetch('/api/sublease/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(seekingData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Seeking request created successfully! We\'ll find matches for you.');
+                    clearSeekingForm();
+                    loadUserRequests();
+                } else {
+                    alert('Error creating seeking request: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Seeking request error:', error);
+                console.error('Full error details:', JSON.stringify(error, null, 2));
+                alert('Error creating seeking request. Please check console for details.');
+            }
+        }
+
+        // Helper function to get checked values from checkboxes
+        function getCheckedValues(name) {
+            const checkboxes = document.querySelectorAll(`input[name="${name}"]:checked`);
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        // Helper function to extract city from address
+        function extractCityFromAddress(address) {
+            if (!address) return null;
+            const parts = address.split(',');
+            return parts.length > 1 ? parts[1].trim() : null;
+        }
+
+        // Helper function to extract state from address
+        function extractStateFromAddress(address) {
+            if (!address) return null;
+            const parts = address.split(',');
+            return parts.length > 2 ? parts[2].trim() : null;
+        }
+
+        // Clear transfer form
+        function clearTransferForm() {
+            document.getElementById('transferAddress').value = '';
+            document.getElementById('transferRent').value = '';
+            document.getElementById('transferAvailableFrom').value = '';
+            document.getElementById('transferAvailableUntil').value = '';
+            document.getElementById('transferDescription').value = '';
+            document.getElementById('transferReason').value = '';
+            document.getElementById('transferBedrooms').value = '';
+            document.getElementById('transferBathrooms').value = '';
+            document.getElementById('transferUrgency').value = '3';
+            document.getElementById('transferCleanliness').value = '3';
+            document.getElementById('transferNoise').value = '3';
+            document.getElementById('transferSchedule').value = 'regular';
+            
+            // Clear checkboxes and radio buttons
+            document.querySelectorAll('input[name="transferPropertyType"]').forEach(radio => radio.checked = false);
+            document.querySelectorAll('input[name="transferAmenities"]').forEach(checkbox => checkbox.checked = false);
+        }
+
+        // Clear seeking form
+        function clearSeekingForm() {
+            document.getElementById('seekingCity').value = '';
+            document.getElementById('seekingState').value = '';
+            document.getElementById('seekingMinBudget').value = '';
+            document.getElementById('seekingMaxBudget').value = '';
+            document.getElementById('seekingMoveIn').value = '';
+            document.getElementById('seekingMoveOut').value = '';
+            document.getElementById('seekingDescription').value = '';
+            document.getElementById('seekingBedrooms').value = '';
+            document.getElementById('seekingBathrooms').value = '';
+            document.getElementById('seekingDuration').value = '6';
+            document.getElementById('seekingCleanliness').value = '3';
+            document.getElementById('seekingNoise').value = '3';
+            document.getElementById('seekingSchedule').value = 'regular';
+            document.getElementById('seekingFlexibleDates').checked = false;
+            
+            // Clear checkboxes
+            document.querySelectorAll('input[name="seekingPropertyType"]').forEach(checkbox => checkbox.checked = false);
+            document.querySelectorAll('input[name="seekingAmenities"]').forEach(checkbox => checkbox.checked = false);
+        }
+
+        // Load user's sublease requests
+        async function loadUserRequests() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) return;
+
+            try {
+                const response = await fetch(`/api/sublease/requests?userEmail=${encodeURIComponent(currentUser.email)}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayUserRequests(result.requests);
+                }
+            } catch (error) {
+                console.error('Error loading user requests:', error);
+            }
+        }
+
+        // Display user requests
+        function displayUserRequests(requests) {
+            const transferRequests = requests.filter(r => r.type === 'transfer');
+            const seekingRequests = requests.filter(r => r.type === 'seeking');
+            
+            // You could add this display logic to show user's active requests
+            console.log('Transfer requests:', transferRequests);
+            console.log('Seeking requests:', seekingRequests);
+        }
+
+        // Load matches for a request
+        async function loadMatches(requestId) {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) return;
+
+            try {
+                const response = await fetch(`/api/sublease/matches/${requestId}?userEmail=${encodeURIComponent(currentUser.email)}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayMatches(result.matches);
+                }
+            } catch (error) {
+                console.error('Error loading matches:', error);
+            }
+        }
+
+        // Display matches
+        function displayMatches(matches) {
+            // Add logic to display matches in UI
+            console.log('Matches found:', matches);
+        }
+
+        // Test Supabase connection
+        async function testSupabaseConnection() {
+            try {
+                console.log('🧪 Testing Supabase connection...');
+                
+                const response = await fetch('/api/test-supabase');
+                const result = await response.json();
+                
+                console.log('Supabase test result:', result);
+                
+                if (result.success) {
+                    alert('✅ Supabase Connection Test PASSED\n\nConnection is working correctly.\nFound ' + result.rowCount + ' existing records.');
+                } else {
+                    alert('❌ Supabase Connection Test FAILED\n\nError: ' + result.error + '\nCode: ' + result.code + '\n\nThis indicates a database permission or RLS policy issue.');
+                }
+            } catch (error) {
+                console.error('Connection test error:', error);
+                alert('❌ Connection test failed. Check console for details.');
+            }
+        }
+
+        // Debug database setup
+        async function debugDatabase() {
+            try {
+                console.log('🔧 Starting database debug check...');
+                
+                const response = await fetch('/api/sublease/debug');
+                const result = await response.json();
+                
+                console.log('Debug result:', result);
+                
+                if (result.success) {
+                    let message = '🔧 Database Debug Results:\n\n';
+                    message += `✅ Supabase Connection: ${result.checks.supabase_connection ? 'OK' : 'FAILED'}\n`;
+                    message += `✅ sublease_requests table: ${result.checks.sublease_requests_table ? 'OK' : 'MISSING'}\n`;
+                    message += `✅ sublease_matches table: ${result.checks.sublease_matches_table ? 'OK' : 'MISSING'}\n`;
+                    message += `✅ set_user_context function: ${result.checks.user_context_function ? 'OK' : 'MISSING'}\n\n`;
+                    
+                    message += 'Recommendations:\n';
+                    result.recommendations.forEach((rec, index) => {
+                        message += `${index + 1}. ${rec}\n`;
+                    });
+                    
+                    alert(message);
+                } else {
+                    alert('Debug check failed: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Debug error:', error);
+                alert('Debug check failed. Check console for details.');
+            }
+        }
+
+        // Express interest in a match
+        async function expressInterest(matchId, requestType) {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) return;
+
+            try {
+                const response = await fetch('/api/sublease/express-interest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        matchId: matchId,
+                        userEmail: currentUser.email,
+                        requestType: requestType
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Interest expressed successfully!');
+                    if (result.match.match_status === 'mutual_interest') {
+                        alert('🎉 Mutual interest! You can now contact each other.');
+                    }
+                } else {
+                    alert('Error expressing interest: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Express interest error:', error);
+                alert('Error expressing interest. Please try again.');
+            }
+        }
     </script>
 </body>
 </html>
