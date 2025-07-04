@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#667eea">
+    <title>Negotiation Assistant - RoomFinderAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="./ai-chat.js?v=10"></script>
+    <script src="./ai-negotiation.js?v=2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/mobile-android.css">
+    <script src="js/mobile-init.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        
+        /* Gradient backgrounds */
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .gradient-bg-alt {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Modern glass cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Modern header */
+        .modern-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Chat bubble styles */
+        .chat-bubble {
+            max-width: 70%;
+            border-radius: 18px;
+            padding: 12px 16px;
+            margin: 8px 0;
+            position: relative;
+            word-wrap: break-word;
+            animation: fadeInUp 0.3s ease-out;
+        }
+        
+        .chat-bubble.user {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 6px;
+        }
+        
+        .chat-bubble.ai {
+            background: white;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            margin-right: auto;
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 18px;
+            border-bottom-left-radius: 6px;
+            margin: 8px 0;
+            max-width: 70%;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #9ca3af;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { 
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% { 
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Listing card styles */
+        .listing-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .listing-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Modern input styles */
+        .modern-input {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        
+        .modern-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Send button */
+        .send-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Scroll styles */
+        .chat-container {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .chat-container::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 3px;
+        }
+        
+        .chat-container::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 modern-header shadow-lg z-50">
+        <nav class="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-6">
+                <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
+                <div class="hidden md:flex space-x-4">
+                    <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
+                    <a href="/dashboard" class="text-gray-700 hover:text-blue-600 transition font-medium">Dashboard</a>
+                    <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
+                    <a href="/ai-negotiator" class="text-blue-600 font-semibold">Negotiation Assistant</a>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="/profile" aria-label="View user profile">
+                    <img id="profileLogo" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM2MzY2RjEiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xNiAxNlY0LjVDMTYgNC4yMjM4NiAxNS43NzYxIDQgMTUuNSA0SDguNUM4LjIyMzg2IDQgOCA0LjIyMzg2IDggNC41VjE2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0xMiAxNEM5Ljc5MDg2IDE0IDggMTUuNzkwOSA4IDE4QzggMjAuMjA5MSA5Ljc5MDg2IDIyIDEyIDIyQzE0LjIwOTEgMjIgMTYgMjAuMjA5MSAxNiAxOEMxNiAxNS43OTA5IDE0LjIwOTEgMTQgMTIgMTQiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cjwvc3ZnPgo=" alt="Profile" class="w-10 h-10 rounded-full transition-transform hover:scale-110">
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">🤖 Negotiation Assistant</h1>
+            <p class="text-gray-600">Get expert advice and coaching to negotiate better rental deals with landlords</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Sidebar - Found Listings Only -->
+            <div class="lg:col-span-1">
+                <!-- Found Listings Panel -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">🏠 Found Listings</h3>
+                    <div id="activeNegotiations" class="space-y-3">
+                        <p class="text-gray-500 text-sm">Use the AI chat to search for properties!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat Interface -->
+            <div class="lg:col-span-2">
+                <div class="glass-card h-[700px] flex flex-col">
+                    <!-- Chat Header -->
+                    <div class="p-6 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div>
+                                    <h3 class="font-semibold text-gray-900">AI Negotiation Assistant</h3>
+                                    <p class="text-sm text-green-600 flex items-center">
+                                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                        Ready to Help
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button id="clearChat" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition font-medium">
+                                    Clear Chat
+                                </button>
+                                <button id="saveChat" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium">
+                                    Save Chat
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Messages -->
+                    <div id="chatContainer" class="flex-1 p-6 overflow-y-auto chat-container">
+                        <div id="chatMessages">
+                            <!-- Welcome message -->
+                            <div class="chat-bubble ai">
+                                <div class="font-semibold text-sm text-gray-500 mb-1">AI Assistant</div>
+                                <p>Hello! I'm your AI assistant. Tell me what you're looking for (e.g., "I want a house in Hong Kong for $1500") and I'll search our database for matching listings and help you negotiate with landlords!</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Typing indicator (hidden by default) -->
+                        <div id="typingIndicator" class="typing-indicator hidden">
+                            <span class="text-sm text-gray-500 mr-3">Assistant is typing</span>
+                            <div class="typing-dots">
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Input -->
+                    <div class="p-6 border-t border-gray-200">
+                        <div class="flex space-x-4">
+                            <input 
+                                type="text" 
+                                id="messageInput" 
+                                placeholder="Type your message here..."
+                                class="flex-1 modern-input"
+                                maxlength="500"
+                            >
+                            <button id="sendButton" class="send-button">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="flex justify-between items-center mt-2">
+                            <p class="text-xs text-gray-500">Press Enter to send • Max 500 characters</p>
+                            <p id="charCount" class="text-xs text-gray-400">0/500</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script>
+        // Global variables
+        let currentUser = null;
+        let aiNegotiator = null;
+        let supabase = null;
+        let configData = null;
+
+        // Initialize the application
+        async function initializeApp() {
+            try {
+                console.log('🚀 Initializing AI Negotiator with Supabase integration...');
+                
+                // Load configuration from Railway API
+                console.log('🔧 Loading configuration from Railway...');
+                const configResponse = await fetch('/api/config');
+                
+                if (!configResponse.ok) {
+                    throw new Error('Failed to load configuration');
+                }
+                
+                configData = await configResponse.json();
+                console.log('✅ Configuration loaded successfully');
+                
+                // Initialize Supabase
+                if (!window.supabase) {
+                    throw new Error('Supabase library not loaded from CDN');
+                }
+                
+                supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
+                console.log('✅ Supabase client initialized');
+                
+                // Test Supabase connection
+                await supabase.from('listings').select('count', { count: 'exact', head: true });
+                console.log('✅ Supabase connection test successful');
+                
+                // Get current user (or create anonymous session)
+                currentUser = JSON.parse(localStorage.getItem('user')) || { email: 'anonymous@user.com', name: 'Anonymous User' };
+                console.log('👤 Current user:', currentUser.email);
+                
+                // Check if AIChatHandler class is available
+                if (typeof AIChatHandler === 'undefined') {
+                    console.error('❌ AIChatHandler class not found! ai-chat.js not loaded properly');
+                    throw new Error('AI Chat module not loaded');
+                }
+                
+                // Initialize AI Negotiator with database integration
+                console.log('🔧 Creating AIChatHandler instance...');
+                aiNegotiator = new AIChatHandler(supabase, configData);
+                await aiNegotiator.init(currentUser);
+                
+                // Make aiChat globally accessible for sidebar button clicks
+                window.aiChat = aiNegotiator;
+                
+                // Setup message input handling
+                setupMessageHandling();
+                
+                console.log('✅ AI Negotiator initialized successfully with database integration!');
+                
+            } catch (error) {
+                console.error('❌ Failed to initialize AI Negotiator:', error);
+                document.getElementById('chatMessages').innerHTML = `
+                    <div style="color: red; padding: 1rem; border: 2px solid red; border-radius: 8px; margin: 1rem 0;">
+                        <h3>❌ Initialization Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>Please check that all environment variables are set correctly in Railway.</p>
+                        <button onclick="window.location.reload()" style="background: #667eea; color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; margin-top: 8px;">
+                            🔄 Retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Setup message input handling
+        function setupMessageHandling() {
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const charCount = document.getElementById('charCount');
+            const clearChatBtn = document.getElementById('clearChat');
+            const saveChatBtn = document.getElementById('saveChat');
+
+            if (!messageInput || !sendButton) {
+                console.error('Message input elements not found');
+                return;
+            }
+
+            // Send button click handler
+            sendButton.addEventListener('click', sendMessage);
+            
+            // Enter key handler
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Character count handler
+            if (charCount) {
+                messageInput.addEventListener('input', () => {
+                    const length = messageInput.value.length;
+                    charCount.textContent = `${length}/500`;
+                    
+                    if (length > 450) {
+                        charCount.classList.add('text-red-500');
+                        charCount.classList.remove('text-gray-400');
+                    } else {
+                        charCount.classList.remove('text-red-500');
+                        charCount.classList.add('text-gray-400');
+                    }
+                });
+            }
+            
+            // Clear chat handler
+            if (clearChatBtn) {
+                clearChatBtn.addEventListener('click', () => {
+                    if (aiNegotiator) {
+                        aiNegotiator.clearConversationHistory();
+                        document.getElementById('chatMessages').innerHTML = `
+                            <div class="chat-bubble ai">
+                                <div class="font-semibold text-sm text-gray-500 mb-1">AI Assistant</div>
+                                <p>Hello! I'm your AI assistant. Tell me what you're looking for (e.g., "I want a house in Hong Kong for $1500") and I'll search our database for matching listings and help you negotiate with landlords!</p>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
+            // Save chat handler
+            if (saveChatBtn) {
+                saveChatBtn.addEventListener('click', () => {
+                    if (aiNegotiator && aiNegotiator.conversationHistory) {
+                        const chatData = {
+                            timestamp: new Date().toISOString(),
+                            messages: aiNegotiator.conversationHistory
+                        };
+                        
+                        const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `ai-negotiator-chat-${new Date().toISOString().split('T')[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        
+                        aiNegotiator.appendMessage('AI', '💾 Chat history saved successfully!', 'left');
+                    }
+                });
+            }
+        }
+
+        // Send message function
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            
+            if (!messageInput || !aiNegotiator) return;
+            
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            // Clear input and disable send button temporarily
+            messageInput.value = '';
+            const charCount = document.getElementById('charCount');
+            if (charCount) charCount.textContent = '0/500';
+            sendButton.disabled = true;
+            
+            try {
+                // Process message with AI chat handler
+                await aiNegotiator.processMessage(message);
+            } catch (error) {
+                console.error('Error processing message:', error);
+                aiNegotiator.appendMessage('AI', 'Sorry, I encountered an error processing your message. Please try again.', 'left');
+            } finally {
+                sendButton.disabled = false;
+            }
+        }
+
+        // Quick search function for sidebar form
+        function performQuickSearch() {
+            const location = document.getElementById('filterLocation').value;
+            const price = document.getElementById('filterPrice').value;
+            const type = document.getElementById('filterType').value;
+            
+            let searchQuery = '';
+            if (location) searchQuery += `I want in ${location}`;
+            if (price) searchQuery += ` under $${price}`;
+            if (type) searchQuery += ` ${type.toLowerCase()}`;
+            
+            if (searchQuery.trim()) {
+                document.getElementById('messageInput').value = searchQuery.trim();
+                sendMessage();
+                
+                // Clear form
+                document.getElementById('filterLocation').value = '';
+                document.getElementById('filterPrice').value = '';
+                document.getElementById('filterType').value = '';
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            
+            // Check for pre-filled search query from index page
+            const aiSearchQuery = localStorage.getItem('aiSearchQuery');
+            if (aiSearchQuery) {
+                const messageInput = document.getElementById('messageInput');
+                if (messageInput) {
+                    messageInput.value = aiSearchQuery;
+                    messageInput.focus();
+                }
+                // Clear the stored query after using it
+                localStorage.removeItem('aiSearchQuery');
+            }
+        });
+    </script>
+</body>
+</html>

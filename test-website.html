@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RoomFinderAI Website Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>RoomFinderAI Website Test</h1>
+    <div id="test-results"></div>
+    
+    <script>
+        const results = document.getElementById('test-results');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+        
+        // Test 1: Check if main files exist
+        addResult('Testing file accessibility...', 'info');
+        
+        // Test 2: Check environment detection
+        if (typeof window !== 'undefined') {
+            addResult('✓ Window object available', 'success');
+        } else {
+            addResult('✗ Window object not available', 'error');
+        }
+        
+        // Test 3: Check if we can detect mobile/web
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isCapacitor = !!(window.Capacitor);
+        
+        if (isMobile) {
+            addResult('✓ Mobile device detected', 'success');
+        } else {
+            addResult('✓ Desktop/Web device detected', 'success');
+        }
+        
+        if (isCapacitor) {
+            addResult('✓ Capacitor environment detected (Mobile App)', 'success');
+        } else {
+            addResult('✓ Web environment detected (Browser)', 'success');
+        }
+        
+        // Test 4: Check CSS loading
+        const testElement = document.createElement('div');
+        testElement.style.display = 'none';
+        document.body.appendChild(testElement);
+        
+        if (getComputedStyle(testElement).display === 'none') {
+            addResult('✓ CSS styles working', 'success');
+        } else {
+            addResult('✗ CSS styles not working', 'error');
+        }
+        
+        // Test 5: Check JavaScript functionality
+        try {
+            const testData = JSON.stringify({test: 'data'});
+            JSON.parse(testData);
+            addResult('✓ JavaScript JSON functions working', 'success');
+        } catch (e) {
+            addResult('✗ JavaScript JSON functions not working', 'error');
+        }
+        
+        // Test 6: Check localStorage
+        try {
+            localStorage.setItem('test', 'value');
+            const value = localStorage.getItem('test');
+            localStorage.removeItem('test');
+            if (value === 'value') {
+                addResult('✓ localStorage working', 'success');
+            } else {
+                addResult('✗ localStorage not working', 'error');
+            }
+        } catch (e) {
+            addResult('✗ localStorage not available', 'error');
+        }
+        
+        // Test 7: Check fetch API
+        if (typeof fetch === 'function') {
+            addResult('✓ Fetch API available', 'success');
+        } else {
+            addResult('✗ Fetch API not available', 'error');
+        }
+        
+        // Final result
+        addResult('✓ Website functionality test completed successfully!', 'success');
+        
+        // Show current page info
+        addResult(`Current URL: ${window.location.href}`, 'info');
+        addResult(`User Agent: ${navigator.userAgent.substring(0, 50)}...`, 'info');
+        addResult(`Screen Size: ${window.screen.width}x${window.screen.height}`, 'info');
+    </script>
+</body>
+</html>

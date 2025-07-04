@@ -3,17 +3,16 @@
   "version": "1.0.0",
   "description": "AI-powered rental negotiation platform with advanced market intelligence",
   "main": "backend/server.js",
-"scripts": {
-  "start": "node backend/server.js",
-  "dev": "node backend/server.js",
-  "build": "npm install --prefix backend --production",
-  "test": "echo 'No tests specified'",
-  "postinstall": "npm install --prefix backend --production"
-},
-
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js",
+    "build": "rm -rf frontend/build && mkdir -p frontend/build && cp -r frontend/* frontend/build/ 2>/dev/null || true",
+    "test": "echo 'No tests specified'",
+    "postinstall": "npm install --prefix backend --production"
+  },
   "keywords": [
     "ai",
-    "negotiation", 
+    "negotiation",
     "rental",
     "real-estate",
     "marketplace",
@@ -27,16 +26,20 @@
     "npm": ">=8.0.0"
   },
   "dependencies": {
+    "@azure/ai-form-recognizer": "^5.0.0",
+    "@azure/cognitiveservices-face": "^4.1.0",
+    "@azure/ms-rest-azure-js": "^2.1.0",
+    "@capacitor/android": "^7.4.1",
+    "@capacitor/cli": "^7.4.1",
+    "@capacitor/core": "^7.4.1",
+    "@capacitor/ios": "^7.4.1",
+    "@supabase/supabase-js": "^2.39.0",
     "axios": "^1.9.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "multer": "^2.0.1",
     "stripe": "^10.15.0",
-    "uuid": "^9.0.0",
-    "@supabase/supabase-js": "^2.39.0",
-    "@azure/ai-form-recognizer": "^5.0.0",
-    "@azure/cognitiveservices-face": "^4.1.0",
-    "@azure/ms-rest-azure-js": "^2.1.0",
-    "multer": "^2.0.1"
+    "uuid": "^9.0.0"
   }
 }
