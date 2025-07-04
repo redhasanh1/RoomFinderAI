@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">roomfinderai</string>
+    <string name="title_activity_main">roomfinderai</string>
+    <string name="package_name">com.roomfinderai.app</string>
+    <string name="custom_url_scheme">com.roomfinderai.app</string>
+</resources>

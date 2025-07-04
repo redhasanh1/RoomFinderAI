@@ -1,0 +1,3206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sublease your room or apartment easily with Room Finder. Create a listing and connect with potential subtenants.">
+    <meta name="keywords" content="sublease, room rental, apartment sublease, housing">
+    <title>Sublease Your Space - RoomFinderAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Premium Header */
+        .premium-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+        }
+        
+        .premium-header.scrolled {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(25px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Navigation Items */
+        .nav-item {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 0.95rem;
+        }
+        
+        .nav-item:hover {
+            color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        .auth-link {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+        .auth-link:hover {
+            color: #667eea;
+            border-color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        /* Dropdown Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .dropdown-arrow {
+            font-size: 0.7rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .dropdown:hover .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 0.5rem 0;
+            min-width: 12rem;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+        }
+        
+        .dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .dropdown-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8fafc;
+            color: #667eea;
+        }
+        
+        /* Mobile Menu Styles */
+        .mobile-menu-btn {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 24px;
+            height: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+        
+        .hamburger-line {
+            width: 100%;
+            height: 2px;
+            background-color: #374151;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
+        }
+        
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            transition: left 0.3s ease;
+        }
+        
+        .mobile-menu.active {
+            left: 0;
+        }
+        
+        .mobile-menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .mobile-menu-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100%;
+            background: white;
+            overflow-y: auto;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-menu.active .mobile-menu-content {
+            transform: translateX(0);
+        }
+        
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .mobile-menu-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #374151;
+        }
+        
+        .mobile-menu-items {
+            padding: 1rem 0;
+        }
+        
+        .mobile-menu-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .mobile-menu-item:hover {
+            background-color: #f8fafc;
+            color: #667eea;
+        }
+        
+        .mobile-section {
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .mobile-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: none;
+            border: none;
+            text-align: left;
+            color: #374151;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .mobile-section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .mobile-section-content.expanded {
+            max-height: 200px;
+        }
+        
+        .mobile-arrow {
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-arrow.rotated {
+            transform: rotate(180deg);
+        }
+        
+        body.mobile-menu-open {
+            overflow: hidden;
+        }
+        
+        /* Modern container */
+        .modern-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Modern button */
+        .modern-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .modern-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        /* Hero section with gradient background */
+        .hero-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.05"><circle cx="30" cy="30" r="2"/></g></g></svg>');
+        }
+        
+        /* Feature cards */
+        .feature-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #f1f5f9;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            border-color: #3b82f6;
+        }
+        
+        /* CTA Button styles */
+        .cta-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50px;
+            padding: 1rem 2.5rem;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        /* Modern input styling */
+        .modern-input {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .modern-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+            outline: none;
+        }
+        .profile-logo {
+            transition: transform 0.2s ease-in-out;
+        }
+        .profile-logo:hover {
+            transform: scale(1.1);
+        }
+        .login-link {
+            transition: color 0.2s ease-in-out;
+        }
+        .login-link:hover {
+            color: #2563eb;
+        }
+        #aiButton {
+            transition: transform 0.3s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        #aiButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .listing-card {
+            background: white;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f1f5f9;
+        }
+        .listing-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="fixed top-0 w-full premium-header z-50">
+        <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
+            <!-- Mobile Layout -->
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <div class="text-xl md:text-2xl font-bold gradient-text">RoomFinderAI</div>
+                
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+            
+            <!-- Desktop Navigation -->
+            <div class="desktop-nav hidden md:flex items-center space-x-8">
+                <!-- Home - Standalone -->
+                <a href="index.html" class="nav-item">Home</a>
+                
+                <!-- Browse Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
+                        Browse <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="browse-dropdown">
+                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
+                        <a href="sublease.html" class="dropdown-item" style="color: #667eea; font-weight: 600;">Sublease Property</a>
+                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
+                    </div>
+                </div>
+                
+                <!-- Tools Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('tools')">
+                        Tools <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="tools-dropdown">
+                        <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
+                        <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
+                        <a href="legal.html" class="dropdown-item">Legal Center</a>
+                        <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
+                    </div>
+                </div>
+                
+                <!-- About Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('about')">
+                        About <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="about-dropdown">
+                        <a href="index.html#about" class="dropdown-item">About Us</a>
+                        <a href="index.html#contact" class="dropdown-item">Contact</a>
+                        <a href="support.html" class="dropdown-item">Support</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Desktop Auth -->
+            <div class="desktop-auth hidden md:block">
+                <a href="login.html" class="auth-link">Login/Register</a>
+            </div>
+        </nav>
+        
+        <!-- Mobile Navigation Menu -->
+        <div class="mobile-menu" id="mobile-menu">
+            <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+            <div class="mobile-menu-content">
+                <div class="mobile-menu-header">
+                    <div class="text-lg font-bold gradient-text">RoomFinderAI</div>
+                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
+                </div>
+                
+                <div class="mobile-menu-items">
+                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
+                    
+                    <!-- Browse Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
+                            🔍 Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="browse-section">
+                            <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
+                            <a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="color: #667eea; font-weight: 600;">Sublease Property</a>
+                            <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Tools Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('tools')">
+                            🛠️ Tools <span class="mobile-arrow" id="tools-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="tools-section">
+                            <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
+                            <a href="pricing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing Plans</a>
+                            <a href="legal.html" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Center</a>
+                            <a href="mortgage.html" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
+                        </div>
+                    </div>
+                    
+                    <!-- About Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('about')">
+                            ℹ️ About <span class="mobile-arrow" id="about-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="about-section">
+                            <a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
+                            <a href="index.html#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
+                            <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Auth Section -->
+                    <div class="mobile-section">
+                        <a href="login.html" class="mobile-menu-item" onclick="closeMobileMenu()">🔐 Login/Register</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient text-white py-20 relative z-10">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+            <div class="text-center">
+                <h1 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
+                    <span class="block">Sublease Your Space</span>
+                    <span class="block text-white">Effortlessly</span>
+                </h1>
+                <p class="text-xl sm:text-2xl mb-8 text-gray-100 leading-relaxed max-w-3xl mx-auto">
+                    Turn your unused space into income. Create professional sublease listings with AI-powered contract analysis and smart tenant matching.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+                    <button onclick="document.getElementById('subleaseForm').scrollIntoView({behavior: 'smooth'})" class="cta-button">
+                        📝 Create Listing
+                    </button>
+                    <button onclick="document.getElementById('howItWorks').scrollIntoView({behavior: 'smooth'})" class="bg-white text-gray-800 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300">
+                        How It Works
+                    </button>
+                </div>
+                
+                <!-- Quick stats -->
+                <div class="grid grid-cols-3 gap-6 mt-16">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold mb-2">500+</div>
+                        <div class="text-sm text-gray-200">Successful Subleases</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold mb-2">72hr</div>
+                        <div class="text-sm text-gray-200">Average Match Time</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold mb-2">98%</div>
+                        <div class="text-sm text-gray-200">Satisfaction Rate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- How It Works Section -->
+    <section id="howItWorks" class="py-20 bg-white">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+                    How <span class="gradient-text">Sublease AI</span> Works
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Our intelligent platform makes subletting as easy as 1-2-3
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8 mb-16">
+                <!-- Step 1 -->
+                <div class="feature-card text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span class="text-2xl font-bold text-white">1</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">📄 Upload Contract</h3>
+                    <p class="text-gray-600 mb-6">Simply upload your lease document and our AI will extract all the important details automatically.</p>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="feature-card text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span class="text-2xl font-bold text-white">2</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">✨ AI Enhancement</h3>
+                    <p class="text-gray-600 mb-6">Our AI creates compelling listings with professional descriptions and optimal pricing suggestions.</p>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="feature-card text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span class="text-2xl font-bold text-white">3</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">🎯 Smart Matching</h3>
+                    <p class="text-gray-600 mb-6">Get matched with qualified tenants who fit your requirements and timeline perfectly.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Sublease Form Section -->
+    <section id="subleaseSection" class="py-20 bg-gray-50">
+        <div class="w-[90%] max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold gradient-text mb-6">Create Your Sublease Listing</h2>
+                <p class="text-xl text-gray-600">Upload your contract or fill out the details manually. Our AI will handle the rest.</p>
+            </div>
+            
+            <div class="modern-container p-8">
+            <!-- Feature Tabs Navigation -->
+            <div class="mb-8">
+                <div class="border-b border-gray-200">
+                    <nav class="flex space-x-8" aria-label="Tabs">
+                        <button onclick="switchTab('documents')" id="tab-documents" class="feature-tab active border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600">
+                            📄 Smart Documents
+                        </button>
+                        <button onclick="switchTab('financial')" id="tab-financial" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+                            💰 Financial Tools
+                        </button>
+                        <button onclick="switchTab('handover')" id="tab-handover" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+                            🤝 Handover & Coordination
+                        </button>
+                        <button onclick="switchTab('matching')" id="tab-matching" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+                            👥 Tenant Matching
+                        </button>
+                        <button onclick="switchTab('timeline')" id="tab-timeline" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+                            📅 Timeline & Duration
+                        </button>
+                        <button onclick="switchTab('transfer')" id="tab-transfer" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+                            🔄 Transfer My Lease
+                        </button>
+                        <button onclick="switchTab('seeking')" id="tab-seeking" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+                            🔍 Find a Sublease
+                        </button>
+                    </nav>
+                </div>
+            </div>
+
+            <form id="subleaseForm" class="space-y-8">
+                <!-- Smart Documents Section -->
+                <div id="section-documents" class="feature-section">
+                    <!-- Contract Detail Extractor -->
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border-2 border-dashed border-blue-300 mb-6">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">🤖 AI Contract Detail Extractor</h3>
+                            <p class="text-gray-600 mb-4">Upload your lease contract and let our AI extract all the property details automatically</p>
+                            <label for="contractFile" class="cursor-pointer modern-button inline-block">
+                                📄 Upload Contract
+                            </label>
+                            <input type="file" id="contractFile" name="contractFile" class="hidden" accept="image/*,application/pdf,.pdf" aria-describedby="contractHelp">
+                            <p id="contractHelp" class="text-sm text-gray-500 mt-3">Supports PDF, JPEG, and PNG files</p>
+                            <button type="button" id="extractButton" class="mt-4 bg-gradient-to-r from-green-500 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-teal-700 transition font-semibold hidden">✨ Extract Details</button>
+                        </div>
+                    </div>
+
+                    <!-- Lease Compatibility Checker -->
+                    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border-2 border-dashed border-yellow-300 mb-6">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">🔍 Smart Lease Compatibility Checker</h3>
+                            <p class="text-gray-600 mb-4">Check if your lease allows subletting and get legal guidance</p>
+                            <button type="button" id="compatibilityCheckBtn" class="modern-button bg-gradient-to-r from-yellow-500 to-orange-600">
+                                🔍 Check Subletting Rights
+                            </button>
+                        </div>
+                        
+                        <!-- Compatibility Results -->
+                        <div id="compatibilityResults" class="hidden mt-6 p-4 bg-white rounded-lg border">
+                            <h4 class="font-semibold text-gray-800 mb-3">📋 Lease Compatibility Report</h4>
+                            <div id="compatibilityContent"></div>
+                        </div>
+                    </div>
+
+                    <!-- Legal Document Generator -->
+                    <div class="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-xl border border-green-200">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">📝 Legal Document Generator</h4>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <button type="button" onclick="generateDocument('sublease')" class="p-4 bg-white rounded-lg border border-green-200 hover:border-green-400 transition text-center">
+                                <div class="text-2xl mb-2">📋</div>
+                                <div class="font-medium">Sublease Agreement</div>
+                                <div class="text-sm text-gray-600">Legal sublease contract</div>
+                            </button>
+                            <button type="button" onclick="generateDocument('consent')" class="p-4 bg-white rounded-lg border border-green-200 hover:border-green-400 transition text-center">
+                                <div class="text-2xl mb-2">✍️</div>
+                                <div class="font-medium">Landlord Consent</div>
+                                <div class="text-sm text-gray-600">Permission form</div>
+                            </button>
+                            <button type="button" onclick="generateDocument('addendum')" class="p-4 bg-white rounded-lg border border-green-200 hover:border-green-400 transition text-center">
+                                <div class="text-2xl mb-2">📄</div>
+                                <div class="font-medium">Lease Addendum</div>
+                                <div class="text-sm text-gray-600">Additional terms</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Tools Section -->
+                <div id="section-financial" class="feature-section hidden">
+                    <!-- Sublease Financial Calculator -->
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">💰 Sublease Financial Calculator</h4>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Original Monthly Rent</label>
+                                <input type="number" id="originalRent" class="modern-input w-full" placeholder="1500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Remaining Lease Months</label>
+                                <input type="number" id="remainingMonths" class="modern-input w-full" placeholder="8">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Security Deposit (Original)</label>
+                                <input type="number" id="originalDeposit" class="modern-input w-full" placeholder="1500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Utilities (Monthly)</label>
+                                <input type="number" id="monthlyUtilities" class="modern-input w-full" placeholder="150">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 p-4 bg-white rounded-lg">
+                            <h5 class="font-medium text-gray-800 mb-3">📊 Financial Breakdown</h5>
+                            <div id="financialBreakdown" class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span>Recommended Sublease Rent:</span>
+                                    <span id="recommendedRent" class="font-semibold text-green-600">$0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Security Deposit to Collect:</span>
+                                    <span id="recommendedDeposit" class="font-semibold">$0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Total Lease Value Remaining:</span>
+                                    <span id="totalLeaseValue" class="font-semibold">$0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Your Monthly Savings:</span>
+                                    <span id="monthlySavings" class="font-semibold text-blue-600">$0</span>
+                                </div>
+                            </div>
+                            <button type="button" onclick="applyCalculatedRent()" class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                                Apply Calculated Rent
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Utilities Split Calculator -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">⚡ Utilities Split Calculator</h4>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Electricity (Monthly)</label>
+                                <input type="number" id="electricityCost" class="modern-input w-full" placeholder="80">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Gas/Heating (Monthly)</label>
+                                <input type="number" id="gasCost" class="modern-input w-full" placeholder="45">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Internet (Monthly)</label>
+                                <input type="number" id="internetCost" class="modern-input w-full" placeholder="60">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Water (Monthly)</label>
+                                <input type="number" id="waterCost" class="modern-input w-full" placeholder="25">
+                            </div>
+                        </div>
+                        <div class="mt-4 p-4 bg-white rounded-lg">
+                            <div class="flex justify-between text-lg font-semibold">
+                                <span>Total Monthly Utilities:</span>
+                                <span id="totalUtilities" class="text-blue-600">$0</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-2">Include this amount in your sublease rent or charge separately</p>
+                        </div>
+                    </div>
+
+                    <!-- Pro-rated Rent Calculator -->
+                    <div class="bg-purple-50 border border-purple-200 rounded-xl p-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">📅 Pro-rated Rent Calculator</h4>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rent</label>
+                                <input type="number" id="proratedMonthlyRent" class="modern-input w-full" placeholder="1200">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Move-in Date</label>
+                                <input type="date" id="proratedMoveIn" class="modern-input w-full">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Days in Month</label>
+                                <input type="number" id="daysInMonth" class="modern-input w-full" placeholder="30">
+                            </div>
+                        </div>
+                        <div class="mt-4 p-4 bg-white rounded-lg">
+                            <div class="flex justify-between">
+                                <span>Pro-rated Amount:</span>
+                                <span id="proratedAmount" class="font-semibold text-purple-600">$0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Handover & Coordination Section -->
+                <div id="section-handover" class="feature-section hidden">
+                    <!-- Handover Assistant -->
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">🤝 Sublease Handover Assistant</h4>
+                        <p class="text-gray-600 mb-4">We'll help coordinate the transfer process between you and your subletter</p>
+                        
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="flex items-center mb-2">
+                                    <input type="checkbox" name="handoverItems" value="keys" class="mr-3 text-green-600">
+                                    <span class="text-sm">🔑 Keys & Access Cards</span>
+                                </label>
+                                <label class="flex items-center mb-2">
+                                    <input type="checkbox" name="handoverItems" value="utilities" class="mr-3 text-green-600">
+                                    <span class="text-sm">⚡ Utility Account Transfer</span>
+                                </label>
+                                <label class="flex items-center mb-2">
+                                    <input type="checkbox" name="handoverItems" value="internet" class="mr-3 text-green-600">
+                                    <span class="text-sm">📶 WiFi & Internet Setup</span>
+                                </label>
+                                <label class="flex items-center mb-2">
+                                    <input type="checkbox" name="handoverItems" value="mailbox" class="mr-3 text-green-600">
+                                    <span class="text-sm">📬 Mailbox Access</span>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="flex items-center mb-2">
+                                    <input type="checkbox" name="handoverItems" value="inventory" class="mr-3 text-green-600">
+                                    <span class="text-sm">📋 Inventory Documentation</span>
+                                </label>
+                                <label class="flex items-center mb-2">
+                                    <input type="checkbox" name="handoverItems" value="deposit" class="mr-3 text-green-600">
+                                    <span class="text-sm">💰 Security Deposit Transfer</span>
+                                </label>
+                                <label class="flex items-center mb-2">
+                                    <input type="checkbox" name="handoverItems" value="cleaning" class="mr-3 text-green-600">
+                                    <span class="text-sm">🧹 Cleaning Requirements</span>
+                                </label>
+                                <label class="flex items-center mb-2">
+                                    <input type="checkbox" name="handoverItems" value="emergency" class="mr-3 text-green-600">
+                                    <span class="text-sm">🚨 Emergency Contacts</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-white rounded-lg">
+                            <p class="text-sm text-gray-600 mb-2">📅 We'll create a custom handover timeline and checklist for your selected items.</p>
+                            <p class="text-sm text-green-600 font-medium">✅ Professional handover reduces disputes and ensures smooth transitions</p>
+                        </div>
+                    </div>
+
+                    <!-- Inventory Documentation -->
+                    <div class="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">📋 Inventory Documentation</h4>
+                        <p class="text-gray-600 mb-4">Document the condition of furniture and appliances before handover</p>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <h5 class="font-medium mb-2">Items Included in Sublease:</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="inventoryItems" value="furniture" class="mr-3">
+                                        <span class="text-sm">🛋️ Living Room Furniture</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="inventoryItems" value="bedroom" class="mr-3">
+                                        <span class="text-sm">🛏️ Bedroom Furniture</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="inventoryItems" value="kitchen" class="mr-3">
+                                        <span class="text-sm">🍳 Kitchen Appliances</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="inventoryItems" value="electronics" class="mr-3">
+                                        <span class="text-sm">📺 Electronics</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg">
+                                <h5 class="font-medium mb-2">📸 Photo Documentation</h5>
+                                <p class="text-sm text-gray-600 mb-3">Take photos of each room and item condition</p>
+                                <button type="button" class="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition">
+                                    📷 Start Photo Documentation
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Contact Hub -->
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">🚨 Emergency Contact Hub</h4>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Landlord/Property Manager</label>
+                                <input type="tel" id="landlordContact" class="modern-input w-full" placeholder="(555) 123-4567">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Building Maintenance</label>
+                                <input type="tel" id="maintenanceContact" class="modern-input w-full" placeholder="(555) 123-4567">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Utility Companies</label>
+                                <input type="text" id="utilityContacts" class="modern-input w-full" placeholder="Electric: (555) 123-4567">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Your Emergency Contact</label>
+                                <input type="tel" id="yourEmergencyContact" class="modern-input w-full" placeholder="(555) 123-4567">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tenant Matching Section -->
+                <div id="section-matching" class="feature-section hidden">
+                    <!-- Roommate Compatibility Matcher -->
+                    <div class="bg-pink-50 border border-pink-200 rounded-xl p-6 mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">👥 Roommate Compatibility Matcher</h4>
+                        <p class="text-gray-600 mb-4">Help potential subletters understand if they're a good fit</p>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h5 class="font-medium mb-3">🏠 Living Style Preferences</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="lifestyle" value="quiet" class="mr-3">
+                                        <span class="text-sm">🤫 Quiet & Peaceful</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="lifestyle" value="social" class="mr-3">
+                                        <span class="text-sm">🎉 Social & Outgoing</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="lifestyle" value="balanced" class="mr-3">
+                                        <span class="text-sm">⚖️ Balanced Mix</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 class="font-medium mb-3">⏰ Schedule Preferences</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="schedule" value="morning" class="mr-3">
+                                        <span class="text-sm">🌅 Early Bird (6-8 AM)</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="schedule" value="regular" class="mr-3">
+                                        <span class="text-sm">☀️ Regular Hours (9-5)</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="schedule" value="night" class="mr-3">
+                                        <span class="text-sm">🌙 Night Owl (Late hours)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h5 class="font-medium mb-3">🧹 Cleanliness Level</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="cleanliness" value="very-clean" class="mr-3">
+                                        <span class="text-sm">✨ Very Clean & Organized</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="cleanliness" value="moderate" class="mr-3">
+                                        <span class="text-sm">🏠 Moderately Tidy</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="cleanliness" value="relaxed" class="mr-3">
+                                        <span class="text-sm">😌 Relaxed About Mess</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 class="font-medium mb-3">🎵 Noise Tolerance</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="noise" value="quiet" class="mr-3">
+                                        <span class="text-sm">🔇 Need Quiet Environment</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="noise" value="moderate" class="mr-3">
+                                        <span class="text-sm">🔉 Moderate Noise OK</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="noise" value="flexible" class="mr-3">
+                                        <span class="text-sm">🔊 Very Flexible</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tenant Screening Requirements -->
+                    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">🔍 Tenant Screening Requirements</h4>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h5 class="font-medium mb-3">📋 Required Documents</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="requirements" value="id" class="mr-3">
+                                        <span class="text-sm">🆔 Government ID</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="requirements" value="income" class="mr-3">
+                                        <span class="text-sm">💰 Income Verification</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="requirements" value="references" class="mr-3">
+                                        <span class="text-sm">📞 References (2-3)</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="requirements" value="background" class="mr-3">
+                                        <span class="text-sm">🔍 Background Check</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 class="font-medium mb-3">💼 Income Requirements</h5>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Minimum Monthly Income</label>
+                                        <input type="number" id="minIncome" class="modern-input w-full" placeholder="3600">
+                                        <p class="text-xs text-gray-500 mt-1">Usually 3x the rent amount</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Credit Score Minimum</label>
+                                        <input type="number" id="minCreditScore" class="modern-input w-full" placeholder="650">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline & Duration Section -->
+                <div id="section-timeline" class="feature-section hidden">
+                    <!-- Academic Calendar Integration -->
+                    <div class="bg-teal-50 border border-teal-200 rounded-xl p-6 mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">🎓 Academic Calendar Integration</h4>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h5 class="font-medium mb-3">📚 Academic Terms</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="academicTerms" value="fall" class="mr-3">
+                                        <span class="text-sm">🍂 Fall Semester (Sep-Dec)</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="academicTerms" value="winter" class="mr-3">
+                                        <span class="text-sm">❄️ Winter Term (Jan-Apr)</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="academicTerms" value="summer" class="mr-3">
+                                        <span class="text-sm">☀️ Summer Term (May-Aug)</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="academicTerms" value="coop" class="mr-3">
+                                        <span class="text-sm">💼 Co-op Term (4-8 months)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 class="font-medium mb-3">📅 Flexible Dates</h5>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Available From</label>
+                                        <input type="date" id="flexibleStartDate" class="modern-input w-full">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Available Until</label>
+                                        <input type="date" id="flexibleEndDate" class="modern-input w-full">
+                                    </div>
+                                    <div>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" name="flexibleDates" value="negotiable" class="mr-3">
+                                            <span class="text-sm">📝 Dates Negotiable</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Duration Options -->
+                    <div class="bg-cyan-50 border border-cyan-200 rounded-xl p-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">⏱️ Sublease Duration Options</h4>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div>
+                                <h5 class="font-medium mb-3">📋 Minimum Stay</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="minStay" value="1month" class="mr-3">
+                                        <span class="text-sm">1 Month</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="minStay" value="3months" class="mr-3">
+                                        <span class="text-sm">3 Months</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="minStay" value="6months" class="mr-3">
+                                        <span class="text-sm">6 Months</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 class="font-medium mb-3">🎯 Ideal Duration</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="idealDuration" value="summer" class="mr-3">
+                                        <span class="text-sm">Summer (4 months)</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="idealDuration" value="semester" class="mr-3">
+                                        <span class="text-sm">Semester (4-5 months)</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="idealDuration" value="year" class="mr-3">
+                                        <span class="text-sm">Academic Year (8-10 months)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 class="font-medium mb-3">🚪 Early Termination</h5>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="earlyTermination" value="allowed" class="mr-3">
+                                        <span class="text-sm">✅ Allowed with Notice</span>
+                                    </label>
+                                    <div class="ml-6">
+                                        <label class="block text-sm text-gray-600 mb-1">Notice Period (days)</label>
+                                        <input type="number" id="noticePeriod" class="modern-input w-full" placeholder="30">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transfer My Lease Section -->
+                <div id="section-transfer" class="feature-section hidden">
+                    <div class="bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-xl border-2 border-dashed border-red-300 mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">🔄 Transfer Your Lease</h4>
+                        <p class="text-gray-600 mb-4">Need to get out of your lease? Find someone to take over your sublease with our matching system.</p>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="transferAddress" class="block text-sm font-medium text-gray-700 mb-2">📍 Property Address</label>
+                                <input type="text" id="transferAddress" class="modern-input w-full" placeholder="123 Main St, City, State">
+                            </div>
+                            <div>
+                                <label for="transferRent" class="block text-sm font-medium text-gray-700 mb-2">💰 Monthly Rent</label>
+                                <input type="number" id="transferRent" class="modern-input w-full" placeholder="1200">
+                            </div>
+                            <div>
+                                <label for="transferAvailableFrom" class="block text-sm font-medium text-gray-700 mb-2">📅 Available From</label>
+                                <input type="date" id="transferAvailableFrom" class="modern-input w-full">
+                            </div>
+                            <div>
+                                <label for="transferAvailableUntil" class="block text-sm font-medium text-gray-700 mb-2">📅 Lease Ends</label>
+                                <input type="date" id="transferAvailableUntil" class="modern-input w-full">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label for="transferReason" class="block text-sm font-medium text-gray-700 mb-2">📝 Reason for Transfer</label>
+                            <select id="transferReason" class="modern-input w-full">
+                                <option value="">Select a reason...</option>
+                                <option value="job_relocation">Job Relocation</option>
+                                <option value="financial_hardship">Financial Hardship</option>
+                                <option value="family_reasons">Family Reasons</option>
+                                <option value="graduation">Graduation/School Change</option>
+                                <option value="relationship_change">Relationship Change</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">🏠 Property Type</label>
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="radio" name="transferPropertyType" value="apartment" class="mr-2">
+                                    <span class="text-sm">🏢 Apartment</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="radio" name="transferPropertyType" value="house" class="mr-2">
+                                    <span class="text-sm">🏠 House</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="radio" name="transferPropertyType" value="room" class="mr-2">
+                                    <span class="text-sm">🚪 Room</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="radio" name="transferPropertyType" value="studio" class="mr-2">
+                                    <span class="text-sm">🏠 Studio</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="radio" name="transferPropertyType" value="condo" class="mr-2">
+                                    <span class="text-sm">🏢 Condo</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-3 gap-6 mt-6">
+                            <div>
+                                <label for="transferBedrooms" class="block text-sm font-medium text-gray-700 mb-2">🛏️ Bedrooms</label>
+                                <input type="number" id="transferBedrooms" class="modern-input w-full" min="0" max="10">
+                            </div>
+                            <div>
+                                <label for="transferBathrooms" class="block text-sm font-medium text-gray-700 mb-2">🚿 Bathrooms</label>
+                                <input type="number" id="transferBathrooms" class="modern-input w-full" min="0" max="10" step="0.5">
+                            </div>
+                            <div>
+                                <label for="transferUrgency" class="block text-sm font-medium text-gray-700 mb-2">⚡ Urgency Level</label>
+                                <select id="transferUrgency" class="modern-input w-full">
+                                    <option value="1">1 - No Rush</option>
+                                    <option value="2">2 - Flexible</option>
+                                    <option value="3" selected>3 - Moderate</option>
+                                    <option value="4">4 - Urgent</option>
+                                    <option value="5">5 - Critical</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label for="transferDescription" class="block text-sm font-medium text-gray-700 mb-2">📝 Property Description</label>
+                            <textarea id="transferDescription" rows="4" class="modern-input w-full" placeholder="Describe your space, neighborhood, and what makes it special..."></textarea>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-4">✨ Amenities & Features</label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="wifi" class="mr-3 text-red-600">
+                                    <span class="text-sm">📶 WiFi</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="parking" class="mr-3 text-red-600">
+                                    <span class="text-sm">🚗 Parking</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="furnished" class="mr-3 text-red-600">
+                                    <span class="text-sm">🛋️ Furnished</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="petFriendly" class="mr-3 text-red-600">
+                                    <span class="text-sm">🐕 Pet Friendly</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="laundry" class="mr-3 text-red-600">
+                                    <span class="text-sm">👕 Laundry</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="gym" class="mr-3 text-red-600">
+                                    <span class="text-sm">🏋️ Gym</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="ac" class="mr-3 text-red-600">
+                                    <span class="text-sm">❄️ A/C</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" name="transferAmenities" value="balcony" class="mr-3 text-red-600">
+                                    <span class="text-sm">🌿 Balcony</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 grid md:grid-cols-3 gap-6">
+                            <div>
+                                <label for="transferCleanliness" class="block text-sm font-medium text-gray-700 mb-2">🧹 Cleanliness Level</label>
+                                <select id="transferCleanliness" class="modern-input w-full">
+                                    <option value="1">1 - Very Relaxed</option>
+                                    <option value="2">2 - Relaxed</option>
+                                    <option value="3" selected>3 - Moderate</option>
+                                    <option value="4">4 - Clean</option>
+                                    <option value="5">5 - Very Clean</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="transferNoise" class="block text-sm font-medium text-gray-700 mb-2">🔊 Noise Tolerance</label>
+                                <select id="transferNoise" class="modern-input w-full">
+                                    <option value="1">1 - Very Quiet</option>
+                                    <option value="2">2 - Quiet</option>
+                                    <option value="3" selected>3 - Moderate</option>
+                                    <option value="4">4 - Social</option>
+                                    <option value="5">5 - Party Friendly</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="transferSchedule" class="block text-sm font-medium text-gray-700 mb-2">⏰ Schedule Type</label>
+                                <select id="transferSchedule" class="modern-input w-full">
+                                    <option value="early_bird">🌅 Early Bird</option>
+                                    <option value="regular" selected>🕐 Regular Hours</option>
+                                    <option value="night_owl">🦉 Night Owl</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button type="button" onclick="submitTransferRequest()" class="mt-6 w-full modern-button">
+                            🔄 List My Transfer Request
+                        </button>
+                        
+                        <button type="button" onclick="testSupabaseConnection()" class="mt-3 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                            🧪 Test Supabase Connection
+                        </button>
+                        
+                        <button type="button" onclick="debugDatabase()" class="mt-2 w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition">
+                            🔧 Debug Database Setup
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Find a Sublease Section -->
+                <div id="section-seeking" class="feature-section hidden">
+                    <div class="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-xl border-2 border-dashed border-green-300 mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">🔍 Find a Sublease</h4>
+                        <p class="text-gray-600 mb-4">Looking for a sublease? Tell us what you need and we'll match you with available transfers.</p>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="seekingCity" class="block text-sm font-medium text-gray-700 mb-2">🏙️ Preferred City</label>
+                                <input type="text" id="seekingCity" class="modern-input w-full" placeholder="Enter city name">
+                            </div>
+                            <div>
+                                <label for="seekingState" class="block text-sm font-medium text-gray-700 mb-2">📍 State/Province</label>
+                                <input type="text" id="seekingState" class="modern-input w-full" placeholder="Enter state or province">
+                            </div>
+                            <div>
+                                <label for="seekingMinBudget" class="block text-sm font-medium text-gray-700 mb-2">💰 Min Budget</label>
+                                <input type="number" id="seekingMinBudget" class="modern-input w-full" placeholder="800">
+                            </div>
+                            <div>
+                                <label for="seekingMaxBudget" class="block text-sm font-medium text-gray-700 mb-2">💰 Max Budget</label>
+                                <input type="number" id="seekingMaxBudget" class="modern-input w-full" placeholder="1500">
+                            </div>
+                            <div>
+                                <label for="seekingMoveIn" class="block text-sm font-medium text-gray-700 mb-2">📅 Preferred Move-in</label>
+                                <input type="date" id="seekingMoveIn" class="modern-input w-full">
+                            </div>
+                            <div>
+                                <label for="seekingMoveOut" class="block text-sm font-medium text-gray-700 mb-2">📅 Preferred Move-out</label>
+                                <input type="date" id="seekingMoveOut" class="modern-input w-full">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">🏠 Property Type Preference</label>
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingPropertyType" value="apartment" class="mr-2">
+                                    <span class="text-sm">🏢 Apartment</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingPropertyType" value="house" class="mr-2">
+                                    <span class="text-sm">🏠 House</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingPropertyType" value="room" class="mr-2">
+                                    <span class="text-sm">🚪 Room</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingPropertyType" value="studio" class="mr-2">
+                                    <span class="text-sm">🏠 Studio</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingPropertyType" value="condo" class="mr-2">
+                                    <span class="text-sm">🏢 Condo</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-3 gap-6 mt-6">
+                            <div>
+                                <label for="seekingBedrooms" class="block text-sm font-medium text-gray-700 mb-2">🛏️ Bedrooms</label>
+                                <select id="seekingBedrooms" class="modern-input w-full">
+                                    <option value="">Any</option>
+                                    <option value="0">Studio</option>
+                                    <option value="1">1 Bedroom</option>
+                                    <option value="2">2 Bedrooms</option>
+                                    <option value="3">3 Bedrooms</option>
+                                    <option value="4">4+ Bedrooms</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="seekingBathrooms" class="block text-sm font-medium text-gray-700 mb-2">🚿 Bathrooms</label>
+                                <select id="seekingBathrooms" class="modern-input w-full">
+                                    <option value="">Any</option>
+                                    <option value="1">1 Bathroom</option>
+                                    <option value="1.5">1.5 Bathrooms</option>
+                                    <option value="2">2 Bathrooms</option>
+                                    <option value="2.5">2.5+ Bathrooms</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="seekingDuration" class="block text-sm font-medium text-gray-700 mb-2">📅 Duration Needed</label>
+                                <select id="seekingDuration" class="modern-input w-full">
+                                    <option value="1">1-2 Months</option>
+                                    <option value="3">3-4 Months</option>
+                                    <option value="6" selected>6 Months</option>
+                                    <option value="12">12+ Months</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label for="seekingDescription" class="block text-sm font-medium text-gray-700 mb-2">📝 What You're Looking For</label>
+                            <textarea id="seekingDescription" rows="4" class="modern-input w-full" placeholder="Describe your ideal living situation, preferences, and any specific requirements..."></textarea>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-4">✨ Must-Have Amenities</label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="wifi" class="mr-3 text-green-600">
+                                    <span class="text-sm">📶 WiFi</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="parking" class="mr-3 text-green-600">
+                                    <span class="text-sm">🚗 Parking</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="furnished" class="mr-3 text-green-600">
+                                    <span class="text-sm">🛋️ Furnished</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="petFriendly" class="mr-3 text-green-600">
+                                    <span class="text-sm">🐕 Pet Friendly</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="laundry" class="mr-3 text-green-600">
+                                    <span class="text-sm">👕 Laundry</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="gym" class="mr-3 text-green-600">
+                                    <span class="text-sm">🏋️ Gym</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="ac" class="mr-3 text-green-600">
+                                    <span class="text-sm">❄️ A/C</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
+                                    <input type="checkbox" name="seekingAmenities" value="balcony" class="mr-3 text-green-600">
+                                    <span class="text-sm">🌿 Balcony</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 grid md:grid-cols-3 gap-6">
+                            <div>
+                                <label for="seekingCleanliness" class="block text-sm font-medium text-gray-700 mb-2">🧹 Cleanliness Level</label>
+                                <select id="seekingCleanliness" class="modern-input w-full">
+                                    <option value="1">1 - Very Relaxed</option>
+                                    <option value="2">2 - Relaxed</option>
+                                    <option value="3" selected>3 - Moderate</option>
+                                    <option value="4">4 - Clean</option>
+                                    <option value="5">5 - Very Clean</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="seekingNoise" class="block text-sm font-medium text-gray-700 mb-2">🔊 Noise Tolerance</label>
+                                <select id="seekingNoise" class="modern-input w-full">
+                                    <option value="1">1 - Very Quiet</option>
+                                    <option value="2">2 - Quiet</option>
+                                    <option value="3" selected>3 - Moderate</option>
+                                    <option value="4">4 - Social</option>
+                                    <option value="5">5 - Party Friendly</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="seekingSchedule" class="block text-sm font-medium text-gray-700 mb-2">⏰ Schedule Type</label>
+                                <select id="seekingSchedule" class="modern-input w-full">
+                                    <option value="early_bird">🌅 Early Bird</option>
+                                    <option value="regular" selected>🕐 Regular Hours</option>
+                                    <option value="night_owl">🦉 Night Owl</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="seekingFlexibleDates" class="mr-3 text-green-600">
+                                <span class="text-sm font-medium">📅 I'm flexible with move-in/out dates</span>
+                            </label>
+                        </div>
+                        
+                        <button type="button" onclick="submitSeekingRequest()" class="mt-6 w-full modern-button" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                            🔍 Create My Seeking Request
+                        </button>
+                        
+                        <button type="button" onclick="testSupabaseConnection()" class="mt-3 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                            🧪 Test Supabase Connection
+                        </button>
+                        
+                        <button type="button" onclick="debugDatabase()" class="mt-2 w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition">
+                            🔧 Debug Database Setup
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="text-center py-4">
+                    <span class="bg-white px-4 py-2 rounded-full text-gray-500 border">OR</span>
+                </div>
+                <!-- Manual Entry Fields -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="address" class="block text-sm font-medium text-gray-700 mb-2">📍 Property Address</label>
+                        <input type="text" id="address" name="address" class="modern-input w-full" placeholder="123 Main St, Toronto, ON" required aria-required="true">
+                    </div>
+                    <div>
+                        <label for="rent" class="block text-sm font-medium text-gray-700 mb-2">💰 Monthly Rent</label>
+                        <div class="relative">
+                            <input type="number" id="rent" name="rent" class="modern-input w-full" placeholder="1200" required aria-required="true">
+                            <button type="button" id="calculateRentBtn" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                🧮 Calculate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sublease Financial Calculator -->
+                <div id="financialCalculator" class="hidden bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4">💰 Sublease Financial Calculator</h4>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Original Monthly Rent</label>
+                            <input type="number" id="originalRent" class="modern-input w-full" placeholder="1500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Remaining Lease Months</label>
+                            <input type="number" id="remainingMonths" class="modern-input w-full" placeholder="8">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Security Deposit (Original)</label>
+                            <input type="number" id="originalDeposit" class="modern-input w-full" placeholder="1500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Utilities (Monthly)</label>
+                            <input type="number" id="monthlyUtilities" class="modern-input w-full" placeholder="150">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-white rounded-lg">
+                        <h5 class="font-medium text-gray-800 mb-3">📊 Financial Breakdown</h5>
+                        <div id="financialBreakdown" class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span>Recommended Sublease Rent:</span>
+                                <span id="recommendedRent" class="font-semibold text-green-600">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Security Deposit to Collect:</span>
+                                <span id="recommendedDeposit" class="font-semibold">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Total Lease Value Remaining:</span>
+                                <span id="totalLeaseValue" class="font-semibold">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Your Monthly Savings:</span>
+                                <span id="monthlySavings" class="font-semibold text-blue-600">$0</span>
+                            </div>
+                        </div>
+                        <button type="button" onclick="applyCalculatedRent()" class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                            Apply Calculated Rent
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="startDate" class="block text-sm font-medium text-gray-700 mb-2">📅 Available From</label>
+                        <input type="date" id="startDate" name="startDate" class="modern-input w-full" required aria-required="true">
+                    </div>
+                    <div>
+                        <label for="endDate" class="block text-sm font-medium text-gray-700 mb-2">📅 Available Until</label>
+                        <input type="date" id="endDate" name="endDate" class="modern-input w-full" required aria-required="true">
+                    </div>
+                </div>
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">📝 Property Description</label>
+                    <textarea id="description" name="description" rows="4" class="modern-input w-full" placeholder="Describe your space, neighborhood, and what makes it special..." required aria-required="true"></textarea>
+                    <p class="text-sm text-gray-500 mt-2">💡 Tip: Our AI can help optimize your description for better visibility</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-4">✨ Amenities & Features</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="wifi" class="mr-3 text-blue-600">
+                            <span class="text-sm">📶 Wi-Fi</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="parking" class="mr-3 text-blue-600">
+                            <span class="text-sm">🚗 Parking</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="furnished" class="mr-3 text-blue-600">
+                            <span class="text-sm">🛋️ Furnished</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="pets" class="mr-3 text-blue-600">
+                            <span class="text-sm">🐕 Pet-Friendly</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="laundry" class="mr-3 text-blue-600">
+                            <span class="text-sm">🧺 Laundry</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="gym" class="mr-3 text-blue-600">
+                            <span class="text-sm">💪 Gym</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="ac" class="mr-3 text-blue-600">
+                            <span class="text-sm">❄️ A/C</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition">
+                            <input type="checkbox" name="amenities" value="balcony" class="mr-3 text-blue-600">
+                            <span class="text-sm">🌅 Balcony</span>
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label for="images" class="block text-sm font-medium text-gray-700 mb-4">📸 Property Photos</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition">
+                        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </div>
+                        <label for="images" class="cursor-pointer">
+                            <span class="text-blue-600 font-semibold hover:text-blue-700">Upload photos</span>
+                            <span class="text-gray-600"> or drag and drop</span>
+                        </label>
+                        <input type="file" id="images" name="images" multiple class="hidden" accept="image/*" aria-describedby="imageHelp">
+                        <p id="imageHelp" class="text-sm text-gray-500 mt-2">PNG, JPG up to 10MB each (max 5 photos)</p>
+                    </div>
+                    <div id="imagePreview" class="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4"></div>
+                </div>
+                <!-- Handover Assistant -->
+                <div class="bg-green-50 border border-green-200 rounded-xl p-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4">🤝 Sublease Handover Assistant</h4>
+                    <p class="text-gray-600 mb-4">We'll help coordinate the transfer process between you and your subletter</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="keys" class="mr-3 text-green-600">
+                                <span class="text-sm">🔑 Keys & Access Cards</span>
+                            </label>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="utilities" class="mr-3 text-green-600">
+                                <span class="text-sm">⚡ Utility Account Transfer</span>
+                            </label>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="internet" class="mr-3 text-green-600">
+                                <span class="text-sm">📶 WiFi & Internet Setup</span>
+                            </label>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="mailbox" class="mr-3 text-green-600">
+                                <span class="text-sm">📬 Mailbox Access</span>
+                            </label>
+                        </div>
+                        <div>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="inventory" class="mr-3 text-green-600">
+                                <span class="text-sm">📋 Inventory Documentation</span>
+                            </label>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="deposit" class="mr-3 text-green-600">
+                                <span class="text-sm">💰 Security Deposit Transfer</span>
+                            </label>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="cleaning" class="mr-3 text-green-600">
+                                <span class="text-sm">🧹 Cleaning Requirements</span>
+                            </label>
+                            <label class="flex items-center mb-2">
+                                <input type="checkbox" name="handoverItems" value="emergency" class="mr-3 text-green-600">
+                                <span class="text-sm">🚨 Emergency Contacts</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-white rounded-lg">
+                        <p class="text-sm text-gray-600 mb-2">📅 We'll create a custom handover timeline and checklist for your selected items.</p>
+                        <p class="text-sm text-green-600 font-medium">✅ Professional handover reduces disputes and ensures smooth transitions</p>
+                    </div>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
+                    <button type="button" onclick="showPreview()" class="flex-1 bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 transition font-semibold">👁️ Preview Listing</button>
+                    <button type="submit" class="flex-1 modern-button">✨ Create Sublease Listing</button>
+                </div>
+            </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section class="py-20 bg-white">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-6">
+                    Why Choose <span class="gradient-text">RoomFinderAI</span> for Subletting?
+                </h2>
+                <p class="text-xl text-gray-600">Join thousands of successful subletters who trust our platform</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Fast Listing</h3>
+                    <p class="text-gray-600">Create listings in under 5 minutes with AI assistance</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Verified Tenants</h3>
+                    <p class="text-gray-600">All tenants are background-checked for your peace of mind</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Smart Pricing</h3>
+                    <p class="text-gray-600">AI-powered pricing recommendations to maximize your income</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">24/7 Support</h3>
+                    <p class="text-gray-600">Round-the-clock assistance for all your subletting needs</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Your Listings Section -->
+    <section id="allSubleases" class="py-20 bg-gray-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold gradient-text mb-4">Your Sublease Listings</h2>
+                <p class="text-lg text-gray-600">Manage and track your active sublease listings</p>
+            </div>
+            <div id="subleaseList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+        </div>
+    </section>
+
+        <!-- Preview Modal -->
+        <div id="previewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" role="dialog" aria-labelledby="previewModalTitle" aria-modal="true">
+            <div class="bg-white p-6 rounded-lg max-w-lg w-full">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Listing Preview</h3>
+                <div id="previewContent" class="space-y-4"></div>
+                <button onclick="closeModal()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Close</button>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+        </div>
+
+        <!-- Extraction Results Modal -->
+        <div id="extractionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" role="dialog" aria-modal="true">
+            <div class="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Extraction Results</h3>
+                <div id="extractionContent" class="space-y-4"></div>
+                <div class="mt-6 flex space-x-4">
+                    <button onclick="confirmExtraction()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-semibold">Use Extracted Data</button>
+                    <button onclick="closeExtractionModal()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition font-semibold">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
+            <div class="mt-4 flex justify-center space-x-4">
+                <a href="/index" class="hover:text-blue-400">Home</a>
+                <a href="/index#about" class="hover:text-blue-400">About</a>
+                <a href="/sublease" class="hover:text-blue-400">Sublease</a>
+                <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
+                <a href="/listings" class="hover:text-blue-400">Listings</a>
+                <a href="/index#contact" class="hover:text-blue-400">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- AI Negotiator Button -->
+    <div class="fixed bottom-4 right-4 z-50">
+        <button id="aiButton" aria-label="Navigate to AI Negotiator page" onclick="window.location.href='/ai-negotiator'" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full p-4 shadow-lg hover:from-blue-600 hover:to-purple-700 transition flex items-center justify-center w-16 h-16">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        let extractedContractData = null;
+
+        // PDF.js configuration
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        // Extract text from PDF
+        async function extractTextFromPDF(file, loadingMessage) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+                let fullText = '';
+                
+                loadingMessage.textContent = `Processing PDF: 0/${pdf.numPages} pages`;
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + '\n\n';
+                    
+                    loadingMessage.textContent = `Processing PDF: ${i}/${pdf.numPages} pages`;
+                }
+                
+                return fullText.trim();
+            } catch (error) {
+                console.error('PDF extraction error:', error);
+                throw new Error('Failed to extract text from PDF');
+            }
+        }
+
+        // Update authentication section and sublease form
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const profileImages = [
+                    'https://via.placeholder.com/40/FF6B6B',
+                    'https://via.placeholder.com/40/4ECDC4',
+                    'https://via.placeholder.com/40/FFE66D',
+                    'https://via.placeholder.com/40/6B7280',
+                    'https://via.placeholder.com/40/FF9F1C'
+                ];
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const authSection = document.getElementById('authSection');
+                const subleaseSection = document.getElementById('subleaseSection');
+
+                if (currentUser) {
+                    if (!currentUser.profileImage) {
+                        currentUser.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
+                        let users = JSON.parse(localStorage.getItem('users')) || [];
+                        users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                        localStorage.setItem('users', JSON.stringify(users));
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    }
+                    authSection.innerHTML = `
+                        <a href="/profile" aria-label="View user profile">
+                            <img id="profileLogo" src="${currentUser.profileImage}" alt="User's profile image" class="w-10 h-10 rounded-full profile-logo">
+                        </a>
+                    `;
+                } else {
+                    subleaseSection.innerHTML = `
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Sublease Your Space</h2>
+                        <p class="text-lg text-gray-600 mb-6 text-center">Looking to sublease your room or apartment? Log in to create your listing!</p>
+                        <div class="flex justify-center">
+                            <a href="/login" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Log In to Create Listing</a>
+                        </div>
+                    `;
+                }
+
+                // Check for pre-filled listing data from index page
+                const prefilledData = localStorage.getItem('prefilledListingData');
+                if (prefilledData) {
+                    try {
+                        const data = JSON.parse(prefilledData);
+                        
+                        // Pre-fill form fields
+                        setTimeout(() => {
+                            if (data.location && document.getElementById('address')) {
+                                document.getElementById('address').value = data.location;
+                            }
+                            if (data.price && document.getElementById('rent')) {
+                                document.getElementById('rent').value = data.price;
+                            }
+                            if (data.bedrooms && document.getElementById('bedrooms')) {
+                                document.getElementById('bedrooms').value = data.bedrooms;
+                            }
+                            if (data.size && document.getElementById('size')) {
+                                document.getElementById('size').value = data.size;
+                            }
+                            if (data.amenities && document.getElementById('amenities')) {
+                                document.getElementById('amenities').value = data.amenities;
+                            }
+                            if (data.roomType && document.getElementById('title')) {
+                                document.getElementById('title').value = `${data.roomType} for Sublease`;
+                            }
+                        }, 500);
+                        
+                        // Clear the stored data after using it
+                        localStorage.removeItem('prefilledListingData');
+                    } catch (error) {
+                        console.error('Error parsing pre-filled data:', error);
+                        localStorage.removeItem('prefilledListingData');
+                    }
+                }
+
+                // Load and display sublease listings
+                loadSubleases();
+            } catch (error) {
+                console.error('Authentication error:', error);
+                const authSection = document.getElementById('authSection');
+                authSection.innerHTML = `
+                    <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
+                `;
+            }
+
+            // Image preview
+            document.getElementById('images')?.addEventListener('change', function(event) {
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = '';
+                const files = event.target.files;
+                if (files.length > 5) {
+                    alert('You can upload a maximum of 5 images.');
+                    event.target.value = '';
+                    return;
+                }
+                for (let file of files) {
+                    if (!file.type.startsWith('image/')) continue;
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.classList.add('w-24', 'h-24', 'object-cover', 'rounded-lg');
+                    preview.appendChild(img);
+                }
+            });
+
+            // Smart Lease Compatibility Checker
+            document.getElementById('calculateRentBtn')?.addEventListener('click', () => {
+                const calculator = document.getElementById('financialCalculator');
+                calculator.classList.toggle('hidden');
+                
+                // Auto-calculate when inputs change
+                const inputs = ['originalRent', 'remainingMonths', 'originalDeposit', 'monthlyUtilities'];
+                inputs.forEach(id => {
+                    document.getElementById(id)?.addEventListener('input', updateFinancialCalculation);
+                });
+            });
+
+            // Contract document extraction with compatibility check
+            document.getElementById('extractButton')?.addEventListener('click', async () => {
+                const contractFile = document.getElementById('contractFile').files[0];
+                if (!contractFile) {
+                    alert('Please upload a contract document.');
+                    return;
+                }
+                
+                const isPDF = contractFile.type === 'application/pdf' || contractFile.name.toLowerCase().endsWith('.pdf');
+                const isImage = contractFile.type.startsWith('image/');
+                
+                if (!isPDF && !isImage) {
+                    alert('Please upload a valid file (JPEG, PNG, or PDF).');
+                    return;
+                }
+                
+                const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB for PDFs
+                if (contractFile.size > MAX_FILE_SIZE) {
+                    alert('File is too large. Please upload a file smaller than 25MB.');
+                    return;
+                }
+                
+                showLoading();
+                try {
+                    const loadingElement = document.getElementById('loading');
+                    const loadingMessage = document.createElement('p');
+                    loadingMessage.className = 'text-white text-center mt-4';
+                    loadingMessage.textContent = isPDF ? 'Extracting text from PDF...' : 'Extracting text from image...';
+                    loadingElement.appendChild(loadingMessage);
+                    
+                    let text = '';
+                    
+                    if (isPDF) {
+                        text = await extractTextFromPDF(contractFile, loadingMessage);
+                    } else {
+                        const { data: { text: ocrText } } = await Tesseract.recognize(contractFile, 'eng', {
+                            logger: m => {
+                                console.log(m);
+                                if (m.status === 'recognizing text') {
+                                    loadingMessage.textContent = `Processing: ${(m.progress * 100).toFixed(1)}%`;
+                                }
+                            }
+                        });
+                        text = ocrText;
+                    }
+                    
+                    console.log('RAW EXTRACTED TEXT:', text);
+                    extractedContractData = extractContractDetails(text);
+                    
+                    // Check subletting compatibility
+                    const compatibilityData = checkSubletCompatibility(text);
+                    
+                    hideLoading();
+                    showCompatibilityResults(compatibilityData, extractedContractData);
+                    
+                } catch (error) {
+                    console.error('Extraction error:', error);
+                    hideLoading();
+                    alert('Failed to extract text from the document. Please ensure the file is valid and try again.');
+                } finally {
+                    const loadingElement = document.getElementById('loading');
+                    const loadingMessage = loadingElement.querySelector('p');
+                    if (loadingMessage) {
+                        loadingMessage.remove();
+                    }
+                }
+            });
+
+            // Form submission
+            document.getElementById('subleaseForm')?.addEventListener('submit', handleFormSubmit);
+        });
+
+        // Enhanced contract details extraction
+        function extractContractDetails(text) {
+            const extractedData = {
+                address: null,
+                rent: null,
+                startDate: null,
+                endDate: null,
+                description: null,
+                amenities: [],
+                landlord: null,
+                tenant: null,
+                securityDeposit: null,
+                rawMatches: {}
+            };
+
+            const cleanText = text.replace(/\s+/g, ' ').trim();
+            console.log('Cleaned OCR Text:', cleanText);
+
+            // Address patterns - Enhanced for Canadian and US addresses
+            const addressPatterns = [
+                // Canadian patterns
+                /(?:premises|property|located|address)[:\s]*(?:at\s+)?(?:\(address\)\s*)?(\d+[^.\n]*(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Circle|Cir|Court|Ct|Way|Place|Pl|Crescent)[^.\n]*(?:Toronto|Vancouver|Calgary|Montreal|Ottawa|Edmonton|Winnipeg|Quebec|Hamilton|London|ON|BC|AB|QC|MB|SK|NS|NB|NL|PE|NT|YT|NU)[^.\n]*)/i,
+                // US patterns
+                /(?:Property\s+)?Address[:\s]+([^.\n]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Circle|Cir|Court|Ct|Way|Place|Pl)[^.\n]*(?:Nevada|NV|California|CA|Texas|TX|Florida|FL|New York|NY)[^.\n]*\d{5})/i,
+                /(?:will\s+lease\s+the\s+following\s+property[:\s]+)?(\d+[^.\n]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr)[^.\n]*(?:Nevada|NV|California|CA|Texas|TX|Florida|FL|New York|NY)[^.\n]*\d{5})/i,
+                // Generic patterns
+                /(\d+\s+[A-Za-z0-9\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Crescent|Circle|Cir|Court|Ct|Way|Place|Pl)[^.\n]*)/i
+            ];
+
+            // Rent patterns - Enhanced for CAD and USD
+            const rentPatterns = [
+                /(?:monthly\s+rent|rent)[:\s]*(?:is\s+)?\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:CAD|USD)?/i,
+                /(?:agrees\s+to\s+pay|pay)[:\s]*(?:the\s+landlord\s+)?(?:the\s+amount\s+of\s+)?\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i,
+                /\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:per\s+month|monthly|\/month|CAD|USD)/i,
+                /amount\s+of\s+\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i
+            ];
+
+            // Date patterns - Enhanced for multiple formats
+            const startDatePatterns = [
+                // Standard formats
+                /(?:effective\s+date|start\s+date|lease\s+start|begin)[:\s]*(\d{1,2}\/\d{1,2}\/\d{4})/i,
+                /(?:effective\s+on|starting\s+on|beginning\s+on)[:\s]*(\d{1,2}\/\d{1,2}\/\d{4})/i,
+                // Written date formats
+                /(?:effective\s+date|start\s+date|lease\s+start|begin)[:\s]*([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+                /(?:effective\s+on|starting\s+on|beginning\s+on)[:\s]*([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+                /effective\s+date[^.\n]*?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+                /first\s+rent\s+payment\s+is\s+due\s+on\s+([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i
+            ];
+
+            const endDatePatterns = [
+                // Standard formats
+                /(?:end\s+date|lease\s+end|expire|termination)[:\s]*(\d{1,2}\/\d{1,2}\/\d{4})/i,
+                /(?:will\s+end\s+on|ending\s+on|expires?\s+on)[:\s]*(\d{1,2}\/\d{1,2}\/\d{4})/i,
+                // Written date formats
+                /(?:end\s+date|lease\s+end|expire|termination)[:\s]*([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+                /(?:will\s+end\s+on|ending\s+on|expires?\s+on)[:\s]*([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+                /will\s+end\s+on\s+([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i
+            ];
+
+            // Landlord and Tenant patterns
+            const landlordPatterns = [
+                /landlord[^.\n]*?([A-Z][a-z]+\s+[A-Z][a-z]+)/i,
+                /by\s+and\s+between[^,]*,\s*[^,]*,\s*[^,]*,\s*[^,]*and\s+([A-Z][a-z]+\s+[A-Z][a-z]+)/i
+            ];
+
+            const tenantPatterns = [
+                /renter[^.\n]*?([A-Z][a-z]+\s+[A-Z][a-z]+)/i,
+                /by\s+and\s+between\s+([A-Z][a-z]+\s+[A-Z][a-z]+)/i
+            ];
+
+            // Security deposit patterns
+            const securityDepositPatterns = [
+                /security\s+deposit[:\s]*\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i,
+                /deposit[:\s]*(?:of\s+)?\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i
+            ];
+
+            // Extract data using patterns
+            for (const pattern of addressPatterns) {
+                const match = cleanText.match(pattern);
+                if (match) {
+                    extractedData.address = match[1].trim().replace(/\s+/g, ' ');
+                    extractedData.rawMatches.address = match[0];
+                    break;
+                }
+            }
+
+            for (const pattern of rentPatterns) {
+                const match = cleanText.match(pattern);
+                if (match) {
+                    // Remove commas and convert to number
+                    const rentValue = match[1].replace(/,/g, '');
+                    extractedData.rent = parseInt(rentValue);
+                    extractedData.rawMatches.rent = match[0];
+                    break;
+                }
+            }
+
+            for (const pattern of startDatePatterns) {
+                const match = cleanText.match(pattern);
+                if (match) {
+                    extractedData.startDate = normalizeDate(match[1]);
+                    extractedData.rawMatches.startDate = match[0];
+                    break;
+                }
+            }
+
+            for (const pattern of endDatePatterns) {
+                const match = cleanText.match(pattern);
+                if (match) {
+                    extractedData.endDate = normalizeDate(match[1]);
+                    extractedData.rawMatches.endDate = match[0];
+                    break;
+                }
+            }
+
+            // Extract landlord information
+            for (const pattern of landlordPatterns) {
+                const match = cleanText.match(pattern);
+                if (match) {
+                    extractedData.landlord = match[1].trim();
+                    extractedData.rawMatches.landlord = match[0];
+                    break;
+                }
+            }
+
+            // Extract tenant information
+            for (const pattern of tenantPatterns) {
+                const match = cleanText.match(pattern);
+                if (match) {
+                    extractedData.tenant = match[1].trim();
+                    extractedData.rawMatches.tenant = match[0];
+                    break;
+                }
+            }
+
+            // Extract security deposit
+            for (const pattern of securityDepositPatterns) {
+                const match = cleanText.match(pattern);
+                if (match) {
+                    const depositValue = match[1].replace(/,/g, '');
+                    extractedData.securityDeposit = parseInt(depositValue);
+                    extractedData.rawMatches.securityDeposit = match[0];
+                    break;
+                }
+            }
+
+            // Create description
+            if (extractedData.address && extractedData.rent) {
+                extractedData.description = `${extractedData.address.includes('Apartment') ? 'Apartment' : 'Property'} available for sublease. Monthly rent: $${extractedData.rent}.`;
+            }
+
+            // Detect amenities
+            const amenityKeywords = {
+                'wifi': ['wifi', 'wi-fi', 'internet', 'wireless', 'broadband'],
+                'parking': ['parking', 'garage', 'car port', 'driveway', 'assigned parking'],
+                'furnished': ['furnished', 'furniture', 'equipped', 'appliances'],
+                'pets': ['pets allowed', 'pet friendly', 'dogs allowed', 'cats allowed', 'animals']
+            };
+
+            for (const [amenity, keywords] of Object.entries(amenityKeywords)) {
+                if (keywords.some(keyword => cleanText.toLowerCase().includes(keyword.toLowerCase()))) {
+                    extractedData.amenities.push(amenity);
+                }
+            }
+
+            return extractedData;
+        }
+
+        // Normalize date format
+        function normalizeDate(dateStr) {
+            if (!dateStr) return null;
+            
+            const cleanDateStr = dateStr.trim();
+            
+            // Handle MM/DD/YYYY format
+            if (cleanDateStr.includes('/')) {
+                const parts = cleanDateStr.split('/');
+                if (parts.length === 3) {
+                    let [month, day, year] = parts;
+                    
+                    if (year.length === 2) {
+                        year = parseInt(year) > 50 ? `19${year}` : `20${year}`;
+                    }
+                    
+                    month = month.padStart(2, '0');
+                    day = day.padStart(2, '0');
+                    
+                    return `${year}-${month}-${day}`;
+                }
+            }
+            
+            // Handle written dates like "June 17, 2025" or "June 30, 2026"
+            const monthNames = {
+                'january': '01', 'february': '02', 'march': '03', 'april': '04',
+                'may': '05', 'june': '06', 'july': '07', 'august': '08',
+                'september': '09', 'october': '10', 'november': '11', 'december': '12',
+                'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04',
+                'jun': '06', 'jul': '07', 'aug': '08', 'sep': '09',
+                'oct': '10', 'nov': '11', 'dec': '12'
+            };
+            
+            const writtenDateMatch = cleanDateStr.match(/([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
+            if (writtenDateMatch) {
+                const [, monthName, day, year] = writtenDateMatch;
+                const monthNum = monthNames[monthName.toLowerCase()];
+                if (monthNum) {
+                    const paddedDay = day.padStart(2, '0');
+                    return `${year}-${monthNum}-${paddedDay}`;
+                }
+            }
+            
+            return cleanDateStr;
+        }
+
+        // Show extraction results
+        function showExtractionResults(data, rawText) {
+            const modal = document.getElementById('extractionModal');
+            const content = document.getElementById('extractionContent');
+            
+            const results = [];
+            if (data.address) results.push(`✓ <strong>Address:</strong> ${data.address}`);
+            if (data.rent) results.push(`✓ <strong>Monthly Rent:</strong> $${data.rent}`);
+            if (data.startDate) results.push(`✓ <strong>Start Date:</strong> ${data.startDate}`);
+            if (data.endDate) results.push(`✓ <strong>End Date:</strong> ${data.endDate}`);
+            if (data.tenant) results.push(`✓ <strong>Tenant:</strong> ${data.tenant}`);
+            if (data.landlord) results.push(`✓ <strong>Landlord:</strong> ${data.landlord}`);
+            if (data.securityDeposit) results.push(`✓ <strong>Security Deposit:</strong> $${data.securityDeposit}`);
+            if (data.description) results.push(`✓ <strong>Description:</strong> ${data.description}`);
+            if (data.amenities.length > 0) results.push(`✓ <strong>Amenities:</strong> ${data.amenities.join(', ')}`);
+            
+            if (results.length === 0) {
+                results.push('❌ No data could be extracted from the document. Please check file quality and try again.');
+            }
+
+            content.innerHTML = `
+                <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                    <h4 class="font-semibold text-gray-800 mb-2">Extracted Information:</h4>
+                    ${results.map(result => `<p class="text-sm text-gray-700 mb-1">${result}</p>`).join('')}
+                </div>
+                <details class="mt-4">
+                    <summary class="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-800">View Raw Text</summary>
+                    <div class="mt-2 p-3 bg-gray-100 rounded text-xs text-gray-600 max-h-40 overflow-y-auto">
+                        ${rawText.replace(/\n/g, '<br>')}
+                    </div>
+                </details>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        // Confirm extraction
+        function confirmExtraction() {
+            if (!extractedContractData) return;
+            
+            populateFormFields(extractedContractData);
+            closeExtractionModal();
+            
+            const successMsg = document.createElement('div');
+            successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            successMsg.textContent = 'Contract data extracted and form filled!';
+            document.body.appendChild(successMsg);
+            setTimeout(() => successMsg.remove(), 3000);
+        }
+
+        // Populate form fields
+        function populateFormFields(data) {
+            const fields = [
+                { id: 'address', value: data.address },
+                { id: 'rent', value: data.rent },
+                { id: 'startDate', value: data.startDate },
+                { id: 'endDate', value: data.endDate },
+                { id: 'description', value: data.description }
+            ];
+
+            fields.forEach(field => {
+                if (field.value) {
+                    const el = document.getElementById(field.id);
+                    if (el) {
+                        el.value = field.value;
+                    }
+                }
+            });
+
+            // Set amenities
+            data.amenities.forEach(amenity => {
+                const checkbox = document.querySelector(`input[name="amenities"][value="${amenity}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+        }
+
+        // Close extraction modal
+        function closeExtractionModal() {
+            document.getElementById('extractionModal').classList.add('hidden');
+        }
+
+        // Show/hide loading
+        function showLoading() {
+            document.getElementById('loading').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        // Form submission handler
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                alert('Please log in to create a listing.');
+                return;
+            }
+
+            const formData = new FormData(e.target);
+            const amenities = formData.getAll('amenities');
+            
+            const listing = {
+                id: Date.now().toString(),
+                userId: currentUser.email,
+                address: formData.get('address'),
+                rent: parseInt(formData.get('rent')),
+                startDate: formData.get('startDate'),
+                endDate: formData.get('endDate'),
+                description: formData.get('description'),
+                amenities: amenities,
+                images: [],
+                createdAt: new Date().toISOString()
+            };
+
+            // Handle image uploads
+            const imageFiles = formData.getAll('images');
+            Promise.all(
+                Array.from(imageFiles).map(file => {
+                    return new Promise((resolve) => {
+                        if (file.size === 0) {
+                            resolve(null);
+                                        return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+                })
+            ).then(imageData => {
+                listing.images = imageData.filter(data => data !== null);
+
+                // Save listing to localStorage
+                let listings = JSON.parse(localStorage.getItem('subleaseListings')) || [];
+                listings.push(listing);
+                localStorage.setItem('subleaseListings', JSON.stringify(listings));
+
+                // Reset form
+                e.target.reset();
+                document.getElementById('imagePreview').innerHTML = '';
+
+                // Reload listings
+                loadSubleases();
+
+                // Show success message
+                const successMsg = document.createElement('div');
+                successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                successMsg.textContent = 'Listing created successfully!';
+                document.body.appendChild(successMsg);
+                setTimeout(() => successMsg.remove(), 3000);
+            }).catch(error => {
+                console.error('Image processing error:', error);
+                alert('Failed to process images. Please try again.');
+            });
+        }
+
+        // Load and display sublease listings
+        function loadSubleases() {
+            const subleaseList = document.getElementById('subleaseList');
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            let listings = JSON.parse(localStorage.getItem('subleaseListings')) || [];
+
+            subleaseList.innerHTML = '';
+
+            if (currentUser) {
+                listings = listings.filter(listing => listing.userId === currentUser.email);
+            } else {
+                listings = [];
+            }
+
+            if (listings.length === 0) {
+                subleaseList.innerHTML = `
+                    <p class="text-center text-gray-600 col-span-full">No listings found. Create one above!</p>
+                `;
+                return;
+            }
+
+            listings.forEach(listing => {
+                const card = document.createElement('div');
+                card.className = 'listing-card bg-gray-50 p-4 rounded-lg shadow-md hover:shadow-lg transition';
+                card.innerHTML = `
+                    <div class="relative h-48 mb-4 rounded-lg overflow-hidden">
+                        ${listing.images[0] ? `
+                            <img src="${listing.images[0]}" alt="Listing image" class="w-full h-full object-cover">
+                        ` : `
+                            <div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
+                                No Image
+                            </div>
+                        `}
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800">${listing.address}</h3>
+                    <p class="text-gray-600">$${listing.rent}/month</p>
+                    <p class="text-gray-600">From ${listing.startDate} to ${listing.endDate}</p>
+                    <p class="text-gray-600 line-clamp-2">${listing.description}</p>
+                    ${listing.amenities.length > 0 ? `
+                        <p class="text-gray-600 mt-2">Amenities: ${listing.amenities.join(', ')}</p>
+                    ` : ''}
+                    <div class="mt-4 flex space-x-2">
+                        <button onclick="deleteListing('${listing.id}')" class="bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700 transition text-sm">Delete</button>
+                    </div>
+                `;
+                subleaseList.appendChild(card);
+            });
+        }
+
+        // Delete a listing
+        function deleteListing(id) {
+            if (!confirm('Are you sure you want to delete this listing?')) return;
+
+            let listings = JSON.parse(localStorage.getItem('subleaseListings')) || [];
+            listings = listings.filter(listing => listing.id !== id);
+            localStorage.setItem('subleaseListings', JSON.stringify(listings));
+            loadSubleases();
+
+            const successMsg = document.createElement('div');
+            successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            successMsg.textContent = 'Listing deleted successfully!';
+            document.body.appendChild(successMsg);
+            setTimeout(() => successMsg.remove(), 3000);
+        }
+
+        // Show preview modal
+        function showPreview() {
+            const form = document.getElementById('subleaseForm');
+            const formData = new FormData(form);
+            const amenities = formData.getAll('amenities');
+            const images = formData.getAll('images');
+
+            const previewContent = document.getElementById('previewContent');
+            previewContent.innerHTML = `
+                <h4 class="text-lg font-semibold text-gray-800">${formData.get('address') || 'No address provided'}</h4>
+                <p class="text-gray-600">$${formData.get('rent') || 'N/A'}/month</p>
+                <p class="text-gray-600">From ${formData.get('startDate') || 'N/A'} to ${formData.get('endDate') || 'N/A'}</p>
+                <p class="text-gray-600">${formData.get('description') || 'No description provided'}</p>
+                ${amenities.length > 0 ? `
+                    <p class="text-gray-600">Amenities: ${amenities.join(', ')}</p>
+                ` : ''}
+                <div class="mt-4 flex space-x-2 overflow-x-auto">
+                    ${images.length > 0 ? Array.from(images).map((_, i) => `
+                        <img src="${URL.createObjectURL(images[i])}" alt="Preview image" class="w-24 h-24 object-cover rounded-lg">
+                    `).join('') : `
+                        <p class="text-gray-600">No images uploaded</p>
+                    `}
+                </div>
+            `;
+
+            document.getElementById('previewModal').classList.remove('hidden');
+        }
+
+        // Close preview modal
+        function closeModal() {
+            document.getElementById('previewModal').classList.add('hidden');
+        }
+
+        // Close modals on outside click
+        window.addEventListener('click', (e) => {
+            const previewModal = document.getElementById('previewModal');
+            const extractionModal = document.getElementById('extractionModal');
+            if (e.target === previewModal) {
+                closeModal();
+            }
+            if (e.target === extractionModal) {
+                closeExtractionModal();
+            }
+        });
+
+        // Close modals on Escape key
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeExtractionModal();
+            }
+        });
+
+        // Sublease Compatibility Checker
+        function checkSubletCompatibility(text) {
+            const cleanText = text.toLowerCase();
+            
+            const compatibilityResults = {
+                sublettingAllowed: null,
+                requiresConsent: false,
+                restrictions: [],
+                recommendations: [],
+                riskLevel: 'medium'
+            };
+
+            // Check for subletting clauses
+            const prohibitedPatterns = [
+                /no subletting/i,
+                /subletting prohibited/i,
+                /shall not sublet/i,
+                /tenant may not sublease/i,
+                /no assignment or subletting/i
+            ];
+
+            const allowedPatterns = [
+                /subletting permitted/i,
+                /may sublet/i,
+                /subletting allowed/i,
+                /tenant may sublease/i
+            ];
+
+            const consentPatterns = [
+                /landlord consent/i,
+                /written consent/i,
+                /permission.*subletting/i,
+                /approval.*sublet/i,
+                /consent.*sublease/i
+            ];
+
+            // Analyze subletting status
+            if (prohibitedPatterns.some(pattern => pattern.test(cleanText))) {
+                compatibilityResults.sublettingAllowed = false;
+                compatibilityResults.riskLevel = 'high';
+                compatibilityResults.restrictions.push('Lease explicitly prohibits subletting');
+            } else if (allowedPatterns.some(pattern => pattern.test(cleanText))) {
+                compatibilityResults.sublettingAllowed = true;
+                compatibilityResults.riskLevel = 'low';
+            } else if (consentPatterns.some(pattern => pattern.test(cleanText))) {
+                compatibilityResults.sublettingAllowed = true;
+                compatibilityResults.requiresConsent = true;
+                compatibilityResults.riskLevel = 'medium';
+                compatibilityResults.restrictions.push('Requires landlord consent');
+            } else {
+                compatibilityResults.sublettingAllowed = null;
+                compatibilityResults.restrictions.push('Subletting policy unclear - consult landlord');
+            }
+
+            // Add recommendations based on analysis
+            if (compatibilityResults.sublettingAllowed === false) {
+                compatibilityResults.recommendations.push('Contact landlord to discuss options');
+                compatibilityResults.recommendations.push('Consider lease assignment instead');
+            } else if (compatibilityResults.requiresConsent) {
+                compatibilityResults.recommendations.push('Obtain written landlord consent before listing');
+                compatibilityResults.recommendations.push('Use our landlord consent form template');
+            } else if (compatibilityResults.sublettingAllowed === true) {
+                compatibilityResults.recommendations.push('Proceed with subletting - you have permission');
+                compatibilityResults.recommendations.push('Still notify landlord as courtesy');
+            }
+
+            return compatibilityResults;
+        }
+
+        // Show compatibility results
+        function showCompatibilityResults(compatibilityData, extractedData) {
+            const resultsContainer = document.getElementById('compatibilityResults');
+            const contentContainer = document.getElementById('compatibilityContent');
+            
+            let statusIcon, statusColor, statusText;
+            
+            if (compatibilityData.sublettingAllowed === true) {
+                statusIcon = '✅';
+                statusColor = 'text-green-600';
+                statusText = compatibilityData.requiresConsent ? 'Allowed with Consent' : 'Subletting Allowed';
+            } else if (compatibilityData.sublettingAllowed === false) {
+                statusIcon = '❌';
+                statusColor = 'text-red-600';
+                statusText = 'Subletting Prohibited';
+            } else {
+                statusIcon = '⚠️';
+                statusColor = 'text-yellow-600';
+                statusText = 'Policy Unclear';
+            }
+
+            contentContainer.innerHTML = `
+                <div class="mb-4">
+                    <div class="flex items-center mb-2">
+                        <span class="text-2xl mr-3">${statusIcon}</span>
+                        <span class="text-lg font-semibold ${statusColor}">${statusText}</span>
+                    </div>
+                    <div class="text-sm text-gray-600">Risk Level: <span class="font-medium capitalize">${compatibilityData.riskLevel}</span></div>
+                </div>
+
+                ${compatibilityData.restrictions.length > 0 ? `
+                    <div class="mb-4">
+                        <h5 class="font-medium text-gray-800 mb-2">⚠️ Restrictions & Requirements:</h5>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            ${compatibilityData.restrictions.map(restriction => `<li>• ${restriction}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+
+                <div class="mb-4">
+                    <h5 class="font-medium text-gray-800 mb-2">💡 Recommendations:</h5>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        ${compatibilityData.recommendations.map(rec => `<li>• ${rec}</li>`).join('')}
+                    </ul>
+                </div>
+
+                ${compatibilityData.requiresConsent ? `
+                    <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-blue-800">📄 Need landlord consent form?</span>
+                            <button onclick="generateConsentForm()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition">
+                                Generate Form
+                            </button>
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${extractedData.address && extractedData.rent ? `
+                    <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <p class="text-sm text-green-800 font-medium">✅ Property details extracted and pre-filled</p>
+                    </div>
+                ` : ''}
+            `;
+
+            resultsContainer.classList.remove('hidden');
+
+            // Auto-fill extracted data
+            if (extractedData.address) {
+                populateFormFields(extractedData);
+            }
+        }
+
+        // Financial Calculator Functions
+        function updateFinancialCalculation() {
+            const originalRent = parseFloat(document.getElementById('originalRent')?.value) || 0;
+            const remainingMonths = parseFloat(document.getElementById('remainingMonths')?.value) || 0;
+            const originalDeposit = parseFloat(document.getElementById('originalDeposit')?.value) || 0;
+            const monthlyUtilities = parseFloat(document.getElementById('monthlyUtilities')?.value) || 0;
+
+            if (originalRent > 0 && remainingMonths > 0) {
+                // Calculate recommended sublease rent (typically 90-95% of original)
+                const recommendedRent = Math.round(originalRent * 0.92);
+                const recommendedDeposit = Math.min(originalDeposit, recommendedRent);
+                const totalLeaseValue = originalRent * remainingMonths;
+                const monthlySavings = originalRent - recommendedRent;
+
+                document.getElementById('recommendedRent').textContent = `$${recommendedRent}`;
+                document.getElementById('recommendedDeposit').textContent = `$${recommendedDeposit}`;
+                document.getElementById('totalLeaseValue').textContent = `$${totalLeaseValue.toLocaleString()}`;
+                document.getElementById('monthlySavings').textContent = `$${monthlySavings}`;
+            }
+        }
+
+        function applyCalculatedRent() {
+            const recommendedRent = document.getElementById('recommendedRent').textContent.replace('$', '');
+            document.getElementById('rent').value = recommendedRent;
+            document.getElementById('financialCalculator').classList.add('hidden');
+        }
+
+        function generateConsentForm() {
+            alert('📄 Landlord consent form template has been generated and emailed to you! (Feature in development)');
+        }
+
+        // Tab Navigation Functions
+        function switchTab(tabName) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.feature-section');
+            sections.forEach(section => section.classList.add('hidden'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.feature-tab');
+            tabs.forEach(tab => tab.classList.remove('active', 'border-blue-500', 'text-blue-600'));
+            tabs.forEach(tab => tab.classList.add('border-transparent', 'text-gray-500'));
+            
+            // Show selected section
+            const selectedSection = document.getElementById(`section-${tabName}`);
+            if (selectedSection) {
+                selectedSection.classList.remove('hidden');
+            }
+            
+            // Add active class to selected tab
+            const selectedTab = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
+            if (selectedTab) {
+                selectedTab.classList.remove('border-transparent', 'text-gray-500');
+                selectedTab.classList.add('active', 'border-blue-500', 'text-blue-600');
+            }
+        }
+
+        // Generate Document Function
+        function generateDocument() {
+            const selectedType = document.querySelector('input[name="documentType"]:checked')?.value;
+            if (!selectedType) {
+                alert('Please select a document type first.');
+                return;
+            }
+            
+            const documentTypes = {
+                'sublease': 'Sublease Agreement Template',
+                'handover': 'Property Handover Checklist',
+                'consent': 'Landlord Consent Form',
+                'inventory': 'Inventory & Condition Report'
+            };
+            
+            alert(`📄 ${documentTypes[selectedType]} has been generated! (Feature in development)`);
+        }
+
+        // Compatibility Check Button Handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const compatibilityCheckBtn = document.getElementById('compatibilityCheckBtn');
+            if (compatibilityCheckBtn) {
+                compatibilityCheckBtn.addEventListener('click', function() {
+                    const contractFile = document.getElementById('contractFile')?.files[0];
+                    if (!contractFile) {
+                        alert('Please upload a contract file first to check compatibility.');
+                        return;
+                    }
+                    
+                    // Trigger the existing contract extraction functionality
+                    document.getElementById('extractButton')?.click();
+                });
+            }
+        });
+
+        // Initialize first tab as active on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show first tab by default
+            switchTab('documents');
+            loadUserRequests();
+        });
+
+        // ========================================
+        // SUBLEASE MATCHING SYSTEM FUNCTIONS
+        // ========================================
+
+        // Submit Transfer Request
+        async function submitTransferRequest() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                alert('Please log in to create a transfer request.');
+                return;
+            }
+
+            // Gather form data
+            const transferData = {
+                userEmail: currentUser.email,
+                type: 'transfer',
+                title: `Lease Transfer: ${document.getElementById('transferAddress').value}`,
+                description: document.getElementById('transferDescription').value,
+                address: document.getElementById('transferAddress').value,
+                city: extractCityFromAddress(document.getElementById('transferAddress').value),
+                state: extractStateFromAddress(document.getElementById('transferAddress').value),
+                rentAmount: parseFloat(document.getElementById('transferRent').value),
+                availableFrom: document.getElementById('transferAvailableFrom').value,
+                availableUntil: document.getElementById('transferAvailableUntil').value,
+                propertyType: document.querySelector('input[name="transferPropertyType"]:checked')?.value,
+                bedrooms: parseInt(document.getElementById('transferBedrooms').value) || null,
+                bathrooms: parseFloat(document.getElementById('transferBathrooms').value) || null,
+                furnished: getCheckedValues('transferAmenities').includes('furnished'),
+                amenities: getCheckedValues('transferAmenities'),
+                petFriendly: getCheckedValues('transferAmenities').includes('petFriendly'),
+                cleanlinessLevel: parseInt(document.getElementById('transferCleanliness').value),
+                noiseTolerance: parseInt(document.getElementById('transferNoise').value),
+                scheduleType: document.getElementById('transferSchedule').value,
+                reasonForTransfer: document.getElementById('transferReason').value,
+                urgencyLevel: parseInt(document.getElementById('transferUrgency').value)
+            };
+
+            try {
+                const response = await fetch('/api/sublease/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(transferData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Transfer request created successfully! We\'ll find matches for you.');
+                    clearTransferForm();
+                    loadUserRequests();
+                } else {
+                    alert('Error creating transfer request: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Transfer request error:', error);
+                alert('Error creating transfer request. Please try again.');
+            }
+        }
+
+        // Submit Seeking Request
+        async function submitSeekingRequest() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                alert('Please log in to create a seeking request.');
+                return;
+            }
+
+            // Gather form data
+            const seekingData = {
+                userEmail: currentUser.email,
+                type: 'seeking',
+                title: `Looking for Sublease in ${document.getElementById('seekingCity').value}`,
+                description: document.getElementById('seekingDescription').value,
+                city: document.getElementById('seekingCity').value,
+                state: document.getElementById('seekingState').value,
+                minBudget: parseFloat(document.getElementById('seekingMinBudget').value),
+                maxBudget: parseFloat(document.getElementById('seekingMaxBudget').value),
+                preferredMoveIn: document.getElementById('seekingMoveIn').value,
+                preferredMoveOut: document.getElementById('seekingMoveOut').value,
+                propertyType: getCheckedValues('seekingPropertyType')[0] || null,
+                bedrooms: document.getElementById('seekingBedrooms').value ? parseInt(document.getElementById('seekingBedrooms').value) : null,
+                bathrooms: document.getElementById('seekingBathrooms').value ? parseFloat(document.getElementById('seekingBathrooms').value) : null,
+                durationMonths: parseInt(document.getElementById('seekingDuration').value),
+                furnished: getCheckedValues('seekingAmenities').includes('furnished'),
+                amenities: getCheckedValues('seekingAmenities'),
+                petFriendly: getCheckedValues('seekingAmenities').includes('petFriendly'),
+                cleanlinessLevel: parseInt(document.getElementById('seekingCleanliness').value),
+                noiseTolerance: parseInt(document.getElementById('seekingNoise').value),
+                scheduleType: document.getElementById('seekingSchedule').value,
+                flexibleDates: document.getElementById('seekingFlexibleDates').checked
+            };
+
+            try {
+                const response = await fetch('/api/sublease/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(seekingData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Seeking request created successfully! We\'ll find matches for you.');
+                    clearSeekingForm();
+                    loadUserRequests();
+                } else {
+                    alert('Error creating seeking request: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Seeking request error:', error);
+                console.error('Full error details:', JSON.stringify(error, null, 2));
+                alert('Error creating seeking request. Please check console for details.');
+            }
+        }
+
+        // Helper function to get checked values from checkboxes
+        function getCheckedValues(name) {
+            const checkboxes = document.querySelectorAll(`input[name="${name}"]:checked`);
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        // Helper function to extract city from address
+        function extractCityFromAddress(address) {
+            if (!address) return null;
+            const parts = address.split(',');
+            return parts.length > 1 ? parts[1].trim() : null;
+        }
+
+        // Helper function to extract state from address
+        function extractStateFromAddress(address) {
+            if (!address) return null;
+            const parts = address.split(',');
+            return parts.length > 2 ? parts[2].trim() : null;
+        }
+
+        // Clear transfer form
+        function clearTransferForm() {
+            document.getElementById('transferAddress').value = '';
+            document.getElementById('transferRent').value = '';
+            document.getElementById('transferAvailableFrom').value = '';
+            document.getElementById('transferAvailableUntil').value = '';
+            document.getElementById('transferDescription').value = '';
+            document.getElementById('transferReason').value = '';
+            document.getElementById('transferBedrooms').value = '';
+            document.getElementById('transferBathrooms').value = '';
+            document.getElementById('transferUrgency').value = '3';
+            document.getElementById('transferCleanliness').value = '3';
+            document.getElementById('transferNoise').value = '3';
+            document.getElementById('transferSchedule').value = 'regular';
+            
+            // Clear checkboxes and radio buttons
+            document.querySelectorAll('input[name="transferPropertyType"]').forEach(radio => radio.checked = false);
+            document.querySelectorAll('input[name="transferAmenities"]').forEach(checkbox => checkbox.checked = false);
+        }
+
+        // Clear seeking form
+        function clearSeekingForm() {
+            document.getElementById('seekingCity').value = '';
+            document.getElementById('seekingState').value = '';
+            document.getElementById('seekingMinBudget').value = '';
+            document.getElementById('seekingMaxBudget').value = '';
+            document.getElementById('seekingMoveIn').value = '';
+            document.getElementById('seekingMoveOut').value = '';
+            document.getElementById('seekingDescription').value = '';
+            document.getElementById('seekingBedrooms').value = '';
+            document.getElementById('seekingBathrooms').value = '';
+            document.getElementById('seekingDuration').value = '6';
+            document.getElementById('seekingCleanliness').value = '3';
+            document.getElementById('seekingNoise').value = '3';
+            document.getElementById('seekingSchedule').value = 'regular';
+            document.getElementById('seekingFlexibleDates').checked = false;
+            
+            // Clear checkboxes
+            document.querySelectorAll('input[name="seekingPropertyType"]').forEach(checkbox => checkbox.checked = false);
+            document.querySelectorAll('input[name="seekingAmenities"]').forEach(checkbox => checkbox.checked = false);
+        }
+
+        // Load user's sublease requests
+        async function loadUserRequests() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) return;
+
+            try {
+                const response = await fetch(`/api/sublease/requests?userEmail=${encodeURIComponent(currentUser.email)}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayUserRequests(result.requests);
+                }
+            } catch (error) {
+                console.error('Error loading user requests:', error);
+            }
+        }
+
+        // Display user requests
+        function displayUserRequests(requests) {
+            const transferRequests = requests.filter(r => r.type === 'transfer');
+            const seekingRequests = requests.filter(r => r.type === 'seeking');
+            
+            // You could add this display logic to show user's active requests
+            console.log('Transfer requests:', transferRequests);
+            console.log('Seeking requests:', seekingRequests);
+        }
+
+        // Load matches for a request
+        async function loadMatches(requestId) {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) return;
+
+            try {
+                const response = await fetch(`/api/sublease/matches/${requestId}?userEmail=${encodeURIComponent(currentUser.email)}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayMatches(result.matches);
+                }
+            } catch (error) {
+                console.error('Error loading matches:', error);
+            }
+        }
+
+        // Display matches
+        function displayMatches(matches) {
+            // Add logic to display matches in UI
+            console.log('Matches found:', matches);
+        }
+
+        // Test Supabase connection
+        async function testSupabaseConnection() {
+            try {
+                console.log('🧪 Testing Supabase connection...');
+                
+                const response = await fetch('/api/test-supabase');
+                const result = await response.json();
+                
+                console.log('Supabase test result:', result);
+                
+                if (result.success) {
+                    alert('✅ Supabase Connection Test PASSED\n\nConnection is working correctly.\nFound ' + result.rowCount + ' existing records.');
+                } else {
+                    alert('❌ Supabase Connection Test FAILED\n\nError: ' + result.error + '\nCode: ' + result.code + '\n\nThis indicates a database permission or RLS policy issue.');
+                }
+            } catch (error) {
+                console.error('Connection test error:', error);
+                alert('❌ Connection test failed. Check console for details.');
+            }
+        }
+
+        // Debug database setup
+        async function debugDatabase() {
+            try {
+                console.log('🔧 Starting database debug check...');
+                
+                const response = await fetch('/api/sublease/debug');
+                const result = await response.json();
+                
+                console.log('Debug result:', result);
+                
+                if (result.success) {
+                    let message = '🔧 Database Debug Results:\n\n';
+                    message += `✅ Supabase Connection: ${result.checks.supabase_connection ? 'OK' : 'FAILED'}\n`;
+                    message += `✅ sublease_requests table: ${result.checks.sublease_requests_table ? 'OK' : 'MISSING'}\n`;
+                    message += `✅ sublease_matches table: ${result.checks.sublease_matches_table ? 'OK' : 'MISSING'}\n`;
+                    message += `✅ set_user_context function: ${result.checks.user_context_function ? 'OK' : 'MISSING'}\n\n`;
+                    
+                    message += 'Recommendations:\n';
+                    result.recommendations.forEach((rec, index) => {
+                        message += `${index + 1}. ${rec}\n`;
+                    });
+                    
+                    alert(message);
+                } else {
+                    alert('Debug check failed: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Debug error:', error);
+                alert('Debug check failed. Check console for details.');
+            }
+        }
+
+        // Express interest in a match
+        async function expressInterest(matchId, requestType) {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) return;
+
+            try {
+                const response = await fetch('/api/sublease/express-interest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        matchId: matchId,
+                        userEmail: currentUser.email,
+                        requestType: requestType
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Interest expressed successfully!');
+                    if (result.match.match_status === 'mutual_interest') {
+                        alert('🎉 Mutual interest! You can now contact each other.');
+                    }
+                } else {
+                    alert('Error expressing interest: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Express interest error:', error);
+                alert('Error expressing interest. Please try again.');
+            }
+        }
+        
+        // Dropdown Navigation Functions
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId + '-dropdown');
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            
+            // Close all other dropdowns
+            allDropdowns.forEach(menu => {
+                if (menu.id !== dropdownId + '-dropdown') {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                }
+            });
+            
+            // Toggle current dropdown
+            if (dropdown.style.opacity === '1') {
+                dropdown.style.opacity = '0';
+                dropdown.style.visibility = 'hidden';
+                dropdown.style.transform = 'translateY(-10px)';
+            } else {
+                dropdown.style.opacity = '1';
+                dropdown.style.visibility = 'visible';
+                dropdown.style.transform = 'translateY(0)';
+            }
+        }
+        
+        // Mobile Menu Functions
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu.classList.contains('active')) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        }
+        
+        function openMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            mobileMenu.classList.add('active');
+            hamburgerBtn.classList.add('active');
+            body.classList.add('mobile-menu-open');
+        }
+        
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            if (mobileMenu) mobileMenu.classList.remove('active');
+            if (hamburgerBtn) hamburgerBtn.classList.remove('active');
+            if (body) body.classList.remove('mobile-menu-open');
+        }
+        
+        function toggleMobileSection(sectionId) {
+            const section = document.getElementById(sectionId + '-section');
+            const arrow = document.getElementById(sectionId + '-arrow');
+            
+            if (section.classList.contains('expanded')) {
+                section.classList.remove('expanded');
+                arrow.classList.remove('rotated');
+            } else {
+                // Close all other sections first
+                document.querySelectorAll('.mobile-section-content').forEach(s => s.classList.remove('expanded'));
+                document.querySelectorAll('.mobile-arrow').forEach(a => a.classList.remove('rotated'));
+                
+                // Open the clicked section
+                section.classList.add('expanded');
+                arrow.classList.add('rotated');
+            }
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            let clickedInsideDropdown = false;
+            
+            dropdowns.forEach(dropdown => {
+                if (dropdown.contains(event.target)) {
+                    clickedInsideDropdown = true;
+                }
+            });
+            
+            if (!clickedInsideDropdown) {
+                const allDropdowns = document.querySelectorAll('.dropdown-menu');
+                allDropdowns.forEach(menu => {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                });
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) {
+                closeMobileMenu();
+            }
+        });
+    </script>
+</body>
+</html>

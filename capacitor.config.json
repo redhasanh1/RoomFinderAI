@@ -1,0 +1,6 @@
+{
+  "appId": "com.roomfinderai.app",
+  "appName": "roomfinderai",
+  "webDir": "frontend/build",
+  "bundledWebRuntime": false
+}
