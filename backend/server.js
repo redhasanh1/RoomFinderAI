@@ -4269,15 +4269,24 @@ app.get('/:page', (req, res) => {
             return res.status(404).send('Route not found');
         }
         
+        // Check root directory first
         const htmlPath = path.join(__dirname, '..', `${pageName}.html`);
         
-        // Check if file exists
+        // Check if file exists in root
         if (fs.existsSync(htmlPath)) {
-            console.log(`📄 Serving ${pageName}.html from:`, htmlPath);
+            console.log(`📄 Serving ${pageName}.html from root:`, htmlPath);
             res.sendFile(htmlPath);
         } else {
-            console.log(`❌ Page not found: ${pageName}.html`);
-            res.status(404).send(`Page not found: /${pageName}`);
+            // Check frontend directory as fallback
+            const frontendHtmlPath = path.join(__dirname, '..', 'frontend', `${pageName}.html`);
+            
+            if (fs.existsSync(frontendHtmlPath)) {
+                console.log(`📄 Serving ${pageName}.html from frontend:`, frontendHtmlPath);
+                res.sendFile(frontendHtmlPath);
+            } else {
+                console.log(`❌ Page not found: ${pageName}.html (checked root and frontend directories)`);
+                res.status(404).send(`Page not found: /${pageName}`);
+            }
         }
     } catch (error) {
         console.error('Error serving page:', error);
