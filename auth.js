@@ -1,9 +1,9 @@
 const profileImages = [
-    'https://via.placeholder.com/40/FF6B6B',
-    'https://via.placeholder.com/40/4ECDC4',
-    'https://via.placeholder.com/40/FFE66D',
-    'https://via.placeholder.com/40/6B7280',
-    'https://via.placeholder.com/40/FF9F1C'
+    'https://via.placeholder.com/40/667eea',
+    'https://via.placeholder.com/40/764ba2',
+    'https://via.placeholder.com/40/5a67d8',
+    'https://via.placeholder.com/40/553c9a',
+    'https://via.placeholder.com/40/4c1d95'
 ];
 
 async function initializeAuth(supabase) {
