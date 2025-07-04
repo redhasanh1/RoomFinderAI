@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#667eea">
+    <title>RoomFinder AI - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/mobile-android.css">
+    <script src="js/mobile-init.js"></script>
+    <style>
+        /* Grand Background */
+        .grand-bg {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: -2;
+        }
+        
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+            z-index: -1;
+        }
+        
+        /* Animated orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.5;
+            animation: float-orb 20s infinite ease-in-out;
+        }
+        
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(102, 126, 234, 0.3);
+            top: -200px;
+            right: -200px;
+        }
+        
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: rgba(118, 75, 162, 0.3);
+            bottom: -150px;
+            left: -150px;
+            animation-delay: -5s;
+        }
+        
+        @keyframes float-orb {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        
+        /* Grand Auth container */
+        .auth-container-grand {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 32px;
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.1),
+                0 20px 40px rgba(102, 126, 234, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+        }
+        
+        .auth-container-grand::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent);
+            animation: shimmer 3s infinite;
+        }
+        
+        .auth-container-grand:hover {
+            transform: translateY(-5px);
+            box-shadow: 
+                0 40px 80px rgba(0, 0, 0, 0.15),
+                0 30px 50px rgba(102, 126, 234, 0.2);
+        }
+        
+        /* Social buttons */
+        .social-btn {
+            background: white;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .social-btn:hover {
+            border-color: var(--purple-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+        }
+        
+        /* Success animation */
+        @keyframes success-pulse {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .success-icon {
+            animation: success-pulse 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Grand Background -->
+    <div class="grand-bg"></div>
+    <div class="bg-pattern"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <!-- Main Content -->
+    <div class="min-h-screen flex items-center justify-center px-4 py-12">
+        <div class="auth-container-grand w-full max-w-md p-8 sm:p-12">
+            <!-- Logo Section -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-purple-600 to-purple-800 rounded-2xl mb-4 shadow-lg">
+                    <i class="fas fa-home text-white text-3xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
+                    RoomFinder AI
+                </h1>
+            </div>
+
+            <!-- Auth Form Container -->
+            <div id="authFormContainer">
+                <h2 id="formTitle" class="text-2xl font-bold text-gray-800 mb-2 text-center">Welcome Back</h2>
+                <p class="text-gray-600 text-center mb-8">Find your perfect room with AI</p>
+                
+                <form id="authForm" class="space-y-6">
+                    <!-- Name Fields (Hidden for Login) -->
+                    <div id="nameFields" class="hidden space-y-4">
+                        <div>
+                            <label for="firstName" class="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+                            <input type="text" id="firstName" name="firstName" class="input-grand w-full" placeholder="John">
+                        </div>
+                        <div>
+                            <label for="lastName" class="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+                            <input type="text" id="lastName" name="lastName" class="input-grand w-full" placeholder="Doe">
+                        </div>
+                    </div>
+                    
+                    <!-- Email Field -->
+                    <div>
+                        <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                        <div class="relative">
+                            <input type="email" id="email" name="email" required class="input-grand w-full pl-12" placeholder="john@example.com">
+                            <i class="fas fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Password Field -->
+                    <div>
+                        <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                        <div class="relative">
+                            <input type="password" id="password" name="password" required class="input-grand w-full pl-12" placeholder="••••••••">
+                            <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Remember Me & Forgot Password -->
+                    <div id="loginOptions" class="flex items-center justify-between">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                            <span class="ml-2 text-sm text-gray-600">Remember me</span>
+                        </label>
+                        <a href="/forgot-password" class="text-sm text-purple-600 hover:text-purple-800 font-medium">Forgot password?</a>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button type="submit" id="submitButton" class="btn-grand w-full">
+                        Sign In
+                    </button>
+                    
+                    <!-- Social Login -->
+                    <div class="mt-6">
+                        <div class="relative">
+                            <div class="absolute inset-0 flex items-center">
+                                <div class="w-full border-t border-gray-300"></div>
+                            </div>
+                            <div class="relative flex justify-center text-sm">
+                                <span class="px-4 bg-white text-gray-500">Or continue with</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 grid grid-cols-2 gap-4">
+                            <button type="button" class="social-btn flex items-center justify-center">
+                                <i class="fab fa-google text-red-500 mr-2"></i>
+                                Google
+                            </button>
+                            <button type="button" class="social-btn flex items-center justify-center">
+                                <i class="fab fa-github text-gray-800 mr-2"></i>
+                                GitHub
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Toggle Form -->
+                    <div class="text-center mt-8">
+                        <span class="text-gray-600">
+                            <span id="toggleText">Don't have an account?</span>
+                            <button type="button" id="toggleForm" class="text-purple-600 hover:text-purple-800 font-semibold ml-1">
+                                Register now
+                            </button>
+                        </span>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Email Verification Section (Hidden) -->
+            <div id="verificationSection" class="hidden">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full mb-4 success-icon">
+                        <i class="fas fa-envelope-open-text text-white text-3xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Verify Your Email</h2>
+                    <p class="text-gray-600">We've sent a verification code to</p>
+                    <p id="verificationEmail" class="text-purple-600 font-semibold mt-1"></p>
+                </div>
+                
+                <form id="verificationForm" class="space-y-6">
+                    <div>
+                        <label for="verificationCode" class="block text-sm font-semibold text-gray-700 mb-2 text-center">
+                            Enter 6-digit code
+                        </label>
+                        <input type="text" id="verificationCode" name="verificationCode" required 
+                               class="input-grand w-full text-center text-2xl font-bold tracking-wider" 
+                               placeholder="000000" maxlength="6" pattern="[0-9]{6}"
+                               style="letter-spacing: 0.5rem;">
+                        <p class="text-sm text-gray-500 text-center mt-2">Code expires in 10 minutes</p>
+                    </div>
+                    
+                    <button type="submit" class="btn-grand w-full">
+                        Verify Email
+                    </button>
+                    
+                    <div class="text-center space-y-3">
+                        <button type="button" id="resendCode" class="text-purple-600 hover:text-purple-800 font-medium">
+                            Didn't receive code? Resend
+                        </button>
+                        <br>
+                        <button type="button" id="backToRegistration" class="text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to registration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to Home -->
+    <a href="index.html" class="fixed top-6 left-6 text-white hover:text-purple-200 transition-colors">
+        <i class="fas fa-arrow-left mr-2"></i>Back to Home
+    </a>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Initialize form handling
+        const form = document.getElementById('authForm');
+        const formTitle = document.getElementById('formTitle');
+        const submitButton = document.getElementById('submitButton');
+        const toggleForm = document.getElementById('toggleForm');
+        const toggleText = document.getElementById('toggleText');
+        const nameFields = document.getElementById('nameFields');
+        const loginOptions = document.getElementById('loginOptions');
+        let isLogin = true;
+
+        toggleForm.addEventListener('click', () => {
+            isLogin = !isLogin;
+            formTitle.textContent = isLogin ? 'Welcome Back' : 'Create Account';
+            submitButton.textContent = isLogin ? 'Sign In' : 'Create Account';
+            toggleText.textContent = isLogin ? "Don't have an account?" : 'Already have an account?';
+            toggleForm.textContent = isLogin ? 'Register now' : 'Sign in';
+            nameFields.classList.toggle('hidden', isLogin);
+            loginOptions.classList.toggle('hidden', !isLogin);
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (isLogin) {
+                // Login logic
+                try {
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        const user = {
+                            firstName: 'User',
+                            lastName: 'Name',
+                            email: email,
+                            profileImage: 'https://via.placeholder.com/40',
+                            aiChats: [],
+                            listings: []
+                        };
+                        localStorage.setItem('currentUser', JSON.stringify(user));
+                        window.location.href = 'index.html';
+                    } else {
+                        alert(result.error || 'Login failed');
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    alert('Login failed. Please try again.');
+                }
+            } else {
+                // Registration logic
+                const firstName = document.getElementById('firstName').value.trim();
+                const lastName = document.getElementById('lastName').value.trim();
+                
+                if (!firstName || !lastName) {
+                    alert('Please fill in all fields.');
+                    return;
+                }
+
+                try {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
+                    
+                    const response = await fetch('/api/send-verification', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ firstName, lastName, email, password })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        showVerificationSection(email, { firstName, lastName, email, password });
+                    } else {
+                        alert(result.error || 'Failed to send verification email');
+                    }
+                } catch (error) {
+                    console.error('Registration error:', error);
+                    alert('Registration failed. Please try again.');
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Create Account';
+                }
+            }
+        });
+
+        // Verification handling
+        let pendingUserData = null;
+
+        function showVerificationSection(email, userData) {
+            pendingUserData = userData;
+            document.getElementById('authFormContainer').classList.add('hidden');
+            document.getElementById('verificationSection').classList.remove('hidden');
+            document.getElementById('verificationEmail').textContent = email;
+        }
+
+        function hideVerificationSection() {
+            document.getElementById('authFormContainer').classList.remove('hidden');
+            document.getElementById('verificationSection').classList.add('hidden');
+            pendingUserData = null;
+        }
+
+        document.getElementById('verificationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!pendingUserData) {
+                alert('No pending verification. Please try registering again.');
+                return;
+            }
+
+            const code = document.getElementById('verificationCode').value.trim();
+            
+            try {
+                const response = await fetch('/api/verify-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: pendingUserData.email, code })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    const user = {
+                        firstName: pendingUserData.firstName,
+                        lastName: pendingUserData.lastName,
+                        email: pendingUserData.email,
+                        profileImage: 'https://via.placeholder.com/40',
+                        aiChats: [],
+                        listings: [],
+                        emailVerified: true
+                    };
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    alert('Email verified successfully! Welcome to RoomFinder AI.');
+                    window.location.href = 'index.html';
+                } else {
+                    alert(result.error || 'Verification failed');
+                }
+            } catch (error) {
+                console.error('Verification error:', error);
+                alert('Verification failed. Please try again.');
+            }
+        });
+
+        document.getElementById('resendCode').addEventListener('click', async () => {
+            if (!pendingUserData) {
+                alert('No pending verification. Please try registering again.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/send-verification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(pendingUserData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Verification code resent successfully!');
+                    document.getElementById('verificationCode').value = '';
+                } else {
+                    alert(result.error || 'Failed to resend verification code');
+                }
+            } catch (error) {
+                alert('Failed to resend verification code. Please try again.');
+            }
+        });
+
+        document.getElementById('backToRegistration').addEventListener('click', hideVerificationSection);
+
+        // Format verification code input
+        document.getElementById('verificationCode').addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+    </script>
+</body>
+</html>

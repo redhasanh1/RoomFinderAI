@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Negotiation Assistant - RoomFinderAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="./ai-chat.js?v=10"></script>
+    <script src="./ai-negotiation.js?v=2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        
+        /* Gradient backgrounds */
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .gradient-bg-alt {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Modern glass cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Premium Header */
+        .premium-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+        }
+        
+        .premium-header.scrolled {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(25px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Navigation Items */
+        .nav-item {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 0.95rem;
+        }
+        
+        .nav-item:hover {
+            color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        .auth-link {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+        .auth-link:hover {
+            color: #667eea;
+            border-color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        /* Dropdown Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .dropdown-arrow {
+            font-size: 0.7rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .dropdown:hover .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 0.5rem 0;
+            min-width: 12rem;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+        }
+        
+        .dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .dropdown-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8fafc;
+            color: #667eea;
+        }
+        
+        /* Mobile Menu Styles */
+        .mobile-menu-btn {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 24px;
+            height: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+        
+        .hamburger-line {
+            width: 100%;
+            height: 2px;
+            background-color: #374151;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
+        }
+        
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            transition: left 0.3s ease;
+        }
+        
+        .mobile-menu.active {
+            left: 0;
+        }
+        
+        .mobile-menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .mobile-menu-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100%;
+            background: white;
+            overflow-y: auto;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-menu.active .mobile-menu-content {
+            transform: translateX(0);
+        }
+        
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .mobile-menu-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #374151;
+        }
+        
+        .mobile-menu-items {
+            padding: 1rem 0;
+        }
+        
+        .mobile-menu-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .mobile-menu-item:hover {
+            background-color: #f8fafc;
+            color: #667eea;
+        }
+        
+        .mobile-section {
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .mobile-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: none;
+            border: none;
+            text-align: left;
+            color: #374151;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .mobile-section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .mobile-section-content.expanded {
+            max-height: 200px;
+        }
+        
+        .mobile-arrow {
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-arrow.rotated {
+            transform: rotate(180deg);
+        }
+        
+        body.mobile-menu-open {
+            overflow: hidden;
+        }
+        
+        /* Chat bubble styles */
+        .chat-bubble {
+            max-width: 70%;
+            border-radius: 18px;
+            padding: 12px 16px;
+            margin: 8px 0;
+            position: relative;
+            word-wrap: break-word;
+            animation: fadeInUp 0.3s ease-out;
+        }
+        
+        .chat-bubble.user {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 6px;
+        }
+        
+        .chat-bubble.ai {
+            background: white;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            margin-right: auto;
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 18px;
+            border-bottom-left-radius: 6px;
+            margin: 8px 0;
+            max-width: 70%;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #9ca3af;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { 
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% { 
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Listing card styles */
+        .listing-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .listing-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Modern input styles */
+        .modern-input {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        
+        .modern-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Send button */
+        .send-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Scroll styles */
+        .chat-container {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .chat-container::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 3px;
+        }
+        
+        .chat-container::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="fixed top-0 w-full premium-header z-50">
+        <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
+            <!-- Mobile Layout -->
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <div class="text-xl md:text-2xl font-bold gradient-text">RoomFinderAI</div>
+                
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+            
+            <!-- Desktop Navigation -->
+            <div class="desktop-nav hidden md:flex items-center space-x-8">
+                <!-- Home - Standalone -->
+                <a href="index.html" class="nav-item">Home</a>
+                
+                <!-- Browse Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
+                        Browse <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="browse-dropdown">
+                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
+                        <a href="sublease.html" class="dropdown-item">Sublease Property</a>
+                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
+                    </div>
+                </div>
+                
+                <!-- Tools Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('tools')">
+                        Tools <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="tools-dropdown">
+                        <a href="ai-negotiator.html" class="dropdown-item" style="color: #667eea; font-weight: 600;">AI Negotiator</a>
+                        <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
+                        <a href="legal.html" class="dropdown-item">Legal Center</a>
+                        <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
+                    </div>
+                </div>
+                
+                <!-- About Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('about')">
+                        About <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="about-dropdown">
+                        <a href="index.html#about" class="dropdown-item">About Us</a>
+                        <a href="index.html#contact" class="dropdown-item">Contact</a>
+                        <a href="support.html" class="dropdown-item">Support</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Desktop Auth -->
+            <div class="desktop-auth hidden md:flex items-center space-x-4">
+                <a href="profile.html" aria-label="View user profile">
+                    <img id="profileLogo" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM2MzY2RjEiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xNiAxNlY0LjVDMTYgNC4yMjM4NiAxNS43NzYxIDQgMTUuNSA0SDguNUM4LjIyMzg2IDQgOCA0LjIyMzg2IDggNC41VjE2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0xMiAxNEM5Ljc5MDg2IDE0IDggMTUuNzkwOSA4IDE4QzggMjAuMjA5MSA5Ljc5MDg2IDIyIDEyIDIyQzE0LjIwOTEgMjIgMTYgMjAuMjA5MSAxNiAxOEMxNiAxNS43OTA5IDE0LjIwOTEgMTQgMTIgMTQiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cjwvc3ZnPgo=" alt="Profile" class="w-10 h-10 rounded-full transition-transform hover:scale-110">
+                </a>
+                <a href="login.html" class="auth-link">Login/Register</a>
+            </div>
+        </nav>
+        
+        <!-- Mobile Navigation Menu -->
+        <div class="mobile-menu" id="mobile-menu">
+            <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+            <div class="mobile-menu-content">
+                <div class="mobile-menu-header">
+                    <div class="text-lg font-bold gradient-text">RoomFinderAI</div>
+                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
+                </div>
+                
+                <div class="mobile-menu-items">
+                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
+                    
+                    <!-- Browse Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
+                            🔍 Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="browse-section">
+                            <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
+                            <a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
+                            <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Tools Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('tools')">
+                            🛠️ Tools <span class="mobile-arrow" id="tools-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="tools-section">
+                            <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="color: #667eea; font-weight: 600;">AI Negotiator</a>
+                            <a href="pricing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing Plans</a>
+                            <a href="legal.html" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Center</a>
+                            <a href="mortgage.html" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
+                        </div>
+                    </div>
+                    
+                    <!-- About Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('about')">
+                            ℹ️ About <span class="mobile-arrow" id="about-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="about-section">
+                            <a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
+                            <a href="index.html#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
+                            <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Auth Section -->
+                    <div class="mobile-section">
+                        <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()">👤 Profile</a>
+                        <a href="login.html" class="mobile-menu-item" onclick="closeMobileMenu()">🔐 Login/Register</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">🤖 Negotiation Assistant</h1>
+            <p class="text-gray-600">Get expert advice and coaching to negotiate better rental deals with landlords</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Sidebar - Found Listings Only -->
+            <div class="lg:col-span-1">
+                <!-- Found Listings Panel -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">🏠 Found Listings</h3>
+                    <div id="activeNegotiations" class="space-y-3">
+                        <p class="text-gray-500 text-sm">Use the AI chat to search for properties!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat Interface -->
+            <div class="lg:col-span-2">
+                <div class="glass-card h-[700px] flex flex-col">
+                    <!-- Chat Header -->
+                    <div class="p-6 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div>
+                                    <h3 class="font-semibold text-gray-900">AI Negotiation Assistant</h3>
+                                    <p class="text-sm text-green-600 flex items-center">
+                                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                        Ready to Help
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button id="clearChat" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition font-medium">
+                                    Clear Chat
+                                </button>
+                                <button id="saveChat" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium">
+                                    Save Chat
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Messages -->
+                    <div id="chatContainer" class="flex-1 p-6 overflow-y-auto chat-container">
+                        <div id="chatMessages">
+                            <!-- Welcome message -->
+                            <div class="chat-bubble ai">
+                                <div class="font-semibold text-sm text-gray-500 mb-1">AI Assistant</div>
+                                <p>Hello! I'm your AI assistant. Tell me what you're looking for (e.g., "I want a house in Hong Kong for $1500") and I'll search our database for matching listings and help you negotiate with landlords!</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Typing indicator (hidden by default) -->
+                        <div id="typingIndicator" class="typing-indicator hidden">
+                            <span class="text-sm text-gray-500 mr-3">Assistant is typing</span>
+                            <div class="typing-dots">
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Input -->
+                    <div class="p-6 border-t border-gray-200">
+                        <div class="flex space-x-4">
+                            <input 
+                                type="text" 
+                                id="messageInput" 
+                                placeholder="Type your message here..."
+                                class="flex-1 modern-input"
+                                maxlength="500"
+                            >
+                            <button id="sendButton" class="send-button">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="flex justify-between items-center mt-2">
+                            <p class="text-xs text-gray-500">Press Enter to send • Max 500 characters</p>
+                            <p id="charCount" class="text-xs text-gray-400">0/500</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script>
+        // Global variables
+        let currentUser = null;
+        let aiNegotiator = null;
+        let supabase = null;
+        let configData = null;
+
+        // Initialize the application
+        async function initializeApp() {
+            try {
+                console.log('🚀 Initializing AI Negotiator with Supabase integration...');
+                
+                // Load configuration from Railway API
+                console.log('🔧 Loading configuration from Railway...');
+                const configResponse = await fetch('/api/config');
+                
+                if (!configResponse.ok) {
+                    throw new Error('Failed to load configuration');
+                }
+                
+                configData = await configResponse.json();
+                console.log('✅ Configuration loaded successfully');
+                
+                // Initialize Supabase
+                if (!window.supabase) {
+                    throw new Error('Supabase library not loaded from CDN');
+                }
+                
+                supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
+                console.log('✅ Supabase client initialized');
+                
+                // Test Supabase connection
+                await supabase.from('listings').select('count', { count: 'exact', head: true });
+                console.log('✅ Supabase connection test successful');
+                
+                // Get current user (or create anonymous session)
+                currentUser = JSON.parse(localStorage.getItem('user')) || { email: 'anonymous@user.com', name: 'Anonymous User' };
+                console.log('👤 Current user:', currentUser.email);
+                
+                // Check if AIChatHandler class is available
+                if (typeof AIChatHandler === 'undefined') {
+                    console.error('❌ AIChatHandler class not found! ai-chat.js not loaded properly');
+                    throw new Error('AI Chat module not loaded');
+                }
+                
+                // Initialize AI Negotiator with database integration
+                console.log('🔧 Creating AIChatHandler instance...');
+                aiNegotiator = new AIChatHandler(supabase, configData);
+                await aiNegotiator.init(currentUser);
+                
+                // Make aiChat globally accessible for sidebar button clicks
+                window.aiChat = aiNegotiator;
+                
+                // Setup message input handling
+                setupMessageHandling();
+                
+                console.log('✅ AI Negotiator initialized successfully with database integration!');
+                
+            } catch (error) {
+                console.error('❌ Failed to initialize AI Negotiator:', error);
+                document.getElementById('chatMessages').innerHTML = `
+                    <div style="color: red; padding: 1rem; border: 2px solid red; border-radius: 8px; margin: 1rem 0;">
+                        <h3>❌ Initialization Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>Please check that all environment variables are set correctly in Railway.</p>
+                        <button onclick="window.location.reload()" style="background: #667eea; color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; margin-top: 8px;">
+                            🔄 Retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Setup message input handling
+        function setupMessageHandling() {
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const charCount = document.getElementById('charCount');
+            const clearChatBtn = document.getElementById('clearChat');
+            const saveChatBtn = document.getElementById('saveChat');
+
+            if (!messageInput || !sendButton) {
+                console.error('Message input elements not found');
+                return;
+            }
+
+            // Send button click handler
+            sendButton.addEventListener('click', sendMessage);
+            
+            // Enter key handler
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Character count handler
+            if (charCount) {
+                messageInput.addEventListener('input', () => {
+                    const length = messageInput.value.length;
+                    charCount.textContent = `${length}/500`;
+                    
+                    if (length > 450) {
+                        charCount.classList.add('text-red-500');
+                        charCount.classList.remove('text-gray-400');
+                    } else {
+                        charCount.classList.remove('text-red-500');
+                        charCount.classList.add('text-gray-400');
+                    }
+                });
+            }
+            
+            // Clear chat handler
+            if (clearChatBtn) {
+                clearChatBtn.addEventListener('click', () => {
+                    if (aiNegotiator) {
+                        aiNegotiator.clearConversationHistory();
+                        document.getElementById('chatMessages').innerHTML = `
+                            <div class="chat-bubble ai">
+                                <div class="font-semibold text-sm text-gray-500 mb-1">AI Assistant</div>
+                                <p>Hello! I'm your AI assistant. Tell me what you're looking for (e.g., "I want a house in Hong Kong for $1500") and I'll search our database for matching listings and help you negotiate with landlords!</p>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
+            // Save chat handler
+            if (saveChatBtn) {
+                saveChatBtn.addEventListener('click', () => {
+                    if (aiNegotiator && aiNegotiator.conversationHistory) {
+                        const chatData = {
+                            timestamp: new Date().toISOString(),
+                            messages: aiNegotiator.conversationHistory
+                        };
+                        
+                        const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `ai-negotiator-chat-${new Date().toISOString().split('T')[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        
+                        aiNegotiator.appendMessage('AI', '💾 Chat history saved successfully!', 'left');
+                    }
+                });
+            }
+        }
+
+        // Send message function
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            
+            if (!messageInput || !aiNegotiator) return;
+            
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            // Clear input and disable send button temporarily
+            messageInput.value = '';
+            const charCount = document.getElementById('charCount');
+            if (charCount) charCount.textContent = '0/500';
+            sendButton.disabled = true;
+            
+            try {
+                // Process message with AI chat handler
+                await aiNegotiator.processMessage(message);
+            } catch (error) {
+                console.error('Error processing message:', error);
+                aiNegotiator.appendMessage('AI', 'Sorry, I encountered an error processing your message. Please try again.', 'left');
+            } finally {
+                sendButton.disabled = false;
+            }
+        }
+
+        // Quick search function for sidebar form
+        function performQuickSearch() {
+            const location = document.getElementById('filterLocation').value;
+            const price = document.getElementById('filterPrice').value;
+            const type = document.getElementById('filterType').value;
+            
+            let searchQuery = '';
+            if (location) searchQuery += `I want in ${location}`;
+            if (price) searchQuery += ` under $${price}`;
+            if (type) searchQuery += ` ${type.toLowerCase()}`;
+            
+            if (searchQuery.trim()) {
+                document.getElementById('messageInput').value = searchQuery.trim();
+                sendMessage();
+                
+                // Clear form
+                document.getElementById('filterLocation').value = '';
+                document.getElementById('filterPrice').value = '';
+                document.getElementById('filterType').value = '';
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            
+            // Check for pre-filled search query from index page
+            const aiSearchQuery = localStorage.getItem('aiSearchQuery');
+            if (aiSearchQuery) {
+                const messageInput = document.getElementById('messageInput');
+                if (messageInput) {
+                    messageInput.value = aiSearchQuery;
+                    messageInput.focus();
+                }
+                // Clear the stored query after using it
+                localStorage.removeItem('aiSearchQuery');
+            }
+        });
+        
+        // Dropdown Navigation Functions
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId + '-dropdown');
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            
+            // Close all other dropdowns
+            allDropdowns.forEach(menu => {
+                if (menu.id !== dropdownId + '-dropdown') {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                }
+            });
+            
+            // Toggle current dropdown
+            if (dropdown.style.opacity === '1') {
+                dropdown.style.opacity = '0';
+                dropdown.style.visibility = 'hidden';
+                dropdown.style.transform = 'translateY(-10px)';
+            } else {
+                dropdown.style.opacity = '1';
+                dropdown.style.visibility = 'visible';
+                dropdown.style.transform = 'translateY(0)';
+            }
+        }
+        
+        // Mobile Menu Functions
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu.classList.contains('active')) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        }
+        
+        function openMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            mobileMenu.classList.add('active');
+            hamburgerBtn.classList.add('active');
+            body.classList.add('mobile-menu-open');
+        }
+        
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            if (mobileMenu) mobileMenu.classList.remove('active');
+            if (hamburgerBtn) hamburgerBtn.classList.remove('active');
+            if (body) body.classList.remove('mobile-menu-open');
+        }
+        
+        function toggleMobileSection(sectionId) {
+            const section = document.getElementById(sectionId + '-section');
+            const arrow = document.getElementById(sectionId + '-arrow');
+            
+            if (section.classList.contains('expanded')) {
+                section.classList.remove('expanded');
+                arrow.classList.remove('rotated');
+            } else {
+                // Close all other sections first
+                document.querySelectorAll('.mobile-section-content').forEach(s => s.classList.remove('expanded'));
+                document.querySelectorAll('.mobile-arrow').forEach(a => a.classList.remove('rotated'));
+                
+                // Open the clicked section
+                section.classList.add('expanded');
+                arrow.classList.add('rotated');
+            }
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            let clickedInsideDropdown = false;
+            
+            dropdowns.forEach(dropdown => {
+                if (dropdown.contains(event.target)) {
+                    clickedInsideDropdown = true;
+                }
+            });
+            
+            if (!clickedInsideDropdown) {
+                const allDropdowns = document.querySelectorAll('.dropdown-menu');
+                allDropdowns.forEach(menu => {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                });
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) {
+                closeMobileMenu();
+            }
+        });
+    </script>
+</body>
+</html>

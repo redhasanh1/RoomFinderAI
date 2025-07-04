@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - RoomFinderAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        
+        /* Modern payment container */
+        .payment-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        
+        /* Modern input styling */
+        .modern-input {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .modern-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+            outline: none;
+        }
+        
+        /* Modern button */
+        .payment-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .payment-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        .payment-button:disabled {
+            background: #9ca3af;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        /* Plan details card */
+        .plan-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        /* Modern header */
+        .modern-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+        }
+        
+        /* Brand logo styling */
+        .brand-logo {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+        }
+        
+        /* Navigation link styling */
+        .nav-link {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+        
+        .nav-link:hover {
+            color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        /* Auth link styling */
+        .auth-link {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+        .auth-link:hover {
+            color: #667eea;
+            border-color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        /* Stripe element customization */
+        .StripeElement {
+            background-color: white;
+            height: 48px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .StripeElement--focus {
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+        }
+        
+        .StripeElement--invalid {
+            border-color: #ef4444;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+        }
+        
+        .StripeElement--webkit-autofill {
+            background-color: #fefefe !important;
+        }
+        
+        /* Success animation */
+        .success-icon {
+            animation: successPulse 0.6s ease-in-out;
+        }
+        
+        @keyframes successPulse {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 2px solid white;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Digital Wallet Buttons */
+        .payment-divider {
+            position: relative;
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .payment-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+        }
+        
+        .payment-divider span {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0 1rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .wallet-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .wallet-button {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .wallet-button:hover {
+            border-color: #d1d5db;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .wallet-button:active {
+            transform: translateY(0);
+        }
+
+        .wallet-button.google-pay {
+            border-color: #4285f4;
+            color: #4285f4;
+        }
+
+        .wallet-button.google-pay:hover {
+            background: #4285f4;
+            color: white;
+        }
+
+        .wallet-button.apple-pay {
+            border-color: #000;
+            color: #000;
+        }
+
+        .wallet-button.apple-pay:hover {
+            background: #000;
+            color: white;
+        }
+
+        .wallet-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 0.5rem;
+        }
+
+        /* Enhanced Payment Request Button */
+        #payment-request-button {
+            margin-bottom: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        #payment-request-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .payment-methods-container {
+            background: rgba(248, 250, 252, 0.8);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(226, 232, 240, 0.6);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+    <!-- Simplified Payment Header -->
+    <header class="sticky top-0 modern-header shadow-lg z-10">
+        <nav class="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <!-- Left side - Brand and minimal navigation -->
+            <div class="flex items-center space-x-6">
+                <div class="text-2xl font-bold brand-logo">RoomFinderAI</div>
+                <div class="hidden sm:flex items-center space-x-4">
+                    <a href="/index" class="nav-link">← Back to Home</a>
+                    <a href="/pricing" class="nav-link">Pricing</a>
+                    <a href="/index#contact" class="nav-link">Support</a>
+                </div>
+            </div>
+            
+            <!-- Right side - Auth section -->
+            <div id="authSection">
+                <a href="/login" class="auth-link">Login</a>
+            </div>
+        </nav>
+        
+        <!-- Mobile navigation for smaller screens -->
+        <div class="sm:hidden px-4 pb-2">
+            <div class="flex items-center space-x-4 text-sm">
+                <a href="/index" class="nav-link">← Home</a>
+                <a href="/pricing" class="nav-link">Pricing</a>
+                <a href="/index#contact" class="nav-link">Support</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Payment Section -->
+    <main class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="max-w-lg mx-auto payment-container p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold brand-logo mb-4">Complete Your Subscription</h1>
+                <div id="planDetails" class="plan-card">
+                    <p class="text-lg font-semibold text-white" id="planName">Loading...</p>
+                    <p class="text-2xl font-bold text-white" id="planPrice">$0.00/mo</p>
+                </div>
+            </div>
+
+            <!-- Payment Form -->
+            <form id="payment-form">
+                <!-- Payment Request Button (Apple Pay / Google Pay) -->
+                <div id="payment-request-button" class="mb-6" style="display: none;">
+                    <!-- Stripe Payment Request Button will be inserted here -->
+                </div>
+
+                <!-- Alternative Payment Methods -->
+                <div id="wallet-container" class="payment-methods-container" style="display: none;">
+                    <div class="wallet-buttons">
+                        <button type="button" id="google-pay-btn" class="wallet-button google-pay" style="display: none;">
+                            <svg class="wallet-icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12.5 8.5c-.4-.4-1-.7-1.8-.7-1.4 0-2.5 1.1-2.5 2.5s1.1 2.5 2.5 2.5c.8 0 1.4-.3 1.8-.7l1.4 1.4c-.8.8-1.9 1.3-3.2 1.3-2.5 0-4.5-2-4.5-4.5s2-4.5 4.5-4.5c1.3 0 2.4.5 3.2 1.3l-1.4 1.4zm7.5 0c-.4-.4-1-.7-1.8-.7-1.4 0-2.5 1.1-2.5 2.5s1.1 2.5 2.5 2.5c.8 0 1.4-.3 1.8-.7l1.4 1.4c-.8.8-1.9 1.3-3.2 1.3-2.5 0-4.5-2-4.5-4.5s2-4.5 4.5-4.5c1.3 0 2.4.5 3.2 1.3l-1.4 1.4z"/>
+                            </svg>
+                            Google Pay
+                        </button>
+                        <button type="button" id="apple-pay-btn" class="wallet-button apple-pay" style="display: none;">
+                            <svg class="wallet-icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.377 0-2.332-1.26-3.428-2.8-1.287-1.82-2.323-4.63-2.323-7.28 0-4.28 2.797-6.55 5.552-6.55 1.448 0 2.675.95 3.6.95.865 0 2.222-.95 3.902-.95.613 0 2.886.06 4.374 2.19-.13.09-2.383 1.37-2.383 4.19 0 3.26 2.854 4.42 2.966 4.475z"/>
+                            </svg>
+                            Apple Pay
+                        </button>
+                    </div>
+                </div>
+
+                <div class="payment-divider">
+                    <span>or pay with card</span>
+                </div>
+                <div class="mb-6">
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                    <input type="email" id="email" required class="modern-input w-full" placeholder="your.email@example.com">
+                </div>
+
+                <div class="mb-6">
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Cardholder Name</label>
+                    <input type="text" id="name" required class="modern-input w-full" placeholder="John Doe">
+                </div>
+
+                <div class="mb-6">
+                    <label for="card-element" class="block text-sm font-medium text-gray-700 mb-2">Card Information</label>
+                    <div id="card-element" class="StripeElement">
+                        <!-- Stripe Elements will create form elements here -->
+                    </div>
+                    <div id="card-errors" role="alert" class="text-red-600 text-sm mt-2"></div>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="terms" required class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <label for="terms" class="ml-2 block text-sm text-gray-900">
+                            I agree to the <a href="#" class="text-blue-600 hover:underline">Terms of Service</a> and <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-payment" class="w-full payment-button">
+                    <span id="button-text">Subscribe Now</span>
+                    <div id="spinner" class="hidden inline-block spinner ml-2"></div>
+                </button>
+            </form>
+
+
+            <!-- Security Notice -->
+            <div class="mt-6 text-center">
+                <p class="text-xs text-gray-500">
+                    🔒 Your payment information is secured by 256-bit SSL encryption
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Simplified Footer -->
+    <footer class="bg-gray-800 text-white py-6">
+        <div class="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
+            <div class="mt-3 flex justify-center space-x-6 text-sm">
+                <a href="/index" class="hover:text-blue-400 transition">Home</a>
+                <a href="/pricing" class="hover:text-blue-400 transition">Pricing</a>
+                <a href="/index#contact" class="hover:text-blue-400 transition">Support</a>
+                <a href="/legal" class="hover:text-blue-400 transition">Privacy</a>
+            </div>
+        </div>
+    <script>
+        // Initialize Stripe with publishable key from Railway API
+        let stripe;
+        let elements;
+        let cardElement;
+        let paymentRequest;
+
+        // Get plan details from URL parameters and update display immediately
+        const urlParams = new URLSearchParams(window.location.search);
+        const plan = urlParams.get('plan') || 'basic';
+        const price = urlParams.get('price') || '9.99';
+        const priceInCents = Math.round(parseFloat(price) * 100);
+
+        // Update plan details
+        document.getElementById('planName').textContent = plan.charAt(0).toUpperCase() + plan.slice(1) + ' Plan';
+        document.getElementById('planPrice').textContent = `$${price}/mo`;
+
+        // Fetch configuration from API and initialize Stripe
+        fetch('/api/config')
+            .then(response => response.json())
+            .then(config => {
+                stripe = Stripe(config.STRIPE_PUBLISHABLE_KEY);
+                elements = stripe.elements({
+                    loader: 'auto'
+                });
+                initializePaymentRequest();
+                initializePaymentForm();
+            })
+            .catch(error => {
+                console.error('Failed to load configuration:', error);
+                showErrorMessage('Failed to initialize payment system. Please refresh the page.');
+            });
+
+        function initializePaymentRequest() {
+            // Create Payment Request for Apple Pay/Google Pay
+            paymentRequest = stripe.paymentRequest({
+                country: 'US',
+                currency: 'usd',
+                total: {
+                    label: `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan`,
+                    amount: priceInCents,
+                },
+                requestPayerName: true,
+                requestPayerEmail: true,
+            });
+
+            // Create and mount Payment Request Button
+            const prButton = elements.create('paymentRequestButton', {
+                paymentRequest,
+                style: {
+                    paymentRequestButton: {
+                        type: 'default',
+                        theme: 'dark',
+                        height: '48px',
+                    },
+                },
+            });
+
+            // Check the availability of the Payment Request API
+            paymentRequest.canMakePayment().then(function(result) {
+                console.log('Payment Request availability:', result);
+                console.log('Current location protocol:', window.location.protocol);
+                console.log('User agent:', navigator.userAgent);
+                
+                if (result) {
+                    // Show the native Stripe Payment Request button (this handles Google Pay/Apple Pay automatically)
+                    document.getElementById('payment-request-button').style.display = 'block';
+                    prButton.mount('#payment-request-button');
+                    console.log('Payment Request button mounted successfully');
+                    
+                    // Hide our custom wallet buttons since Stripe handles them natively
+                    document.getElementById('wallet-container').style.display = 'none';
+                } else {
+                    console.log('No payment methods available - likely due to HTTP (not HTTPS) or unsupported browser');
+                    console.log('Apple Pay requires: Safari on iOS/macOS with Touch ID/Face ID');
+                    console.log('Google Pay requires: Chrome with saved payment methods or Android device');
+                    console.log('Both require HTTPS in production');
+                    
+                    // Show custom wallet buttons as fallback for development
+                    document.getElementById('payment-request-button').style.display = 'none';
+                    document.getElementById('wallet-container').style.display = 'block';
+                }
+            }).catch(function(error) {
+                console.error('Payment Request API error:', error);
+                console.log('Falling back to custom wallet buttons for development');
+                // Show custom wallet buttons as fallback
+                document.getElementById('payment-request-button').style.display = 'none';
+                document.getElementById('wallet-container').style.display = 'block';
+            });
+
+            // Handle payment request token
+            paymentRequest.on('token', function(ev) {
+                // Send the token to your server to charge the customer
+                processWalletPayment(ev.token, ev.complete);
+            });
+
+            // Individual wallet button handlers
+            document.getElementById('google-pay-btn').addEventListener('click', function() {
+                if (paymentRequest) {
+                    paymentRequest.show();
+                }
+            });
+
+            document.getElementById('apple-pay-btn').addEventListener('click', function() {
+                if (paymentRequest) {
+                    paymentRequest.show();
+                }
+            });
+        }
+
+        function initializePaymentForm() {
+            // Create card element
+            cardElement = elements.create('card', {
+                hidePostalCode: true,
+                disableLink: true,
+                style: {
+                    base: {
+                        fontSize: '16px',
+                        color: '#424770',
+                        '::placeholder': {
+                            color: '#aab7c4',
+                        },
+                    },
+                    invalid: {
+                        color: '#9e2146',
+                    },
+                },
+            });
+
+            cardElement.mount('#card-element');
+
+            // Handle real-time validation errors from the card Element
+            cardElement.on('change', ({error}) => {
+                const displayError = document.getElementById('card-errors');
+                if (error) {
+                    displayError.textContent = error.message;
+                } else {
+                    displayError.textContent = '';
+                }
+            });
+
+            // Handle form submission
+            const form = document.getElementById('payment-form');
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const submitButton = document.getElementById('submit-payment');
+                const buttonText = document.getElementById('button-text');
+                const spinner = document.getElementById('spinner');
+
+                // Disable button and show loading
+                submitButton.disabled = true;
+                buttonText.textContent = 'Processing...';
+                spinner.classList.remove('hidden');
+
+                const {token, error} = await stripe.createToken(cardElement, {
+                    name: document.getElementById('name').value,
+                });
+
+                if (error) {
+                    // Show error to customer
+                    const errorElement = document.getElementById('card-errors');
+                    errorElement.textContent = error.message;
+
+                    // Re-enable button
+                    submitButton.disabled = false;
+                    buttonText.textContent = 'Subscribe Now';
+                    spinner.classList.add('hidden');
+                } else {
+                    // Send token to your server
+                    submitToken(token);
+                }
+            });
+
+            async function submitToken(token) {
+                const email = document.getElementById('email').value;
+                const name = document.getElementById('name').value;
+
+                try {
+                    // Send payment to backend for processing
+                    const response = await fetch('/api/process-payment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            token: token,
+                            email: email,
+                            name: name,
+                            plan: plan,
+                            price: price
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        // Payment successful
+                        console.log('Payment successful:', result.chargeId);
+                        
+                        // Show success message
+                        showSuccessMessage();
+
+                        // Store subscription in localStorage
+                        const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                        currentUser.subscription = {
+                            plan: plan,
+                            price: price,
+                            status: 'active',
+                            startDate: new Date().toISOString(),
+                            paymentMethod: 'card',
+                            chargeId: result.chargeId
+                        };
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                        // Redirect to success page or dashboard
+                        setTimeout(() => {
+                            window.location.href = '/index?payment=success';
+                        }, 3000);
+
+                    } else {
+                        // Payment failed
+                        throw new Error(result.error || 'Payment processing failed');
+                    }
+
+                } catch (error) {
+                    console.error('Payment failed:', error);
+                    showErrorMessage(error.message || 'Payment failed. Please try again.');
+                    
+                    // Re-enable button
+                    const submitButton = document.getElementById('submit-payment');
+                    const buttonText = document.getElementById('button-text');
+                    const spinner = document.getElementById('spinner');
+                    
+                    submitButton.disabled = false;
+                    buttonText.textContent = 'Subscribe Now';
+                    spinner.classList.add('hidden');
+                }
+            }
+        }
+
+        async function processWalletPayment(token, complete) {
+            try {
+                // Extract email and name from various token sources
+                const walletEmail = token.email || 
+                                  token.paymentMethod?.billing_details?.email || 
+                                  token.card?.name || 
+                                  document.getElementById('email')?.value || 
+                                  'wallet-payment@example.com';
+                
+                const walletName = token.paymentMethod?.billing_details?.name || 
+                                 token.card?.name || 
+                                 document.getElementById('name')?.value || 
+                                 'Wallet User';
+
+                console.log('Processing wallet payment with:', { walletEmail, walletName, token });
+
+                // Send payment to backend for processing
+                const response = await fetch('/api/process-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        token: token,
+                        email: walletEmail,
+                        name: walletName,
+                        plan: plan,
+                        price: price,
+                        paymentMethod: 'wallet'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Payment successful
+                    complete('success');
+                    console.log('Wallet payment successful:', result.chargeId);
+                    
+                    // Show success message
+                    showSuccessMessage();
+
+                    // Store subscription in localStorage
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                    currentUser.subscription = {
+                        plan: plan,
+                        price: price,
+                        status: 'active',
+                        startDate: new Date().toISOString(),
+                        paymentMethod: 'wallet',
+                        chargeId: result.chargeId
+                    };
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                    // Redirect to success page or dashboard
+                    setTimeout(() => {
+                        window.location.href = '/index?payment=success';
+                    }, 3000);
+
+                } else {
+                    // Payment failed
+                    complete('fail');
+                    throw new Error(result.error || 'Payment processing failed');
+                }
+
+            } catch (error) {
+                complete('fail');
+                console.error('Wallet payment failed:', error);
+                showErrorMessage(error.message || 'Payment failed. Please try again.');
+            }
+        }
+
+        function showSuccessMessage() {
+            const form = document.getElementById('payment-form');
+            form.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
+                    <p class="text-gray-600 mb-4">Welcome to Room Finder ${plan.charAt(0).toUpperCase() + plan.slice(1)}!</p>
+                    <p class="text-sm text-gray-500">Redirecting you to the dashboard...</p>
+                </div>
+            `;
+        }
+
+        function showErrorMessage(message) {
+            const errorElement = document.getElementById('card-errors');
+            errorElement.textContent = message;
+        }
+
+        // Update authentication section and check login status
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const authSection = document.getElementById('authSection');
+
+            if (currentUser) {
+                authSection.innerHTML = `
+                    <a href="/profile">
+                        <img src="${currentUser.profileImage || 'https://via.placeholder.com/40'}" alt="Profile" class="w-10 h-10 rounded-full">
+                    </a>
+                `;
+                
+                // Pre-fill email if user is logged in
+                if (currentUser.email) {
+                    document.getElementById('email').value = currentUser.email;
+                }
+            } else {
+                // User is not logged in - show error message and disable form
+                showLoginRequiredError();
+            }
+        });
+
+        function showLoginRequiredError() {
+            const form = document.getElementById('payment-form');
+            form.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                        <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Login Required</h2>
+                    <p class="text-gray-600 mb-6">You must be logged in to make a purchase. Please log in to your account before continuing.</p>
+                    <a href="/login" class="bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg inline-block">
+                        Login Now
+                    </a>
+                </div>
+            `;
+        }
+
+        // Note about testing
+        console.log(`
+        🔧 STRIPE TESTING NOTES:
+        
+        Test Card Numbers:
+        - 4242424242424242 (Visa)
+        - 4000000000000002 (Card declined)
+        - 4000000000009995 (Insufficient funds)
+        
+        Use any future date for expiry, any 3-digit CVC, and any ZIP code.
+        
+        💳 DIGITAL WALLET TESTING:
+        - Apple Pay: Only works on Apple devices with Safari
+        - Google Pay: Works on Chrome and supported Android devices
+        - In test mode, these may show as regular buttons for testing
+        `);
+    </script>
+</body>
+</html>
