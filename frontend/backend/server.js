@@ -5021,6 +5021,32 @@ app.get('/api/turnstile-key', (req, res) => {
     });
 });
 
+// Dynamic route handler for all HTML pages - MUST BE LAST
+app.get('/:page', (req, res) => {
+    try {
+        const pageName = req.params.page;
+        
+        // Skip API routes and health - they should be handled above
+        if (pageName.startsWith('api') || pageName === 'health') {
+            return res.status(404).send('Route not found');
+        }
+        
+        const htmlPath = path.join(__dirname, '..', `${pageName}.html`);
+        
+        // Check if file exists
+        if (fs.existsSync(htmlPath)) {
+            console.log(`📄 Serving ${pageName}.html from:`, htmlPath);
+            res.sendFile(htmlPath);
+        } else {
+            console.log(`❌ Page not found: ${pageName}.html`);
+            res.status(404).send(`Page not found: /${pageName}`);
+        }
+    } catch (error) {
+        console.error('Error serving page:', error);
+        res.status(500).send('Server error');
+    }
+});
+
 // Declare server variable in global scope
 let server;
 
