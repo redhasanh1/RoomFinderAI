@@ -802,42 +802,42 @@
             </div>
             
             <!-- Desktop Navigation -->
-            <div class="desktop-nav hidden md:flex items-center space-x-6">
+            <div class="desktop-nav hidden md:flex items-center space-x-8">
                 <!-- Home - Standalone -->
                 <a href="/index" class="nav-item">Home</a>
                 
-                <!-- Properties Dropdown -->
+                <!-- Browse Dropdown -->
                 <div class="dropdown">
-                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('properties')">
-                        Properties <span class="dropdown-arrow">▼</span>
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
+                        Browse <span class="dropdown-arrow">▼</span>
                     </button>
-                    <div class="dropdown-menu" id="properties-dropdown">
+                    <div class="dropdown-menu" id="browse-dropdown">
                         <a href="/listings" class="dropdown-item">Browse Listings</a>
                         <a href="/sublease" class="dropdown-item">Sublease Property</a>
                         <a href="#add-listing" class="dropdown-item" onclick="document.querySelector('#listingForm').scrollIntoView()">Add Listing</a>
+                        <a href="/student-housing" class="dropdown-item">Student Housing</a>
                     </div>
                 </div>
                 
-                <!-- Services Dropdown -->
+                <!-- Tools Dropdown -->
                 <div class="dropdown">
-                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('services')">
-                        Services <span class="dropdown-arrow">▼</span>
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('tools')">
+                        Tools <span class="dropdown-arrow">▼</span>
                     </button>
-                    <div class="dropdown-menu" id="services-dropdown">
+                    <div class="dropdown-menu" id="tools-dropdown">
                         <a href="/ai-negotiator" class="dropdown-item">AI Negotiator</a>
                         <a href="/pricing" class="dropdown-item">Pricing Plans</a>
-                        <a href="/student-housing" class="dropdown-item">Student Housing</a>
                         <a href="/legal" class="dropdown-item">Legal Center</a>
                         <a href="/mortgage" class="dropdown-item">Mortgage Tools</a>
                     </div>
                 </div>
                 
-                <!-- Company Dropdown -->
+                <!-- About Dropdown -->
                 <div class="dropdown">
-                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('company')">
-                        Company <span class="dropdown-arrow">▼</span>
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('about')">
+                        About <span class="dropdown-arrow">▼</span>
                     </button>
-                    <div class="dropdown-menu" id="company-dropdown">
+                    <div class="dropdown-menu" id="about-dropdown">
                         <a href="/index#about" class="dropdown-item">About Us</a>
                         <a href="/index#contact" class="dropdown-item">Contact</a>
                         <a href="/support" class="dropdown-item">Support</a>
@@ -863,38 +863,38 @@
                 <div class="mobile-menu-items">
                     <a href="/index" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
                     
-                    <!-- Properties Section -->
+                    <!-- Browse Section -->
                     <div class="mobile-section">
-                        <button class="mobile-section-header" onclick="toggleMobileSection('properties')">
-                            🏘️ Properties <span class="mobile-arrow" id="properties-arrow">▼</span>
+                        <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
+                            🔍 Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
                         </button>
-                        <div class="mobile-section-content" id="properties-section">
+                        <div class="mobile-section-content" id="browse-section">
                             <a href="/listings" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
                             <a href="/sublease" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
                             <a href="#add-listing" class="mobile-menu-item" onclick="closeMobileMenu(); document.querySelector('#listingForm').scrollIntoView()">Add Listing</a>
+                            <a href="/student-housing" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
                         </div>
                     </div>
                     
-                    <!-- Services Section -->
+                    <!-- Tools Section -->
                     <div class="mobile-section">
-                        <button class="mobile-section-header" onclick="toggleMobileSection('services')">
-                            🛠️ Services <span class="mobile-arrow" id="services-arrow">▼</span>
+                        <button class="mobile-section-header" onclick="toggleMobileSection('tools')">
+                            🛠️ Tools <span class="mobile-arrow" id="tools-arrow">▼</span>
                         </button>
-                        <div class="mobile-section-content" id="services-section">
+                        <div class="mobile-section-content" id="tools-section">
                             <a href="/ai-negotiator" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
                             <a href="/pricing" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing Plans</a>
-                            <a href="/student-housing" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
                             <a href="/legal" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Center</a>
                             <a href="/mortgage" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
                         </div>
                     </div>
                     
-                    <!-- Company Section -->
+                    <!-- About Section -->
                     <div class="mobile-section">
-                        <button class="mobile-section-header" onclick="toggleMobileSection('company')">
-                            🏢 Company <span class="mobile-arrow" id="company-arrow">▼</span>
+                        <button class="mobile-section-header" onclick="toggleMobileSection('about')">
+                            ℹ️ About <span class="mobile-arrow" id="about-arrow">▼</span>
                         </button>
-                        <div class="mobile-section-content" id="company-section">
+                        <div class="mobile-section-content" id="about-section">
                             <a href="/index#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
                             <a href="/index#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
                             <a href="/support" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
