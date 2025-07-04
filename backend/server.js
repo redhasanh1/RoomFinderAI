@@ -4367,7 +4367,7 @@ app.get('/:page', (req, res) => {
             return res.status(404).send('Route not found');
         }
         
-        const htmlPath = path.join(__dirname, '..', `${pageName}.html`);
+        const htmlPath = path.join(__dirname, '..', 'frontend', `${pageName}.html`);
         
         // Check if file exists
         if (fs.existsSync(htmlPath)) {
