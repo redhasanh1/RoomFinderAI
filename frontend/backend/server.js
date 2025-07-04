@@ -12,7 +12,7 @@ const bcrypt = require('bcryptjs');
 let config = {};
 try {
     // First, try to load from config file as fallback
-    const fileConfig = require('../config.js');
+    const fileConfig = require('../../config.js');
     config = { ...fileConfig };
     console.log('✅ Config file loaded as fallback');
 } catch (error) {
@@ -30,6 +30,8 @@ config = {
     OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim() || config.OPENAI_ORG_ID,
     OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || config.OPENAI_MODEL || 'gpt-3.5-turbo',
     BREVO_API_KEY: process.env.BREVO_API_KEY?.trim() || config.BREVO_API_KEY,
+    TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY?.trim() || config.TURNSTILE_SITE_KEY,
+    TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY?.trim() || config.TURNSTILE_SECRET_KEY,
     AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_KEY,
     AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
     AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim() || config.AZURE_FACE_KEY,
@@ -5010,6 +5012,13 @@ app.get('/api/sublease/search', async (req, res) => {
         console.error('Search error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
+});
+
+// API: Get Turnstile site key
+app.get('/api/turnstile-key', (req, res) => {
+    res.json({ 
+        siteKey: config.TURNSTILE_SITE_KEY || '1x00000000000000000000AA' 
+    });
 });
 
 // Declare server variable in global scope

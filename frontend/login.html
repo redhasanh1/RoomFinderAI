@@ -10,6 +10,7 @@
     <title>RoomFinder AI - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
@@ -195,8 +196,13 @@
                         <a href="/forgot-password" class="text-sm text-purple-600 hover:text-purple-800 font-medium">Forgot password?</a>
                     </div>
                     
+                    <!-- Cloudflare Turnstile -->
+                    <div class="flex justify-center">
+                        <div id="turnstileWidget" class="cf-turnstile" data-callback="onTurnstileSuccess"></div>
+                    </div>
+                    
                     <!-- Submit Button -->
-                    <button type="submit" id="submitButton" class="btn-grand w-full">
+                    <button type="submit" id="submitButton" class="btn-grand w-full" disabled>
                         Sign In
                     </button>
                     
@@ -283,6 +289,73 @@
 
     <script src="js/main.js"></script>
     <script>
+        // Turnstile configuration
+        let turnstileToken = null;
+        let turnstileWidgetId = null;
+        
+        // Callback when Turnstile is successfully completed
+        function onTurnstileSuccess(token) {
+            turnstileToken = token;
+            document.getElementById('submitButton').disabled = false;
+            console.log('Turnstile verification successful');
+        }
+
+        // Initialize Turnstile with dynamic site key
+        async function initializeTurnstile() {
+            try {
+                console.log('Fetching Turnstile site key...');
+                const response = await fetch('/api/turnstile-key');
+                const data = await response.json();
+                
+                console.log('Received site key data:', data);
+                
+                if (data.siteKey && window.turnstile) {
+                    const widget = document.getElementById('turnstileWidget');
+                    
+                    // Clear any existing content
+                    widget.innerHTML = '';
+                    
+                    console.log('Rendering Turnstile with site key:', data.siteKey);
+                    
+                    // Render the widget
+                    turnstileWidgetId = window.turnstile.render(widget, {
+                        sitekey: data.siteKey,
+                        callback: onTurnstileSuccess,
+                        'error-callback': function(errorCode) {
+                            console.error('Turnstile error occurred:', errorCode);
+                            document.getElementById('submitButton').disabled = true;
+                        }
+                    });
+                    
+                    console.log('Turnstile initialized successfully, widget ID:', turnstileWidgetId);
+                } else {
+                    console.error('No site key received or Turnstile not loaded');
+                }
+            } catch (error) {
+                console.error('Failed to initialize Turnstile:', error);
+                // Fallback: enable form without Turnstile in case of error
+                document.getElementById('submitButton').disabled = false;
+            }
+        }
+
+        // Initialize Turnstile when everything is ready
+        function waitForTurnstile() {
+            if (window.turnstile && typeof window.turnstile.render === 'function') {
+                console.log('Turnstile is ready, initializing...');
+                initializeTurnstile();
+            } else {
+                console.log('Waiting for Turnstile to load...');
+                setTimeout(waitForTurnstile, 100);
+            }
+        }
+
+        // Start waiting for Turnstile
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', waitForTurnstile);
+        } else {
+            waitForTurnstile();
+        }
+        
         // Initialize form handling
         const form = document.getElementById('authForm');
         const formTitle = document.getElementById('formTitle');
@@ -301,10 +374,24 @@
             toggleForm.textContent = isLogin ? 'Register now' : 'Sign in';
             nameFields.classList.toggle('hidden', isLogin);
             loginOptions.classList.toggle('hidden', !isLogin);
+            
+            // Reset Turnstile and button state when switching forms
+            turnstileToken = null;
+            submitButton.disabled = true;
+            if (window.turnstile && turnstileWidgetId !== null) {
+                window.turnstile.reset(turnstileWidgetId);
+            }
         });
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Check if Turnstile is completed
+            if (!turnstileToken) {
+                alert('Please complete the security verification');
+                return;
+            }
+            
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
 
@@ -314,7 +401,11 @@
                     const response = await fetch('/api/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password })
+                        body: JSON.stringify({ 
+                            email, 
+                            password,
+                            turnstileToken: turnstileToken
+                        })
                     });
 
                     const result = await response.json();
@@ -354,7 +445,13 @@
                     const response = await fetch('/api/send-verification', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ firstName, lastName, email, password })
+                        body: JSON.stringify({ 
+                            firstName, 
+                            lastName, 
+                            email, 
+                            password,
+                            turnstileToken: turnstileToken
+                        })
                     });
 
                     const result = await response.json();
