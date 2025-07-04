@@ -1,0 +1,200 @@
+/* Mobile Android Optimization Styles */
+
+/* Prevent overscroll and rubber band effect */
+html, body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+}
+
+/* Safe area insets for modern Android devices */
+.mobile-container {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+/* Touch-friendly tap targets */
+button, a, input, select, textarea, .clickable {
+    min-height: 48px;
+    min-width: 48px;
+    touch-action: manipulation;
+}
+
+/* Remove tap highlight */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Optimize form inputs for mobile */
+input, textarea, select {
+    font-size: 16px !important; /* Prevents zoom on focus in Android */
+    -webkit-appearance: none;
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+/* Mobile-friendly navigation */
+.mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .mobile-nav {
+        display: flex;
+        justify-content: space-around;
+        padding: 8px 0;
+    }
+    
+    /* Hide desktop navigation on mobile */
+    .desktop-nav {
+        display: none !important;
+    }
+    
+    /* Responsive text sizing */
+    h1 { font-size: 2rem !important; }
+    h2 { font-size: 1.75rem !important; }
+    h3 { font-size: 1.5rem !important; }
+    h4 { font-size: 1.25rem !important; }
+    h5 { font-size: 1.125rem !important; }
+    p, span { font-size: 1rem !important; }
+    
+    /* Mobile padding adjustments */
+    .container {
+        padding: 16px !important;
+    }
+    
+    /* Stack elements vertically on mobile */
+    .flex-row-mobile {
+        flex-direction: column !important;
+    }
+    
+    /* Full width buttons on mobile */
+    .btn-mobile-full {
+        width: 100% !important;
+        margin: 8px 0 !important;
+    }
+    
+    /* Card adjustments for mobile */
+    .card {
+        margin: 8px !important;
+        padding: 16px !important;
+    }
+    
+    /* Modal adjustments */
+    .modal {
+        margin: 0 !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+    }
+}
+
+/* Android-specific performance optimizations */
+.hardware-accelerated {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
+}
+
+/* Smooth scrolling containers */
+.scroll-container {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+/* Loading states */
+.skeleton-loader {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Touch feedback */
+.touch-feedback {
+    position: relative;
+    overflow: hidden;
+}
+
+.touch-feedback::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.1);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.touch-feedback:active::after {
+    width: 300px;
+    height: 300px;
+}
+
+/* Optimize images for mobile */
+img {
+    max-width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+/* Mobile-friendly spacing */
+.mobile-spacing {
+    margin: 16px 0;
+}
+
+/* Bottom navigation safe area */
+.bottom-nav-padding {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom));
+}
+
+/* Floating action button */
+.fab {
+    position: fixed;
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    right: 16px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+/* Pull to refresh hint */
+.pull-to-refresh {
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Android status bar color (for PWA) */
+@media (display-mode: standalone) {
+    body {
+        padding-top: env(safe-area-inset-top);
+    }
+}
