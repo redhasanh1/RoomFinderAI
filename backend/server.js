@@ -38,6 +38,48 @@ config = {
 
 console.log('🔧 Configuration priority: Environment variables > Config file > Defaults');
 
+// Debug configuration loading
+console.log('📧 Email configuration check:');
+console.log('  - BREVO_API_KEY loaded:', config.BREVO_API_KEY ? '✅ Yes (length: ' + config.BREVO_API_KEY.length + ')' : '❌ No');
+console.log('  - Source:', process.env.BREVO_API_KEY ? 'Environment variable' : 'Config file');
+
+// Test Brevo API key on startup
+async function testBrevoApiKey() {
+    if (!config.BREVO_API_KEY) {
+        console.log('⚠️ Skipping Brevo API test - no API key found');
+        return;
+    }
+    
+    try {
+        console.log('🧪 Testing Brevo API key...');
+        const response = await axios.get('https://api.brevo.com/v3/account', {
+            headers: {
+                'accept': 'application/json',
+                'api-key': config.BREVO_API_KEY
+            },
+            timeout: 10000
+        });
+        
+        console.log('✅ Brevo API key is valid');
+        console.log('📧 Account info:', {
+            email: response.data.email,
+            company: response.data.companyName,
+            plan: response.data.plan?.type
+        });
+    } catch (error) {
+        console.error('❌ Brevo API key test failed:');
+        console.error('  - Status:', error.response?.status);
+        console.error('  - Error:', error.response?.data || error.message);
+        
+        if (error.response?.status === 401) {
+            console.error('🚨 BREVO_API_KEY appears to be invalid or expired');
+        }
+    }
+}
+
+// Test API key after a short delay to let server start
+setTimeout(testBrevoApiKey, 2000);
+
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 const { DocumentAnalysisClient, AzureKeyCredential } = require('@azure/ai-form-recognizer');
@@ -618,6 +660,13 @@ async function sendVerificationEmail(email, code, firstName) {
 async function sendPasswordResetEmail(email, code, firstName) {
     try {
         console.log('📧 Sending password reset email to:', email);
+        console.log('📧 Using API key:', config.BREVO_API_KEY ? 'Present (length: ' + config.BREVO_API_KEY.length + ')' : 'Missing');
+        
+        // Check if API key is available
+        if (!config.BREVO_API_KEY) {
+            console.error('❌ BREVO_API_KEY not configured');
+            return { success: false, error: 'Email service not configured' };
+        }
         
         const emailData = {
             sender: {
@@ -626,7 +675,7 @@ async function sendPasswordResetEmail(email, code, firstName) {
             },
             to: [{
                 email: email,
-                name: firstName
+                name: firstName || 'User'
             }],
             subject: "Reset your RoomFinderAI password",
             htmlContent: `
@@ -647,7 +696,7 @@ async function sendPasswordResetEmail(email, code, firstName) {
                         
                         <!-- Content -->
                         <div style="padding: 40px 30px;">
-                            <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hi ${firstName}!</h2>
+                            <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 24px;">Hi ${firstName || 'there'}!</h2>
                             <p style="color: #64748b; line-height: 1.6; margin: 0 0 30px 0; font-size: 16px;">
                                 We received a request to reset your password. Use the code below to complete the process:
                             </p>
@@ -681,19 +730,34 @@ async function sendPasswordResetEmail(email, code, firstName) {
             `
         };
 
+        console.log('📧 Sending request to Brevo API...');
         const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
             headers: {
                 'accept': 'application/json',
                 'api-key': config.BREVO_API_KEY,
                 'content-type': 'application/json'
-            }
+            },
+            timeout: 30000 // 30 second timeout
         });
 
         console.log('✅ Password reset email sent successfully to:', email);
-        return { success: true };
+        console.log('📧 Brevo response status:', response.status);
+        console.log('📧 Brevo response data:', response.data);
+        return { success: true, data: response.data };
     } catch (error) {
-        console.error('❌ Error sending password reset email:', error.response?.data || error.message);
-        return { success: false, error: error.message };
+        console.error('❌ Error sending password reset email:');
+        console.error('  - Error message:', error.message);
+        console.error('  - Error code:', error.code);
+        console.error('  - Response status:', error.response?.status);
+        console.error('  - Response data:', error.response?.data);
+        console.error('  - Request config:', {
+            url: error.config?.url,
+            method: error.config?.method,
+            headers: error.config?.headers
+        });
+        
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Unknown error';
+        return { success: false, error: errorMessage, details: error.response?.data };
     }
 }
 
@@ -932,8 +996,12 @@ app.post('/api/send-reset-code', async (req, res) => {
             });
         } else {
             console.log('❌ Failed to send reset email:', emailResult.error);
+            console.log('❌ Email error details:', emailResult.details);
             passwordResetCodes.delete(email);
-            res.status(500).json({ error: 'Failed to send reset email' });
+            res.status(500).json({ 
+                error: 'Failed to send reset email: ' + emailResult.error,
+                details: emailResult.details
+            });
         }
     } catch (error) {
         console.error('❌ Error in /api/send-reset-code:', error.message);
@@ -1041,6 +1109,36 @@ app.post('/api/reset-password', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/reset-password:', error.message);
         res.status(500).json({ error: 'Failed to reset password' });
+    }
+});
+
+// Test endpoint for email functionality (remove in production)
+app.post('/api/test-email', async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+        
+        console.log('🧪 Testing email send to:', email);
+        const testCode = '123456';
+        const result = await sendPasswordResetEmail(email, testCode, 'Test User');
+        
+        if (result.success) {
+            res.json({ 
+                message: 'Test email sent successfully',
+                details: result.data
+            });
+        } else {
+            res.status(500).json({ 
+                error: 'Failed to send test email',
+                details: result.error
+            });
+        }
+    } catch (error) {
+        console.error('Test email error:', error);
+        res.status(500).json({ error: 'Test email failed' });
     }
 });
 
