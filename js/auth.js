@@ -1,11 +1,11 @@
 // Authentication module
 window.AuthManager = (function() {
     const profileImages = [
-        'https://api.dicebear.com/7.x/avataaars/svg?seed=1',
-        'https://api.dicebear.com/7.x/avataaars/svg?seed=2',
-        'https://api.dicebear.com/7.x/avataaars/svg?seed=3',
-        'https://api.dicebear.com/7.x/avataaars/svg?seed=4',
-        'https://api.dicebear.com/7.x/avataaars/svg?seed=5'
+        'https://via.placeholder.com/40/667eea',
+        'https://via.placeholder.com/40/764ba2',
+        'https://via.placeholder.com/40/5a67d8',
+        'https://via.placeholder.com/40/553c9a',
+        'https://via.placeholder.com/40/4c1d95'
     ];
 
     let currentUser = null;
