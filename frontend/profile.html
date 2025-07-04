@@ -539,12 +539,12 @@
         <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
             <div class="mt-4 flex justify-center space-x-4">
-                <a href="/index" class="hover:text-blue-400">Home</a>
-                <a href="/index#about" class="hover:text-blue-400">About</a>
-                <a href="/sublease" class="hover:text-blue-400">Sublease</a>
-                <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
-                <a href="/listings" class="hover:text-blue-400">Listings</a>
-                <a href="/index#contact" class="hover:text-blue-400">Contact</a>
+                <a href="index.html" class="hover:text-blue-400">Home</a>
+                <a href="index.html#about" class="hover:text-blue-400">About</a>
+                <a href="sublease.html" class="hover:text-blue-400">Sublease</a>
+                <a href="ai-negotiator.html" class="hover:text-blue-400">AI Negotiator</a>
+                <a href="listings.html" class="hover:text-blue-400">Listings</a>
+                <a href="index.html#contact" class="hover:text-blue-400">Contact</a>
             </div>
         </div>
     </footer>
@@ -642,7 +642,7 @@
         async function initializeProfile() {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             if (!currentUser) {
-                window.location.href = '/login';
+                window.location.href = 'login.html';
                 return;
             }
 
@@ -763,7 +763,7 @@
                     }
 
                     if (!listings || listings.length === 0) {
-                        userListings.innerHTML = '<p class="text-gray-600 text-center">No listings yet. <a href="/listings" class="text-blue-600 hover:underline">Create your first listing!</a></p>';
+                        userListings.innerHTML = '<p class="text-gray-600 text-center">No listings yet. <a href="listings.html" class="text-blue-600 hover:underline">Create your first listing!</a></p>';
                         return;
                     }
 
@@ -816,13 +816,13 @@
 
             // Function to view listing details
             window.viewListing = function(listingId) {
-                window.location.href = `/listing_details?id=${listingId}`;
+                window.location.href = `listing_details.html?id=${listingId}`;
             };
 
             // Logout
             document.getElementById('logoutButton').addEventListener('click', () => {
                 localStorage.removeItem('currentUser');
-                window.location.href = '/login';
+                window.location.href = 'login.html';
             });
         }
 
