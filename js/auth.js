@@ -1,12 +1,6 @@
 // Authentication module
 window.AuthManager = (function() {
-    const profileImages = [
-        'https://via.placeholder.com/40/667eea',
-        'https://via.placeholder.com/40/764ba2',
-        'https://via.placeholder.com/40/5a67d8',
-        'https://via.placeholder.com/40/553c9a',
-        'https://via.placeholder.com/40/4c1d95'
-    ];
+    const defaultProfileImage = 'https://ui-avatars.com/api/?name=User&background=667eea&color=ffffff&size=128&format=svg';
 
     let currentUser = null;
 
@@ -81,7 +75,7 @@ window.AuthManager = (function() {
         if (!user) return;
 
         if (!user.profileImage) {
-            user.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
+            user.profileImage = defaultProfileImage;
             
             // Update in localStorage
             let users = JSON.parse(localStorage.getItem('users')) || [];

@@ -1,10 +1,4 @@
-const profileImages = [
-    'https://via.placeholder.com/40/667eea',
-    'https://via.placeholder.com/40/764ba2',
-    'https://via.placeholder.com/40/5a67d8',
-    'https://via.placeholder.com/40/553c9a',
-    'https://via.placeholder.com/40/4c1d95'
-];
+const defaultProfileImage = 'https://ui-avatars.com/api/?name=User&background=667eea&color=ffffff&size=128&format=svg';
 
 async function initializeAuth(supabase) {
     let currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -26,7 +20,7 @@ async function initializeAuth(supabase) {
         // Create profile if it doesn't exist
         const newProfile = {
             email: currentUser.email,
-            profile_image: profileImages[Math.floor(Math.random() * profileImages.length)]
+            profile_image: defaultProfileImage
         };
         const { data, error: insertError } = await supabase
             .from('profiles')
