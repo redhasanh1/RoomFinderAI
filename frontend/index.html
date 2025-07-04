@@ -2,19 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#667eea">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RoomFinderAI - AI-Powered Rental Search & Negotiation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/mobile-android.css">
-    <script src="js/universal-compatibility.js"></script>
-    <script src="js/environment-config.js"></script>
-    <script src="js/mobile-init.js"></script>
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -105,6 +97,346 @@
         .nav-link:hover {
             color: #667eea;
             transform: translateY(-2px);
+        }
+        
+        /* Navigation Items */
+        .nav-item {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 0.95rem;
+        }
+        
+        .nav-item:hover {
+            color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        .auth-link {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+        .auth-link:hover {
+            color: #667eea;
+            border-color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        /* Dropdown Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .dropdown-arrow {
+            font-size: 0.7rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .dropdown:hover .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            z-index: 100;
+            padding: 0.5rem 0;
+        }
+        
+        .dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .dropdown-item {
+            display: block;
+            padding: 0.75rem 1.25rem;
+            color: #374151;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 400;
+            transition: all 0.15s ease;
+            border-radius: 0;
+        }
+        
+        .dropdown-item:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+            color: #667eea;
+            padding-left: 1.5rem;
+        }
+        
+        .dropdown-item:first-child {
+            border-radius: 0.5rem 0.5rem 0 0;
+        }
+        
+        .dropdown-item:last-child {
+            border-radius: 0 0 0.5rem 0.5rem;
+        }
+        
+        /* Mobile Menu Styles */
+        .mobile-menu-btn {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            width: 30px;
+            height: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            z-index: 60;
+        }
+        
+        .hamburger-line {
+            width: 100%;
+            height: 3px;
+            background-color: #374151;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+            transform-origin: center;
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+        
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 55;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-menu.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .mobile-menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+        }
+        
+        .mobile-menu-content {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 85%;
+            max-width: 350px;
+            height: 100%;
+            background: white;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mobile-menu.active .mobile-menu-content {
+            transform: translateX(0);
+        }
+        
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+        
+        .mobile-menu-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.25rem;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+        }
+        
+        .mobile-menu-close:hover {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+        
+        .mobile-menu-items {
+            padding: 1rem 0;
+        }
+        
+        .mobile-menu-item {
+            display: block;
+            padding: 1rem 1.5rem;
+            color: #374151;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            border-bottom: 1px solid #f3f4f6;
+            transition: all 0.2s ease;
+            min-height: 56px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .mobile-menu-item:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+            color: #667eea;
+            padding-left: 2rem;
+        }
+        
+        .mobile-section {
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .mobile-section-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            color: #374151;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 56px;
+        }
+        
+        .mobile-section-header:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+            color: #667eea;
+        }
+        
+        .mobile-arrow {
+            font-size: 0.75rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .mobile-arrow.rotated {
+            transform: rotate(180deg);
+        }
+        
+        .mobile-section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background-color: #f9fafb;
+        }
+        
+        .mobile-section-content.expanded {
+            max-height: 300px;
+        }
+        
+        .mobile-section-content .mobile-menu-item {
+            padding-left: 3rem;
+            font-size: 0.9rem;
+            font-weight: 400;
+            background-color: transparent;
+        }
+        
+        .mobile-section-content .mobile-menu-item:hover {
+            padding-left: 3.5rem;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        .auth-item {
+            background-color: rgba(102, 126, 234, 0.1);
+            color: #667eea !important;
+            font-weight: 600;
+            margin: 1rem;
+            border-radius: 0.5rem;
+            border-bottom: none;
+        }
+        
+        .auth-item:hover {
+            background-color: rgba(102, 126, 234, 0.15);
+            padding-left: 1.5rem;
+        }
+        
+        /* Hide mobile menu on desktop */
+        @media (min-width: 768px) {
+            .mobile-menu {
+                display: none;
+            }
+        }
+        
+        /* Prevent body scroll when mobile menu is open */
+        body.mobile-menu-open {
+            overflow: hidden;
+        }
+        
+        /* Responsive Design - Updated */
+        @media (max-width: 767px) {
+            .desktop-nav,
+            .desktop-auth {
+                display: none !important;
+            }
+            
+            nav {
+                padding: 1rem;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .mobile-menu-btn {
+                display: none;
+            }
         }
         
         .brand-logo {
@@ -989,26 +1321,126 @@
 <body class="bg-gray-50 flex flex-col min-h-screen">
     <!-- Premium Header -->
     <header id="header" class="fixed top-0 w-full premium-header z-50">
-        <nav class="w-[85%] max-w-7xl mx-auto px-6 lg:px-8 py-6 flex justify-between items-center">
-            <div class="flex items-center space-x-8">
-                <div class="brand-logo font-display">RoomFinderAI</div>
-                <div class="hidden lg:flex items-center space-x-1">
-                    <a href="index.html" class="nav-link">Home</a>
-                    <a href="index.html#about" class="nav-link">About</a>
-                    <a href="dashboard.html#student" class="nav-link">Student Housing</a>
-                    <a href="dashboard.html#legal" class="nav-link">Legal Center</a>
-                    <a href="dashboard.html#mortgage" class="nav-link">Mortgage</a>
-                    <a href="sublease.html" class="nav-link">Sublease</a>
-                    <a href="ai-negotiator.html" class="nav-link">AI Negotiator</a>
-                    <a href="listings.html" class="nav-link">Listings</a>
-                    <a href="pricing.html" class="nav-link">Pricing</a>
-                    <a href="index.html#contact" class="nav-link">Contact</a>
+        <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
+            <!-- Mobile Layout -->
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <div class="text-xl md:text-2xl font-bold brand-logo font-display">RoomFinderAI</div>
+                
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+            
+            <!-- Desktop Navigation -->
+            <div class="desktop-nav hidden md:flex items-center space-x-8">
+                <!-- Home - Standalone -->
+                <a href="index.html" class="nav-item">Home</a>
+                
+                <!-- Browse Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
+                        Browse <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="browse-dropdown">
+                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
+                        <a href="sublease.html" class="dropdown-item">Sublease Property</a>
+                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
+                    </div>
+                </div>
+                
+                <!-- Tools Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('tools')">
+                        Tools <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="tools-dropdown">
+                        <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
+                        <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
+                        <a href="legal.html" class="dropdown-item">Legal Center</a>
+                        <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
+                    </div>
+                </div>
+                
+                <!-- About Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('about')">
+                        About <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="about-dropdown">
+                        <a href="index.html#about" class="dropdown-item">About Us</a>
+                        <a href="index.html#contact" class="dropdown-item">Contact</a>
+                        <a href="support.html" class="dropdown-item">Support</a>
+                    </div>
                 </div>
             </div>
-            <div id="authSection" class="flex items-center space-x-4">
-                <a href="login.html" class="nav-link login-link">Login</a>
+            
+            <!-- Desktop Auth -->
+            <div class="desktop-auth hidden md:block">
+                <div id="authSection">
+                    <a href="login.html" class="auth-link">Login/Register</a>
+                </div>
             </div>
         </nav>
+        
+        <!-- Mobile Navigation Menu -->
+        <div class="mobile-menu" id="mobile-menu">
+            <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+            <div class="mobile-menu-content">
+                <div class="mobile-menu-header">
+                    <div class="text-lg font-bold gradient-text">RoomFinderAI</div>
+                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
+                </div>
+                
+                <div class="mobile-menu-items">
+                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
+                    
+                    <!-- Browse Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
+                            🔍 Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="browse-section">
+                            <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
+                            <a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
+                            <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Tools Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('tools')">
+                            🛠️ Tools <span class="mobile-arrow" id="tools-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="tools-section">
+                            <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
+                            <a href="pricing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing Plans</a>
+                            <a href="legal.html" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Center</a>
+                            <a href="mortgage.html" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
+                        </div>
+                    </div>
+                    
+                    <!-- About Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('about')">
+                            ℹ️ About <span class="mobile-arrow" id="about-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="about-section">
+                            <a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
+                            <a href="index.html#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
+                            <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Mobile Auth -->
+                    <div id="mobileAuthSection">
+                        <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </header>
 
     <!-- Hero Section -->
@@ -1364,7 +1796,7 @@
                             <div class="text-gray-600">Premium plans from $29.99/month</div>
                         </div>
                         
-                        <button onclick="window.location.href='dashboard.html#mortgage'" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300 group">
+                        <button onclick="window.location.href='mortgage.html'" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300 group">
                             Analyze Mortgage
                             <svg class="w-5 h-5 ml-2 inline group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
@@ -1619,7 +2051,7 @@
                             </div>
                         </div>
                         
-                        <button onclick="window.location.href='dashboard.html#mortgage'" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300">
+                        <button onclick="window.location.href='mortgage.html'" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300">
                             Start Free Mortgage Analysis
                         </button>
                     </div>
@@ -1631,7 +2063,7 @@
                 <h3 class="text-3xl font-bold mb-4">Ready to Save Thousands on Your Mortgage?</h3>
                 <p class="text-xl mb-8 text-green-100">Join 10,000+ homeowners who've optimized their mortgages with AI</p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button onclick="window.location.href='dashboard.html#mortgage'" class="bg-white text-green-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300">
+                    <button onclick="window.location.href='mortgage.html'" class="bg-white text-green-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300">
                         Get Started Free
                     </button>
                     <button onclick="window.location.href='#mortgage-demo'" class="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white hover:text-green-600 transition-all duration-300">
@@ -2049,7 +2481,7 @@
                 <a href="index.html#about" class="hover:text-blue-400">About</a>
                 <a href="dashboard.html#student" class="hover:text-blue-400">Student Housing</a>
                 <a href="dashboard.html#legal" class="hover:text-blue-400">Legal Center</a>
-                <a href="dashboard.html#mortgage" class="hover:text-blue-400">Mortgage</a>
+                <a href="mortgage.html" class="hover:text-blue-400">Mortgage</a>
                 <a href="sublease.html" class="hover:text-blue-400">Sublease</a>
                 <a href="ai-negotiator.html" class="hover:text-blue-400">AI Negotiator</a>
                 <a href="listings.html" class="hover:text-blue-400">Listings</a>
@@ -2059,29 +2491,126 @@
         </div>
     </footer>
 
-    <!-- Minimalistic AI Negotiator Button -->
+    <!-- Customer Support Chat System -->
     <div class="fixed bottom-8 right-8 z-50">
+        <!-- Chat Widget -->
+        <div id="chatWidget" class="hidden">
+            <div class="bg-white rounded-2xl shadow-2xl w-96 h-[500px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] flex flex-col border border-gray-200">
+                <!-- Chat Header -->
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-t-2xl flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="relative">
+                            <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-sm">Support Assistant</h3>
+                            <p class="text-xs text-white/80">Online • Usually replies in minutes</p>
+                        </div>
+                    </div>
+                    <button onclick="toggleChat()" class="hover:bg-white/20 p-1 rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Chat Messages -->
+                <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                    <!-- Welcome Message -->
+                    <div class="flex items-start space-x-2">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="bg-white rounded-2xl rounded-tl-md p-3 shadow-sm max-w-[280px]">
+                            <p class="text-sm text-gray-800">👋 Hi! I'm your AI support assistant. How can I help you today?</p>
+                            <div class="flex flex-wrap gap-2 mt-3">
+                                <button onclick="quickReply('How does RoomFinderAI work?')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-xs transition-colors">
+                                    How it works
+                                </button>
+                                <button onclick="quickReply('What are your pricing plans?')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-xs transition-colors">
+                                    Pricing
+                                </button>
+                                <button onclick="quickReply('I need technical support')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-xs transition-colors">
+                                    Tech Support
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div class="p-4 border-t border-gray-200 bg-white rounded-b-2xl">
+                    <div class="flex items-center space-x-2">
+                        <div class="flex-1 relative">
+                            <input 
+                                type="text" 
+                                id="chatInput" 
+                                placeholder="Type your message..." 
+                                class="w-full px-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                onkeypress="handleEnterKey(event)"
+                            >
+                            <div class="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
+                                <button onclick="toggleFileUpload()" class="text-gray-400 hover:text-gray-600 p-1 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- File Upload (Hidden) -->
+                    <input type="file" id="fileUpload" class="hidden" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" onchange="handleFileUpload(event)">
+                    
+                    <!-- Typing Indicator -->
+                    <div id="typingIndicator" class="hidden flex items-center space-x-2 mt-2 text-xs text-gray-500">
+                        <div class="flex space-x-1">
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        </div>
+                        <span>Support is typing...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Toggle Button -->
         <div class="relative group">
-            <!-- Subtle Glow -->
-            <div class="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 opacity-20 blur-sm group-hover:opacity-30 transition-opacity duration-300"></div>
+            <!-- Notification Badge -->
+            <div id="notificationBadge" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold z-10">
+                1
+            </div>
             
-            <!-- Main Button -->
-            <button id="aiButton" onclick="window.location.href='ai-negotiator.html';" class="relative bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full p-4 shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center w-16 h-16 hover:scale-105">
+            <!-- Button -->
+            <button id="chatToggle" onclick="toggleChat()" class="relative bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center w-16 h-16 hover:scale-105 group">
                 <!-- Glow Effect -->
                 <div class="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 blur-lg opacity-50 group-hover:opacity-70 transition-opacity duration-300"></div>
                 
-                <!-- Icon -->
-                <div class="relative z-10 flex flex-col items-center">
-                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <!-- Icon Container -->
+                <div id="chatIcon" class="relative z-10 flex flex-col items-center">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
-                    <span class="text-xxs font-bold">AI</span>
+                    <span class="text-xxs font-bold">Help</span>
                 </div>
             </button>
             
             <!-- Tooltip -->
             <div class="absolute bottom-full right-0 mb-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                Try AI Negotiator
+                Get Support
                 <div class="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
             </div>
         </div>
@@ -2178,7 +2707,8 @@
                 });
             });
 
-            // Static chat bubbles - no animations
+            // Customer Support Chat System
+            initializeChatSystem();
 
             // Success Stories Rotation
             let currentStory = 0;
@@ -2280,6 +2810,7 @@
             ];
             let currentUser = JSON.parse(localStorage.getItem('currentUser'));
             const authSection = document.getElementById('authSection');
+            const mobileAuthSection = document.getElementById('mobileAuthSection');
 
             if (currentUser) {
                 if (!currentUser.profileImage) {
@@ -2289,6 +2820,8 @@
                     localStorage.setItem('users', JSON.stringify(users));
                     localStorage.setItem('currentUser', JSON.stringify(currentUser));
                 }
+                
+                // Update desktop auth section
                 authSection.innerHTML = `
                     <div class="flex items-center space-x-4">
                         <a href="profile.html">
@@ -2296,11 +2829,27 @@
                         </a>
                     </div>
                 `;
+                
+                // Update mobile auth section
+                mobileAuthSection.innerHTML = `
+                    <a href="profile.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">
+                        <div class="flex items-center space-x-3">
+                            <img src="${currentUser.profileImage}" alt="Profile" class="w-8 h-8 rounded-full">
+                            <span>👤 ${currentUser.firstName || 'Profile'}</span>
+                        </div>
+                    </a>
+                `;
             } else {
+                // Update desktop auth section
                 authSection.innerHTML = `
                     <div class="flex items-center space-x-4">
-                        <a href="login.html" class="nav-link login-link">Login</a>
+                        <a href="login.html" class="auth-link">Login/Register</a>
                     </div>
+                `;
+                
+                // Update mobile auth section
+                mobileAuthSection.innerHTML = `
+                    <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
                 `;
             }
         });
@@ -2698,6 +3247,416 @@
             localStorage.setItem('prefilledListingData', JSON.stringify(listingData));
             window.location.href = 'sublease.html';
         }
+
+        // Customer Support Chat System Functions
+        let isTyping = false;
+        let chatHistory = [];
+        
+        function initializeChatSystem() {
+            // Load chat history from localStorage
+            const savedHistory = localStorage.getItem('roomfinderai_chat_history');
+            if (savedHistory) {
+                chatHistory = JSON.parse(savedHistory);
+                if (chatHistory.length > 1) { // More than just welcome message
+                    document.getElementById('notificationBadge').style.display = 'flex';
+                }
+            }
+            
+            // Hide notification badge initially if no previous chats
+            if (chatHistory.length <= 1) {
+                document.getElementById('notificationBadge').style.display = 'none';
+            }
+        }
+
+        function toggleChat() {
+            const chatWidget = document.getElementById('chatWidget');
+            const notificationBadge = document.getElementById('notificationBadge');
+            
+            if (chatWidget.classList.contains('hidden')) {
+                chatWidget.classList.remove('hidden');
+                chatWidget.style.animation = 'slideInUp 0.3s ease-out';
+                notificationBadge.style.display = 'none';
+                
+                // Focus on input when opened
+                setTimeout(() => {
+                    document.getElementById('chatInput').focus();
+                }, 300);
+            } else {
+                chatWidget.style.animation = 'slideOutDown 0.3s ease-in';
+                setTimeout(() => {
+                    chatWidget.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message === '') return;
+            
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Generate AI response
+            setTimeout(() => {
+                hideTypingIndicator();
+                const aiResponse = generateAIResponse(message);
+                addMessage(aiResponse.text, 'ai', aiResponse.suggestions);
+            }, Math.random() * 2000 + 1000); // 1-3 second delay
+        }
+
+        function quickReply(message) {
+            document.getElementById('chatInput').value = message;
+            sendMessage();
+        }
+
+        function handleEnterKey(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function addMessage(text, sender, suggestions = []) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            
+            if (sender === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="flex items-start space-x-2 justify-end">
+                        <div class="bg-blue-600 text-white rounded-2xl rounded-tr-md p-3 shadow-sm max-w-[280px]">
+                            <p class="text-sm">${text}</p>
+                        </div>
+                        <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const suggestionsHtml = suggestions.length > 0 ? `
+                    <div class="flex flex-wrap gap-2 mt-3">
+                        ${suggestions.map(suggestion => `
+                            <button onclick="quickReply('${suggestion}')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-xs transition-colors">
+                                ${suggestion}
+                            </button>
+                        `).join('')}
+                    </div>
+                ` : '';
+                
+                messageDiv.innerHTML = `
+                    <div class="flex items-start space-x-2">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="bg-white rounded-2xl rounded-tl-md p-3 shadow-sm max-w-[280px]">
+                            <p class="text-sm text-gray-800">${text}</p>
+                            ${suggestionsHtml}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Save to chat history
+            chatHistory.push({ text, sender, timestamp: new Date().toISOString() });
+            localStorage.setItem('roomfinderai_chat_history', JSON.stringify(chatHistory));
+        }
+
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').classList.remove('hidden');
+            isTyping = true;
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').classList.add('hidden');
+            isTyping = false;
+        }
+
+        function generateAIResponse(userMessage) {
+            const message = userMessage.toLowerCase();
+            
+            // AI Response Database
+            const responses = {
+                greeting: {
+                    keywords: ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening'],
+                    text: "Hello! 👋 Thanks for reaching out to RoomFinderAI support. I'm here to help you with any questions about our platform. What can I assist you with today?",
+                    suggestions: ['How does RoomFinderAI work?', 'Pricing information', 'Technical support']
+                },
+                
+                howItWorks: {
+                    keywords: ['how does', 'how it works', 'how roomfinderai works', 'explain'],
+                    text: "RoomFinderAI uses advanced AI to help you find and negotiate rental properties! 🏠\\n\\n✨ **Key Features:**\\n• AI-powered property search\\n• Automated rent negotiation\\n• Student housing finder\\n• Legal document assistance\\n• Mortgage calculator\\n\\nWould you like to know more about any specific feature?",
+                    suggestions: ['Student housing', 'AI negotiation', 'Pricing plans', 'Get started']
+                },
+                
+                pricing: {
+                    keywords: ['pricing', 'cost', 'price', 'plans', 'how much', 'payment'],
+                    text: "Here are our pricing plans: 💰\\n\\n🆓 **Free Plan:** Basic search and alerts\\n💎 **Premium ($19.99/month):** AI negotiation + advanced filters\\n🚀 **Enterprise ($49.99/month):** Priority support + team features\\n\\nAll plans include a 14-day free trial! Would you like help choosing the right plan?",
+                    suggestions: ['Start free trial', 'Compare plans', 'Enterprise features', 'Contact sales']
+                },
+                
+                technical: {
+                    keywords: ['technical', 'bug', 'error', 'problem', 'not working', 'issue', 'support'],
+                    text: "I'm sorry you're experiencing technical issues. 🔧 I can help with:\\n\\n• Login problems\\n• Search functionality\\n• Payment issues\\n• Mobile app support\\n• Browser compatibility\\n\\nCould you describe the specific issue you're facing?",
+                    suggestions: ['Login problems', 'Payment issues', 'Mobile app help', 'Browser issues']
+                },
+                
+                studentHousing: {
+                    keywords: ['student', 'university', 'college', 'dorm', 'campus'],
+                    text: "Our Student Housing Center is perfect for you! 🎓\\n\\n📚 **Features include:**\\n• University-specific search\\n• Roommate matching\\n• Budget calculators\\n• Safety ratings\\n• Lease assistance\\n\\nWe work with 500+ universities across North America. Which school are you attending?",
+                    suggestions: ['Find my university', 'Roommate matching', 'Budget calculator', 'Safety features']
+                },
+                
+                legal: {
+                    keywords: ['legal', 'lawyer', 'contract', 'lease', 'rights', 'tenant'],
+                    text: "Our Legal Center provides comprehensive tenant support! ⚖️\\n\\n📋 **Services include:**\\n• Lease review assistance\\n• Tenant rights information\\n• Legal document templates\\n• Attorney referrals\\n• Dispute resolution guidance\\n\\nWhat legal assistance do you need?",
+                    suggestions: ['Lease review', 'Tenant rights', 'Find attorney', 'Document templates']
+                },
+                
+                mortgage: {
+                    keywords: ['mortgage', 'home loan', 'buying', 'finance', 'rate'],
+                    text: "Our Mortgage Intelligence Hub helps you save thousands! 🏡\\n\\n💰 **Features include:**\\n• Real-time rate comparison\\n• Pre-approval assistance\\n• Payment calculators\\n• Refinance analysis\\n• Stress test calculator\\n\\nWould you like help with getting pre-approved or finding the best rates?",
+                    suggestions: ['Compare rates', 'Get pre-approved', 'Calculate payments', 'Refinance analysis']
+                },
+                
+                contact: {
+                    keywords: ['contact', 'email', 'phone', 'human', 'agent', 'representative'],
+                    text: "You can reach our human support team 24/7! 📞\\n\\n**Contact Options:**\\n• Email: support@roomfinderai.com\\n• Phone: 1-800-ROOMFINDER\\n• Live Chat: Available 9 AM - 9 PM EST\\n• Emergency Support: 24/7 for urgent issues\\n\\nWould you like me to connect you with a human agent now?",
+                    suggestions: ['Connect to agent', 'Email support', 'Emergency help', 'Callback request']
+                },
+                
+                default: {
+                    text: "I understand you need help with that. Let me connect you with the right resources! 🤔\\n\\nI can help you with:\\n• Platform features and how-to guides\\n• Account and billing questions\\n• Technical troubleshooting\\n• Finding the right plan for you\\n\\nCould you please rephrase your question or choose from the options below?",
+                    suggestions: ['Speak to human agent', 'Browse help center', 'Common questions', 'Technical support']
+                }
+            };
+            
+            // Find matching response
+            for (const [key, response] of Object.entries(responses)) {
+                if (key !== 'default' && response.keywords.some(keyword => message.includes(keyword))) {
+                    return response;
+                }
+            }
+            
+            return responses.default;
+        }
+
+        function toggleFileUpload() {
+            document.getElementById('fileUpload').click();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const fileName = file.name;
+                const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+                
+                addMessage(`📎 Uploaded: ${fileName} (${fileSize} MB)`, 'user');
+                
+                setTimeout(() => {
+                    addMessage(`Thanks for uploading "${fileName}"! 📄 I've received your file and our support team will review it shortly. Is there anything specific about this file you'd like help with?`, 'ai', [
+                        'File review status',
+                        'Document questions',
+                        'Technical help',
+                        'Speak to agent'
+                    ]);
+                }, 1500);
+            }
+        }
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInUp {
+                from {
+                    transform: translateY(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOutDown {
+                from {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateY(100%);
+                    opacity: 0;
+                }
+            }
+            
+            .chat-message {
+                animation: fadeInUp 0.3s ease-out;
+            }
+            
+            @keyframes fadeInUp {
+                from {
+                    transform: translateY(10px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Dropdown Navigation Functions
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId + '-dropdown');
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            
+            // Close all other dropdowns
+            allDropdowns.forEach(menu => {
+                if (menu.id !== dropdownId + '-dropdown') {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                }
+            });
+            
+            // Toggle current dropdown
+            if (dropdown.style.opacity === '1') {
+                dropdown.style.opacity = '0';
+                dropdown.style.visibility = 'hidden';
+                dropdown.style.transform = 'translateY(-10px)';
+            } else {
+                dropdown.style.opacity = '1';
+                dropdown.style.visibility = 'visible';
+                dropdown.style.transform = 'translateY(0)';
+            }
+        }
+        
+        // Mobile Menu Functions
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            if (mobileMenu.classList.contains('active')) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        }
+        
+        function openMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            mobileMenu.classList.add('active');
+            hamburgerBtn.classList.add('active');
+            body.classList.add('mobile-menu-open');
+            
+            // Close any open desktop dropdowns
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            allDropdowns.forEach(menu => {
+                menu.style.opacity = '0';
+                menu.style.visibility = 'hidden';
+                menu.style.transform = 'translateY(-10px)';
+            });
+        }
+        
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            if (mobileMenu) {
+                mobileMenu.classList.remove('active');
+            }
+            if (hamburgerBtn) {
+                hamburgerBtn.classList.remove('active');
+            }
+            if (body) {
+                body.classList.remove('mobile-menu-open');
+            }
+        }
+        
+        function toggleMobileSection(sectionId) {
+            const section = document.getElementById(sectionId + '-section');
+            const arrow = document.getElementById(sectionId + '-arrow');
+            
+            if (section.classList.contains('expanded')) {
+                section.classList.remove('expanded');
+                arrow.classList.remove('rotated');
+            } else {
+                // Close all other sections first
+                const allSections = document.querySelectorAll('.mobile-section-content');
+                const allArrows = document.querySelectorAll('.mobile-arrow');
+                
+                allSections.forEach(s => s.classList.remove('expanded'));
+                allArrows.forEach(a => a.classList.remove('rotated'));
+                
+                // Open the clicked section
+                section.classList.add('expanded');
+                arrow.classList.add('rotated');
+            }
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            let clickedInsideDropdown = false;
+            
+            dropdowns.forEach(dropdown => {
+                if (dropdown.contains(event.target)) {
+                    clickedInsideDropdown = true;
+                }
+            });
+            
+            if (!clickedInsideDropdown) {
+                const allDropdowns = document.querySelectorAll('.dropdown-menu');
+                allDropdowns.forEach(menu => {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                });
+            }
+        });
+        
+        // Close dropdowns on escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const allDropdowns = document.querySelectorAll('.dropdown-menu');
+                allDropdowns.forEach(menu => {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                });
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) {
+                closeMobileMenu();
+            }
+        });
+        
+        // Touch event handling for better mobile experience
+        document.addEventListener('touchstart', function(event) {
+            // Prevent zoom on double tap for buttons
+            if (event.target.matches('button, .mobile-menu-item, .nav-item')) {
+                event.preventDefault();
+            }
+        }, { passive: false });
     </script>
 </body>
 </html>
