@@ -114,11 +114,141 @@
             background-clip: text;
         }
         
-        /* Modern header */
+        /* Navigation Styles */
+        .nav-item {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 0.95rem;
+        }
+        
+        .nav-item:hover {
+            color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        .auth-link {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+        .auth-link:hover {
+            color: #667eea;
+            border-color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        /* Dropdown Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .dropdown-arrow {
+            font-size: 0.7rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .dropdown:hover .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            z-index: 100;
+            padding: 0.5rem 0;
+        }
+        
+        .dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .dropdown-item {
+            display: block;
+            padding: 0.75rem 1.25rem;
+            color: #374151;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 400;
+            transition: all 0.15s ease;
+            border-radius: 0;
+        }
+        
+        .dropdown-item:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+            color: #667eea;
+            padding-left: 1.5rem;
+        }
+        
+        .dropdown-item:first-child {
+            border-radius: 0.5rem 0.5rem 0 0;
+        }
+        
+        .dropdown-item:last-child {
+            border-radius: 0 0 0.5rem 0.5rem;
+        }
+        
+        /* Modern header - Updated for better spacing */
         .modern-header {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dropdown-menu {
+                position: fixed;
+                top: 70px;
+                left: 1rem;
+                right: 1rem;
+                width: auto;
+                transform: translateY(-20px);
+            }
+            
+            .dropdown:hover .dropdown-menu {
+                transform: translateY(0);
+            }
+            
+            nav {
+                flex-wrap: wrap;
+            }
+            
+            .nav-item {
+                font-size: 0.85rem;
+                padding: 0.4rem 0.8rem;
+            }
         }
         
         /* Modern container */
@@ -447,20 +577,55 @@
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen"> <!-- Body background updated -->
     <!-- Header -->
-    <header class="sticky top-0 bg-white shadow-md z-10"> <!-- Header style updated -->
-        <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-6">
-                <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
-                <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
-                <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
-                <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
-                <a href="/ai-negotiator" class="text-gray-700 hover:text-blue-600 transition font-medium">AI Negotiator</a>
-                <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
-                <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition font-medium">Pricing</a>
-                <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
+    <header class="sticky top-0 bg-white shadow-md z-50">
+        <nav class="w-[85%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-8">
+                <div class="text-2xl font-bold gradient-text mr-4">RoomFinderAI</div>
+                
+                <!-- Home - Standalone -->
+                <a href="/index" class="nav-item">Home</a>
+                
+                <!-- Properties Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('properties')">
+                        Properties <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="properties-dropdown">
+                        <a href="/listings" class="dropdown-item">Browse Listings</a>
+                        <a href="/sublease" class="dropdown-item">Sublease Property</a>
+                        <a href="#add-listing" class="dropdown-item" onclick="document.querySelector('#listingForm').scrollIntoView()">Add Listing</a>
+                    </div>
+                </div>
+                
+                <!-- Services Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('services')">
+                        Services <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="services-dropdown">
+                        <a href="/ai-negotiator" class="dropdown-item">AI Negotiator</a>
+                        <a href="/pricing" class="dropdown-item">Pricing Plans</a>
+                        <a href="/student-housing" class="dropdown-item">Student Housing</a>
+                        <a href="/legal" class="dropdown-item">Legal Center</a>
+                        <a href="/mortgage" class="dropdown-item">Mortgage Tools</a>
+                    </div>
+                </div>
+                
+                <!-- Company Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('company')">
+                        Company <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="company-dropdown">
+                        <a href="/index#about" class="dropdown-item">About Us</a>
+                        <a href="/index#contact" class="dropdown-item">Contact</a>
+                        <a href="/support" class="dropdown-item">Support</a>
+                    </div>
+                </div>
             </div>
+            
             <div id="authSection">
-                <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
+                <a href="/login" class="auth-link">Login/Register</a>
             </div>
         </nav>
     </header>
@@ -3500,7 +3665,65 @@
         
         // Initialize search filters after page loads
         setTimeout(setupSearchFilters, 1000);
-
+        
+        // Dropdown functionality
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId + '-dropdown');
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            
+            // Close all other dropdowns
+            allDropdowns.forEach(menu => {
+                if (menu.id !== dropdownId + '-dropdown') {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                }
+            });
+            
+            // Toggle current dropdown
+            if (dropdown.style.opacity === '1') {
+                dropdown.style.opacity = '0';
+                dropdown.style.visibility = 'hidden';
+                dropdown.style.transform = 'translateY(-10px)';
+            } else {
+                dropdown.style.opacity = '1';
+                dropdown.style.visibility = 'visible';
+                dropdown.style.transform = 'translateY(0)';
+            }
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            let clickedInsideDropdown = false;
+            
+            dropdowns.forEach(dropdown => {
+                if (dropdown.contains(event.target)) {
+                    clickedInsideDropdown = true;
+                }
+            });
+            
+            if (!clickedInsideDropdown) {
+                const allDropdowns = document.querySelectorAll('.dropdown-menu');
+                allDropdowns.forEach(menu => {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                });
+            }
+        });
+        
+        // Close dropdowns on escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const allDropdowns = document.querySelectorAll('.dropdown-menu');
+                allDropdowns.forEach(menu => {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                });
+            }
+        });
 
         // Real-time subscription to listings
         if (typeof supabase !== 'undefined' && supabase) {
