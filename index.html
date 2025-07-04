@@ -1379,7 +1379,9 @@
             
             <!-- Desktop Auth -->
             <div class="desktop-auth hidden md:block">
-                <a href="login.html" class="auth-link">Login/Register</a>
+                <div id="authSection">
+                    <a href="login.html" class="auth-link">Login/Register</a>
+                </div>
             </div>
         </nav>
         
@@ -1433,7 +1435,9 @@
                     </div>
                     
                     <!-- Mobile Auth -->
-                    <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
+                    <div id="mobileAuthSection">
+                        <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2806,6 +2810,7 @@
             ];
             let currentUser = JSON.parse(localStorage.getItem('currentUser'));
             const authSection = document.getElementById('authSection');
+            const mobileAuthSection = document.getElementById('mobileAuthSection');
 
             if (currentUser) {
                 if (!currentUser.profileImage) {
@@ -2815,6 +2820,8 @@
                     localStorage.setItem('users', JSON.stringify(users));
                     localStorage.setItem('currentUser', JSON.stringify(currentUser));
                 }
+                
+                // Update desktop auth section
                 authSection.innerHTML = `
                     <div class="flex items-center space-x-4">
                         <a href="profile.html">
@@ -2822,11 +2829,27 @@
                         </a>
                     </div>
                 `;
+                
+                // Update mobile auth section
+                mobileAuthSection.innerHTML = `
+                    <a href="profile.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">
+                        <div class="flex items-center space-x-3">
+                            <img src="${currentUser.profileImage}" alt="Profile" class="w-8 h-8 rounded-full">
+                            <span>👤 ${currentUser.firstName || 'Profile'}</span>
+                        </div>
+                    </a>
+                `;
             } else {
+                // Update desktop auth section
                 authSection.innerHTML = `
                     <div class="flex items-center space-x-4">
-                        <a href="login.html" class="nav-link login-link">Login</a>
+                        <a href="login.html" class="auth-link">Login/Register</a>
                     </div>
+                `;
+                
+                // Update mobile auth section
+                mobileAuthSection.innerHTML = `
+                    <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
                 `;
             }
         });
