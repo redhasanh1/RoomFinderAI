@@ -18,7 +18,7 @@ STRIPE_SECRET_KEY=your_stripe_key
 ### Start the Server
 ```bash
 # Method 1: Start from backend directory
-cd frontend/backend
+cd backend
 node server.js
 
 # Method 2: Use npm script (if configured)
