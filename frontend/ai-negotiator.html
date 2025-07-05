@@ -702,19 +702,33 @@
                 supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
                 console.log('✅ Supabase client initialized');
                 
-                // Initialize authentication
-                if (typeof initializeAuth === 'function') {
-                    await initializeAuth(supabase);
-                    console.log('✅ Authentication initialized');
+                // Get current user first (before auth check)
+                currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                console.log('👤 Current user from localStorage:', currentUser?.email || 'none');
+                
+                // Initialize authentication only if user exists
+                if (currentUser && typeof initializeAuth === 'function') {
+                    try {
+                        await initializeAuth(supabase, true); // Allow anonymous access
+                        console.log('✅ Authentication initialized for logged-in user');
+                    } catch (error) {
+                        console.error('❌ Authentication failed:', error);
+                        // Don't redirect, allow anonymous access
+                    }
+                } else {
+                    console.log('⚠️ No logged-in user, allowing anonymous access');
+                    // Create anonymous session for AI negotiator
+                    currentUser = { 
+                        email: 'anonymous@user.com', 
+                        name: 'Anonymous User',
+                        firstName: 'Anonymous',
+                        lastName: 'User'
+                    };
                 }
                 
                 // Test Supabase connection
                 await supabase.from('listings').select('count', { count: 'exact', head: true });
                 console.log('✅ Supabase connection test successful');
-                
-                // Get current user (or create anonymous session)
-                currentUser = JSON.parse(localStorage.getItem('currentUser')) || { email: 'anonymous@user.com', name: 'Anonymous User' };
-                console.log('👤 Current user:', currentUser.email);
                 
                 // Check if AIChatHandler class is available
                 if (typeof AIChatHandler === 'undefined') {
