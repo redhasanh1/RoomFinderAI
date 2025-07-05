@@ -6,7 +6,6 @@
     <title>Negotiation Assistant - RoomFinderAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="/frontend/auth.js"></script>
     <script src="/frontend/ai-chat.js?v=10"></script>
     <script src="/frontend/ai-negotiation.js?v=2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -670,6 +669,102 @@
         </div>
     </main>
 
+    <!-- Isolated Authentication for AI Negotiator -->
+    <script>
+        // Isolated authentication system that never redirects
+        const defaultProfileImage = 'data:image/svg+xml;base64,' + btoa(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+                <rect width="100" height="100" rx="50" fill="#E5E7EB"/>
+                <path d="M50 45C56.075 45 61 40.075 61 34C61 27.925 56.075 23 50 23C43.925 23 39 27.925 39 34C39 40.075 43.925 45 50 45Z" fill="#9CA3AF"/>
+                <path d="M30 77C30 77 30 66.103 30 62C30 55.373 36.268 50 44 50H56C63.732 50 70 55.373 70 62C70 66.103 70 77 70 77" fill="#9CA3AF"/>
+            </svg>
+        `.trim());
+
+        // Safe authentication function that never redirects
+        async function initializeAuthSafe(supabase, currentUser) {
+            console.log('🔐 Starting safe authentication initialization...');
+            
+            if (!currentUser) {
+                console.log('⚠️ No user session found, proceeding with anonymous access');
+                return null;
+            }
+
+            try {
+                // Check if user exists in profiles table
+                let { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('email', currentUser.email)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') {
+                    console.error('Database error checking profile:', error);
+                    return null; // Don't redirect, just continue without profile
+                }
+
+                // Create profile if missing
+                if (!profile) {
+                    console.log('Creating missing profile for current user...');
+                    const newProfile = {
+                        email: currentUser.email,
+                        profile_image: defaultProfileImage
+                    };
+                    const { data, error: insertError } = await supabase
+                        .from('profiles')
+                        .insert([newProfile])
+                        .select()
+                        .single();
+
+                    if (insertError) {
+                        console.error('Error creating profile:', insertError);
+                        return null; // Don't redirect, continue without profile
+                    }
+                    profile = data;
+                }
+
+                // Update user with profile info
+                currentUser.id = profile.id;
+                currentUser.profileImage = profile.profile_image;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                // Update auth section if it exists
+                const authSection = document.getElementById('authSection');
+                if (authSection) {
+                    authSection.innerHTML = `
+                        <a href="/profile">
+                            <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
+                        </a>
+                    `;
+                }
+                
+                console.log('✅ Safe authentication completed successfully');
+                return profile;
+            } catch (error) {
+                console.error('❌ Authentication error (non-fatal):', error);
+                return null; // Never redirect, just continue
+            }
+        }
+
+        // Override any global initializeAuth to prevent conflicts
+        window.initializeAuth = initializeAuthSafe;
+
+        // Protection against unwanted redirects
+        const originalLocationSetter = Object.getOwnPropertyDescriptor(window.location, 'href').set;
+        Object.defineProperty(window.location, 'href', {
+            set: function(url) {
+                if (url.includes('/login')) {
+                    console.error('🚫 BLOCKED REDIRECT TO LOGIN:', url);
+                    console.trace('Redirect blocked - stack trace:');
+                    return; // Block the redirect
+                }
+                originalLocationSetter.call(this, url);
+            },
+            get: function() {
+                return window.location.href;
+            }
+        });
+    </script>
+
     <!-- JavaScript -->
     <script>
         // Global variables
@@ -678,9 +773,42 @@
         let supabase = null;
         let configData = null;
 
+        // Authentication debugging
+        function debugAuthState(label) {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            console.log(`🔍 AUTH DEBUG [${label}]:`, {
+                hasCurrentUser: !!currentUser,
+                userEmail: currentUser?.email || 'none',
+                isAnonymous: currentUser?.email === 'anonymous@user.com',
+                localStorageKeys: Object.keys(localStorage),
+                pageUrl: window.location.href,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        // Monitor localStorage changes
+        const originalSetItem = localStorage.setItem;
+        localStorage.setItem = function(key, value) {
+            if (key === 'currentUser') {
+                console.log('📝 localStorage.setItem currentUser:', JSON.parse(value || 'null'));
+            }
+            return originalSetItem.apply(this, arguments);
+        };
+
+        const originalRemoveItem = localStorage.removeItem;
+        localStorage.removeItem = function(key) {
+            if (key === 'currentUser') {
+                console.log('🗑️ localStorage.removeItem currentUser');
+                console.trace('currentUser removal - stack trace:');
+                // Allow removal but log it for debugging
+            }
+            return originalRemoveItem.apply(this, arguments);
+        };
+
         // Initialize the application
         async function initializeApp() {
             try {
+                debugAuthState('APP_START');
                 console.log('🚀 Initializing AI Negotiator with Supabase integration...');
                 
                 // Load configuration from Railway API
@@ -704,16 +832,17 @@
                 
                 // Get current user first (before auth check)
                 currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                debugAuthState('BEFORE_AUTH');
                 console.log('👤 Current user from localStorage:', currentUser?.email || 'none');
                 
-                // Initialize authentication only if user exists
-                if (currentUser && typeof initializeAuth === 'function') {
+                // Initialize safe authentication (never redirects)
+                if (currentUser) {
                     try {
-                        await initializeAuth(supabase, true); // Allow anonymous access
+                        await initializeAuthSafe(supabase, currentUser);
                         console.log('✅ Authentication initialized for logged-in user');
                     } catch (error) {
-                        console.error('❌ Authentication failed:', error);
-                        // Don't redirect, allow anonymous access
+                        console.error('❌ Authentication failed (non-fatal):', error);
+                        // Continue with existing user data
                     }
                 } else {
                     console.log('⚠️ No logged-in user, allowing anonymous access');
@@ -724,7 +853,10 @@
                         firstName: 'Anonymous',
                         lastName: 'User'
                     };
+                    console.log('🎭 Created anonymous user session');
                 }
+                
+                debugAuthState('AFTER_AUTH');
                 
                 // Test Supabase connection
                 await supabase.from('listings').select('count', { count: 'exact', head: true });
