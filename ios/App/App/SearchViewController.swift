@@ -100,6 +100,29 @@ class SearchViewController: UIViewController {
         let navController = UINavigationController(rootViewController: filterVC)
         present(navController, animated: true)
     }
+    
+    func filterByCategory(_ category: String) {
+        // Filter properties by category
+        filteredProperties = properties.filter { property in
+            switch category.lowercased() {
+            case "studios":
+                return property.bedrooms == 1 && property.title.lowercased().contains("studio")
+            case "1 bedroom":
+                return property.bedrooms == 1
+            case "2+ bedrooms":
+                return property.bedrooms >= 2
+            case "luxury":
+                return property.price > 2000 || property.title.lowercased().contains("luxury")
+            case "student":
+                return property.title.lowercased().contains("student") || property.price < 800
+            case "shared":
+                return property.title.lowercased().contains("shared")
+            default:
+                return true
+            }
+        }
+        tableView.reloadData()
+    }
 }
 
 // MARK: - UISearchResultsUpdating
@@ -144,6 +167,26 @@ struct PropertyModel {
     let bedrooms: Int
     let bathrooms: Int
     let amenities: [String]
+    var imageURL: String = "photo"
+    var rating: Double = 4.5
+    var isVerified: Bool = false
+    
+    init(id: String, title: String, price: Int, location: String, bedrooms: Int, bathrooms: Int, amenities: [String], imageURL: String = "photo", rating: Double = 4.5, isVerified: Bool = false) {
+        self.id = id
+        self.title = title
+        self.price = price
+        self.location = location
+        self.bedrooms = bedrooms
+        self.bathrooms = bathrooms
+        self.amenities = amenities
+        self.imageURL = imageURL
+        self.rating = rating
+        self.isVerified = isVerified
+    }
+    
+    func filterByCategory(_ category: String) {
+        // Method for filtering by category
+    }
 }
 
 // MARK: - PropertyTableViewCell
