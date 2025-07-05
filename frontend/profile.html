@@ -515,7 +515,7 @@
                 <input type="file" id="profileUpload" class="profile-upload-input" accept="image/jpeg,image/png">
                 <h3 id="userName" class="text-xl font-semibold text-gray-800"></h3>
                 <p id="userEmail" class="text-gray-600"></p>
-                <button id="logoutButton" class="mt-4 bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 transition font-semibold shadow-md hover:shadow-lg">Logout</button>
+                <button id="logoutButton" class="mt-4 bg-gradient-to-r from-red-600 to-pink-600 text-white p-3 rounded-lg hover:from-red-700 hover:to-pink-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg hover:transform hover:-translate-y-0.5">Logout</button>
             </div>
         </section>
 
@@ -787,10 +787,10 @@
                                 <h3 class="text-xl font-semibold text-gray-800">${listing.title}</h3>
                                 <div class="flex space-x-2">
                                     <button onclick="editListing('${listing.id}')" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-300 font-medium shadow-md hover:shadow-lg hover:transform hover:-translate-y-0.5">
-                                        ✏️ Edit
+                                        Edit
                                     </button>
                                     <button onclick="deleteListing('${listing.id}')" class="bg-gradient-to-r from-red-600 to-pink-600 text-white px-4 py-2 rounded-lg hover:from-red-700 hover:to-pink-700 transition-all duration-300 font-medium shadow-md hover:shadow-lg hover:transform hover:-translate-y-0.5">
-                                        🗑️ Delete
+                                        Delete
                                     </button>
                                 </div>
                             </div>
