@@ -707,7 +707,7 @@
                 console.log('✅ Supabase connection test successful');
                 
                 // Get current user (or create anonymous session)
-                currentUser = JSON.parse(localStorage.getItem('user')) || { email: 'anonymous@user.com', name: 'Anonymous User' };
+                currentUser = JSON.parse(localStorage.getItem('currentUser')) || { email: 'anonymous@user.com', name: 'Anonymous User' };
                 console.log('👤 Current user:', currentUser.email);
                 
                 // Check if AIChatHandler class is available
