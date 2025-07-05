@@ -9,11 +9,11 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY frontend/backend/package*.json ./frontend/backend/
+COPY backend/package*.json ./backend/
 
 # Install dependencies
 RUN npm install --production
-RUN npm install --prefix frontend/backend --production
+RUN npm install --prefix backend --production
 
 # Copy application files
 COPY . .
@@ -26,4 +26,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
 # Start the application
-CMD ["node", "frontend/backend/server.js"]
+CMD ["node", "backend/server.js"]

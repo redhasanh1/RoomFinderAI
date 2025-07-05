@@ -19,7 +19,8 @@
       "Bash(cp:*)",
       "Bash(npm start)",
       "Bash(timeout:*)",
-      "Bash(git --version)"
+      "Bash(git --version)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }
