@@ -669,6 +669,133 @@
         </div>
     </main>
 
+    <!-- Emergency Authentication Protection - Runs First -->
+    <script>
+        // EMERGENCY: Capture initial state before ANY other scripts run
+        console.log('🚨 EMERGENCY AUTH DEBUG - SCRIPT START');
+        const INITIAL_USER = localStorage.getItem('currentUser');
+        const INITIAL_TIMESTAMP = Date.now();
+        console.log('📸 Initial localStorage state:', {
+            currentUser: INITIAL_USER ? JSON.parse(INITIAL_USER) : null,
+            allKeys: Object.keys(localStorage),
+            url: window.location.href,
+            timestamp: new Date().toISOString()
+        });
+
+        // Create a global flag to prevent any other auth systems from running
+        window.AI_NEGOTIATOR_AUTH_ACTIVE = true;
+        window.AI_NEGOTIATOR_INITIAL_USER = INITIAL_USER;
+        
+        // Emergency protection: Block ALL redirects immediately
+        const ORIGINAL_LOCATION_REPLACE = window.location.replace;
+        const ORIGINAL_LOCATION_ASSIGN = window.location.assign;
+        const ORIGINAL_LOCATION_HREF_SETTER = Object.getOwnPropertyDescriptor(window.location, 'href')?.set;
+        
+        // Override all location setters to prevent redirects
+        window.location.replace = function(url) {
+            console.error('🚫 BLOCKED location.replace:', url);
+            console.trace('Blocked replace - stack trace:');
+            if (!url.includes('/login')) {
+                return ORIGINAL_LOCATION_REPLACE.call(this, url);
+            }
+        };
+        
+        window.location.assign = function(url) {
+            console.error('🚫 BLOCKED location.assign:', url);
+            console.trace('Blocked assign - stack trace:');
+            if (!url.includes('/login')) {
+                return ORIGINAL_LOCATION_ASSIGN.call(this, url);
+            }
+        };
+        
+        if (ORIGINAL_LOCATION_HREF_SETTER) {
+            Object.defineProperty(window.location, 'href', {
+                set: function(url) {
+                    if (url.includes('/login')) {
+                        console.error('🚫 BLOCKED location.href set:', url);
+                        console.trace('Blocked href set - stack trace:');
+                        return;
+                    }
+                    return ORIGINAL_LOCATION_HREF_SETTER.call(this, url);
+                },
+                get: function() {
+                    return window.location.href;
+                }
+            });
+        }
+        
+        // Track ALL localStorage operations
+        const ORIGINAL_SET_ITEM = localStorage.setItem;
+        const ORIGINAL_REMOVE_ITEM = localStorage.removeItem;
+        const ORIGINAL_CLEAR = localStorage.clear;
+        
+        localStorage.setItem = function(key, value) {
+            if (key === 'currentUser') {
+                console.log('📝 EMERGENCY TRACKED: localStorage.setItem currentUser:', value);
+                console.trace('setItem stack trace:');
+            }
+            return ORIGINAL_SET_ITEM.apply(this, arguments);
+        };
+        
+        localStorage.removeItem = function(key) {
+            if (key === 'currentUser') {
+                console.error('🗑️ EMERGENCY TRACKED: localStorage.removeItem currentUser');
+                console.trace('removeItem stack trace:');
+                // For debugging, let's temporarily block this
+                console.error('⚠️ BLOCKING currentUser removal for debugging');
+                return; // Block the removal
+            }
+            return ORIGINAL_REMOVE_ITEM.apply(this, arguments);
+        };
+        
+        localStorage.clear = function() {
+            console.error('🗑️ EMERGENCY TRACKED: localStorage.clear()');
+            console.trace('clear stack trace:');
+            // Block clear for debugging
+            console.error('⚠️ BLOCKING localStorage.clear for debugging');
+            return;
+        };
+        
+        // Protect against page navigation events
+        window.addEventListener('beforeunload', function(e) {
+            console.log('📤 Page unloading, preserving user data...');
+            preserveUserData();
+        });
+        
+        window.addEventListener('pagehide', function(e) {
+            console.log('📤 Page hiding, preserving user data...');
+            preserveUserData();
+        });
+        
+        window.addEventListener('visibilitychange', function(e) {
+            if (document.visibilityState === 'hidden') {
+                console.log('👁️ Page hidden, preserving user data...');
+                preserveUserData();
+            } else {
+                console.log('👁️ Page visible, checking user data...');
+                setTimeout(() => {
+                    const currentUser = localStorage.getItem('currentUser');
+                    if (!currentUser) {
+                        console.log('⚠️ User data missing after visibility change, restoring...');
+                        restoreUserData();
+                    }
+                }, 100);
+            }
+        });
+        
+        console.log('🛡️ Emergency auth protection activated');
+        
+        function preserveUserData() {
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                sessionStorage.setItem('currentUser_backup', currentUser);
+                sessionStorage.setItem('ai_negotiator_user_backup', currentUser);
+                window.BACKUP_USER_DATA = currentUser;
+                console.log('💾 User data backed up');
+            }
+        }
+    </script>
+
     <!-- Isolated Authentication for AI Negotiator -->
     <script>
         // Isolated authentication system that never redirects
@@ -805,9 +932,47 @@
             return originalRemoveItem.apply(this, arguments);
         };
 
+        // Backup current user data in multiple locations
+        function preserveUserData() {
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                // Store in multiple backup locations
+                sessionStorage.setItem('currentUser_backup', currentUser);
+                sessionStorage.setItem('ai_negotiator_user_backup', currentUser);
+                window.BACKUP_USER_DATA = currentUser;
+                console.log('💾 User data backed up to multiple locations');
+            }
+        }
+
+        // Restore user data if it gets cleared
+        function restoreUserData() {
+            let currentUser = localStorage.getItem('currentUser');
+            
+            if (!currentUser) {
+                console.log('⚠️ currentUser missing, attempting restore...');
+                
+                // Try to restore from backups
+                currentUser = sessionStorage.getItem('currentUser_backup') ||
+                             sessionStorage.getItem('ai_negotiator_user_backup') ||
+                             window.BACKUP_USER_DATA ||
+                             window.AI_NEGOTIATOR_INITIAL_USER;
+                             
+                if (currentUser) {
+                    localStorage.setItem('currentUser', currentUser);
+                    console.log('🔄 User data restored from backup:', JSON.parse(currentUser));
+                    return JSON.parse(currentUser);
+                }
+            }
+            
+            return currentUser ? JSON.parse(currentUser) : null;
+        }
+
         // Initialize the application
         async function initializeApp() {
             try {
+                // Immediately preserve and restore user data
+                preserveUserData();
+                
                 debugAuthState('APP_START');
                 console.log('🚀 Initializing AI Negotiator with Supabase integration...');
                 
@@ -830,10 +995,10 @@
                 supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
                 console.log('✅ Supabase client initialized');
                 
-                // Get current user first (before auth check)
-                currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                // Get current user first (with backup restore)
+                currentUser = restoreUserData();
                 debugAuthState('BEFORE_AUTH');
-                console.log('👤 Current user from localStorage:', currentUser?.email || 'none');
+                console.log('👤 Current user loaded:', currentUser?.email || 'none');
                 
                 // Initialize safe authentication (never redirects)
                 if (currentUser) {
@@ -1025,9 +1190,23 @@
             }
         }
 
+        // Periodic user data protection
+        function setupPeriodicProtection() {
+            setInterval(() => {
+                const currentUser = localStorage.getItem('currentUser');
+                if (!currentUser) {
+                    console.log('🔄 Periodic check: currentUser missing, attempting restore...');
+                    restoreUserData();
+                }
+            }, 5000); // Check every 5 seconds
+        }
+
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
+            
+            // Start periodic protection
+            setupPeriodicProtection();
             
             // Check for pre-filled search query from index page
             const aiSearchQuery = localStorage.getItem('aiSearchQuery');
