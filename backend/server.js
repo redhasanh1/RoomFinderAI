@@ -4262,11 +4262,16 @@ app.get('/', (req, res) => {
 // Dynamic route handler for all HTML pages - MUST BE LAST
 app.get('/:page', (req, res) => {
     try {
-        const pageName = req.params.page;
+        let pageName = req.params.page;
         
         // Skip API routes and health - they should be handled above
         if (pageName.startsWith('api') || pageName === 'health') {
             return res.status(404).send('Route not found');
+        }
+        
+        // Remove .html extension if present
+        if (pageName.endsWith('.html')) {
+            pageName = pageName.slice(0, -5);
         }
         
         // Check root directory first
