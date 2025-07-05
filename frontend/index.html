@@ -3634,6 +3634,63 @@
                 event.preventDefault();
             }
         }, { passive: false });
+
+        // Authentication state checking
+        function checkAuthState() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            const desktopAuthLink = document.querySelector('.desktop-auth .auth-link');
+            const mobileAuthItem = document.querySelector('.mobile-menu-item.auth-item');
+            
+            if (currentUser && currentUser.email) {
+                // User is logged in - show user info
+                if (desktopAuthLink) {
+                    desktopAuthLink.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <img src="${currentUser.profileImage || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM2MzY2RjEiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xNiAxNlY0LjVDMTYgNC4yMjM4NiAxNS43NzYxIDQgMTUuNSA0SDguNUM4LjIyMzg2IDQgOCA0LjIyMzg2IDggNC41VjE2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0xMiAxNEM5Ljc5MDg2IDE0IDggMTUuNzkwOSA4IDE4QzggMjAuMjA5MSA5Ljc5MDg2IDIyIDEyIDIyQzE0LjIwOTEgMjIgMTYgMjAuMjA5MSAxNiAxOEMxNiAxNS43OTA5IDE0LjIwOTEgMTQgMTIgMTQiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cjwvc3ZnPgo='}" 
+                                 alt="Profile" class="w-8 h-8 rounded-full">
+                            <span class="text-sm font-medium">${currentUser.email.split('@')[0]}</span>
+                            <button onclick="logout()" class="text-xs text-red-600 hover:text-red-800 ml-2">Logout</button>
+                        </div>
+                    `;
+                    desktopAuthLink.href = 'profile.html';
+                }
+                
+                if (mobileAuthItem) {
+                    mobileAuthItem.innerHTML = `
+                        <div class="flex items-center justify-between w-full">
+                            <div class="flex items-center">
+                                <img src="${currentUser.profileImage || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM2MzY2RjEiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xNiAxNlY0LjVDMTYgNC4yMjM4NiAxNS43NzYxIDQgMTUuNSA0SDguNUM4LjIyMzg2IDQgOCA0LjIyMzg2IDggNC41VjE2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0xMiAxNEM5Ljc5MDg2IDE0IDggMTUuNzkwOSA4IDE4QzggMjAuMjA5MSA5Ljc5MDg2IDIyIDEyIDIyQzE0LjIwOTEgMjIgMTYgMjAuMjA5MSAxNiAxOEMxNiAxNS43OTA5IDE0LjIwOTEgMTQgMTIgMTQiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cjwvc3ZnPgo='}" 
+                                     alt="Profile" class="w-6 h-6 rounded-full mr-2">
+                                <span>👤 ${currentUser.email.split('@')[0]}</span>
+                            </div>
+                            <button onclick="logout()" class="text-red-600 text-sm">Logout</button>
+                        </div>
+                    `;
+                    mobileAuthItem.href = 'profile.html';
+                }
+            } else {
+                // User is not logged in - show login/register
+                if (desktopAuthLink) {
+                    desktopAuthLink.innerHTML = 'Login/Register';
+                    desktopAuthLink.href = 'login.html';
+                }
+                
+                if (mobileAuthItem) {
+                    mobileAuthItem.innerHTML = '👤 Login/Register';
+                    mobileAuthItem.href = 'login.html';
+                }
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('user');
+            window.location.reload();
+        }
+
+        // Check auth state when page loads
+        document.addEventListener('DOMContentLoaded', checkAuthState);
     </script>
 </body>
 </html>
