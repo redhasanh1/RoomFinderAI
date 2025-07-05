@@ -2,13 +2,13 @@
   "name": "roomfinder-ai-negotiator",
   "version": "1.0.0",
   "description": "AI-powered rental negotiation platform with advanced market intelligence",
-  "main": "frontend/backend/server.js",
+  "main": "backend/server.js",
   "scripts": {
-    "start": "node frontend/backend/server.js",
-    "dev": "node frontend/backend/server.js",
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js",
     "build": "rm -rf frontend/build && mkdir -p frontend/build && cp -r frontend/* frontend/build/ 2>/dev/null || true",
     "test": "echo 'No tests specified'",
-    "postinstall": "npm install --prefix frontend/backend --production"
+    "postinstall": "npm install --prefix backend --production"
   },
   "keywords": [
     "ai",

@@ -1,12 +1,6 @@
 // Authentication module
 window.AuthManager = (function() {
-    const profileImages = [
-        'https://api.dicebear.com/7.x/avataaars/svg?seed=1',
-        'https://api.dicebear.com/7.x/avataaars/svg?seed=2',
-        'https://api.dicebear.com/7.x/avataaars/svg?seed=3',
-        'https://api.dicebear.com/7.x/avataaars/svg?seed=4',
-        'https://api.dicebear.com/7.x/avataaars/svg?seed=5'
-    ];
+    const defaultProfileImage = 'https://ui-avatars.com/api/?name=User&background=667eea&color=ffffff&size=128&format=svg';
 
     let currentUser = null;
 
@@ -81,7 +75,7 @@ window.AuthManager = (function() {
         if (!user) return;
 
         if (!user.profileImage) {
-            user.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
+            user.profileImage = defaultProfileImage;
             
             // Update in localStorage
             let users = JSON.parse(localStorage.getItem('users')) || [];

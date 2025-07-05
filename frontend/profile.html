@@ -20,11 +20,284 @@
             background-clip: text;
         }
         
-        /* Modern header */
-        .modern-header {
+        /* Premium Header */
+        .premium-header {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+        }
+        
+        .premium-header.scrolled {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(25px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Navigation Items */
+        .nav-item {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 0.95rem;
+        }
+        
+        .nav-item:hover {
+            color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        .auth-link {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+        .auth-link:hover {
+            color: #667eea;
+            border-color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        /* Dropdown Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .dropdown-arrow {
+            font-size: 0.7rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .dropdown:hover .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 0.5rem 0;
+            min-width: 12rem;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+        }
+        
+        .dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .dropdown-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8fafc;
+            color: #667eea;
+        }
+        
+        /* Mobile Menu Styles */
+        .mobile-menu-btn {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 24px;
+            height: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+        
+        .hamburger-line {
+            width: 100%;
+            height: 2px;
+            background-color: #374151;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
+        }
+        
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            transition: left 0.3s ease;
+        }
+        
+        .mobile-menu.active {
+            left: 0;
+        }
+        
+        .mobile-menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .mobile-menu-content {
+            position: relative;
+            width: 80%;
+            max-width: 400px;
+            height: 100%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .mobile-menu-close {
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        
+        .mobile-menu-items {
+            flex: 1;
+            padding: 1rem 0;
+            overflow-y: auto;
+        }
+        
+        .mobile-menu-item {
+            display: block;
+            padding: 0.75rem 1.5rem;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .mobile-menu-item:hover {
+            background-color: #f8fafc;
+            color: #667eea;
+        }
+        
+        .mobile-section {
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .mobile-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            text-align: left;
+            color: #374151;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .mobile-section-header:hover {
+            background-color: #f8fafc;
+            color: #667eea;
+        }
+        
+        .mobile-arrow {
+            font-size: 0.8rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .mobile-arrow.rotated {
+            transform: rotate(180deg);
+        }
+        
+        .mobile-section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .mobile-section-content.expanded {
+            max-height: 500px;
+        }
+        
+        .mobile-section-content .mobile-menu-item {
+            padding-left: 2.5rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Prevent scrolling when mobile menu is open */
+        .mobile-menu-open {
+            overflow: hidden;
+        }
+        
+        /* Desktop menu hidden on mobile */
+        @media (max-width: 768px) {
+            .desktop-nav,
+            .desktop-auth {
+                display: none !important;
+            }
+        }
+        
+        /* Mobile menu hidden on desktop */
+        @media (min-width: 769px) {
+            .mobile-menu-btn {
+                display: none !important;
+            }
         }
         
         /* Modern container */
@@ -106,31 +379,133 @@
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen">
     <!-- Header -->
-    <header class="sticky top-0 modern-header shadow-lg z-10">
-        <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-6">
-                <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
-                <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
-                <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
-                <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
-                <a href="/ai-negotiator" class="text-gray-700 hover:text-blue-600 transition font-medium">AI Negotiator</a>
-                <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
-                <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition font-medium">Pricing</a>
-                <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
+    <header class="fixed top-0 w-full premium-header z-50">
+        <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
+            <!-- Mobile Layout -->
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <div class="text-xl md:text-2xl font-bold gradient-text">RoomFinderAI</div>
+                
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
             </div>
-            <div class="flex items-center space-x-4">
-                <a href="/dashboard" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition font-medium shadow-lg">
-                    📊 Dashboard
+            
+            <!-- Desktop Navigation -->
+            <div class="desktop-nav hidden md:flex items-center space-x-8">
+                <!-- Home - Standalone -->
+                <a href="index.html" class="nav-item">Home</a>
+                
+                <!-- Browse Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
+                        Browse <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="browse-dropdown">
+                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
+                        <a href="sublease.html" class="dropdown-item">Sublease Property</a>
+                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
+                    </div>
+                </div>
+                
+                <!-- Tools Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('tools')">
+                        Tools <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="tools-dropdown">
+                        <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
+                        <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
+                        <a href="legal.html" class="dropdown-item">Legal Center</a>
+                        <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
+                    </div>
+                </div>
+                
+                <!-- About Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('about')">
+                        About <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="about-dropdown">
+                        <a href="index.html#about" class="dropdown-item">About Us</a>
+                        <a href="index.html#contact" class="dropdown-item">Contact</a>
+                        <a href="support.html" class="dropdown-item">Support</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Desktop Auth -->
+            <div class="desktop-auth hidden md:flex items-center space-x-4">
+                <a href="profile.html" aria-label="View user profile">
+                    <img id="profileLogo" src="https://via.placeholder.com/40" alt="Profile" class="w-10 h-10 rounded-full transition-transform hover:scale-110">
                 </a>
-                <a href="/profile" aria-label="View user profile">
-                    <img id="profileLogo" src="https://via.placeholder.com/40" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
-                </a>
+                <a href="dashboard.html" class="auth-link bg-gradient-to-r from-purple-600 to-blue-600 text-white border-none hover:from-purple-700 hover:to-blue-700">Dashboard</a>
             </div>
         </nav>
+        
+        <!-- Mobile Navigation Menu -->
+        <div class="mobile-menu" id="mobile-menu">
+            <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+            <div class="mobile-menu-content">
+                <div class="mobile-menu-header">
+                    <div class="text-lg font-bold gradient-text">RoomFinderAI</div>
+                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
+                </div>
+                
+                <div class="mobile-menu-items">
+                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
+                    
+                    <!-- Browse Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
+                            🔍 Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="browse-section">
+                            <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
+                            <a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
+                            <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Tools Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('tools')">
+                            🛠️ Tools <span class="mobile-arrow" id="tools-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="tools-section">
+                            <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
+                            <a href="pricing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing Plans</a>
+                            <a href="legal.html" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Center</a>
+                            <a href="mortgage.html" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
+                        </div>
+                    </div>
+                    
+                    <!-- About Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('about')">
+                            ℹ️ About <span class="mobile-arrow" id="about-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="about-section">
+                            <a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
+                            <a href="index.html#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
+                            <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Auth Section -->
+                    <div class="mobile-section">
+                        <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()">👤 Profile</a>
+                        <a href="dashboard.html" class="mobile-menu-item" onclick="closeMobileMenu()">📊 Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <main class="flex-grow w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-20">
         <!-- Profile Info -->
         <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">User Profile</h2>
@@ -164,12 +539,12 @@
         <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
             <div class="mt-4 flex justify-center space-x-4">
-                <a href="/index" class="hover:text-blue-400">Home</a>
-                <a href="/index#about" class="hover:text-blue-400">About</a>
-                <a href="/sublease" class="hover:text-blue-400">Sublease</a>
-                <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
-                <a href="/listings" class="hover:text-blue-400">Listings</a>
-                <a href="/index#contact" class="hover:text-blue-400">Contact</a>
+                <a href="index.html" class="hover:text-blue-400">Home</a>
+                <a href="index.html#about" class="hover:text-blue-400">About</a>
+                <a href="sublease.html" class="hover:text-blue-400">Sublease</a>
+                <a href="ai-negotiator.html" class="hover:text-blue-400">AI Negotiator</a>
+                <a href="listings.html" class="hover:text-blue-400">Listings</a>
+                <a href="index.html#contact" class="hover:text-blue-400">Contact</a>
             </div>
         </div>
     </footer>
@@ -267,7 +642,7 @@
         async function initializeProfile() {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             if (!currentUser) {
-                window.location.href = '/login';
+                window.location.href = 'login.html';
                 return;
             }
 
@@ -388,7 +763,7 @@
                     }
 
                     if (!listings || listings.length === 0) {
-                        userListings.innerHTML = '<p class="text-gray-600 text-center">No listings yet. <a href="/listings" class="text-blue-600 hover:underline">Create your first listing!</a></p>';
+                        userListings.innerHTML = '<p class="text-gray-600 text-center">No listings yet. <a href="listings.html" class="text-blue-600 hover:underline">Create your first listing!</a></p>';
                         return;
                     }
 
@@ -441,13 +816,13 @@
 
             // Function to view listing details
             window.viewListing = function(listingId) {
-                window.location.href = `/listing_details?id=${listingId}`;
+                window.location.href = `listing_details.html?id=${listingId}`;
             };
 
             // Logout
             document.getElementById('logoutButton').addEventListener('click', () => {
                 localStorage.removeItem('currentUser');
-                window.location.href = '/login';
+                window.location.href = 'login.html';
             });
         }
 
@@ -1039,6 +1414,140 @@
                 alert('Error deleting listing. Please try again.');
             }
         };
+        
+        // Navigation Functions
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId + '-dropdown');
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            
+            // Close all other dropdowns
+            allDropdowns.forEach(menu => {
+                if (menu.id !== dropdownId + '-dropdown') {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                }
+            });
+            
+            // Toggle current dropdown
+            if (dropdown.style.opacity === '1') {
+                dropdown.style.opacity = '0';
+                dropdown.style.visibility = 'hidden';
+                dropdown.style.transform = 'translateY(-10px)';
+            } else {
+                dropdown.style.opacity = '1';
+                dropdown.style.visibility = 'visible';
+                dropdown.style.transform = 'translateY(0)';
+            }
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.dropdown')) {
+                const allDropdowns = document.querySelectorAll('.dropdown-menu');
+                allDropdowns.forEach(menu => {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                });
+            }
+        });
+        
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            if (mobileMenu.classList.contains('active')) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        }
+        
+        function openMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            mobileMenu.classList.add('active');
+            hamburgerBtn.classList.add('active');
+            body.classList.add('mobile-menu-open');
+        }
+        
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            if (mobileMenu) {
+                mobileMenu.classList.remove('active');
+            }
+            if (hamburgerBtn) {
+                hamburgerBtn.classList.remove('active');
+            }
+            if (body) {
+                body.classList.remove('mobile-menu-open');
+            }
+        }
+        
+        function toggleMobileSection(sectionId) {
+            const section = document.getElementById(sectionId + '-section');
+            const arrow = document.getElementById(sectionId + '-arrow');
+            
+            if (section.classList.contains('expanded')) {
+                section.classList.remove('expanded');
+                arrow.classList.remove('rotated');
+            } else {
+                // Close all other sections first
+                const allSections = document.querySelectorAll('.mobile-section-content');
+                const allArrows = document.querySelectorAll('.mobile-arrow');
+                
+                allSections.forEach(s => s.classList.remove('expanded'));
+                allArrows.forEach(a => a.classList.remove('rotated'));
+                
+                // Open the clicked section
+                section.classList.add('expanded');
+                arrow.classList.add('rotated');
+            }
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) {
+                closeMobileMenu();
+            }
+        });
+        
+        // Touch event handling for better mobile experience
+        document.addEventListener('touchstart', function(event) {
+            // Prevent zoom on double tap for buttons
+            if (event.target.matches('button, .mobile-menu-item, .nav-item')) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+        
+        // Initialize mobile menu on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure mobile menu is closed on page load
+            closeMobileMenu();
+            
+            // Add proper touch handling for iOS
+            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                document.body.style.webkitTouchCallout = 'none';
+                document.body.style.webkitUserSelect = 'none';
+            }
+        });
+        
+        // Header scroll effect
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.premium-header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
     </script>
 </body>
 </html>
