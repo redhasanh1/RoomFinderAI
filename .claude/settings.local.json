@@ -12,7 +12,15 @@
       "Bash(git pull:*)",
       "Bash(git stash:*)",
       "Bash(rm:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(ss:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(cp:*)",
+      "Bash(npm start)",
+      "Bash(timeout:*)",
+      "Bash(git --version)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

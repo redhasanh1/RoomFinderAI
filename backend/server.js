@@ -30,8 +30,6 @@ config = {
     OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim() || config.OPENAI_ORG_ID,
     OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || config.OPENAI_MODEL || 'gpt-3.5-turbo',
     BREVO_API_KEY: process.env.BREVO_API_KEY?.trim() || config.BREVO_API_KEY,
-    TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY?.trim() || config.TURNSTILE_SITE_KEY,
-    TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY?.trim() || config.TURNSTILE_SECRET_KEY,
     AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_KEY,
     AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
     AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim() || config.AZURE_FACE_KEY,
@@ -81,50 +79,6 @@ async function testBrevoApiKey() {
 
 // Test API key after a short delay to let server start
 setTimeout(testBrevoApiKey, 2000);
-
-// Cloudflare Turnstile verification function
-async function verifyTurnstileToken(token, clientIP = '') {
-    try {
-        console.log('🔐 Verifying Turnstile token...');
-        
-        if (!config.TURNSTILE_SECRET_KEY) {
-            console.error('❌ TURNSTILE_SECRET_KEY not configured');
-            return { success: false, error: 'Turnstile not configured' };
-        }
-
-        const formData = new URLSearchParams();
-        formData.append('secret', config.TURNSTILE_SECRET_KEY);
-        formData.append('response', token);
-        if (clientIP) {
-            formData.append('remoteip', clientIP);
-        }
-
-        const response = await axios.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', formData, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            timeout: 10000
-        });
-
-        const result = response.data;
-        console.log('🔐 Turnstile verification result:', { 
-            success: result.success, 
-            hostname: result.hostname,
-            challenge_ts: result.challenge_ts
-        });
-
-        if (result.success) {
-            console.log('✅ Turnstile verification successful');
-            return { success: true, data: result };
-        } else {
-            console.log('❌ Turnstile verification failed:', result['error-codes']);
-            return { success: false, error: 'Verification failed', codes: result['error-codes'] };
-        }
-    } catch (error) {
-        console.error('❌ Turnstile verification error:', error.message);
-        return { success: false, error: error.message };
-    }
-}
 
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
@@ -811,27 +765,12 @@ async function sendPasswordResetEmail(email, code, firstName) {
 app.post('/api/send-verification', async (req, res) => {
     try {
         console.log('📧 Received verification request:', req.body);
-        const { firstName, lastName, email, password, turnstileToken } = req.body;
+        const { firstName, lastName, email, password } = req.body;
         
         if (!firstName || !lastName || !email || !password) {
             console.log('❌ Missing required fields');
             return res.status(400).json({ error: 'All fields are required' });
         }
-
-        // Verify Turnstile token
-        if (!turnstileToken) {
-            return res.status(400).json({ error: 'Security verification required' });
-        }
-
-        const clientIP = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
-        const turnstileResult = await verifyTurnstileToken(turnstileToken, clientIP);
-        
-        if (!turnstileResult.success) {
-            console.log('❌ Registration blocked - Turnstile verification failed for:', email);
-            return res.status(400).json({ error: 'Security verification failed. Please try again.' });
-        }
-
-        console.log('✅ Turnstile verified for registration attempt:', email);
 
         // Check if user already exists
         const existingUser = users.find(u => u.email === email);
@@ -984,25 +923,10 @@ app.post('/api/register', async (req, res) => {
 // API: User login
 app.post('/api/login', async (req, res) => {
     try {
-        const { email, password, turnstileToken } = req.body;
+        const { email, password } = req.body;
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required' });
         }
-
-        // Verify Turnstile token
-        if (!turnstileToken) {
-            return res.status(400).json({ error: 'Security verification required' });
-        }
-
-        const clientIP = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
-        const turnstileResult = await verifyTurnstileToken(turnstileToken, clientIP);
-        
-        if (!turnstileResult.success) {
-            console.log('❌ Login blocked - Turnstile verification failed for:', email);
-            return res.status(400).json({ error: 'Security verification failed. Please try again.' });
-        }
-
-        console.log('✅ Turnstile verified for login attempt:', email);
 
         const user = users.find(u => u.email === email);
         if (!user) {
@@ -1025,26 +949,11 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/send-reset-code', async (req, res) => {
     try {
         console.log('📧 Received password reset request for:', req.body.email);
-        const { email, turnstileToken } = req.body;
+        const { email } = req.body;
         
         if (!email) {
             return res.status(400).json({ error: 'Email is required' });
         }
-
-        // Verify Turnstile token
-        if (!turnstileToken) {
-            return res.status(400).json({ error: 'Security verification required' });
-        }
-
-        const clientIP = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
-        const turnstileResult = await verifyTurnstileToken(turnstileToken, clientIP);
-        
-        if (!turnstileResult.success) {
-            console.log('❌ Password reset blocked - Turnstile verification failed for:', email);
-            return res.status(400).json({ error: 'Security verification failed. Please try again.' });
-        }
-
-        console.log('✅ Turnstile verified for password reset request:', email);
 
         // Check if user exists
         const user = users.find(u => u.email === email);
@@ -1201,13 +1110,6 @@ app.post('/api/reset-password', async (req, res) => {
         console.error('Error in /api/reset-password:', error.message);
         res.status(500).json({ error: 'Failed to reset password' });
     }
-});
-
-// API: Get Turnstile site key
-app.get('/api/turnstile-key', (req, res) => {
-    res.json({ 
-        siteKey: config.TURNSTILE_SITE_KEY || '1x00000000000000000000AA' 
-    });
 });
 
 // Test endpoint for email functionality (remove in production)
@@ -4360,22 +4262,36 @@ app.get('/', (req, res) => {
 // Dynamic route handler for all HTML pages - MUST BE LAST
 app.get('/:page', (req, res) => {
     try {
-        const pageName = req.params.page;
+        let pageName = req.params.page;
         
         // Skip API routes and health - they should be handled above
         if (pageName.startsWith('api') || pageName === 'health') {
             return res.status(404).send('Route not found');
         }
         
-        const htmlPath = path.join(__dirname, '..', 'frontend', `${pageName}.html`);
+        // Remove .html extension if present
+        if (pageName.endsWith('.html')) {
+            pageName = pageName.slice(0, -5);
+        }
         
-        // Check if file exists
+        // Check root directory first
+        const htmlPath = path.join(__dirname, '..', `${pageName}.html`);
+        
+        // Check if file exists in root
         if (fs.existsSync(htmlPath)) {
-            console.log(`📄 Serving ${pageName}.html from:`, htmlPath);
+            console.log(`📄 Serving ${pageName}.html from root:`, htmlPath);
             res.sendFile(htmlPath);
         } else {
-            console.log(`❌ Page not found: ${pageName}.html`);
-            res.status(404).send(`Page not found: /${pageName}`);
+            // Check frontend directory as fallback
+            const frontendHtmlPath = path.join(__dirname, '..', 'frontend', `${pageName}.html`);
+            
+            if (fs.existsSync(frontendHtmlPath)) {
+                console.log(`📄 Serving ${pageName}.html from frontend:`, frontendHtmlPath);
+                res.sendFile(frontendHtmlPath);
+            } else {
+                console.log(`❌ Page not found: ${pageName}.html (checked root and frontend directories)`);
+                res.status(404).send(`Page not found: /${pageName}`);
+            }
         }
     } catch (error) {
         console.error('Error serving page:', error);
