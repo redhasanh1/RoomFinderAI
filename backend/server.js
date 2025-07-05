@@ -4242,6 +4242,20 @@ function generateSupplyIndicators() {
     };
 }
 
+// API: Get Turnstile site key
+app.get('/api/turnstile-key', (req, res) => {
+    // Use test key if production key looks invalid
+    let siteKey = config.TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+    
+    // If the key starts with 0x4AAA, it might be invalid - use test key
+    if (siteKey.startsWith('0x4AAA')) {
+        console.log('Using Cloudflare test key for development');
+        siteKey = '1x00000000000000000000AA'; // Always passes test key
+    }
+    
+    res.json({ siteKey });
+});
+
 // Health check route for Railway monitoring - MUST BE BEFORE /:page
 app.get('/health', (req, res) => {
     res.status(200).send('✅ RoomFinderAI server is running');
