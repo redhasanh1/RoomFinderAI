@@ -5141,30 +5141,26 @@ app.get('/api/sublease/search', async (req, res) => {
 // Declare server variable in global scope
 let server;
 
-// Initialize storage and start server
+// Start server immediately for faster startup
+server = app.listen(port, '0.0.0.0', () => {
+    console.log(`✅ RoomFinderAI Server running on port ${port}`);
+    console.log(`🏥 Health check: http://localhost:${port}/health`);
+    console.log(`🌐 Server ready at http://0.0.0.0:${port}`);
+});
+
+// Handle server errors
+server.on('error', (err) => {
+    console.error('❌ Server error:', err);
+    if (err.code === 'EADDRINUSE') {
+        console.log(`Port ${port} is busy, trying alternative...`);
+    }
+});
+
+// Initialize storage in background (non-blocking)
 initializeStorage().then(() => {
-    // Simplified startup with better error handling
-    server = app.listen(port, '0.0.0.0', () => {
-        console.log(`✅ RoomFinderAI Server running on port ${port}`);
-        console.log(`🏥 Health check: http://localhost:${port}/health`);
-        console.log(`🌐 Server ready at http://0.0.0.0:${port}`);
-    });
-    
-    // Handle server errors
-    server.on('error', (err) => {
-        console.error('❌ Server error:', err);
-        if (err.code === 'EADDRINUSE') {
-            console.log(`Port ${port} is busy, trying alternative...`);
-        }
-    });
+    console.log('📦 Storage initialization completed');
 }).catch((error) => {
-    console.error('❌ Failed to initialize storage, starting server anyway:', error);
-    
-    server = app.listen(port, '0.0.0.0', () => {
-        console.log(`✅ RoomFinderAI Server running on port ${port} (without storage init)`);
-        console.log(`🏥 Health check: http://localhost:${port}/health`);
-        console.log(`🌐 Server ready at http://0.0.0.0:${port}`);
-    });
+    console.error('❌ Storage initialization failed (server still running):', error);
 });
 
 // Handle server errors (only if server is defined)
