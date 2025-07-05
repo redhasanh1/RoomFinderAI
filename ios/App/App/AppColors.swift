@@ -10,6 +10,8 @@ struct AppColors {
     // Gradient colors
     static let primaryGradient = [primaryPurple.cgColor, secondaryPurple.cgColor]
     static let accentGradient = [accentBlue.cgColor, lightBlue.cgColor]
+    static let successGradient = [successGreen.cgColor, successGreen.withAlphaComponent(0.7).cgColor]
+    static let warningGradient = [warningOrange.cgColor, warningOrange.withAlphaComponent(0.7).cgColor]
     
     // UI Colors
     static let backgroundColor = UIColor.systemBackground

@@ -6,6 +6,20 @@ class PropertyDetailViewController: UIViewController {
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     
+    // Hero image gallery
+    private let imageGalleryContainer = UIView()
+    private let imageScrollView = UIScrollView()
+    private let imageStackView = UIStackView()
+    private let imagePageControl = UIPageControl()
+    private var currentImageIndex = 0
+    
+    // Floating action buttons
+    private let favoriteButton = UIButton(type: .system)
+    private let shareButton = UIButton(type: .system)
+    
+    // Property images
+    private let propertyImages = ["luxury1", "modern1", "studio1", "photo", "photo.fill"]
+    
     init(property: PropertyModel) {
         self.property = property
         super.init(nibName: nil, bundle: nil)
@@ -19,27 +33,50 @@ class PropertyDetailViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupContent()
+        setupNavigationBar()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Make navigation bar transparent initially
+        navigationController?.navigationBar.setBackgroundImage(UIImage(), for: .default)
+        navigationController?.navigationBar.shadowImage = UIImage()
+        navigationController?.navigationBar.isTranslucent = true
+        navigationController?.navigationBar.tintColor = .white
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // Restore navigation bar
+        navigationController?.navigationBar.setBackgroundImage(nil, for: .default)
+        navigationController?.navigationBar.shadowImage = nil
+        navigationController?.navigationBar.tintColor = AppColors.primaryPurple
+    }
+    
+    private func setupNavigationBar() {
+        // Custom back button
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            image: UIImage(systemName: "chevron.left"),
+            style: .plain,
+            target: self,
+            action: #selector(backTapped)
+        )
     }
     
     private func setupUI() {
         view.backgroundColor = AppColors.backgroundColor
-        title = property.title
         
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "heart"),
-            style: .plain,
-            target: self,
-            action: #selector(favoriteTapped)
-        )
-        
+        // Setup scroll view
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
+        scrollView.delegate = self
+        scrollView.showsVerticalScrollIndicator = false
         
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         contentView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -105,83 +142,327 @@ class PropertyDetailViewController: UIViewController {
     }
     
     private func createImageGallery() -> UIView {
-        let gallery = UIView()
+        // Configure image scroll view
+        imageScrollView.isPagingEnabled = true
+        imageScrollView.showsHorizontalScrollIndicator = false
+        imageScrollView.delegate = self
         
-        let imageView = UIImageView()
-        imageView.backgroundColor = AppColors.separatorColor
-        imageView.contentMode = .scaleAspectFill
-        imageView.clipsToBounds = true
-        imageView.image = UIImage(systemName: "photo")
-        imageView.tintColor = AppColors.textSecondary
+        // Configure stack view
+        imageStackView.axis = .horizontal
+        imageStackView.spacing = 0
+        imageStackView.distribution = .fillEqually
         
-        gallery.addSubview(imageView)
-        imageView.translatesAutoresizingMaskIntoConstraints = false
+        // Add images to stack view
+        for imageName in propertyImages {
+            let imageView = UIImageView()
+            imageView.backgroundColor = AppColors.separatorColor
+            imageView.contentMode = .scaleAspectFill
+            imageView.clipsToBounds = true
+            
+            // Try to load image, fallback to system image
+            if let image = UIImage(named: imageName) {
+                imageView.image = image
+            } else {
+                imageView.image = UIImage(systemName: imageName)
+                imageView.tintColor = AppColors.textSecondary
+            }
+            
+            imageView.translatesAutoresizingMaskIntoConstraints = false
+            imageView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+            
+            imageStackView.addArrangedSubview(imageView)
+        }
+        
+        // Configure page control
+        imagePageControl.numberOfPages = propertyImages.count
+        imagePageControl.currentPage = 0
+        imagePageControl.pageIndicatorTintColor = UIColor.white.withAlphaComponent(0.5)
+        imagePageControl.currentPageIndicatorTintColor = .white
+        imagePageControl.hidesForSinglePage = true
+        
+        // Setup floating buttons
+        setupFloatingButtons()
+        
+        // Add subviews
+        imageGalleryContainer.addSubview(imageScrollView)
+        imageScrollView.addSubview(imageStackView)
+        imageGalleryContainer.addSubview(imagePageControl)
+        imageGalleryContainer.addSubview(favoriteButton)
+        imageGalleryContainer.addSubview(shareButton)
+        
+        // Setup constraints
+        imageScrollView.translatesAutoresizingMaskIntoConstraints = false
+        imageStackView.translatesAutoresizingMaskIntoConstraints = false
+        imagePageControl.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            imageView.topAnchor.constraint(equalTo: gallery.topAnchor),
-            imageView.leadingAnchor.constraint(equalTo: gallery.leadingAnchor),
-            imageView.trailingAnchor.constraint(equalTo: gallery.trailingAnchor),
-            imageView.bottomAnchor.constraint(equalTo: gallery.bottomAnchor),
-            imageView.heightAnchor.constraint(equalToConstant: 300)
+            imageScrollView.topAnchor.constraint(equalTo: imageGalleryContainer.topAnchor),
+            imageScrollView.leadingAnchor.constraint(equalTo: imageGalleryContainer.leadingAnchor),
+            imageScrollView.trailingAnchor.constraint(equalTo: imageGalleryContainer.trailingAnchor),
+            imageScrollView.bottomAnchor.constraint(equalTo: imageGalleryContainer.bottomAnchor),
+            imageScrollView.heightAnchor.constraint(equalToConstant: 350),
+            
+            imageStackView.topAnchor.constraint(equalTo: imageScrollView.topAnchor),
+            imageStackView.leadingAnchor.constraint(equalTo: imageScrollView.leadingAnchor),
+            imageStackView.trailingAnchor.constraint(equalTo: imageScrollView.trailingAnchor),
+            imageStackView.bottomAnchor.constraint(equalTo: imageScrollView.bottomAnchor),
+            imageStackView.heightAnchor.constraint(equalTo: imageScrollView.heightAnchor),
+            
+            imagePageControl.bottomAnchor.constraint(equalTo: imageGalleryContainer.bottomAnchor, constant: -20),
+            imagePageControl.centerXAnchor.constraint(equalTo: imageGalleryContainer.centerXAnchor)
         ])
         
-        return gallery
+        return imageGalleryContainer
+    }
+    
+    private func setupFloatingButtons() {
+        // Favorite button
+        favoriteButton.setImage(UIImage(systemName: "heart.fill"), for: .normal)
+        favoriteButton.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        favoriteButton.tintColor = AppColors.errorRed
+        favoriteButton.layer.cornerRadius = 22
+        favoriteButton.addTarget(self, action: #selector(favoriteTapped), for: .touchUpInside)
+        
+        // Share button  
+        shareButton.setImage(UIImage(systemName: "square.and.arrow.up"), for: .normal)
+        shareButton.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        shareButton.tintColor = .white
+        shareButton.layer.cornerRadius = 22
+        shareButton.addTarget(self, action: #selector(shareTapped), for: .touchUpInside)
+        
+        favoriteButton.translatesAutoresizingMaskIntoConstraints = false
+        shareButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            favoriteButton.topAnchor.constraint(equalTo: imageGalleryContainer.safeAreaLayoutGuide.topAnchor, constant: 16),
+            favoriteButton.trailingAnchor.constraint(equalTo: imageGalleryContainer.trailingAnchor, constant: -20),
+            favoriteButton.widthAnchor.constraint(equalToConstant: 44),
+            favoriteButton.heightAnchor.constraint(equalToConstant: 44),
+            
+            shareButton.topAnchor.constraint(equalTo: favoriteButton.bottomAnchor, constant: 12),
+            shareButton.trailingAnchor.constraint(equalTo: imageGalleryContainer.trailingAnchor, constant: -20),
+            shareButton.widthAnchor.constraint(equalToConstant: 44),
+            shareButton.heightAnchor.constraint(equalToConstant: 44)
+        ])
     }
     
     private func createPropertyInfo() -> UIView {
         let infoView = UIView()
         infoView.backgroundColor = AppColors.cardBackground
-        infoView.layer.cornerRadius = 16
+        infoView.layer.cornerRadius = 20
+        infoView.layer.shadowColor = UIColor.black.cgColor
+        infoView.layer.shadowOpacity = 0.08
+        infoView.layer.shadowOffset = CGSize(width: 0, y: 4)
+        infoView.layer.shadowRadius = 12
+        
+        // Top row with title and price
+        let topContainer = UIView()
         
         let titleLabel = UILabel()
         titleLabel.text = property.title
-        titleLabel.font = UIFont.systemFont(ofSize: 24, weight: .bold)
+        titleLabel.font = UIFont.systemFont(ofSize: 26, weight: .bold)
         titleLabel.textColor = AppColors.textPrimary
         titleLabel.numberOfLines = 0
         
+        let priceContainer = UIView()
+        priceContainer.backgroundColor = AppColors.primaryPurple.withAlphaComponent(0.1)
+        priceContainer.layer.cornerRadius = 16
+        
         let priceLabel = UILabel()
-        priceLabel.text = "$\(property.price)/month"
-        priceLabel.font = UIFont.systemFont(ofSize: 28, weight: .bold)
+        priceLabel.text = "$\(property.price)"
+        priceLabel.font = UIFont.systemFont(ofSize: 24, weight: .bold)
         priceLabel.textColor = AppColors.primaryPurple
         
+        let periodLabel = UILabel()
+        periodLabel.text = "/month"
+        periodLabel.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        periodLabel.textColor = AppColors.textSecondary
+        
+        // Rating and verification
+        let ratingContainer = UIView()
+        
+        let starIcon = UIImageView(image: UIImage(systemName: "star.fill"))
+        starIcon.tintColor = .systemYellow
+        starIcon.contentMode = .scaleAspectFit
+        
+        let ratingLabel = UILabel()
+        ratingLabel.text = String(format: "%.1f", property.rating)
+        ratingLabel.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
+        ratingLabel.textColor = AppColors.textPrimary
+        
+        let verifiedBadge = UIView()
+        if property.isVerified {
+            verifiedBadge.backgroundColor = AppColors.successGreen
+            verifiedBadge.layer.cornerRadius = 12
+            
+            let checkIcon = UIImageView(image: UIImage(systemName: "checkmark.seal.fill"))
+            checkIcon.tintColor = .white
+            checkIcon.contentMode = .scaleAspectFit
+            
+            let verifiedLabel = UILabel()
+            verifiedLabel.text = "Verified"
+            verifiedLabel.font = UIFont.systemFont(ofSize: 12, weight: .semibold)
+            verifiedLabel.textColor = .white
+            
+            verifiedBadge.addSubview(checkIcon)
+            verifiedBadge.addSubview(verifiedLabel)
+            
+            checkIcon.translatesAutoresizingMaskIntoConstraints = false
+            verifiedLabel.translatesAutoresizingMaskIntoConstraints = false
+            
+            NSLayoutConstraint.activate([
+                checkIcon.leadingAnchor.constraint(equalTo: verifiedBadge.leadingAnchor, constant: 8),
+                checkIcon.centerYAnchor.constraint(equalTo: verifiedBadge.centerYAnchor),
+                checkIcon.widthAnchor.constraint(equalToConstant: 16),
+                checkIcon.heightAnchor.constraint(equalToConstant: 16),
+                
+                verifiedLabel.leadingAnchor.constraint(equalTo: checkIcon.trailingAnchor, constant: 4),
+                verifiedLabel.centerYAnchor.constraint(equalTo: verifiedBadge.centerYAnchor),
+                verifiedLabel.trailingAnchor.constraint(equalTo: verifiedBadge.trailingAnchor, constant: -8),
+                
+                verifiedBadge.heightAnchor.constraint(equalToConstant: 24)
+            ])
+        }
+        
+        // Location and details
+        let locationIcon = UIImageView(image: UIImage(systemName: "location.fill"))
+        locationIcon.tintColor = AppColors.primaryPurple
+        locationIcon.contentMode = .scaleAspectFit
+        
         let locationLabel = UILabel()
-        locationLabel.text = "📍 \(property.location)"
+        locationLabel.text = property.location
         locationLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
         locationLabel.textColor = AppColors.textSecondary
         
-        let detailsLabel = UILabel()
-        detailsLabel.text = "\(property.bedrooms) bedroom • \(property.bathrooms) bathroom"
-        detailsLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        detailsLabel.textColor = AppColors.textSecondary
+        let detailsContainer = UIView()
+        detailsContainer.backgroundColor = AppColors.separatorColor.withAlphaComponent(0.3)
+        detailsContainer.layer.cornerRadius = 12
         
-        infoView.addSubview(titleLabel)
-        infoView.addSubview(priceLabel)
+        let bedroomIcon = UIImageView(image: UIImage(systemName: "bed.double.fill"))
+        bedroomIcon.tintColor = AppColors.textSecondary
+        bedroomIcon.contentMode = .scaleAspectFit
+        
+        let bedroomLabel = UILabel()
+        bedroomLabel.text = "\(property.bedrooms) bed"
+        bedroomLabel.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        bedroomLabel.textColor = AppColors.textPrimary
+        
+        let bathroomIcon = UIImageView(image: UIImage(systemName: "drop.fill"))
+        bathroomIcon.tintColor = AppColors.textSecondary
+        bathroomIcon.contentMode = .scaleAspectFit
+        
+        let bathroomLabel = UILabel()
+        bathroomLabel.text = "\(property.bathrooms) bath"
+        bathroomLabel.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        bathroomLabel.textColor = AppColors.textPrimary
+        
+        // Add subviews
+        infoView.addSubview(topContainer)
+        topContainer.addSubview(titleLabel)
+        topContainer.addSubview(priceContainer)
+        priceContainer.addSubview(priceLabel)
+        priceContainer.addSubview(periodLabel)
+        
+        infoView.addSubview(ratingContainer)
+        ratingContainer.addSubview(starIcon)
+        ratingContainer.addSubview(ratingLabel)
+        if property.isVerified {
+            ratingContainer.addSubview(verifiedBadge)
+        }
+        
+        infoView.addSubview(locationIcon)
         infoView.addSubview(locationLabel)
-        infoView.addSubview(detailsLabel)
+        infoView.addSubview(detailsContainer)
+        detailsContainer.addSubview(bedroomIcon)
+        detailsContainer.addSubview(bedroomLabel)
+        detailsContainer.addSubview(bathroomIcon)
+        detailsContainer.addSubview(bathroomLabel)
         
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        priceLabel.translatesAutoresizingMaskIntoConstraints = false
-        locationLabel.translatesAutoresizingMaskIntoConstraints = false
-        detailsLabel.translatesAutoresizingMaskIntoConstraints = false
+        // Setup constraints
+        [topContainer, titleLabel, priceContainer, priceLabel, periodLabel, ratingContainer,
+         starIcon, ratingLabel, locationIcon, locationLabel, detailsContainer, bedroomIcon,
+         bedroomLabel, bathroomIcon, bathroomLabel].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+        }
         
-        NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: infoView.topAnchor, constant: 20),
-            titleLabel.leadingAnchor.constraint(equalTo: infoView.leadingAnchor, constant: 20),
-            titleLabel.trailingAnchor.constraint(equalTo: priceLabel.leadingAnchor, constant: -16),
+        var constraints = [
+            topContainer.topAnchor.constraint(equalTo: infoView.topAnchor, constant: 24),
+            topContainer.leadingAnchor.constraint(equalTo: infoView.leadingAnchor, constant: 24),
+            topContainer.trailingAnchor.constraint(equalTo: infoView.trailingAnchor, constant: -24),
             
-            priceLabel.topAnchor.constraint(equalTo: infoView.topAnchor, constant: 20),
-            priceLabel.trailingAnchor.constraint(equalTo: infoView.trailingAnchor, constant: -20),
-            priceLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 120),
+            titleLabel.topAnchor.constraint(equalTo: topContainer.topAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: topContainer.leadingAnchor),
+            titleLabel.trailingAnchor.constraint(equalTo: priceContainer.leadingAnchor, constant: -16),
+            titleLabel.bottomAnchor.constraint(equalTo: topContainer.bottomAnchor),
             
-            locationLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
-            locationLabel.leadingAnchor.constraint(equalTo: infoView.leadingAnchor, constant: 20),
-            locationLabel.trailingAnchor.constraint(equalTo: infoView.trailingAnchor, constant: -20),
+            priceContainer.topAnchor.constraint(equalTo: topContainer.topAnchor),
+            priceContainer.trailingAnchor.constraint(equalTo: topContainer.trailingAnchor),
+            priceContainer.bottomAnchor.constraint(equalTo: topContainer.bottomAnchor),
             
-            detailsLabel.topAnchor.constraint(equalTo: locationLabel.bottomAnchor, constant: 8),
-            detailsLabel.leadingAnchor.constraint(equalTo: infoView.leadingAnchor, constant: 20),
-            detailsLabel.trailingAnchor.constraint(equalTo: infoView.trailingAnchor, constant: -20),
-            detailsLabel.bottomAnchor.constraint(equalTo: infoView.bottomAnchor, constant: -20)
-        ])
+            priceLabel.topAnchor.constraint(equalTo: priceContainer.topAnchor, constant: 12),
+            priceLabel.leadingAnchor.constraint(equalTo: priceContainer.leadingAnchor, constant: 16),
+            priceLabel.trailingAnchor.constraint(equalTo: priceContainer.trailingAnchor, constant: -16),
+            
+            periodLabel.topAnchor.constraint(equalTo: priceLabel.bottomAnchor, constant: 2),
+            periodLabel.leadingAnchor.constraint(equalTo: priceContainer.leadingAnchor, constant: 16),
+            periodLabel.trailingAnchor.constraint(equalTo: priceContainer.trailingAnchor, constant: -16),
+            periodLabel.bottomAnchor.constraint(equalTo: priceContainer.bottomAnchor, constant: -12),
+            
+            ratingContainer.topAnchor.constraint(equalTo: topContainer.bottomAnchor, constant: 20),
+            ratingContainer.leadingAnchor.constraint(equalTo: infoView.leadingAnchor, constant: 24),
+            ratingContainer.heightAnchor.constraint(equalToConstant: 24),
+            
+            starIcon.leadingAnchor.constraint(equalTo: ratingContainer.leadingAnchor),
+            starIcon.centerYAnchor.constraint(equalTo: ratingContainer.centerYAnchor),
+            starIcon.widthAnchor.constraint(equalToConstant: 16),
+            starIcon.heightAnchor.constraint(equalToConstant: 16),
+            
+            ratingLabel.leadingAnchor.constraint(equalTo: starIcon.trailingAnchor, constant: 6),
+            ratingLabel.centerYAnchor.constraint(equalTo: ratingContainer.centerYAnchor),
+            ratingLabel.trailingAnchor.constraint(equalTo: ratingContainer.trailingAnchor),
+            
+            locationIcon.topAnchor.constraint(equalTo: ratingContainer.bottomAnchor, constant: 16),
+            locationIcon.leadingAnchor.constraint(equalTo: infoView.leadingAnchor, constant: 24),
+            locationIcon.widthAnchor.constraint(equalToConstant: 16),
+            locationIcon.heightAnchor.constraint(equalToConstant: 16),
+            
+            locationLabel.centerYAnchor.constraint(equalTo: locationIcon.centerYAnchor),
+            locationLabel.leadingAnchor.constraint(equalTo: locationIcon.trailingAnchor, constant: 8),
+            locationLabel.trailingAnchor.constraint(equalTo: infoView.trailingAnchor, constant: -24),
+            
+            detailsContainer.topAnchor.constraint(equalTo: locationIcon.bottomAnchor, constant: 16),
+            detailsContainer.leadingAnchor.constraint(equalTo: infoView.leadingAnchor, constant: 24),
+            detailsContainer.trailingAnchor.constraint(equalTo: infoView.trailingAnchor, constant: -24),
+            detailsContainer.bottomAnchor.constraint(equalTo: infoView.bottomAnchor, constant: -24),
+            detailsContainer.heightAnchor.constraint(equalToConstant: 40),
+            
+            bedroomIcon.leadingAnchor.constraint(equalTo: detailsContainer.leadingAnchor, constant: 16),
+            bedroomIcon.centerYAnchor.constraint(equalTo: detailsContainer.centerYAnchor),
+            bedroomIcon.widthAnchor.constraint(equalToConstant: 16),
+            bedroomIcon.heightAnchor.constraint(equalToConstant: 16),
+            
+            bedroomLabel.leadingAnchor.constraint(equalTo: bedroomIcon.trailingAnchor, constant: 8),
+            bedroomLabel.centerYAnchor.constraint(equalTo: detailsContainer.centerYAnchor),
+            
+            bathroomIcon.leadingAnchor.constraint(equalTo: bedroomLabel.trailingAnchor, constant: 24),
+            bathroomIcon.centerYAnchor.constraint(equalTo: detailsContainer.centerYAnchor),
+            bathroomIcon.widthAnchor.constraint(equalToConstant: 16),
+            bathroomIcon.heightAnchor.constraint(equalToConstant: 16),
+            
+            bathroomLabel.leadingAnchor.constraint(equalTo: bathroomIcon.trailingAnchor, constant: 8),
+            bathroomLabel.centerYAnchor.constraint(equalTo: detailsContainer.centerYAnchor),
+            bathroomLabel.trailingAnchor.constraint(lessThanOrEqualTo: detailsContainer.trailingAnchor, constant: -16)
+        ]
+        
+        if property.isVerified {
+            constraints.append(contentsOf: [
+                verifiedBadge.leadingAnchor.constraint(equalTo: ratingLabel.trailingAnchor, constant: 12),
+                verifiedBadge.centerYAnchor.constraint(equalTo: ratingContainer.centerYAnchor),
+                verifiedBadge.trailingAnchor.constraint(lessThanOrEqualTo: infoView.trailingAnchor, constant: -24)
+            ])
+        }
+        
+        NSLayoutConstraint.activate(constraints)
         
         return infoView
     }
@@ -336,29 +617,69 @@ class PropertyDetailViewController: UIViewController {
         return section
     }
     
+    @objc private func backTapped() {
+        navigationController?.popViewController(animated: true)
+    }
+    
     @objc private func favoriteTapped() {
-        // Toggle favorite status
-        let isFavorited = navigationItem.rightBarButtonItem?.image == UIImage(systemName: "heart.fill")
-        let newImage = isFavorited ? UIImage(systemName: "heart") : UIImage(systemName: "heart.fill")
-        navigationItem.rightBarButtonItem?.image = newImage
+        // Toggle favorite status with animation
+        favoriteButton.isSelected.toggle()
         
-        // Add haptic feedback
+        let newImage = favoriteButton.isSelected ? UIImage(systemName: "heart.fill") : UIImage(systemName: "heart")
+        favoriteButton.setImage(newImage, for: .normal)
+        
+        // Animate button
+        UIView.animate(withDuration: 0.2, animations: {
+            self.favoriteButton.transform = CGAffineTransform(scaleX: 1.3, y: 1.3)
+        }) { _ in
+            UIView.animate(withDuration: 0.2) {
+                self.favoriteButton.transform = .identity
+            }
+        }
+        
+        // Haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+    }
+    
+    @objc private func shareTapped() {
+        let shareText = "Check out this amazing property: \(property.title) for $\(property.price)/month in \(property.location)"
+        let activityVC = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
+        
+        if let popover = activityVC.popoverPresentationController {
+            popover.sourceView = shareButton
+            popover.sourceRect = shareButton.bounds
+        }
+        
+        present(activityVC, animated: true)
+        
+        // Haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
     }
     
     @objc private func contactTapped() {
         let alert = UIAlertController(title: "Contact Landlord", message: "Would you like to call or message the landlord?", preferredStyle: .actionSheet)
         
-        alert.addAction(UIAlertAction(title: "Call", style: .default) { _ in
+        alert.addAction(UIAlertAction(title: "📞 Call", style: .default) { _ in
             // Implement call functionality
+            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+            impactFeedback.impactOccurred()
         })
         
-        alert.addAction(UIAlertAction(title: "Message", style: .default) { _ in
+        alert.addAction(UIAlertAction(title: "💬 Message", style: .default) { _ in
             // Implement message functionality
+            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+            impactFeedback.impactOccurred()
         })
         
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
         
         present(alert, animated: true)
     }
@@ -367,6 +688,38 @@ class PropertyDetailViewController: UIViewController {
         // Navigate to AI chat with pre-filled negotiation context
         if let tabBarController = self.tabBarController {
             tabBarController.selectedIndex = 3 // Switch to chat tab
+        }
+        
+        // Haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+    }
+}
+
+// MARK: - UIScrollViewDelegate
+extension PropertyDetailViewController: UIScrollViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if scrollView == imageScrollView {
+            // Update page control for image gallery
+            let pageIndex = round(scrollView.contentOffset.x / scrollView.frame.width)
+            imagePageControl.currentPage = Int(pageIndex)
+            currentImageIndex = Int(pageIndex)
+        } else {
+            // Handle main scroll view for navigation bar transparency
+            let offset = scrollView.contentOffset.y
+            let alpha = min(1.0, max(0.0, offset / 100.0))
+            
+            // Update navigation bar appearance
+            navigationController?.navigationBar.backgroundColor = AppColors.backgroundColor.withAlphaComponent(alpha)
+            navigationController?.navigationBar.tintColor = alpha > 0.5 ? AppColors.primaryPurple : .white
+        }
+    }
+    
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        if scrollView == imageScrollView {
+            // Add haptic feedback when changing images
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
         }
     }
 }
