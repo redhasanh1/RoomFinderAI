@@ -179,19 +179,26 @@ window.App = (function() {
         // Setup global error handling
         setupGlobalErrorHandler();
         
+        // Check if AppConfig is available
+        if (!window.AppConfig) {
+            console.error('AppConfig not found. Make sure environment-config.js is loaded.');
+            showError('Configuration not found. Please refresh the page.');
+            return;
+        }
+        
         // Initialize configuration and start app
-        window.AppConfig.initialize(() => {
-            // This callback runs after config is loaded and DOM is ready
-            initializeListingsPage()
-                .then(() => {
-                    // Setup real-time subscriptions after everything is initialized
-                    setupRealtimeSubscriptions();
-                })
-                .catch(error => {
-                    console.error('Failed to initialize application:', error);
-                    showError('Failed to initialize application. Please refresh the page.');
-                });
-        });
+        window.AppConfig.initialize();
+        
+        // Start the main application after config is initialized
+        initializeListingsPage()
+            .then(() => {
+                // Setup real-time subscriptions after everything is initialized
+                setupRealtimeSubscriptions();
+            })
+            .catch(error => {
+                console.error('Failed to initialize application:', error);
+                showError('Failed to initialize application. Please refresh the page.');
+            });
     }
 
     // Public API
