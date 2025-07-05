@@ -4153,7 +4153,7 @@ app.get('/health', (req, res) => {
 // Serve main website at root
 app.get('/', (req, res) => {
     try {
-        const indexPath = path.join(__dirname, '..', 'index.html');
+        const indexPath = path.join(__dirname, '..', 'frontend', 'index.html');
         console.log('📄 Serving index.html from:', indexPath);
         res.sendFile(indexPath);
     } catch (error) {
@@ -4172,7 +4172,7 @@ app.get('/:page', (req, res) => {
             return res.status(404).send('Route not found');
         }
         
-        const htmlPath = path.join(__dirname, '..', `${pageName}.html`);
+        const htmlPath = path.join(__dirname, '..', 'frontend', `${pageName}.html`);
         
         // Check if file exists
         if (fs.existsSync(htmlPath)) {
