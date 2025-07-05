@@ -12,7 +12,7 @@ const bcrypt = require('bcryptjs');
 let config = {};
 try {
     // First, try to load from config file as fallback
-    const fileConfig = require('../config.js');
+    const fileConfig = require('./config/config.js');
     config = { ...fileConfig };
     console.log('✅ Config file loaded as fallback');
 } catch (error) {
@@ -234,8 +234,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from parent directory (frontend files)
-const staticPath = path.join(__dirname, '..');
+// Serve static files from frontend directory
+const staticPath = path.join(__dirname, '..', 'frontend');
 console.log('📁 Serving static files from:', staticPath);
 app.use(express.static(staticPath, {
     setHeaders: (res, path) => {
@@ -245,9 +245,10 @@ app.use(express.static(staticPath, {
 }));
 
 // Specifically serve 3D House Models folder with URL encoding support
-const houseModelsPath = path.join(__dirname, '..', '3D House Models');
+const houseModelsPath = path.join(__dirname, '..', 'frontend', 'assets', '3d-models');
 console.log('🏠 Serving 3D House Models from:', houseModelsPath);
 app.use('/3D%20House%20Models', express.static(houseModelsPath));
+app.use('/assets/3d-models', express.static(houseModelsPath));
 
 // Google Maps API key from config
 const GOOGLE_API_KEY = config.GOOGLE_API_KEY;
