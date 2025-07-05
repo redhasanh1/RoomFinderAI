@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support - RoomFinderAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-2xl font-bold text-blue-600">RoomFinderAI</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/dashboard" class="text-gray-600 hover:text-gray-900">Dashboard</a>
+                    <a href="/listings" class="text-gray-600 hover:text-gray-900">Listings</a>
+                    <a href="/login" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">Support Center</h1>
+            <p class="text-xl text-gray-600">Get help with RoomFinderAI</p>
+        </div>
+
+        <!-- Support Sections -->
+        <div class="grid md:grid-cols-2 gap-8 mb-12">
+            <!-- FAQ Section -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-4">Frequently Asked Questions</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="font-medium text-gray-900">How do I search for properties?</h3>
+                        <p class="text-gray-600 text-sm mt-1">Use our search filters on the listings page or try our AI negotiator for personalized recommendations.</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-medium text-gray-900">How does the AI negotiator work?</h3>
+                        <p class="text-gray-600 text-sm mt-1">Our AI helps you find properties matching your criteria and assists with landlord negotiations.</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-medium text-gray-900">Is RoomFinderAI free to use?</h3>
+                        <p class="text-gray-600 text-sm mt-1">Basic features are free. Premium features require a subscription.</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-medium text-gray-900">How do I contact landlords?</h3>
+                        <p class="text-gray-600 text-sm mt-1">Use the contact buttons on property listings or let our AI negotiator handle communications.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Support -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-4">Contact Support</h2>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900">Email Support</h3>
+                            <p class="text-gray-600 text-sm">support@roomfinderai.com</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900">Live Chat</h3>
+                            <p class="text-gray-600 text-sm">Available 24/7</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900">Documentation</h3>
+                            <p class="text-gray-600 text-sm">User guides and tutorials</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="w-full mt-6 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                    Start Live Chat
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Quick Links</h2>
+            <div class="grid md:grid-cols-3 gap-4">
+                <a href="/listings" class="text-blue-600 hover:text-blue-800 font-medium">Browse Listings</a>
+                <a href="/ai-negotiator" class="text-blue-600 hover:text-blue-800 font-medium">AI Negotiator</a>
+                <a href="/pricing" class="text-blue-600 hover:text-blue-800 font-medium">Pricing Plans</a>
+                <a href="/legal" class="text-blue-600 hover:text-blue-800 font-medium">Terms of Service</a>
+                <a href="/signup" class="text-blue-600 hover:text-blue-800 font-medium">Create Account</a>
+                <a href="/dashboard" class="text-blue-600 hover:text-blue-800 font-medium">Dashboard</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2025 RoomFinderAI. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
