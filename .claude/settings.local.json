@@ -13,7 +13,13 @@
       "Bash(git stash:*)",
       "Bash(rm:*)",
       "Bash(curl:*)",
-      "Bash(ss:*)"
+      "Bash(ss:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(cp:*)",
+      "Bash(npm start)",
+      "Bash(timeout:*)",
+      "Bash(git --version)"
     ],
     "deny": []
   }
