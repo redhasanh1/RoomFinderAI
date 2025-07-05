@@ -6,11 +6,15 @@ const defaultProfileImage = 'data:image/svg+xml;base64,' + btoa(`
     </svg>
 `.trim());
 
-async function initializeAuth(supabase) {
+async function initializeAuth(supabase, allowAnonymous = false) {
     let currentUser = JSON.parse(localStorage.getItem('currentUser'));
     const authSection = document.getElementById('authSection');
 
     if (!currentUser) {
+        if (allowAnonymous) {
+            console.log('No user found, but anonymous access allowed');
+            return false; // Don't redirect, let caller handle
+        }
         window.location.href = '/login';
         return false;
     }
@@ -37,6 +41,10 @@ async function initializeAuth(supabase) {
 
         if (insertError) {
             console.error('Error creating profile:', insertError);
+            if (allowAnonymous) {
+                console.log('Profile creation failed, but anonymous access allowed');
+                return false; // Don't redirect, let caller handle
+            }
             alert('Failed to initialize user profile.');
             window.location.href = '/login';
             return false;
