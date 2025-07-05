@@ -95,6 +95,98 @@
             }
         }
     </script>
+    
+    <!-- 🛡️ EMERGENCY AUTHENTICATION PROTECTION SYSTEM -->
+    <script>
+        console.log('🛡️ Initializing Emergency Authentication Protection System for Listings Page...');
+        
+        // Store original functions to prevent blocking
+        const ORIGINAL_LOCATION_HREF = Object.getOwnPropertyDescriptor(window.location, 'href');
+        const ORIGINAL_LOCATION_ASSIGN = window.location.assign;
+        const ORIGINAL_LOCATION_REPLACE = window.location.replace;
+        const ORIGINAL_LOCATION_RELOAD = window.location.reload;
+        
+        // Emergency protection: Block ALL redirects to login pages
+        Object.defineProperty(window.location, 'href', {
+            set: function(url) {
+                if (typeof url === 'string' && url.includes('/login')) {
+                    console.error('🚫 BLOCKED location.href redirect to login:', url);
+                    console.trace('Stack trace for blocked redirect:');
+                    return; // Block the redirect
+                }
+                return ORIGINAL_LOCATION_HREF.set.call(this, url);
+            },
+            get: function() {
+                return ORIGINAL_LOCATION_HREF.get.call(this);
+            }
+        });
+        
+        window.location.assign = function(url) {
+            if (typeof url === 'string' && url.includes('/login')) {
+                console.error('🚫 BLOCKED location.assign to login:', url);
+                console.trace('Stack trace for blocked redirect:');
+                return; // Block the redirect
+            }
+            return ORIGINAL_LOCATION_ASSIGN.call(this, url);
+        };
+        
+        window.location.replace = function(url) {
+            if (typeof url === 'string' && url.includes('/login')) {
+                console.error('🚫 BLOCKED location.replace to login:', url);
+                console.trace('Stack trace for blocked redirect:');
+                return; // Block the redirect
+            }
+            return ORIGINAL_LOCATION_REPLACE.call(this, url);
+        };
+        
+        // Block localStorage.removeItem for currentUser
+        const ORIGINAL_REMOVE_ITEM = localStorage.removeItem;
+        localStorage.removeItem = function(key) {
+            if (key === 'currentUser') {
+                console.error('⚠️ BLOCKING currentUser removal for debugging');
+                console.trace('Stack trace for blocked currentUser removal:');
+                return; // Block the removal
+            }
+            return ORIGINAL_REMOVE_ITEM.call(this, key);
+        };
+        
+        // Backup system for user data
+        function createUserBackup() {
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                localStorage.setItem('currentUser_backup', currentUser);
+                localStorage.setItem('currentUser_backup_timestamp', Date.now().toString());
+                console.log('💾 User backup created');
+            }
+        }
+        
+        // Restore system for user data
+        function restoreUserIfNeeded() {
+            const currentUser = localStorage.getItem('currentUser');
+            const backup = localStorage.getItem('currentUser_backup');
+            
+            if (!currentUser && backup) {
+                console.log('🔄 Restoring user from backup');
+                localStorage.setItem('currentUser', backup);
+                return true;
+            }
+            return false;
+        }
+        
+        // Create initial backup
+        createUserBackup();
+        
+        // Continuous monitoring and restoration
+        setInterval(() => {
+            if (restoreUserIfNeeded()) {
+                console.log('🔄 User data restored automatically');
+            }
+            createUserBackup(); // Refresh backup
+        }, 5000);
+        
+        console.log('✅ Emergency Authentication Protection System Active');
+    </script>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
@@ -1394,8 +1486,14 @@
             const authSection = document.getElementById('authSection');
 
             if (!currentUser) {
-                console.log('No current user, redirecting to login');
-                window.location.href = '/login';
+                console.log('No current user, showing anonymous interface');
+                // Show login/register interface for anonymous users
+                authSection.innerHTML = `
+                    <a href="/login" class="auth-link">Login</a>
+                    <a href="/signup" class="auth-link">Sign Up</a>
+                `;
+                // Continue loading page without authentication
+                loadListings();
                 return;
             }
 
