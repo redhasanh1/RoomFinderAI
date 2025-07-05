@@ -4,6 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Housing Hub - RoomFinderAI</title>
+    
+    <!-- 🛡️ EMERGENCY AUTHENTICATION PROTECTION SYSTEM -->
+    <script>
+        console.log('🛡️ Initializing Emergency Authentication Protection System for Student Housing Page...');
+        
+        // Store original functions to prevent blocking
+        const ORIGINAL_LOCATION_HREF = Object.getOwnPropertyDescriptor(window.location, 'href');
+        const ORIGINAL_LOCATION_ASSIGN = window.location.assign;
+        const ORIGINAL_LOCATION_REPLACE = window.location.replace;
+        
+        // Emergency protection: Block ALL redirects to login pages
+        Object.defineProperty(window.location, 'href', {
+            set: function(url) {
+                if (typeof url === 'string' && url.includes('/login')) {
+                    console.error('🚫 BLOCKED location.href redirect to login:', url);
+                    console.trace('Stack trace for blocked redirect:');
+                    return; // Block the redirect
+                }
+                return ORIGINAL_LOCATION_HREF.set.call(this, url);
+            },
+            get: function() {
+                return ORIGINAL_LOCATION_HREF.get.call(this);
+            }
+        });
+        
+        window.location.assign = function(url) {
+            if (typeof url === 'string' && url.includes('/login')) {
+                console.error('🚫 BLOCKED location.assign to login:', url);
+                console.trace('Stack trace for blocked redirect:');
+                return; // Block the redirect
+            }
+            return ORIGINAL_LOCATION_ASSIGN.call(this, url);
+        };
+        
+        window.location.replace = function(url) {
+            if (typeof url === 'string' && url.includes('/login')) {
+                console.error('🚫 BLOCKED location.replace to login:', url);
+                console.trace('Stack trace for blocked redirect:');
+                return; // Block the redirect
+            }
+            return ORIGINAL_LOCATION_REPLACE.call(this, url);
+        };
+        
+        // Block localStorage.removeItem for currentUser
+        const ORIGINAL_REMOVE_ITEM = localStorage.removeItem;
+        localStorage.removeItem = function(key) {
+            if (key === 'currentUser') {
+                console.error('⚠️ BLOCKING currentUser removal for debugging');
+                console.trace('Stack trace for blocked currentUser removal:');
+                return; // Block the removal
+            }
+            return ORIGINAL_REMOVE_ITEM.call(this, key);
+        };
+        
+        // Backup system for user data
+        function createUserBackup() {
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                localStorage.setItem('currentUser_backup', currentUser);
+                localStorage.setItem('currentUser_backup_timestamp', Date.now().toString());
+                console.log('💾 User backup created');
+            }
+        }
+        
+        // Restore system for user data
+        function restoreUserIfNeeded() {
+            const currentUser = localStorage.getItem('currentUser');
+            const backup = localStorage.getItem('currentUser_backup');
+            
+            if (!currentUser && backup) {
+                console.log('🔄 Restoring user from backup');
+                localStorage.setItem('currentUser', backup);
+                return true;
+            }
+            return false;
+        }
+        
+        // Create initial backup
+        createUserBackup();
+        
+        // Continuous monitoring and restoration
+        setInterval(() => {
+            if (restoreUserIfNeeded()) {
+                console.log('🔄 User data restored automatically');
+            }
+            createUserBackup(); // Refresh backup
+        }, 5000);
+        
+        console.log('✅ Emergency Authentication Protection System Active');
+    </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
