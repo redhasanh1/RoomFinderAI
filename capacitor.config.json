@@ -3,6 +3,12 @@
   "appName": "RoomFinderAI",
   "webDir": "frontend",
   "bundledWebRuntime": false,
+  "android": {
+    "buildOptions": {
+      "javaVersion": "17"
+    },
+    "webDir": "frontend"
+  },
   "ios": {
     "contentInset": "automatic"
   }
