@@ -8,6 +8,9 @@
     <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
     <script src="universal-auth-protection.js"></script>
     
+    <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
+    <script src="universal-auth-manager.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -862,18 +865,8 @@
             </div>
             
             <!-- Desktop Auth/Profile Section -->
-            <div class="desktop-auth hidden md:flex items-center space-x-4">
-                <div class="relative">
-                    <button id="notificationBtn" class="relative p-2 text-gray-600 hover:text-blue-600 transition">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM10.07 2.82l3.12 3.12a7 7 0 0 1 0 9.9l-3.12 3.12a7 7 0 0 1-9.9 0l3.12-3.12a7 7 0 0 1 0-9.9z"></path>
-                        </svg>
-                        <span id="notificationCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
-                    </button>
-                </div>
-                <a href="profile.html" aria-label="View user profile">
-                    <img id="profileLogo" src="" alt="Profile" class="w-10 h-10 rounded-full transition-transform hover:scale-110">
-                </a>
+            <div id="authSection" class="desktop-auth hidden md:flex items-center space-x-4">
+                <!-- Will be populated by universal-auth-manager.js -->
             </div>
         </nav>
         
@@ -9952,6 +9945,11 @@
                 event.preventDefault();
             }
         }, { passive: false });
+        
+        // Initialize Universal Authentication Manager
+        if (typeof window.UniversalAuth !== 'undefined') {
+            window.UniversalAuth.init({ allowAnonymous: false, requireSupabase: true });
+        }
     </script>
 </body>
 </html>
