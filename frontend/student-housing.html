@@ -4,13 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Housing Hub - RoomFinderAI</title>
-    
-    <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
+
+    <!-- 🚨 EMERGENCY AUTHENTICATION PROTECTION SYSTEM 🚨 -->
+    <script>
+        (function() {
+            console.log("🛡️ EMERGENCY AUTHENTICATION SYSTEM: ACTIVATED");
+
+            const currentUserKey = 'currentUser';
+            const backupKey = 'currentUser_backup';
+
+            // Immediately back up the user data
+            try {
+                const currentUser = localStorage.getItem(currentUserKey);
+                if (currentUser) {
+                    localStorage.setItem(backupKey, currentUser);
+                    console.log("🛡️ Initial user backup created.");
+                }
+            } catch (e) {
+                console.error("🛡️ Backup failed:", e);
+            }
+
+            // Continuously monitor and restore the user data
+            setInterval(() => {
+                try {
+                    const currentUser = localStorage.getItem(currentUserKey);
+                    const backupUser = localStorage.getItem(backupKey);
+
+                    if (backupUser && !currentUser) {
+                        localStorage.setItem(currentUserKey, backupUser);
+                        console.warn("🛡️ USER LOGOUT DETECTED. SESSION RESTORED.");
+                    } else if (currentUser && !backupUser) {
+                        localStorage.setItem(backupKey, currentUser);
+                        console.log("🛡️ Backup created from active session.");
+                    }
+                } catch (e) {
+                    console.error("🛡️ Monitoring failed:", e);
+                }
+            }, 1000); // Check every second
+
+            // Prevent redirects to the login page
+            const original_location_assign = window.location.assign;
+            window.location.assign = function(url) {
+                if (typeof url === 'string' && url.includes('login.html')) {
+                    console.error("🛡️ BLOCKED REDIRECT TO LOGIN PAGE:", url);
+                    return;
+                }
+                original_location_assign.apply(this, arguments);
+            };
+        })();
+    </script>
+
+    <!-- Other scripts and styles -->
     <script src="universal-auth-protection.js"></script>
-    
-    <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
     <script src="universal-auth-manager.js"></script>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
