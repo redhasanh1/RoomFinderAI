@@ -1,0 +1,27 @@
+<!-- Reusable Chat Modal Component Template -->
+<template id="chat-modal-template">
+    <div id="chatModal" class="chat-modal">
+        <div class="chat-modal-content">
+            <div class="chat-header">
+                <h3 id="chatTitle" class="text-lg font-semibold">Chat</h3>
+                <button id="chatClose" class="close-button text-gray-400 hover:text-gray-600">×</button>
+            </div>
+            
+            <div id="chatMessages" class="chat-messages"></div>
+            
+            <div class="chat-input-container">
+                <textarea 
+                    id="chatInput" 
+                    class="chat-input" 
+                    placeholder="Type your message..."
+                    rows="1"
+                ></textarea>
+                <input type="file" id="fileUpload" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.webp" style="display: none;">
+                <button type="button" onclick="document.getElementById('fileUpload').click()" class="chat-btn secondary">📎</button>
+                <button id="chatSendBtn" class="chat-send-btn">Send</button>
+            </div>
+            
+            <div id="healthStatus" class="health-status"></div>
+        </div>
+    </div>
+</template>
