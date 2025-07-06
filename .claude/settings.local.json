@@ -22,7 +22,10 @@
       "Bash(git --version)",
       "Bash(mv:*)",
       "Bash(mkdir:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(open /Users/arsalanamirali/Downloads/RoomFinderAI/ios/App/App.xcworkspace)",
+      "Bash(xcodebuild:*)",
+      "Bash(open:*)"
     ],
     "deny": []
   }
