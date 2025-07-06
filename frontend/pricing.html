@@ -7,6 +7,7 @@
     
     <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
     <script src="universal-auth-protection.js"></script>
+    <script src="universal-auth-manager.js"></script>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -755,6 +756,11 @@
 
         // Initialize mobile menu on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Universal Auth Manager
+            if (typeof window.UniversalAuth !== 'undefined') {
+                window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+            }
+            
             // Ensure mobile menu is closed on page load
             closeMobileMenu();
             
