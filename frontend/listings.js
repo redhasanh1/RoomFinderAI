@@ -258,6 +258,179 @@
             console.log('- Valid coordinates:', validCoordinates.length);
         }
 
+        // ========================================
+        // BOOKMARK/FAVORITES FUNCTIONALITY
+        // ========================================
+
+        // Toggle bookmark status for a listing
+        async function toggleBookmark(listingId, userEmail, buttonElement) {
+            try {
+                console.log('🔖 Toggling bookmark for listing:', listingId);
+                const icon = buttonElement.querySelector('.bookmark-icon');
+                const isCurrentlyBookmarked = icon.style.fill === 'currentColor';
+                
+                // Optimistic UI update
+                updateBookmarkUI(buttonElement, !isCurrentlyBookmarked);
+                
+                let response;
+                if (isCurrentlyBookmarked) {
+                    // Remove bookmark
+                    response = await fetch(`/api/favorites/${listingId}?userEmail=${encodeURIComponent(userEmail)}`, {
+                        method: 'DELETE'
+                    });
+                } else {
+                    // Add bookmark
+                    response = await fetch('/api/favorites', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            listingId: listingId,
+                            userEmail: userEmail
+                        })
+                    });
+                }
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    // Revert UI on error
+                    updateBookmarkUI(buttonElement, isCurrentlyBookmarked);
+                    throw new Error(result.error || 'Failed to update bookmark');
+                }
+                
+                // Show success message
+                const action = isCurrentlyBookmarked ? 'removed from' : 'added to';
+                showToast(`Listing ${action} favorites`, 'success');
+                
+                console.log('✅ Bookmark updated successfully:', result);
+                
+            } catch (error) {
+                console.error('❌ Error toggling bookmark:', error);
+                showToast('Failed to update bookmark. Please try again.', 'error');
+            }
+        }
+
+        // Update bookmark button UI
+        function updateBookmarkUI(buttonElement, isBookmarked) {
+            const icon = buttonElement.querySelector('.bookmark-icon');
+            const button = buttonElement;
+            
+            if (isBookmarked) {
+                // Bookmarked state - filled heart, red color
+                icon.style.fill = 'currentColor';
+                icon.style.color = '#ef4444'; // red-500
+                button.title = 'Remove from favorites';
+                button.classList.add('bookmarked');
+            } else {
+                // Not bookmarked state - outline heart, gray color
+                icon.style.fill = 'none';
+                icon.style.color = '#6b7280'; // gray-500
+                button.title = 'Save to favorites';
+                button.classList.remove('bookmarked');
+            }
+        }
+
+        // Check bookmark status for multiple listings
+        async function checkBookmarkStatus(listings) {
+            try {
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                if (!currentUser) return;
+                
+                const listingIds = listings.map(listing => listing.id);
+                if (listingIds.length === 0) return;
+                
+                console.log('🔍 Checking bookmark status for', listingIds.length, 'listings');
+                
+                const response = await fetch('/api/favorites/check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        listingIds: listingIds,
+                        userEmail: currentUser.email
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to check bookmark status');
+                }
+                
+                const favoriteMap = await response.json();
+                console.log('📋 Bookmark status:', favoriteMap);
+                
+                // Update UI for each listing
+                Object.entries(favoriteMap).forEach(([listingId, isBookmarked]) => {
+                    const button = document.querySelector(`[data-listing-id="${listingId}"]`);
+                    if (button) {
+                        updateBookmarkUI(button, isBookmarked);
+                    }
+                });
+                
+            } catch (error) {
+                console.error('❌ Error checking bookmark status:', error);
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            // Remove existing toast
+            const existingToast = document.getElementById('bookmark-toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            const colors = {
+                success: { bg: '#10b981', text: '#ffffff' },
+                error: { bg: '#ef4444', text: '#ffffff' },
+                warning: { bg: '#f59e0b', text: '#ffffff' },
+                info: { bg: '#3b82f6', text: '#ffffff' }
+            };
+            
+            const color = colors[type] || colors.info;
+            
+            const toast = document.createElement('div');
+            toast.id = 'bookmark-toast';
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${color.bg};
+                color: ${color.text};
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-family: 'Inter', sans-serif;
+                font-size: 14px;
+                font-weight: 500;
+                z-index: 10000;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                transform: translateX(100%);
+                transition: transform 0.3s ease-out;
+                max-width: 300px;
+            `;
+            
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // Slide in
+            setTimeout(() => {
+                toast.style.transform = 'translateX(0)';
+            }, 10);
+            
+            // Slide out and remove
+            setTimeout(() => {
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.remove();
+                    }
+                }, 300);
+            }, 3000);
+        }
+
         // Authentication check and header update
         async function initializeListingsPage() {
             console.log('DOMContentLoaded event fired');
@@ -757,11 +930,18 @@
                     .catch(err => console.error('Failed to fetch MIME type for', primaryImage, err));
 
                 const listingCard = document.createElement('div');
-                listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden';
+                listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
 
                 const hasOwner = !!listing.user_email;
                 listingCard.innerHTML = `
-                    <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'">
+                    <div class="relative">
+                        <img src="${primaryImage}" alt="${listing.title}" class="listing-image w-full h-48 object-cover" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'">
+                        <button class="bookmark-btn absolute top-3 right-3 w-10 h-10 bg-white bg-opacity-90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105" data-listing-id="${listing.id}" title="Save to favorites">
+                            <svg class="bookmark-icon w-5 h-5 text-gray-600 hover:text-red-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                            </svg>
+                        </button>
+                    </div>
                     <div class="p-4">
                         <h3 class="text-lg font-semibold text-gray-800 truncate">${listing.title}</h3>
                         <p class="text-xl font-bold text-blue-600">$${listing.price.toLocaleString()}/mo</p>
@@ -807,6 +987,27 @@
                     console.log('⚠️ Chat button is disabled (legacy handler) - no owner email specified');
                 }
             });
+
+            // Add bookmark functionality
+            document.querySelectorAll('.bookmark-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const listingId = button.dataset.listingId;
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                    
+                    if (!currentUser) {
+                        showToast('Please log in to save listings', 'warning');
+                        return;
+                    }
+                    
+                    await toggleBookmark(listingId, currentUser.email, button);
+                });
+            });
+
+            // Check bookmark status for all listings
+            await checkBookmarkStatus(listings);
 
             // Update map with all listings
             console.log('📍 Updating map with', listings.length, 'listings...');

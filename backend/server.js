@@ -570,6 +570,232 @@ app.delete('/api/listings/:id', (req, res) => {
     }
 });
 
+// ========================================
+// BOOKMARK/FAVORITES API ENDPOINTS
+// ========================================
+
+// Add listing to favorites
+app.post('/api/favorites', async (req, res) => {
+    try {
+        const { listingId, userEmail } = req.body;
+        
+        if (!listingId || !userEmail) {
+            return res.status(400).json({ error: 'listingId and userEmail are required' });
+        }
+
+        if (!supabase) {
+            return res.status(500).json({ error: 'Database not connected' });
+        }
+
+        // Check if listing exists
+        const { data: listing, error: listingError } = await supabase
+            .from('listings')
+            .select('id')
+            .eq('id', listingId)
+            .single();
+
+        if (listingError || !listing) {
+            return res.status(404).json({ error: 'Listing not found' });
+        }
+
+        // Create user_favorites table if it doesn't exist
+        await ensureUserFavoritesTable();
+
+        // Insert favorite (ON CONFLICT DO NOTHING to handle duplicates)
+        const { data, error } = await supabase
+            .from('user_favorites')
+            .insert({
+                user_email: userEmail,
+                listing_id: listingId,
+                created_at: new Date().toISOString()
+            })
+            .select();
+
+        if (error) {
+            // If it's a duplicate key error, that's okay
+            if (error.code === '23505') {
+                return res.json({ message: 'Listing already in favorites', alreadyFavorited: true });
+            }
+            console.error('Error adding to favorites:', error);
+            return res.status(500).json({ error: 'Failed to add to favorites' });
+        }
+
+        res.status(201).json({ message: 'Added to favorites successfully', favorite: data[0] });
+    } catch (error) {
+        console.error('Error in POST /api/favorites:', error.message);
+        res.status(500).json({ error: 'Failed to add to favorites' });
+    }
+});
+
+// Remove listing from favorites
+app.delete('/api/favorites/:listingId', async (req, res) => {
+    try {
+        const { listingId } = req.params;
+        const { userEmail } = req.query;
+        
+        if (!listingId || !userEmail) {
+            return res.status(400).json({ error: 'listingId and userEmail are required' });
+        }
+
+        if (!supabase) {
+            return res.status(500).json({ error: 'Database not connected' });
+        }
+
+        const { data, error } = await supabase
+            .from('user_favorites')
+            .delete()
+            .eq('listing_id', listingId)
+            .eq('user_email', userEmail)
+            .select();
+
+        if (error) {
+            console.error('Error removing from favorites:', error);
+            return res.status(500).json({ error: 'Failed to remove from favorites' });
+        }
+
+        if (data.length === 0) {
+            return res.status(404).json({ error: 'Favorite not found' });
+        }
+
+        res.json({ message: 'Removed from favorites successfully' });
+    } catch (error) {
+        console.error('Error in DELETE /api/favorites/:listingId:', error.message);
+        res.status(500).json({ error: 'Failed to remove from favorites' });
+    }
+});
+
+// Get user's favorite listings
+app.get('/api/favorites', async (req, res) => {
+    try {
+        const { userEmail } = req.query;
+        
+        if (!userEmail) {
+            return res.status(400).json({ error: 'userEmail is required' });
+        }
+
+        if (!supabase) {
+            return res.status(500).json({ error: 'Database not connected' });
+        }
+
+        // Join favorites with listings to get full listing details
+        const { data, error } = await supabase
+            .from('user_favorites')
+            .select(`
+                *,
+                listings:listing_id (*)
+            `)
+            .eq('user_email', userEmail)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching favorites:', error);
+            return res.status(500).json({ error: 'Failed to fetch favorites' });
+        }
+
+        // Transform the data to have listings at the top level
+        const favorites = data.map(favorite => ({
+            ...favorite.listings,
+            favorited_at: favorite.created_at
+        }));
+
+        res.json(favorites);
+    } catch (error) {
+        console.error('Error in GET /api/favorites:', error.message);
+        res.status(500).json({ error: 'Failed to fetch favorites' });
+    }
+});
+
+// Check if specific listings are favorited by user
+app.post('/api/favorites/check', async (req, res) => {
+    try {
+        const { listingIds, userEmail } = req.body;
+        
+        if (!listingIds || !Array.isArray(listingIds) || !userEmail) {
+            return res.status(400).json({ error: 'listingIds array and userEmail are required' });
+        }
+
+        if (!supabase) {
+            return res.status(500).json({ error: 'Database not connected' });
+        }
+
+        const { data, error } = await supabase
+            .from('user_favorites')
+            .select('listing_id')
+            .eq('user_email', userEmail)
+            .in('listing_id', listingIds);
+
+        if (error) {
+            console.error('Error checking favorites:', error);
+            return res.status(500).json({ error: 'Failed to check favorites' });
+        }
+
+        // Create a map of listingId -> isFavorited
+        const favoriteMap = {};
+        listingIds.forEach(id => {
+            favoriteMap[id] = data.some(fav => fav.listing_id === id);
+        });
+
+        res.json(favoriteMap);
+    } catch (error) {
+        console.error('Error in POST /api/favorites/check:', error.message);
+        res.status(500).json({ error: 'Failed to check favorites' });
+    }
+});
+
+// Helper function to ensure user_favorites table exists
+async function ensureUserFavoritesTable() {
+    try {
+        // Check if table exists by trying to query it
+        const { data, error } = await supabase
+            .from('user_favorites')
+            .select('count')
+            .limit(1);
+
+        if (error && error.code === '42P01') {
+            // Table doesn't exist, create it
+            console.log('Creating user_favorites table...');
+            
+            const { error: createError } = await supabase.rpc('exec_sql', {
+                sql: `
+                    CREATE TABLE IF NOT EXISTS user_favorites (
+                        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+                        user_email VARCHAR(255) NOT NULL,
+                        listing_id UUID NOT NULL,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                        UNIQUE(user_email, listing_id)
+                    );
+                    
+                    -- Create indexes for better performance
+                    CREATE INDEX IF NOT EXISTS idx_user_favorites_user_email 
+                    ON user_favorites(user_email);
+                    
+                    CREATE INDEX IF NOT EXISTS idx_user_favorites_listing_id 
+                    ON user_favorites(listing_id);
+                    
+                    -- Enable RLS
+                    ALTER TABLE user_favorites ENABLE ROW LEVEL SECURITY;
+                    
+                    -- Create policy to allow users to manage their own favorites
+                    CREATE POLICY "Users can manage their own favorites" 
+                    ON user_favorites 
+                    FOR ALL 
+                    USING (true);
+                `
+            });
+
+            if (createError) {
+                console.error('Failed to create user_favorites table:', createError);
+                throw createError;
+            }
+            
+            console.log('✅ user_favorites table created successfully');
+        }
+    } catch (error) {
+        console.error('Error ensuring user_favorites table:', error);
+        // Don't throw error - let the operation continue and handle it at the API level
+    }
+}
+
 // Helper: Generate 6-digit verification code
 function generateVerificationCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
