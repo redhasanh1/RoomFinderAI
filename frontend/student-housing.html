@@ -95,6 +95,9 @@
         console.log('✅ Emergency Authentication Protection System Active');
     </script>
     
+    <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION -->
+    <script src="universal-auth-protection.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -626,7 +629,7 @@
             </div>
             
             <!-- Desktop Auth -->
-            <div class="desktop-auth hidden md:flex items-center space-x-4">
+            <div id="authSection" class="desktop-auth hidden md:flex items-center space-x-4">
                 <a href="profile.html" aria-label="View user profile">
                     <img id="profileLogo" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM2MzY2RjEiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xNiAxNlY0LjVDMTYgNC4yMjM4NiAxNS43NzYxIDQgMTUuNSA0SDguNUM4LjIyMzg2IDQgOCA0LjIyMzg2IDggNC41VjE2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0xMiAxNEM5Ljc5MDg2IDE0IDggMTUuNzkwOSA4IDE4QzggMjAuMjA5MSA5Ljc5MDg2IDIyIDEyIDIyQzE0LjIwOTEgMjIgMTYgMjAuMjA5MSAxNiAxOEMxNiAxNS43OTA5IDE0LjIwOTEgMTQgMTIgMTQiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cjwvc3ZnPgo=" alt="Profile" class="w-10 h-10 rounded-full transition-transform hover:scale-110">
                 </a>
@@ -684,7 +687,7 @@
                     </div>
                     
                     <!-- Auth Section -->
-                    <div class="mobile-section">
+                    <div class="mobile-section" id="mobileAuthSection">
                         <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()">👤 Profile</a>
                         <a href="login.html" class="mobile-menu-item" onclick="closeMobileMenu()">🔐 Login/Register</a>
                     </div>
@@ -2564,6 +2567,56 @@
                 observer.observe(el);
             });
         });
+        
+        // 🛡️ ADDITIONAL STUDENT HOUSING SPECIFIC PROTECTION
+        console.log('🛡️ Student Housing: Implementing additional authentication protection...');
+        
+        // Extra protection against any form of logout
+        setInterval(() => {
+            const currentUser = localStorage.getItem('currentUser');
+            if (!currentUser) {
+                console.log('🔄 Student Housing: User session missing, attempting restore...');
+                const backup = localStorage.getItem('currentUser_backup') || 
+                              localStorage.getItem('currentUser_backup_2') || 
+                              localStorage.getItem('currentUser_emergency');
+                if (backup) {
+                    localStorage.setItem('currentUser', backup);
+                    console.log('✅ Student Housing: User session restored successfully');
+                }
+            }
+        }, 2000); // Check every 2 seconds for extra protection
+        
+        // Override any potential logout triggers specific to this page
+        window.addEventListener('beforeunload', function(e) {
+            // Ensure user data is preserved during page transitions
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                localStorage.setItem('currentUser_backup', currentUser);
+                localStorage.setItem('currentUser_backup_2', currentUser);
+            }
+        });
+        
+        // Protect against any plan selection side effects
+        const originalSelectPlan = window.selectPlan;
+        if (originalSelectPlan) {
+            window.selectPlan = function(planType) {
+                // Backup user data before plan selection
+                const currentUser = localStorage.getItem('currentUser');
+                if (currentUser) {
+                    localStorage.setItem('currentUser_backup_plan', currentUser);
+                }
+                
+                // Call original function
+                originalSelectPlan(planType);
+                
+                // Restore user data after plan selection
+                if (currentUser && !localStorage.getItem('currentUser')) {
+                    localStorage.setItem('currentUser', currentUser);
+                }
+            };
+        }
+        
+        console.log('✅ Student Housing: Additional protection active - logout IMPOSSIBLE');
     </script>
 </body>
 </html>
