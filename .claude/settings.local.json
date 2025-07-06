@@ -25,7 +25,11 @@
       "Bash(mv:*)",
       "Bash(open /Users/arsalanamirali/Downloads/RoomFinderAI/ios/App/App.xcworkspace)",
       "Bash(xcodebuild:*)",
-      "Bash(open:*)"
+      "Bash(open:*)",
+      "Bash(for file in *.html)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(done)",
+      "Bash(echo)"
     ],
     "deny": []
   }
