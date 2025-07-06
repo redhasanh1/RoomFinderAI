@@ -16,6 +16,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-content.expanded {
+            max-height: 500px;
+            transition: max-height 0.3s ease-in;
+        }
+        .accordion-icon {
+            transition: transform 0.3s ease;
+        }
+        .accordion-icon.rotated {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -38,99 +53,292 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-gray-900 mb-4">Support Center</h1>
-            <p class="text-xl text-gray-600">Get help with RoomFinderAI</p>
+    <main class="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <!-- Support Center Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Support Center</h1>
+            <p class="text-xl text-gray-600">We're here to help you with RoomFinderAI</p>
         </div>
 
-        <!-- Support Sections -->
-        <div class="grid md:grid-cols-2 gap-8 mb-12">
-            <!-- FAQ Section -->
-            <div class="bg-white rounded-lg shadow-sm p-6">
-                <h2 class="text-2xl font-semibold text-gray-900 mb-4">Frequently Asked Questions</h2>
+        <!-- Contact Support Section (Moved to top) -->
+        <div class="bg-blue-50 rounded-xl shadow-sm p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Contact Support</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-lg p-4 flex items-start space-x-4">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900 text-lg">Email Support</h3>
+                        <p class="text-gray-600 mt-1">support@roomfinderai.com</p>
+                        <p class="text-gray-500 text-sm mt-2">Response time: Within 24 hours</p>
+                    </div>
+                </div>
                 
-                <div class="space-y-4">
+                <div class="bg-white rounded-lg p-4 flex items-start space-x-4">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
                     <div>
-                        <h3 class="font-medium text-gray-900">How do I search for properties?</h3>
-                        <p class="text-gray-600 text-sm mt-1">Use our search filters on the listings page or try our AI negotiator for personalized recommendations.</p>
+                        <h3 class="font-semibold text-gray-900 text-lg">Documentation</h3>
+                        <p class="text-gray-600 mt-1">User guides and tutorials</p>
+                        <a href="#" class="text-blue-600 hover:text-blue-700 text-sm mt-2 inline-block">Browse docs →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ Search -->
+        <div class="mb-8">
+            <div class="relative">
+                <input type="text" id="faqSearch" placeholder="Search for help..." 
+                    class="w-full px-6 py-4 pr-12 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <svg class="absolute right-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Categorized FAQ Sections -->
+        <div class="space-y-6">
+            <!-- Getting Started -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Getting Started
+                </h2>
+                
+                <div class="space-y-3">
+                    <div class="faq-item border-b border-gray-200 pb-3">
+                        <button class="faq-question w-full text-left py-2 flex justify-between items-center hover:text-blue-600 transition-colors">
+                            <span class="font-medium text-gray-900">How do I create an account?</span>
+                            <svg class="accordion-icon w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="accordion-content">
+                            <p class="text-gray-600 text-sm mt-2 pr-8">Click the "Sign Up" button in the top navigation, fill in your details including email, password, and phone number. You'll receive a verification email to complete your registration.</p>
+                        </div>
                     </div>
                     
-                    <div>
-                        <h3 class="font-medium text-gray-900">How does the AI negotiator work?</h3>
-                        <p class="text-gray-600 text-sm mt-1">Our AI helps you find properties matching your criteria and assists with landlord negotiations.</p>
+                    <div class="faq-item border-b border-gray-200 pb-3">
+                        <button class="faq-question w-full text-left py-2 flex justify-between items-center hover:text-blue-600 transition-colors">
+                            <span class="font-medium text-gray-900">How do I search for properties?</span>
+                            <svg class="accordion-icon w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="accordion-content">
+                            <p class="text-gray-600 text-sm mt-2 pr-8">Go to the Listings page and use our advanced filters to search by location, price range, number of bedrooms, and amenities. You can also save your searches for quick access later.</p>
+                        </div>
                     </div>
                     
-                    <div>
-                        <h3 class="font-medium text-gray-900">Is RoomFinderAI free to use?</h3>
-                        <p class="text-gray-600 text-sm mt-1">Basic features are free. Premium features require a subscription.</p>
-                    </div>
-                    
-                    <div>
-                        <h3 class="font-medium text-gray-900">How do I contact landlords?</h3>
-                        <p class="text-gray-600 text-sm mt-1">Use the contact buttons on property listings or let our AI negotiator handle communications.</p>
+                    <div class="faq-item">
+                        <button class="faq-question w-full text-left py-2 flex justify-between items-center hover:text-blue-600 transition-colors">
+                            <span class="font-medium text-gray-900">What is the AI Negotiator?</span>
+                            <svg class="accordion-icon w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="accordion-content">
+                            <p class="text-gray-600 text-sm mt-2 pr-8">Our AI Negotiator is a smart assistant that helps you find properties matching your specific needs and can assist with landlord communications, price negotiations, and answering questions about properties.</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Contact Support -->
+            <!-- Account & Billing -->
             <div class="bg-white rounded-lg shadow-sm p-6">
-                <h2 class="text-2xl font-semibold text-gray-900 mb-4">Contact Support</h2>
+                <h2 class="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    Account & Billing
+                </h2>
                 
-                <div class="space-y-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                <div class="space-y-3">
+                    <div class="faq-item border-b border-gray-200 pb-3">
+                        <button class="faq-question w-full text-left py-2 flex justify-between items-center hover:text-blue-600 transition-colors">
+                            <span class="font-medium text-gray-900">Is RoomFinderAI free to use?</span>
+                            <svg class="accordion-icon w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
-                        </div>
-                        <div>
-                            <h3 class="font-medium text-gray-900">Email Support</h3>
-                            <p class="text-gray-600 text-sm">support@roomfinderai.com</p>
+                        </button>
+                        <div class="accordion-content">
+                            <p class="text-gray-600 text-sm mt-2 pr-8">Basic features including property search and viewing listings are free. Premium features like AI Negotiator, advanced filters, and priority support require a subscription starting at $9.99/month.</p>
                         </div>
                     </div>
                     
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    <div class="faq-item border-b border-gray-200 pb-3">
+                        <button class="faq-question w-full text-left py-2 flex justify-between items-center hover:text-blue-600 transition-colors">
+                            <span class="font-medium text-gray-900">How do I update my profile?</span>
+                            <svg class="accordion-icon w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
-                        </div>
-                        <div>
-                            <h3 class="font-medium text-gray-900">Live Chat</h3>
-                            <p class="text-gray-600 text-sm">Available 24/7</p>
+                        </button>
+                        <div class="accordion-content">
+                            <p class="text-gray-600 text-sm mt-2 pr-8">Go to your Dashboard and click on "Profile Settings". You can update your personal information, preferences, and upload a profile picture from there.</p>
                         </div>
                     </div>
                     
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    <div class="faq-item">
+                        <button class="faq-question w-full text-left py-2 flex justify-between items-center hover:text-blue-600 transition-colors">
+                            <span class="font-medium text-gray-900">How do I cancel my subscription?</span>
+                            <svg class="accordion-icon w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
-                        </div>
-                        <div>
-                            <h3 class="font-medium text-gray-900">Documentation</h3>
-                            <p class="text-gray-600 text-sm">User guides and tutorials</p>
+                        </button>
+                        <div class="accordion-content">
+                            <p class="text-gray-600 text-sm mt-2 pr-8">You can cancel your subscription anytime from your Dashboard under "Billing Settings". Your access to premium features will continue until the end of your current billing period.</p>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Property Management -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg class="w-6 h-6 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    Property Management
+                </h2>
                 
-                <button class="w-full mt-6 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
-                    Start Live Chat
-                </button>
+                <div class="space-y-3">
+                    <div class="faq-item border-b border-gray-200 pb-3">
+                        <button class="faq-question w-full text-left py-2 flex justify-between items-center hover:text-blue-600 transition-colors">
+                            <span class="font-medium text-gray-900">How do I contact landlords?</span>
+                            <svg class="accordion-icon w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="accordion-content">
+                            <p class="text-gray-600 text-sm mt-2 pr-8">Each property listing has a "Contact Landlord" button. Click it to send a message directly through our platform. You can also let our AI Negotiator handle initial communications for you.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item border-b border-gray-200 pb-3">
+                        <button class="faq-question w-full text-left py-2 flex justify-between items-center hover:text-blue-600 transition-colors">
+                            <span class="font-medium text-gray-900">Can I save properties for later?</span>
+                            <svg class="accordion-icon w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="accordion-content">
+                            <p class="text-gray-600 text-sm mt-2 pr-8">Yes! Click the heart icon on any property listing to save it to your favorites. You can view all saved properties in your Dashboard under "Saved Properties".</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <button class="faq-question w-full text-left py-2 flex justify-between items-center hover:text-blue-600 transition-colors">
+                            <span class="font-medium text-gray-900">How do I schedule property viewings?</span>
+                            <svg class="accordion-icon w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="accordion-content">
+                            <p class="text-gray-600 text-sm mt-2 pr-8">Click "Schedule Viewing" on the property page and select your preferred date and time. The landlord will receive your request and confirm the appointment through our messaging system.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technical Support -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg class="w-6 h-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Technical Support
+                </h2>
+                
+                <div class="space-y-3">
+                    <div class="faq-item border-b border-gray-200 pb-3">
+                        <button class="faq-question w-full text-left py-2 flex justify-between items-center hover:text-blue-600 transition-colors">
+                            <span class="font-medium text-gray-900">I can't log in to my account</span>
+                            <svg class="accordion-icon w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="accordion-content">
+                            <p class="text-gray-600 text-sm mt-2 pr-8">Try resetting your password using the "Forgot Password" link on the login page. If you still can't access your account, contact support@roomfinderai.com with your email address.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item border-b border-gray-200 pb-3">
+                        <button class="faq-question w-full text-left py-2 flex justify-between items-center hover:text-blue-600 transition-colors">
+                            <span class="font-medium text-gray-900">The website is loading slowly</span>
+                            <svg class="accordion-icon w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="accordion-content">
+                            <p class="text-gray-600 text-sm mt-2 pr-8">Try clearing your browser cache and cookies, or use a different browser. Ensure you have a stable internet connection. If issues persist, our technical team can help.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <button class="faq-question w-full text-left py-2 flex justify-between items-center hover:text-blue-600 transition-colors">
+                            <span class="font-medium text-gray-900">How do I report a bug?</span>
+                            <svg class="accordion-icon w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="accordion-content">
+                            <p class="text-gray-600 text-sm mt-2 pr-8">Email support@roomfinderai.com with details about the issue, including what you were doing when it occurred, any error messages, and your browser/device information.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Quick Links -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
+        <div class="bg-gray-100 rounded-lg shadow-sm p-6 mt-8">
             <h2 class="text-2xl font-semibold text-gray-900 mb-4">Quick Links</h2>
             <div class="grid md:grid-cols-3 gap-4">
-                <a href="/listings" class="text-blue-600 hover:text-blue-800 font-medium">Browse Listings</a>
-                <a href="/ai-negotiator" class="text-blue-600 hover:text-blue-800 font-medium">AI Negotiator</a>
-                <a href="/pricing" class="text-blue-600 hover:text-blue-800 font-medium">Pricing Plans</a>
-                <a href="/legal" class="text-blue-600 hover:text-blue-800 font-medium">Terms of Service</a>
-                <a href="/signup" class="text-blue-600 hover:text-blue-800 font-medium">Create Account</a>
-                <a href="/dashboard" class="text-blue-600 hover:text-blue-800 font-medium">Dashboard</a>
+                <a href="/listings" class="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    Browse Listings
+                </a>
+                <a href="/ai-negotiator" class="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    AI Negotiator
+                </a>
+                <a href="/pricing" class="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    Pricing Plans
+                </a>
+                <a href="/legal" class="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    Terms of Service
+                </a>
+                <a href="/signup" class="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    Create Account
+                </a>
+                <a href="/dashboard" class="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    Dashboard
+                </a>
             </div>
         </div>
     </main>
@@ -147,6 +355,65 @@
         if (typeof window.UniversalAuth !== 'undefined') {
             window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
         }
+
+        // FAQ Accordion functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const faqQuestions = document.querySelectorAll('.faq-question');
+            
+            faqQuestions.forEach(question => {
+                question.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    const icon = this.querySelector('.accordion-icon');
+                    
+                    // Toggle current item
+                    content.classList.toggle('expanded');
+                    icon.classList.toggle('rotated');
+                    
+                    // Close other items in the same section
+                    const section = this.closest('.bg-white');
+                    const otherQuestions = section.querySelectorAll('.faq-question');
+                    
+                    otherQuestions.forEach(otherQuestion => {
+                        if (otherQuestion !== this) {
+                            const otherContent = otherQuestion.nextElementSibling;
+                            const otherIcon = otherQuestion.querySelector('.accordion-icon');
+                            otherContent.classList.remove('expanded');
+                            otherIcon.classList.remove('rotated');
+                        }
+                    });
+                });
+            });
+
+            // FAQ Search functionality
+            const searchInput = document.getElementById('faqSearch');
+            const faqItems = document.querySelectorAll('.faq-item');
+            
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                
+                faqItems.forEach(item => {
+                    const question = item.querySelector('.faq-question span').textContent.toLowerCase();
+                    const answer = item.querySelector('.accordion-content p').textContent.toLowerCase();
+                    
+                    if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+                        item.style.display = 'block';
+                        // Highlight matching section
+                        if (searchTerm.length > 0) {
+                            item.closest('.bg-white').style.borderLeft = '4px solid #3B82F6';
+                        }
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                // Reset highlights if search is empty
+                if (searchTerm.length === 0) {
+                    document.querySelectorAll('.bg-white').forEach(section => {
+                        section.style.borderLeft = 'none';
+                    });
+                }
+            });
+        });
     </script>
 </body>
 </html>
