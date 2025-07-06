@@ -415,5 +415,471 @@
             });
         });
     </script>
+
+    <!-- AI Customer Support Chatbot -->
+    <div id="ai-support-chatbot" class="fixed bottom-6 right-6 z-50">
+        <!-- Chat Toggle Button -->
+        <button id="chatbot-toggle" class="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg transition-all duration-300 flex items-center justify-center w-16 h-16 relative group">
+            <svg id="chat-icon" class="w-8 h-8 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            <svg id="close-icon" class="w-8 h-8 absolute inset-4 transition-transform duration-300 transform scale-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            <span id="notification-badge" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center hidden animate-pulse">1</span>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chatbot-window" class="absolute bottom-20 right-0 w-96 h-96 bg-white rounded-lg shadow-2xl border border-gray-200 transform transition-all duration-300 scale-0 origin-bottom-right opacity-0 pointer-events-none">
+            <!-- Chat Header -->
+            <div class="bg-blue-600 text-white p-4 rounded-t-lg flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-sm">AI Support Assistant</h3>
+                        <span id="typing-indicator" class="text-xs text-blue-200 hidden">Typing...</span>
+                    </div>
+                </div>
+                <button id="chatbot-minimize" class="text-blue-200 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Chat Messages -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 h-64">
+                <div class="flex items-start space-x-2">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-3 max-w-xs">
+                        <p class="text-sm text-gray-800">Hi! I'm your AI support assistant. I can help answer questions about RoomFinderAI. What would you like to know?</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="border-t border-gray-200 p-4">
+                <div class="flex space-x-2">
+                    <input type="text" id="chat-input" placeholder="Type your question..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" maxlength="500">
+                    <button id="send-button" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="quick-actions" class="mt-2 flex flex-wrap gap-2">
+                    <button class="quick-action-btn text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" data-question="How do I create an account?">Create Account</button>
+                    <button class="quick-action-btn text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" data-question="How do I search for properties?">Search Properties</button>
+                    <button class="quick-action-btn text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" data-question="I can't log in to my account">Login Issues</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    /* AI Chatbot Styles */
+    #ai-support-chatbot {
+        font-family: 'Inter', sans-serif;
+    }
+
+    #chatbot-window.open {
+        transform: scale(1);
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    #chatbot-toggle.open #chat-icon {
+        transform: scale(0);
+    }
+
+    #chatbot-toggle.open #close-icon {
+        transform: scale(1);
+    }
+
+    .quick-action-btn:hover {
+        background-color: #e5e7eb;
+    }
+
+    /* Custom scrollbar for chat messages */
+    #chat-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #chat-messages::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    #chat-messages::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+
+    #chat-messages::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+    /* Typing animation */
+    @keyframes typing {
+        0%, 60%, 100% {
+            transform: translateY(0);
+        }
+        30% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .typing-dots::after {
+        content: '...';
+        animation: typing 1.5s infinite;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 640px) {
+        #chatbot-window {
+            width: 320px;
+            height: 400px;
+            right: -10px;
+        }
+        
+        #chatbot-toggle {
+            bottom: 20px;
+            right: 20px;
+        }
+    }
+
+    @media (max-width: 360px) {
+        #chatbot-window {
+            width: 280px;
+            right: -20px;
+        }
+    }
+    </style>
+
+    <script>
+    // AI Customer Support Chatbot
+    class AISupportChatbot {
+        constructor() {
+            this.isOpen = false;
+            this.conversations = [];
+            this.isTyping = false;
+            this.quickReplies = [
+                "How do I create an account?",
+                "How do I search for properties?", 
+                "I can't log in to my account",
+                "How do I contact landlords?",
+                "Is RoomFinderAI free to use?",
+                "How do I cancel my subscription?"
+            ];
+            
+            // FAQ Knowledge Base - extracted from the page content
+            this.faqData = this.extractFAQData();
+            
+            this.init();
+        }
+        
+        init() {
+            this.setupEventListeners();
+            this.showNotificationBadge();
+        }
+        
+        extractFAQData() {
+            const faqs = [];
+            
+            // Extract all FAQ items from the page
+            const faqItems = document.querySelectorAll('.faq-item');
+            faqItems.forEach(item => {
+                const questionElement = item.querySelector('.faq-question span');
+                const answerElement = item.querySelector('.accordion-content p');
+                
+                if (questionElement && answerElement) {
+                    faqs.push({
+                        question: questionElement.textContent.trim(),
+                        answer: answerElement.textContent.trim(),
+                        keywords: this.generateKeywords(questionElement.textContent + ' ' + answerElement.textContent)
+                    });
+                }
+            });
+            
+            // Add additional context-aware responses
+            faqs.push(
+                {
+                    question: "What is RoomFinderAI?",
+                    answer: "RoomFinderAI is a platform that helps you find rental properties using AI technology. We offer property listings, an AI negotiator, and various tools to help you find your perfect home.",
+                    keywords: ["what", "roomfinderai", "platform", "about", "service"]
+                },
+                {
+                    question: "How can I contact support?",
+                    answer: "You can contact our support team by emailing support@roomfinderai.com. We typically respond within 24 hours. You can also browse our documentation for quick answers.",
+                    keywords: ["contact", "support", "help", "email", "assistance"]
+                },
+                {
+                    question: "Where can I find pricing information?",
+                    answer: "Basic features like property search are free. Premium features start at $9.99/month. You can view detailed pricing on our pricing page or in your dashboard billing settings.",
+                    keywords: ["pricing", "cost", "price", "plans", "billing", "subscription"]
+                }
+            );
+            
+            return faqs;
+        }
+        
+        generateKeywords(text) {
+            return text.toLowerCase()
+                .replace(/[^\w\s]/g, ' ')
+                .split(/\s+/)
+                .filter(word => word.length > 2)
+                .filter(word => !['the', 'and', 'you', 'can', 'how', 'what', 'when', 'where', 'why', 'who'].includes(word));
+        }
+        
+        setupEventListeners() {
+            const toggleBtn = document.getElementById('chatbot-toggle');
+            const minimizeBtn = document.getElementById('chatbot-minimize');
+            const sendBtn = document.getElementById('send-button');
+            const chatInput = document.getElementById('chat-input');
+            const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+            
+            toggleBtn.addEventListener('click', () => this.toggleChat());
+            minimizeBtn.addEventListener('click', () => this.closeChat());
+            sendBtn.addEventListener('click', () => this.sendMessage());
+            
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.sendMessage();
+                }
+            });
+            
+            quickActionBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const question = btn.getAttribute('data-question');
+                    chatInput.value = question;
+                    this.sendMessage();
+                });
+            });
+        }
+        
+        toggleChat() {
+            if (this.isOpen) {
+                this.closeChat();
+            } else {
+                this.openChat();
+            }
+        }
+        
+        openChat() {
+            const toggleBtn = document.getElementById('chatbot-toggle');
+            const chatWindow = document.getElementById('chatbot-window');
+            const badge = document.getElementById('notification-badge');
+            
+            this.isOpen = true;
+            toggleBtn.classList.add('open');
+            chatWindow.classList.add('open');
+            badge.classList.add('hidden');
+            
+            // Focus on input
+            setTimeout(() => {
+                document.getElementById('chat-input').focus();
+            }, 300);
+        }
+        
+        closeChat() {
+            const toggleBtn = document.getElementById('chatbot-toggle');
+            const chatWindow = document.getElementById('chatbot-window');
+            
+            this.isOpen = false;
+            toggleBtn.classList.remove('open');
+            chatWindow.classList.remove('open');
+        }
+        
+        showNotificationBadge() {
+            // Show notification badge initially to draw attention
+            setTimeout(() => {
+                const badge = document.getElementById('notification-badge');
+                if (!this.isOpen && badge) {
+                    badge.classList.remove('hidden');
+                }
+            }, 2000);
+        }
+        
+        async sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Clear input
+            input.value = '';
+            
+            // Add user message
+            this.addMessage(message, 'user');
+            
+            // Show typing indicator
+            this.showTyping();
+            
+            // Process message and get response
+            setTimeout(() => {
+                const response = this.processMessage(message);
+                this.hideTyping();
+                this.addMessage(response, 'bot');
+            }, 1000 + Math.random() * 1000); // Simulate thinking time
+        }
+        
+        processMessage(message) {
+            const messageLower = message.toLowerCase();
+            
+            // Check for greetings
+            if (['hi', 'hello', 'hey', 'good morning', 'good afternoon'].some(greeting => messageLower.includes(greeting))) {
+                return "Hello! I'm here to help you with any questions about RoomFinderAI. What would you like to know?";
+            }
+            
+            // Check for thanks
+            if (['thank', 'thanks', 'appreciate'].some(thanks => messageLower.includes(thanks))) {
+                return "You're welcome! Is there anything else I can help you with?";
+            }
+            
+            // Find best matching FAQ
+            let bestMatch = null;
+            let bestScore = 0;
+            
+            this.faqData.forEach(faq => {
+                const score = this.calculateRelevanceScore(messageLower, faq);
+                if (score > bestScore && score > 0.3) {
+                    bestScore = score;
+                    bestMatch = faq;
+                }
+            });
+            
+            if (bestMatch) {
+                return bestMatch.answer;
+            }
+            
+            // Check for specific topics
+            if (messageLower.includes('price') || messageLower.includes('cost') || messageLower.includes('subscription')) {
+                return "RoomFinderAI offers both free and premium features. Basic property search is free, while premium features like the AI Negotiator start at $9.99/month. You can view detailed pricing in your dashboard or on our pricing page.";
+            }
+            
+            if (messageLower.includes('contact') || messageLower.includes('support') || messageLower.includes('help')) {
+                return "You can contact our support team at support@roomfinderai.com. We typically respond within 24 hours. For immediate help, you can also browse our FAQ sections above.";
+            }
+            
+            if (messageLower.includes('account') || messageLower.includes('login') || messageLower.includes('register')) {
+                return "To create an account, click the 'Sign Up' button in the top navigation. If you're having trouble logging in, try the 'Forgot Password' link on the login page. Need more help? Contact support@roomfinderai.com.";
+            }
+            
+            // Default response
+            return "I'd be happy to help! For detailed answers, you can browse the FAQ sections above or contact our support team at support@roomfinderai.com. Is there something specific you'd like to know about RoomFinderAI?";
+        }
+        
+        calculateRelevanceScore(message, faq) {
+            const messageWords = this.generateKeywords(message);
+            const matchingKeywords = messageWords.filter(word => 
+                faq.keywords.some(keyword => keyword.includes(word) || word.includes(keyword))
+            );
+            
+            // Also check for direct question similarity
+            const questionSimilarity = this.calculateStringSimilarity(message, faq.question.toLowerCase());
+            
+            const keywordScore = matchingKeywords.length / Math.max(messageWords.length, 1);
+            return Math.max(keywordScore, questionSimilarity);
+        }
+        
+        calculateStringSimilarity(str1, str2) {
+            const words1 = str1.split(' ');
+            const words2 = str2.split(' ');
+            const commonWords = words1.filter(word => words2.includes(word));
+            return commonWords.length / Math.max(words1.length, words2.length);
+        }
+        
+        addMessage(message, sender) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            
+            if (sender === 'user') {
+                messageDiv.className = 'flex items-start space-x-2 justify-end';
+                messageDiv.innerHTML = `
+                    <div class="bg-blue-600 text-white rounded-lg p-3 max-w-xs">
+                        <p class="text-sm">${message}</p>
+                    </div>
+                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                `;
+            } else {
+                messageDiv.className = 'flex items-start space-x-2';
+                messageDiv.innerHTML = `
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-3 max-w-xs">
+                        <p class="text-sm text-gray-800">${message}</p>
+                    </div>
+                `;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            this.conversations.push({ message, sender, timestamp: new Date() });
+        }
+        
+        showTyping() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            const messagesContainer = document.getElementById('chat-messages');
+            
+            typingIndicator.classList.remove('hidden');
+            
+            // Add typing message
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typing-message';
+            typingDiv.className = 'flex items-start space-x-2';
+            typingDiv.innerHTML = `
+                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="bg-gray-100 rounded-lg p-3">
+                    <div class="flex space-x-1">
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                    </div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            this.isTyping = true;
+        }
+        
+        hideTyping() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            const typingMessage = document.getElementById('typing-message');
+            
+            typingIndicator.classList.add('hidden');
+            if (typingMessage) {
+                typingMessage.remove();
+            }
+            this.isTyping = false;
+        }
+    }
+    
+    // Initialize chatbot when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        window.aiSupportChatbot = new AISupportChatbot();
+    });
+    </script>
 </body>
 </html>
