@@ -1,0 +1,148 @@
+/* Base Styles */
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    /* background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); */ /* Replaced by Tailwind bg-gray-50 */
+}
+
+/* Gradient text */
+.gradient-text {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Modern container */
+.modern-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Modern input styling */
+.modern-input {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.modern-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+    outline: none;
+}
+
+/* Modern button */
+.modern-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.modern-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+}
+
+.brand-cta-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    font-weight: 600; /* Tailwind font-semibold */
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.brand-cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+/* Profile and Auth Styles */
+.profile-logo {
+    transition: transform 0.2s ease-in-out;
+}
+
+.profile-logo:hover {
+    transform: scale(1.1);
+}
+
+.login-link {
+    transition: color 0.2s ease-in-out;
+}
+
+.login-link:hover {
+    color: #2563eb;
+}
+
+/* Autocomplete Styles */
+.custom-autocomplete {
+    position: absolute;
+    z-index: 1000;
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: calc(100% - 2rem);
+    max-width: 400px;
+    margin-top: 2px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.autocomplete-item {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    color: #374151;
+    cursor: pointer;
+}
+
+.autocomplete-item:hover {
+    background-color: #f3f4f6;
+}
+
+/* Form Input Styles */
+#city, #country, #street, #postalCode {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+}
+
+/* Media Preview */
+.media-preview img, .media-preview video {
+    max-width: 100px;
+    max-height: 100px;
+    object-fit: cover;
+    margin: 0.5rem;
+    border-radius: 0.25rem;
+}
+
+/* Leaflet Custom Styles */
+.custom-popup .leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.custom-popup .leaflet-popup-content {
+    margin: 0;
+    padding: 0;
+}
+
+.custom-popup .leaflet-popup-tip {
+    background: white;
+}
+
+.custom-marker {
+    background: transparent !important;
+    border: none !important;
+}
