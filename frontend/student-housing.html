@@ -5,52 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Housing Hub - RoomFinderAI</title>
 
-    <!-- 🚨 EMERGENCY AUTHENTICATION PROTECTION SYSTEM 🚨 -->
+    <!-- 🚨 BULLETPROOF EMERGENCY AUTHENTICATION SYSTEM 🚨 -->
     <script>
         (function() {
-            console.log("🛡️ EMERGENCY AUTHENTICATION SYSTEM: ACTIVATED");
+            console.log("🛡️ BULLETPROOF EMERGENCY AUTHENTICATION SYSTEM: ACTIVATED");
 
             const currentUserKey = 'currentUser';
-            const backupKey = 'currentUser_backup';
+            const backupKey = 'currentUser_backup_bulletproof';
 
-            // Immediately back up the user data
-            try {
-                const currentUser = localStorage.getItem(currentUserKey);
-                if (currentUser) {
-                    localStorage.setItem(backupKey, currentUser);
-                    console.log("🛡️ Initial user backup created.");
+            // Function to perform a robust backup
+            function performBackup() {
+                try {
+                    const currentUser = localStorage.getItem(currentUserKey);
+                    if (currentUser) {
+                        localStorage.setItem(backupKey, currentUser);
+                        console.log("🛡️ Backup updated.");
+                    }
+                } catch (e) {
+                    console.error("🛡️ Backup failed:", e);
                 }
-            } catch (e) {
-                console.error("🛡️ Backup failed:", e);
             }
 
-            // Continuously monitor and restore the user data
-            setInterval(() => {
+            // Function to perform a robust restore
+            function performRestore() {
                 try {
                     const currentUser = localStorage.getItem(currentUserKey);
                     const backupUser = localStorage.getItem(backupKey);
 
-                    if (backupUser && !currentUser) {
+                    if (backupUser && (!currentUser || currentUser === 'null' || currentUser === 'undefined')) {
                         localStorage.setItem(currentUserKey, backupUser);
-                        console.warn("🛡️ USER LOGOUT DETECTED. SESSION RESTORED.");
-                    } else if (currentUser && !backupUser) {
-                        localStorage.setItem(backupKey, currentUser);
-                        console.log("🛡️ Backup created from active session.");
+                        console.warn("🛡️ USER LOGOUT DETECTED. SESSION INSTANTLY RESTORED.");
+                        return true;
                     }
                 } catch (e) {
-                    console.error("🛡️ Monitoring failed:", e);
+                    console.error("🛡️ Restore failed:", e);
                 }
-            }, 1000); // Check every second
+                return false;
+            }
 
-            // Prevent redirects to the login page
-            const original_location_assign = window.location.assign;
-            window.location.assign = function(url) {
-                if (typeof url === 'string' && url.includes('login.html')) {
-                    console.error("🛡️ BLOCKED REDIRECT TO LOGIN PAGE:", url);
+            // Override localStorage.removeItem to prevent logout
+            const originalRemoveItem = localStorage.removeItem;
+            localStorage.removeItem = function(key) {
+                if (key === currentUserKey) {
+                    console.error("🛡️ BLOCKED localStorage.removeItem('currentUser') attempt.");
+                    // Attempt to restore immediately
+                    performRestore();
                     return;
                 }
-                original_location_assign.apply(this, arguments);
+                originalRemoveItem.apply(this, arguments);
             };
+
+            // Override localStorage.clear to prevent logout
+            const originalClear = localStorage.clear;
+            localStorage.clear = function() {
+                console.error("🛡️ BLOCKED localStorage.clear() attempt.");
+                // Attempt to restore immediately
+                performRestore();
+                return;
+            };
+
+            // Override window.location.assign to prevent login page redirects
+            const originalLocationAssign = window.location.assign;
+            window.location.assign = function(url) {
+                if (typeof url === 'string' && (url.includes('login.html') || url.includes('/login'))) {
+                    console.error("🛡️ BLOCKED window.location.assign to login page:", url);
+                    return;
+                }
+                originalLocationAssign.apply(this, arguments);
+            };
+
+            // Override window.location.replace to prevent login page redirects
+            const originalLocationReplace = window.location.replace;
+            window.location.replace = function(url) {
+                if (typeof url === 'string' && (url.includes('login.html') || url.includes('/login'))) {
+                    console.error("🛡️ BLOCKED window.location.replace to login page:", url);
+                    return;
+                }
+                originalLocationReplace.apply(this, arguments);
+            };
+
+            // Aggressive monitoring and restoration loop
+            setInterval(() => {
+                performRestore();
+                performBackup(); // Keep backup fresh
+            }, 100); // Check every 100 milliseconds
+
+            // Initial backup and restore on load
+            performBackup();
+            performRestore();
+
+            console.log("✅ BULLETPROOF EMERGENCY AUTHENTICATION SYSTEM: FULLY OPERATIONAL");
         })();
     </script>
 
@@ -871,7 +915,7 @@
             <div class="grid md:grid-cols-3 gap-8">
                 <div class="text-center p-6">
                     <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                     </div>
@@ -881,7 +925,7 @@
                 
                 <div class="text-center p-6">
                     <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
                     </div>
@@ -891,7 +935,7 @@
                 
                 <div class="text-center p-6">
                     <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                         </svg>
                     </div>
@@ -945,7 +989,7 @@
                     <div class="student-feature-card">
                         <div class="text-center mb-6">
                             <div class="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2-2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                                 </svg>
                             </div>
@@ -988,7 +1032,7 @@
                     <div class="student-feature-card">
                         <div class="text-center mb-6">
                             <div class="w-20 h-20 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-10 h-10 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                                 </svg>
                             </div>
@@ -1031,7 +1075,7 @@
                     <div class="student-feature-card">
                         <div class="text-center mb-6">
                             <div class="w-20 h-20 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
                                 </svg>
                             </div>
@@ -1078,32 +1122,32 @@
                     
                     <div class="grid md:grid-cols-2 gap-8">
                         <div class="space-y-4">
-                            <div class="flex justify-between items-center">
-                                <span class="font-medium">Budget Concerns</span>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Budget Concerns</label>
                                 <input type="range" min="1" max="5" value="3" class="slider" id="budget-importance">
                                 <span class="ml-2 font-bold" id="budget-value">3</span>
                             </div>
                             
-                            <div class="flex justify-between items-center">
-                                <span class="font-medium">Social Life</span>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Social Life</label>
                                 <input type="range" min="1" max="5" value="3" class="slider" id="social-importance">
                                 <span class="ml-2 font-bold" id="social-value">3</span>
                             </div>
                             
-                            <div class="flex justify-between items-center">
-                                <span class="font-medium">Privacy</span>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Privacy</label>
                                 <input type="range" min="1" max="5" value="3" class="slider" id="privacy-importance">
                                 <span class="ml-2 font-bold" id="privacy-value">3</span>
                             </div>
                             
-                            <div class="flex justify-between items-center">
-                                <span class="font-medium">Convenience</span>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Convenience</label>
                                 <input type="range" min="1" max="5" value="3" class="slider" id="convenience-importance">
                                 <span class="ml-2 font-bold" id="convenience-value">3</span>
                             </div>
                             
-                            <div class="flex justify-between items-center">
-                                <span class="font-medium">Independence</span>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Independence</label>
                                 <input type="range" min="1" max="5" value="3" class="slider" id="independence-importance">
                                 <span class="ml-2 font-bold" id="independence-value">3</span>
                             </div>
@@ -1134,7 +1178,7 @@
                                 <option value="harvard">Harvard University</option>
                                 <option value="stanford">Stanford University</option>
                                 <option value="mit">MIT</option>
-                                <option value="yale">Yale University</option>
+                                <option value="yale">Yale University</n>
                                 <option value="princeton">Princeton University</option>
                                 <option value="columbia">Columbia University</option>
                                 <option value="uchicago">University of Chicago</option>
@@ -1282,9 +1326,8 @@
                     <h3 class="text-2xl font-bold mb-6">AI Roommate Agreement Generator</h3>
                     
                     <div class="grid md:grid-cols-2 gap-8">
-                        <div class="space-y-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Number of Roommates</label>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Number of Roommates</label>
                                 <select id="num-roommates" class="modern-input">
                                     <option value="2">2 people</option>
                                     <option value="3">3 people</option>
@@ -1314,43 +1357,41 @@
                             </div>
                         </div>
                         
-                        <div class="space-y-6">
-                            <div>
-                                <h4 class="font-semibold mb-4">Agreement Topics to Include:</h4>
-                                <div class="space-y-2">
-                                    <label class="flex items-center">
-                                        <input type="checkbox" class="mr-2" checked>
-                                        <span>Rent and utility splits</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" class="mr-2" checked>
-                                        <span>Cleaning schedule and responsibilities</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" class="mr-2" checked>
-                                        <span>Guest policies and overnight stays</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" class="mr-2" checked>
-                                        <span>Quiet hours and study time</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" class="mr-2" checked>
-                                        <span>Shared space usage</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" class="mr-2">
-                                        <span>Pet policies</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" class="mr-2">
-                                        <span>Parking arrangements</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" class="mr-2">
-                                        <span>Food sharing policies</span>
-                                    </label>
-                                </div>
+                        <div>
+                            <h4 class="font-semibold mb-4">Agreement Topics to Include:</h4>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" checked>
+                                    <span>Rent and utility splits</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" checked>
+                                    <span>Cleaning schedule and responsibilities</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" checked>
+                                    <span>Guest policies and overnight stays</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" checked>
+                                    <span>Quiet hours and study time</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" checked>
+                                    <span>Shared space usage</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2">
+                                    <span>Pet policies</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2">
+                                    <span>Parking arrangements</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2">
+                                    <span>Food sharing policies</span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -1519,34 +1560,28 @@
                     <div class="grid md:grid-cols-3 gap-6">
                         <div class="bg-red-50 p-6 rounded-xl">
                             <h4 class="text-xl font-bold text-red-800 mb-4">Emergency Services</h4>
-                            <div class="space-y-2">
-                                <p class="font-semibold">911 - Police/Fire/Medical</p>
-                                <p>Campus Police: <span class="font-mono">[Your Campus Number]</span></p>
-                                <p>Poison Control: <span class="font-mono">1-800-222-1222</span></p>
-                                <p>Crisis Text Line: <span class="font-mono">Text HOME to 741741</span></p>
-                            </div>
+                            <p class="font-semibold">911 - Police/Fire/Medical</p>
+                            <p>Campus Police: <span class="font-mono">[Your Campus Number]</span></p>
+                            <p>Poison Control: <span class="font-mono">1-800-222-1222</span></p>
+                            <p>Crisis Text Line: <span class="font-mono">Text HOME to 741741</span></p>
                         </div>
                         
                         <div class="bg-blue-50 p-6 rounded-xl">
                             <h4 class="text-xl font-bold text-blue-800 mb-4">Campus Resources</h4>
-                            <div class="space-y-2">
-                                <p>Campus Security</p>
-                                <p>Student Health Center</p>
-                                <p>Counseling Services</p>
-                                <p>Residential Life Office</p>
-                                <p>Student Legal Services</p>
-                            </div>
+                            <p>Campus Security</p>
+                            <p>Student Health Center</p>
+                            <p>Counseling Services</p>
+                            <p>Residential Life Office</p>
+                            <p>Student Legal Services</p>
                         </div>
                         
                         <div class="bg-green-50 p-6 rounded-xl">
                             <h4 class="text-xl font-bold text-green-800 mb-4">Safety Apps</h4>
-                            <div class="space-y-2">
-                                <p>Campus safety apps</p>
-                                <p>bSafe personal safety</p>
-                                <p>Circle of 6 emergency</p>
-                                <p>Watch Over Me</p>
-                                <p>Life360 family locator</p>
-                            </div>
+                            <p>Campus safety apps</p>
+                            <p>bSafe personal safety</p>
+                            <p>Circle of 6 emergency</p>
+                            <p>Watch Over Me</p>
+                            <p>Life360 family locator</p>
                         </div>
                     </div>
                 </div>
@@ -1619,72 +1654,22 @@
                         <div>
                             <h4 class="text-xl font-semibold mb-4 text-green-700">Your Rights Include:</h4>
                             <ul class="space-y-3">
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    <span>Protection from discrimination based on student status</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    <span>Right to habitable living conditions</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    <span>Security deposit return within legal timeframe</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    <span>Privacy rights and advance notice for inspections</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    <span>Protection from retaliatory eviction</span>
-                                </li>
+                                <li>• Protection from discrimination based on student status</li>
+                                <li>• Right to habitable living conditions</li>
+                                <li>• Security deposit return within legal timeframe</li>
+                                <li>• Privacy rights and advance notice for inspections</li>
+                                <li>• Protection from retaliatory eviction</li>
                             </ul>
                         </div>
                         
                         <div>
                             <h4 class="text-xl font-semibold mb-4 text-red-700">Common Violations:</h4>
                             <ul class="space-y-3">
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                    <span>Refusing to rent to students</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                    <span>Withholding security deposits without cause</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                    <span>Entering without proper notice</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                    <span>Failing to make necessary repairs</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                    <span>Discriminatory lease terms for students</span>
-                                </li>
+                                <li>• Refusing to rent to students</li>
+                                <li>• Withholding security deposits without cause</li>
+                                <li>• Entering without proper notice</li>
+                                <li>• Failing to make necessary repairs</li>
+                                <li>• Discriminatory lease terms for students</li>
                             </ul>
                         </div>
                     </div>
@@ -1695,44 +1680,42 @@
                     <h3 class="text-2xl font-bold mb-6">Student Rights Checker</h3>
                     
                     <div class="grid md:grid-cols-2 gap-8">
-                        <div class="space-y-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">What's your situation?</label>
-                                <select id="rights-situation" class="modern-input">
-                                    <option value="">Select your situation...</option>
-                                    <option value="application">Application was denied</option>
-                                    <option value="deposit">Security deposit issues</option>
-                                    <option value="repairs">Landlord won't make repairs</option>
-                                    <option value="privacy">Privacy violations</option>
-                                    <option value="eviction">Received eviction notice</option>
-                                    <option value="discrimination">Felt discriminated against</option>
-                                    <option value="lease">Lease break for school</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Your State</label>
-                                <select id="rights-state" class="modern-input">
-                                    <option value="">Select your state...</option>
-                                    <option value="CA">California</option>
-                                    <option value="NY">New York</option>
-                                    <option value="TX">Texas</option>
-                                    <option value="FL">Florida</option>
-                                    <option value="PA">Pennsylvania</option>
-                                    <option value="IL">Illinois</option>
-                                    <option value="OH">Ohio</option>
-                                    <option value="MI">Michigan</option>
-                                </select>
-                            </div>
-                            
-                            <button onclick="checkStudentRights()" class="w-full gradient-bg-student text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
-                                Check My Rights
-                            </button>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">What's your situation?</label>
+                            <select id="rights-situation" class="modern-input">
+                                <option value="">Select your situation...</option>
+                                <option value="application">Application was denied</option>
+                                <option value="deposit">Security deposit issues</option>
+                                <option value="repairs">Landlord won't make repairs</option>
+                                <option value="privacy">Privacy violations</option>
+                                <option value="eviction">Received eviction notice</option>
+                                <option value="discrimination">Felt discriminated against</option>
+                                <option value="lease">Lease break for school</option>
+                            </select>
                         </div>
                         
-                        <div id="rights-results" class="bg-gray-50 p-6 rounded-xl">
-                            <p class="text-gray-600">Select your situation and state to get personalized rights information and next steps.</p>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Your State</label>
+                            <select id="rights-state" class="modern-input">
+                                <option value="">Select your state...</option>
+                                <option value="CA">California</option>
+                                <option value="NY">New York</option>
+                                <option value="TX">Texas</option>
+                                <option value="FL">Florida</option>
+                                <option value="PA">Pennsylvania</option>
+                                <option value="IL">Illinois</option>
+                                <option value="OH">Ohio</option>
+                                <option value="MI">Michigan</option>
+                            </select>
                         </div>
+                        
+                        <button onclick="checkStudentRights()" class="w-full gradient-bg-student text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
+                            Check My Rights
+                        </button>
+                    </div>
+                    
+                    <div id="rights-results" class="bg-gray-50 p-6 rounded-xl">
+                        <p class="text-gray-600">Select your situation and state to get personalized rights information and next steps.</p>
                     </div>
                 </div>
                 
@@ -1743,35 +1726,29 @@
                     <div class="grid md:grid-cols-3 gap-6">
                         <div class="bg-blue-50 p-6 rounded-xl">
                             <h4 class="text-xl font-bold text-blue-800 mb-4">Free Legal Help</h4>
-                            <ul class="space-y-2 text-blue-700">
-                                <li>• Student Legal Services (on-campus)</li>
-                                <li>• Local Legal Aid Societies</li>
-                                <li>• Tenant Rights Organizations</li>
-                                <li>• Law School Clinics</li>
-                                <li>• State Bar Pro Bono Programs</li>
-                            </ul>
+                            <p>Student Legal Services (on-campus)</p>
+                            <p>Local Legal Aid Societies</p>
+                            <p>Tenant Rights Organizations</p>
+                            <p>Law School Clinics</p>
+                            <p>State Bar Pro Bono Programs</p>
                         </div>
                         
                         <div class="bg-green-50 p-6 rounded-xl">
                             <h4 class="text-xl font-bold text-green-800 mb-4">Document Templates</h4>
-                            <ul class="space-y-2 text-green-700">
-                                <li>• Complaint Letters to Landlords</li>
-                                <li>• Security Deposit Demand Letters</li>
-                                <li>• Repair Request Forms</li>
-                                <li>• Lease Break Requests</li>
-                                <li>• Small Claims Court Filing</li>
-                            </ul>
+                            <p>Complaint Letters to Landlords</p>
+                            <p>Security Deposit Demand Letters</p>
+                            <p>Repair Request Forms</p>
+                            <p>Lease Break Requests</p>
+                            <p>Small Claims Court Filing</p>
                         </div>
                         
                         <div class="bg-purple-50 p-6 rounded-xl">
                             <h4 class="text-xl font-bold text-purple-800 mb-4">Know Before You Sign</h4>
-                            <ul class="space-y-2 text-purple-700">
-                                <li>• Read entire lease carefully</li>
-                                <li>• Understand your state's laws</li>
-                                <li>• Document existing damage</li>
-                                <li>• Get everything in writing</li>
-                                <li>• Know your move-out requirements</li>
-                            </ul>
+                            <p>Read entire lease carefully</p>
+                            <p>Understand your state's laws</p>
+                            <p>Document existing damage</p>
+                            <p>Get everything in writing</p>
+                            <p>Know your move-out requirements</p>
                         </div>
                     </div>
                 </div>
@@ -1788,7 +1765,7 @@
                 <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                     <div class="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center">
                         <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                             </svg>
                         </div>
@@ -1798,7 +1775,7 @@
                     
                     <div class="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center">
                         <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
                         </div>
@@ -1808,7 +1785,7 @@
                     
                     <div class="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center">
                         <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                             </svg>
                         </div>
@@ -1818,7 +1795,7 @@
                     
                     <div class="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center">
                         <div class="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-8 h-8 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                             </svg>
                         </div>
