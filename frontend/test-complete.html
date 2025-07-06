@@ -12,6 +12,8 @@
     <script src="js/universal-compatibility.js"></script>
     <script src="js/environment-config.js"></script>
     <script src="js/mobile-init.js"></script>
+    <script src="js/universal-auth-protection.js"></script>
+    <script src="js/universal-auth-manager.js"></script>
     <style>
         body {
             font-family: 'Inter', Arial, sans-serif;
@@ -82,6 +84,7 @@
     </style>
 </head>
 <body>
+    <div id="authSection"></div>
     <div class="test-container">
         <h1>🚀 RoomFinderAI Complete Test Suite</h1>
         <p>This page tests all functionality across Web, Local, and Android environments.</p>
@@ -458,6 +461,13 @@
                 testEnvironmentDetection();
                 testDeviceAndPlatform();
             }, 1000);
+        });
+
+        // Initialize Universal Auth
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof UniversalAuth !== 'undefined') {
+                UniversalAuth.init();
+            }
         });
     </script>
 </body>

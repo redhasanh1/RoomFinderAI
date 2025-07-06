@@ -8,6 +8,9 @@
     <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
     <script src="universal-auth-protection.js"></script>
     
+    <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
+    <script src="universal-auth-manager.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -26,7 +29,9 @@
                 <div class="flex items-center space-x-4">
                     <a href="/dashboard" class="text-gray-600 hover:text-gray-900">Dashboard</a>
                     <a href="/listings" class="text-gray-600 hover:text-gray-900">Listings</a>
-                    <a href="/login" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Login</a>
+                    <div id="authSection">
+                        <a href="/login" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Login</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -136,5 +141,12 @@
             <p>&copy; 2025 RoomFinderAI. All rights reserved.</p>
         </div>
     </footer>
+    
+    <script>
+        // Initialize Universal Authentication Manager
+        if (typeof window.UniversalAuth !== 'undefined') {
+            window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+        }
+    </script>
 </body>
 </html>

@@ -8,6 +8,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#667eea">
     <title>RoomFinder AI - Login</title>
+    
+    <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
+    <script src="universal-auth-protection.js"></script>
+    
+    <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
+    <script src="universal-auth-manager.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -137,8 +144,20 @@
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
 
+    <!-- Header Navigation -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-lg border-b border-white/20">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="index.html" class="text-white hover:text-purple-200 transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Home
+            </a>
+            <div id="authSection">
+                <!-- Will be populated by universal-auth-manager.js -->
+            </div>
+        </div>
+    </header>
+
     <!-- Main Content -->
-    <div class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="min-h-screen flex items-center justify-center px-4 py-12 pt-20">
         <div class="auth-container-grand w-full max-w-md p-8 sm:p-12">
             <!-- Logo Section -->
             <div class="text-center mb-8">
@@ -276,10 +295,6 @@
         </div>
     </div>
 
-    <!-- Back to Home -->
-    <a href="index.html" class="fixed top-6 left-6 text-white hover:text-purple-200 transition-colors">
-        <i class="fas fa-arrow-left mr-2"></i>Back to Home
-    </a>
 
     <script>
         // Form handling - no Turnstile needed here as it's handled in the modal
@@ -479,6 +494,11 @@
         document.getElementById('verificationCode').addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/[^0-9]/g, '');
         });
+        
+        // Initialize Universal Authentication Manager
+        if (typeof window.UniversalAuth !== 'undefined') {
+            window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+        }
     </script>
 </body>
 </html>

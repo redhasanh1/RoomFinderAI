@@ -8,6 +8,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#667eea">
     <title>RoomFinderAI - Sign Up</title>
+    
+    <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
+    <script src="universal-auth-protection.js"></script>
+    
+    <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
+    <script src="universal-auth-manager.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="config.js"></script>
@@ -282,7 +289,6 @@
         <nav class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-6">
                 <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
-                <div class="text-2xl font-bold gradient-text">RoomFinderAI</div>
                 <a href="/index" class="text-gray-700 hover:text-blue-600 transition font-medium">Home</a>
                 <a href="/index#about" class="text-gray-700 hover:text-blue-600 transition font-medium">About</a>
                 <a href="/sublease" class="text-gray-700 hover:text-blue-600 transition font-medium">Sublease</a>
@@ -290,6 +296,9 @@
                 <a href="/listings" class="text-gray-700 hover:text-blue-600 transition font-medium">Listings</a>
                 <a href="/pricing" class="text-gray-700 hover:text-blue-600 transition font-medium">Pricing</a>
                 <a href="/index#contact" class="text-gray-700 hover:text-blue-600 transition font-medium">Contact Us</a>
+            </div>
+            <div id="authSection">
+                <!-- Will be populated by universal-auth-manager.js -->
             </div>
         </nav>
     </header>
@@ -534,6 +543,11 @@
             alert('Account created successfully!');
             window.location.href = '/index';
         });
+        
+        // Initialize Universal Authentication Manager
+        if (typeof window.UniversalAuth !== 'undefined') {
+            window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+        }
     </script>
 </body>
 </html>

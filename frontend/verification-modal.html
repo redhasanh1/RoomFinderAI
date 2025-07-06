@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Security Check - RoomFinderAI</title>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script src="js/universal-auth-protection.js"></script>
+    <script src="js/universal-auth-manager.js"></script>
     <style>
         body {
             margin: 0;
@@ -52,6 +54,7 @@
     </style>
 </head>
 <body>
+    <div id="authSection"></div>
     <div class="verification-container">
         <h1 class="verification-title">One more step</h1>
         <div class="turnstile-container">
@@ -173,6 +176,13 @@
         } else {
             waitForTurnstile();
         }
+
+        // Initialize Universal Auth
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof UniversalAuth !== 'undefined') {
+                UniversalAuth.init();
+            }
+        });
     </script>
 </body>
 </html>

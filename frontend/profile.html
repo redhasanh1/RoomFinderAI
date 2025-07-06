@@ -8,6 +8,9 @@
     <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
     <script src="universal-auth-protection.js"></script>
     
+    <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
+    <script src="universal-auth-manager.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
@@ -441,13 +444,8 @@
             </div>
             
             <!-- Desktop Auth -->
-            <div class="desktop-auth hidden md:flex items-center space-x-4">
-                <a href="profile.html" aria-label="View user profile">
-                    <img id="profileLogo" src="https://via.placeholder.com/40" alt="Profile" class="w-10 h-10 rounded-full transition-transform hover:scale-110">
-                </a>
-                <div class="ml-auto">
-                    <a href="dashboard.html" class="auth-link bg-gradient-to-r from-purple-600 to-blue-600 text-white border-none hover:from-purple-700 hover:to-blue-700">Dashboard</a>
-                </div>
+            <div id="authSection" class="desktop-auth hidden md:flex items-center space-x-4">
+                <!-- Will be populated by universal-auth-manager.js -->
             </div>
         </nav>
         
@@ -1544,6 +1542,11 @@
                 header.classList.remove('scrolled');
             }
         });
+        
+        // Initialize Universal Authentication Manager
+        if (typeof window.UniversalAuth !== 'undefined') {
+            window.UniversalAuth.init({ allowAnonymous: false, requireSupabase: true });
+        }
     </script>
 
     <!-- Footer -->
