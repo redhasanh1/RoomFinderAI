@@ -530,6 +530,28 @@
             <div id="chatHistory" class="space-y-4"></div>
         </section>
 
+        <!-- Saved Listings -->
+        <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Saved Listings</h2>
+                <div class="flex items-center space-x-2">
+                    <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                    <span id="savedListingsCount" class="text-sm text-gray-600">0 saved</span>
+                </div>
+            </div>
+            <div id="savedListingsContainer" class="space-y-4">
+                <div id="savedListingsEmpty" class="text-center py-12">
+                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                    <p class="text-gray-500 text-lg">No saved listings yet</p>
+                    <p class="text-gray-400 text-sm mt-2">Click the heart icon on any listing to save it here</p>
+                    <a href="listings.html" class="inline-block mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">Browse Listings</a>
+                </div>
+            </div>
+        </section>
 
         <!-- User Listings -->
         <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8">
@@ -744,6 +766,9 @@
             // Display user listings from Supabase
             await displayUserListings();
 
+            // Display saved/bookmarked listings
+            await displaySavedListings();
+
             // Make displayUserListings available globally for edit/delete functions
             window.displayUserListings = displayUserListings;
 
@@ -817,6 +842,133 @@
                 }
             }
 
+            // Display saved/bookmarked listings
+            async function displaySavedListings() {
+                const savedListingsContainer = document.getElementById('savedListingsContainer');
+                const savedListingsEmpty = document.getElementById('savedListingsEmpty');
+                const savedListingsCount = document.getElementById('savedListingsCount');
+                
+                try {
+                    console.log('🔖 Loading saved listings for user:', currentUser.email);
+                    
+                    // Fetch user's saved listings from the API
+                    const response = await fetch(`/api/favorites?userEmail=${encodeURIComponent(currentUser.email)}`);
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Failed to fetch saved listings');
+                    }
+                    
+                    const savedListings = await response.json();
+                    console.log('📋 Fetched saved listings:', savedListings);
+                    
+                    // Update count
+                    savedListingsCount.textContent = `${savedListings.length} saved`;
+                    
+                    if (!savedListings || savedListings.length === 0) {
+                        savedListingsEmpty.style.display = 'block';
+                        return;
+                    }
+                    
+                    // Hide empty state and show listings
+                    savedListingsEmpty.style.display = 'none';
+                    
+                    // Clear container and add listings
+                    savedListingsContainer.innerHTML = '';
+                    
+                    savedListings.forEach(listing => {
+                        const listingCard = document.createElement('div');
+                        listingCard.className = 'saved-listing-card bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow';
+                        
+                        // Get primary image
+                        const primaryImage = listing.media && listing.media.length > 0 && listing.media[0].type?.startsWith('image/')
+                            ? listing.media[0].url
+                            : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+                        
+                        const favoriteDate = listing.favorited_at ? new Date(listing.favorited_at).toLocaleDateString() : 'Unknown';
+                        
+                        listingCard.innerHTML = `
+                            <div class="flex gap-4">
+                                <img src="${primaryImage}" alt="${listing.title}" class="w-20 h-20 object-cover rounded-lg flex-shrink-0" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='">
+                                <div class="flex-grow min-w-0">
+                                    <div class="flex justify-between items-start">
+                                        <h3 class="font-semibold text-gray-900 text-lg truncate">${listing.title}</h3>
+                                        <button onclick="removeSavedListing('${listing.id}')" class="text-red-500 hover:text-red-700 ml-2 flex-shrink-0" title="Remove from favorites">
+                                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <p class="text-xl font-bold text-blue-600">$${listing.price?.toLocaleString() || 'N/A'}/mo</p>
+                                    <p class="text-gray-600 text-sm">${listing.street || ''}, ${listing.city || ''}</p>
+                                    <div class="flex items-center space-x-2 text-sm text-gray-500 mt-2">
+                                        <span>${listing.bedrooms || 'N/A'} Bed</span>
+                                        <span>•</span>
+                                        <span>${listing.house_type || 'N/A'}</span>
+                                        <span>•</span>
+                                        <span>Saved ${favoriteDate}</span>
+                                    </div>
+                                    <div class="flex space-x-2 mt-3">
+                                        <a href="listing_details.html?id=${listing.id}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">View Details</a>
+                                        <a href="listings.html" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium">Browse More</a>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        savedListingsContainer.appendChild(listingCard);
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ Error loading saved listings:', error);
+                    savedListingsEmpty.innerHTML = `
+                        <div class="text-center py-12">
+                            <svg class="w-16 h-16 mx-auto text-red-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                            <p class="text-gray-500 text-lg">Error loading saved listings</p>
+                            <p class="text-gray-400 text-sm mt-2">${error.message}</p>
+                            <button onclick="displaySavedListings()" class="inline-block mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">Retry</button>
+                        </div>
+                    `;
+                    savedListingsCount.textContent = 'Error';
+                }
+            }
+
+            // Function to remove a saved listing
+            window.removeSavedListing = async function(listingId) {
+                try {
+                    console.log('🗑️ Removing saved listing:', listingId);
+                    
+                    const response = await fetch(`/api/favorites/${listingId}?userEmail=${encodeURIComponent(currentUser.email)}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Failed to remove saved listing');
+                    }
+                    
+                    // Show success message
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed top-20 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                    toast.textContent = 'Removed from favorites';
+                    document.body.appendChild(toast);
+                    
+                    setTimeout(() => {
+                        if (toast.parentElement) {
+                            toast.remove();
+                        }
+                    }, 3000);
+                    
+                    // Refresh saved listings
+                    await displaySavedListings();
+                    
+                } catch (error) {
+                    console.error('❌ Error removing saved listing:', error);
+                    alert('Failed to remove listing from favorites. Please try again.');
+                }
+            };
 
             // Function to view listing details
             window.viewListing = function(listingId) {
