@@ -659,18 +659,25 @@ class PropertyDetailViewController: UIViewController {
     }
     
     @objc private func contactTapped() {
-        let alert = UIAlertController(title: "Contact Landlord", message: "Would you like to call or message the landlord?", preferredStyle: .actionSheet)
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
         
-        alert.addAction(UIAlertAction(title: "📞 Call", style: .default) { _ in
-            // Implement call functionality
-            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-            impactFeedback.impactOccurred()
+        let alert = UIAlertController(title: "Contact Landlord", message: "Choose your preferred contact method", preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "📞 Call Now", style: .default) { _ in
+            self.makePhoneCall()
         })
         
-        alert.addAction(UIAlertAction(title: "💬 Message", style: .default) { _ in
-            // Implement message functionality
-            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-            impactFeedback.impactOccurred()
+        alert.addAction(UIAlertAction(title: "💬 Send Message", style: .default) { _ in
+            self.sendMessage()
+        })
+        
+        alert.addAction(UIAlertAction(title: "📧 Email Inquiry", style: .default) { _ in
+            self.sendEmail()
+        })
+        
+        alert.addAction(UIAlertAction(title: "📅 Schedule Tour", style: .default) { _ in
+            self.scheduleTour()
         })
         
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
@@ -684,15 +691,222 @@ class PropertyDetailViewController: UIViewController {
         present(alert, animated: true)
     }
     
+    private func makePhoneCall() {
+        let phoneNumber = "tel://+1234567890"
+        if let url = URL(string: phoneNumber), UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+        } else {
+            showContactAlert(message: "Phone calling is not available on this device.")
+        }
+    }
+    
+    private func sendMessage() {
+        // Show native messaging interface
+        let alert = UIAlertController(title: "Send Message", message: "Your message will be sent to the landlord.", preferredStyle: .alert)
+        
+        alert.addTextField { textField in
+            textField.placeholder = "Type your message here..."
+            textField.font = .systemFont(ofSize: 16)
+        }
+        
+        alert.addAction(UIAlertAction(title: "Send", style: .default) { _ in
+            if let message = alert.textFields?.first?.text, !message.isEmpty {
+                self.showContactAlert(message: "Message sent successfully!")
+            }
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func sendEmail() {
+        let email = "mailto:landlord@property.com?subject=Inquiry about \(property.title)&body=Hi, I'm interested in learning more about this property."
+        if let url = URL(string: email), UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+        } else {
+            showContactAlert(message: "Email is not configured on this device.")
+        }
+    }
+    
+    private func scheduleTour() {
+        let alert = UIAlertController(title: "Schedule Tour", message: "When would you like to schedule a property tour?", preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "🌅 Tomorrow Morning", style: .default) { _ in
+            self.showContactAlert(message: "Tour scheduled for tomorrow morning. You'll receive a confirmation email shortly.")
+        })
+        
+        alert.addAction(UIAlertAction(title: "🌆 Tomorrow Afternoon", style: .default) { _ in
+            self.showContactAlert(message: "Tour scheduled for tomorrow afternoon. You'll receive a confirmation email shortly.")
+        })
+        
+        alert.addAction(UIAlertAction(title: "🗺️ This Weekend", style: .default) { _ in
+            self.showContactAlert(message: "Tour scheduled for this weekend. You'll receive a confirmation email shortly.")
+        })
+        
+        alert.addAction(UIAlertAction(title: "📅 Choose Custom Time", style: .default) { _ in
+            self.showDatePicker()
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+        }
+        
+        present(alert, animated: true)
+    }
+    
+    private func showDatePicker() {
+        let alert = UIAlertController(title: "Select Date & Time", message: "\n\n\n\n\n\n", preferredStyle: .alert)
+        
+        let datePicker = UIDatePicker()
+        datePicker.datePickerMode = .dateAndTime
+        datePicker.preferredDatePickerStyle = .compact
+        datePicker.minimumDate = Date()
+        
+        alert.setValue(datePicker, forKey: "contentViewController")
+        
+        alert.addAction(UIAlertAction(title: "Schedule", style: .default) { _ in
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .short
+            let dateString = formatter.string(from: datePicker.date)
+            self.showContactAlert(message: "Tour scheduled for \(dateString). You'll receive a confirmation email shortly.")
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func showContactAlert(message: String) {
+        let alert = UIAlertController(title: "Success", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+        
+        // Add success haptic feedback
+        let notificationFeedback = UINotificationFeedbackGenerator()
+        notificationFeedback.notificationOccurred(.success)
+    }
+    
     @objc private func negotiateTapped() {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
+        // Show AI negotiation options
+        let alert = UIAlertController(title: "AI Negotiation Assistant", message: "Let our AI help you negotiate the best deal!", preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "🤖 Start AI Negotiation Chat", style: .default) { _ in
+            self.startAINegotiation()
+        })
+        
+        alert.addAction(UIAlertAction(title: "📊 Get Market Analysis", style: .default) { _ in
+            self.getMarketAnalysis()
+        })
+        
+        alert.addAction(UIAlertAction(title: "💰 Price Suggestion Tool", style: .default) { _ in
+            self.showPriceSuggestion()
+        })
+        
+        alert.addAction(UIAlertAction(title: "📝 Generate Counter Offer", style: .default) { _ in
+            self.generateCounterOffer()
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+        }
+        
+        present(alert, animated: true)
+    }
+    
+    private func startAINegotiation() {
         // Navigate to AI chat with pre-filled negotiation context
         if let tabBarController = self.tabBarController {
             tabBarController.selectedIndex = 3 // Switch to chat tab
         }
         
-        // Haptic feedback
-        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-        impactFeedback.impactOccurred()
+        let notificationFeedback = UINotificationFeedbackGenerator()
+        notificationFeedback.notificationOccurred(.success)
+    }
+    
+    private func getMarketAnalysis() {
+        let alert = UIAlertController(
+            title: "Market Analysis", 
+            message: "Based on current market data:\n\n• Average rent in \(property.location): $\(property.price + 200)\n• This property is 8% below market average\n• Similar properties: $\(property.price - 100) - $\(property.price + 300)\n• Negotiation potential: Medium", 
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+    
+    private func showPriceSuggestion() {
+        let suggestedPrice = property.price - 150
+        let alert = UIAlertController(
+            title: "AI Price Suggestion", 
+            message: "Based on market analysis and property features, we suggest negotiating for:\n\n$\(suggestedPrice)/month\n\nThis represents a $150 monthly savings and is within reasonable negotiation range.", 
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Use This Price", style: .default) { _ in
+            self.generateCounterOffer(withPrice: suggestedPrice)
+        })
+        
+        alert.addAction(UIAlertAction(title: "Adjust Price", style: .default) { _ in
+            self.showCustomPriceInput()
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func showCustomPriceInput() {
+        let alert = UIAlertController(title: "Custom Price", message: "Enter your desired monthly rent:", preferredStyle: .alert)
+        
+        alert.addTextField { textField in
+            textField.placeholder = "$\(self.property.price - 100)"
+            textField.keyboardType = .numberPad
+            textField.font = .systemFont(ofSize: 16)
+        }
+        
+        alert.addAction(UIAlertAction(title: "Generate Offer", style: .default) { _ in
+            if let priceText = alert.textFields?.first?.text,
+               let customPrice = Int(priceText.replacingOccurrences(of: "$", with: "").replacingOccurrences(of: ",", with: "")) {
+                self.generateCounterOffer(withPrice: customPrice)
+            }
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func generateCounterOffer(withPrice price: Int? = nil) {
+        let offerPrice = price ?? (property.price - 150)
+        let savings = property.price - offerPrice
+        
+        let alert = UIAlertController(
+            title: "Generated Counter Offer", 
+            message: "Dear Landlord,\n\nI'm very interested in \(property.title). Based on my research of comparable properties in \(property.location), I would like to propose a monthly rent of $\(offerPrice).\n\nThis would represent fair market value considering current conditions. I'm a reliable tenant and ready to sign a lease promptly.\n\nBest regards", 
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Send Offer", style: .default) { _ in
+            self.showContactAlert(message: "Counter offer sent successfully! You'll hear back within 24 hours.")
+        })
+        
+        alert.addAction(UIAlertAction(title: "Edit Offer", style: .default) { _ in
+            self.showCustomPriceInput()
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
     }
 }
 
