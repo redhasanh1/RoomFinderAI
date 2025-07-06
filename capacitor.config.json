@@ -1,6 +1,9 @@
 {
   "appId": "com.roomfinderai.app",
-  "appName": "roomfinderai",
-  "webDir": "frontend/build",
-  "bundledWebRuntime": false
+  "appName": "RoomFinderAI",
+  "webDir": "frontend",
+  "bundledWebRuntime": false,
+  "ios": {
+    "contentInset": "automatic"
+  }
 }
