@@ -10,14 +10,18 @@ class HomeViewController: UIViewController {
     private let profileButton = UIButton(type: .system)
     private let notificationButton = UIButton(type: .system)
     
+    // Quick Actions Widget
+    private let quickActionsWidget = UIView()
+    
     // Featured Property Hero Section
     private let heroSection = UIView()
     private let heroScrollView = UIScrollView()
     private let heroStackView = UIStackView()
     private let heroPageControl = UIPageControl()
     
-    // Quick Stats Section
-    private let statsSection = UIView()
+    // Floating Action Button
+    private let floatingActionButton = UIButton(type: .system)
+    
     
     // Categories Section
     private let categoriesSection = UIView()
@@ -27,9 +31,6 @@ class HomeViewController: UIViewController {
     private let featuredSection = UIView()
     private let featuredCollectionView: UICollectionView
     
-    // Recent Properties
-    private let recentSection = UIView()
-    private let recentCollectionView: UICollectionView
     
     // Sample Data
     private let featuredProperties = [
@@ -61,11 +62,6 @@ class HomeViewController: UIViewController {
         featuredLayout.minimumLineSpacing = 16
         featuredCollectionView = UICollectionView(frame: .zero, collectionViewLayout: featuredLayout)
         
-        let recentLayout = UICollectionViewFlowLayout()
-        recentLayout.scrollDirection = .horizontal
-        recentLayout.minimumInteritemSpacing = 12
-        recentLayout.minimumLineSpacing = 12
-        recentCollectionView = UICollectionView(frame: .zero, collectionViewLayout: recentLayout)
         
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
     }
@@ -81,6 +77,7 @@ class HomeViewController: UIViewController {
         setupConstraints()
         loadData()
         setupRefreshControl()
+        setupFloatingActionButton()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -97,96 +94,217 @@ class HomeViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = AppColors.backgroundColor
         
-        // Configure scroll view
+        // Configure scroll view for mobile-optimized scrolling
         scrollView.showsVerticalScrollIndicator = false
         scrollView.alwaysBounceVertical = true
         scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.decelerationRate = .fast // Faster scrolling for mobile
         
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
         
-        // Setup header
-        setupHeader()
-        
-        // Setup hero section
-        setupHeroSection()
-        
-        // Setup stats
-        setupStatsSection()
-        
-        // Setup categories
+        // Setup mobile-optimized sections
+        setupMobileHeader()
+        setupQuickActionsWidget()
+        setupFeaturedHeroSection()
         setupCategoriesSection()
-        
-        // Setup featured section
         setupFeaturedSection()
         
-        // Setup recent section
-        setupRecentSection()
-        
-        // Add all sections to content view
+        // Add sections to content view with optimized spacing
         contentView.addSubview(headerView)
+        contentView.addSubview(quickActionsWidget)
         contentView.addSubview(heroSection)
-        contentView.addSubview(statsSection)
         contentView.addSubview(categoriesSection)
         contentView.addSubview(featuredSection)
-        contentView.addSubview(recentSection)
     }
     
-    private func setupHeader() {
+    private func setupMobileHeader() {
         headerView.backgroundColor = .clear
         
-        // Title
+        // Compact mobile header
         let titleLabel = UILabel()
-        titleLabel.text = "Discover"
-        titleLabel.font = .systemFont(ofSize: 34, weight: .bold)
+        titleLabel.text = "RoomFinder"
+        titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
         titleLabel.textColor = AppColors.textPrimary
         
-        let subtitleLabel = UILabel()
-        subtitleLabel.text = "Find your perfect room"
-        subtitleLabel.font = .systemFont(ofSize: 16, weight: .medium)
-        subtitleLabel.textColor = AppColors.textSecondary
+        let locationContainer = UIView()
+        locationContainer.backgroundColor = AppColors.separatorColor.withAlphaComponent(0.3)
+        locationContainer.layer.cornerRadius = 16
+        
+        let locationIcon = UIImageView(image: UIImage(systemName: "location.fill"))
+        locationIcon.tintColor = AppColors.primaryPurple
+        
+        let locationLabel = UILabel()
+        locationLabel.text = "New York, NY"
+        locationLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        locationLabel.textColor = AppColors.textSecondary
+        
+        // Notification badge
+        notificationButton.setImage(UIImage(systemName: "bell.badge.fill"), for: .normal)
+        notificationButton.tintColor = AppColors.primaryPurple
+        notificationButton.backgroundColor = AppColors.cardBackground
+        notificationButton.layer.cornerRadius = 20
+        notificationButton.layer.shadowColor = UIColor.black.cgColor
+        notificationButton.layer.shadowOpacity = 0.1
+        notificationButton.layer.shadowOffset = CGSize(width: 0, y: 2)
+        notificationButton.layer.shadowRadius = 4
+        notificationButton.addTarget(self, action: #selector(notificationsTapped), for: .touchUpInside)
         
         // Profile button
         profileButton.setImage(UIImage(systemName: "person.circle.fill"), for: .normal)
         profileButton.tintColor = AppColors.primaryPurple
+        profileButton.backgroundColor = AppColors.cardBackground
+        profileButton.layer.cornerRadius = 20
+        profileButton.layer.shadowColor = UIColor.black.cgColor
+        profileButton.layer.shadowOpacity = 0.1
+        profileButton.layer.shadowOffset = CGSize(width: 0, y: 2)
+        profileButton.layer.shadowRadius = 4
         profileButton.addTarget(self, action: #selector(profileTapped), for: .touchUpInside)
         
-        // Notification button
-        notificationButton.setImage(UIImage(systemName: "bell.fill"), for: .normal)
-        notificationButton.tintColor = AppColors.primaryPurple
-        notificationButton.addTarget(self, action: #selector(notificationsTapped), for: .touchUpInside)
-        
         headerView.addSubview(titleLabel)
-        headerView.addSubview(subtitleLabel)
-        headerView.addSubview(profileButton)
+        headerView.addSubview(locationContainer)
+        locationContainer.addSubview(locationIcon)
+        locationContainer.addSubview(locationLabel)
         headerView.addSubview(notificationButton)
+        headerView.addSubview(profileButton)
         
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        profileButton.translatesAutoresizingMaskIntoConstraints = false
-        notificationButton.translatesAutoresizingMaskIntoConstraints = false
+        [titleLabel, locationContainer, locationIcon, locationLabel, notificationButton, profileButton].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+        }
         
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 60),
             titleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
             
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            subtitleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
-            subtitleLabel.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -20),
+            locationContainer.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
+            locationContainer.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
+            locationContainer.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -16),
+            locationContainer.heightAnchor.constraint(equalToConstant: 32),
+            
+            locationIcon.leadingAnchor.constraint(equalTo: locationContainer.leadingAnchor, constant: 12),
+            locationIcon.centerYAnchor.constraint(equalTo: locationContainer.centerYAnchor),
+            locationIcon.widthAnchor.constraint(equalToConstant: 16),
+            locationIcon.heightAnchor.constraint(equalToConstant: 16),
+            
+            locationLabel.leadingAnchor.constraint(equalTo: locationIcon.trailingAnchor, constant: 8),
+            locationLabel.centerYAnchor.constraint(equalTo: locationContainer.centerYAnchor),
+            locationLabel.trailingAnchor.constraint(equalTo: locationContainer.trailingAnchor, constant: -12),
             
             profileButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
             profileButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20),
-            profileButton.widthAnchor.constraint(equalToConstant: 32),
-            profileButton.heightAnchor.constraint(equalToConstant: 32),
+            profileButton.widthAnchor.constraint(equalToConstant: 40),
+            profileButton.heightAnchor.constraint(equalToConstant: 40),
             
             notificationButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
             notificationButton.trailingAnchor.constraint(equalTo: profileButton.leadingAnchor, constant: -12),
-            notificationButton.widthAnchor.constraint(equalToConstant: 32),
-            notificationButton.heightAnchor.constraint(equalToConstant: 32)
+            notificationButton.widthAnchor.constraint(equalToConstant: 40),
+            notificationButton.heightAnchor.constraint(equalToConstant: 40)
         ])
     }
     
-    private func setupHeroSection() {
+    private func setupQuickActionsWidget() {
+        quickActionsWidget.backgroundColor = .clear
+        
+        // Quick search button
+        let searchButton = createQuickActionButton(
+            title: "Search",
+            icon: "magnifyingglass",
+            color: AppColors.primaryPurple,
+            action: #selector(quickSearchTapped)
+        )
+        
+        // Favorites button
+        let favoritesButton = createQuickActionButton(
+            title: "Favorites",
+            icon: "heart.fill",
+            color: AppColors.errorRed,
+            action: #selector(quickFavoritesTapped)
+        )
+        
+        // AI Chat button
+        let chatButton = createQuickActionButton(
+            title: "AI Help",
+            icon: "message.fill",
+            color: AppColors.accentBlue,
+            action: #selector(quickChatTapped)
+        )
+        
+        // Map view button
+        let mapButton = createQuickActionButton(
+            title: "Map View",
+            icon: "map.fill",
+            color: AppColors.successGreen,
+            action: #selector(quickMapTapped)
+        )
+        
+        let stackView = UIStackView(arrangedSubviews: [searchButton, favoritesButton, chatButton, mapButton])
+        stackView.axis = .horizontal
+        stackView.distribution = .fillEqually
+        stackView.spacing = 12
+        
+        quickActionsWidget.addSubview(stackView)
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            stackView.topAnchor.constraint(equalTo: quickActionsWidget.topAnchor, constant: 16),
+            stackView.leadingAnchor.constraint(equalTo: quickActionsWidget.leadingAnchor, constant: 20),
+            stackView.trailingAnchor.constraint(equalTo: quickActionsWidget.trailingAnchor, constant: -20),
+            stackView.bottomAnchor.constraint(equalTo: quickActionsWidget.bottomAnchor, constant: -16),
+            stackView.heightAnchor.constraint(equalToConstant: 80)
+        ])
+    }
+    
+    private func createQuickActionButton(title: String, icon: String, color: UIColor, action: Selector) -> UIView {
+        let container = UIView()
+        container.backgroundColor = AppColors.cardBackground
+        container.layer.cornerRadius = 16
+        container.layer.shadowColor = UIColor.black.cgColor
+        container.layer.shadowOpacity = 0.08
+        container.layer.shadowOffset = CGSize(width: 0, y: 2)
+        container.layer.shadowRadius = 8
+        
+        let button = UIButton(type: .system)
+        button.addTarget(self, action: action, for: .touchUpInside)
+        
+        let iconView = UIImageView(image: UIImage(systemName: icon))
+        iconView.tintColor = color
+        iconView.contentMode = .scaleAspectFit
+        
+        let titleLabel = UILabel()
+        titleLabel.text = title
+        titleLabel.font = .systemFont(ofSize: 12, weight: .semibold)
+        titleLabel.textColor = AppColors.textPrimary
+        titleLabel.textAlignment = .center
+        
+        container.addSubview(button)
+        container.addSubview(iconView)
+        container.addSubview(titleLabel)
+        
+        [button, iconView, titleLabel].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+        }
+        
+        NSLayoutConstraint.activate([
+            button.topAnchor.constraint(equalTo: container.topAnchor),
+            button.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            button.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            button.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            
+            iconView.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
+            iconView.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: 24),
+            iconView.heightAnchor.constraint(equalToConstant: 24),
+            
+            titleLabel.topAnchor.constraint(equalTo: iconView.bottomAnchor, constant: 8),
+            titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 4),
+            titleLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -4),
+            titleLabel.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
+        ])
+        
+        return container
+    }
+    
+    private func setupFeaturedHeroSection() {
         heroSection.backgroundColor = .clear
         
         // Hero scroll view setup
@@ -222,7 +340,7 @@ class HomeViewController: UIViewController {
             heroScrollView.topAnchor.constraint(equalTo: heroSection.topAnchor),
             heroScrollView.leadingAnchor.constraint(equalTo: heroSection.leadingAnchor),
             heroScrollView.trailingAnchor.constraint(equalTo: heroSection.trailingAnchor),
-            heroScrollView.heightAnchor.constraint(equalToConstant: 300),
+            heroScrollView.heightAnchor.constraint(equalToConstant: 220), // Reduced height for mobile
             
             heroStackView.topAnchor.constraint(equalTo: heroScrollView.topAnchor),
             heroStackView.leadingAnchor.constraint(equalTo: heroScrollView.leadingAnchor),
@@ -231,9 +349,9 @@ class HomeViewController: UIViewController {
             heroStackView.heightAnchor.constraint(equalTo: heroScrollView.heightAnchor),
             heroStackView.widthAnchor.constraint(equalTo: heroScrollView.widthAnchor, multiplier: CGFloat(featuredProperties.count)),
             
-            heroPageControl.topAnchor.constraint(equalTo: heroScrollView.bottomAnchor, constant: 16),
+            heroPageControl.topAnchor.constraint(equalTo: heroScrollView.bottomAnchor, constant: 8),
             heroPageControl.centerXAnchor.constraint(equalTo: heroSection.centerXAnchor),
-            heroPageControl.bottomAnchor.constraint(equalTo: heroSection.bottomAnchor, constant: -20)
+            heroPageControl.bottomAnchor.constraint(equalTo: heroSection.bottomAnchor, constant: -12)
         ])
     }
     
@@ -407,127 +525,42 @@ class HomeViewController: UIViewController {
         return card
     }
     
-    private func setupStatsSection() {
-        statsSection.backgroundColor = .clear
-        
-        let titleLabel = UILabel()
-        titleLabel.text = "Your Activity"
-        titleLabel.font = .systemFont(ofSize: 22, weight: .bold)
-        titleLabel.textColor = AppColors.textPrimary
-        
-        let statsStackView = UIStackView()
-        statsStackView.axis = .horizontal
-        statsStackView.distribution = .fillEqually
-        statsStackView.spacing = 16
-        
-        // Create stat cards
-        let searchesCard = createStatCard(title: "Searches", value: "47", icon: "magnifyingglass", gradient: AppColors.primaryGradient)
-        let favoritesCard = createStatCard(title: "Favorites", value: "12", icon: "heart.fill", gradient: AppColors.accentGradient)
-        let messagesCard = createStatCard(title: "Messages", value: "156", icon: "message.fill", gradient: [AppColors.successGreen.cgColor, AppColors.successGreen.withAlphaComponent(0.7).cgColor])
-        
-        statsStackView.addArrangedSubview(searchesCard)
-        statsStackView.addArrangedSubview(favoritesCard)
-        statsStackView.addArrangedSubview(messagesCard)
-        
-        statsSection.addSubview(titleLabel)
-        statsSection.addSubview(statsStackView)
-        
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        statsStackView.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: statsSection.topAnchor, constant: 20),
-            titleLabel.leadingAnchor.constraint(equalTo: statsSection.leadingAnchor, constant: 20),
-            
-            statsStackView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 16),
-            statsStackView.leadingAnchor.constraint(equalTo: statsSection.leadingAnchor, constant: 20),
-            statsStackView.trailingAnchor.constraint(equalTo: statsSection.trailingAnchor, constant: -20),
-            statsStackView.bottomAnchor.constraint(equalTo: statsSection.bottomAnchor, constant: -20),
-            statsStackView.heightAnchor.constraint(equalToConstant: 80)
-        ])
-    }
     
-    private func createStatCard(title: String, value: String, icon: String, gradient: [CGColor]) -> UIView {
-        let card = UIView()
-        card.layer.cornerRadius = 16
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOpacity = 0.1
-        card.layer.shadowOffset = CGSize(width: 0, y: 4)
-        card.layer.shadowRadius = 12
-        
-        let gradientLayer = CAGradientLayer()
-        gradientLayer.colors = gradient
-        gradientLayer.startPoint = CGPoint(x: 0, y: 0)
-        gradientLayer.endPoint = CGPoint(x: 1, y: 1)
-        gradientLayer.cornerRadius = 16
-        card.layer.insertSublayer(gradientLayer, at: 0)
-        
-        let iconImageView = UIImageView(image: UIImage(systemName: icon))
-        iconImageView.tintColor = .white
-        iconImageView.contentMode = .scaleAspectFit
-        
-        let valueLabel = UILabel()
-        valueLabel.text = value
-        valueLabel.font = .systemFont(ofSize: 20, weight: .bold)
-        valueLabel.textColor = .white
-        
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = .systemFont(ofSize: 12, weight: .medium)
-        titleLabel.textColor = UIColor.white.withAlphaComponent(0.9)
-        
-        card.addSubview(iconImageView)
-        card.addSubview(valueLabel)
-        card.addSubview(titleLabel)
-        
-        iconImageView.translatesAutoresizingMaskIntoConstraints = false
-        valueLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            iconImageView.topAnchor.constraint(equalTo: card.topAnchor, constant: 12),
-            iconImageView.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -12),
-            iconImageView.widthAnchor.constraint(equalToConstant: 20),
-            iconImageView.heightAnchor.constraint(equalToConstant: 20),
-            
-            valueLabel.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 12),
-            valueLabel.centerYAnchor.constraint(equalTo: card.centerYAnchor, constant: -4),
-            
-            titleLabel.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 12),
-            titleLabel.topAnchor.constraint(equalTo: valueLabel.bottomAnchor, constant: 2),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: iconImageView.leadingAnchor, constant: -8)
-        ])
-        
-        DispatchQueue.main.async {
-            gradientLayer.frame = card.bounds
-        }
-        
-        return card
-    }
     
     private func setupCategoriesSection() {
         categoriesSection.backgroundColor = .clear
         
         let titleLabel = UILabel()
-        titleLabel.text = "Browse by Category"
-        titleLabel.font = .systemFont(ofSize: 22, weight: .bold)
+        titleLabel.text = "Categories"
+        titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
         titleLabel.textColor = AppColors.textPrimary
         
+        let seeAllButton = UIButton(type: .system)
+        seeAllButton.setTitle("See All", for: .normal)
+        seeAllButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        seeAllButton.setTitleColor(AppColors.primaryPurple, for: .normal)
+        seeAllButton.addTarget(self, action: #selector(seeAllCategoriesTapped), for: .touchUpInside)
+        
         categoriesSection.addSubview(titleLabel)
+        categoriesSection.addSubview(seeAllButton)
         categoriesSection.addSubview(categoriesCollectionView)
         
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        seeAllButton.translatesAutoresizingMaskIntoConstraints = false
         categoriesCollectionView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: categoriesSection.topAnchor, constant: 20),
+            titleLabel.topAnchor.constraint(equalTo: categoriesSection.topAnchor, constant: 16),
             titleLabel.leadingAnchor.constraint(equalTo: categoriesSection.leadingAnchor, constant: 20),
             
-            categoriesCollectionView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 16),
+            seeAllButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            seeAllButton.trailingAnchor.constraint(equalTo: categoriesSection.trailingAnchor, constant: -20),
+            
+            categoriesCollectionView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
             categoriesCollectionView.leadingAnchor.constraint(equalTo: categoriesSection.leadingAnchor),
             categoriesCollectionView.trailingAnchor.constraint(equalTo: categoriesSection.trailingAnchor),
-            categoriesCollectionView.bottomAnchor.constraint(equalTo: categoriesSection.bottomAnchor, constant: -20),
-            categoriesCollectionView.heightAnchor.constraint(equalToConstant: 100)
+            categoriesCollectionView.bottomAnchor.constraint(equalTo: categoriesSection.bottomAnchor, constant: -16),
+            categoriesCollectionView.heightAnchor.constraint(equalToConstant: 90) // Slightly smaller for mobile
         ])
     }
     
@@ -568,31 +601,6 @@ class HomeViewController: UIViewController {
         ])
     }
     
-    private func setupRecentSection() {
-        recentSection.backgroundColor = .clear
-        
-        let titleLabel = UILabel()
-        titleLabel.text = "Recently Viewed"
-        titleLabel.font = .systemFont(ofSize: 22, weight: .bold)
-        titleLabel.textColor = AppColors.textPrimary
-        
-        recentSection.addSubview(titleLabel)
-        recentSection.addSubview(recentCollectionView)
-        
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        recentCollectionView.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: recentSection.topAnchor, constant: 20),
-            titleLabel.leadingAnchor.constraint(equalTo: recentSection.leadingAnchor, constant: 20),
-            
-            recentCollectionView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 16),
-            recentCollectionView.leadingAnchor.constraint(equalTo: recentSection.leadingAnchor),
-            recentCollectionView.trailingAnchor.constraint(equalTo: recentSection.trailingAnchor),
-            recentCollectionView.bottomAnchor.constraint(equalTo: recentSection.bottomAnchor, constant: -20),
-            recentCollectionView.heightAnchor.constraint(equalToConstant: 200)
-        ])
-    }
     
     private func setupCollectionViews() {
         // Categories collection view
@@ -611,24 +619,16 @@ class HomeViewController: UIViewController {
         featuredCollectionView.dataSource = self
         featuredCollectionView.delegate = self
         
-        // Recent collection view
-        recentCollectionView.backgroundColor = .clear
-        recentCollectionView.showsHorizontalScrollIndicator = false
-        recentCollectionView.contentInset = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
-        recentCollectionView.register(CompactPropertyCard.self, forCellWithReuseIdentifier: "CompactPropertyCard")
-        recentCollectionView.dataSource = self
-        recentCollectionView.delegate = self
     }
     
     private func setupConstraints() {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         contentView.translatesAutoresizingMaskIntoConstraints = false
         headerView.translatesAutoresizingMaskIntoConstraints = false
+        quickActionsWidget.translatesAutoresizingMaskIntoConstraints = false
         heroSection.translatesAutoresizingMaskIntoConstraints = false
-        statsSection.translatesAutoresizingMaskIntoConstraints = false
         categoriesSection.translatesAutoresizingMaskIntoConstraints = false
         featuredSection.translatesAutoresizingMaskIntoConstraints = false
-        recentSection.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -646,33 +646,52 @@ class HomeViewController: UIViewController {
             headerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             
-            heroSection.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            quickActionsWidget.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 8),
+            quickActionsWidget.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            quickActionsWidget.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            
+            heroSection.topAnchor.constraint(equalTo: quickActionsWidget.bottomAnchor, constant: 16),
             heroSection.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             heroSection.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             
-            statsSection.topAnchor.constraint(equalTo: heroSection.bottomAnchor),
-            statsSection.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            statsSection.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            
-            categoriesSection.topAnchor.constraint(equalTo: statsSection.bottomAnchor),
+            categoriesSection.topAnchor.constraint(equalTo: heroSection.bottomAnchor, constant: 24),
             categoriesSection.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             categoriesSection.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             
-            featuredSection.topAnchor.constraint(equalTo: categoriesSection.bottomAnchor),
+            featuredSection.topAnchor.constraint(equalTo: categoriesSection.bottomAnchor, constant: 24),
             featuredSection.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             featuredSection.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            
-            recentSection.topAnchor.constraint(equalTo: featuredSection.bottomAnchor),
-            recentSection.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            recentSection.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            recentSection.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+            featuredSection.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -100) // Extra space for floating button
         ])
     }
     
     private func setupRefreshControl() {
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(self, action: #selector(refreshData), for: .valueChanged)
+        refreshControl.tintColor = AppColors.primaryPurple
         scrollView.refreshControl = refreshControl
+    }
+    
+    private func setupFloatingActionButton() {
+        floatingActionButton.setImage(UIImage(systemName: "plus.circle.fill"), for: .normal)
+        floatingActionButton.backgroundColor = AppColors.primaryPurple
+        floatingActionButton.tintColor = .white
+        floatingActionButton.layer.cornerRadius = 28
+        floatingActionButton.layer.shadowColor = UIColor.black.cgColor
+        floatingActionButton.layer.shadowOpacity = 0.3
+        floatingActionButton.layer.shadowOffset = CGSize(width: 0, y: 4)
+        floatingActionButton.layer.shadowRadius = 12
+        floatingActionButton.addTarget(self, action: #selector(floatingActionTapped), for: .touchUpInside)
+        
+        view.addSubview(floatingActionButton)
+        floatingActionButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            floatingActionButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            floatingActionButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            floatingActionButton.widthAnchor.constraint(equalToConstant: 56),
+            floatingActionButton.heightAnchor.constraint(equalToConstant: 56)
+        ])
     }
     
     private func loadData() {
@@ -731,11 +750,100 @@ class HomeViewController: UIViewController {
         tabBarController?.selectedIndex = 1
     }
     
+    @objc private func seeAllCategoriesTapped() {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        
+        // Navigate to search with category filters
+        tabBarController?.selectedIndex = 1
+    }
+    
     @objc private func refreshData() {
+        // Add haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.scrollView.refreshControl?.endRefreshing()
             self.loadData()
         }
+    }
+    
+    // MARK: - Quick Actions
+    @objc private func quickSearchTapped() {
+        // Add haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        
+        // Navigate to search with animation
+        tabBarController?.selectedIndex = 1
+    }
+    
+    @objc private func quickFavoritesTapped() {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        
+        tabBarController?.selectedIndex = 2
+    }
+    
+    @objc private func quickChatTapped() {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        
+        tabBarController?.selectedIndex = 3
+    }
+    
+    @objc private func quickMapTapped() {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        
+        // Present map view modally
+        let alert = UIAlertController(title: "Map View", message: "Opening map with nearby properties...", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+    
+    @objc private func floatingActionTapped() {
+        // Enhanced haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .heavy)
+        impactFeedback.impactOccurred()
+        
+        // Animate button
+        UIView.animate(withDuration: 0.1, animations: {
+            self.floatingActionButton.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+        }) { _ in
+            UIView.animate(withDuration: 0.1) {
+                self.floatingActionButton.transform = .identity
+            }
+        }
+        
+        // Show quick actions menu
+        let actionSheet = UIAlertController(title: "Quick Actions", message: "What would you like to do?", preferredStyle: .actionSheet)
+        
+        actionSheet.addAction(UIAlertAction(title: "🔍 Advanced Search", style: .default) { _ in
+            self.tabBarController?.selectedIndex = 1
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "📍 Properties Near Me", style: .default) { _ in
+            // Implement location-based search
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "🤖 AI Property Assistant", style: .default) { _ in
+            self.tabBarController?.selectedIndex = 3
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "📋 Saved Searches", style: .default) { _ in
+            // Show saved searches
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        if let popover = actionSheet.popoverPresentationController {
+            popover.sourceView = floatingActionButton
+            popover.sourceRect = floatingActionButton.bounds
+        }
+        
+        present(actionSheet, animated: true)
     }
 }
 
@@ -776,8 +884,6 @@ extension HomeViewController: UICollectionViewDataSource, UICollectionViewDelega
             return categories.count
         case featuredCollectionView:
             return featuredProperties.count
-        case recentCollectionView:
-            return min(featuredProperties.count, 5)
         default:
             return 0
         }
@@ -795,11 +901,6 @@ extension HomeViewController: UICollectionViewDataSource, UICollectionViewDelega
             cell.configure(with: featuredProperties[indexPath.item])
             return cell
             
-        case recentCollectionView:
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CompactPropertyCard", for: indexPath) as! CompactPropertyCard
-            cell.configure(with: featuredProperties[indexPath.item])
-            return cell
-            
         default:
             return UICollectionViewCell()
         }
@@ -811,8 +912,6 @@ extension HomeViewController: UICollectionViewDataSource, UICollectionViewDelega
             return CGSize(width: 80, height: 100)
         case featuredCollectionView:
             return CGSize(width: 220, height: 280)
-        case recentCollectionView:
-            return CGSize(width: 160, height: 200)
         default:
             return CGSize.zero
         }
@@ -830,7 +929,7 @@ extension HomeViewController: UICollectionViewDataSource, UICollectionViewDelega
                 tabBar.selectedIndex = 1
             }
             
-        case featuredCollectionView, recentCollectionView:
+        case featuredCollectionView:
             let property = featuredProperties[indexPath.item]
             let detailVC = PropertyDetailViewController(property: property)
             navigationController?.pushViewController(detailVC, animated: true)

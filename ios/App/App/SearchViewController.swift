@@ -5,9 +5,23 @@ class SearchViewController: UIViewController {
     private let searchController = UISearchController(searchResultsController: nil)
     private let tableView = UITableView()
     private let filterButton = UIButton(type: .system)
+    private let mapButton = UIButton(type: .system)
+    private let sortButton = UIButton(type: .system)
     
+    // Search and filter properties
     private var properties: [PropertyModel] = []
     private var filteredProperties: [PropertyModel] = []
+    private var currentSearchText = ""
+    private var activeFilters: [String: Any] = [:]
+    
+    // Quick filter buttons
+    private let quickFiltersScrollView = UIScrollView()
+    private let quickFiltersStackView = UIStackView()
+    
+    // Search suggestions
+    private let suggestionsView = UIView()
+    private let suggestionsTableView = UITableView()
+    private var searchSuggestions: [String] = ["Manhattan", "Brooklyn", "Queens", "Studio", "1 Bedroom", "2 Bedroom", "Under $2000", "Pet Friendly", "Gym", "Pool"]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -21,29 +35,77 @@ class SearchViewController: UIViewController {
         view.backgroundColor = AppColors.backgroundColor
         title = "Search"
         
-        // Setup filter button
-        filterButton.setTitle("Filters", for: .normal)
+        setupNavigationButtons()
+        setupQuickFilters()
+        setupSuggestionsView()
+    }
+    
+    private func setupNavigationButtons() {
+        // Filter button
         filterButton.setImage(UIImage(systemName: "slider.horizontal.3"), for: .normal)
         filterButton.backgroundColor = AppColors.primaryPurple
-        filterButton.setTitleColor(.white, for: .normal)
         filterButton.tintColor = .white
-        filterButton.layer.cornerRadius = 22
-        filterButton.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
-        filterButton.contentEdgeInsets = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
+        filterButton.layer.cornerRadius = 20
+        filterButton.layer.shadowColor = UIColor.black.cgColor
+        filterButton.layer.shadowOpacity = 0.2
+        filterButton.layer.shadowOffset = CGSize(width: 0, y: 2)
+        filterButton.layer.shadowRadius = 4
         filterButton.addTarget(self, action: #selector(filterTapped), for: .touchUpInside)
         
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: filterButton)
+        // Map button
+        mapButton.setImage(UIImage(systemName: "map.fill"), for: .normal)
+        mapButton.backgroundColor = AppColors.accentBlue
+        mapButton.tintColor = .white
+        mapButton.layer.cornerRadius = 20
+        mapButton.layer.shadowColor = UIColor.black.cgColor
+        mapButton.layer.shadowOpacity = 0.2
+        mapButton.layer.shadowOffset = CGSize(width: 0, y: 2)
+        mapButton.layer.shadowRadius = 4
+        mapButton.addTarget(self, action: #selector(mapTapped), for: .touchUpInside)
+        
+        // Sort button
+        sortButton.setImage(UIImage(systemName: "arrow.up.arrow.down"), for: .normal)
+        sortButton.backgroundColor = AppColors.successGreen
+        sortButton.tintColor = .white
+        sortButton.layer.cornerRadius = 20
+        sortButton.layer.shadowColor = UIColor.black.cgColor
+        sortButton.layer.shadowOpacity = 0.2
+        sortButton.layer.shadowOffset = CGSize(width: 0, y: 2)
+        sortButton.layer.shadowRadius = 4
+        sortButton.addTarget(self, action: #selector(sortTapped), for: .touchUpInside)
+        
+        // Setup button constraints
+        [filterButton, mapButton, sortButton].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                $0.widthAnchor.constraint(equalToConstant: 40),
+                $0.heightAnchor.constraint(equalToConstant: 40)
+            ])
+        }
+        
+        let stackView = UIStackView(arrangedSubviews: [sortButton, mapButton, filterButton])
+        stackView.axis = .horizontal
+        stackView.spacing = 8
+        stackView.distribution = .fillEqually
+        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: stackView)
     }
     
     private func setupSearchController() {
         searchController.searchResultsUpdater = self
         searchController.obscuresBackgroundDuringPresentation = false
-        searchController.searchBar.placeholder = "Search locations, price range..."
+        searchController.searchBar.placeholder = "Search locations, price, features..."
         searchController.searchBar.tintColor = AppColors.primaryPurple
+        searchController.delegate = self
         
         // Customize search bar appearance
         searchController.searchBar.searchBarStyle = .minimal
         searchController.searchBar.backgroundColor = AppColors.backgroundColor
+        
+        // Add scope buttons for quick filtering
+        searchController.searchBar.scopeButtonTitles = ["All", "Studio", "1BR", "2BR+", "Luxury"]
+        searchController.searchBar.selectedScopeButtonIndex = 0
+        searchController.searchBar.delegate = self
         
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
@@ -56,13 +118,20 @@ class SearchViewController: UIViewController {
         tableView.backgroundColor = AppColors.backgroundColor
         tableView.separatorStyle = .none
         tableView.register(PropertyTableViewCell.self, forCellReuseIdentifier: "PropertyCell")
-        tableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 100, right: 0)
+        tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 100, right: 0)
+        tableView.keyboardDismissMode = .onDrag
+        
+        // Add refresh control
+        let refreshControl = UIRefreshControl()
+        refreshControl.tintColor = AppColors.primaryPurple
+        refreshControl.addTarget(self, action: #selector(refreshProperties), for: .valueChanged)
+        tableView.refreshControl = refreshControl
         
         view.addSubview(tableView)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.topAnchor.constraint(equalTo: quickFiltersScrollView.bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -70,76 +139,384 @@ class SearchViewController: UIViewController {
     }
     
     private func loadProperties() {
-        // Sample data
+        // Comprehensive sample data for testing
         properties = [
-            PropertyModel(id: "1", title: "Modern Studio in Downtown", price: 850, location: "Downtown", bedrooms: 1, bathrooms: 1, amenities: ["WiFi", "Gym", "Pool"]),
-            PropertyModel(id: "2", title: "Cozy 2BR Apartment", price: 1200, location: "Midtown", bedrooms: 2, bathrooms: 1, amenities: ["WiFi", "Parking"]),
-            PropertyModel(id: "3", title: "Luxury Penthouse", price: 2500, location: "Upper East", bedrooms: 3, bathrooms: 2, amenities: ["WiFi", "Gym", "Pool", "Concierge"]),
-            PropertyModel(id: "4", title: "Student Housing", price: 600, location: "University District", bedrooms: 1, bathrooms: 1, amenities: ["WiFi", "Study Room"]),
-            PropertyModel(id: "5", title: "Shared Room", price: 450, location: "Brooklyn", bedrooms: 1, bathrooms: 1, amenities: ["WiFi"]),
+            PropertyModel(id: "1", title: "Modern Studio in Downtown", price: 1800, location: "Manhattan", bedrooms: 1, bathrooms: 1, amenities: ["WiFi", "Gym", "Pool", "Furnished"], rating: 4.8, isVerified: true),
+            PropertyModel(id: "2", title: "Cozy 2BR Apartment", price: 1200, location: "Brooklyn", bedrooms: 2, bathrooms: 1, amenities: ["WiFi", "Pet Friendly", "Parking"], rating: 4.5, isVerified: false),
+            PropertyModel(id: "3", title: "Luxury Penthouse", price: 3200, location: "Upper East Side", bedrooms: 3, bathrooms: 2, amenities: ["WiFi", "Gym", "Pool", "Concierge", "Furnished"], rating: 4.9, isVerified: true),
+            PropertyModel(id: "4", title: "Student Housing Near NYU", price: 900, location: "Greenwich Village", bedrooms: 1, bathrooms: 1, amenities: ["WiFi", "Study Room", "Furnished"], rating: 4.3, isVerified: true),
+            PropertyModel(id: "5", title: "Shared Room in Queens", price: 750, location: "Queens", bedrooms: 1, bathrooms: 1, amenities: ["WiFi", "Pet Friendly"], rating: 4.1, isVerified: false),
+            PropertyModel(id: "6", title: "Spacious 2BR with Gym Access", price: 2100, location: "Midtown", bedrooms: 2, bathrooms: 2, amenities: ["WiFi", "Gym", "Pet Friendly", "Parking"], rating: 4.6, isVerified: true),
+            PropertyModel(id: "7", title: "Affordable Studio with Pool", price: 1400, location: "Lower East Side", bedrooms: 1, bathrooms: 1, amenities: ["WiFi", "Pool", "Furnished"], rating: 4.4, isVerified: false),
+            PropertyModel(id: "8", title: "Luxury 3BR with Concierge", price: 4500, location: "Tribeca", bedrooms: 3, bathrooms: 3, amenities: ["WiFi", "Gym", "Pool", "Concierge", "Pet Friendly", "Parking"], rating: 4.9, isVerified: true),
+            PropertyModel(id: "9", title: "Pet-Friendly 1BR", price: 1600, location: "Chelsea", bedrooms: 1, bathrooms: 1, amenities: ["WiFi", "Pet Friendly", "Gym"], rating: 4.2, isVerified: true),
+            PropertyModel(id: "10", title: "Furnished Studio Near Central Park", price: 2200, location: "Upper West Side", bedrooms: 1, bathrooms: 1, amenities: ["WiFi", "Furnished", "Gym", "Pool"], rating: 4.7, isVerified: true)
         ]
         filteredProperties = properties
-        tableView.reloadData()
+        
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+        }
     }
     
     private func filterProperties(with searchText: String) {
-        if searchText.isEmpty {
-            filteredProperties = properties
-        } else {
-            filteredProperties = properties.filter { property in
+        currentSearchText = searchText
+        
+        // Start with all properties
+        var results = properties
+        
+        // Apply text search
+        if !searchText.isEmpty {
+            results = results.filter { property in
                 property.title.lowercased().contains(searchText.lowercased()) ||
                 property.location.lowercased().contains(searchText.lowercased()) ||
-                String(property.price).contains(searchText)
+                String(property.price).contains(searchText) ||
+                property.amenities.joined().lowercased().contains(searchText.lowercased())
             }
         }
+        
+        // Apply scope filter
+        let scopeIndex = searchController.searchBar.selectedScopeButtonIndex
+        switch scopeIndex {
+        case 1: // Studio
+            results = results.filter { $0.bedrooms == 1 && $0.title.lowercased().contains("studio") }
+        case 2: // 1BR
+            results = results.filter { $0.bedrooms == 1 && !$0.title.lowercased().contains("studio") }
+        case 3: // 2BR+
+            results = results.filter { $0.bedrooms >= 2 }
+        case 4: // Luxury
+            results = results.filter { $0.price > 2000 || $0.title.lowercased().contains("luxury") }
+        default: // All
+            break
+        }
+        
+        // Apply quick filters
+        for (filterName, _) in activeFilters {
+            switch filterName {
+            case "Under $2000":
+                results = results.filter { $0.price < 2000 }
+            case "Pet Friendly":
+                results = results.filter { $0.amenities.contains("Pet Friendly") }
+            case "Gym":
+                results = results.filter { $0.amenities.contains("Gym") }
+            case "Pool":
+                results = results.filter { $0.amenities.contains("Pool") }
+            case "Furnished":
+                results = results.filter { $0.amenities.contains("Furnished") }
+            case "Recently Added":
+                // Filter by recently added (mock implementation)
+                results = results.suffix(results.count / 2).map { $0 }
+            default:
+                break
+            }
+        }
+        
+        filteredProperties = results
+        
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+            
+            // Show/hide suggestions
+            if searchText.isEmpty {
+                self.showSuggestions()
+            } else {
+                self.hideSuggestions()
+            }
+        }
+    }
+    
+    private func showSuggestions() {
+        UIView.animate(withDuration: 0.3) {
+            self.suggestionsView.isHidden = false
+            self.suggestionsView.alpha = 1
+        }
+    }
+    
+    private func hideSuggestions() {
+        UIView.animate(withDuration: 0.3) {
+            self.suggestionsView.alpha = 0
+        } completion: { _ in
+            self.suggestionsView.isHidden = true
+        }
+    }
+    
+    enum SortOption {
+        case priceLowToHigh, priceHighToLow, recentlyAdded, rating
+    }
+    
+    private func sortProperties(by option: SortOption) {
+        switch option {
+        case .priceLowToHigh:
+            filteredProperties.sort { $0.price < $1.price }
+        case .priceHighToLow:
+            filteredProperties.sort { $0.price > $1.price }
+        case .recentlyAdded:
+            // Mock implementation - reverse order
+            filteredProperties.reverse()
+        case .rating:
+            filteredProperties.sort { $0.rating > $1.rating }
+        }
+        
         tableView.reloadData()
     }
     
+    private func setupQuickFilters() {
+        quickFiltersScrollView.showsHorizontalScrollIndicator = false
+        quickFiltersScrollView.backgroundColor = AppColors.backgroundColor
+        
+        quickFiltersStackView.axis = .horizontal
+        quickFiltersStackView.spacing = 12
+        quickFiltersStackView.distribution = .fill
+        
+        let filterTitles = ["Under $2000", "Pet Friendly", "Gym", "Pool", "Furnished", "Recently Added"]
+        
+        for title in filterTitles {
+            let filterButton = createQuickFilterButton(title: title)
+            quickFiltersStackView.addArrangedSubview(filterButton)
+        }
+        
+        quickFiltersScrollView.addSubview(quickFiltersStackView)
+        view.addSubview(quickFiltersScrollView)
+        
+        [quickFiltersScrollView, quickFiltersStackView].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+        }
+        
+        NSLayoutConstraint.activate([
+            quickFiltersScrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            quickFiltersScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            quickFiltersScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            quickFiltersScrollView.heightAnchor.constraint(equalToConstant: 60),
+            
+            quickFiltersStackView.topAnchor.constraint(equalTo: quickFiltersScrollView.topAnchor, constant: 12),
+            quickFiltersStackView.leadingAnchor.constraint(equalTo: quickFiltersScrollView.leadingAnchor, constant: 20),
+            quickFiltersStackView.trailingAnchor.constraint(equalTo: quickFiltersScrollView.trailingAnchor, constant: -20),
+            quickFiltersStackView.bottomAnchor.constraint(equalTo: quickFiltersScrollView.bottomAnchor, constant: -12),
+            quickFiltersStackView.heightAnchor.constraint(equalToConstant: 36)
+        ])
+    }
+    
+    private func createQuickFilterButton(title: String) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setTitle(title, for: .normal)
+        button.setTitleColor(AppColors.textPrimary, for: .normal)
+        button.setTitleColor(.white, for: .selected)
+        button.backgroundColor = AppColors.separatorColor.withAlphaComponent(0.3)
+        button.layer.cornerRadius = 18
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
+        button.addTarget(self, action: #selector(quickFilterTapped(_:)), for: .touchUpInside)
+        
+        return button
+    }
+    
+    private func setupSuggestionsView() {
+        suggestionsView.backgroundColor = AppColors.cardBackground
+        suggestionsView.layer.cornerRadius = 12
+        suggestionsView.layer.shadowColor = UIColor.black.cgColor
+        suggestionsView.layer.shadowOpacity = 0.1
+        suggestionsView.layer.shadowOffset = CGSize(width: 0, y: 4)
+        suggestionsView.layer.shadowRadius = 8
+        suggestionsView.isHidden = true
+        
+        suggestionsTableView.delegate = self
+        suggestionsTableView.dataSource = self
+        suggestionsTableView.backgroundColor = .clear
+        suggestionsTableView.separatorStyle = .none
+        suggestionsTableView.register(UITableViewCell.self, forCellReuseIdentifier: "SuggestionCell")
+        suggestionsTableView.layer.cornerRadius = 12
+        
+        suggestionsView.addSubview(suggestionsTableView)
+        view.addSubview(suggestionsView)
+        
+        [suggestionsView, suggestionsTableView].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+        }
+        
+        NSLayoutConstraint.activate([
+            suggestionsView.topAnchor.constraint(equalTo: quickFiltersScrollView.bottomAnchor, constant: 8),
+            suggestionsView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            suggestionsView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            suggestionsView.heightAnchor.constraint(equalToConstant: 200),
+            
+            suggestionsTableView.topAnchor.constraint(equalTo: suggestionsView.topAnchor),
+            suggestionsTableView.leadingAnchor.constraint(equalTo: suggestionsView.leadingAnchor),
+            suggestionsTableView.trailingAnchor.constraint(equalTo: suggestionsView.trailingAnchor),
+            suggestionsTableView.bottomAnchor.constraint(equalTo: suggestionsView.bottomAnchor)
+        ])
+    }
+    
+    @objc private func quickFilterTapped(_ sender: UIButton) {
+        // Add haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        
+        // Toggle button state
+        sender.isSelected.toggle()
+        
+        UIView.animate(withDuration: 0.2) {
+            sender.backgroundColor = sender.isSelected ? 
+                AppColors.primaryPurple : 
+                AppColors.separatorColor.withAlphaComponent(0.3)
+            sender.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+        } completion: { _ in
+            UIView.animate(withDuration: 0.1) {
+                sender.transform = .identity
+            }
+        }
+        
+        // Apply filter
+        applyQuickFilter(sender.titleLabel?.text ?? "", isActive: sender.isSelected)
+    }
+    
+    private func applyQuickFilter(_ filterName: String, isActive: Bool) {
+        if isActive {
+            activeFilters[filterName] = true
+        } else {
+            activeFilters.removeValue(forKey: filterName)
+        }
+        
+        filterProperties(with: currentSearchText)
+    }
+    
     @objc private func filterTapped() {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
         let filterVC = FilterViewController()
         let navController = UINavigationController(rootViewController: filterVC)
         present(navController, animated: true)
     }
     
-    func filterByCategory(_ category: String) {
-        // Filter properties by category
-        filteredProperties = properties.filter { property in
-            switch category.lowercased() {
-            case "studios":
-                return property.bedrooms == 1 && property.title.lowercased().contains("studio")
-            case "1 bedroom":
-                return property.bedrooms == 1
-            case "2+ bedrooms":
-                return property.bedrooms >= 2
-            case "luxury":
-                return property.price > 2000 || property.title.lowercased().contains("luxury")
-            case "student":
-                return property.title.lowercased().contains("student") || property.price < 800
-            case "shared":
-                return property.title.lowercased().contains("shared")
-            default:
-                return true
-            }
+    @objc private func mapTapped() {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
+        let alert = UIAlertController(title: "Map View", message: "Opening map with search results...", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+    
+    @objc private func sortTapped() {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
+        let actionSheet = UIAlertController(title: "Sort Properties", message: "Choose sorting option", preferredStyle: .actionSheet)
+        
+        actionSheet.addAction(UIAlertAction(title: "Price: Low to High", style: .default) { _ in
+            self.sortProperties(by: .priceLowToHigh)
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "Price: High to Low", style: .default) { _ in
+            self.sortProperties(by: .priceHighToLow)
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "Recently Added", style: .default) { _ in
+            self.sortProperties(by: .recentlyAdded)
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "Rating", style: .default) { _ in
+            self.sortProperties(by: .rating)
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        if let popover = actionSheet.popoverPresentationController {
+            popover.sourceView = sortButton
+            popover.sourceRect = sortButton.bounds
         }
-        tableView.reloadData()
+        
+        present(actionSheet, animated: true)
+    }
+    
+    @objc private func refreshProperties() {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            self.loadProperties()
+            self.tableView.refreshControl?.endRefreshing()
+        }
+    }
+    
+    func filterByCategory(_ category: String) {
+        // Set the appropriate scope button
+        switch category.lowercased() {
+        case "studios":
+            searchController.searchBar.selectedScopeButtonIndex = 1
+        case "1 bedroom":
+            searchController.searchBar.selectedScopeButtonIndex = 2
+        case "2+ bedrooms":
+            searchController.searchBar.selectedScopeButtonIndex = 3
+        case "luxury":
+            searchController.searchBar.selectedScopeButtonIndex = 4
+        default:
+            searchController.searchBar.selectedScopeButtonIndex = 0
+        }
+        
+        // Apply the filter
+        filterProperties(with: searchController.searchBar.text ?? "")
+        
+        // Add haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
     }
 }
 
-// MARK: - UISearchResultsUpdating
-extension SearchViewController: UISearchResultsUpdating {
+// MARK: - UISearchResultsUpdating & UISearchControllerDelegate
+extension SearchViewController: UISearchResultsUpdating, UISearchControllerDelegate {
     func updateSearchResults(for searchController: UISearchController) {
         let searchText = searchController.searchBar.text ?? ""
         filterProperties(with: searchText)
+    }
+    
+    func willPresentSearchController(_ searchController: UISearchController) {
+        showSuggestions()
+    }
+    
+    func willDismissSearchController(_ searchController: UISearchController) {
+        hideSuggestions()
+    }
+}
+
+// MARK: - UISearchBarDelegate
+extension SearchViewController: UISearchBarDelegate {
+    func searchBar(_ searchBar: UISearchBar, selectedScopeButtonIndexDidChange selectedScope: Int) {
+        filterProperties(with: searchBar.text ?? "")
+    }
+    
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        showSuggestions()
+    }
+    
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        if searchBar.text?.isEmpty ?? true {
+            hideSuggestions()
+        }
     }
 }
 
 // MARK: - UITableViewDataSource, UITableViewDelegate
 extension SearchViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if tableView == suggestionsTableView {
+            return searchSuggestions.count
+        }
         return filteredProperties.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if tableView == suggestionsTableView {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "SuggestionCell", for: indexPath)
+            cell.textLabel?.text = searchSuggestions[indexPath.row]
+            cell.textLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+            cell.textLabel?.textColor = AppColors.textPrimary
+            cell.backgroundColor = .clear
+            cell.imageView?.image = UIImage(systemName: "magnifyingglass")
+            cell.imageView?.tintColor = AppColors.primaryPurple
+            return cell
+        }
+        
         let cell = tableView.dequeueReusableCell(withIdentifier: "PropertyCell", for: indexPath) as! PropertyTableViewCell
         cell.configure(with: filteredProperties[indexPath.row])
         return cell
@@ -148,13 +525,68 @@ extension SearchViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
+        if tableView == suggestionsTableView {
+            let suggestion = searchSuggestions[indexPath.row]
+            searchController.searchBar.text = suggestion
+            filterProperties(with: suggestion)
+            hideSuggestions()
+            
+            // Add haptic feedback
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
+            return
+        }
+        
         let property = filteredProperties[indexPath.row]
         let detailVC = PropertyDetailViewController(property: property)
         navigationController?.pushViewController(detailVC, animated: true)
+        
+        // Add haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        if tableView == suggestionsTableView {
+            return 44
+        }
         return 280
+    }
+    
+    // Add swipe actions for property cells
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        if tableView == suggestionsTableView {
+            return nil
+        }
+        
+        let favoriteAction = UIContextualAction(style: .normal, title: "Favorite") { [weak self] (_, _, completion) in
+            // Add haptic feedback
+            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+            impactFeedback.impactOccurred()
+            
+            // Handle favorite action
+            completion(true)
+        }
+        favoriteAction.backgroundColor = AppColors.errorRed
+        favoriteAction.image = UIImage(systemName: "heart.fill")
+        
+        let shareAction = UIContextualAction(style: .normal, title: "Share") { [weak self] (_, _, completion) in
+            // Add haptic feedback
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
+            
+            // Handle share action
+            let property = self?.filteredProperties[indexPath.row]
+            let shareText = "Check out this property: \(property?.title ?? "")"
+            let activityVC = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
+            self?.present(activityVC, animated: true)
+            
+            completion(true)
+        }
+        shareAction.backgroundColor = AppColors.accentBlue
+        shareAction.image = UIImage(systemName: "square.and.arrow.up")
+        
+        return UISwipeActionsConfiguration(actions: [favoriteAction, shareAction])
     }
 }
 

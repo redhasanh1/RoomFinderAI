@@ -105,6 +105,16 @@ class PropertyCard: UICollectionViewCell {
     private let priceLabel = UILabel()
     private let detailsLabel = UILabel()
     
+    // Swipe gesture recognizers
+    private var leftSwipeGesture: UISwipeGestureRecognizer!
+    private var rightSwipeGesture: UISwipeGestureRecognizer!
+    
+    // Animation properties
+    private var originalTransform: CGAffineTransform = .identity
+    
+    // Property data for actions
+    private var currentProperty: PropertyModel?
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -209,6 +219,8 @@ class PropertyCard: UICollectionViewCell {
         containerView.addSubview(detailsLabel)
         
         setupConstraints()
+        setupSwipeGestures()
+        setupLongPressGesture()
     }
     
     private func setupConstraints() {
@@ -283,6 +295,7 @@ class PropertyCard: UICollectionViewCell {
     }
     
     func configure(with property: PropertyModel) {
+        currentProperty = property
         titleLabel.text = property.title
         locationLabel.text = "📍 \(property.location)"
         priceLabel.text = "$\(property.price)/mo"
@@ -293,6 +306,9 @@ class PropertyCard: UICollectionViewCell {
         
         // Add parallax effect
         addParallaxEffect()
+        
+        // Reset any previous transformations
+        resetCardTransform()
     }
     
     private func addParallaxEffect() {
@@ -334,6 +350,195 @@ class PropertyCard: UICollectionViewCell {
         favoriteButton.isSelected = false
         verifiedBadge.isHidden = true
         containerView.motionEffects.removeAll()
+        currentProperty = nil
+        resetCardTransform()
+    }
+    
+    private func setupSwipeGestures() {
+        // Right swipe to favorite
+        rightSwipeGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleRightSwipe))
+        rightSwipeGesture.direction = .right
+        containerView.addGestureRecognizer(rightSwipeGesture)
+        
+        // Left swipe for quick details
+        leftSwipeGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleLeftSwipe))
+        leftSwipeGesture.direction = .left
+        containerView.addGestureRecognizer(leftSwipeGesture)
+    }
+    
+    private func setupLongPressGesture() {
+        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+        longPressGesture.minimumPressDuration = 0.5
+        containerView.addGestureRecognizer(longPressGesture)
+    }
+    
+    @objc private func handleRightSwipe() {
+        // Add haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
+        // Animate favorite action
+        UIView.animate(withDuration: 0.3, animations: {
+            self.containerView.transform = CGAffineTransform(translationX: 50, y: 0)
+            self.containerView.backgroundColor = AppColors.successGreen.withAlphaComponent(0.1)
+        }) { _ in
+            // Toggle favorite
+            self.favoriteToggled()
+            
+            // Show feedback animation
+            self.showSwipeActionFeedback("Added to Favorites", icon: "heart.fill", color: AppColors.errorRed)
+            
+            // Reset position
+            UIView.animate(withDuration: 0.2) {
+                self.resetCardTransform()
+            }
+        }
+    }
+    
+    @objc private func handleLeftSwipe() {
+        // Add haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        
+        // Animate quick preview action
+        UIView.animate(withDuration: 0.3, animations: {
+            self.containerView.transform = CGAffineTransform(translationX: -50, y: 0)
+            self.containerView.backgroundColor = AppColors.primaryPurple.withAlphaComponent(0.1)
+        }) { _ in
+            // Show quick details
+            self.showSwipeActionFeedback("Quick Preview", icon: "eye.fill", color: AppColors.primaryPurple)
+            
+            // Reset position
+            UIView.animate(withDuration: 0.2) {
+                self.resetCardTransform()
+            }
+        }
+    }
+    
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        switch gesture.state {
+        case .began:
+            // Heavy haptic feedback
+            let impactFeedback = UIImpactFeedbackGenerator(style: .heavy)
+            impactFeedback.impactOccurred()
+            
+            // Scale animation
+            UIView.animate(withDuration: 0.2) {
+                self.containerView.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+                self.containerView.layer.shadowOpacity = 0.2
+            }
+            
+        case .ended, .cancelled:
+            // Reset animation
+            UIView.animate(withDuration: 0.2) {
+                self.resetCardTransform()
+            }
+            
+            // Show context menu
+            if gesture.state == .ended {
+                showContextMenu()
+            }
+            
+        default:
+            break
+        }
+    }
+    
+    private func resetCardTransform() {
+        containerView.transform = .identity
+        containerView.backgroundColor = AppColors.cardBackground
+        containerView.layer.shadowOpacity = 0.1
+    }
+    
+    private func showSwipeActionFeedback(_ text: String, icon: String, color: UIColor) {
+        let feedbackView = UIView()
+        feedbackView.backgroundColor = color.withAlphaComponent(0.9)
+        feedbackView.layer.cornerRadius = 20
+        feedbackView.alpha = 0
+        
+        let iconView = UIImageView(image: UIImage(systemName: icon))
+        iconView.tintColor = .white
+        iconView.contentMode = .scaleAspectFit
+        
+        let label = UILabel()
+        label.text = text
+        label.textColor = .white
+        label.font = .systemFont(ofSize: 14, weight: .semibold)
+        label.textAlignment = .center
+        
+        feedbackView.addSubview(iconView)
+        feedbackView.addSubview(label)
+        containerView.addSubview(feedbackView)
+        
+        [feedbackView, iconView, label].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+        }
+        
+        NSLayoutConstraint.activate([
+            feedbackView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            feedbackView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            feedbackView.widthAnchor.constraint(equalToConstant: 150),
+            feedbackView.heightAnchor.constraint(equalToConstant: 40),
+            
+            iconView.leadingAnchor.constraint(equalTo: feedbackView.leadingAnchor, constant: 12),
+            iconView.centerYAnchor.constraint(equalTo: feedbackView.centerYAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: 16),
+            iconView.heightAnchor.constraint(equalToConstant: 16),
+            
+            label.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 8),
+            label.centerYAnchor.constraint(equalTo: feedbackView.centerYAnchor),
+            label.trailingAnchor.constraint(equalTo: feedbackView.trailingAnchor, constant: -12)
+        ])
+        
+        // Animate feedback
+        UIView.animate(withDuration: 0.3, animations: {
+            feedbackView.alpha = 1
+        }) { _ in
+            UIView.animate(withDuration: 0.3, delay: 1.0, options: [], animations: {
+                feedbackView.alpha = 0
+            }) { _ in
+                feedbackView.removeFromSuperview()
+            }
+        }
+    }
+    
+    private func showContextMenu() {
+        guard let currentProperty = currentProperty else { return }
+        
+        // Find the parent view controller to present context menu
+        var responder: UIResponder? = self
+        while responder != nil {
+            if let viewController = responder as? UIViewController {
+                let alert = UIAlertController(title: currentProperty.title, message: "Quick Actions", preferredStyle: .actionSheet)
+                
+                alert.addAction(UIAlertAction(title: "❤️ Add to Favorites", style: .default) { _ in
+                    self.favoriteToggled()
+                })
+                
+                alert.addAction(UIAlertAction(title: "👁️ View Details", style: .default) { _ in
+                    // Trigger cell selection
+                })
+                
+                alert.addAction(UIAlertAction(title: "📤 Share Property", style: .default) { _ in
+                    // Share functionality
+                })
+                
+                alert.addAction(UIAlertAction(title: "📞 Contact Landlord", style: .default) { _ in
+                    // Contact functionality
+                })
+                
+                alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+                
+                if let popover = alert.popoverPresentationController {
+                    popover.sourceView = self.containerView
+                    popover.sourceRect = self.containerView.bounds
+                }
+                
+                viewController.present(alert, animated: true)
+                break
+            }
+            responder = responder?.next
+        }
     }
 }
 
