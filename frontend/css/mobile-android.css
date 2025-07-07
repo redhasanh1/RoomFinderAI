@@ -1148,6 +1148,208 @@ img {
     transition: var(--transition-smooth);
 }
 
+/* Android Mobile Navigation Fixes */
+.mobile-menu-btn {
+    min-width: 48px !important;
+    min-height: 48px !important;
+    padding: 12px !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    z-index: 9999 !important;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.mobile-menu-btn:active {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+.hamburger-line {
+    pointer-events: none;
+}
+
+/* Fix mobile menu item touch targets */
+.mobile-section-header {
+    min-height: 60px !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    border: none !important;
+    background: transparent !important;
+    text-align: left !important;
+    font-size: 16px !important;
+    padding: 16px 24px !important;
+}
+
+.mobile-section-header:active {
+    background-color: rgba(102, 126, 234, 0.1) !important;
+}
+
+.mobile-section-content {
+    overflow: hidden;
+    max-height: 0;
+    transition: all 0.3s ease;
+    background-color: #f8fafc;
+}
+
+.mobile-section-content.expanded {
+    max-height: 300px;
+    padding: 8px 0;
+}
+
+.mobile-section-content a {
+    display: block !important;
+    padding: 16px 32px !important;
+    min-height: 56px !important;
+    color: #374151 !important;
+    text-decoration: none !important;
+    font-size: 15px !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    border-bottom: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+.mobile-section-content a:active,
+.mobile-section-content a:hover {
+    background-color: rgba(102, 126, 234, 0.1) !important;
+    color: #667eea !important;
+    padding-left: 40px !important;
+}
+
+.mobile-menu-item {
+    min-height: 60px !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 16px 24px !important;
+    font-size: 16px !important;
+}
+
+.mobile-menu-item:active {
+    background-color: rgba(102, 126, 234, 0.1) !important;
+}
+
+.mobile-arrow {
+    transition: transform 0.3s ease;
+    font-size: 14px;
+    color: #9ca3af;
+    pointer-events: none;
+}
+
+.mobile-arrow.rotated {
+    transform: rotate(180deg);
+}
+
+/* Fix mobile menu z-index and positioning */
+.mobile-menu {
+    z-index: 9998 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100vh !important;
+}
+
+.mobile-menu-overlay {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    touch-action: manipulation !important;
+}
+
+.mobile-menu-content {
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 85% !important;
+    max-width: 350px !important;
+    height: 100% !important;
+    background: white !important;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+    z-index: 9999 !important;
+}
+
+.mobile-menu.active .mobile-menu-content {
+    transform: translateX(0) !important;
+}
+
+.mobile-menu-close {
+    min-width: 48px !important;
+    min-height: 48px !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 24px !important;
+    border-radius: 6px !important;
+}
+
+.mobile-menu-close:active {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Prevent text selection on buttons */
+.mobile-section-header,
+.mobile-menu-btn,
+.mobile-menu-close {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Android-specific optimizations */
+@media (max-width: 768px) {
+    /* Increase touch targets on small screens */
+    .mobile-section-header,
+    .mobile-menu-item,
+    .mobile-section-content a {
+        min-height: 64px !important;
+    }
+    
+    /* Ensure proper spacing */
+    .mobile-section-content a {
+        padding: 20px 32px !important;
+    }
+    
+    .mobile-section-header {
+        padding: 20px 24px !important;
+    }
+}
+
+/* Debug styles for touch testing */
+.debug-touch .mobile-section-header {
+    border: 2px solid red !important;
+}
+
+.debug-touch .mobile-section-content a {
+    border: 2px solid blue !important;
+}
+
 /* Android status bar color (for PWA) */
 @media (display-mode: standalone) {
     body {
