@@ -26,17 +26,30 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Force native theme and layout
         setTheme(R.style.MarketplaceTheme);
         setContentView(R.layout.activity_main);
         
-        Log.d(TAG, "RoomFinderAI app initialized successfully");
+        Log.d(TAG, "Native RoomFinderAI app started - NO WEBVIEW");
         
-        initializeViews();
-        setupBottomNavigation();
-        setupSearchBar();
-        
-        if (savedInstanceState == null) {
-            loadFragment(new ListingsFragment());
+        try {
+            initializeViews();
+            setupBottomNavigation();
+            setupSearchBar();
+            
+            // Always load the listings fragment first
+            if (savedInstanceState == null) {
+                loadFragment(new ListingsFragment());
+                // Set home as selected in bottom nav
+                bottomNavigation.setSelectedItemId(R.id.navigation_home);
+            }
+            
+            Log.d(TAG, "Native marketplace UI initialized successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Error initializing native UI: " + e.getMessage(), e);
+            // If there's any error, show a simple message
+            setTitle("RoomFinderAI - Native Mode");
         }
     }
 
@@ -45,32 +58,37 @@ public class MainActivity extends AppCompatActivity {
         searchBar = findViewById(R.id.searchBar);
         filterButton = findViewById(R.id.filterButton);
         fragmentManager = getSupportFragmentManager();
+        
+        Log.d(TAG, "Views initialized - BottomNav: " + (bottomNavigation != null) + 
+                  ", SearchBar: " + (searchBar != null) + 
+                  ", FilterButton: " + (filterButton != null));
     }
 
     private void setupBottomNavigation() {
+        if (bottomNavigation == null) {
+            Log.e(TAG, "BottomNavigation is null!");
+            return;
+        }
+        
         bottomNavigation.setOnNavigationItemSelectedListener(item -> {
             Fragment fragment = null;
             
-            switch (item.getItemId()) {
-                case R.id.navigation_home:
-                    fragment = new ListingsFragment();
-                    break;
-                case R.id.navigation_categories:
-                    fragment = new CategoriesFragment();
-                    break;
-                case R.id.navigation_post:
-                    fragment = new PostFragment();
-                    break;
-                case R.id.navigation_messages:
-                    fragment = new MessagesFragment();
-                    break;
-                case R.id.navigation_profile:
-                    fragment = new ProfileFragment();
-                    break;
+            int itemId = item.getItemId();
+            if (itemId == R.id.navigation_home) {
+                fragment = new ListingsFragment();
+            } else if (itemId == R.id.navigation_categories) {
+                fragment = new CategoriesFragment();
+            } else if (itemId == R.id.navigation_post) {
+                fragment = new PostFragment();
+            } else if (itemId == R.id.navigation_messages) {
+                fragment = new MessagesFragment();
+            } else if (itemId == R.id.navigation_profile) {
+                fragment = new ProfileFragment();
             }
             
             if (fragment != null) {
                 loadFragment(fragment);
+                Log.d(TAG, "Navigation: Loaded " + fragment.getClass().getSimpleName());
                 return true;
             }
             return false;
@@ -78,18 +96,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadFragment(Fragment fragment) {
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.setCustomAnimations(
-            android.R.anim.fade_in,
-            android.R.anim.fade_out,
-            android.R.anim.fade_in,
-            android.R.anim.fade_out
-        );
-        transaction.replace(R.id.fragmentContainer, fragment);
-        transaction.commit();
+        try {
+            FragmentTransaction transaction = fragmentManager.beginTransaction();
+            transaction.setCustomAnimations(
+                android.R.anim.fade_in,
+                android.R.anim.fade_out,
+                android.R.anim.fade_in,
+                android.R.anim.fade_out
+            );
+            transaction.replace(R.id.fragmentContainer, fragment);
+            transaction.commit();
+            
+            Log.d(TAG, "Fragment loaded: " + fragment.getClass().getSimpleName());
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading fragment: " + e.getMessage(), e);
+        }
     }
 
     private void setupSearchBar() {
+        if (searchBar == null || filterButton == null) {
+            Log.e(TAG, "SearchBar or FilterButton is null!");
+            return;
+        }
+        
         searchBar.setOnEditorActionListener((v, actionId, event) -> {
             String query = searchBar.getText().toString();
             performSearch(query);
@@ -106,22 +135,24 @@ public class MainActivity extends AppCompatActivity {
         if (currentFragment instanceof ListingsFragment) {
             ((ListingsFragment) currentFragment).searchListings(query);
         }
+        Log.d(TAG, "Search performed: " + query);
     }
 
     private void showFilterDialog() {
+        Log.d(TAG, "Filter dialog requested");
         // TODO: Implement filter dialog
     }
     
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "App resumed");
+        Log.d(TAG, "Native app resumed");
     }
     
     @Override
     public void onPause() {
         super.onPause();
-        Log.d(TAG, "App paused");
+        Log.d(TAG, "Native app paused");
     }
 
     @Override
