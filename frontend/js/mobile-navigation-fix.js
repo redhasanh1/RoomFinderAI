@@ -332,29 +332,87 @@ class MobileNavigationFix {
     }
     
     fixMenuLinks() {
-        // Fix regular menu item links
-        const menuItems = document.querySelectorAll('.mobile-menu-item');
-        menuItems.forEach(item => {
-            item.style.touchAction = 'manipulation';
-            item.style.webkitTapHighlightColor = 'transparent';
+        console.log('🔧 Fixing menu links...');
+        
+        // Fix all mobile menu links
+        const allMenuLinks = document.querySelectorAll('.mobile-menu-item, .mobile-section-content a');
+        console.log('📱 Found menu links:', allMenuLinks.length);
+        
+        allMenuLinks.forEach((link, index) => {
+            if (link.tagName === 'A') {
+                console.log(`🔗 Link ${index}:`, link.textContent.trim(), '→', link.href);
+                
+                // Remove any onclick that might interfere
+                const originalOnclick = link.onclick;
+                link.onclick = null;
+                
+                // Ensure link is properly styled
+                link.style.display = 'block';
+                link.style.touchAction = 'manipulation';
+                link.style.webkitTapHighlightColor = 'transparent';
+                link.style.cursor = 'pointer';
+                link.style.textDecoration = 'none';
+                
+                // Add enhanced click handler
+                const handleLinkClick = (e) => {
+                    console.log('📱 Link clicked:', link.textContent.trim(), '→', link.href);
+                    
+                    // Let the browser handle the navigation
+                    if (link.href && !link.href.includes('javascript:')) {
+                        // Close menu first if needed
+                        if (originalOnclick) {
+                            try {
+                                originalOnclick.call(link, e);
+                            } catch (err) {
+                                console.error('Error in original onclick:', err);
+                            }
+                        }
+                        
+                        // Small delay to let menu close animation start
+                        setTimeout(() => {
+                            console.log('📱 Navigating to:', link.href);
+                            window.location.href = link.href;
+                        }, 100);
+                        
+                        // Prevent default only if we're handling navigation
+                        e.preventDefault();
+                    }
+                };
+                
+                // Remove existing listeners
+                link.removeEventListener('click', handleLinkClick);
+                link.removeEventListener('touchend', handleLinkClick);
+                
+                // Add new listeners
+                link.addEventListener('click', handleLinkClick, { passive: false });
+                link.addEventListener('touchend', (e) => {
+                    // Prevent ghost clicks
+                    e.preventDefault();
+                    handleLinkClick(e);
+                }, { passive: false });
+                
+                // Add visual feedback
+                link.addEventListener('touchstart', () => {
+                    link.style.backgroundColor = 'rgba(102, 126, 234, 0.1)';
+                    link.style.transform = 'scale(0.98)';
+                }, { passive: true });
+                
+                link.addEventListener('touchend', () => {
+                    setTimeout(() => {
+                        link.style.backgroundColor = '';
+                        link.style.transform = '';
+                    }, 200);
+                }, { passive: true });
+            }
         });
         
-        // Fix dropdown menu links
+        // Special handling for dropdown links inside mobile-section-content
         const dropdownLinks = document.querySelectorAll('.mobile-section-content a');
         dropdownLinks.forEach(link => {
-            link.style.touchAction = 'manipulation';
-            link.style.webkitTapHighlightColor = 'transparent';
-            
-            // Add visual feedback
-            link.addEventListener('touchstart', () => {
-                link.style.backgroundColor = 'rgba(102, 126, 234, 0.1)';
-            }, { passive: true });
-            
-            link.addEventListener('touchend', () => {
-                setTimeout(() => {
-                    link.style.backgroundColor = '';
-                }, 200);
-            }, { passive: true });
+            // Ensure these links are visible and clickable
+            link.style.pointerEvents = 'auto';
+            link.style.position = 'relative';
+            link.style.zIndex = '10';
         });
         
         console.log('✅ Menu links fixed');

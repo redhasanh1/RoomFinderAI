@@ -1201,11 +1201,13 @@ img {
     max-height: 0;
     transition: all 0.3s ease;
     background-color: #f8fafc;
+    pointer-events: none;
 }
 
 .mobile-section-content.expanded {
-    max-height: 300px;
+    max-height: 500px;
     padding: 8px 0;
+    pointer-events: auto !important;
 }
 
 .mobile-section-content a {
@@ -1214,11 +1216,22 @@ img {
     min-height: 56px !important;
     color: #374151 !important;
     text-decoration: none !important;
-    font-size: 15px !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
     touch-action: manipulation !important;
     -webkit-tap-highlight-color: transparent !important;
     border-bottom: 1px solid #e5e7eb;
     transition: all 0.2s ease;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 1000 !important;
+    background-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    line-height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
 }
 
 .mobile-section-content a:active,
@@ -1348,6 +1361,39 @@ img {
 
 .debug-touch .mobile-section-content a {
     border: 2px solid blue !important;
+}
+
+/* Critical Android Link Fixes */
+.mobile-section-content a.mobile-menu-item {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Ensure expanded sections are interactive */
+.mobile-section-content.expanded * {
+    pointer-events: auto !important;
+}
+
+/* Remove any overlays that might block clicks */
+.mobile-menu-content * {
+    pointer-events: auto !important;
+}
+
+.mobile-menu-overlay {
+    pointer-events: auto !important;
+}
+
+/* Make absolutely sure links are clickable */
+a[href] {
+    cursor: pointer !important;
+}
+
+/* Debug helper - add red border to all clickable elements */
+.debug-clicks a {
+    border: 2px solid red !important;
 }
 
 /* Android status bar color (for PWA) */
