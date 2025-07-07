@@ -15,7 +15,7 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
-            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:theme="@style/MarketplaceTheme"
             android:launchMode="singleTask"
             android:exported="true">
 
@@ -25,12 +25,6 @@
             </intent-filter>
 
         </activity>
-
-        <activity
-            android:name=".MarketplaceActivity"
-            android:label="Marketplace"
-            android:theme="@style/MarketplaceTheme"
-            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
