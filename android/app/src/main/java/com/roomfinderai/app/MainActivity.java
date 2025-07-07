@@ -1,5 +1,6 @@
 package com.roomfinderai.app;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.WebView;
@@ -18,6 +19,11 @@ public class MainActivity extends BridgeActivity {
         }
         
         Log.d(TAG, "RoomFinderAI app initialized successfully");
+        
+        // Launch MarketplaceActivity for native UI
+        Intent intent = new Intent(this, MarketplaceActivity.class);
+        startActivity(intent);
+        finish();
     }
     
     @Override
