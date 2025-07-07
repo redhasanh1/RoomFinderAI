@@ -28,7 +28,7 @@ window.AppConfig = {
     getApiUrl: function() {
         if (this.isMobile) {
             // For mobile app, use your production API
-            return 'https://your-api-domain.com/api/';
+            return 'https://roomfinderai-production.up.railway.app/api/';
         }
         
         // For web, use relative or full API URL

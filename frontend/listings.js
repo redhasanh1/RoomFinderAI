@@ -258,179 +258,6 @@
             console.log('- Valid coordinates:', validCoordinates.length);
         }
 
-        // ========================================
-        // BOOKMARK/FAVORITES FUNCTIONALITY
-        // ========================================
-
-        // Toggle bookmark status for a listing
-        async function toggleBookmark(listingId, userEmail, buttonElement) {
-            try {
-                console.log('🔖 Toggling bookmark for listing:', listingId);
-                const icon = buttonElement.querySelector('.bookmark-icon');
-                const isCurrentlyBookmarked = icon.style.fill === 'currentColor';
-                
-                // Optimistic UI update
-                updateBookmarkUI(buttonElement, !isCurrentlyBookmarked);
-                
-                let response;
-                if (isCurrentlyBookmarked) {
-                    // Remove bookmark
-                    response = await fetch(`/api/favorites/${listingId}?userEmail=${encodeURIComponent(userEmail)}`, {
-                        method: 'DELETE'
-                    });
-                } else {
-                    // Add bookmark
-                    response = await fetch('/api/favorites', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            listingId: listingId,
-                            userEmail: userEmail
-                        })
-                    });
-                }
-                
-                const result = await response.json();
-                
-                if (!response.ok) {
-                    // Revert UI on error
-                    updateBookmarkUI(buttonElement, isCurrentlyBookmarked);
-                    throw new Error(result.error || 'Failed to update bookmark');
-                }
-                
-                // Show success message
-                const action = isCurrentlyBookmarked ? 'removed from' : 'added to';
-                showToast(`Listing ${action} favorites`, 'success');
-                
-                console.log('✅ Bookmark updated successfully:', result);
-                
-            } catch (error) {
-                console.error('❌ Error toggling bookmark:', error);
-                showToast('Failed to update bookmark. Please try again.', 'error');
-            }
-        }
-
-        // Update bookmark button UI
-        function updateBookmarkUI(buttonElement, isBookmarked) {
-            const icon = buttonElement.querySelector('.bookmark-icon');
-            const button = buttonElement;
-            
-            if (isBookmarked) {
-                // Bookmarked state - filled heart, red color
-                icon.style.fill = 'currentColor';
-                icon.style.color = '#ef4444'; // red-500
-                button.title = 'Remove from favorites';
-                button.classList.add('bookmarked');
-            } else {
-                // Not bookmarked state - outline heart, gray color
-                icon.style.fill = 'none';
-                icon.style.color = '#6b7280'; // gray-500
-                button.title = 'Save to favorites';
-                button.classList.remove('bookmarked');
-            }
-        }
-
-        // Check bookmark status for multiple listings
-        async function checkBookmarkStatus(listings) {
-            try {
-                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                if (!currentUser) return;
-                
-                const listingIds = listings.map(listing => listing.id);
-                if (listingIds.length === 0) return;
-                
-                console.log('🔍 Checking bookmark status for', listingIds.length, 'listings');
-                
-                const response = await fetch('/api/favorites/check', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        listingIds: listingIds,
-                        userEmail: currentUser.email
-                    })
-                });
-                
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to check bookmark status');
-                }
-                
-                const favoriteMap = await response.json();
-                console.log('📋 Bookmark status:', favoriteMap);
-                
-                // Update UI for each listing
-                Object.entries(favoriteMap).forEach(([listingId, isBookmarked]) => {
-                    const button = document.querySelector(`[data-listing-id="${listingId}"]`);
-                    if (button) {
-                        updateBookmarkUI(button, isBookmarked);
-                    }
-                });
-                
-            } catch (error) {
-                console.error('❌ Error checking bookmark status:', error);
-            }
-        }
-
-        // Show toast notification
-        function showToast(message, type = 'info') {
-            // Remove existing toast
-            const existingToast = document.getElementById('bookmark-toast');
-            if (existingToast) {
-                existingToast.remove();
-            }
-            
-            const colors = {
-                success: { bg: '#10b981', text: '#ffffff' },
-                error: { bg: '#ef4444', text: '#ffffff' },
-                warning: { bg: '#f59e0b', text: '#ffffff' },
-                info: { bg: '#3b82f6', text: '#ffffff' }
-            };
-            
-            const color = colors[type] || colors.info;
-            
-            const toast = document.createElement('div');
-            toast.id = 'bookmark-toast';
-            toast.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${color.bg};
-                color: ${color.text};
-                padding: 12px 20px;
-                border-radius: 8px;
-                font-family: 'Inter', sans-serif;
-                font-size: 14px;
-                font-weight: 500;
-                z-index: 10000;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                transform: translateX(100%);
-                transition: transform 0.3s ease-out;
-                max-width: 300px;
-            `;
-            
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            // Slide in
-            setTimeout(() => {
-                toast.style.transform = 'translateX(0)';
-            }, 10);
-            
-            // Slide out and remove
-            setTimeout(() => {
-                toast.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    if (toast.parentElement) {
-                        toast.remove();
-                    }
-                }, 300);
-            }, 3000);
-        }
-
         // Authentication check and header update
         async function initializeListingsPage() {
             console.log('DOMContentLoaded event fired');
@@ -847,28 +674,134 @@
         }
 
         // Fetch listings from Supabase
-        async function fetchListings() {
-            console.log('Fetching listings from Supabase');
+        // Enhanced listings cache and pagination
+        let listingsCache = new Map();
+        let currentPage = 0;
+        const LISTINGS_PER_PAGE = 20;
+        let isLoading = false;
+        let hasMoreListings = true;
+        let allListings = [];
+        let filteredListings = [];
+        let isFilterActive = false;
+
+        // Optimized fetch with caching and pagination
+        async function fetchListings(page = 0, forceRefresh = false) {
+            const cacheKey = `listings_page_${page}`;
+            
+            // Return cached data if available and not forcing refresh
+            if (!forceRefresh && listingsCache.has(cacheKey)) {
+                console.log('📦 Returning cached listings for page', page);
+                return listingsCache.get(cacheKey);
+            }
+
+            if (isLoading) {
+                console.log('⏳ Already loading listings, skipping...');
+                return [];
+            }
+
+            isLoading = true;
+            console.log('🔄 Fetching listings from Supabase - Page', page);
+            
             try {
+                const startRange = page * LISTINGS_PER_PAGE;
+                const endRange = startRange + LISTINGS_PER_PAGE - 1;
+                
                 const { data, error } = await supabase
                     .from('listings')
                     .select('*')
                     .order('created_at', { ascending: false })
-                    .range(0, 19);
-                console.log('Fetch result:', { data, error });
+                    .range(startRange, endRange);
+                    
+                console.log('📊 Fetch result:', { 
+                    page, 
+                    startRange, 
+                    endRange, 
+                    count: data?.length || 0, 
+                    error 
+                });
+                
                 if (error) throw error;
-                return data || [];
+                
+                const listings = data || [];
+                
+                // Update hasMoreListings flag
+                hasMoreListings = listings.length === LISTINGS_PER_PAGE;
+                
+                // Cache the results
+                listingsCache.set(cacheKey, listings);
+                
+                // Set cache expiration (5 minutes)
+                setTimeout(() => {
+                    listingsCache.delete(cacheKey);
+                    console.log('🗑️ Expired cache for page', page);
+                }, 5 * 60 * 1000);
+                
+                return listings;
             } catch (error) {
-                console.error('Error fetching listings:', error);
-                alert('Failed to load listings: ' + error.message);
+                console.error('❌ Error fetching listings:', error);
+                if (page === 0) {
+                    alert('Failed to load listings: ' + error.message);
+                }
                 return [];
+            } finally {
+                isLoading = false;
             }
         }
 
-        // Display listings
+        // Load more listings with infinite scroll
+        async function loadMoreListings() {
+            if (isLoading || !hasMoreListings || isFilterActive) {
+                return;
+            }
+
+            showLoadingIndicator();
+            const nextPage = currentPage + 1;
+            const newListings = await fetchListings(nextPage);
+            
+            if (newListings.length > 0) {
+                currentPage = nextPage;
+                allListings = [...allListings, ...newListings];
+                await appendListingsToDOM(newListings);
+                console.log('📈 Loaded page', nextPage, '- Total listings:', allListings.length);
+                
+                // Update map with new listings
+                await updateMap(allListings);
+                
+                // Set up infinite scroll for new content
+                setupInfiniteScroll();
+            }
+            
+            hideLoadingIndicator();
+        }
+
+        // Refresh listings cache
+        async function refreshListings() {
+            console.log('🔄 Refreshing listings cache...');
+            listingsCache.clear();
+            currentPage = 0;
+            allListings = [];
+            filteredListings = [];
+            isFilterActive = false;
+            hasMoreListings = true;
+            
+            // Clear existing listings from DOM
+            const listingsContainer = document.getElementById('listings');
+            if (listingsContainer) {
+                listingsContainer.innerHTML = '<div class="loading-spinner">Loading listings...</div>';
+            }
+            
+            await displayListings();
+        }
+
+        // Display listings with pagination
         async function displayListings() {
             console.log('🔄 Starting displayListings function');
-            let listings = await fetchListings();
+            
+            // Reset pagination state
+            currentPage = 0;
+            isFilterActive = false;
+            
+            let listings = await fetchListings(0);
             console.log('📋 Fetched listings:', listings);
             
             const container = document.getElementById('listingsContainer');
@@ -880,138 +813,236 @@
                 return;
             }
 
+            // Store initial listings
+            allListings = [...listings];
+            
+            // Render the listings
+            await renderListingsToDOM(listings);
+            
+            // Update map with initial listings
+            await updateMap(listings);
+            
+            // Set up infinite scroll
+            setupInfiniteScroll();
+            
+            // Set up pull-to-refresh
+            setupPullToRefresh();
+            
+            // Initialize GPS services
+            initializeGPS();
+        }
+
+        // Render listings to DOM with optimization
+        async function renderListingsToDOM(listings) {
+            const container = document.getElementById('listingsContainer');
+            
+            // Use document fragment for better performance
+            const fragment = document.createDocumentFragment();
+
             listings.forEach(listing => {
-                console.log('Processing listing:', listing.id, listing.title);
-                let media = listing.media || [];
-                if (!Array.isArray(media)) {
-                    console.warn('Media is not an array, resetting to empty array:', media);
-                    media = [];
-                }
+                const listingCard = createListingCard(listing);
+                fragment.appendChild(listingCard);
+            });
 
-                media = media.map(item => {
-                    if (item.type === 'application/json' || !item.type || item.type === 'application/octet-stream') {
-                        const extension = item.name.split('.').pop().toLowerCase();
-                        let correctedType;
-                        switch (extension) {
-                            case 'jpg':
-                            case 'jpeg':
-                                correctedType = 'image/jpeg';
-                                break;
-                            case 'png':
-                                correctedType = 'image/png';
-                                break;
-                            case 'mp4':
-                                correctedType = 'video/mp4';
-                                break;
-                            default:
-                                correctedType = item.type || 'application/octet-stream';
-                        }
-                        console.log('Corrected MIME type for', item.name, 'from', item.type, 'to', correctedType);
-                        return { ...item, type: correctedType };
+            container.appendChild(fragment);
+            
+            // Set up event listeners for all buttons
+            setupListingEventListeners();
+        }
+
+        // Append new listings to existing DOM (for infinite scroll)
+        async function appendListingsToDOM(listings) {
+            const container = document.getElementById('listingsContainer');
+            const fragment = document.createDocumentFragment();
+
+            listings.forEach(listing => {
+                const listingCard = createListingCard(listing);
+                fragment.appendChild(listingCard);
+            });
+
+            container.appendChild(fragment);
+            
+            // Set up event listeners for new buttons
+            setupListingEventListeners();
+        }
+
+        // Optimized listing card creation with lazy loading
+        function createListingCard(listing) {
+            const listingCard = document.createElement('div');
+            listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden';
+            
+            // Process media
+            let media = listing.media || [];
+            if (!Array.isArray(media)) {
+                media = [];
+            }
+
+            // Fix MIME types
+            media = media.map(item => {
+                if (item.type === 'application/json' || !item.type || item.type === 'application/octet-stream') {
+                    const extension = item.name.split('.').pop().toLowerCase();
+                    let correctedType;
+                    switch (extension) {
+                        case 'jpg':
+                        case 'jpeg':
+                            correctedType = 'image/jpeg';
+                            break;
+                        case 'png':
+                            correctedType = 'image/png';
+                            break;
+                        case 'mp4':
+                            correctedType = 'video/mp4';
+                            break;
+                        default:
+                            correctedType = item.type || 'application/octet-stream';
                     }
-                    return item;
-                });
+                    return { ...item, type: correctedType };
+                }
+                return item;
+            });
 
-                const isImage = (file) => {
-                    const byType = file.type.startsWith('image/');
-                    const byExtension = file.name.match(/\.(jpg|jpeg|png)$/i);
-                    return byType || byExtension;
-                };
+            const isImage = (file) => {
+                const byType = file.type.startsWith('image/');
+                const byExtension = file.name.match(/\.(jpg|jpeg|png)$/i);
+                return byType || byExtension;
+            };
 
-                const primaryImage = media.length > 0 && isImage(media[0])
-                    ? media[0].url
-                    : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+            const primaryImage = media.length > 0 && isImage(media[0])
+                ? media[0].url
+                : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
 
-                fetch(primaryImage, { method: 'HEAD' })
-                    .then(response => {
-                        const serverContentType = response.headers.get('Content-Type');
-                        console.log('Server content type for', primaryImage, ':', serverContentType);
-                    })
-                    .catch(err => console.error('Failed to fetch MIME type for', primaryImage, err));
-
-                const listingCard = document.createElement('div');
-                listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
-
-                const hasOwner = !!listing.user_email;
-                listingCard.innerHTML = `
-                    <div class="relative">
-                        <img src="${primaryImage}" alt="${listing.title}" class="listing-image w-full h-48 object-cover" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'">
-                        <button class="bookmark-btn absolute top-3 right-3 w-10 h-10 bg-white bg-opacity-90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105" data-listing-id="${listing.id}" title="Save to favorites">
-                            <svg class="bookmark-icon w-5 h-5 text-gray-600 hover:text-red-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            const hasOwner = !!listing.user_email;
+            
+            // Create optimized HTML structure
+            listingCard.innerHTML = `
+                <div class="listing-image-container">
+                    <img src="${primaryImage}" alt="${listing.title}" class="listing-image lazy-load" loading="lazy" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'">
+                </div>
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold text-gray-800 truncate">${listing.title}</h3>
+                    <p class="text-xl font-bold text-blue-600">$${listing.price.toLocaleString()}/mo</p>
+                    <p class="text-gray-600 text-sm">${listing.street}, ${listing.city}, ${listing.postalCode}</p>
+                    <div class="flex items-center space-x-2 text-sm text-gray-600 mt-2">
+                        <span>${listing.bedrooms} Bed</span>
+                        <span>•</span>
+                        <span>${listing.house_type}</span>
+                        <span>•</span>
+                        <span>${listing.utilities}</span>
+                    </div>
+                    <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
+                    <div class="flex space-x-2 mt-4">
+                        <button class="view-details-btn bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg flex-1" data-listing-id="${listing.id}">View Details</button>
+                        <button class="chat-btn bg-green-600 text-white px-3 py-2 rounded-lg transition ${hasOwner ? 'hover:bg-green-700' : ''} font-semibold shadow-md hover:shadow-lg flex-1" data-listing-id="${listing.id}" ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
+                        <button class="visit-btn bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition font-semibold shadow-md hover:shadow-lg" data-listing-id="${listing.id}" title="Start property visit">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
                         </button>
                     </div>
-                    <div class="p-4">
-                        <h3 class="text-lg font-semibold text-gray-800 truncate">${listing.title}</h3>
-                        <p class="text-xl font-bold text-blue-600">$${listing.price.toLocaleString()}/mo</p>
-                        <p class="text-gray-600 text-sm">${listing.street}, ${listing.city}, ${listing.postalCode}</p>
-                        <div class="flex items-center space-x-2 text-sm text-gray-600 mt-2">
-                            <span>${listing.bedrooms} Bed</span>
-                            <span>•</span>
-                            <span>${listing.house_type}</span>
-                            <span>•</span>
-                            <span>${listing.utilities}</span>
-                        </div>
-                        <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
-                        <div class="flex space-x-2 mt-4">
-                            <button class="view-details-btn w-1/2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                            <button class="chat-btn w-1/2 bg-green-600 text-white px-4 py-2 rounded-lg transition ${hasOwner ? 'hover:bg-green-700' : ''} font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(listingCard);
-            });
+                </div>
+            `;
+            
+            return listingCard;
+        }
 
-            document.querySelectorAll('.view-details-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const listing = JSON.parse(button.dataset.listing);
+        // Centralized event listener setup
+        function setupListingEventListeners() {
+            // Use event delegation for better performance
+            const container = document.getElementById('listingsContainer');
+            
+            // Remove existing listeners to avoid duplicates
+            container.replaceWith(container.cloneNode(true));
+            const newContainer = document.getElementById('listingsContainer');
+            
+            newContainer.addEventListener('click', (e) => {
+                const button = e.target.closest('.view-details-btn, .chat-btn');
+                if (!button) return;
+                
+                const listingId = button.dataset.listingId;
+                const listing = allListings.find(l => l.id == listingId);
+                
+                if (!listing) {
+                    console.error('Listing not found:', listingId);
+                    return;
+                }
+                
+                if (button.classList.contains('view-details-btn')) {
                     showListingModal(listing);
-                });
-            });
-
-            document.querySelectorAll('.chat-btn').forEach(button => {
-                if (!button.disabled) {
-                    button.addEventListener('click', () => {
-                        try {
-                            console.log('🎯 Chat button clicked (legacy handler):', button.dataset.listing);
-                            const listing = JSON.parse(button.dataset.listing);
-                            console.log('📋 Parsed listing data:', listing);
-                            startConversation(listing);
-                        } catch (error) {
-                            console.error('❌ Error parsing listing data or starting conversation:', error);
-                            alert('Error opening chat. Please refresh the page and try again.');
-                        }
-                    });
-                } else {
-                    console.log('⚠️ Chat button is disabled (legacy handler) - no owner email specified');
+                } else if (button.classList.contains('chat-btn') && !button.disabled) {
+                    try {
+                        console.log('🎯 Chat button clicked:', listingId);
+                        startConversation(listing);
+                    } catch (error) {
+                        console.error('❌ Error starting conversation:', error);
+                        alert('Error opening chat. Please refresh the page and try again.');
+                    }
+                } else if (button.classList.contains('visit-btn')) {
+                    try {
+                        console.log('📍 Visit button clicked:', listingId);
+                        startPropertyVisit(listing);
+                    } catch (error) {
+                        console.error('❌ Error starting property visit:', error);
+                        alert('Error starting property visit. Please try again.');
+                    }
                 }
             });
+        }
 
-            // Add bookmark functionality
-            document.querySelectorAll('.bookmark-btn').forEach(button => {
-                button.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const listingId = button.dataset.listingId;
-                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                    
-                    if (!currentUser) {
-                        showToast('Please log in to save listings', 'warning');
-                        return;
+        // Set up infinite scroll
+        function setupInfiniteScroll() {
+            const container = document.getElementById('listingsContainer');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const lastCard = container.lastElementChild;
+                        if (lastCard && entry.target === lastCard) {
+                            console.log('📜 Reached bottom, loading more listings...');
+                            loadMoreListings();
+                        }
                     }
-                    
-                    await toggleBookmark(listingId, currentUser.email, button);
                 });
+            }, {
+                root: null,
+                rootMargin: '100px',
+                threshold: 0.1
             });
 
-            // Check bookmark status for all listings
-            await checkBookmarkStatus(listings);
+            // Observe the last listing card
+            const lastCard = container.lastElementChild;
+            if (lastCard) {
+                observer.observe(lastCard);
+            }
 
-            // Update map with all listings
-            console.log('📍 Updating map with', listings.length, 'listings...');
-            await updateMap(listings);
+            // Store observer for cleanup
+            window.listingsObserver = observer;
+        }
+
+        // Add loading indicator
+        function showLoadingIndicator() {
+            const container = document.getElementById('listingsContainer');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loading-indicator';
+            loadingDiv.className = 'text-center py-8';
+            loadingDiv.innerHTML = `
+                <div class="inline-flex items-center px-4 py-2 bg-blue-100 rounded-lg">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-blue-600 font-medium">Loading more listings...</span>
+                </div>
+            `;
+            container.appendChild(loadingDiv);
+        }
+
+        function hideLoadingIndicator() {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+            }
+        }
             console.log('✅ Listings display complete:', listings.length, 'listings processed');
         }
 
@@ -2718,6 +2749,44 @@
         let originalListings = [];
         let filteredListings = [];
 
+        // Quick filter presets
+        const quickFilters = {
+            'under-1000': { maxPrice: 1000, label: 'Under $1,000' },
+            'under-1500': { maxPrice: 1500, label: 'Under $1,500' },
+            '1-bed': { bedrooms: 1, label: '1 Bedroom' },
+            '2-bed': { bedrooms: 2, label: '2+ Bedrooms' },
+            'apartment': { roomType: 'Apartment', label: 'Apartments' },
+            'house': { roomType: 'House', label: 'Houses' },
+            'toronto': { location: 'toronto', label: 'Toronto' },
+            'vancouver': { location: 'vancouver', label: 'Vancouver' }
+        };
+
+        // Apply quick filter
+        function applyQuickFilter(filterId) {
+            const filter = quickFilters[filterId];
+            if (!filter) return;
+            
+            console.log('🚀 Applying quick filter:', filter.label);
+            
+            // Update form fields
+            if (filter.maxPrice) {
+                document.getElementById('searchMaxPrice').value = filter.maxPrice;
+            }
+            if (filter.bedrooms) {
+                document.getElementById('searchBedrooms').value = filter.bedrooms;
+            }
+            if (filter.roomType) {
+                document.getElementById('searchRoomType').value = filter.roomType;
+            }
+            if (filter.location) {
+                document.getElementById('searchLocation').value = filter.location;
+            }
+            
+            // Apply the search
+            applySearchFilters();
+        }
+
+        // Enhanced search with caching and pagination
         async function applySearchFilters() {
             console.log('🔍 Applying search filters...');
             
@@ -2727,6 +2796,26 @@
             const bedrooms = document.getElementById('searchBedrooms').value;
             
             console.log('Search criteria:', { location, maxPrice, roomType, bedrooms });
+            
+            // Clear existing observer
+            if (window.listingsObserver) {
+                window.listingsObserver.disconnect();
+            }
+            
+            // Set filter active state
+            const hasFilters = location || maxPrice || roomType || bedrooms;
+            isFilterActive = hasFilters;
+            
+            // If no filters, show all listings
+            if (!hasFilters) {
+                console.log('🔄 No filters active, showing all listings');
+                await displayListings();
+                return;
+            }
+            
+            // Show loading
+            const container = document.getElementById('listingsContainer');
+            container.innerHTML = '<div class="loading-spinner text-center py-8">Searching listings...</div>';
             
             // Build Supabase query with filters
             let query = supabase
@@ -2765,12 +2854,22 @@
                 
                 console.log(`✅ Found ${filteredListings.length} listings matching criteria`);
                 
+                // Store filtered results
+                filteredListings = filteredListings || [];
+                allListings = [...filteredListings];
+                
                 // Display filtered results
-                const container = document.getElementById('listingsContainer');
                 container.innerHTML = '';
 
                 if (filteredListings.length === 0) {
-                    container.innerHTML = '<p class="text-gray-600 text-center mb-4">No listings match your search criteria. Try adjusting your filters.</p>';
+                    container.innerHTML = `
+                        <div class="text-center py-8">
+                            <p class="text-gray-600 mb-4">No listings match your search criteria.</p>
+                            <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" onclick="clearFilters()">
+                                Clear Filters
+                            </button>
+                        </div>
+                    `;
                     // Clear map
                     if (markerClusterGroup) {
                         markerClusterGroup.clearLayers();
@@ -2778,9 +2877,604 @@
                     return;
                 }
 
-                // Display filtered listings
-                filteredListings.forEach(listing => {
-                    displayListingCard(listing, container);
+                // Render filtered listings
+                await renderListingsToDOM(filteredListings);
+                
+                // Update map with filtered results
+                await updateMap(filteredListings);
+                
+            } catch (error) {
+                console.error('❌ Error applying filters:', error);
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-red-600 mb-4">Error applying filters: ${error.message}</p>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" onclick="clearFilters()">
+                            Clear Filters
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            console.log('🧹 Clearing all filters');
+            
+            // Clear form fields
+            document.getElementById('searchLocation').value = '';
+            document.getElementById('searchMaxPrice').value = '';
+            document.getElementById('searchRoomType').value = '';
+            document.getElementById('searchBedrooms').value = '';
+            
+            // Reset state
+            isFilterActive = false;
+            filteredListings = [];
+            
+            // Show all listings
+            displayListings();
+        }
+
+        // Add debounced search for better performance
+        let searchTimeout;
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                applySearchFilters();
+            }, 300);
+        }
+
+        // Pull-to-refresh functionality
+        function setupPullToRefresh() {
+            let startY = 0;
+            let pullDistance = 0;
+            let isPulling = false;
+            let refreshThreshold = 100;
+            
+            const container = document.getElementById('listingsContainer');
+            
+            container.addEventListener('touchstart', (e) => {
+                if (window.scrollY === 0) {
+                    startY = e.touches[0].clientY;
+                    isPulling = true;
+                }
+            });
+            
+            container.addEventListener('touchmove', (e) => {
+                if (!isPulling) return;
+                
+                const currentY = e.touches[0].clientY;
+                pullDistance = currentY - startY;
+                
+                if (pullDistance > 0) {
+                    e.preventDefault();
+                    
+                    // Visual feedback
+                    if (pullDistance > refreshThreshold) {
+                        container.style.transform = `translateY(${Math.min(pullDistance * 0.5, 50)}px)`;
+                        container.style.opacity = '0.7';
+                    }
+                }
+            });
+            
+            container.addEventListener('touchend', () => {
+                if (isPulling && pullDistance > refreshThreshold) {
+                    console.log('🔄 Pull to refresh triggered');
+                    refreshListings();
+                }
+                
+                // Reset
+                container.style.transform = '';
+                container.style.opacity = '';
+                isPulling = false;
+                pullDistance = 0;
+            });
+        }
+
+        // GPS and Location Services
+        let userLocation = null;
+        let watchId = null;
+        let locationAccuracy = null;
+
+        // Initialize GPS services
+        async function initializeGPS() {
+            console.log('🛰️ Initializing GPS services...');
+            
+            if (!navigator.geolocation) {
+                console.warn('Geolocation not supported by this browser');
+                showLocationError('GPS not supported on this device');
+                return false;
+            }
+            
+            // Request location permission
+            try {
+                const position = await getCurrentLocation();
+                userLocation = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy,
+                    timestamp: position.timestamp
+                };
+                
+                console.log('✅ GPS initialized:', userLocation);
+                
+                // Add user location marker to map
+                addUserLocationToMap(userLocation);
+                
+                // Start watching location changes
+                startLocationTracking();
+                
+                // Enable location-based features
+                enableLocationFeatures();
+                
+                return true;
+            } catch (error) {
+                console.error('❌ GPS initialization failed:', error);
+                handleLocationError(error);
+                return false;
+            }
+        }
+
+        // Get current location with promise
+        function getCurrentLocation(options = {}) {
+            return new Promise((resolve, reject) => {
+                const defaultOptions = {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                };
+                
+                navigator.geolocation.getCurrentPosition(
+                    resolve,
+                    reject,
+                    { ...defaultOptions, ...options }
+                );
+            });
+        }
+
+        // Start continuous location tracking
+        function startLocationTracking() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+            
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    userLocation = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        timestamp: position.timestamp
+                    };
+                    
+                    console.log('📍 Location updated:', userLocation);
+                    updateUserLocationOnMap(userLocation);
+                },
+                (error) => {
+                    console.error('Location tracking error:', error);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 30000,
+                    maximumAge: 30000
+                }
+            );
+            
+            console.log('👁️ Started location tracking');
+        }
+
+        // Stop location tracking
+        function stopLocationTracking() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                console.log('⏹️ Stopped location tracking');
+            }
+        }
+
+        // Add user location marker to map
+        function addUserLocationToMap(location) {
+            if (!map) return;
+            
+            // Create custom user location icon
+            const userIcon = L.divIcon({
+                className: 'user-location-marker',
+                html: `<div class="user-location-dot">
+                    <div class="user-location-pulse"></div>
+                </div>`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+            
+            // Add user location marker
+            const userMarker = L.marker([location.latitude, location.longitude], {
+                icon: userIcon,
+                zIndexOffset: 1000
+            });
+            
+            userMarker.addTo(map);
+            userMarker.bindPopup('📍 Your Location');
+            
+            // Store reference for updates
+            window.userLocationMarker = userMarker;
+            
+            // Add accuracy circle
+            if (location.accuracy) {
+                const accuracyCircle = L.circle([location.latitude, location.longitude], {
+                    radius: location.accuracy,
+                    color: '#3b82f6',
+                    fillColor: '#3b82f6',
+                    fillOpacity: 0.1,
+                    weight: 1
+                });
+                
+                accuracyCircle.addTo(map);
+                window.userAccuracyCircle = accuracyCircle;
+            }
+        }
+
+        // Update user location on map
+        function updateUserLocationOnMap(location) {
+            if (window.userLocationMarker) {
+                window.userLocationMarker.setLatLng([location.latitude, location.longitude]);
+            }
+            
+            if (window.userAccuracyCircle && location.accuracy) {
+                window.userAccuracyCircle.setLatLng([location.latitude, location.longitude]);
+                window.userAccuracyCircle.setRadius(location.accuracy);
+            }
+        }
+
+        // Enable location-based features
+        function enableLocationFeatures() {
+            // Add "Near Me" button
+            addNearMeButton();
+            
+            // Add navigation buttons to listing cards
+            addNavigationButtons();
+            
+            // Sort listings by distance
+            addDistanceSorting();
+        }
+
+        // Add "Properties Near Me" button
+        function addNearMeButton() {
+            const searchContainer = document.querySelector('.search-controls') || document.querySelector('#searchForm');
+            if (!searchContainer) return;
+            
+            const nearMeButton = document.createElement('button');
+            nearMeButton.className = 'near-me-btn bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-semibold flex items-center gap-2';
+            nearMeButton.innerHTML = `
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Near Me
+            `;
+            
+            nearMeButton.addEventListener('click', showPropertiesNearMe);
+            searchContainer.appendChild(nearMeButton);
+        }
+
+        // Show properties near user location
+        async function showPropertiesNearMe() {
+            if (!userLocation) {
+                console.log('🛰️ Getting current location...');
+                const button = document.querySelector('.near-me-btn');
+                if (button) {
+                    button.innerHTML = '📍 Getting location...';
+                    button.disabled = true;
+                }
+                
+                try {
+                    const position = await getCurrentLocation();
+                    userLocation = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        timestamp: position.timestamp
+                    };
+                    addUserLocationToMap(userLocation);
+                } catch (error) {
+                    handleLocationError(error);
+                    return;
+                } finally {
+                    if (button) {
+                        button.innerHTML = 'Near Me';
+                        button.disabled = false;
+                    }
+                }
+            }
+            
+            console.log('🔍 Finding properties near:', userLocation);
+            
+            // Calculate distances and sort listings
+            const listingsWithDistance = allListings.map(listing => {
+                const distance = calculateDistance(
+                    userLocation.latitude,
+                    userLocation.longitude,
+                    listing.latitude || 0,
+                    listing.longitude || 0
+                );
+                
+                return {
+                    ...listing,
+                    distance: distance
+                };
+            }).sort((a, b) => a.distance - b.distance);
+            
+            // Filter to properties within reasonable distance (e.g., 50km)
+            const nearbyProperties = listingsWithDistance.filter(listing => listing.distance <= 50);
+            
+            console.log(`📍 Found ${nearbyProperties.length} properties within 50km`);
+            
+            // Update UI
+            const container = document.getElementById('listingsContainer');
+            container.innerHTML = '';
+            
+            if (nearbyProperties.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-gray-600 mb-4">No properties found within 50km of your location.</p>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" onclick="displayListings()">
+                            Show All Properties
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Render nearby properties with distance info
+            await renderListingsWithDistance(nearbyProperties);
+            
+            // Update map to show nearby properties
+            await updateMap(nearbyProperties);
+            
+            // Center map on user location
+            if (map) {
+                map.setView([userLocation.latitude, userLocation.longitude], 12);
+            }
+        }
+
+        // Calculate distance between two coordinates (Haversine formula)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in kilometers
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; // Distance in kilometers
+        }
+
+        // Render listings with distance information
+        async function renderListingsWithDistance(listings) {
+            const container = document.getElementById('listingsContainer');
+            const fragment = document.createDocumentFragment();
+
+            listings.forEach(listing => {
+                const listingCard = createListingCardWithDistance(listing);
+                fragment.appendChild(listingCard);
+            });
+
+            container.appendChild(fragment);
+            setupListingEventListeners();
+        }
+
+        // Create listing card with distance and navigation
+        function createListingCardWithDistance(listing) {
+            const listingCard = createListingCard(listing);
+            
+            // Add distance and navigation info
+            const cardContent = listingCard.querySelector('.p-4');
+            if (cardContent && listing.distance !== undefined) {
+                const distanceInfo = document.createElement('div');
+                distanceInfo.className = 'flex items-center justify-between text-sm text-gray-600 mt-2 pt-2 border-t border-gray-200';
+                distanceInfo.innerHTML = `
+                    <span class="flex items-center gap-1">
+                        📍 ${listing.distance.toFixed(1)} km away
+                    </span>
+                    <button class="navigate-btn text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1" data-listing-id="${listing.id}">
+                        🧭 Navigate
+                    </button>
+                `;
+                
+                cardContent.appendChild(distanceInfo);
+            }
+            
+            return listingCard;
+        }
+
+        // Add navigation functionality
+        function addNavigationButtons() {
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('navigate-btn') || e.target.closest('.navigate-btn')) {
+                    const button = e.target.closest('.navigate-btn') || e.target;
+                    const listingId = button.dataset.listingId;
+                    const listing = allListings.find(l => l.id == listingId);
+                    
+                    if (listing) {
+                        navigateToProperty(listing);
+                    }
+                }
+            });
+        }
+
+        // Navigate to property
+        async function navigateToProperty(listing) {
+            console.log('🧭 Navigating to property:', listing.title);
+            
+            const address = `${listing.street}, ${listing.city}, ${listing.postalCode}`;
+            
+            // Get property coordinates if not available
+            let propertyCoords = null;
+            if (listing.latitude && listing.longitude) {
+                propertyCoords = { lat: listing.latitude, lon: listing.longitude };
+            } else {
+                try {
+                    propertyCoords = await geocodeLocation(address);
+                } catch (error) {
+                    console.error('Failed to geocode property address:', error);
+                    alert('Unable to get directions to this property. Address may be incomplete.');
+                    return;
+                }
+            }
+            
+            // Open navigation options
+            showNavigationOptions(listing, propertyCoords, address);
+        }
+
+        // Show navigation options modal
+        function showNavigationOptions(listing, coordinates, address) {
+            const modal = document.createElement('div');
+            modal.className = 'navigation-modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+                    <h3 class="text-lg font-semibold mb-4">Navigate to Property</h3>
+                    <p class="text-gray-600 mb-4">${listing.title}</p>
+                    <p class="text-sm text-gray-500 mb-6">${address}</p>
+                    
+                    <div class="space-y-3">
+                        <button class="nav-option w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2" data-type="google">
+                            🗺️ Google Maps
+                        </button>
+                        <button class="nav-option w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2" data-type="apple">
+                            🧭 Apple Maps
+                        </button>
+                        <button class="nav-option w-full bg-orange-600 text-white py-3 px-4 rounded-lg hover:bg-orange-700 flex items-center justify-center gap-2" data-type="waze">
+                            🚗 Waze
+                        </button>
+                        <button class="nav-option w-full bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 flex items-center justify-center gap-2" data-type="browser">
+                            🌐 Browser Maps
+                        </button>
+                    </div>
+                    
+                    <button class="close-modal w-full mt-4 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300">
+                        Cancel
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Handle navigation option clicks
+            modal.addEventListener('click', (e) => {
+                if (e.target.classList.contains('nav-option')) {
+                    const type = e.target.dataset.type;
+                    openNavigation(type, coordinates, address);
+                    modal.remove();
+                } else if (e.target.classList.contains('close-modal') || e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        // Open navigation in selected app
+        function openNavigation(type, coordinates, address) {
+            const lat = coordinates.lat;
+            const lon = coordinates.lon;
+            const encodedAddress = encodeURIComponent(address);
+            
+            let url;
+            
+            switch (type) {
+                case 'google':
+                    url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+                    break;
+                case 'apple':
+                    url = `http://maps.apple.com/?daddr=${lat},${lon}`;
+                    break;
+                case 'waze':
+                    url = `https://waze.com/ul?ll=${lat},${lon}&navigate=yes`;
+                    break;
+                case 'browser':
+                    url = `https://www.openstreetmap.org/directions?to=${lat},${lon}`;
+                    break;
+                default:
+                    url = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
+            }
+            
+            console.log('🚀 Opening navigation:', url);
+            
+            // Open in same window for mobile, new tab for desktop
+            if (window.innerWidth <= 768) {
+                window.location.href = url;
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
+        // Handle location errors
+        function handleLocationError(error) {
+            let message;
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    message = 'Location access denied. Please enable location services to use GPS features.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    message = 'Location information unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    message = 'Location request timed out.';
+                    break;
+                default:
+                    message = 'An unknown error occurred while retrieving location.';
+            }
+            
+            console.error('Location error:', message);
+            showLocationError(message);
+        }
+
+        // Show location error to user
+        function showLocationError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'location-error fixed top-4 left-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50';
+            errorDiv.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span>${message}</span>
+                    <button class="text-red-700 hover:text-red-900" onclick="this.parentElement.parentElement.remove()">
+                        ✕
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(errorDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (errorDiv.parentElement) {
+                    errorDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Add distance sorting option
+        function addDistanceSorting() {
+            // This could be integrated into the existing filter system
+            // For now, it's handled by the "Near Me" functionality
+        }
+
+        // Property visit functionality
+        function startPropertyVisit(listing) {
+            if (!window.propertyVisitTracker) {
+                console.error('Property visit tracker not initialized');
+                alert('Property visit feature not available. Please refresh the page.');
+                return;
+            }
+            
+            window.propertyVisitTracker.startVisit(listing.id, listing.title);
+        }
+
+        // Make functions globally available
+        window.applyQuickFilter = applyQuickFilter;
+        window.clearFilters = clearFilters;
+        window.debounceSearch = debounceSearch;
+        window.refreshListings = refreshListings;
+        window.initializeGPS = initializeGPS;
+        window.showPropertiesNearMe = showPropertiesNearMe;
+        window.navigateToProperty = navigateToProperty;
+        window.startPropertyVisit = startPropertyVisit;
                 });
                 
                 // Update map with filtered results
