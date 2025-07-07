@@ -4225,5 +4225,174 @@
             window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: true });
         }
     </script>
+    
+    <!-- Property Visit Tracker -->
+    <script src="js/property-visit-tracker.js"></script>
+    
+    <!-- Notification Manager -->
+    <script src="js/notification-manager.js"></script>
+    
+    <!-- Sync Manager -->
+    <script src="js/sync-manager.js"></script>
+    
+    <!-- Offline Cache Manager -->
+    <script src="js/offline-cache.js"></script>
+    
+    <!-- Recommendation Engine -->
+    <script src="js/recommendation-engine.js"></script>
+    
+    <!-- Performance Manager -->
+    <script src="js/performance-manager.js"></script>
+    
+    <!-- Initialize Notifications -->
+    <script>
+        // Initialize all systems when DOM is ready
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Initializing RoomFinderAI systems...');
+            
+            // Initialize offline cache
+            if (window.offlineCacheManager) {
+                await window.offlineCacheManager.init();
+                console.log('✅ Offline cache initialized');
+            }
+            
+            // Initialize notification system
+            if (window.notificationManager) {
+                await window.notificationManager.init();
+                console.log('✅ Notification system initialized');
+                
+                // Show notification prompt after 10 seconds if not already granted
+                setTimeout(() => {
+                    if (window.notificationManager.permission === 'default') {
+                        window.notificationManager.requestPermission().catch(console.error);
+                    }
+                }, 10000);
+            }
+            
+            // Initialize sync manager when user is authenticated
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (currentUser && window.syncManager) {
+                await window.syncManager.init(currentUser);
+                console.log('✅ Cross-device sync initialized');
+            }
+            
+            // Initialize recommendation engine
+            if (currentUser && window.recommendationEngine) {
+                await window.recommendationEngine.init(currentUser);
+                console.log('✅ Recommendation engine initialized');
+                
+                // Track page view for recommendations
+                window.recommendationEngine.recordInteraction('search', {
+                    query: '',
+                    location: '',
+                    resultCount: 0
+                });
+            }
+            
+            console.log('🎉 All systems initialized successfully');
+        });
+        
+        // Add notification triggers for new listings
+        if (supabase) {
+            supabase
+                .channel('notification_listings')
+                .on('postgres_changes', { 
+                    event: 'INSERT', 
+                    schema: 'public', 
+                    table: 'listings' 
+                }, (payload) => {
+                    console.log('🔔 New listing notification trigger:', payload.new);
+                    
+                    // Check if user has saved searches that match this listing
+                    if (window.notificationManager && window.notificationManager.isEnabled()) {
+                        checkAndSendNewListingNotification(payload.new);
+                    }
+                })
+                .on('postgres_changes', { 
+                    event: 'UPDATE', 
+                    schema: 'public', 
+                    table: 'listings' 
+                }, (payload) => {
+                    console.log('🔔 Listing update notification trigger:', payload.new);
+                    
+                    // Check for price changes
+                    if (window.notificationManager && window.notificationManager.isEnabled()) {
+                        checkAndSendPriceChangeNotification(payload.old, payload.new);
+                    }
+                })
+                .subscribe();
+        }
+        
+        // Check if new listing matches user's saved searches
+        function checkAndSendNewListingNotification(listing) {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) return;
+            
+            // Get user's notification preferences
+            const preferences = window.notificationManager.preferences;
+            if (!preferences.new_listing) return;
+            
+            // Simple matching logic (in production, this would be server-side)
+            const savedSearches = JSON.parse(localStorage.getItem('savedSearches') || '[]');
+            
+            for (const search of savedSearches) {
+                let matches = true;
+                
+                if (search.maxPrice && listing.price > search.maxPrice) matches = false;
+                if (search.minPrice && listing.price < search.minPrice) matches = false;
+                if (search.city && !listing.city.toLowerCase().includes(search.city.toLowerCase())) matches = false;
+                if (search.bedrooms && listing.bedrooms < search.bedrooms) matches = false;
+                if (search.houseType && listing.house_type !== search.houseType) matches = false;
+                
+                if (matches) {
+                    // Show local notification
+                    window.notificationManager.sendLocalNotification(
+                        '🏠 New Property Available',
+                        {
+                            body: `${listing.title} - $${listing.price.toLocaleString()}/mo`,
+                            data: { 
+                                type: 'new_listing',
+                                propertyId: listing.id,
+                                url: `/listing_details?id=${listing.id}`
+                            },
+                            tag: 'new_listing_' + listing.id
+                        }
+                    );
+                    break; // Only send one notification per new listing
+                }
+            }
+        }
+        
+        // Check for price changes on saved properties
+        function checkAndSendPriceChangeNotification(oldListing, newListing) {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) return;
+            
+            const preferences = window.notificationManager.preferences;
+            if (!preferences.price_change) return;
+            
+            // Check if price decreased
+            if (newListing.price < oldListing.price) {
+                const savedProperties = JSON.parse(localStorage.getItem('savedProperties') || '[]');
+                
+                if (savedProperties.includes(newListing.id)) {
+                    const savings = oldListing.price - newListing.price;
+                    
+                    window.notificationManager.sendLocalNotification(
+                        '💰 Price Drop Alert',
+                        {
+                            body: `${newListing.title} dropped by $${savings}/mo - Now $${newListing.price.toLocaleString()}/mo`,
+                            data: { 
+                                type: 'price_change',
+                                propertyId: newListing.id,
+                                url: `/listing_details?id=${newListing.id}`
+                            },
+                            tag: 'price_change_' + newListing.id
+                        }
+                    );
+                }
+            }
+        }
+    </script>
 </body>
 </html>
