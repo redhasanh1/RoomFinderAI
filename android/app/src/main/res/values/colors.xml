@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Brand Colors -->
+    <color name="purple_primary">#667eea</color>
+    <color name="purple_secondary">#764ba2</color>
+    <color name="purple_light">#a78bfa</color>
+    <color name="purple_ultralight">#e9d5ff</color>
+    
+    <!-- Accent Colors -->
+    <color name="accent_blue">#4facfe</color>
+    <color name="accent_light">#00f2fe</color>
+    
+    <!-- Glass Morphism Colors -->
+    <color name="glass_white">#40ffffff</color>
+    <color name="glass_border">#2dffffff</color>
+    <color name="glass_shadow">#5f1f2687</color>
+    
+    <!-- Background Colors -->
+    <color name="background_primary">#f8fafc</color>
+    <color name="background_secondary">#f1f5f9</color>
+    <color name="background_card">#ffffff</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#0f172a</color>
+    <color name="text_secondary">#64748b</color>
+    <color name="text_accent">#667eea</color>
+    <color name="text_white">#ffffff</color>
+    
+    <!-- System Colors -->
+    <color name="white">#ffffff</color>
+    <color name="black">#000000</color>
+    <color name="transparent">#00000000</color>
+    
+    <!-- Material Design Colors -->
+    <color name="colorPrimary">@color/purple_primary</color>
+    <color name="colorPrimaryVariant">@color/purple_secondary</color>
+    <color name="colorOnPrimary">@color/white</color>
+    <color name="colorSecondary">@color/accent_blue</color>
+    <color name="colorSecondaryVariant">@color/accent_light</color>
+    <color name="colorOnSecondary">@color/white</color>
+    <color name="colorBackground">@color/background_primary</color>
+    <color name="colorSurface">@color/background_card</color>
+    <color name="colorError">#f56565</color>
+    <color name="colorOnBackground">@color/text_primary</color>
+    <color name="colorOnSurface">@color/text_primary</color>
+    <color name="colorOnError">@color/white</color>
+    
+    <!-- Navigation Colors -->
+    <color name="nav_active">@color/purple_primary</color>
+    <color name="nav_inactive">#94a3b8</color>
+    <color name="nav_background">@color/white</color>
+    
+    <!-- Card Colors -->
+    <color name="card_background">@color/white</color>
+    <color name="card_shadow">#1a000000</color>
+    <color name="card_gradient_start">@color/purple_primary</color>
+    <color name="card_gradient_end">@color/purple_secondary</color>
+    
+    <!-- Button Colors -->
+    <color name="button_primary">@color/purple_primary</color>
+    <color name="button_secondary">@color/purple_light</color>
+    <color name="button_outline">@color/purple_primary</color>
+    <color name="button_text">@color/white</color>
+    
+    <!-- Search Colors -->
+    <color name="search_background">@color/glass_white</color>
+    <color name="search_hint">@color/text_secondary</color>
+    <color name="search_text">@color/text_primary</color>
+</resources>

@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.Marketplace.CardView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/card_margin"
+    android:clickable="true"
+    android:focusable="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Property Image -->
+        <ImageView
+            android:id="@+id/propertyImage"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/card_image_height"
+            android:scaleType="centerCrop"
+            android:background="@color/background_secondary"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Gradient Overlay -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:background="@drawable/gradient_overlay"
+            app:layout_constraintBottom_toBottomOf="@id/propertyImage"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Favorite Button -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/favoriteButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/spacing_small"
+            app:fabSize="mini"
+            app:backgroundTint="@color/white"
+            app:tint="@color/purple_primary"
+            android:src="@android:drawable/ic_menu_view"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Content Container -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding"
+            app:layout_constraintTop_toBottomOf="@id/propertyImage"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- Price and Type Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/price"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="$1,500/month"
+                    android:textSize="@dimen/text_size_xlarge"
+                    android:textColor="@color/purple_primary"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/propertyType"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Apartment"
+                    android:textSize="@dimen/text_size_small"
+                    android:textColor="@color/text_secondary"
+                    android:background="@drawable/type_badge"
+                    android:paddingHorizontal="@dimen/spacing_small"
+                    android:paddingVertical="@dimen/spacing_tiny" />
+            </LinearLayout>
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_small"
+                android:text="Beautiful Downtown Apartment"
+                android:textSize="@dimen/text_size_large"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <!-- Location -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="@dimen/spacing_tiny"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_small"
+                    android:layout_height="@dimen/icon_size_small"
+                    android:src="@android:drawable/ic_menu_mylocation"
+                    android:tint="@color/text_secondary" />
+
+                <TextView
+                    android:id="@+id/location"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_tiny"
+                    android:text="Downtown, Toronto"
+                    android:textSize="@dimen/text_size_medium"
+                    android:textColor="@color/text_secondary" />
+            </LinearLayout>
+
+            <!-- Details Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="@dimen/spacing_small">
+
+                <TextView
+                    android:id="@+id/bedrooms"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2 Beds"
+                    android:textSize="@dimen/text_size_small"
+                    android:textColor="@color/text_secondary"
+                    android:drawableStart="@android:drawable/ic_menu_today"
+                    android:drawablePadding="@dimen/spacing_tiny" />
+
+                <TextView
+                    android:id="@+id/bathrooms"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_medium"
+                    android:text="1 Bath"
+                    android:textSize="@dimen/text_size_small"
+                    android:textColor="@color/text_secondary"
+                    android:drawableStart="@android:drawable/ic_menu_today"
+                    android:drawablePadding="@dimen/spacing_tiny" />
+
+                <TextView
+                    android:id="@+id/area"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_medium"
+                    android:text="850 sqft"
+                    android:textSize="@dimen/text_size_small"
+                    android:textColor="@color/text_secondary"
+                    android:drawableStart="@android:drawable/ic_menu_today"
+                    android:drawablePadding="@dimen/spacing_tiny" />
+            </LinearLayout>
+
+            <!-- Posted Date -->
+            <TextView
+                android:id="@+id/postedDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_small"
+                android:text="Posted 2 hours ago"
+                android:textSize="@dimen/text_size_tiny"
+                android:textColor="@color/purple_light" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
