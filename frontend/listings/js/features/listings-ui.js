@@ -141,6 +141,19 @@ function createListingCard(listing) {
                     <div class="absolute top-2 right-2 bg-white bg-opacity-90 px-2 py-1 rounded-full text-sm font-semibold text-gray-700">
                         ${price}
                     </div>
+                    <button 
+                        class="favorite-btn absolute top-2 left-2 bg-white bg-opacity-90 p-2 rounded-full shadow-lg hover:bg-opacity-100 transition-all duration-200 transform hover:scale-110"
+                        data-listing-id="${listing.id}"
+                        onclick="event.stopPropagation(); toggleFavorite('${listing.id}')"
+                        title="Add to favorites"
+                    >
+                        <svg class="w-5 h-5 favorite-icon text-gray-400 hover:text-red-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                        </svg>
+                        <svg class="w-5 h-5 favorite-icon-filled text-red-500 hidden" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                        </svg>
+                    </button>
                 </div>
                 
                 <h3 class="text-xl font-bold mb-2 text-gray-900">${sanitizeText(listing.title)}</h3>
@@ -493,6 +506,265 @@ function openImageViewer(imageUrl) {
     document.body.appendChild(viewer);
 }
 
+/**
+ * Favorites Management Functions
+ */
+
+// Store current user's favorites in memory for fast access
+let userFavorites = new Set();
+
+/**
+ * Initialize favorites functionality
+ */
+async function initializeFavorites() {
+    try {
+        await loadUserFavorites();
+        console.log('✅ Favorites initialized');
+    } catch (error) {
+        console.error('❌ Failed to initialize favorites:', error);
+    }
+}
+
+/**
+ * Load user's favorites from backend
+ */
+async function loadUserFavorites() {
+    try {
+        // Get current user email from universal auth manager
+        const currentUser = window.UniversalAuthManager ? 
+            window.UniversalAuthManager.getCurrentUser() : null;
+        
+        if (!currentUser || !currentUser.email) {
+            console.log('No authenticated user, skipping favorites load');
+            return;
+        }
+
+        const response = await fetch(`/api/favorites?userEmail=${encodeURIComponent(currentUser.email)}`);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to load favorites: ${response.status}`);
+        }
+
+        const favorites = await response.json();
+        
+        // Update in-memory set
+        userFavorites.clear();
+        favorites.forEach(listing => {
+            userFavorites.add(listing.id);
+        });
+
+        // Update UI
+        updateAllFavoriteIcons();
+        
+        console.log(`✅ Loaded ${favorites.length} user favorites`);
+        
+    } catch (error) {
+        console.error('❌ Error loading favorites:', error);
+    }
+}
+
+/**
+ * Toggle favorite status of a listing
+ */
+async function toggleFavorite(listingId) {
+    try {
+        // Check if user is authenticated
+        const currentUser = window.UniversalAuthManager ? 
+            window.UniversalAuthManager.getCurrentUser() : null;
+        
+        if (!currentUser || !currentUser.email) {
+            // Show login prompt
+            alert('Please log in to save listings to your favorites.');
+            return;
+        }
+
+        const isFavorited = userFavorites.has(listingId);
+        const favoriteBtn = document.querySelector(`.favorite-btn[data-listing-id="${listingId}"]`);
+        
+        if (!favoriteBtn) {
+            console.error('Favorite button not found for listing:', listingId);
+            return;
+        }
+
+        // Optimistic UI update
+        updateFavoriteIcon(favoriteBtn, !isFavorited);
+        
+        if (isFavorited) {
+            // Remove from favorites
+            const response = await fetch(`/api/favorites/${listingId}?userEmail=${encodeURIComponent(currentUser.email)}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to remove from favorites');
+            }
+            
+            userFavorites.delete(listingId);
+            showFavoriteMessage('Removed from favorites', 'removed');
+            
+        } else {
+            // Add to favorites
+            const response = await fetch('/api/favorites', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    listingId: listingId,
+                    userEmail: currentUser.email
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to add to favorites');
+            }
+            
+            userFavorites.add(listingId);
+            showFavoriteMessage('Added to favorites', 'added');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error toggling favorite:', error);
+        
+        // Revert optimistic UI update on error
+        const favoriteBtn = document.querySelector(`.favorite-btn[data-listing-id="${listingId}"]`);
+        if (favoriteBtn) {
+            const isFavorited = userFavorites.has(listingId);
+            updateFavoriteIcon(favoriteBtn, isFavorited);
+        }
+        
+        showFavoriteMessage('Failed to update favorites. Please try again.', 'error');
+    }
+}
+
+/**
+ * Update favorite icon for a specific button
+ */
+function updateFavoriteIcon(favoriteBtn, isFavorited) {
+    const outlineIcon = favoriteBtn.querySelector('.favorite-icon');
+    const filledIcon = favoriteBtn.querySelector('.favorite-icon-filled');
+    
+    if (isFavorited) {
+        outlineIcon.classList.add('hidden');
+        filledIcon.classList.remove('hidden');
+        favoriteBtn.title = 'Remove from favorites';
+        favoriteBtn.classList.add('favorited');
+    } else {
+        outlineIcon.classList.remove('hidden');
+        filledIcon.classList.add('hidden');
+        favoriteBtn.title = 'Add to favorites';
+        favoriteBtn.classList.remove('favorited');
+    }
+}
+
+/**
+ * Update all favorite icons based on current favorites
+ */
+function updateAllFavoriteIcons() {
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+        const listingId = btn.dataset.listingId;
+        const isFavorited = userFavorites.has(listingId);
+        updateFavoriteIcon(btn, isFavorited);
+    });
+}
+
+/**
+ * Check if listings are favorited (batch check)
+ */
+async function checkFavoritesStatus(listingIds) {
+    try {
+        const currentUser = window.UniversalAuthManager ? 
+            window.UniversalAuthManager.getCurrentUser() : null;
+        
+        if (!currentUser || !currentUser.email) {
+            return {};
+        }
+
+        const response = await fetch('/api/favorites/check', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                listingIds: listingIds,
+                userEmail: currentUser.email
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to check favorites status');
+        }
+        
+        const favoriteMap = await response.json();
+        
+        // Update in-memory set
+        Object.entries(favoriteMap).forEach(([listingId, isFavorited]) => {
+            if (isFavorited) {
+                userFavorites.add(listingId);
+            } else {
+                userFavorites.delete(listingId);
+            }
+        });
+        
+        return favoriteMap;
+        
+    } catch (error) {
+        console.error('❌ Error checking favorites status:', error);
+        return {};
+    }
+}
+
+/**
+ * Show favorite status message
+ */
+function showFavoriteMessage(message, type = 'info') {
+    const messageEl = document.createElement('div');
+    messageEl.className = `fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white font-medium transition-all duration-300 transform translate-x-full`;
+    
+    // Set colors based on type
+    switch (type) {
+        case 'added':
+            messageEl.className += ' bg-green-500';
+            break;
+        case 'removed':
+            messageEl.className += ' bg-blue-500';
+            break;
+        case 'error':
+            messageEl.className += ' bg-red-500';
+            break;
+        default:
+            messageEl.className += ' bg-gray-500';
+    }
+    
+    messageEl.textContent = message;
+    document.body.appendChild(messageEl);
+    
+    // Animate in
+    setTimeout(() => {
+        messageEl.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Animate out and remove
+    setTimeout(() => {
+        messageEl.classList.add('translate-x-full');
+        setTimeout(() => {
+            if (messageEl.parentNode) {
+                messageEl.parentNode.removeChild(messageEl);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Make toggleFavorite globally available
+window.toggleFavorite = toggleFavorite;
+
+// Auto-initialize favorites when listings are displayed
+document.addEventListener('listingsDisplayed', () => {
+    setTimeout(() => {
+        initializeFavorites();
+    }, 100);
+});
+
 // Export functions for use in other modules
 export {
     initializeUI,
@@ -511,7 +783,14 @@ export {
     sanitizeText,
     formatDate,
     showErrorMessage,
-    openImageViewer
+    openImageViewer,
+    initializeFavorites,
+    loadUserFavorites,
+    toggleFavorite,
+    updateFavoriteIcon,
+    updateAllFavoriteIcons,
+    checkFavoritesStatus,
+    showFavoriteMessage
 };
 
 // Also export to window for backward compatibility
@@ -532,5 +811,12 @@ window.ListingsUI = {
     sanitizeText,
     formatDate,
     showErrorMessage,
-    openImageViewer
+    openImageViewer,
+    initializeFavorites,
+    loadUserFavorites,
+    toggleFavorite,
+    updateFavoriteIcon,
+    updateAllFavoriteIcons,
+    checkFavoritesStatus,
+    showFavoriteMessage
 };
