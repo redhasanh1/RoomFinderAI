@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RoomFinderAI - Mobile App</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="RoomFinderAI">
+    
+    <!-- Authentication Protection -->
+    <script src="universal-auth-protection.js"></script>
+    <script src="universal-auth-manager.js"></script>
+    
+    <!-- Core Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    
+    <!-- App Styles -->
+    <link rel="stylesheet" href="css/mobile-app.css">
+    <link rel="stylesheet" href="css/mobile-android.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- CSS Variables -->
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --shadow-soft: 0 8px 32px rgba(31, 38, 135, 0.37);
+            --shadow-hard: 0 20px 40px rgba(0, 0, 0, 0.1);
+            --transition-smooth: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+            --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            
+            /* App-specific variables */
+            --app-header-height: 60px;
+            --app-bottom-nav-height: 70px;
+            --app-content-padding: 16px;
+            --app-card-radius: 16px;
+            --app-primary-color: #667eea;
+            --app-background: #f8fafc;
+            --app-surface: #ffffff;
+            --app-text-primary: #1a202c;
+            --app-text-secondary: #4a5568;
+        }
+        
+        * {
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--app-background);
+            color: var(--app-text-primary);
+            overflow-x: hidden;
+            padding-top: var(--app-header-height);
+            padding-bottom: var(--app-bottom-nav-height);
+        }
+    </style>
+</head>
+<body>
+    <!-- App Header -->
+    <header class="app-header">
+        <div class="app-header-content">
+            <!-- Logo -->
+            <div class="app-logo">
+                <span class="logo-icon">🏠</span>
+                <span class="logo-text">RoomFinderAI</span>
+            </div>
+            
+            <!-- Location Selector -->
+            <div class="location-selector" onclick="openLocationModal()">
+                <span class="location-icon">📍</span>
+                <span class="location-text" id="currentLocation">Toronto, ON</span>
+                <span class="location-arrow">▼</span>
+            </div>
+            
+            <!-- Profile Menu -->
+            <div class="profile-menu-container">
+                <button class="profile-btn" onclick="toggleProfileMenu()">
+                    <div class="profile-avatar">
+                        <span id="profileIcon">👤</span>
+                    </div>
+                </button>
+                
+                <!-- Profile Dropdown -->
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="profile-dropdown-header">
+                        <div class="profile-info">
+                            <div class="profile-avatar-large">👤</div>
+                            <div class="profile-details">
+                                <div class="profile-name" id="profileName">Guest User</div>
+                                <div class="profile-email" id="profileEmail">Not logged in</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-dropdown-content">
+                        <!-- Authentication Section -->
+                        <div class="menu-section" id="authSection">
+                            <a href="login.html" class="menu-item">
+                                <span class="menu-icon">🔐</span>
+                                <span class="menu-text">Login</span>
+                            </a>
+                            <a href="signup.html" class="menu-item">
+                                <span class="menu-icon">📝</span>
+                                <span class="menu-text">Sign Up</span>
+                            </a>
+                        </div>
+                        
+                        <!-- User Section -->
+                        <div class="menu-section" id="userSection" style="display: none;">
+                            <a href="#" class="menu-item" onclick="showMyProfile()">
+                                <span class="menu-icon">👤</span>
+                                <span class="menu-text">My Profile</span>
+                            </a>
+                            <a href="#" class="menu-item" onclick="showMyListings()">
+                                <span class="menu-icon">🏠</span>
+                                <span class="menu-text">My Listings</span>
+                            </a>
+                            <a href="#" class="menu-item" onclick="showSavedProperties()">
+                                <span class="menu-icon">❤️</span>
+                                <span class="menu-text">Saved Properties</span>
+                            </a>
+                            <a href="#" class="menu-item" onclick="showMessages()">
+                                <span class="menu-icon">💬</span>
+                                <span class="menu-text">Messages</span>
+                                <span class="menu-badge" id="messageBadge">3</span>
+                            </a>
+                            <a href="#" class="menu-item" onclick="showDashboard()">
+                                <span class="menu-icon">📊</span>
+                                <span class="menu-text">Dashboard</span>
+                            </a>
+                        </div>
+                        
+                        <!-- Settings Section -->
+                        <div class="menu-section">
+                            <a href="#" class="menu-item" onclick="showSettings()">
+                                <span class="menu-icon">⚙️</span>
+                                <span class="menu-text">Settings</span>
+                            </a>
+                            <a href="#" class="menu-item" onclick="showHelp()">
+                                <span class="menu-icon">🆘</span>
+                                <span class="menu-text">Help & Support</span>
+                            </a>
+                            <a href="legal.html" class="menu-item">
+                                <span class="menu-icon">📋</span>
+                                <span class="menu-text">Terms of Use</span>
+                            </a>
+                            <a href="#" class="menu-item" onclick="showPrivacyPolicy()">
+                                <span class="menu-icon">🔒</span>
+                                <span class="menu-text">Privacy Policy</span>
+                            </a>
+                        </div>
+                        
+                        <!-- Logout Section -->
+                        <div class="menu-section" id="logoutSection" style="display: none;">
+                            <a href="#" class="menu-item logout-item" onclick="logout()">
+                                <span class="menu-icon">🚪</span>
+                                <span class="menu-text">Logout</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Quick Filters Bar -->
+    <div class="quick-filters-bar">
+        <div class="quick-filters-scroll">
+            <button class="quick-filter active" data-filter="all">All</button>
+            <button class="quick-filter" data-filter="apartment">Apartments</button>
+            <button class="quick-filter" data-filter="house">Houses</button>
+            <button class="quick-filter" data-filter="condo">Condos</button>
+            <button class="quick-filter" data-filter="room">Rooms</button>
+            <button class="quick-filter" data-filter="studio">Studios</button>
+        </div>
+        <button class="filters-btn" onclick="openFiltersModal()">
+            <span>🔍</span>
+        </button>
+    </div>
+    
+    <!-- Main Content Area -->
+    <main class="app-main">
+        <div class="content-container" id="contentContainer">
+            <!-- Property Cards will be inserted here -->
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p>Loading properties...</p>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="openPostModal()">
+        <span class="fab-icon">+</span>
+    </button>
+    
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-page="home" onclick="switchPage('home')">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-item" data-page="search" onclick="switchPage('search')">
+            <span class="nav-icon">🔍</span>
+            <span class="nav-label">Search</span>
+        </button>
+        <button class="nav-item post-btn" data-page="post" onclick="openPostModal()">
+            <span class="nav-icon">+</span>
+            <span class="nav-label">Post</span>
+        </button>
+        <button class="nav-item" data-page="messages" onclick="switchPage('messages')">
+            <span class="nav-icon">💬</span>
+            <span class="nav-label">Messages</span>
+            <span class="nav-badge" id="navMessageBadge">3</span>
+        </button>
+        <button class="nav-item" data-page="profile" onclick="switchPage('profile')">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">Profile</span>
+        </button>
+    </nav>
+    
+    <!-- Modals -->
+    
+    <!-- Location Modal -->
+    <div class="modal" id="locationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Choose Location</h3>
+                <button class="modal-close" onclick="closeLocationModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="location-search">
+                    <input type="text" placeholder="Search city or postal code" id="locationSearch">
+                </div>
+                <div class="location-suggestions">
+                    <div class="location-item" onclick="selectLocation('Toronto, ON')">
+                        📍 Toronto, ON
+                    </div>
+                    <div class="location-item" onclick="selectLocation('Vancouver, BC')">
+                        📍 Vancouver, BC
+                    </div>
+                    <div class="location-item" onclick="selectLocation('Montreal, QC')">
+                        📍 Montreal, QC
+                    </div>
+                    <div class="location-item" onclick="selectLocation('Calgary, AB')">
+                        📍 Calgary, AB
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters Modal -->
+    <div class="modal" id="filtersModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Filters</h3>
+                <button class="modal-close" onclick="closeFiltersModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Filter options will be added here -->
+                <div class="filter-section">
+                    <h4>Price Range</h4>
+                    <div class="price-inputs">
+                        <input type="number" placeholder="Min" id="minPrice">
+                        <span>to</span>
+                        <input type="number" placeholder="Max" id="maxPrice">
+                    </div>
+                </div>
+                
+                <div class="filter-section">
+                    <h4>Property Type</h4>
+                    <div class="filter-chips">
+                        <label class="filter-chip">
+                            <input type="checkbox" value="apartment">
+                            <span>Apartment</span>
+                        </label>
+                        <label class="filter-chip">
+                            <input type="checkbox" value="house">
+                            <span>House</span>
+                        </label>
+                        <label class="filter-chip">
+                            <input type="checkbox" value="condo">
+                            <span>Condo</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="filter-section">
+                    <h4>Bedrooms</h4>
+                    <div class="bedroom-selector">
+                        <button class="bedroom-btn" data-bedrooms="any">Any</button>
+                        <button class="bedroom-btn" data-bedrooms="1">1+</button>
+                        <button class="bedroom-btn" data-bedrooms="2">2+</button>
+                        <button class="bedroom-btn" data-bedrooms="3">3+</button>
+                        <button class="bedroom-btn" data-bedrooms="4">4+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="clearFilters()">Clear All</button>
+                <button class="btn-primary" onclick="applyFilters()">Apply Filters</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="js/mobile-app-config.js"></script>
+    <script src="js/mobile-app-navigation.js"></script>
+    <script src="js/mobile-app-listings.js"></script>
+    <script src="js/mobile-app-profile.js"></script>
+    <script src="js/android-navigation-fix.js"></script>
+    
+    <!-- App Initialization -->
+    <script>
+        // Main Mobile App Coordinator
+        class MobileApp {
+            constructor() {
+                this.isInitialized = false;
+                this.modules = {};
+            }
+            
+            init() {
+                console.log('🚀 RoomFinderAI Mobile App initializing...');
+                
+                // Wait for all modules to be loaded
+                this.waitForModules().then(() => {
+                    // Initialize all modules in order
+                    this.initializeModules();
+                    
+                    // Set up module connections
+                    this.connectModules();
+                    
+                    this.isInitialized = true;
+                    console.log('✅ Mobile app fully initialized');
+                });
+            }
+            
+            async waitForModules() {
+                const maxWait = 5000; // 5 seconds
+                const startTime = Date.now();
+                
+                while (Date.now() - startTime < maxWait) {
+                    if (window.MobileAppConfig && 
+                        window.MobileAppNavigation && 
+                        window.MobileAppListings && 
+                        window.MobileAppProfile) {
+                        console.log('✅ All modules loaded');
+                        return;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                console.warn('⚠️ Some modules may not have loaded in time');
+            }
+            
+            initializeModules() {
+                // Initialize config first (other modules depend on it)
+                if (window.MobileAppConfig) {
+                    this.modules.config = window.MobileAppConfig;
+                    if (!this.modules.config.isInitialized) {
+                        this.modules.config.init();
+                    }
+                }
+                
+                // Initialize profile (may update config)
+                if (window.MobileAppProfile) {
+                    this.modules.profile = window.MobileAppProfile;
+                    this.modules.profile.init();
+                }
+                
+                // Initialize navigation
+                if (window.MobileAppNavigation) {
+                    this.modules.navigation = window.MobileAppNavigation;
+                    this.modules.navigation.init();
+                }
+                
+                // Initialize listings last
+                if (window.MobileAppListings) {
+                    this.modules.listings = window.MobileAppListings;
+                    this.modules.listings.init();
+                }
+            }
+            
+            connectModules() {
+                // Connect config to other modules
+                if (this.modules.config && this.modules.listings) {
+                    this.modules.config.onFiltersChanged = (filters) => {
+                        this.modules.listings.onFiltersChanged(filters);
+                    };
+                    
+                    this.modules.config.onLocationChanged = (location) => {
+                        this.modules.listings.onLocationChanged(location);
+                    };
+                }
+                
+                // Connect navigation to profile
+                if (this.modules.navigation && this.modules.profile) {
+                    const originalLoadProfilePage = this.modules.navigation.loadProfilePage;
+                    this.modules.navigation.loadProfilePage = () => {
+                        this.modules.profile.renderProfileDashboard();
+                    };
+                }
+                
+                console.log('🔗 Modules connected successfully');
+            }
+        }
+        
+        // Create global instance
+        window.MobileApp = new MobileApp();
+        
+        // Initialize mobile app
+        document.addEventListener('DOMContentLoaded', function() {
+            window.MobileApp.init();
+        });
+    </script>
+</body>
+</html>
