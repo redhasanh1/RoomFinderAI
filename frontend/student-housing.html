@@ -411,6 +411,123 @@
         .mobile-arrow.rotated {
             transform: rotate(180deg);
         }
+
+        /* Step Navigation Styles */
+        .step-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #e5e7eb;
+            position: relative;
+        }
+
+        .step-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-color: #8b5cf6;
+        }
+
+        .step-card.active {
+            border-color: #8b5cf6;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        }
+
+        .step-circle {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .step-card.active .step-circle {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .step-number {
+            color: white;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+
+        .step-icon {
+            font-size: 1.5rem;
+            position: absolute;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .step-card.active .step-icon {
+            opacity: 1;
+        }
+
+        .step-card.active .step-number {
+            opacity: 0;
+        }
+
+        .step-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-desc {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        /* Modern Input Styles */
+        .modern-input {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1rem 1.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            font-size: 1rem;
+        }
+
+        .modern-input:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+            outline: none;
+        }
+
+        /* Student-specific gradients */
+        .gradient-text-student {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .step-card {
+                padding: 1rem;
+            }
+            
+            .step-circle {
+                width: 3rem;
+                height: 3rem;
+            }
+            
+            .step-number {
+                font-size: 1rem;
+            }
+            
+            .step-icon {
+                font-size: 1.25rem;
+            }
+        }
         
         .mobile-section-content {
             max-height: 0;
@@ -697,42 +814,161 @@
         </div>
     </header>
 
-    <!-- Hero Section -->
+    <!-- Enhanced Hero Section -->
     <section class="pt-32 pb-20 university-colors text-white relative overflow-hidden">
         <div class="absolute inset-0 bg-black opacity-20"></div>
+        
+        <!-- Animated Background Elements -->
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full animate-pulse"></div>
+            <div class="absolute top-40 right-20 w-16 h-16 bg-white/10 rounded-full animate-pulse" style="animation-delay: 1s;"></div>
+            <div class="absolute bottom-20 left-1/4 w-12 h-12 bg-white/10 rounded-full animate-pulse" style="animation-delay: 2s;"></div>
+        </div>
+        
         <div class="w-[90%] max-w-7xl mx-auto px-4 relative z-10">
-            <div class="text-center mb-12">
-                <h1 class="text-5xl md:text-6xl font-bold mb-6 font-display">Find Your Perfect Student Housing</h1>
-                <p class="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8">
-                    AI-powered housing search, roommate matching, and legal protection - Starting FREE for students!
-                </p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                    <a href="#pricing" class="bg-white text-purple-600 font-bold px-8 py-4 rounded-full hover:bg-gray-100 transition-all duration-300 text-lg">
-                        Start Free Trial
-                    </a>
-                    <a href="#features" class="border-2 border-white text-white font-semibold px-8 py-4 rounded-full hover:bg-white hover:text-purple-600 transition-all duration-300">
-                        See How It Works
-                    </a>
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Left Column: Main Content -->
+                <div class="text-center lg:text-left">
+                    <div class="inline-flex items-center bg-white/20 backdrop-blur-md rounded-full px-4 py-2 mb-6">
+                        <span class="text-sm font-medium">🎓 #1 Student Housing Platform</span>
+                    </div>
+                    
+                    <h1 class="text-4xl md:text-6xl font-bold mb-6 font-display">
+                        Find Your Perfect 
+                        <span class="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+                            Student Housing
+                        </span>
+                    </h1>
+                    
+                    <p class="text-xl text-white/90 mb-8 leading-relaxed">
+                        Skip the stress! Our AI matches you with the perfect housing, roommates, and budget - 
+                        <strong>all FREE for students</strong>
+                    </p>
+                    
+                    <!-- Quick Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                        <button onclick="scrollToSection('quick-start')" class="bg-white text-purple-600 font-bold px-8 py-4 rounded-full hover:bg-yellow-300 hover:text-purple-700 transition-all duration-300 text-lg transform hover:scale-105 shadow-xl">
+                            🏠 Find Housing Now
+                        </button>
+                        <button onclick="scrollToSection('budget-step')" class="border-2 border-white text-white font-semibold px-8 py-4 rounded-full hover:bg-white hover:text-purple-600 transition-all duration-300 backdrop-blur-md">
+                            💰 Budget Calculator
+                        </button>
+                    </div>
+                    
+                    <!-- Trust Indicators -->
+                    <div class="flex flex-wrap items-center justify-center lg:justify-start gap-6 text-sm text-white/80">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                            </svg>
+                            <span>Trusted by 50k+ students</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                            </svg>
+                            <span>100% Free for students</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                            </svg>
+                            <span>Legal protection included</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column: Quick Housing Preference Form -->
+                <div class="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 shadow-2xl">
+                    <div class="text-center mb-6">
+                        <h3 class="text-2xl font-bold mb-2">Get Matched in 2 Minutes</h3>
+                        <p class="text-white/80">Tell us your preferences and we'll find your perfect housing</p>
+                    </div>
+                    
+                    <form id="quickMatchForm" class="space-y-4">
+                        <!-- Budget Range -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Monthly Budget</label>
+                            <select id="budgetRange" class="w-full bg-white/20 border border-white/30 rounded-lg px-4 py-3 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-yellow-300">
+                                <option value="">Select your budget range</option>
+                                <option value="under-500">Under $500/month</option>
+                                <option value="500-800">$500 - $800/month</option>
+                                <option value="800-1200">$800 - $1,200/month</option>
+                                <option value="1200-1800">$1,200 - $1,800/month</option>
+                                <option value="over-1800">Over $1,800/month</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Housing Type -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Preferred Housing Type</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center bg-white/20 rounded-lg p-3 cursor-pointer hover:bg-white/30 transition-all">
+                                    <input type="radio" name="housingType" value="dorm" class="mr-3">
+                                    <div>
+                                        <div class="font-medium">🏫 Dorm</div>
+                                        <div class="text-xs text-white/70">On-campus</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center bg-white/20 rounded-lg p-3 cursor-pointer hover:bg-white/30 transition-all">
+                                    <input type="radio" name="housingType" value="apartment" class="mr-3">
+                                    <div>
+                                        <div class="font-medium">🏠 Apartment</div>
+                                        <div class="text-xs text-white/70">Off-campus</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center bg-white/20 rounded-lg p-3 cursor-pointer hover:bg-white/30 transition-all">
+                                    <input type="radio" name="housingType" value="shared" class="mr-3">
+                                    <div>
+                                        <div class="font-medium">👥 Shared</div>
+                                        <div class="text-xs text-white/70">With roommates</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center bg-white/20 rounded-lg p-3 cursor-pointer hover:bg-white/30 transition-all">
+                                    <input type="radio" name="housingType" value="studio" class="mr-3">
+                                    <div>
+                                        <div class="font-medium">🏡 Studio</div>
+                                        <div class="text-xs text-white/70">Private</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Location -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">University/Location</label>
+                            <input type="text" id="university" placeholder="Enter your university or city" class="w-full bg-white/20 border border-white/30 rounded-lg px-4 py-3 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-yellow-300">
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <button type="submit" class="w-full bg-gradient-to-r from-yellow-300 to-orange-300 text-purple-700 font-bold py-4 rounded-lg hover:from-yellow-400 hover:to-orange-400 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                            🔍 Find My Perfect Housing
+                        </button>
+                        
+                        <p class="text-xs text-white/70 text-center">
+                            ✨ Get instant matches • No spam • 100% Free for students
+                        </p>
+                    </form>
                 </div>
             </div>
             
-            <!-- Student Quick Stats -->
-            <div class="grid md:grid-cols-4 gap-6 mt-16">
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
-                    <div class="text-4xl font-bold mb-2">FREE</div>
-                    <div class="text-white/80">Basic Housing Search</div>
+            <!-- Quick Stats Row -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16">
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300">
+                    <div class="text-3xl font-bold mb-2 text-green-300">FREE</div>
+                    <div class="text-white/80 text-sm">For Students</div>
                 </div>
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
-                    <div class="text-4xl font-bold mb-2">$847</div>
-                    <div class="text-white/80">Average Savings</div>
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300">
+                    <div class="text-3xl font-bold mb-2 text-yellow-300">$847</div>
+                    <div class="text-white/80 text-sm">Avg. Savings</div>
                 </div>
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
-                    <div class="text-4xl font-bold mb-2">98%</div>
-                    <div class="text-white/80">Success Rate</div>
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300">
+                    <div class="text-3xl font-bold mb-2 text-blue-300">2 min</div>
+                    <div class="text-white/80 text-sm">Setup Time</div>
                 </div>
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
-                    <div class="text-4xl font-bold mb-2">24/7</div>
-                    <div class="text-white/80">Student Support</div>
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300">
+                    <div class="text-3xl font-bold mb-2 text-green-300">24/7</div>
+                    <div class="text-white/80 text-sm">Support</div>
                 </div>
             </div>
         </div>
@@ -780,38 +1016,260 @@
         </div>
     </section>
 
-    <!-- Main Navigation Tabs -->
-    <section class="py-8 bg-white shadow-sm sticky top-24 z-40">
+    <!-- Step-by-Step Navigation -->
+    <section id="quick-start" class="py-12 bg-gradient-to-r from-blue-50 to-purple-50">
         <div class="w-[90%] max-w-7xl mx-auto px-4">
-            <div class="flex space-x-4 overflow-x-auto">
-                <button onclick="showTab('housing-guide')" class="tab-button active" data-tab="housing-guide">
-                    Housing Guide
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold mb-4 gradient-text-student">Your Housing Journey in 5 Simple Steps</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Follow our proven process to find perfect student housing without the stress</p>
+            </div>
+            
+            <!-- Progress Steps -->
+            <div class="relative mb-16">
+                <!-- Progress Line -->
+                <div class="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 rounded-full transform -translate-y-1/2 hidden md:block"></div>
+                <div id="progress-line" class="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transform -translate-y-1/2 transition-all duration-500 hidden md:block" style="width: 20%;"></div>
+                
+                <!-- Step Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-6 relative">
+                    <div class="step-card active" data-step="1" onclick="goToStep(1)">
+                        <div class="step-circle">
+                            <span class="step-number">1</span>
+                            <div class="step-icon">💰</div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Set Budget</h3>
+                            <p class="step-desc">Calculate what you can afford</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-card" data-step="2" onclick="goToStep(2)">
+                        <div class="step-circle">
+                            <span class="step-number">2</span>
+                            <div class="step-icon">🏠</div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Compare Options</h3>
+                            <p class="step-desc">Dorm vs apartment vs shared</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-card" data-step="3" onclick="goToStep(3)">
+                        <div class="step-circle">
+                            <span class="step-number">3</span>
+                            <div class="step-icon">👥</div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Find Roommates</h3>
+                            <p class="step-desc">Get matched with compatible people</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-card" data-step="4" onclick="goToStep(4)">
+                        <div class="step-circle">
+                            <span class="step-number">4</span>
+                            <div class="step-icon">🛡️</div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Stay Safe</h3>
+                            <p class="step-desc">Legal protection & safety tips</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-card" data-step="5" onclick="goToStep(5)">
+                        <div class="step-circle">
+                            <span class="step-number">5</span>
+                            <div class="step-icon">✅</div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Get Started</h3>
+                            <p class="step-desc">Apply & move in with confidence</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Action CTAs -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <button onclick="goToStep(1)" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold px-8 py-4 rounded-full hover:from-purple-700 hover:to-blue-700 transition-all duration-300 text-lg transform hover:scale-105 shadow-xl">
+                    🚀 Start Your Journey
                 </button>
-                <button onclick="showTab('budget')" class="tab-button" data-tab="budget">
-                    Budget Calculator
+                <button onclick="scrollToSection('budget-step')" class="border-2 border-purple-600 text-purple-600 font-semibold px-8 py-4 rounded-full hover:bg-purple-600 hover:text-white transition-all duration-300">
+                    💰 Jump to Budget Calculator
                 </button>
-                <button onclick="showTab('roommate')" class="tab-button" data-tab="roommate">
-                    Roommate Tools
-                </button>
-                <button onclick="showTab('safety')" class="tab-button" data-tab="safety">
-                    Safety & Security
-                </button>
-                <button onclick="showTab('legal')" class="tab-button" data-tab="legal">
-                    Student Rights
-                </button>
-                <button onclick="showTab('resources')" class="tab-button" data-tab="resources">
-                    Resources
-                </button>
+                <a href="/listings" class="text-purple-600 font-medium hover:text-purple-800 transition-colors">
+                    Browse Available Housing →
+                </a>
             </div>
         </div>
     </section>
 
-    <!-- Tab Content -->
-    <section class="py-16">
+    <!-- Step 1: Budget Calculator -->
+    <section id="budget-step" class="py-16 bg-white">
         <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <div class="inline-flex items-center bg-purple-100 rounded-full px-4 py-2 mb-4">
+                    <span class="text-purple-600 font-medium">💰 Step 1 of 5</span>
+                </div>
+                <h2 class="text-4xl font-bold mb-4 gradient-text-student">Calculate Your Student Housing Budget</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Know exactly what you can afford before you start looking. Our calculator includes all hidden costs.</p>
+            </div>
             
-            <!-- Housing Guide Tab -->
-            <div id="housing-guide-tab" class="tab-content">
+            <div class="grid lg:grid-cols-2 gap-12 items-start">
+                <!-- Budget Calculator Form -->
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-8 border border-purple-100">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Smart Budget Calculator</h3>
+                        
+                        <!-- Monthly Income -->
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Income Sources</label>
+                                <div class="space-y-3">
+                                    <div class="flex items-center gap-4">
+                                        <span class="w-24 text-sm text-gray-600">Part-time job:</span>
+                                        <input type="number" id="income-job" placeholder="$0" class="flex-1 modern-input" oninput="updateBudget()">
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span class="w-24 text-sm text-gray-600">Family support:</span>
+                                        <input type="number" id="income-family" placeholder="$0" class="flex-1 modern-input" oninput="updateBudget()">
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span class="w-24 text-sm text-gray-600">Financial aid:</span>
+                                        <input type="number" id="income-aid" placeholder="$0" class="flex-1 modern-input" oninput="updateBudget()">
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span class="w-24 text-sm text-gray-600">Savings:</span>
+                                        <input type="number" id="income-savings" placeholder="$0" class="flex-1 modern-input" oninput="updateBudget()">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Monthly Expenses -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Expenses</label>
+                                <div class="space-y-3">
+                                    <div class="flex items-center gap-4">
+                                        <span class="w-24 text-sm text-gray-600">Tuition/Books:</span>
+                                        <input type="number" id="expense-tuition" placeholder="$0" class="flex-1 modern-input" oninput="updateBudget()">
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span class="w-24 text-sm text-gray-600">Food:</span>
+                                        <input type="number" id="expense-food" placeholder="$300" class="flex-1 modern-input" oninput="updateBudget()">
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span class="w-24 text-sm text-gray-600">Transportation:</span>
+                                        <input type="number" id="expense-transport" placeholder="$100" class="flex-1 modern-input" oninput="updateBudget()">
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span class="w-24 text-sm text-gray-600">Personal:</span>
+                                        <input type="number" id="expense-personal" placeholder="$200" class="flex-1 modern-input" oninput="updateBudget()">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Emergency Buffer -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Emergency Buffer (%)</label>
+                                <input type="range" id="emergency-buffer" min="5" max="25" value="15" class="w-full" oninput="updateBudget(); document.getElementById('buffer-display').textContent = this.value + '%'">
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>5%</span>
+                                    <span id="buffer-display" class="font-medium text-purple-600">15%</span>
+                                    <span>25%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Presets -->
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <h4 class="font-semibold mb-4 text-gray-800">Quick Student Profiles</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <button onclick="setProfile('minimal')" class="text-left p-3 bg-white rounded-lg hover:bg-blue-50 transition-colors border">
+                                <div class="font-medium text-sm">💡 Minimal</div>
+                                <div class="text-xs text-gray-500">Basic needs only</div>
+                            </button>
+                            <button onclick="setProfile('comfortable')" class="text-left p-3 bg-white rounded-lg hover:bg-blue-50 transition-colors border">
+                                <div class="font-medium text-sm">😊 Comfortable</div>
+                                <div class="text-xs text-gray-500">Balanced lifestyle</div>
+                            </button>
+                            <button onclick="setProfile('premium')" class="text-left p-3 bg-white rounded-lg hover:bg-blue-50 transition-colors border">
+                                <div class="font-medium text-sm">✨ Premium</div>
+                                <div class="text-xs text-gray-500">All the extras</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Real-time Results -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg sticky top-8">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Your Housing Budget</h3>
+                        
+                        <!-- Budget Summary -->
+                        <div class="space-y-4 mb-6">
+                            <div class="flex justify-between items-center p-4 bg-green-50 rounded-lg">
+                                <span class="font-medium text-green-800">Total Monthly Income</span>
+                                <span id="total-income" class="text-2xl font-bold text-green-600">$0</span>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-red-50 rounded-lg">
+                                <span class="font-medium text-red-800">Total Monthly Expenses</span>
+                                <span id="total-expenses" class="text-2xl font-bold text-red-600">$0</span>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-purple-50 rounded-lg">
+                                <span class="font-medium text-purple-800">Available for Housing</span>
+                                <span id="housing-budget" class="text-3xl font-bold text-purple-600">$0</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Budget Breakdown Chart -->
+                        <div class="mb-6">
+                            <h4 class="font-semibold mb-3 text-gray-700">Budget Breakdown</h4>
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-4 h-4 bg-purple-500 rounded"></div>
+                                    <span class="text-sm">Housing</span>
+                                    <span id="housing-percentage" class="text-sm text-gray-500 ml-auto">0%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div id="housing-bar" class="bg-purple-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recommendations -->
+                        <div id="budget-recommendations" class="space-y-3">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <div class="flex items-start gap-3">
+                                    <div class="text-blue-600 text-xl">💡</div>
+                                    <div>
+                                        <div class="font-medium text-blue-800">Smart Tip</div>
+                                        <div class="text-sm text-blue-700">Add your income sources to see your housing budget</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Next Step -->
+                        <button onclick="goToStep(2)" class="w-full mt-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                            Next: Compare Housing Options →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Step 2: Housing Comparison -->
+    <section id="housing-comparison" class="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <div class="inline-flex items-center bg-blue-100 rounded-full px-4 py-2 mb-4">
+                    <span class="text-blue-600 font-medium">🏠 Step 2 of 5</span>
+                </div>
+                <h2 class="text-4xl font-bold mb-4 gradient-text-student">Compare Your Housing Options</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">See side-by-side comparisons to make the best choice for your lifestyle and budget.</p>
+            </div>
                 <div class="mb-12">
                     <h2 class="text-4xl font-bold mb-6 text-center gradient-text-student">Complete Student Housing Guide</h2>
                     <p class="text-xl text-gray-600 text-center max-w-3xl mx-auto">Make informed decisions about your housing options with our comprehensive comparison tools and expert guidance.</p>
@@ -1928,3 +2386,219 @@
             
             // Add active class to clicked button
             document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        }
+
+        // Step Navigation Functionality
+        let currentStep = 1;
+        
+        function goToStep(stepNumber) {
+            currentStep = stepNumber;
+            
+            // Update step cards
+            document.querySelectorAll('.step-card').forEach((card, index) => {
+                card.classList.remove('active');
+                if (index + 1 === stepNumber) {
+                    card.classList.add('active');
+                }
+            });
+            
+            // Update progress line
+            const progressLine = document.getElementById('progress-line');
+            if (progressLine) {
+                const percentage = (stepNumber / 5) * 100;
+                progressLine.style.width = percentage + '%';
+            }
+            
+            // Scroll to appropriate section
+            const sectionMap = {
+                1: 'budget-step',
+                2: 'housing-comparison', 
+                3: 'roommate-step',
+                4: 'safety-step',
+                5: 'resources-step'
+            };
+            
+            const targetSection = document.getElementById(sectionMap[stepNumber]);
+            if (targetSection) {
+                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+        
+        function scrollToSection(sectionId) {
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+        
+        // Budget Calculator Functionality
+        function updateBudget() {
+            // Get income values
+            const incomeJob = parseFloat(document.getElementById('income-job')?.value || 0);
+            const incomeFamily = parseFloat(document.getElementById('income-family')?.value || 0);
+            const incomeAid = parseFloat(document.getElementById('income-aid')?.value || 0);
+            const incomeSavings = parseFloat(document.getElementById('income-savings')?.value || 0);
+            const totalIncome = incomeJob + incomeFamily + incomeAid + incomeSavings;
+            
+            // Get expense values
+            const expenseTuition = parseFloat(document.getElementById('expense-tuition')?.value || 0);
+            const expenseFood = parseFloat(document.getElementById('expense-food')?.value || 0);
+            const expenseTransport = parseFloat(document.getElementById('expense-transport')?.value || 0);
+            const expensePersonal = parseFloat(document.getElementById('expense-personal')?.value || 0);
+            const totalExpenses = expenseTuition + expenseFood + expenseTransport + expensePersonal;
+            
+            // Calculate emergency buffer
+            const bufferPercent = parseFloat(document.getElementById('emergency-buffer')?.value || 15);
+            const bufferAmount = totalIncome * (bufferPercent / 100);
+            
+            // Calculate available for housing
+            const availableForHousing = Math.max(0, totalIncome - totalExpenses - bufferAmount);
+            
+            // Update display
+            document.getElementById('total-income').textContent = '$' + totalIncome.toLocaleString();
+            document.getElementById('total-expenses').textContent = '$' + (totalExpenses + bufferAmount).toLocaleString();
+            document.getElementById('housing-budget').textContent = '$' + availableForHousing.toLocaleString();
+            
+            // Update percentage and bar
+            const housingPercentage = totalIncome > 0 ? (availableForHousing / totalIncome * 100) : 0;
+            document.getElementById('housing-percentage').textContent = Math.round(housingPercentage) + '%';
+            document.getElementById('housing-bar').style.width = Math.min(housingPercentage, 100) + '%';
+            
+            // Update recommendations
+            updateBudgetRecommendations(availableForHousing, totalIncome, housingPercentage);
+        }
+        
+        function updateBudgetRecommendations(housingBudget, totalIncome, housingPercentage) {
+            const container = document.getElementById('budget-recommendations');
+            if (!container) return;
+            
+            let recommendations = [];
+            
+            if (totalIncome === 0) {
+                recommendations.push({
+                    icon: '💡',
+                    title: 'Smart Tip',
+                    text: 'Add your income sources to see your housing budget',
+                    color: 'blue'
+                });
+            } else if (housingBudget <= 0) {
+                recommendations.push({
+                    icon: '⚠️',
+                    title: 'Budget Alert',
+                    text: 'Your expenses exceed your income. Consider reducing costs or increasing income.',
+                    color: 'red'
+                });
+            } else if (housingPercentage > 40) {
+                recommendations.push({
+                    icon: '💰',
+                    title: 'Great Budget!',
+                    text: 'You have a healthy housing budget. Consider dorms or nice apartments.',
+                    color: 'green'
+                });
+            } else if (housingPercentage > 25) {
+                recommendations.push({
+                    icon: '👍',
+                    title: 'Good Options',
+                    text: 'Your budget allows for decent housing. Look for shared apartments or dorms.',
+                    color: 'blue'
+                });
+            } else {
+                recommendations.push({
+                    icon: '🏠',
+                    title: 'Budget-Friendly',
+                    text: 'Consider shared housing or dorms to maximize your budget.',
+                    color: 'yellow'
+                });
+            }
+            
+            // Render recommendations
+            container.innerHTML = recommendations.map(rec => `
+                <div class="bg-${rec.color}-50 p-4 rounded-lg">
+                    <div class="flex items-start gap-3">
+                        <div class="text-${rec.color}-600 text-xl">${rec.icon}</div>
+                        <div>
+                            <div class="font-medium text-${rec.color}-800">${rec.title}</div>
+                            <div class="text-sm text-${rec.color}-700">${rec.text}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function setProfile(profileType) {
+            const profiles = {
+                minimal: {
+                    incomeJob: 800,
+                    incomeFamily: 300,
+                    incomeAid: 200,
+                    incomeSavings: 100,
+                    expenseTuition: 400,
+                    expenseFood: 200,
+                    expenseTransport: 50,
+                    expensePersonal: 100
+                },
+                comfortable: {
+                    incomeJob: 1200,
+                    incomeFamily: 600,
+                    incomeAid: 400,
+                    incomeSavings: 200,
+                    expenseTuition: 500,
+                    expenseFood: 350,
+                    expenseTransport: 150,
+                    expensePersonal: 250
+                },
+                premium: {
+                    incomeJob: 1800,
+                    incomeFamily: 1000,
+                    incomeAid: 600,
+                    incomeSavings: 400,
+                    expenseTuition: 600,
+                    expenseFood: 500,
+                    expenseTransport: 300,
+                    expensePersonal: 400
+                }
+            };
+            
+            const profile = profiles[profileType];
+            if (!profile) return;
+            
+            // Set all values
+            Object.keys(profile).forEach(key => {
+                const element = document.getElementById(key.replace(/([A-Z])/g, '-$1').toLowerCase());
+                if (element) {
+                    element.value = profile[key];
+                }
+            });
+            
+            // Update budget calculations
+            updateBudget();
+        }
+        
+        // Quick Match Form Handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const quickMatchForm = document.getElementById('quickMatchForm');
+            if (quickMatchForm) {
+                quickMatchForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const budget = document.getElementById('budgetRange').value;
+                    const housingType = document.querySelector('input[name="housingType"]:checked')?.value;
+                    const university = document.getElementById('university').value;
+                    
+                    if (!budget || !housingType || !university) {
+                        alert('Please fill in all fields to get matched!');
+                        return;
+                    }
+                    
+                    // Show success message and scroll to next step
+                    alert('🎉 Great! Let\'s calculate your detailed budget in the next step.');
+                    goToStep(1);
+                });
+            }
+            
+            // Initialize budget calculator
+            updateBudget();
+        });
+    </script>
+</body>
+</html>
