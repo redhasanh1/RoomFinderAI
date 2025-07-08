@@ -344,6 +344,82 @@
             50% { transform: translateY(-20px); }
         }
         
+        /* Accessibility improvements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        
+        /* Focus styles for better accessibility */
+        .modern-input:focus,
+        .range-slider:focus,
+        button:focus,
+        select:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+        
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .glass-card {
+                background: white;
+                border: 2px solid black;
+            }
+            
+            .gradient-text {
+                background: none;
+                color: black;
+                -webkit-text-fill-color: initial;
+            }
+        }
+        
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Range sliders */
+        .range-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: linear-gradient(to right, #667eea 0%, #667eea 50%, #e5e7eb 50%, #e5e7eb 100%);
+            outline: none;
+            border-radius: 5px;
+        }
+        
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        .range-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
         /* Tabs */
         .tab-button {
             padding: 1rem 2rem;
@@ -601,19 +677,38 @@
                         
                         <div class="space-y-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Home Price</label>
-                                <input type="number" id="homePrice" class="modern-input" placeholder="650000" value="650000">
+                                <label for="homePrice" class="block text-sm font-medium text-gray-700 mb-2">Home Price</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" aria-hidden="true">$</span>
+                                    <input type="text" id="homePrice" class="modern-input pl-8" placeholder="650,000" value="650,000" data-min="50000" data-max="5000000" aria-describedby="homePrice-help homePrice-error" aria-required="true">
+                                </div>
+                                <div class="mt-3">
+                                    <label for="homePriceSlider" class="sr-only">Home Price Slider</label>
+                                    <input type="range" id="homePriceSlider" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-slider" min="50000" max="2000000" step="10000" value="650000" aria-describedby="homePriceSlider-help">
+                                    <div id="homePriceSlider-help" class="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span>$50k</span>
+                                        <span>$2M</span>
+                                    </div>
+                                </div>
+                                <div id="homePrice-help" class="sr-only">Enter the total purchase price of the home</div>
+                                <div id="homePrice-error" class="text-red-500 text-xs mt-1 hidden" aria-live="polite"></div>
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
+                                <label for="downPayment" class="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
                                 <div class="grid grid-cols-2 gap-4">
-                                    <input type="number" id="downPayment" class="modern-input" placeholder="130000" value="130000">
-                                    <select id="downPaymentType" class="modern-input">
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" id="downPaymentSymbol" aria-hidden="true">$</span>
+                                        <input type="text" id="downPayment" class="modern-input pl-8" placeholder="130,000" value="130,000" aria-describedby="downPayment-help downPayment-error" aria-required="true">
+                                    </div>
+                                    <label for="downPaymentType" class="sr-only">Down Payment Type</label>
+                                    <select id="downPaymentType" class="modern-input" aria-describedby="downPayment-help">
                                         <option value="amount">Amount ($)</option>
                                         <option value="percent">Percent (%)</option>
                                     </select>
                                 </div>
+                                <div id="downPayment-help" class="text-xs text-gray-500 mt-1">Minimum: <span id="minDownPayment">5%</span> | Recommended: 20%</div>
+                                <div id="downPayment-error" class="text-red-500 text-xs mt-1 hidden" aria-live="polite"></div>
                             </div>
                             
                             <div>
@@ -628,7 +723,22 @@
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Interest Rate (%)</label>
-                                <input type="number" id="interestRate" class="modern-input" placeholder="5.89" value="5.89" step="0.01">
+                                <div class="relative">
+                                    <input type="number" id="interestRate" class="modern-input pr-8" placeholder="5.89" value="5.89" step="0.01" min="0.1" max="20">
+                                    <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
+                                </div>
+                                <div class="mt-3">
+                                    <input type="range" id="interestRateSlider" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-slider" min="1" max="15" step="0.1" value="5.89">
+                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span>1%</span>
+                                        <span>15%</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>Current avg: <span id="currentAvgRate">5.89%</span></span>
+                                    <span>Best rate: <span id="bestRate">4.79%</span></span>
+                                </div>
+                                <div id="interestRate-error" class="text-red-500 text-xs mt-1 hidden"></div>
                             </div>
                             
                             <div>
@@ -640,6 +750,72 @@
                                     <option value="accelerated-biweekly">Accelerated Bi-Weekly</option>
                                     <option value="accelerated-weekly">Accelerated Weekly</option>
                                 </select>
+                            </div>
+                            
+                            <!-- Advanced Options Toggle -->
+                            <div class="border-t pt-6">
+                                <button type="button" onclick="toggleAdvancedOptions()" onkeydown="handleToggleKeydown(event, 'toggleAdvancedOptions')" class="flex items-center justify-between w-full text-left" aria-expanded="false" aria-controls="advancedOptions">
+                                    <span class="text-sm font-medium text-gray-700">Advanced Options</span>
+                                    <svg id="advancedOptionsIcon" class="w-4 h-4 text-gray-500 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                
+                                <div id="advancedOptions" class="hidden mt-4 space-y-4">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Property Tax (Annual)</label>
+                                            <div class="relative">
+                                                <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">$</span>
+                                                <input type="text" id="propertyTax" class="w-full text-sm border rounded px-6 py-2" placeholder="8,000">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Home Insurance (Annual)</label>
+                                            <div class="relative">
+                                                <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">$</span>
+                                                <input type="text" id="homeInsurance" class="w-full text-sm border rounded px-6 py-2" placeholder="1,200">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">HOA Fees (Monthly)</label>
+                                            <div class="relative">
+                                                <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">$</span>
+                                                <input type="text" id="hoaFees" class="w-full text-sm border rounded px-6 py-2" placeholder="150">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Extra Monthly Payment</label>
+                                            <div class="relative">
+                                                <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">$</span>
+                                                <input type="text" id="extraPayment" class="w-full text-sm border rounded px-6 py-2" placeholder="200">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-2">Loan Type</label>
+                                        <select id="loanType" class="w-full text-sm border rounded px-2 py-2">
+                                            <option value="conventional">Conventional</option>
+                                            <option value="fha">FHA</option>
+                                            <option value="va">VA</option>
+                                            <option value="usda">USDA</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="bg-blue-50 p-3 rounded-lg">
+                                        <div class="flex items-center mb-2">
+                                            <svg class="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <span class="text-xs font-medium text-blue-800">Pro Tip</span>
+                                        </div>
+                                        <p class="text-xs text-blue-700">Adding extra monthly payments can significantly reduce your total interest and loan term.</p>
+                                    </div>
+                                </div>
                             </div>
                             
                             <button onclick="calculateMortgage()" class="w-full gradient-bg text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
@@ -671,6 +847,39 @@
                                     <span class="font-semibold" id="totalCost">$926,700</span>
                                 </div>
                             </div>
+                            
+                            <!-- Detailed Breakdown Toggle -->
+                            <div class="border-t pt-4 mt-6">
+                                <button type="button" onclick="toggleDetailedBreakdown()" class="flex items-center justify-between w-full text-left">
+                                    <span class="text-sm font-medium text-gray-700">View Detailed Breakdown</span>
+                                    <svg id="detailedBreakdownIcon" class="w-4 h-4 text-gray-500 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                
+                                <div id="detailedBreakdown" class="hidden mt-4 space-y-3">
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <h4 class="font-semibold mb-3">Monthly Payment Components</h4>
+                                        <div id="monthlyBreakdown" class="space-y-2 text-sm">
+                                            <!-- Populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <h4 class="font-semibold mb-3">Loan Summary</h4>
+                                        <div id="loanSummary" class="space-y-2 text-sm">
+                                            <!-- Populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <h4 class="font-semibold mb-3">Payment Schedule Options</h4>
+                                        <div id="paymentOptions" class="space-y-2 text-sm">
+                                            <!-- Populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Amortization Chart -->
@@ -681,21 +890,131 @@
                             </div>
                         </div>
                         
-                        <!-- AI Insights -->
+                        <!-- Smart AI Insights -->
                         <div class="glass-card p-8 bg-gradient-to-br from-purple-50 to-blue-50">
-                            <h3 class="text-xl font-bold mb-4">AI Insights</h3>
-                            <div class="space-y-3">
-                                <div class="flex items-start">
-                                    <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <p class="text-sm text-gray-700">By making bi-weekly payments, you could save $89,456 in interest and pay off your mortgage 5.5 years earlier.</p>
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold">AI Insights & Recommendations</h3>
+                                <button onclick="refreshInsights()" class="text-sm text-purple-600 hover:text-purple-800 font-medium">
+                                    🔄 Refresh
+                                </button>
+                            </div>
+                            <div id="aiInsights" class="space-y-4">
+                                <!-- Insights populated by JavaScript -->
+                            </div>
+                            
+                            <!-- Smart Action Items -->
+                            <div class="mt-6 p-4 bg-white rounded-lg border border-purple-200">
+                                <h4 class="font-semibold mb-3 text-purple-800">Recommended Actions</h4>
+                                <div id="actionItems" class="space-y-2">
+                                    <!-- Actions populated by JavaScript -->
                                 </div>
-                                <div class="flex items-start">
-                                    <svg class="w-5 h-5 text-blue-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <p class="text-sm text-gray-700">Current market analysis shows rates may drop 0.25% in the next 90 days. Waiting could save you $124/month.</p>
+                            </div>
+                            
+                            <!-- Financial Health Score -->
+                            <div class="mt-6 p-4 bg-white rounded-lg border border-purple-200">
+                                <h4 class="font-semibold mb-3 text-purple-800">Financial Health Score</h4>
+                                <div id="healthScore" class="space-y-3">
+                                    <!-- Score populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Scenario Comparison Section -->
+                <div class="glass-card p-8 mt-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold">What-If Scenario Comparison</h3>
+                        <button onclick="toggleScenarioComparison()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            Compare Scenarios
+                        </button>
+                    </div>
+                    
+                    <div id="scenarioComparison" class="hidden">
+                        <div class="grid md:grid-cols-3 gap-6 mb-6">
+                            <!-- Current Scenario -->
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-semibold mb-3 text-center">Current Scenario</h4>
+                                <div id="currentScenario" class="space-y-2 text-sm">
+                                    <!-- Populated by JavaScript -->
+                                </div>
+                            </div>
+                            
+                            <!-- Scenario A -->
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="font-semibold mb-3 text-center">Scenario A</h4>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs text-gray-600">Down Payment</label>
+                                        <input type="text" id="scenarioA-downPayment" class="w-full text-sm border rounded px-2 py-1" placeholder="150,000">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-600">Interest Rate (%)</label>
+                                        <input type="number" id="scenarioA-rate" class="w-full text-sm border rounded px-2 py-1" placeholder="5.5" step="0.1">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-600">Amortization</label>
+                                        <select id="scenarioA-amortization" class="w-full text-sm border rounded px-2 py-1">
+                                            <option value="15">15 years</option>
+                                            <option value="20">20 years</option>
+                                            <option value="25">25 years</option>
+                                            <option value="30">30 years</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Scenario B -->
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <h4 class="font-semibold mb-3 text-center">Scenario B</h4>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs text-gray-600">Down Payment</label>
+                                        <input type="text" id="scenarioB-downPayment" class="w-full text-sm border rounded px-2 py-1" placeholder="200,000">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-600">Interest Rate (%)</label>
+                                        <input type="number" id="scenarioB-rate" class="w-full text-sm border rounded px-2 py-1" placeholder="4.9" step="0.1">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-600">Amortization</label>
+                                        <select id="scenarioB-amortization" class="w-full text-sm border rounded px-2 py-1">
+                                            <option value="15">15 years</option>
+                                            <option value="20">20 years</option>
+                                            <option value="25">25 years</option>
+                                            <option value="30">30 years</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mb-6">
+                            <button onclick="compareScenarios()" class="gradient-bg text-white px-6 py-2 rounded-lg hover:shadow-lg transition-all">
+                                Calculate & Compare
+                            </button>
+                        </div>
+                        
+                        <!-- Comparison Results -->
+                        <div id="comparisonResults" class="hidden">
+                            <div class="grid md:grid-cols-3 gap-6">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <h5 class="font-semibold mb-3">Current</h5>
+                                    <div id="currentResults" class="space-y-2 text-sm">
+                                        <!-- Results populated by JavaScript -->
+                                    </div>
+                                </div>
+                                <div class="bg-blue-50 p-4 rounded-lg">
+                                    <h5 class="font-semibold mb-3">Scenario A</h5>
+                                    <div id="scenarioAResults" class="space-y-2 text-sm">
+                                        <!-- Results populated by JavaScript -->
+                                    </div>
+                                </div>
+                                <div class="bg-green-50 p-4 rounded-lg">
+                                    <h5 class="font-semibold mb-3">Scenario B</h5>
+                                    <div id="scenarioBResults" class="space-y-2 text-sm">
+                                        <!-- Results populated by JavaScript -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1741,12 +2060,922 @@
         }
 
         // Advanced Mortgage Calculator with PMI Integration
+        // Smart input formatting and validation functions
+        function initializeSmartInputs() {
+            // Format currency inputs
+            const currencyInputs = ['homePrice', 'downPayment'];
+            currencyInputs.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('input', formatCurrencyInput);
+                    input.addEventListener('blur', validateInput);
+                }
+            });
+            
+            // Format percentage inputs
+            const percentageInputs = ['interestRate'];
+            percentageInputs.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('input', formatPercentageInput);
+                    input.addEventListener('blur', validateInput);
+                }
+            });
+            
+            // Handle down payment type switching
+            const downPaymentType = document.getElementById('downPaymentType');
+            if (downPaymentType) {
+                downPaymentType.addEventListener('change', updateDownPaymentType);
+            }
+            
+            // Initialize range sliders
+            initializeRangeSliders();
+        }
+        
+        function formatCurrencyInput(e) {
+            let value = e.target.value.replace(/[^0-9]/g, '');
+            if (value) {
+                value = parseInt(value).toLocaleString();
+                e.target.value = value;
+            }
+        }
+        
+        function formatPercentageInput(e) {
+            let value = e.target.value;
+            // Allow decimals for percentage
+            value = value.replace(/[^0-9.]/g, '');
+            
+            // Prevent multiple decimal points
+            const decimalCount = (value.match(/\./g) || []).length;
+            if (decimalCount > 1) {
+                value = value.substring(0, value.lastIndexOf('.'));
+            }
+            
+            e.target.value = value;
+        }
+        
+        function validateInput(e) {
+            const input = e.target;
+            const errorDiv = document.getElementById(input.id + '-error');
+            const value = parseFloat(input.value.replace(/[^0-9.]/g, ''));
+            
+            let isValid = true;
+            let errorMessage = '';
+            
+            if (input.id === 'homePrice') {
+                if (value < 50000) {
+                    isValid = false;
+                    errorMessage = 'Home price must be at least $50,000';
+                } else if (value > 5000000) {
+                    isValid = false;
+                    errorMessage = 'Home price cannot exceed $5,000,000';
+                }
+            } else if (input.id === 'downPayment') {
+                const homePrice = parseFloat(document.getElementById('homePrice').value.replace(/[^0-9.]/g, ''));
+                const downPaymentType = document.getElementById('downPaymentType').value;
+                
+                if (downPaymentType === 'percent') {
+                    if (value < 5) {
+                        isValid = false;
+                        errorMessage = 'Down payment must be at least 5%';
+                    } else if (value > 95) {
+                        isValid = false;
+                        errorMessage = 'Down payment cannot exceed 95%';
+                    }
+                } else {
+                    const minDownPayment = homePrice * 0.05;
+                    if (value < minDownPayment) {
+                        isValid = false;
+                        errorMessage = `Down payment must be at least $${Math.round(minDownPayment).toLocaleString()}`;
+                    } else if (value >= homePrice) {
+                        isValid = false;
+                        errorMessage = 'Down payment cannot exceed home price';
+                    }
+                }
+            } else if (input.id === 'interestRate') {
+                if (value < 0.1) {
+                    isValid = false;
+                    errorMessage = 'Interest rate must be at least 0.1%';
+                } else if (value > 20) {
+                    isValid = false;
+                    errorMessage = 'Interest rate cannot exceed 20%';
+                }
+            }
+            
+            if (errorDiv) {
+                if (isValid) {
+                    errorDiv.classList.add('hidden');
+                    input.classList.remove('border-red-500');
+                    input.classList.add('border-gray-300');
+                } else {
+                    errorDiv.textContent = errorMessage;
+                    errorDiv.classList.remove('hidden');
+                    input.classList.add('border-red-500');
+                    input.classList.remove('border-gray-300');
+                }
+            }
+        }
+        
+        function updateDownPaymentType() {
+            const downPaymentType = document.getElementById('downPaymentType').value;
+            const symbol = document.getElementById('downPaymentSymbol');
+            const input = document.getElementById('downPayment');
+            
+            if (downPaymentType === 'percent') {
+                symbol.textContent = '%';
+                input.placeholder = '20';
+                input.value = '20';
+            } else {
+                symbol.textContent = '$';
+                input.placeholder = '130,000';
+                input.value = '130,000';
+            }
+            
+            calculateMortgage();
+        }
+        
+        function initializeRangeSliders() {
+            // Home price slider
+            const homePriceSlider = document.getElementById('homePriceSlider');
+            const homePriceInput = document.getElementById('homePrice');
+            
+            if (homePriceSlider && homePriceInput) {
+                homePriceSlider.addEventListener('input', function() {
+                    const value = parseInt(this.value);
+                    homePriceInput.value = value.toLocaleString();
+                    updateRangeSliderBackground(this);
+                    calculateMortgage();
+                });
+                
+                homePriceInput.addEventListener('input', function() {
+                    const value = parseInt(this.value.replace(/[^0-9]/g, ''));
+                    if (value >= 50000 && value <= 2000000) {
+                        homePriceSlider.value = value;
+                        updateRangeSliderBackground(homePriceSlider);
+                    }
+                });
+            }
+            
+            // Interest rate slider
+            const interestRateSlider = document.getElementById('interestRateSlider');
+            const interestRateInput = document.getElementById('interestRate');
+            
+            if (interestRateSlider && interestRateInput) {
+                interestRateSlider.addEventListener('input', function() {
+                    const value = parseFloat(this.value);
+                    interestRateInput.value = value.toFixed(2);
+                    updateRangeSliderBackground(this);
+                    calculateMortgage();
+                });
+                
+                interestRateInput.addEventListener('input', function() {
+                    const value = parseFloat(this.value);
+                    if (value >= 1 && value <= 15) {
+                        interestRateSlider.value = value;
+                        updateRangeSliderBackground(interestRateSlider);
+                    }
+                });
+            }
+            
+            // Initialize slider backgrounds
+            updateRangeSliderBackground(homePriceSlider);
+            updateRangeSliderBackground(interestRateSlider);
+        }
+        
+        function updateRangeSliderBackground(slider) {
+            if (!slider) return;
+            
+            const value = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+            slider.style.background = `linear-gradient(to right, #667eea 0%, #667eea ${value}%, #e5e7eb ${value}%, #e5e7eb 100%)`;
+        }
+        
+        function updateMinDownPayment() {
+            const homePrice = parseFloat(document.getElementById('homePrice').value.replace(/[^0-9.]/g, ''));
+            const minDownPaymentElement = document.getElementById('minDownPayment');
+            
+            if (homePrice && minDownPaymentElement) {
+                const minAmount = homePrice * 0.05;
+                minDownPaymentElement.textContent = `$${Math.round(minAmount).toLocaleString()}`;
+            }
+        }
+
+        // Scenario Comparison Functions
+        function toggleScenarioComparison() {
+            const comparison = document.getElementById('scenarioComparison');
+            const isHidden = comparison.classList.contains('hidden');
+            
+            if (isHidden) {
+                comparison.classList.remove('hidden');
+                populateCurrentScenario();
+            } else {
+                comparison.classList.add('hidden');
+            }
+        }
+        
+        function populateCurrentScenario() {
+            const homePrice = parseFloat(document.getElementById('homePrice').value.replace(/[^0-9.]/g, '')) || 650000;
+            const downPayment = parseFloat(document.getElementById('downPayment').value.replace(/[^0-9.]/g, '')) || 130000;
+            const interestRate = parseFloat(document.getElementById('interestRate').value) || 5.89;
+            const amortization = parseInt(document.getElementById('amortization').value) || 25;
+            
+            const currentScenario = document.getElementById('currentScenario');
+            currentScenario.innerHTML = `
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Home Price:</span>
+                    <span class="font-medium">$${homePrice.toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Down Payment:</span>
+                    <span class="font-medium">$${downPayment.toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Interest Rate:</span>
+                    <span class="font-medium">${interestRate}%</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Amortization:</span>
+                    <span class="font-medium">${amortization} years</span>
+                </div>
+            `;
+        }
+        
+        function compareScenarios() {
+            const homePrice = parseFloat(document.getElementById('homePrice').value.replace(/[^0-9.]/g, '')) || 650000;
+            
+            // Get current scenario
+            const current = calculateScenario(
+                homePrice,
+                parseFloat(document.getElementById('downPayment').value.replace(/[^0-9.]/g, '')) || 130000,
+                parseFloat(document.getElementById('interestRate').value) || 5.89,
+                parseInt(document.getElementById('amortization').value) || 25
+            );
+            
+            // Get scenario A
+            const scenarioA = calculateScenario(
+                homePrice,
+                parseFloat(document.getElementById('scenarioA-downPayment').value.replace(/[^0-9.]/g, '')) || 150000,
+                parseFloat(document.getElementById('scenarioA-rate').value) || 5.5,
+                parseInt(document.getElementById('scenarioA-amortization').value) || 25
+            );
+            
+            // Get scenario B
+            const scenarioB = calculateScenario(
+                homePrice,
+                parseFloat(document.getElementById('scenarioB-downPayment').value.replace(/[^0-9.]/g, '')) || 200000,
+                parseFloat(document.getElementById('scenarioB-rate').value) || 4.9,
+                parseInt(document.getElementById('scenarioB-amortization').value) || 25
+            );
+            
+            // Display results
+            displayScenarioResults('currentResults', current);
+            displayScenarioResults('scenarioAResults', scenarioA);
+            displayScenarioResults('scenarioBResults', scenarioB);
+            
+            document.getElementById('comparisonResults').classList.remove('hidden');
+        }
+        
+        function calculateScenario(homePrice, downPayment, interestRate, amortization) {
+            const loanAmount = homePrice - downPayment;
+            const monthlyRate = interestRate / 100 / 12;
+            const numPayments = amortization * 12;
+            
+            const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+            const totalPayments = monthlyPayment * numPayments;
+            const totalInterest = totalPayments - loanAmount;
+            
+            // Calculate PMI
+            const pmiInfo = calculatePMIForScenario(homePrice, downPayment, loanAmount, interestRate);
+            
+            return {
+                monthlyPayment: monthlyPayment + pmiInfo.monthlyPMI,
+                totalInterest: totalInterest,
+                totalCost: totalPayments + pmiInfo.totalPMI,
+                loanAmount: loanAmount,
+                downPaymentPercent: (downPayment / homePrice) * 100,
+                pmi: pmiInfo
+            };
+        }
+        
+        function calculatePMIForScenario(homePrice, downPayment, loanAmount, interestRate) {
+            const loanToValue = (loanAmount / homePrice) * 100;
+            let pmiRate = 0;
+            
+            if (loanToValue > 80) {
+                if (loanToValue > 95) pmiRate = 0.85;
+                else if (loanToValue > 90) pmiRate = 0.70;
+                else if (loanToValue > 85) pmiRate = 0.50;
+                else pmiRate = 0.30;
+            }
+            
+            const monthlyPMI = (loanAmount * pmiRate / 100) / 12;
+            const monthlyRate = interestRate / 100 / 12;
+            const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, 25 * 12)) / (Math.pow(1 + monthlyRate, 25 * 12) - 1);
+            
+            // Calculate PMI removal timing
+            let balance = loanAmount;
+            let month = 0;
+            let pmiRemovalMonth = 0;
+            
+            while (balance > homePrice * 0.8 && month < 360) {
+                month++;
+                const interestPayment = balance * monthlyRate;
+                const principalPayment = monthlyPayment - interestPayment;
+                balance -= principalPayment;
+                
+                if (balance <= homePrice * 0.8) {
+                    pmiRemovalMonth = month;
+                    break;
+                }
+            }
+            
+            const totalPMI = monthlyPMI * pmiRemovalMonth;
+            
+            return {
+                monthlyPMI: monthlyPMI,
+                totalPMI: totalPMI,
+                removalMonth: pmiRemovalMonth
+            };
+        }
+        
+        function displayScenarioResults(elementId, scenario) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Monthly Payment:</span>
+                    <span class="font-semibold">$${Math.round(scenario.monthlyPayment).toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Total Interest:</span>
+                    <span class="font-medium">$${Math.round(scenario.totalInterest).toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Total Cost:</span>
+                    <span class="font-medium">$${Math.round(scenario.totalCost).toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Down Payment:</span>
+                    <span class="font-medium">${scenario.downPaymentPercent.toFixed(1)}%</span>
+                </div>
+                ${scenario.pmi.monthlyPMI > 0 ? `
+                <div class="flex justify-between">
+                    <span class="text-gray-600">PMI Cost:</span>
+                    <span class="font-medium text-orange-600">$${Math.round(scenario.pmi.totalPMI).toLocaleString()}</span>
+                </div>
+                ` : ''}
+            `;
+        }
+        
+        // Accessibility Helper Functions
+        function handleToggleKeydown(event, functionName) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                window[functionName]();
+            }
+        }
+        
+        function updateAriaExpanded(buttonSelector, isExpanded) {
+            const button = document.querySelector(buttonSelector);
+            if (button) {
+                button.setAttribute('aria-expanded', isExpanded.toString());
+            }
+        }
+        
+        function announceToScreenReader(message) {
+            const announcement = document.createElement('div');
+            announcement.setAttribute('aria-live', 'polite');
+            announcement.setAttribute('aria-atomic', 'true');
+            announcement.className = 'sr-only';
+            announcement.textContent = message;
+            document.body.appendChild(announcement);
+            
+            setTimeout(() => {
+                document.body.removeChild(announcement);
+            }, 1000);
+        }
+
+        // Progressive Disclosure Functions
+        function toggleAdvancedOptions() {
+            const advancedOptions = document.getElementById('advancedOptions');
+            const icon = document.getElementById('advancedOptionsIcon');
+            const isHidden = advancedOptions.classList.contains('hidden');
+            
+            if (isHidden) {
+                advancedOptions.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+                updateAriaExpanded('[aria-controls="advancedOptions"]', true);
+                announceToScreenReader('Advanced options expanded');
+            } else {
+                advancedOptions.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+                updateAriaExpanded('[aria-controls="advancedOptions"]', false);
+                announceToScreenReader('Advanced options collapsed');
+            }
+        }
+        
+        function toggleDetailedBreakdown() {
+            const detailedBreakdown = document.getElementById('detailedBreakdown');
+            const icon = document.getElementById('detailedBreakdownIcon');
+            
+            if (detailedBreakdown.classList.contains('hidden')) {
+                detailedBreakdown.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+                populateDetailedBreakdown();
+            } else {
+                detailedBreakdown.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+        
+        function populateDetailedBreakdown() {
+            const homePrice = parseFloat(document.getElementById('homePrice').value.replace(/[^0-9.]/g, '')) || 650000;
+            const downPaymentType = document.getElementById('downPaymentType').value;
+            let downPayment = parseFloat(document.getElementById('downPayment').value.replace(/[^0-9.]/g, '')) || 130000;
+            
+            if (downPaymentType === 'percent') {
+                downPayment = (downPayment / 100) * homePrice;
+            }
+            
+            const interestRate = parseFloat(document.getElementById('interestRate').value) || 5.89;
+            const amortization = parseInt(document.getElementById('amortization').value) || 25;
+            const loanAmount = homePrice - downPayment;
+            const monthlyRate = interestRate / 100 / 12;
+            const numPayments = amortization * 12;
+            
+            const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+            
+            // Get advanced options if available
+            const propertyTax = parseFloat(document.getElementById('propertyTax')?.value.replace(/[^0-9.]/g, '')) || 8000;
+            const homeInsurance = parseFloat(document.getElementById('homeInsurance')?.value.replace(/[^0-9.]/g, '')) || 1200;
+            const hoaFees = parseFloat(document.getElementById('hoaFees')?.value.replace(/[^0-9.]/g, '')) || 0;
+            const extraPayment = parseFloat(document.getElementById('extraPayment')?.value.replace(/[^0-9.]/g, '')) || 0;
+            
+            // Calculate PMI
+            const pmiInfo = calculatePMI(homePrice, downPayment, loanAmount);
+            
+            // Monthly breakdown
+            const monthlyBreakdown = document.getElementById('monthlyBreakdown');
+            monthlyBreakdown.innerHTML = `
+                <div class="flex justify-between">
+                    <span>Principal & Interest:</span>
+                    <span class="font-medium">$${Math.round(monthlyPayment).toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Property Tax:</span>
+                    <span class="font-medium">$${Math.round(propertyTax / 12).toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Home Insurance:</span>
+                    <span class="font-medium">$${Math.round(homeInsurance / 12).toLocaleString()}</span>
+                </div>
+                ${pmiInfo.monthlyPMI > 0 ? `
+                <div class="flex justify-between">
+                    <span>PMI:</span>
+                    <span class="font-medium text-orange-600">$${Math.round(pmiInfo.monthlyPMI).toLocaleString()}</span>
+                </div>
+                ` : ''}
+                ${hoaFees > 0 ? `
+                <div class="flex justify-between">
+                    <span>HOA Fees:</span>
+                    <span class="font-medium">$${Math.round(hoaFees).toLocaleString()}</span>
+                </div>
+                ` : ''}
+                ${extraPayment > 0 ? `
+                <div class="flex justify-between">
+                    <span>Extra Payment:</span>
+                    <span class="font-medium text-green-600">$${Math.round(extraPayment).toLocaleString()}</span>
+                </div>
+                ` : ''}
+                <div class="flex justify-between border-t pt-2 font-semibold">
+                    <span>Total Monthly:</span>
+                    <span>$${Math.round(monthlyPayment + pmiInfo.monthlyPMI + propertyTax/12 + homeInsurance/12 + hoaFees + extraPayment).toLocaleString()}</span>
+                </div>
+            `;
+            
+            // Loan summary
+            const loanSummary = document.getElementById('loanSummary');
+            loanSummary.innerHTML = `
+                <div class="flex justify-between">
+                    <span>Loan-to-Value Ratio:</span>
+                    <span class="font-medium">${((loanAmount / homePrice) * 100).toFixed(1)}%</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Effective Interest Rate:</span>
+                    <span class="font-medium">${interestRate}%</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Monthly Rate:</span>
+                    <span class="font-medium">${(monthlyRate * 100).toFixed(4)}%</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Total Payments:</span>
+                    <span class="font-medium">${numPayments} payments</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>First Payment Date:</span>
+                    <span class="font-medium">${getFirstPaymentDate()}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Final Payment Date:</span>
+                    <span class="font-medium">${getFinalPaymentDate(amortization)}</span>
+                </div>
+            `;
+            
+            // Payment options
+            const paymentOptions = document.getElementById('paymentOptions');
+            const biweeklyPayment = monthlyPayment / 2;
+            const weeklyPayment = monthlyPayment / 4.33;
+            
+            paymentOptions.innerHTML = `
+                <div class="flex justify-between">
+                    <span>Monthly:</span>
+                    <span class="font-medium">$${Math.round(monthlyPayment).toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Bi-weekly:</span>
+                    <span class="font-medium">$${Math.round(biweeklyPayment).toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Weekly:</span>
+                    <span class="font-medium">$${Math.round(weeklyPayment).toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Accelerated Bi-weekly:</span>
+                    <span class="font-medium text-green-600">$${Math.round(monthlyPayment / 2).toLocaleString()}</span>
+                </div>
+                <div class="text-xs text-gray-600 mt-2">
+                    <strong>Tip:</strong> Accelerated bi-weekly payments can save you years and thousands in interest!
+                </div>
+            `;
+        }
+        
+        function getFirstPaymentDate() {
+            const today = new Date();
+            const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+            return nextMonth.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        
+        function getFinalPaymentDate(amortizationYears) {
+            const today = new Date();
+            const finalDate = new Date(today.getFullYear() + amortizationYears, today.getMonth(), today.getDate());
+            return finalDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+        }
+
+        // Smart Insights and Recommendations System
+        function generateSmartInsights() {
+            const homePrice = parseFloat(document.getElementById('homePrice').value.replace(/[^0-9.]/g, '')) || 650000;
+            const downPaymentType = document.getElementById('downPaymentType').value;
+            let downPayment = parseFloat(document.getElementById('downPayment').value.replace(/[^0-9.]/g, '')) || 130000;
+            
+            if (downPaymentType === 'percent') {
+                downPayment = (downPayment / 100) * homePrice;
+            }
+            
+            const interestRate = parseFloat(document.getElementById('interestRate').value) || 5.89;
+            const amortization = parseInt(document.getElementById('amortization').value) || 25;
+            const loanAmount = homePrice - downPayment;
+            const loanToValue = (loanAmount / homePrice) * 100;
+            
+            const insights = [];
+            const actions = [];
+            
+            // Payment frequency analysis
+            const monthlyPayment = loanAmount * ((interestRate / 100 / 12) * Math.pow(1 + (interestRate / 100 / 12), amortization * 12)) / (Math.pow(1 + (interestRate / 100 / 12), amortization * 12) - 1);
+            const biweeklyPayment = monthlyPayment / 2;
+            const biweeklySavings = calculateBiweeklySavings(loanAmount, interestRate, amortization);
+            
+            if (biweeklySavings.interestSaved > 10000) {
+                insights.push({
+                    type: 'savings',
+                    icon: '💰',
+                    color: 'green',
+                    message: `Switching to bi-weekly payments could save you $${Math.round(biweeklySavings.interestSaved).toLocaleString()} in interest and pay off your mortgage ${biweeklySavings.timeSaved.toFixed(1)} years earlier.`
+                });
+                actions.push({
+                    type: 'high',
+                    action: 'Consider bi-weekly payment schedule',
+                    impact: `Save $${Math.round(biweeklySavings.interestSaved).toLocaleString()}`
+                });
+            }
+            
+            // Down payment analysis
+            if (loanToValue > 95) {
+                insights.push({
+                    type: 'warning',
+                    icon: '⚠️',
+                    color: 'orange',
+                    message: `Your down payment is ${(downPayment / homePrice * 100).toFixed(1)}%. Consider saving more to reduce PMI costs and get better rates.`
+                });
+                actions.push({
+                    type: 'medium',
+                    action: 'Increase down payment to 20%',
+                    impact: 'Eliminate PMI and reduce monthly payment'
+                });
+            } else if (loanToValue > 80) {
+                const pmiInfo = calculatePMI(homePrice, downPayment, loanAmount);
+                insights.push({
+                    type: 'info',
+                    icon: '📊',
+                    color: 'blue',
+                    message: `You'll pay $${Math.round(pmiInfo.totalPMI).toLocaleString()} in PMI over ${pmiInfo.removalYears} years. PMI will be removed automatically when you reach 20% equity.`
+                });
+            } else {
+                insights.push({
+                    type: 'success',
+                    icon: '✅',
+                    color: 'green',
+                    message: `Excellent! Your ${(downPayment / homePrice * 100).toFixed(1)}% down payment means no PMI required, saving you thousands.`
+                });
+            }
+            
+            // Interest rate analysis
+            const currentMarketRate = 5.89;
+            const bestAvailableRate = 4.79;
+            
+            if (interestRate > currentMarketRate + 0.5) {
+                insights.push({
+                    type: 'warning',
+                    icon: '📈',
+                    color: 'red',
+                    message: `Your rate of ${interestRate}% is above current market average. Shop around for better rates to potentially save thousands.`
+                });
+                actions.push({
+                    type: 'high',
+                    action: 'Shop for better interest rates',
+                    impact: 'Could save $200+ monthly'
+                });
+            } else if (interestRate > bestAvailableRate + 0.3) {
+                const rateSavings = calculateRateSavings(loanAmount, interestRate, bestAvailableRate, amortization);
+                insights.push({
+                    type: 'info',
+                    icon: '💡',
+                    color: 'blue',
+                    message: `You could potentially qualify for rates as low as ${bestAvailableRate}%, saving $${Math.round(rateSavings.monthlySavings)} monthly.`
+                });
+                actions.push({
+                    type: 'medium',
+                    action: 'Get pre-qualified for better rates',
+                    impact: `Save $${Math.round(rateSavings.totalSavings).toLocaleString()} over loan term`
+                });
+            }
+            
+            // Amortization analysis
+            if (amortization > 25) {
+                const shorterTermSavings = calculateShorterTermSavings(loanAmount, interestRate, amortization, 25);
+                insights.push({
+                    type: 'info',
+                    icon: '⏰',
+                    color: 'blue',
+                    message: `Reducing your amortization to 25 years would save $${Math.round(shorterTermSavings.interestSaved).toLocaleString()} in interest but increase monthly payments by $${Math.round(shorterTermSavings.paymentIncrease)}.`
+                });
+            }
+            
+            // Market timing insights
+            const marketInsights = getMarketTimingInsights();
+            insights.push(marketInsights);
+            
+            return { insights, actions };
+        }
+        
+        function calculateBiweeklySavings(principal, rate, years) {
+            const monthlyRate = rate / 100 / 12;
+            const monthlyPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, years * 12)) / (Math.pow(1 + monthlyRate, years * 12) - 1);
+            const biweeklyPayment = monthlyPayment / 2;
+            
+            // Calculate payoff time with bi-weekly payments
+            const biweeklyRate = rate / 100 / 26;
+            const biweeklyMonths = -Math.log(1 - (principal * biweeklyRate) / biweeklyPayment) / Math.log(1 + biweeklyRate) * 12 / 26;
+            
+            const monthlyTotalInterest = (monthlyPayment * years * 12) - principal;
+            const biweeklyTotalInterest = (biweeklyPayment * 26 * biweeklyMonths / 12) - principal;
+            
+            return {
+                interestSaved: monthlyTotalInterest - biweeklyTotalInterest,
+                timeSaved: years - (biweeklyMonths / 12)
+            };
+        }
+        
+        function calculateRateSavings(principal, currentRate, newRate, years) {
+            const currentMonthlyRate = currentRate / 100 / 12;
+            const newMonthlyRate = newRate / 100 / 12;
+            
+            const currentPayment = principal * (currentMonthlyRate * Math.pow(1 + currentMonthlyRate, years * 12)) / (Math.pow(1 + currentMonthlyRate, years * 12) - 1);
+            const newPayment = principal * (newMonthlyRate * Math.pow(1 + newMonthlyRate, years * 12)) / (Math.pow(1 + newMonthlyRate, years * 12) - 1);
+            
+            const monthlySavings = currentPayment - newPayment;
+            const totalSavings = monthlySavings * years * 12;
+            
+            return { monthlySavings, totalSavings };
+        }
+        
+        function calculateShorterTermSavings(principal, rate, currentYears, newYears) {
+            const monthlyRate = rate / 100 / 12;
+            
+            const currentPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, currentYears * 12)) / (Math.pow(1 + monthlyRate, currentYears * 12) - 1);
+            const newPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, newYears * 12)) / (Math.pow(1 + monthlyRate, newYears * 12) - 1);
+            
+            const currentTotalInterest = (currentPayment * currentYears * 12) - principal;
+            const newTotalInterest = (newPayment * newYears * 12) - principal;
+            
+            return {
+                paymentIncrease: newPayment - currentPayment,
+                interestSaved: currentTotalInterest - newTotalInterest
+            };
+        }
+        
+        function getMarketTimingInsights() {
+            const scenarios = [
+                {
+                    type: 'info',
+                    icon: '📊',
+                    color: 'blue',
+                    message: 'Market analysis suggests rates may fluctuate ±0.25% over the next 90 days. Consider rate lock options.'
+                },
+                {
+                    type: 'warning',
+                    icon: '⏳',
+                    color: 'orange',
+                    message: 'Inventory is low in your area. Pre-approval could give you a competitive edge in bidding.'
+                },
+                {
+                    type: 'success',
+                    icon: '🎯',
+                    color: 'green',
+                    message: 'Current rates are historically favorable. This could be an optimal time to secure financing.'
+                }
+            ];
+            
+            return scenarios[Math.floor(Math.random() * scenarios.length)];
+        }
+        
+        function calculateFinancialHealthScore() {
+            const homePrice = parseFloat(document.getElementById('homePrice').value.replace(/[^0-9.]/g, '')) || 650000;
+            const downPaymentType = document.getElementById('downPaymentType').value;
+            let downPayment = parseFloat(document.getElementById('downPayment').value.replace(/[^0-9.]/g, '')) || 130000;
+            
+            if (downPaymentType === 'percent') {
+                downPayment = (downPayment / 100) * homePrice;
+            }
+            
+            const interestRate = parseFloat(document.getElementById('interestRate').value) || 5.89;
+            const loanToValue = ((homePrice - downPayment) / homePrice) * 100;
+            
+            let score = 0;
+            const factors = [];
+            
+            // Down payment score (0-30 points)
+            if (downPayment / homePrice >= 0.20) {
+                score += 30;
+                factors.push({ name: 'Down Payment', score: 30, max: 30, status: 'excellent' });
+            } else if (downPayment / homePrice >= 0.15) {
+                score += 22;
+                factors.push({ name: 'Down Payment', score: 22, max: 30, status: 'good' });
+            } else if (downPayment / homePrice >= 0.10) {
+                score += 15;
+                factors.push({ name: 'Down Payment', score: 15, max: 30, status: 'fair' });
+            } else {
+                score += 8;
+                factors.push({ name: 'Down Payment', score: 8, max: 30, status: 'poor' });
+            }
+            
+            // Interest rate score (0-25 points)
+            if (interestRate <= 4.5) {
+                score += 25;
+                factors.push({ name: 'Interest Rate', score: 25, max: 25, status: 'excellent' });
+            } else if (interestRate <= 5.5) {
+                score += 20;
+                factors.push({ name: 'Interest Rate', score: 20, max: 25, status: 'good' });
+            } else if (interestRate <= 6.5) {
+                score += 15;
+                factors.push({ name: 'Interest Rate', score: 15, max: 25, status: 'fair' });
+            } else {
+                score += 8;
+                factors.push({ name: 'Interest Rate', score: 8, max: 25, status: 'poor' });
+            }
+            
+            // Loan term score (0-20 points)
+            const amortization = parseInt(document.getElementById('amortization').value) || 25;
+            if (amortization <= 15) {
+                score += 20;
+                factors.push({ name: 'Loan Term', score: 20, max: 20, status: 'excellent' });
+            } else if (amortization <= 25) {
+                score += 15;
+                factors.push({ name: 'Loan Term', score: 15, max: 20, status: 'good' });
+            } else {
+                score += 10;
+                factors.push({ name: 'Loan Term', score: 10, max: 20, status: 'fair' });
+            }
+            
+            // PMI impact (0-15 points)
+            if (loanToValue <= 80) {
+                score += 15;
+                factors.push({ name: 'PMI Impact', score: 15, max: 15, status: 'excellent' });
+            } else if (loanToValue <= 90) {
+                score += 10;
+                factors.push({ name: 'PMI Impact', score: 10, max: 15, status: 'fair' });
+            } else {
+                score += 5;
+                factors.push({ name: 'PMI Impact', score: 5, max: 15, status: 'poor' });
+            }
+            
+            // Payment optimization (0-10 points)
+            const paymentFreq = document.getElementById('paymentFrequency').value;
+            if (paymentFreq.includes('accelerated')) {
+                score += 10;
+                factors.push({ name: 'Payment Strategy', score: 10, max: 10, status: 'excellent' });
+            } else if (paymentFreq !== 'monthly') {
+                score += 7;
+                factors.push({ name: 'Payment Strategy', score: 7, max: 10, status: 'good' });
+            } else {
+                score += 5;
+                factors.push({ name: 'Payment Strategy', score: 5, max: 10, status: 'fair' });
+            }
+            
+            return { score, factors, maxScore: 100 };
+        }
+        
+        function refreshInsights() {
+            const smartInsights = generateSmartInsights();
+            const healthScore = calculateFinancialHealthScore();
+            
+            displayInsights(smartInsights.insights);
+            displayActionItems(smartInsights.actions);
+            displayHealthScore(healthScore);
+        }
+        
+        function displayInsights(insights) {
+            const container = document.getElementById('aiInsights');
+            container.innerHTML = insights.map(insight => `
+                <div class="flex items-start p-3 bg-white rounded-lg border-l-4 border-${insight.color}-400">
+                    <span class="text-lg mr-3">${insight.icon}</span>
+                    <p class="text-sm text-gray-700">${insight.message}</p>
+                </div>
+            `).join('');
+        }
+        
+        function displayActionItems(actions) {
+            const container = document.getElementById('actionItems');
+            const priorityColors = {
+                high: 'red',
+                medium: 'yellow',
+                low: 'green'
+            };
+            
+            container.innerHTML = actions.map(action => `
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <div class="flex items-center">
+                        <div class="w-2 h-2 rounded-full bg-${priorityColors[action.type]}-400 mr-3"></div>
+                        <span class="text-sm font-medium">${action.action}</span>
+                    </div>
+                    <span class="text-xs text-gray-600">${action.impact}</span>
+                </div>
+            `).join('');
+        }
+        
+        function displayHealthScore(healthData) {
+            const container = document.getElementById('healthScore');
+            const percentage = (healthData.score / healthData.maxScore) * 100;
+            
+            let rating = 'Poor';
+            let color = 'red';
+            if (percentage >= 90) { rating = 'Excellent'; color = 'green'; }
+            else if (percentage >= 75) { rating = 'Good'; color = 'blue'; }
+            else if (percentage >= 60) { rating = 'Fair'; color = 'yellow'; }
+            
+            container.innerHTML = `
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-semibold">Overall Score: ${healthData.score}/${healthData.maxScore}</span>
+                    <span class="px-3 py-1 rounded-full text-sm font-medium bg-${color}-100 text-${color}-800">${rating}</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
+                    <div class="bg-${color}-600 h-3 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
+                </div>
+                <div class="space-y-2">
+                    ${healthData.factors.map(factor => `
+                        <div class="flex justify-between text-sm">
+                            <span>${factor.name}</span>
+                            <span class="font-medium">${factor.score}/${factor.max}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
         function calculateMortgage() {
-            const homePrice = parseFloat(document.getElementById('homePrice').value) || 650000;
-            const downPayment = parseFloat(document.getElementById('downPayment').value) || 130000;
+            const homePrice = parseFloat(document.getElementById('homePrice').value.replace(/[^0-9.]/g, '')) || 650000;
+            const downPaymentType = document.getElementById('downPaymentType').value;
+            let downPayment = parseFloat(document.getElementById('downPayment').value.replace(/[^0-9.]/g, '')) || 130000;
+            
+            // Convert percentage to amount if needed
+            if (downPaymentType === 'percent') {
+                downPayment = (downPayment / 100) * homePrice;
+            }
+            
             const amortization = parseInt(document.getElementById('amortization').value) || 25;
             const interestRate = parseFloat(document.getElementById('interestRate').value) || 5.89;
             const paymentFrequency = document.getElementById('paymentFrequency').value;
+            
+            // Update minimum down payment display
+            updateMinDownPayment();
             
             const mortgageAmount = homePrice - downPayment;
             const monthlyRate = interestRate / 100 / 12;
@@ -1780,6 +3009,9 @@
             
             // Update chart
             updateAmortizationChart(mortgageAmount, baseMonthlyPayment, interestRate, amortization);
+            
+            // Update smart insights
+            refreshInsights();
         }
 
         // Update PMI display in payment breakdown
@@ -1794,22 +3026,67 @@
             }
             
             if (pmiInfo.monthlyPMI > 0) {
+                const removalText = pmiInfo.removalYears > 0 ? 
+                    `${pmiInfo.removalYears} years ${pmiInfo.removalMonths} months` : 
+                    `${pmiInfo.removalMonths} months`;
+                
                 pmiElement.innerHTML = `
-                    <div class="flex justify-between py-3 border-b">
-                        <span class="text-gray-600">PMI (Monthly)</span>
-                        <span class="font-semibold text-orange-600">$${Math.round(pmiInfo.monthlyPMI).toLocaleString()}</span>
-                    </div>
-                    <div class="flex justify-between py-3 border-b">
-                        <span class="text-gray-600">PMI Removal</span>
-                        <span class="font-semibold">${pmiInfo.removalMonth > 0 ? 'Month ' + pmiInfo.removalMonth : 'At 20% equity'}</span>
-                    </div>
-                    <div class="flex justify-between py-3 border-b">
-                        <span class="text-gray-600">Total PMI Cost</span>
-                        <span class="font-semibold text-orange-600">$${Math.round(pmiInfo.totalPMI).toLocaleString()}</span>
+                    <div class="bg-orange-50 p-4 rounded-lg mb-4">
+                        <h4 class="font-semibold text-orange-800 mb-3">PMI Insurance Details</h4>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-3">
+                            <div>
+                                <span class="text-sm text-gray-600">Monthly PMI</span>
+                                <div class="font-semibold text-orange-600">$${Math.round(pmiInfo.monthlyPMI).toLocaleString()}</div>
+                            </div>
+                            <div>
+                                <span class="text-sm text-gray-600">PMI Rate</span>
+                                <div class="font-semibold">${pmiInfo.pmiRate}%</div>
+                            </div>
+                            <div>
+                                <span class="text-sm text-gray-600">LTV Ratio</span>
+                                <div class="font-semibold">${pmiInfo.loanToValue.toFixed(1)}%</div>
+                            </div>
+                            <div>
+                                <span class="text-sm text-gray-600">Risk Category</span>
+                                <div class="font-semibold">${pmiInfo.pmiCategory}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t pt-3">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-sm text-gray-600">PMI Removal After</span>
+                                <span class="font-semibold">${removalText}</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-sm text-gray-600">Total PMI Cost</span>
+                                <span class="font-semibold text-orange-600">$${Math.round(pmiInfo.totalPMI).toLocaleString()}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                <span>Progress to 80% LTV</span>
+                                <span>${(100 - pmiInfo.loanToValue).toFixed(1)}% complete</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-orange-600 h-2 rounded-full transition-all duration-300" style="width: ${Math.max(0, (100 - pmiInfo.loanToValue) / 20 * 100)}%"></div>
+                            </div>
+                        </div>
                     </div>
                 `;
             } else {
-                pmiElement.innerHTML = '';
+                pmiElement.innerHTML = `
+                    <div class="bg-green-50 p-4 rounded-lg mb-4">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="font-semibold text-green-800">No PMI Required</span>
+                        </div>
+                        <p class="text-sm text-green-700 mt-1">Your down payment is 20% or more, so no PMI insurance is needed.</p>
+                    </div>
+                `;
             }
         }
 
@@ -1863,28 +3140,47 @@
         function updateAmortizationChart(principal, payment, rate, years) {
             const ctx = document.getElementById('amortizationChart').getContext('2d');
             
-            // Generate data for chart
+            // Generate enhanced data for chart
             const labels = [];
-            const principalData = [];
-            const interestData = [];
+            const principalRemainingData = [];
+            const principalPaidData = [];
+            const totalInterestPaidData = [];
+            const monthlyInterestData = [];
+            const monthlyPrincipalData = [];
+            
             let balance = principal;
+            let totalInterestPaid = 0;
             const monthlyRate = rate / 100 / 12;
             
-            for (let year = 0; year <= years; year += 5) {
-                labels.push('Year ' + year);
+            // Generate more detailed yearly data
+            for (let year = 0; year <= years; year += 1) {
+                labels.push(`Year ${year}`);
                 
-                // Calculate remaining balance
+                // Calculate payments for this year
                 const monthsPassed = year * 12;
                 let tempBalance = principal;
+                let tempTotalInterest = 0;
+                let yearlyInterest = 0;
+                let yearlyPrincipal = 0;
                 
                 for (let month = 0; month < monthsPassed; month++) {
                     const interestPayment = tempBalance * monthlyRate;
                     const principalPayment = payment - interestPayment;
                     tempBalance -= principalPayment;
+                    tempTotalInterest += interestPayment;
+                    
+                    // Track last 12 months for current year calculations
+                    if (month >= monthsPassed - 12 && month < monthsPassed) {
+                        yearlyInterest += interestPayment;
+                        yearlyPrincipal += principalPayment;
+                    }
                 }
                 
-                principalData.push(Math.max(0, tempBalance));
-                interestData.push(principal - tempBalance);
+                principalRemainingData.push(Math.max(0, tempBalance));
+                principalPaidData.push(principal - tempBalance);
+                totalInterestPaidData.push(tempTotalInterest);
+                monthlyInterestData.push(yearlyInterest / 12);
+                monthlyPrincipalData.push(yearlyPrincipal / 12);
             }
             
             // Create or update chart
@@ -1893,36 +3189,142 @@
             }
             
             window.amortizationChart = new Chart(ctx, {
-                type: 'bar',
+                type: 'line',
                 data: {
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Remaining Principal',
-                            data: principalData,
-                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                            label: 'Remaining Balance',
+                            data: principalRemainingData,
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y'
                         },
                         {
                             label: 'Principal Paid',
-                            data: interestData,
-                            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                            data: principalPaidData,
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Cumulative Interest',
+                            data: totalInterestPaidData,
+                            borderColor: 'rgba(251, 191, 36, 1)',
+                            backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                            tension: 0.4,
+                            fill: false,
+                            yAxisID: 'y'
                         }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                beforeBody: function(context) {
+                                    const year = parseInt(context[0].label.replace('Year ', ''));
+                                    if (year === 0) return [];
+                                    
+                                    const remainingBalance = principalRemainingData[year];
+                                    const equityBuilt = principal - remainingBalance;
+                                    const totalInterest = totalInterestPaidData[year];
+                                    const equityPercent = ((equityBuilt / principal) * 100).toFixed(1);
+                                    
+                                    return [
+                                        `Equity Built: $${Math.round(equityBuilt).toLocaleString()} (${equityPercent}%)`,
+                                        `Total Interest Paid: $${Math.round(totalInterest).toLocaleString()}`,
+                                        `Avg Monthly Interest: $${Math.round(monthlyInterestData[year]).toLocaleString()}`,
+                                        `Avg Monthly Principal: $${Math.round(monthlyPrincipalData[year]).toLocaleString()}`
+                                    ];
+                                },
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const label = context.dataset.label;
+                                    return `${label}: $${Math.round(value).toLocaleString()}`;
+                                },
+                                afterBody: function(context) {
+                                    const year = parseInt(context[0].label.replace('Year ', ''));
+                                    if (year === 0) return [];
+                                    
+                                    const remaining = principalRemainingData[year];
+                                    const yearsLeft = years - year;
+                                    
+                                    return [
+                                        '',
+                                        `Years Remaining: ${yearsLeft}`,
+                                        `Monthly Payment: $${Math.round(payment).toLocaleString()}`
+                                    ];
+                                }
+                            },
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            titleColor: 'rgba(243, 244, 246, 1)',
+                            bodyColor: 'rgba(209, 213, 219, 1)',
+                            borderColor: 'rgba(75, 85, 99, 1)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            padding: 12
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        }
+                    },
                     scales: {
                         x: {
-                            stacked: true,
+                            grid: {
+                                color: 'rgba(209, 213, 219, 0.3)'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Years'
+                            }
                         },
                         y: {
-                            stacked: true,
+                            grid: {
+                                color: 'rgba(209, 213, 219, 0.3)'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Amount ($)'
+                            },
                             ticks: {
                                 callback: function(value) {
-                                    return '$' + (value / 1000) + 'k';
+                                    if (value >= 1000000) {
+                                        return '$' + (value / 1000000).toFixed(1) + 'M';
+                                    } else if (value >= 1000) {
+                                        return '$' + (value / 1000).toFixed(0) + 'k';
+                                    }
+                                    return '$' + value.toLocaleString();
                                 }
                             }
+                        }
+                    },
+                    hover: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    elements: {
+                        point: {
+                            radius: 4,
+                            hoverRadius: 8
                         }
                     }
                 }
@@ -2173,26 +3575,64 @@
         function calculatePMI(homePrice, downPayment, loanAmount) {
             const loanToValue = (loanAmount / homePrice) * 100;
             let pmiRate = 0;
+            let pmiCategory = '';
             
             if (loanToValue > 80) {
                 if (loanToValue > 95) {
                     pmiRate = 0.85; // 0.85% for >95% LTV
+                    pmiCategory = 'High Risk';
                 } else if (loanToValue > 90) {
                     pmiRate = 0.70; // 0.70% for 90-95% LTV
+                    pmiCategory = 'Medium-High Risk';
                 } else if (loanToValue > 85) {
                     pmiRate = 0.50; // 0.50% for 85-90% LTV
+                    pmiCategory = 'Medium Risk';
                 } else {
                     pmiRate = 0.30; // 0.30% for 80-85% LTV
+                    pmiCategory = 'Low Risk';
                 }
             }
             
             const monthlyPMI = (loanAmount * pmiRate / 100) / 12;
-            const pmiRemovalMonth = Math.ceil(Math.log(0.80 / (loanAmount / homePrice)) / Math.log(1 + (5.89 / 100 / 12)));
+            
+            // Calculate PMI removal timing more accurately
+            const interestRate = parseFloat(document.getElementById('interestRate').value) || 5.89;
+            const monthlyRate = interestRate / 100 / 12;
+            const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, 25 * 12)) / (Math.pow(1 + monthlyRate, 25 * 12) - 1);
+            
+            // Calculate when principal reaches 80% of original home value
+            let balance = loanAmount;
+            let month = 0;
+            let pmiRemovalMonth = 0;
+            
+            while (balance > homePrice * 0.8 && month < 360) {
+                month++;
+                const interestPayment = balance * monthlyRate;
+                const principalPayment = monthlyPayment - interestPayment;
+                balance -= principalPayment;
+                
+                if (balance <= homePrice * 0.8) {
+                    pmiRemovalMonth = month;
+                    break;
+                }
+            }
+            
+            // Calculate years and months for display
+            const removalYears = Math.floor(pmiRemovalMonth / 12);
+            const removalMonths = pmiRemovalMonth % 12;
+            
+            const totalPMI = monthlyPMI * pmiRemovalMonth;
             
             return {
                 monthlyPMI: monthlyPMI,
-                removalMonth: pmiRemovalMonth > 0 ? pmiRemovalMonth : 0,
-                totalPMI: monthlyPMI * (pmiRemovalMonth > 0 ? pmiRemovalMonth : 0)
+                removalMonth: pmiRemovalMonth,
+                removalYears: removalYears,
+                removalMonths: removalMonths,
+                totalPMI: totalPMI,
+                loanToValue: loanToValue,
+                pmiRate: pmiRate,
+                pmiCategory: pmiCategory,
+                balanceAtRemoval: homePrice * 0.8
             };
         }
 
@@ -2588,6 +4028,9 @@ Schedule: support@roomfinderai.com or 1-800-ROOMFINDER`);
             document.querySelectorAll('.reveal').forEach(el => {
                 observer.observe(el);
             });
+            
+            // Initialize smart input formatting and validation
+            initializeSmartInputs();
             
             // Add input event listeners for real-time calculations
             ['homePrice', 'downPayment', 'interestRate', 'amortization', 'paymentFrequency'].forEach(id => {
