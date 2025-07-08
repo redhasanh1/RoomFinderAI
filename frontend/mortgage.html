@@ -635,31 +635,93 @@
         </div>
     </section>
 
+    <!-- Getting Started Section -->
+    <section class="py-16 bg-gray-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">What Would You Like To Do?</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">Choose your situation below and we'll guide you through the right tools and information</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <!-- First Time Buyer -->
+                <div onclick="showGuidedFlow('firstTime')" class="glass-card p-6 text-center cursor-pointer hover:scale-105 transition-all duration-300 group">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200 transition-colors">
+                        <span class="text-2xl">🏠</span>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">I'm Buying My First Home</h3>
+                    <p class="text-sm text-gray-600">Find out how much you can afford and get pre-approved</p>
+                    <div class="mt-4 text-blue-600 font-medium text-sm">Start Here →</div>
+                </div>
+                
+                <!-- Calculate Payments -->
+                <div onclick="showGuidedFlow('calculate')" class="glass-card p-6 text-center cursor-pointer hover:scale-105 transition-all duration-300 group">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-green-200 transition-colors">
+                        <span class="text-2xl">🧮</span>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Calculate My Payments</h3>
+                    <p class="text-sm text-gray-600">See what your monthly payments would be for different homes</p>
+                    <div class="mt-4 text-green-600 font-medium text-sm">Calculate →</div>
+                </div>
+                
+                <!-- Compare Rates -->
+                <div onclick="showGuidedFlow('rates')" class="glass-card p-6 text-center cursor-pointer hover:scale-105 transition-all duration-300 group">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
+                        <span class="text-2xl">💰</span>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Compare Interest Rates</h3>
+                    <p class="text-sm text-gray-600">Find the best mortgage rates from different lenders</p>
+                    <div class="mt-4 text-purple-600 font-medium text-sm">Compare →</div>
+                </div>
+                
+                <!-- Refinance -->
+                <div onclick="showGuidedFlow('refinance')" class="glass-card p-6 text-center cursor-pointer hover:scale-105 transition-all duration-300 group">
+                    <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-orange-200 transition-colors">
+                        <span class="text-2xl">🔄</span>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Should I Refinance?</h3>
+                    <p class="text-sm text-gray-600">Check if refinancing could save you money</p>
+                    <div class="mt-4 text-orange-600 font-medium text-sm">Check →</div>
+                </div>
+            </div>
+            
+            <!-- Guided Flow Panel -->
+            <div id="guidedFlow" class="hidden">
+                <div class="glass-card p-8 max-w-4xl mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 id="flowTitle" class="text-2xl font-bold text-gray-900"></h3>
+                        <button onclick="closeGuidedFlow()" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="flowContent" class="space-y-6">
+                        <!-- Dynamic content will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Main Navigation Tabs -->
     <section class="py-8 bg-white shadow-sm sticky top-24 z-40">
         <div class="w-[90%] max-w-7xl mx-auto px-4">
-            <div class="flex space-x-4 overflow-x-auto">
-                <button onclick="showTab('calculator')" class="tab-button active" data-tab="calculator">
-                    Mortgage Calculator
-                </button>
-                <button onclick="showTab('rates')" class="tab-button" data-tab="rates">
-                    Rate Comparison
-                </button>
-                <button onclick="showTab('affordability')" class="tab-button" data-tab="affordability">
-                    Affordability Check
-                </button>
-                <button onclick="showTab('preapproval')" class="tab-button" data-tab="preapproval">
-                    Pre-Approval
-                </button>
-                <button onclick="showTab('refinance')" class="tab-button" data-tab="refinance">
-                    Refinance Analysis
-                </button>
-                <button onclick="showTab('stress')" class="tab-button" data-tab="stress">
-                    Stress Test
-                </button>
-                <button onclick="showTab('sell')" class="tab-button" data-tab="sell">
-                    Sell Property
-                </button>
+            <div class="flex justify-center">
+                <div class="flex space-x-2 bg-gray-100 rounded-xl p-2">
+                    <button onclick="showTab('calculator')" class="tab-button active" data-tab="calculator">
+                        🧮 Payment Calculator
+                    </button>
+                    <button onclick="showTab('affordability')" class="tab-button" data-tab="affordability">
+                        💡 How Much Can I Afford?
+                    </button>
+                    <button onclick="showTab('rates')" class="tab-button" data-tab="rates">
+                        💰 Compare Rates
+                    </button>
+                    <button onclick="showTab('refinance')" class="tab-button" data-tab="refinance">
+                        🔄 Refinance Check
+                    </button>
+                </div>
             </div>
         </div>
     </section>
@@ -673,11 +735,12 @@
                 <div class="grid lg:grid-cols-2 gap-8">
                     <!-- Calculator Form -->
                     <div class="glass-card p-8">
-                        <h2 class="text-2xl font-bold mb-6">Advanced Mortgage Calculator</h2>
+                        <h2 class="text-2xl font-bold mb-2">What Will My Payments Be?</h2>
+                        <p class="text-gray-600 mb-6">Enter your home details to see your monthly payment</p>
                         
                         <div class="space-y-6">
                             <div>
-                                <label for="homePrice" class="block text-sm font-medium text-gray-700 mb-2">Home Price</label>
+                                <label for="homePrice" class="block text-sm font-medium text-gray-700 mb-2">💰 How much does the home cost?</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" aria-hidden="true">$</span>
                                     <input type="text" id="homePrice" class="modern-input pl-8" placeholder="650,000" value="650,000" data-min="50000" data-max="5000000" aria-describedby="homePrice-help homePrice-error" aria-required="true">
@@ -690,12 +753,12 @@
                                         <span>$2M</span>
                                     </div>
                                 </div>
-                                <div id="homePrice-help" class="sr-only">Enter the total purchase price of the home</div>
+                                <div id="homePrice-help" class="text-xs text-gray-500 mt-1">💡 Try the slider above to quickly adjust the price</div>
                                 <div id="homePrice-error" class="text-red-500 text-xs mt-1 hidden" aria-live="polite"></div>
                             </div>
                             
                             <div>
-                                <label for="downPayment" class="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
+                                <label for="downPayment" class="block text-sm font-medium text-gray-700 mb-2">💳 How much will you put down?</label>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="relative">
                                         <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" id="downPaymentSymbol" aria-hidden="true">$</span>
@@ -707,22 +770,23 @@
                                         <option value="percent">Percent (%)</option>
                                     </select>
                                 </div>
-                                <div id="downPayment-help" class="text-xs text-gray-500 mt-1">Minimum: <span id="minDownPayment">5%</span> | Recommended: 20%</div>
+                                <div id="downPayment-help" class="text-xs text-gray-500 mt-1">💡 20% down = no mortgage insurance | Minimum: <span id="minDownPayment">5%</span></div>
                                 <div id="downPayment-error" class="text-red-500 text-xs mt-1 hidden" aria-live="polite"></div>
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Amortization Period</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">📅 How long to pay it off?</label>
                                 <select id="amortization" class="modern-input">
-                                    <option value="15">15 years</option>
+                                    <option value="15">15 years (higher payments, less interest)</option>
                                     <option value="20">20 years</option>
-                                    <option value="25" selected>25 years</option>
-                                    <option value="30">30 years</option>
+                                    <option value="25" selected>25 years (most common)</option>
+                                    <option value="30">30 years (lower payments, more interest)</option>
                                 </select>
+                                <div class="text-xs text-gray-500 mt-1">💡 Shorter terms = higher payments but less interest paid overall</div>
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Interest Rate (%)</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">📊 What interest rate can you get?</label>
                                 <div class="relative">
                                     <input type="number" id="interestRate" class="modern-input pr-8" placeholder="5.89" value="5.89" step="0.01" min="0.1" max="20">
                                     <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
@@ -735,21 +799,22 @@
                                     </div>
                                 </div>
                                 <div class="flex justify-between text-xs text-gray-500 mt-1">
-                                    <span>Current avg: <span id="currentAvgRate">5.89%</span></span>
-                                    <span>Best rate: <span id="bestRate">4.79%</span></span>
+                                    <span>Today's avg: <span id="currentAvgRate">5.89%</span></span>
+                                    <span>Best available: <span id="bestRate">4.79%</span></span>
                                 </div>
                                 <div id="interestRate-error" class="text-red-500 text-xs mt-1 hidden"></div>
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Payment Frequency</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">💸 How often will you pay?</label>
                                 <select id="paymentFrequency" class="modern-input">
-                                    <option value="monthly" selected>Monthly</option>
-                                    <option value="biweekly">Bi-Weekly</option>
+                                    <option value="monthly" selected>Monthly (most common)</option>
+                                    <option value="biweekly">Bi-Weekly (save interest)</option>
                                     <option value="weekly">Weekly</option>
-                                    <option value="accelerated-biweekly">Accelerated Bi-Weekly</option>
+                                    <option value="accelerated-biweekly">Accelerated Bi-Weekly (pay off faster)</option>
                                     <option value="accelerated-weekly">Accelerated Weekly</option>
                                 </select>
+                                <div class="text-xs text-gray-500 mt-1">💡 More frequent payments = less interest paid overall</div>
                             </div>
                             
                             <!-- Advanced Options Toggle -->
@@ -1330,38 +1395,57 @@
                 <div class="grid lg:grid-cols-2 gap-8">
                     <!-- Input Section -->
                     <div class="glass-card p-8">
-                        <h2 class="text-2xl font-bold mb-6">Affordability Calculator</h2>
-                        <p class="text-gray-600 mb-6">Find out how much home you can afford based on your income and expenses</p>
+                        <h2 class="text-2xl font-bold mb-2">How Much Home Can I Afford?</h2>
+                        <p class="text-gray-600 mb-6">Tell us about your finances and we'll show you what you can afford</p>
                         
                         <div class="space-y-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Annual Household Income</label>
-                                <input type="number" id="annualIncome" class="modern-input" placeholder="120000">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">💰 What's your yearly household income?</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                                    <input type="number" id="annualIncome" class="modern-input pl-8" placeholder="120,000">
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">💡 Include all income sources (salary, bonuses, overtime, etc.)</div>
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Debt Payments</label>
-                                <input type="number" id="monthlyDebt" class="modern-input" placeholder="500">
-                                <p class="text-sm text-gray-500 mt-1">Include car loans, credit cards, student loans, etc.</p>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">💳 What are your monthly debt payments?</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                                    <input type="number" id="monthlyDebt" class="modern-input pl-8" placeholder="500">
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">💡 Car loans, credit cards, student loans, etc. (excluding rent)</div>
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Down Payment Available</label>
-                                <input type="number" id="availableDownPayment" class="modern-input" placeholder="100000">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">🏦 How much do you have for a down payment?</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                                    <input type="number" id="availableDownPayment" class="modern-input pl-8" placeholder="100,000">
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">💡 Include savings, gifts, and other funds available</div>
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Property Tax Rate (%)</label>
-                                <input type="number" id="propertyTaxRate" class="modern-input" placeholder="1.2" step="0.1" value="1.2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">🏠 What's the property tax rate in your area?</label>
+                                <div class="relative">
+                                    <input type="number" id="propertyTaxRate" class="modern-input pr-8" placeholder="1.2" step="0.1" value="1.2">
+                                    <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">💡 Check your city's website or ask your realtor</div>
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Utilities & Maintenance</label>
-                                <input type="number" id="monthlyUtilities" class="modern-input" placeholder="400" value="400">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">⚡ Monthly utilities, insurance & maintenance?</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                                    <input type="number" id="monthlyUtilities" class="modern-input pl-8" placeholder="400" value="400">
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">💡 Estimate: $300-600/month depending on home size</div>
                             </div>
                             
                             <button onclick="calculateAffordability()" class="w-full gradient-bg text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
-                                Calculate Affordability
+                                Show Me What I Can Afford
                             </button>
                         </div>
                     </div>
@@ -5312,6 +5396,111 @@ Schedule: support@roomfinderai.com or 1-800-ROOMFINDER`);
             }
         });
         
+        // Guided Flow Functions
+        function showGuidedFlow(flowType) {
+            const flowPanel = document.getElementById('guidedFlow');
+            const flowTitle = document.getElementById('flowTitle');
+            const flowContent = document.getElementById('flowContent');
+            
+            // Show the panel
+            flowPanel.classList.remove('hidden');
+            
+            // Set content based on flow type
+            switch(flowType) {
+                case 'firstTime':
+                    flowTitle.textContent = 'First Time Home Buyer Guide';
+                    flowContent.innerHTML = `
+                        <div class="space-y-6">
+                            <div class="bg-blue-50 p-6 rounded-lg">
+                                <h4 class="font-semibold text-blue-900 mb-3">🎯 Your Next Steps</h4>
+                                <ol class="list-decimal list-inside space-y-2 text-blue-800">
+                                    <li>Check how much you can afford (use our calculator below)</li>
+                                    <li>Get pre-approved for a mortgage</li>
+                                    <li>Start house hunting within your budget</li>
+                                    <li>Make an offer and finalize your mortgage</li>
+                                </ol>
+                            </div>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <button onclick="showTab('affordability')" class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors">
+                                    Calculate What I Can Afford
+                                </button>
+                                <button onclick="showTab('rates')" class="w-full border-2 border-blue-600 text-blue-600 p-3 rounded-lg hover:bg-blue-50 transition-colors">
+                                    Compare Current Rates
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'calculate':
+                    flowTitle.textContent = 'Calculate Your Mortgage Payments';
+                    flowContent.innerHTML = `
+                        <div class="space-y-6">
+                            <div class="bg-green-50 p-6 rounded-lg">
+                                <h4 class="font-semibold text-green-900 mb-3">💡 Quick Tips</h4>
+                                <ul class="space-y-2 text-green-800">
+                                    <li>• Include property taxes and insurance in your budget</li>
+                                    <li>• Consider a 20% down payment to avoid mortgage insurance</li>
+                                    <li>• Your total housing costs should be under 28% of your income</li>
+                                </ul>
+                            </div>
+                            <button onclick="showTab('calculator')" class="w-full bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition-colors">
+                                Use Payment Calculator
+                            </button>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'rates':
+                    flowTitle.textContent = 'Find the Best Mortgage Rates';
+                    flowContent.innerHTML = `
+                        <div class="space-y-6">
+                            <div class="bg-purple-50 p-6 rounded-lg">
+                                <h4 class="font-semibold text-purple-900 mb-3">🔍 Rate Shopping Tips</h4>
+                                <ul class="space-y-2 text-purple-800">
+                                    <li>• Shop around with multiple lenders</li>
+                                    <li>• Compare both rates and fees</li>
+                                    <li>• Get quotes within 14-45 days to minimize credit impact</li>
+                                    <li>• Consider rate lock options</li>
+                                </ul>
+                            </div>
+                            <button onclick="showTab('rates')" class="w-full bg-purple-600 text-white p-3 rounded-lg hover:bg-purple-700 transition-colors">
+                                Compare Rates Now
+                            </button>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'refinance':
+                    flowTitle.textContent = 'Should You Refinance?';
+                    flowContent.innerHTML = `
+                        <div class="space-y-6">
+                            <div class="bg-orange-50 p-6 rounded-lg">
+                                <h4 class="font-semibold text-orange-900 mb-3">⚖️ Refinancing Makes Sense When:</h4>
+                                <ul class="space-y-2 text-orange-800">
+                                    <li>• You can lower your rate by 0.5% or more</li>
+                                    <li>• You want to switch from ARM to fixed rate</li>
+                                    <li>• You want to remove mortgage insurance</li>
+                                    <li>• You need to access home equity</li>
+                                </ul>
+                            </div>
+                            <button onclick="showTab('refinance')" class="w-full bg-orange-600 text-white p-3 rounded-lg hover:bg-orange-700 transition-colors">
+                                Check Refinance Options
+                            </button>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            // Scroll to the panel
+            flowPanel.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function closeGuidedFlow() {
+            const flowPanel = document.getElementById('guidedFlow');
+            flowPanel.classList.add('hidden');
+        }
+
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {
             window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
