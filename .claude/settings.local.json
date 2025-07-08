@@ -29,7 +29,16 @@
       "Bash(for file in *.html)",
       "Bash(do echo \"=== $file ===\")",
       "Bash(done)",
-      "Bash(echo)"
+      "Bash(echo)",
+      "Bash(pod install:*)",
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(npx cap init:*)",
+      "Bash(npx cap add:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss init:*)",
+      "Bash(npx cap copy:*)",
+      "Bash(npx cap open:*)"
     ],
     "deny": []
   }
