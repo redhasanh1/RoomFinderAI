@@ -589,8 +589,51 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left Sidebar - Found Listings Only -->
-            <div class="lg:col-span-1">
+            <!-- Left Sidebar - Instructions & Found Listings -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- How to Use Instructions Panel -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                            💡 How to Use
+                        </h3>
+                        <button onclick="toggleInstructions()" id="instructionsToggle" class="text-gray-500 hover:text-gray-700 text-sm">
+                            Hide
+                        </button>
+                    </div>
+                    <div id="instructionsContent" class="space-y-3">
+                        <div class="flex items-start space-x-3">
+                            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">1</span>
+                            <p class="text-sm text-gray-600"><strong>Tell me what you want:</strong> "I need a 2-bedroom apartment in downtown for $2000/month"</p>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">2</span>
+                            <p class="text-sm text-gray-600"><strong>I'll find properties</strong> that match your criteria and show them on the right</p>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">3</span>
+                            <p class="text-sm text-gray-600"><strong>Ask for help:</strong> "Help me negotiate the rent" or "Write a message to the landlord"</p>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">4</span>
+                            <p class="text-sm text-gray-600"><strong>Get expert advice</strong> and ready-to-send messages for negotiations</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Start Examples -->
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <p class="text-xs font-semibold text-gray-500 mb-2">QUICK START EXAMPLES:</p>
+                        <div class="space-y-1">
+                            <button onclick="sendQuickMessage('I want a studio apartment in San Francisco under $3000')" class="w-full text-left text-xs text-blue-600 hover:text-blue-800 p-2 rounded bg-blue-50 hover:bg-blue-100 transition-colors">
+                                "Studio in San Francisco under $3000"
+                            </button>
+                            <button onclick="sendQuickMessage('Help me negotiate lower rent for a property')" class="w-full text-left text-xs text-blue-600 hover:text-blue-800 p-2 rounded bg-blue-50 hover:bg-blue-100 transition-colors">
+                                "Help me negotiate lower rent"
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Found Listings Panel -->
                 <div class="bg-white rounded-xl shadow-lg p-6">
                     <h3 class="text-lg font-bold text-gray-800 mb-4">🏠 Found Listings</h3>
@@ -631,8 +674,20 @@
                         <div id="chatMessages">
                             <!-- Welcome message -->
                             <div class="chat-bubble ai">
-                                <div class="font-semibold text-sm text-gray-500 mb-1">AI Assistant</div>
-                                <p>Hello! I'm your AI assistant. Tell me what you're looking for (e.g., "I want a house in Hong Kong for $1500") and I'll search our database for matching listings and help you negotiate with landlords!</p>
+                                <div class="font-semibold text-sm text-gray-500 mb-1">AI Negotiation Assistant</div>
+                                <div class="space-y-2">
+                                    <p>👋 <strong>Welcome!</strong> I'm here to help you find great properties and negotiate better deals with landlords.</p>
+                                    
+                                    <p><strong>Here's how I can help:</strong></p>
+                                    <ul class="text-sm space-y-1 ml-4">
+                                        <li>🔍 <strong>Find properties:</strong> Tell me your location, budget, and requirements</li>
+                                        <li>💬 <strong>Write messages:</strong> Get professional negotiation emails and texts</li>
+                                        <li>📋 <strong>Strategy advice:</strong> Learn the best tactics for your situation</li>
+                                        <li>⚡ <strong>Quick responses:</strong> Get ready-to-send messages instantly</li>
+                                    </ul>
+                                    
+                                    <p class="text-sm text-gray-600 mt-3"><strong>Try saying:</strong> "Find me a 1-bedroom apartment in [city] under $[budget]" or "Help me negotiate with my landlord"</p>
+                                </div>
                             </div>
                         </div>
                         
@@ -1327,6 +1382,32 @@
             }
         });
         
+        // Instructions panel toggle functionality
+        function toggleInstructions() {
+            const content = document.getElementById('instructionsContent');
+            const toggle = document.getElementById('instructionsToggle');
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                toggle.textContent = 'Hide';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = 'Show';
+            }
+        }
+        
+        // Quick message sending functionality
+        function sendQuickMessage(message) {
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            
+            if (messageInput && sendButton) {
+                messageInput.value = message;
+                // Trigger the send button click to use existing send functionality
+                sendButton.click();
+            }
+        }
+
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {
             window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: true });
