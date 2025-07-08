@@ -126,74 +126,136 @@ function createListingCard(listing) {
     const imageUrl = getListingImageUrl(listing);
     const price = formatPrice(listing.price);
     const amenities = getAmenities(listing);
-    const truncatedDescription = truncateText(listing.description, 100);
+    const truncatedDescription = truncateText(listing.description, 120);
+    const availability = getAvailabilityStatus(listing);
     
     return `
-        <div class="listing-card-perspective-container">
-            <div class="listing-card p-6 cursor-pointer" data-listing-id="${listing.id}">
-                <div class="relative mb-4">
-                    <img 
-                        src="${imageUrl}" 
-                        alt="${sanitizeText(listing.title)}" 
-                        class="listing-image w-full h-48 object-cover rounded-lg"
-                        onerror="this.src='${generatePlaceholderImage(listing.title)}'"
-                    />
-                    <div class="absolute top-2 right-2 bg-white bg-opacity-90 px-2 py-1 rounded-full text-sm font-semibold text-gray-700">
-                        ${price}
-                    </div>
-                    <button 
-                        class="favorite-btn absolute top-2 left-2 bg-white bg-opacity-90 p-2 rounded-full shadow-lg hover:bg-opacity-100 transition-all duration-200 transform hover:scale-110"
-                        data-listing-id="${listing.id}"
-                        onclick="event.stopPropagation(); toggleFavorite('${listing.id}')"
-                        title="Add to favorites"
-                    >
-                        <svg class="w-5 h-5 favorite-icon text-gray-400 hover:text-red-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                        </svg>
-                        <svg class="w-5 h-5 favorite-icon-filled text-red-500 hidden" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                        </svg>
-                    </button>
+        <div class="listing-card-enhanced bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden" data-listing-id="${listing.id}">
+            <!-- Image Section -->
+            <div class="relative h-64 overflow-hidden">
+                <img 
+                    src="${imageUrl}" 
+                    alt="${sanitizeText(listing.title)}" 
+                    class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                    onerror="this.src='${generatePlaceholderImage(listing.title)}'"
+                />
+                
+                <!-- Price Badge -->
+                <div class="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-full font-bold text-lg shadow-lg">
+                    ${price}<span class="text-sm font-normal">/mo</span>
                 </div>
                 
-                <h3 class="text-xl font-bold mb-2 text-gray-900">${sanitizeText(listing.title)}</h3>
-                
-                <div class="flex items-center text-gray-600 mb-2">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <!-- Favorite Button -->
+                <button 
+                    class="favorite-btn absolute top-4 left-4 bg-white bg-opacity-90 p-3 rounded-full shadow-lg hover:bg-opacity-100 transition-all duration-200 transform hover:scale-110"
+                    data-listing-id="${listing.id}"
+                    onclick="event.stopPropagation(); toggleFavorite('${listing.id}')"
+                    title="Add to favorites"
+                >
+                    <svg class="w-6 h-6 favorite-icon text-gray-400 hover:text-red-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                     </svg>
-                    <span>${sanitizeText(listing.city)}, ${sanitizeText(listing.country)}</span>
+                    <svg class="w-6 h-6 favorite-icon-filled text-red-500 hidden" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                </button>
+                
+                <!-- Availability Status -->
+                <div class="absolute bottom-4 left-4">
+                    <span class="${availability.class} px-3 py-1 rounded-full text-sm font-semibold">
+                        ${availability.text}
+                    </span>
                 </div>
                 
-                <div class="text-sm text-gray-500 mb-3">
-                    <span class="inline-block bg-gray-100 px-2 py-1 rounded-full mr-2">
+                <!-- Quick View Button -->
+                <button 
+                    onclick="event.stopPropagation(); showQuickView('${listing.id}')"
+                    class="absolute bottom-4 right-4 bg-white bg-opacity-90 text-gray-700 px-4 py-2 rounded-full text-sm font-semibold hover:bg-opacity-100 transition-all"
+                >
+                    👁️ Quick View
+                </button>
+            </div>
+            
+            <!-- Content Section -->
+            <div class="p-6">
+                <!-- Title and Property Type -->
+                <div class="flex items-start justify-between mb-3">
+                    <h3 class="text-xl font-bold text-gray-900 leading-tight flex-1 mr-2">${sanitizeText(listing.title)}</h3>
+                    <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
                         ${sanitizeText(listing.room_type)}
                     </span>
                 </div>
                 
-                <p class="text-gray-600 mb-4 leading-relaxed">${sanitizeText(truncatedDescription)}</p>
+                <!-- Location -->
+                <div class="flex items-center text-gray-600 mb-4">
+                    <svg class="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span class="font-medium">${sanitizeText(listing.city)}, ${sanitizeText(listing.country)}</span>
+                </div>
                 
+                <!-- Key Details -->
+                <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4"></path>
+                        </svg>
+                        <span class="text-sm font-semibold text-gray-700">${listing.bedrooms || 0} Bed</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-4 8l-2-2m0 0l-2-2m2 2l2-2m-2 2l2 2"></path>
+                        </svg>
+                        <span class="text-sm font-semibold text-gray-700">${listing.bathrooms || 1} Bath</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V6a2 2 0 012-2h2M4 8v8a2 2 0 002 2h8a2 2 0 002-2V8M4 8h16M20 8V6a2 2 0 00-2-2h-2"></path>
+                        </svg>
+                        <span class="text-sm font-semibold text-gray-700">${listing.sqft || '800'} sqft</span>
+                    </div>
+                </div>
+                
+                <!-- Description -->
+                <p class="text-gray-600 mb-4 leading-relaxed text-sm">${sanitizeText(truncatedDescription)}</p>
+                
+                <!-- Amenities -->
                 ${amenities.length > 0 ? `
                     <div class="flex flex-wrap gap-2 mb-4">
-                        ${amenities.map(amenity => `
-                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                        ${amenities.slice(0, 4).map(amenity => `
+                            <span class="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 text-xs px-3 py-1 rounded-full font-medium">
                                 ${amenity}
                             </span>
                         `).join('')}
+                        ${amenities.length > 4 ? `
+                            <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">
+                                +${amenities.length - 4} more
+                            </span>
+                        ` : ''}
                     </div>
                 ` : ''}
                 
-                <div class="flex justify-between items-center">
-                    <span class="text-sm text-gray-500">
-                        ${formatDate(listing.created_at)}
-                    </span>
+                <!-- Action Buttons -->
+                <div class="flex gap-3 pt-4 border-t border-gray-100">
                     <button 
                         onclick="event.stopPropagation(); showListingModal(${JSON.stringify(listing).replace(/"/g, '&quot;')})"
-                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+                        class="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
                     >
                         View Details
                     </button>
+                    <button 
+                        onclick="event.stopPropagation(); contactOwner('${listing.id}')"
+                        class="px-6 py-3 border-2 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white rounded-lg font-semibold transition-all"
+                    >
+                        💬 Contact
+                    </button>
+                </div>
+                
+                <!-- Listed Date -->
+                <div class="text-xs text-gray-500 mt-3 text-center">
+                    Listed ${formatDate(listing.created_at)}
                 </div>
             </div>
         </div>
@@ -474,6 +536,19 @@ function formatDate(dateString) {
         month: 'short',
         day: 'numeric'
     });
+}
+
+function getAvailabilityStatus(listing) {
+    // Simulate availability status - in real app this would come from the listing data
+    const statuses = [
+        { text: '✅ Available Now', class: 'bg-green-500 text-white' },
+        { text: '🕒 Available Soon', class: 'bg-yellow-500 text-white' },
+        { text: '📞 Call for Availability', class: 'bg-blue-500 text-white' }
+    ];
+    
+    // Use listing ID to determine status consistently
+    const statusIndex = parseInt(listing.id?.slice(-1) || '0') % statuses.length;
+    return statuses[statusIndex];
 }
 
 function showErrorMessage(message) {
