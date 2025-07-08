@@ -2432,5 +2432,736 @@
             updateBudget();
         });
     </script>
+
+    <!-- Student Portal Section -->
+    <section class="py-20 bg-gradient-to-br from-indigo-50 to-purple-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <div class="text-center mb-16">
+                <div class="inline-flex items-center bg-purple-100 rounded-full px-6 py-3 mb-6">
+                    <span class="text-purple-600 font-semibold">🎓 RoomFinderAI Student Portal</span>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-bold mb-6 gradient-text-student">Your Housing Hub</h2>
+                <p class="text-xl text-gray-600 max-w-4xl mx-auto">Everything you need to find, apply for, and manage your perfect student housing - all in one place.</p>
+            </div>
+
+            <!-- Portal Navigation -->
+            <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+                <!-- Tab Navigation -->
+                <div class="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4">
+                    <div class="flex flex-wrap gap-2 justify-center">
+                        <button onclick="showPortalTab('dashboard')" class="portal-tab active" data-tab="dashboard">
+                            🏠 Dashboard
+                        </button>
+                        <button onclick="showPortalTab('search')" class="portal-tab" data-tab="search">
+                            🔍 Find Housing
+                        </button>
+                        <button onclick="showPortalTab('roommates')" class="portal-tab" data-tab="roommates">
+                            👥 Roommate Finder
+                        </button>
+                        <button onclick="showPortalTab('applications')" class="portal-tab" data-tab="applications">
+                            📋 Applications
+                        </button>
+                        <button onclick="showPortalTab('profile')" class="portal-tab" data-tab="profile">
+                            👤 Profile
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="p-8">
+                    <!-- Dashboard Tab -->
+                    <div id="dashboard-portal" class="portal-content active">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Welcome to Your Housing Dashboard</h3>
+                        
+                        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            <!-- Quick Stats -->
+                            <div class="bg-gradient-to-br from-green-400 to-green-600 rounded-2xl p-6 text-white">
+                                <div class="text-3xl font-bold mb-2">23</div>
+                                <div class="text-green-100">Available Dorms</div>
+                            </div>
+                            <div class="bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl p-6 text-white">
+                                <div class="text-3xl font-bold mb-2">156</div>
+                                <div class="text-blue-100">Apartments Nearby</div>
+                            </div>
+                            <div class="bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl p-6 text-white">
+                                <div class="text-3xl font-bold mb-2">12</div>
+                                <div class="text-purple-100">Roommate Matches</div>
+                            </div>
+                            <div class="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-6 text-white">
+                                <div class="text-3xl font-bold mb-2">$850</div>
+                                <div class="text-orange-100">Your Budget</div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div class="space-y-6">
+                                <h4 class="text-xl font-bold text-gray-800">Quick Actions</h4>
+                                <div class="space-y-4">
+                                    <button onclick="showPortalTab('search')" class="w-full bg-purple-600 text-white p-4 rounded-xl hover:bg-purple-700 transition-all text-left">
+                                        <div class="font-semibold mb-1">🔍 Start Housing Search</div>
+                                        <div class="text-purple-100 text-sm">Find dorms and apartments near your campus</div>
+                                    </button>
+                                    <button onclick="showPortalTab('roommates')" class="w-full bg-blue-600 text-white p-4 rounded-xl hover:bg-blue-700 transition-all text-left">
+                                        <div class="font-semibold mb-1">👥 Find Roommates</div>
+                                        <div class="text-blue-100 text-sm">Get matched with compatible roommates</div>
+                                    </button>
+                                    <button onclick="showPortalTab('applications')" class="w-full bg-green-600 text-white p-4 rounded-xl hover:bg-green-700 transition-all text-left">
+                                        <div class="font-semibold mb-1">📋 Track Applications</div>
+                                        <div class="text-green-100 text-sm">Manage your housing applications</div>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="space-y-6">
+                                <h4 class="text-xl font-bold text-gray-800">Recent Activity</h4>
+                                <div class="space-y-4">
+                                    <div class="bg-gray-50 p-4 rounded-xl">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                                <span class="text-green-600">✓</span>
+                                            </div>
+                                            <div>
+                                                <div class="font-medium">Application Submitted</div>
+                                                <div class="text-sm text-gray-600">Sunset Dorms - Room 204A</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gray-50 p-4 rounded-xl">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                                <span class="text-blue-600">👥</span>
+                                            </div>
+                                            <div>
+                                                <div class="font-medium">New Roommate Match</div>
+                                                <div class="text-sm text-gray-600">Sarah M. - 95% compatibility</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gray-50 p-4 rounded-xl">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                                <span class="text-purple-600">⭐</span>
+                                            </div>
+                                            <div>
+                                                <div class="font-medium">Saved Favorite</div>
+                                                <div class="text-sm text-gray-600">Campus View Apartments</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Housing Search Tab -->
+                    <div id="search-portal" class="portal-content">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Find Your Perfect Housing</h3>
+                        
+                        <!-- Search Filters -->
+                        <div class="bg-gray-50 p-6 rounded-2xl mb-8">
+                            <div class="grid md:grid-cols-4 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Housing Type</label>
+                                    <select class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <option>All Types</option>
+                                        <option>Dorm Rooms</option>
+                                        <option>Apartments</option>
+                                        <option>Shared Houses</option>
+                                        <option>Studios</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Max Budget</label>
+                                    <select class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <option>$500/month</option>
+                                        <option>$750/month</option>
+                                        <option>$1000/month</option>
+                                        <option>$1500/month</option>
+                                        <option>$2000+/month</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Distance from Campus</label>
+                                    <select class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <option>Walking Distance</option>
+                                        <option>Under 1 mile</option>
+                                        <option>Under 3 miles</option>
+                                        <option>Under 5 miles</option>
+                                        <option>Any Distance</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Move-in Date</label>
+                                    <input type="date" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                </div>
+                            </div>
+                            <button class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-all font-semibold">
+                                🔍 Search Housing
+                            </button>
+                        </div>
+
+                        <!-- Featured Listings -->
+                        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Dorm Listing -->
+                            <div class="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden hover:border-purple-300 transition-all hover:shadow-lg">
+                                <img src="https://images.unsplash.com/photo-1555854877-bab0e564b8d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Dorm Room" class="w-full h-48 object-cover">
+                                <div class="p-6">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="text-lg font-bold">Sunset Residence Hall</h4>
+                                        <span class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full">Available</span>
+                                    </div>
+                                    <div class="text-gray-600 mb-3">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span>📍</span>
+                                            <span>0.2 miles from campus</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span>💰</span>
+                                            <span class="font-semibold text-purple-600">$650/month</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2 mb-4">
+                                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">WiFi</span>
+                                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Meal Plan</span>
+                                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Laundry</span>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button class="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-all">Apply Now</button>
+                                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all">❤️</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Apartment Listing -->
+                            <div class="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden hover:border-purple-300 transition-all hover:shadow-lg">
+                                <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Apartment" class="w-full h-48 object-cover">
+                                <div class="p-6">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="text-lg font-bold">Campus View Apartments</h4>
+                                        <span class="bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full">2 Left</span>
+                                    </div>
+                                    <div class="text-gray-600 mb-3">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span>📍</span>
+                                            <span>0.5 miles from campus</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span>💰</span>
+                                            <span class="font-semibold text-purple-600">$850/month</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2 mb-4">
+                                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Furnished</span>
+                                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Parking</span>
+                                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Kitchen</span>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button class="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-all">Apply Now</button>
+                                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all">❤️</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Shared House Listing -->
+                            <div class="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden hover:border-purple-300 transition-all hover:shadow-lg">
+                                <img src="https://images.unsplash.com/photo-1449844908441-8829872d2607?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="House" class="w-full h-48 object-cover">
+                                <div class="p-6">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="text-lg font-bold">University Heights House</h4>
+                                        <span class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full">Available</span>
+                                    </div>
+                                    <div class="text-gray-600 mb-3">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span>📍</span>
+                                            <span>1.2 miles from campus</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span>💰</span>
+                                            <span class="font-semibold text-purple-600">$475/month</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2 mb-4">
+                                        <span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">Shared</span>
+                                        <span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">Yard</span>
+                                        <span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">4 Bedrooms</span>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button class="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-all">Apply Now</button>
+                                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all">❤️</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Roommate Finder Tab -->
+                    <div id="roommates-portal" class="portal-content">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Find Your Perfect Roommate</h3>
+                        
+                        <!-- Compatibility Quiz -->
+                        <div class="bg-gradient-to-r from-purple-100 to-blue-100 p-6 rounded-2xl mb-8">
+                            <h4 class="text-xl font-bold mb-4">Take Our Compatibility Quiz</h4>
+                            <p class="text-gray-700 mb-4">Answer a few questions to get matched with compatible roommates based on lifestyle, habits, and preferences.</p>
+                            <button class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-all font-semibold">
+                                🧠 Start Quiz (2 minutes)
+                            </button>
+                        </div>
+
+                        <!-- Roommate Matches -->
+                        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Roommate Profile 1 -->
+                            <div class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:border-green-300 transition-all hover:shadow-lg">
+                                <div class="text-center mb-4">
+                                    <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Sarah" class="w-20 h-20 rounded-full mx-auto mb-3">
+                                    <h4 class="text-lg font-bold">Sarah M.</h4>
+                                    <p class="text-gray-600">Junior, Psychology Major</p>
+                                    <div class="inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mt-2">
+                                        <span class="text-green-600 mr-1">●</span>
+                                        95% Match
+                                    </div>
+                                </div>
+                                <div class="space-y-3 mb-4">
+                                    <div class="flex items-center gap-2">
+                                        <span>🛏️</span>
+                                        <span class="text-sm">Early sleeper (10 PM)</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span>🎵</span>
+                                        <span class="text-sm">Quiet study environment</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span>🧹</span>
+                                        <span class="text-sm">Very organized</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span>🚭</span>
+                                        <span class="text-sm">Non-smoker</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-all">Connect</button>
+                                    <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all">View Profile</button>
+                                </div>
+                            </div>
+
+                            <!-- Roommate Profile 2 -->
+                            <div class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:border-blue-300 transition-all hover:shadow-lg">
+                                <div class="text-center mb-4">
+                                    <img src="https://randomuser.me/api/portraits/men/24.jpg" alt="Alex" class="w-20 h-20 rounded-full mx-auto mb-3">
+                                    <h4 class="text-lg font-bold">Alex K.</h4>
+                                    <p class="text-gray-600">Sophomore, Engineering</p>
+                                    <div class="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mt-2">
+                                        <span class="text-blue-600 mr-1">●</span>
+                                        87% Match
+                                    </div>
+                                </div>
+                                <div class="space-y-3 mb-4">
+                                    <div class="flex items-center gap-2">
+                                        <span>🎮</span>
+                                        <span class="text-sm">Gamer (with headphones)</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span>🍕</span>
+                                        <span class="text-sm">Loves to cook</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span>📚</span>
+                                        <span class="text-sm">Study groups welcome</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span>🏃</span>
+                                        <span class="text-sm">Active lifestyle</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all">Connect</button>
+                                    <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all">View Profile</button>
+                                </div>
+                            </div>
+
+                            <!-- Roommate Profile 3 -->
+                            <div class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:border-purple-300 transition-all hover:shadow-lg">
+                                <div class="text-center mb-4">
+                                    <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Emma" class="w-20 h-20 rounded-full mx-auto mb-3">
+                                    <h4 class="text-lg font-bold">Emma R.</h4>
+                                    <p class="text-gray-600">Senior, Art Major</p>
+                                    <div class="inline-flex items-center bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium mt-2">
+                                        <span class="text-purple-600 mr-1">●</span>
+                                        82% Match
+                                    </div>
+                                </div>
+                                <div class="space-y-3 mb-4">
+                                    <div class="flex items-center gap-2">
+                                        <span>🎨</span>
+                                        <span class="text-sm">Creative projects</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span>☕</span>
+                                        <span class="text-sm">Coffee enthusiast</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span>🌱</span>
+                                        <span class="text-sm">Plant lover</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span>🎧</span>
+                                        <span class="text-sm">Music lover</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-all">Connect</button>
+                                    <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all">View Profile</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Applications Tab -->
+                    <div id="applications-portal" class="portal-content">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Housing Applications</h3>
+                        
+                        <!-- Application Status -->
+                        <div class="grid md:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
+                                <div class="text-center">
+                                    <div class="text-3xl font-bold text-yellow-600 mb-2">3</div>
+                                    <div class="text-yellow-800 font-medium">Pending</div>
+                                </div>
+                            </div>
+                            <div class="bg-green-50 border border-green-200 rounded-2xl p-6">
+                                <div class="text-center">
+                                    <div class="text-3xl font-bold text-green-600 mb-2">1</div>
+                                    <div class="text-green-800 font-medium">Approved</div>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6">
+                                <div class="text-center">
+                                    <div class="text-3xl font-bold text-blue-600 mb-2">2</div>
+                                    <div class="text-blue-800 font-medium">In Review</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Applications List -->
+                        <div class="space-y-4">
+                            <div class="bg-white border-2 border-green-200 rounded-2xl p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h4 class="text-lg font-bold">Sunset Residence Hall</h4>
+                                        <p class="text-gray-600">Room 204A - Double Occupancy</p>
+                                    </div>
+                                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium">Approved</span>
+                                </div>
+                                <div class="grid md:grid-cols-3 gap-4 mb-4">
+                                    <div>
+                                        <span class="text-sm text-gray-500">Applied:</span>
+                                        <div class="font-medium">March 15, 2024</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm text-gray-500">Decision:</span>
+                                        <div class="font-medium">March 20, 2024</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm text-gray-500">Move-in:</span>
+                                        <div class="font-medium">August 25, 2024</div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-3">
+                                    <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all">Accept Offer</button>
+                                    <button class="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all">View Details</button>
+                                </div>
+                            </div>
+
+                            <div class="bg-white border-2 border-yellow-200 rounded-2xl p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h4 class="text-lg font-bold">Campus View Apartments</h4>
+                                        <p class="text-gray-600">Unit 3B - 1 Bedroom</p>
+                                    </div>
+                                    <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-medium">Pending</span>
+                                </div>
+                                <div class="grid md:grid-cols-3 gap-4 mb-4">
+                                    <div>
+                                        <span class="text-sm text-gray-500">Applied:</span>
+                                        <div class="font-medium">March 18, 2024</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm text-gray-500">Status:</span>
+                                        <div class="font-medium">Under Review</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm text-gray-500">Expected:</span>
+                                        <div class="font-medium">March 25, 2024</div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-3">
+                                    <button class="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all">Check Status</button>
+                                    <button class="border border-red-300 text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition-all">Withdraw</button>
+                                </div>
+                            </div>
+
+                            <div class="bg-white border-2 border-blue-200 rounded-2xl p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h4 class="text-lg font-bold">University Heights House</h4>
+                                        <p class="text-gray-600">Room C - Shared House</p>
+                                    </div>
+                                    <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">In Review</span>
+                                </div>
+                                <div class="grid md:grid-cols-3 gap-4 mb-4">
+                                    <div>
+                                        <span class="text-sm text-gray-500">Applied:</span>
+                                        <div class="font-medium">March 22, 2024</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm text-gray-500">Next Step:</span>
+                                        <div class="font-medium">Virtual Tour</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm text-gray-500">Scheduled:</span>
+                                        <div class="font-medium">March 28, 2024</div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-3">
+                                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all">Join Virtual Tour</button>
+                                    <button class="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all">Reschedule</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Tab -->
+                    <div id="profile-portal" class="portal-content">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Your Profile</h3>
+                        
+                        <div class="grid md:grid-cols-3 gap-8">
+                            <!-- Profile Info -->
+                            <div class="md:col-span-2 space-y-6">
+                                <div class="bg-white border border-gray-200 rounded-2xl p-6">
+                                    <h4 class="text-lg font-bold mb-4">Personal Information</h4>
+                                    <div class="grid md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                                            <input type="text" value="John" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                                            <input type="text" value="Doe" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                            <input type="email" value="john.doe@university.edu" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                                            <input type="tel" value="(555) 123-4567" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white border border-gray-200 rounded-2xl p-6">
+                                    <h4 class="text-lg font-bold mb-4">Academic Information</h4>
+                                    <div class="grid md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">University</label>
+                                            <input type="text" value="University of California" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Major</label>
+                                            <input type="text" value="Computer Science" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                                            <select class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                                <option>Freshman</option>
+                                                <option>Sophomore</option>
+                                                <option selected>Junior</option>
+                                                <option>Senior</option>
+                                                <option>Graduate</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Student ID</label>
+                                            <input type="text" value="CS2024-001234" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white border border-gray-200 rounded-2xl p-6">
+                                    <h4 class="text-lg font-bold mb-4">Housing Preferences</h4>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Housing Type</label>
+                                            <div class="flex flex-wrap gap-2">
+                                                <label class="flex items-center">
+                                                    <input type="checkbox" checked class="mr-2">
+                                                    <span class="text-sm">Dorm Rooms</span>
+                                                </label>
+                                                <label class="flex items-center">
+                                                    <input type="checkbox" checked class="mr-2">
+                                                    <span class="text-sm">Apartments</span>
+                                                </label>
+                                                <label class="flex items-center">
+                                                    <input type="checkbox" class="mr-2">
+                                                    <span class="text-sm">Shared Houses</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Budget Range</label>
+                                            <select class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                                <option>$500-750/month</option>
+                                                <option selected>$750-1000/month</option>
+                                                <option>$1000-1500/month</option>
+                                                <option>$1500+/month</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Important Amenities</label>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <label class="flex items-center">
+                                                    <input type="checkbox" checked class="mr-2">
+                                                    <span class="text-sm">WiFi</span>
+                                                </label>
+                                                <label class="flex items-center">
+                                                    <input type="checkbox" checked class="mr-2">
+                                                    <span class="text-sm">Laundry</span>
+                                                </label>
+                                                <label class="flex items-center">
+                                                    <input type="checkbox" class="mr-2">
+                                                    <span class="text-sm">Parking</span>
+                                                </label>
+                                                <label class="flex items-center">
+                                                    <input type="checkbox" class="mr-2">
+                                                    <span class="text-sm">Gym</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Profile Summary -->
+                            <div class="space-y-6">
+                                <div class="bg-white border border-gray-200 rounded-2xl p-6 text-center">
+                                    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile" class="w-24 h-24 rounded-full mx-auto mb-4">
+                                    <h4 class="text-lg font-bold mb-2">John Doe</h4>
+                                    <p class="text-gray-600 mb-4">Junior, Computer Science</p>
+                                    <div class="space-y-2">
+                                        <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">Profile 85% Complete</div>
+                                        <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">12 Roommate Matches</div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white border border-gray-200 rounded-2xl p-6">
+                                    <h4 class="text-lg font-bold mb-4">Quick Stats</h4>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Applications:</span>
+                                            <span class="font-medium">6 total</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Favorites:</span>
+                                            <span class="font-medium">8 saved</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Messages:</span>
+                                            <span class="font-medium">3 unread</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Profile Views:</span>
+                                            <span class="font-medium">24 this week</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-all font-semibold">
+                                    💾 Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <style>
+        .portal-tab {
+            padding: 8px 16px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .portal-tab:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .portal-tab.active {
+            background: white;
+            color: #7c3aed;
+            font-weight: 600;
+        }
+        
+        .portal-content {
+            display: none;
+        }
+        
+        .portal-content.active {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .portal-tab {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+        }
+    </style>
+
+    <script>
+        // Portal tab functionality
+        function showPortalTab(tabName) {
+            // Hide all portal content
+            document.querySelectorAll('.portal-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all portal tabs
+            document.querySelectorAll('.portal-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected portal content
+            const selectedContent = document.getElementById(tabName + '-portal');
+            if (selectedContent) {
+                selectedContent.classList.add('active');
+            }
+            
+            // Add active class to clicked portal tab
+            const selectedTab = document.querySelector(`[data-tab="${tabName}"]`);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+        }
+        
+        // Initialize with dashboard tab active
+        document.addEventListener('DOMContentLoaded', function() {
+            showPortalTab('dashboard');
+        });
+    </script>
+
+    <script>
+            // Initialize budget calculator
+            updateBudget();
+        });
+    </script>
 </body>
 </html>
