@@ -1026,11 +1026,89 @@
             <div id="rates-tab" class="tab-content hidden">
                 <div class="mb-8">
                     <h2 class="text-3xl font-bold mb-4">Live Rate Comparison</h2>
-                    <p class="text-gray-600">Real-time rates from 50+ Canadian lenders updated every 15 minutes</p>
+                    <p class="text-gray-600">Real-time rates from Federal Reserve data updated every 15 minutes</p>
                 </div>
                 
-                <!-- Filters -->
+                <!-- Enhanced Filters -->
                 <div class="glass-card p-6 mb-8">
+                    <div class="grid md:grid-cols-4 gap-4 mb-4">
+                        <div>
+                            <label for="productTypeFilter" class="block text-sm font-medium text-gray-700 mb-2">Product Type</label>
+                            <select id="productTypeFilter" class="modern-input" onchange="filterRatesByProduct()">
+                                <option value="all">All Products</option>
+                                <option value="conventional">Conventional</option>
+                                <option value="fha">FHA</option>
+                                <option value="va">VA</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="termFilter" class="block text-sm font-medium text-gray-700 mb-2">Term Length</label>
+                            <select id="termFilter" class="modern-input" onchange="filterRatesByTerm()">
+                                <option value="all">All Terms</option>
+                                <option value="15">15-Year Fixed</option>
+                                <option value="30">30-Year Fixed</option>
+                                <option value="arm">5/1 ARM</option>
+                                <option value="variable">Variable Rate</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="lenderFilter" class="block text-sm font-medium text-gray-700 mb-2">Lender Type</label>
+                            <select id="lenderFilter" class="modern-input" onchange="filterRatesByLender()">
+                                <option value="all">All Lenders</option>
+                                <option value="bank">Major Banks</option>
+                                <option value="credit_union">Credit Unions</option>
+                                <option value="online">Online Lenders</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="sortBy" class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                            <select id="sortBy" class="modern-input" onchange="sortRates()">
+                                <option value="rate_asc">Rate (Low to High)</option>
+                                <option value="rate_desc">Rate (High to Low)</option>
+                                <option value="payment_asc">Payment (Low to High)</option>
+                                <option value="lender_name">Lender Name</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Filter Buttons -->
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <button onclick="applyQuickFilter('best_rates')" class="px-4 py-2 bg-green-100 text-green-800 rounded-lg text-sm hover:bg-green-200 transition-colors">
+                            🏆 Best Rates
+                        </button>
+                        <button onclick="applyQuickFilter('fixed_only')" class="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm hover:bg-blue-200 transition-colors">
+                            📊 Fixed Rate Only
+                        </button>
+                        <button onclick="applyQuickFilter('government_backed')" class="px-4 py-2 bg-purple-100 text-purple-800 rounded-lg text-sm hover:bg-purple-200 transition-colors">
+                            🏛️ Government Backed
+                        </button>
+                        <button onclick="applyQuickFilter('low_down_payment')" class="px-4 py-2 bg-orange-100 text-orange-800 rounded-lg text-sm hover:bg-orange-200 transition-colors">
+                            💰 Low Down Payment
+                        </button>
+                        <button onclick="resetFilters()" class="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm hover:bg-gray-200 transition-colors">
+                            🔄 Reset All
+                        </button>
+                    </div>
+                    
+                    <!-- Rate Summary -->
+                    <div id="rateSummary" class="grid grid-cols-3 gap-4 text-center text-sm">
+                        <div class="bg-green-50 rounded-lg p-3">
+                            <div class="text-lg font-bold text-green-600" id="bestRate">Loading...</div>
+                            <div class="text-green-700">Best Rate</div>
+                        </div>
+                        <div class="bg-blue-50 rounded-lg p-3">
+                            <div class="text-lg font-bold text-blue-600" id="avgRate">Loading...</div>
+                            <div class="text-blue-700">Average Rate</div>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-3">
+                            <div class="text-lg font-bold text-purple-600" id="rateCount">Loading...</div>
+                            <div class="text-purple-700">Available Rates</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Old Filters (keeping for compatibility) -->
+                <div class="hidden">
                     <div class="grid md:grid-cols-4 gap-4">
                         <select class="modern-input">
                             <option>All Mortgage Types</option>
@@ -1187,9 +1265,62 @@
                 
                 <!-- Market Trends -->
                 <div class="glass-card p-8 mt-8">
-                    <h3 class="text-2xl font-bold mb-6">Market Rate Trends</h3>
-                    <div class="chart-container">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold">Historical Rate Trends</h3>
+                        <div class="flex items-center space-x-4">
+                            <!-- Date Range Selector -->
+                            <select id="chartDateRange" class="modern-input text-sm" onchange="updateHistoricalChart()">
+                                <option value="1M">1 Month</option>
+                                <option value="3M">3 Months</option>
+                                <option value="6M">6 Months</option>
+                                <option value="1Y" selected>1 Year</option>
+                                <option value="5Y">5 Years</option>
+                            </select>
+                            
+                            <!-- Series Selector -->
+                            <div class="relative">
+                                <button onclick="toggleSeriesSelector()" class="modern-input text-sm flex items-center">
+                                    <span id="selectedSeries">Multiple Series</span>
+                                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                <div id="seriesSelector" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-10">
+                                    <label class="flex items-center p-3 hover:bg-gray-50">
+                                        <input type="checkbox" id="series_MORTGAGE30US" checked onchange="updateSeriesSelection()">
+                                        <span class="ml-2 text-sm">30-Year Fixed</span>
+                                    </label>
+                                    <label class="flex items-center p-3 hover:bg-gray-50">
+                                        <input type="checkbox" id="series_MORTGAGE15US" checked onchange="updateSeriesSelection()">
+                                        <span class="ml-2 text-sm">15-Year Fixed</span>
+                                    </label>
+                                    <label class="flex items-center p-3 hover:bg-gray-50">
+                                        <input type="checkbox" id="series_MORTGAGE5US" onchange="updateSeriesSelection()">
+                                        <span class="ml-2 text-sm">5/1 ARM</span>
+                                    </label>
+                                    <label class="flex items-center p-3 hover:bg-gray-50">
+                                        <input type="checkbox" id="series_FEDFUNDS" onchange="updateSeriesSelection()">
+                                        <span class="ml-2 text-sm">Federal Funds Rate</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart Container -->
+                    <div class="chart-container relative" style="height: 400px;">
                         <canvas id="rateTrendsChart"></canvas>
+                        <div id="chartLoadingState" class="hidden absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
+                            <div class="text-center">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                                <p class="text-sm text-gray-600">Loading historical data...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Trend Analysis Summary -->
+                    <div id="trendAnalysis" class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- Populated by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -3383,51 +3514,222 @@
             });
         }
 
-        // Initialize rate trends chart
-        function initializeRateTrendsChart() {
+        // Global chart instance
+        let rateTrendsChartInstance = null;
+        
+        // Initialize rate trends chart with real FRED data
+        async function initializeRateTrendsChart() {
+            const fredAPIKey = localStorage.getItem('fredAPIKey');
+            if (!fredAPIKey) {
+                showChartAPIKeyRequired();
+                return;
+            }
+            
+            // Load initial chart with default settings
+            await updateHistoricalChart();
+        }
+        
+        // Update historical chart based on selected date range and series
+        async function updateHistoricalChart() {
+            const dateRange = document.getElementById('chartDateRange').value || '1Y';
+            const selectedSeries = getSelectedSeries();
+            
+            if (selectedSeries.length === 0) {
+                showChartNoSeriesSelected();
+                return;
+            }
+            
+            try {
+                showChartLoadingState();
+                
+                // Fetch historical data
+                const historicalData = await fetchHistoricalRatesWithCache(dateRange, selectedSeries);
+                
+                // Create chart
+                createRateTrendsChart(historicalData);
+                
+                // Update trend analysis
+                updateTrendAnalysis(historicalData);
+                
+                hideChartLoadingState();
+            } catch (error) {
+                console.error('Failed to update chart:', error);
+                showChartError(error.message);
+            }
+        }
+        
+        // Create or update the chart with real data
+        function createRateTrendsChart(historicalData) {
             const ctx = document.getElementById('rateTrendsChart');
             if (!ctx) return;
             
-            new Chart(ctx.getContext('2d'), {
+            // Destroy existing chart if it exists
+            if (rateTrendsChartInstance) {
+                rateTrendsChartInstance.destroy();
+            }
+            
+            // Prepare chart data
+            const chartData = prepareChartData(historicalData);
+            
+            rateTrendsChartInstance = new Chart(ctx.getContext('2d'), {
                 type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [
-                        {
-                            label: 'Big 5 Banks Average',
-                            data: [6.45, 6.39, 6.25, 6.15, 5.95, 5.89],
-                            borderColor: 'rgba(239, 68, 68, 1)',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Best Available Rate',
-                            data: [5.89, 5.75, 5.45, 5.25, 4.95, 4.79],
-                            borderColor: 'rgba(34, 197, 94, 1)',
-                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                            tension: 0.4
-                        }
-                    ]
-                },
+                data: chartData,
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
                     plugins: {
                         legend: {
                             position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                },
+                                footer: function(tooltipItems) {
+                                    const date = tooltipItems[0].label;
+                                    return 'Date: ' + date;
+                                }
+                            }
                         }
                     },
                     scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
                         y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Interest Rate (%)'
+                            },
                             ticks: {
                                 callback: function(value) {
-                                    return value + '%';
+                                    return value.toFixed(2) + '%';
                                 }
                             }
                         }
                     }
                 }
             });
+        }
+        
+        // Prepare chart data from historical FRED data
+        function prepareChartData(historicalData) {
+            const colors = [
+                { border: 'rgba(239, 68, 68, 1)', background: 'rgba(239, 68, 68, 0.1)' },    // Red
+                { border: 'rgba(34, 197, 94, 1)', background: 'rgba(34, 197, 94, 0.1)' },    // Green
+                { border: 'rgba(59, 130, 246, 1)', background: 'rgba(59, 130, 246, 0.1)' },  // Blue
+                { border: 'rgba(168, 85, 247, 1)', background: 'rgba(168, 85, 247, 0.1)' }   // Purple
+            ];
+            
+            // Get all unique dates
+            const allDates = new Set();
+            historicalData.forEach(series => {
+                series.data.forEach(point => allDates.add(point.date));
+            });
+            const sortedDates = Array.from(allDates).sort();
+            
+            // Create datasets
+            const datasets = historicalData.map((series, index) => {
+                const colorScheme = colors[index % colors.length];
+                
+                // Create data array aligned with sorted dates
+                const dataPoints = sortedDates.map(date => {
+                    const point = series.data.find(p => p.date === date);
+                    return point ? point.value : null;
+                });
+                
+                return {
+                    label: series.name,
+                    data: dataPoints,
+                    borderColor: colorScheme.border,
+                    backgroundColor: colorScheme.background,
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                    fill: false
+                };
+            });
+            
+            return {
+                labels: sortedDates.map(date => new Date(date).toLocaleDateString()),
+                datasets: datasets
+            };
+        }
+        
+        // Chart UI helper functions
+        function showChartLoadingState() {
+            document.getElementById('chartLoadingState').classList.remove('hidden');
+        }
+        
+        function hideChartLoadingState() {
+            document.getElementById('chartLoadingState').classList.add('hidden');
+        }
+        
+        function showChartAPIKeyRequired() {
+            const chartContainer = document.querySelector('.chart-container');
+            chartContainer.innerHTML = `
+                <div class="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+                    <div class="text-center">
+                        <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-3.586l6.293-6.293A6 6 0 0121 9z"></path>
+                        </svg>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-2">FRED API Key Required</h4>
+                        <p class="text-gray-600 mb-4">Configure your FRED API key to view historical rate trends</p>
+                        <button onclick="toggleFREDConfig()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            Configure API Key
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showChartNoSeriesSelected() {
+            const chartContainer = document.querySelector('.chart-container');
+            chartContainer.innerHTML = `
+                <div class="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+                    <div class="text-center">
+                        <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-2">No Data Series Selected</h4>
+                        <p class="text-gray-600">Please select at least one data series to display</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showChartError(errorMessage) {
+            hideChartLoadingState();
+            const chartContainer = document.querySelector('.chart-container');
+            chartContainer.innerHTML = `
+                <div class="flex items-center justify-center h-64 bg-red-50 rounded-lg">
+                    <div class="text-center">
+                        <svg class="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h4 class="text-lg font-semibold text-red-700 mb-2">Failed to Load Chart</h4>
+                        <p class="text-red-600 mb-4">${errorMessage}</p>
+                        <button onclick="updateHistoricalChart()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                            Retry
+                        </button>
+                    </div>
+                </div>
+            `;
         }
 
         // Advanced Affordability Calculator with GDS/TDS
@@ -3688,52 +3990,42 @@
             };
         }
 
-        // Enhanced Real-time Mortgage Rates API Integration
+        // Enhanced Real-time Mortgage Rates API Integration (FRED only)
         async function fetchRealTimeRates() {
+            const fredAPIKey = localStorage.getItem('fredAPIKey');
+            
+            if (!fredAPIKey) {
+                showAPIKeyRequiredMessage();
+                return;
+            }
+            
             try {
-                // Show loading state
                 showRateLoadingState();
-                
-                // Try multiple API sources in order of preference
-                const rateData = await tryMultipleAPISources();
-                
-                if (rateData && rateData.length > 0) {
-                    updateRateDisplay(rateData);
-                    updateRateCache(rateData);
-                    console.log('Successfully fetched real-time rates');
-                } else {
-                    throw new Error('No valid rate data received');
-                }
+                const rateData = await tryFREDAPISource();
+                updateRateDisplay(rateData);
+                updateRateCache(rateData);
+                console.log('Successfully fetched real-time FRED rates');
             } catch (error) {
-                console.log('Using fallback rates due to API error:', error.message);
-                useFallbackRates();
+                console.error('FRED API error:', error.message);
+                showAPIErrorMessage(error.message);
             }
         }
         
-        // Try multiple API sources with fallback strategy
-        async function tryMultipleAPISources() {
-            const apiSources = [
-                () => fetchFREDRates(),      // Federal Reserve data (when API key available)
-                () => fetchMockAPIRates(),   // JSONPlaceholder-style mock data
-                () => getFallbackRates()     // Static fallback
-            ];
-            
-            for (const apiCall of apiSources) {
-                try {
-                    const data = await apiCall();
-                    if (data && data.length > 0) {
-                        return data;
-                    }
-                } catch (error) {
-                    console.log('API source failed, trying next...');
-                    continue;
+        // FRED-only API source (requires API key)
+        async function tryFREDAPISource() {
+            try {
+                const data = await fetchFREDRates();
+                if (data && data.length > 0) {
+                    return data;
                 }
+                throw new Error('No valid FRED data received');
+            } catch (error) {
+                console.log('FRED API failed:', error.message);
+                throw error;
             }
-            
-            return null;
         }
         
-        // FRED API integration (when user provides API key)
+        // Enhanced FRED API integration with multiple mortgage products
         async function fetchFREDRates() {
             const fredAPIKey = localStorage.getItem('fredAPIKey');
             if (!fredAPIKey) {
@@ -3741,76 +4033,251 @@
             }
             
             try {
-                // Fetch 30-year mortgage rate
-                const response = await fetch(`https://api.stlouisfed.org/fred/series/observations?series_id=MORTGAGE30US&api_key=${fredAPIKey}&file_type=json&limit=1&sort_order=desc`);
+                // Fetch multiple FRED series for comprehensive mortgage products
+                const series = [
+                    { id: 'MORTGAGE30US', name: '30-Year Fixed' },
+                    { id: 'MORTGAGE15US', name: '15-Year Fixed' },
+                    { id: 'MORTGAGE5US', name: '5/1 ARM' },
+                    { id: 'FEDFUNDS', name: 'Variable Rate Base' }
+                ];
                 
-                if (!response.ok) {
-                    throw new Error('FRED API request failed');
+                const ratePromises = series.map(async (serie) => {
+                    const response = await fetch(`https://api.stlouisfed.org/fred/series/observations?series_id=${serie.id}&api_key=${fredAPIKey}&file_type=json&limit=1&sort_order=desc`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`FRED API request failed for ${serie.id}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.observations && data.observations.length > 0) {
+                        const rate = parseFloat(data.observations[0].value);
+                        return { 
+                            series: serie.id, 
+                            name: serie.name, 
+                            rate: rate,
+                            date: data.observations[0].date
+                        };
+                    }
+                    
+                    return null;
+                });
+                
+                const results = await Promise.all(ratePromises);
+                const validRates = results.filter(result => result !== null);
+                
+                if (validRates.length === 0) {
+                    throw new Error('No valid FRED data available');
                 }
                 
-                const data = await response.json();
-                
-                if (data.observations && data.observations.length > 0) {
-                    const rate = parseFloat(data.observations[0].value);
-                    return generateRateDataFromBase(rate);
-                }
-                
-                throw new Error('No FRED data available');
+                return generateMultiProductRates(validRates);
             } catch (error) {
                 console.log('FRED API error:', error.message);
                 throw error;
             }
         }
         
-        // Mock API for development and testing
-        async function fetchMockAPIRates() {
-            try {
-                // Using JSONPlaceholder as a test API to simulate real API calls
-                const response = await fetch('https://jsonplaceholder.typicode.com/posts/1');
+        
+        // Generate comprehensive multi-product rate data from FRED data
+        function generateMultiProductRates(fredRates) {
+            const lenders = [
+                { name: 'First National Bank', spread: -0.35 },
+                { name: 'RBC Royal Bank', spread: -0.25 },
+                { name: 'BMO', spread: -0.30 },
+                { name: 'TD Bank', spread: 0.0 },
+                { name: 'Scotiabank', spread: -0.15 },
+                { name: 'CIBC', spread: -0.10 }
+            ];
+            
+            // Create rate data for all available products
+            const allRates = [];
+            
+            fredRates.forEach(fredRate => {
+                let productType = fredRate.name;
+                let termYears = 25; // Default
                 
-                if (!response.ok) {
-                    throw new Error('Mock API request failed');
+                // Set specific terms and adjust rates based on product type
+                if (fredRate.series === 'MORTGAGE30US') {
+                    termYears = 30;
+                    productType = '30-Year Fixed';
+                } else if (fredRate.series === 'MORTGAGE15US') {
+                    termYears = 15;
+                    productType = '15-Year Fixed';
+                } else if (fredRate.series === 'MORTGAGE5US') {
+                    termYears = 30; // ARM is typically 30-year with 5-year initial period
+                    productType = '5/1 ARM';
+                } else if (fredRate.series === 'FEDFUNDS') {
+                    termYears = 25;
+                    productType = 'Variable Rate';
+                    fredRate.rate = fredRate.rate + 2.5; // Add typical spread for variable mortgages
                 }
                 
-                // Simulate processing time
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Generate FHA/VA variants for fixed-rate products
+                const variants = [
+                    { suffix: '', spread: 0, category: 'Conventional' },
+                    ...(fredRate.series.includes('MORTGAGE') ? [
+                        { suffix: ' (FHA)', spread: -0.25, category: 'FHA' },
+                        { suffix: ' (VA)', spread: -0.35, category: 'VA' }
+                    ] : [])
+                ];
                 
-                // Generate realistic mock rates based on current market
-                const baseRate = 5.89 + (Math.random() - 0.5) * 0.5; // Random variation around current rate
-                return generateRateDataFromBase(baseRate);
+                variants.forEach(variant => {
+                    lenders.forEach(lender => {
+                        const finalRate = Math.max(1.0, fredRate.rate + lender.spread + variant.spread + (Math.random() - 0.5) * 0.15);
+                        const principal = 520000; // Sample loan amount
+                        const monthlyRate = finalRate / 100 / 12;
+                        const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, termYears * 12)) / (Math.pow(1 + monthlyRate, termYears * 12) - 1);
+                        
+                        allRates.push({
+                            lender: lender.name,
+                            rate: parseFloat(finalRate.toFixed(2)),
+                            type: productType + variant.suffix,
+                            category: variant.category,
+                            term: termYears,
+                            payment: Math.round(payment),
+                            timestamp: new Date().toISOString(),
+                            source: 'fred',
+                            fredDate: fredRate.date,
+                            series: fredRate.series
+                        });
+                    });
+                });
+            });
+            
+            return allRates.sort((a, b) => a.rate - b.rate); // Sort by rate ascending
+        }
+        
+        // Fetch historical rate data from FRED for trend analysis and charting
+        async function fetchHistoricalRates(dateRange = '1Y', series = ['MORTGAGE30US']) {
+            const fredAPIKey = localStorage.getItem('fredAPIKey');
+            if (!fredAPIKey) {
+                throw new Error('FRED API key not configured');
+            }
+            
+            // Calculate date range
+            const endDate = new Date();
+            const startDate = new Date();
+            
+            switch (dateRange) {
+                case '1M':
+                    startDate.setMonth(endDate.getMonth() - 1);
+                    break;
+                case '3M':
+                    startDate.setMonth(endDate.getMonth() - 3);
+                    break;
+                case '6M':
+                    startDate.setMonth(endDate.getMonth() - 6);
+                    break;
+                case '1Y':
+                    startDate.setFullYear(endDate.getFullYear() - 1);
+                    break;
+                case '5Y':
+                    startDate.setFullYear(endDate.getFullYear() - 5);
+                    break;
+            }
+            
+            const startDateStr = startDate.toISOString().split('T')[0];
+            const endDateStr = endDate.toISOString().split('T')[0];
+            
+            try {
+                // Fetch historical data for multiple series
+                const historicalPromises = series.map(async (seriesId) => {
+                    const response = await fetch(
+                        `https://api.stlouisfed.org/fred/series/observations?series_id=${seriesId}&api_key=${fredAPIKey}&file_type=json&observation_start=${startDateStr}&observation_end=${endDateStr}&frequency=w&sort_order=asc`
+                    );
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch historical data for ${seriesId}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.observations && data.observations.length > 0) {
+                        // Filter out missing values and process data
+                        const validObservations = data.observations
+                            .filter(obs => obs.value !== '.')
+                            .map(obs => ({
+                                date: obs.date,
+                                value: parseFloat(obs.value),
+                                series: seriesId
+                            }));
+                            
+                        return {
+                            series: seriesId,
+                            name: getSeriesDisplayName(seriesId),
+                            data: validObservations
+                        };
+                    }
+                    
+                    return null;
+                });
+                
+                const results = await Promise.all(historicalPromises);
+                const validSeries = results.filter(result => result !== null);
+                
+                if (validSeries.length === 0) {
+                    throw new Error('No historical data available');
+                }
+                
+                // Calculate trend analysis
+                return addTrendAnalysis(validSeries, dateRange);
             } catch (error) {
-                console.log('Mock API error:', error.message);
+                console.error('Historical data fetch error:', error.message);
                 throw error;
             }
         }
         
-        // Generate comprehensive rate data from a base rate
-        function generateRateDataFromBase(baseRate) {
-            const lenders = [
-                { name: 'First National Bank', spread: -0.35, type: '5-Year Fixed' },
-                { name: 'TD Bank', spread: 0.0, type: '5-Year Fixed' },
-                { name: 'RBC Royal Bank', spread: -0.25, type: '5-Year Fixed' },
-                { name: 'Scotiabank', spread: -0.15, type: '5-Year Fixed' },
-                { name: 'BMO', spread: -0.3, type: '5-Year Fixed' },
-                { name: 'CIBC', spread: -0.1, type: '5-Year Fixed' }
-            ];
-            
-            return lenders.map((lender, index) => {
-                const rate = Math.max(1.0, baseRate + lender.spread + (Math.random() - 0.5) * 0.2);
-                const principal = 520000; // Sample loan amount for payment calculation
-                const monthlyRate = rate / 100 / 12;
-                const years = 25;
-                const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, years * 12)) / (Math.pow(1 + monthlyRate, years * 12) - 1);
+        // Helper function to get display names for FRED series
+        function getSeriesDisplayName(seriesId) {
+            const seriesNames = {
+                'MORTGAGE30US': '30-Year Fixed',
+                'MORTGAGE15US': '15-Year Fixed', 
+                'MORTGAGE5US': '5/1 ARM',
+                'FEDFUNDS': 'Federal Funds Rate',
+                'DGS10': '10-Year Treasury'
+            };
+            return seriesNames[seriesId] || seriesId;
+        }
+        
+        // Add trend analysis to historical data
+        function addTrendAnalysis(seriesData, dateRange) {
+            return seriesData.map(series => {
+                const data = series.data;
+                if (data.length < 2) return series;
+                
+                const firstValue = data[0].value;
+                const lastValue = data[data.length - 1].value;
+                const change = lastValue - firstValue;
+                const changePercent = (change / firstValue) * 100;
+                
+                // Calculate volatility (standard deviation)
+                const values = data.map(d => d.value);
+                const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+                const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+                const volatility = Math.sqrt(variance);
+                
+                // Determine trend direction
+                let trend = 'stable';
+                if (Math.abs(changePercent) > 5) {
+                    trend = changePercent > 0 ? 'rising' : 'falling';
+                } else if (Math.abs(changePercent) > 1) {
+                    trend = changePercent > 0 ? 'slight_rise' : 'slight_fall';
+                }
                 
                 return {
-                    lender: lender.name,
-                    rate: parseFloat(rate.toFixed(2)),
-                    type: lender.type,
-                    payment: Math.round(payment),
-                    timestamp: new Date().toISOString(),
-                    source: 'api'
+                    ...series,
+                    analysis: {
+                        startValue: firstValue,
+                        endValue: lastValue,
+                        change: parseFloat(change.toFixed(3)),
+                        changePercent: parseFloat(changePercent.toFixed(2)),
+                        volatility: parseFloat(volatility.toFixed(3)),
+                        trend: trend,
+                        period: dateRange,
+                        dataPoints: data.length
+                    }
                 };
-            }).sort((a, b) => a.rate - b.rate); // Sort by rate ascending
+            });
         }
         
         // Show loading state while fetching rates
@@ -3832,38 +4299,111 @@
             `).join('');
         }
         
-        // Cache management for API rate limiting
-        function updateRateCache(rateData) {
+        // Enhanced cache management for different data types
+        function updateRateCache(rateData, cacheType = 'current') {
+            const cacheDurations = {
+                'current': 15 * 60 * 1000,      // 15 minutes for current rates
+                'historical': 24 * 60 * 60 * 1000, // 24 hours for historical data
+                'trends': 6 * 60 * 60 * 1000,   // 6 hours for trend analysis
+                'products': 30 * 60 * 1000      // 30 minutes for product-specific rates
+            };
+            
             const cache = {
                 data: rateData,
                 timestamp: Date.now(),
-                expires: Date.now() + (15 * 60 * 1000) // 15 minutes cache
+                expires: Date.now() + (cacheDurations[cacheType] || cacheDurations['current']),
+                type: cacheType
             };
-            localStorage.setItem('mortgageRatesCache', JSON.stringify(cache));
+            
+            localStorage.setItem(`mortgageCache_${cacheType}`, JSON.stringify(cache));
         }
         
-        function getCachedRates() {
+        function getCachedData(cacheType = 'current') {
             try {
-                const cache = JSON.parse(localStorage.getItem('mortgageRatesCache'));
+                const cache = JSON.parse(localStorage.getItem(`mortgageCache_${cacheType}`));
                 if (cache && cache.expires > Date.now()) {
-                    console.log('Using cached rates');
+                    console.log(`Using cached ${cacheType} data`);
                     return cache.data;
                 }
             } catch (error) {
-                console.log('Cache error:', error);
+                console.log(`Cache error for ${cacheType}:`, error);
             }
             return null;
         }
         
+        function updateHistoricalCache(historicalData, dateRange, series) {
+            const cacheKey = `historical_${dateRange}_${series.join('_')}`;
+            const cache = {
+                data: historicalData,
+                timestamp: Date.now(),
+                expires: Date.now() + (24 * 60 * 60 * 1000), // 24 hours for historical data
+                dateRange: dateRange,
+                series: series
+            };
+            
+            localStorage.setItem(`mortgageCache_${cacheKey}`, JSON.stringify(cache));
+        }
+        
+        function getCachedHistoricalData(dateRange, series) {
+            const cacheKey = `historical_${dateRange}_${series.join('_')}`;
+            try {
+                const cache = JSON.parse(localStorage.getItem(`mortgageCache_${cacheKey}`));
+                if (cache && cache.expires > Date.now()) {
+                    console.log(`Using cached historical data for ${dateRange}, series: ${series.join(', ')}`);
+                    return cache.data;
+                }
+            } catch (error) {
+                console.log(`Historical cache error:`, error);
+            }
+            return null;
+        }
+        
+        function clearExpiredCaches() {
+            const keys = Object.keys(localStorage);
+            const mortgageCacheKeys = keys.filter(key => key.startsWith('mortgageCache_'));
+            
+            mortgageCacheKeys.forEach(key => {
+                try {
+                    const cache = JSON.parse(localStorage.getItem(key));
+                    if (cache && cache.expires <= Date.now()) {
+                        localStorage.removeItem(key);
+                        console.log(`Cleared expired cache: ${key}`);
+                    }
+                } catch (error) {
+                    localStorage.removeItem(key); // Remove corrupted cache
+                }
+            });
+        }
+        
         // Check cache first before making API calls
         async function fetchRealTimeRatesWithCache() {
-            const cachedRates = getCachedRates();
+            // Clear expired caches on startup
+            clearExpiredCaches();
+            
+            const cachedRates = getCachedData('current');
             if (cachedRates) {
                 updateRateDisplay(cachedRates);
                 return;
             }
             
             await fetchRealTimeRates();
+        }
+        
+        // Fetch historical rates with caching
+        async function fetchHistoricalRatesWithCache(dateRange = '1Y', series = ['MORTGAGE30US']) {
+            // Check cache first
+            const cachedData = getCachedHistoricalData(dateRange, series);
+            if (cachedData) {
+                return cachedData;
+            }
+            
+            // Fetch fresh data
+            const historicalData = await fetchHistoricalRates(dateRange, series);
+            
+            // Cache the results
+            updateHistoricalCache(historicalData, dateRange, series);
+            
+            return historicalData;
         }
         
         // FRED API Key management
@@ -3967,28 +4507,75 @@
             
             console.log('🎯 API Integration Test Complete');
         }
-
-        // Static fallback rates when all APIs fail
-        function getFallbackRates() {
-            return [
-                { lender: 'First National Bank', rate: 4.79, type: '5-Year Fixed', payment: 2847, source: 'fallback' },
-                { lender: 'RBC Royal Bank', rate: 5.34, type: '5-Year Fixed', payment: 3089, source: 'fallback' },
-                { lender: 'TD Bank', rate: 5.89, type: '5-Year Fixed', payment: 3256, source: 'fallback' },
-                { lender: 'Scotiabank', rate: 5.45, type: '5-Year Fixed', payment: 3125, source: 'fallback' },
-                { lender: 'BMO', rate: 5.29, type: '5-Year Fixed', payment: 3067, source: 'fallback' },
-                { lender: 'CIBC', rate: 5.39, type: '5-Year Fixed', payment: 3098, source: 'fallback' }
-            ].sort((a, b) => a.rate - b.rate);
+        
+        // Error handling functions for FRED-only implementation
+        function showAPIKeyRequiredMessage() {
+            const rateContainer = document.querySelector('#rates-tab .grid');
+            if (!rateContainer) return;
+            
+            rateContainer.innerHTML = `
+                <div class="col-span-full">
+                    <div class="glass-card p-8 text-center bg-gradient-to-br from-blue-50 to-indigo-50">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-3.586l6.293-6.293A6 6 0 0121 9z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-4">FRED API Key Required</h3>
+                        <p class="text-gray-600 mb-6">To view real-time mortgage rates from the Federal Reserve, please configure your free FRED API key.</p>
+                        <div class="space-y-4">
+                            <a href="https://fred.stlouisfed.org/docs/api/fred/" target="_blank" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                                Get Free API Key
+                            </a>
+                            <button onclick="toggleFREDConfig()" class="block mx-auto text-blue-600 hover:text-blue-800">
+                                I have an API key
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
         
-        function useFallbackRates() {
-            const fallbackRates = getFallbackRates();
-            updateRateDisplay(fallbackRates);
+        function showAPIErrorMessage(errorMessage) {
+            const rateContainer = document.querySelector('#rates-tab .grid');
+            if (!rateContainer) return;
+            
+            rateContainer.innerHTML = `
+                <div class="col-span-full">
+                    <div class="glass-card p-8 text-center bg-gradient-to-br from-red-50 to-pink-50">
+                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-4">API Error</h3>
+                        <p class="text-gray-600 mb-4">Unable to fetch current mortgage rates from FRED.</p>
+                        <p class="text-sm text-red-600 mb-6">${errorMessage}</p>
+                        <div class="space-y-3">
+                            <button onclick="fetchRealTimeRates()" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                                Retry
+                            </button>
+                            <button onclick="toggleFREDConfig()" class="block mx-auto text-red-600 hover:text-red-800">
+                                Check API Key
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
+
 
         // Update rate display with fresh data
         function updateRateDisplay(rates) {
             const rateContainer = document.querySelector('#rates-tab .grid');
             if (!rateContainer) return;
+            
+            // Store current data for filtering
+            currentRatesData = [...rates];
+            filteredRatesData = [...rates];
+            
+            // Update rate summary
+            updateRateSummary(rates);
             
             // Add data source indicator
             const dataSourceBadge = getDataSourceBadge(rates[0]?.source || 'fallback');
@@ -4046,6 +4633,241 @@
             };
             
             return badges[source] || badges['fallback'];
+        }
+        
+        // Product filtering and sorting functions
+        let currentRatesData = [];
+        let filteredRatesData = [];
+        
+        function filterRatesByProduct() {
+            const filter = document.getElementById('productTypeFilter').value;
+            applyFilters();
+        }
+        
+        function filterRatesByTerm() {
+            const filter = document.getElementById('termFilter').value;
+            applyFilters();
+        }
+        
+        function filterRatesByLender() {
+            const filter = document.getElementById('lenderFilter').value;
+            applyFilters();
+        }
+        
+        function sortRates() {
+            const sortBy = document.getElementById('sortBy').value;
+            
+            switch (sortBy) {
+                case 'rate_asc':
+                    filteredRatesData.sort((a, b) => a.rate - b.rate);
+                    break;
+                case 'rate_desc':
+                    filteredRatesData.sort((a, b) => b.rate - a.rate);
+                    break;
+                case 'payment_asc':
+                    filteredRatesData.sort((a, b) => a.payment - b.payment);
+                    break;
+                case 'lender_name':
+                    filteredRatesData.sort((a, b) => a.lender.localeCompare(b.lender));
+                    break;
+            }
+            
+            updateRateDisplay(filteredRatesData);
+            updateRateSummary(filteredRatesData);
+        }
+        
+        function applyFilters() {
+            const productFilter = document.getElementById('productTypeFilter').value;
+            const termFilter = document.getElementById('termFilter').value;
+            const lenderFilter = document.getElementById('lenderFilter').value;
+            
+            filteredRatesData = currentRatesData.filter(rate => {
+                let passesFilter = true;
+                
+                // Product type filter
+                if (productFilter !== 'all') {
+                    if (productFilter === 'conventional' && rate.category !== 'Conventional') passesFilter = false;
+                    if (productFilter === 'fha' && rate.category !== 'FHA') passesFilter = false;
+                    if (productFilter === 'va' && rate.category !== 'VA') passesFilter = false;
+                }
+                
+                // Term filter
+                if (termFilter !== 'all') {
+                    if (termFilter === '15' && rate.term !== 15) passesFilter = false;
+                    if (termFilter === '30' && rate.term !== 30) passesFilter = false;
+                    if (termFilter === 'arm' && !rate.type.includes('ARM')) passesFilter = false;
+                    if (termFilter === 'variable' && !rate.type.includes('Variable')) passesFilter = false;
+                }
+                
+                // Lender filter (simplified - can be enhanced based on lender categories)
+                if (lenderFilter !== 'all') {
+                    const bankLenders = ['TD Bank', 'RBC Royal Bank', 'BMO', 'Scotiabank', 'CIBC'];
+                    if (lenderFilter === 'bank' && !bankLenders.includes(rate.lender)) passesFilter = false;
+                }
+                
+                return passesFilter;
+            });
+            
+            sortRates();
+        }
+        
+        function applyQuickFilter(filterType) {
+            const productFilter = document.getElementById('productTypeFilter');
+            const termFilter = document.getElementById('termFilter');
+            
+            switch (filterType) {
+                case 'best_rates':
+                    // Sort by rate and show top rates
+                    document.getElementById('sortBy').value = 'rate_asc';
+                    filteredRatesData = currentRatesData.slice(0, 6);
+                    break;
+                case 'fixed_only':
+                    productFilter.value = 'conventional';
+                    termFilter.value = '30';
+                    break;
+                case 'government_backed':
+                    productFilter.value = 'fha';
+                    break;
+                case 'low_down_payment':
+                    productFilter.value = 'fha';
+                    termFilter.value = '30';
+                    break;
+            }
+            
+            applyFilters();
+        }
+        
+        function resetFilters() {
+            document.getElementById('productTypeFilter').value = 'all';
+            document.getElementById('termFilter').value = 'all';
+            document.getElementById('lenderFilter').value = 'all';
+            document.getElementById('sortBy').value = 'rate_asc';
+            
+            filteredRatesData = [...currentRatesData];
+            sortRates();
+        }
+        
+        function updateRateSummary(rates) {
+            if (rates.length === 0) return;
+            
+            const bestRate = Math.min(...rates.map(r => r.rate));
+            const avgRate = rates.reduce((sum, r) => sum + r.rate, 0) / rates.length;
+            const rateCount = rates.length;
+            
+            document.getElementById('bestRate').textContent = bestRate.toFixed(2) + '%';
+            document.getElementById('avgRate').textContent = avgRate.toFixed(2) + '%';
+            document.getElementById('rateCount').textContent = rateCount + ' rates';
+        }
+        
+        // Chart series selection functions
+        function getSelectedSeries() {
+            const series = [];
+            if (document.getElementById('series_MORTGAGE30US').checked) series.push('MORTGAGE30US');
+            if (document.getElementById('series_MORTGAGE15US').checked) series.push('MORTGAGE15US');
+            if (document.getElementById('series_MORTGAGE5US').checked) series.push('MORTGAGE5US');
+            if (document.getElementById('series_FEDFUNDS').checked) series.push('FEDFUNDS');
+            return series;
+        }
+        
+        function updateSeriesSelection() {
+            const selectedSeries = getSelectedSeries();
+            const selectedSeriesSpan = document.getElementById('selectedSeries');
+            
+            if (selectedSeries.length === 0) {
+                selectedSeriesSpan.textContent = 'None Selected';
+            } else if (selectedSeries.length === 1) {
+                selectedSeriesSpan.textContent = getSeriesDisplayName(selectedSeries[0]);
+            } else {
+                selectedSeriesSpan.textContent = `${selectedSeries.length} Series`;
+            }
+            
+            // Update chart if it's already loaded
+            if (rateTrendsChartInstance && localStorage.getItem('fredAPIKey')) {
+                updateHistoricalChart();
+            }
+        }
+        
+        function toggleSeriesSelector() {
+            const selector = document.getElementById('seriesSelector');
+            selector.classList.toggle('hidden');
+        }
+        
+        // Close series selector when clicking outside
+        document.addEventListener('click', function(event) {
+            const seriesSelector = document.getElementById('seriesSelector');
+            const button = event.target.closest('button');
+            
+            if (seriesSelector && !seriesSelector.contains(event.target) && 
+                (!button || !button.onclick || button.onclick.toString().indexOf('toggleSeriesSelector') === -1)) {
+                seriesSelector.classList.add('hidden');
+            }
+        });
+        
+        // Update trend analysis display
+        function updateTrendAnalysis(historicalData) {
+            const container = document.getElementById('trendAnalysis');
+            if (!container || !historicalData || historicalData.length === 0) return;
+            
+            container.innerHTML = historicalData.map(series => {
+                if (!series.analysis) return '';
+                
+                const analysis = series.analysis;
+                const trendColor = getTrendColor(analysis.trend);
+                const trendIcon = getTrendIcon(analysis.trend);
+                
+                return `
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-semibold text-sm">${series.name}</h4>
+                            <span class="text-${trendColor}-600">${trendIcon}</span>
+                        </div>
+                        <div class="space-y-1 text-xs text-gray-600">
+                            <div class="flex justify-between">
+                                <span>Change:</span>
+                                <span class="font-medium text-${trendColor}-600">
+                                    ${analysis.changePercent > 0 ? '+' : ''}${analysis.changePercent}%
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Current:</span>
+                                <span class="font-medium">${analysis.endValue.toFixed(2)}%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Volatility:</span>
+                                <span class="font-medium">${analysis.volatility.toFixed(2)}%</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function getTrendColor(trend) {
+            switch (trend) {
+                case 'rising':
+                case 'slight_rise':
+                    return 'red';
+                case 'falling':
+                case 'slight_fall':
+                    return 'green';
+                default:
+                    return 'gray';
+            }
+        }
+        
+        function getTrendIcon(trend) {
+            switch (trend) {
+                case 'rising':
+                    return '📈';
+                case 'slight_rise':
+                    return '↗️';
+                case 'falling':
+                    return '📉';
+                case 'slight_fall':
+                    return '↘️';
+                default:
+                    return '➡️';
+            }
         }
 
         // AI-Powered Mortgage Negotiation Letter Generator
