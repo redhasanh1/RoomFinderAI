@@ -2,8 +2,10 @@ package com.roomfinderai.app;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -15,8 +17,9 @@ import com.roomfinderai.app.fragments.MessagesFragment;
 import com.roomfinderai.app.fragments.PostFragment;
 import com.roomfinderai.app.fragments.ProfileFragment;
 
+// PURE NATIVE ANDROID APP - NO WEBVIEW, NO CAPACITOR
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = "RoomFinderAI";
+    private static final String TAG = "RoomFinderAI-NATIVE";
     
     private BottomNavigationView bottomNavigation;
     private EditText searchBar;
@@ -27,29 +30,35 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Force native theme and layout
-        setTheme(R.style.MarketplaceTheme);
+        // FORCE NATIVE LAYOUT - NO WEBVIEW
         setContentView(R.layout.activity_main);
         
-        Log.d(TAG, "Native RoomFinderAI app started - NO WEBVIEW");
+        // Show a toast to confirm native app is running
+        Toast.makeText(this, "NATIVE KIJIJI LAYOUT - NO WEBVIEW!", Toast.LENGTH_LONG).show();
+        
+        Log.d(TAG, "====================================");
+        Log.d(TAG, "NATIVE ANDROID APP STARTED");
+        Log.d(TAG, "NO CAPACITOR - NO WEBVIEW");
+        Log.d(TAG, "PURE NATIVE UI WITH KIJIJI LAYOUT");
+        Log.d(TAG, "====================================");
         
         try {
             initializeViews();
             setupBottomNavigation();
             setupSearchBar();
             
-            // Always load the listings fragment first
+            // Load the home fragment immediately
             if (savedInstanceState == null) {
                 loadFragment(new ListingsFragment());
-                // Set home as selected in bottom nav
                 bottomNavigation.setSelectedItemId(R.id.navigation_home);
             }
             
-            Log.d(TAG, "Native marketplace UI initialized successfully");
+            // Set window background to purple theme
+            getWindow().getDecorView().setBackgroundColor(getResources().getColor(R.color.background_primary));
+            
         } catch (Exception e) {
-            Log.e(TAG, "Error initializing native UI: " + e.getMessage(), e);
-            // If there's any error, show a simple message
-            setTitle("RoomFinderAI - Native Mode");
+            Log.e(TAG, "Error in native app: " + e.getMessage(), e);
+            Toast.makeText(this, "Native app error: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -59,36 +68,51 @@ public class MainActivity extends AppCompatActivity {
         filterButton = findViewById(R.id.filterButton);
         fragmentManager = getSupportFragmentManager();
         
-        Log.d(TAG, "Views initialized - BottomNav: " + (bottomNavigation != null) + 
-                  ", SearchBar: " + (searchBar != null) + 
-                  ", FilterButton: " + (filterButton != null));
+        // Make sure views are visible
+        if (bottomNavigation != null) {
+            bottomNavigation.setVisibility(View.VISIBLE);
+            Log.d(TAG, "Bottom navigation initialized and visible");
+        }
+        
+        if (searchBar != null) {
+            searchBar.setVisibility(View.VISIBLE);
+            searchBar.setHint("Search properties...");
+            Log.d(TAG, "Search bar initialized and visible");
+        }
     }
 
     private void setupBottomNavigation() {
         if (bottomNavigation == null) {
-            Log.e(TAG, "BottomNavigation is null!");
+            Log.e(TAG, "ERROR: Bottom navigation is null!");
             return;
         }
         
         bottomNavigation.setOnNavigationItemSelectedListener(item -> {
             Fragment fragment = null;
+            String fragmentName = "";
             
             int itemId = item.getItemId();
             if (itemId == R.id.navigation_home) {
                 fragment = new ListingsFragment();
+                fragmentName = "Home/Listings";
             } else if (itemId == R.id.navigation_categories) {
                 fragment = new CategoriesFragment();
+                fragmentName = "Categories";
             } else if (itemId == R.id.navigation_post) {
                 fragment = new PostFragment();
+                fragmentName = "Post";
             } else if (itemId == R.id.navigation_messages) {
                 fragment = new MessagesFragment();
+                fragmentName = "Messages";
             } else if (itemId == R.id.navigation_profile) {
                 fragment = new ProfileFragment();
+                fragmentName = "Profile";
             }
             
             if (fragment != null) {
                 loadFragment(fragment);
-                Log.d(TAG, "Navigation: Loaded " + fragment.getClass().getSimpleName());
+                Toast.makeText(this, "Selected: " + fragmentName, Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Navigation to: " + fragmentName);
                 return true;
             }
             return false;
@@ -115,17 +139,19 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupSearchBar() {
         if (searchBar == null || filterButton == null) {
-            Log.e(TAG, "SearchBar or FilterButton is null!");
+            Log.e(TAG, "Search components not found!");
             return;
         }
         
         searchBar.setOnEditorActionListener((v, actionId, event) -> {
             String query = searchBar.getText().toString();
             performSearch(query);
+            Toast.makeText(this, "Searching: " + query, Toast.LENGTH_SHORT).show();
             return true;
         });
 
         filterButton.setOnClickListener(v -> {
+            Toast.makeText(this, "Filter clicked!", Toast.LENGTH_SHORT).show();
             showFilterDialog();
         });
     }
@@ -146,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "Native app resumed");
+        Log.d(TAG, "Native app resumed - NO WEBVIEW");
     }
     
     @Override
