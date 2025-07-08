@@ -14,6 +14,7 @@ import com.roomfinderai.app.fragments.ListingsFragment;
 import com.roomfinderai.app.fragments.MessagesFragment;
 import com.roomfinderai.app.fragments.PostFragment;
 import com.roomfinderai.app.fragments.ProfileFragment;
+import com.roomfinderai.app.config.ApiConfig;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "RoomFinderAI";
@@ -32,6 +33,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         
         Log.d(TAG, "Native RoomFinderAI app started - NO WEBVIEW");
+        
+        // Initialize API configuration
+        if (ApiConfig.isConfigValid()) {
+            Log.d(TAG, "API configuration is valid");
+        } else {
+            Log.w(TAG, "API configuration is missing or invalid");
+        }
         
         try {
             initializeViews();

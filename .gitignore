@@ -65,9 +65,17 @@ __pycache__/
 *.pyc
 
 # Backup files
-*.saveconfig.js
-config.js
-.env
-config.js
-config.js
-config.js
+*.save
+
+# Android specific
+android/local.properties
+android/app/google-services.json
+android/keystore.properties
+android/app/release/
+android/app/debug/
+android/.gradle/
+android/build/
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/gradle/wrapper/gradle-wrapper.jar

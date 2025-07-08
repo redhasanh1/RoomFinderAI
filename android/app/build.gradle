@@ -3,6 +3,10 @@ apply plugin: 'com.android.application'
 android {
     namespace "com.roomfinderai.app"
     compileSdk rootProject.ext.compileSdkVersion
+    
+    buildFeatures {
+        buildConfig true
+    }
     defaultConfig {
         applicationId "com.roomfinderai.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -10,6 +14,14 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Environment variables from Railway
+        buildConfigField "String", "OPENAI_API_KEY", "\"${System.getenv('OPENAI_API_KEY') ?: ''}\""
+        buildConfigField "String", "SUPABASE_URL", "\"${System.getenv('SUPABASE_URL') ?: ''}\""
+        buildConfigField "String", "SUPABASE_ANON_KEY", "\"${System.getenv('SUPABASE_ANON_KEY') ?: ''}\""
+        buildConfigField "String", "GOOGLE_API_KEY", "\"${System.getenv('GOOGLE_API_KEY') ?: ''}\""
+        buildConfigField "String", "STRIPE_PUBLISHABLE_KEY", "\"${System.getenv('STRIPE_PUBLISHABLE_KEY') ?: ''}\""
+        buildConfigField "String", "BREVO_API_KEY", "\"${System.getenv('BREVO_API_KEY') ?: ''}\""
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -17,7 +29,14 @@ android {
         }
     }
     buildTypes {
+        debug {
+            // Local development - use local config
+            buildConfigField "boolean", "USE_LOCAL_CONFIG", "true"
+            minifyEnabled false
+        }
         release {
+            // Production - use Railway environment variables
+            buildConfigField "boolean", "USE_LOCAL_CONFIG", "false"
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
