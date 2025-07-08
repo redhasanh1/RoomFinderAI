@@ -7,18 +7,47 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		098876F33570FD2A62F341C6 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0F43A8052FDC5C149657D60 /* SupabaseService.swift */; };
+		127B118254411CE45C923D08 /* FilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B09CA506DAF200F9045FA65 /* FilterViewController.swift */; };
+		1C46C8C79334F4404ADFEBC1 /* ProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACC1E191C320A484EA137C0 /* ProfileViewController.swift */; };
+		23DBA232431CDE640201E346 /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A07BC80591AD44CA6059E8 /* SearchViewController.swift */; };
+		28D515232DE8F3DEBBC17A79 /* PropertyTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D914CDFA7C2A1045CDDDAF1 /* PropertyTableViewCell.swift */; };
+		2E3800F13557763D85EADB20 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F704DD261ACBF4E66EA37D /* APIService.swift */; };
+		2F6F107C153B613131FF0901 /* MapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4170FF248779E2D5A9AA9924 /* MapViewController.swift */; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
+		375CE7451EB44CC0847D1B67 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F1DC716847C93BC68D4E4C3 /* HomeViewController.swift */; };
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
 		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
+		522B055FF20DB86084EDE384 /* AuthViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19708FCE683311F278CB4967 /* AuthViewController.swift */; };
+		6F7310BF2EAA2B52952C2FF9 /* DataValidationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 029C67CFFC8BF7578653B27E /* DataValidationService.swift */; };
+		8D2D2F5E46B15F41F6430C72 /* FavoritesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD6A1BE9C8A4513E9F2E63F /* FavoritesViewController.swift */; };
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
+		A183A553489FEBCC5DEA3569 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77D695E09A84E63D781ED9BE /* Theme.swift */; };
+		A3B7518BD23FFCA75D064F83 /* PropertyDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72BE15FEC0579CC5AF9D2869 /* PropertyDetailViewController.swift */; };
+		A62A41C87B5DF43EB595E86E /* CollectionViewCells.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F5A6CE707272AEE57CEA2E /* CollectionViewCells.swift */; };
+		B2F222A3EC366222076D87E6 /* RealDataTestViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DBFE353505A8B666D78ACF6 /* RealDataTestViewController.swift */; };
+		C2D79FD11D334926916E2046 /* MainTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A880FA421D3585370C0BF8 /* MainTabBarController.swift */; };
+		D80D1A2B92865E7D8EBD9C26 /* PropertyDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DBA0EAF99F37C1226CDB3E8 /* PropertyDetailViewController.swift */; };
+		E0D12F3B5568499C8B2A5757 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76FDF7FB9606A760CE06FA83 /* ChatViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		029C67CFFC8BF7578653B27E /* DataValidationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataValidationService.swift; sourceTree = "<group>"; };
+		09F5A6CE707272AEE57CEA2E /* CollectionViewCells.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CollectionViewCells.swift; path = App/CollectionViewCells.swift; sourceTree = "<group>"; };
+		0CD6A1BE9C8A4513E9F2E63F /* FavoritesViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FavoritesViewController.swift; path = App/FavoritesViewController.swift; sourceTree = "<group>"; };
+		0F1DC716847C93BC68D4E4C3 /* HomeViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HomeViewController.swift; path = App/HomeViewController.swift; sourceTree = "<group>"; };
+		19708FCE683311F278CB4967 /* AuthViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AuthViewController.swift; path = App/AuthViewController.swift; sourceTree = "<group>"; };
+		1ACC1E191C320A484EA137C0 /* ProfileViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProfileViewController.swift; path = App/ProfileViewController.swift; sourceTree = "<group>"; };
+		2B09CA506DAF200F9045FA65 /* FilterViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FilterViewController.swift; path = App/FilterViewController.swift; sourceTree = "<group>"; };
+		2DBA0EAF99F37C1226CDB3E8 /* PropertyDetailViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PropertyDetailViewController.swift; sourceTree = "<group>"; };
+		2DBFE353505A8B666D78ACF6 /* RealDataTestViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RealDataTestViewController.swift; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
+		4170FF248779E2D5A9AA9924 /* MapViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MapViewController.swift; path = App/MapViewController.swift; sourceTree = "<group>"; };
+		4D914CDFA7C2A1045CDDDAF1 /* PropertyTableViewCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PropertyTableViewCell.swift; path = App/PropertyTableViewCell.swift; sourceTree = "<group>"; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -26,9 +55,16 @@
 		504EC30E1FED79650016851F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		50A880FA421D3585370C0BF8 /* MainTabBarController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MainTabBarController.swift; path = App/MainTabBarController.swift; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
+		72BE15FEC0579CC5AF9D2869 /* PropertyDetailViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PropertyDetailViewController.swift; path = App/PropertyDetailViewController.swift; sourceTree = "<group>"; };
+		76FDF7FB9606A760CE06FA83 /* ChatViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChatViewController.swift; path = App/ChatViewController.swift; sourceTree = "<group>"; };
+		77D695E09A84E63D781ED9BE /* Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = App/Theme.swift; sourceTree = "<group>"; };
 		AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_App.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.release.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.release.xcconfig"; sourceTree = "<group>"; };
+		B0F43A8052FDC5C149657D60 /* SupabaseService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
+		C9A07BC80591AD44CA6059E8 /* SearchViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SearchViewController.swift; path = App/SearchViewController.swift; sourceTree = "<group>"; };
+		C9F704DD261ACBF4E66EA37D /* APIService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = APIService.swift; path = App/APIService.swift; sourceTree = "<group>"; };
 		FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -52,6 +88,14 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		4ED50A020295F26791380A08 /* ViewControllers */ = {
+			isa = PBXGroup;
+			children = (
+				2DBA0EAF99F37C1226CDB3E8 /* PropertyDetailViewController.swift */,
+			);
+			name = ViewControllers;
+			sourceTree = "<group>";
+		};
 		504EC2FB1FED79650016851F = {
 			isa = PBXGroup;
 			children = (
@@ -59,6 +103,20 @@
 				504EC3051FED79650016851F /* Products */,
 				7F8756D8B27F46E3366F6CEA /* Pods */,
 				27E2DDA53C4D2A4D1A88CE4A /* Frameworks */,
+				50A880FA421D3585370C0BF8 /* MainTabBarController.swift */,
+				0F1DC716847C93BC68D4E4C3 /* HomeViewController.swift */,
+				C9A07BC80591AD44CA6059E8 /* SearchViewController.swift */,
+				0CD6A1BE9C8A4513E9F2E63F /* FavoritesViewController.swift */,
+				76FDF7FB9606A760CE06FA83 /* ChatViewController.swift */,
+				1ACC1E191C320A484EA137C0 /* ProfileViewController.swift */,
+				09F5A6CE707272AEE57CEA2E /* CollectionViewCells.swift */,
+				4D914CDFA7C2A1045CDDDAF1 /* PropertyTableViewCell.swift */,
+				2B09CA506DAF200F9045FA65 /* FilterViewController.swift */,
+				72BE15FEC0579CC5AF9D2869 /* PropertyDetailViewController.swift */,
+				77D695E09A84E63D781ED9BE /* Theme.swift */,
+				C9F704DD261ACBF4E66EA37D /* APIService.swift */,
+				19708FCE683311F278CB4967 /* AuthViewController.swift */,
+				4170FF248779E2D5A9AA9924 /* MapViewController.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -81,8 +139,20 @@
 				504EC3131FED79650016851F /* Info.plist */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
+				52A776F11A4F901180D6C60F /* Services */,
+				4ED50A020295F26791380A08 /* ViewControllers */,
+				2DBFE353505A8B666D78ACF6 /* RealDataTestViewController.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		52A776F11A4F901180D6C60F /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B0F43A8052FDC5C149657D60 /* SupabaseService.swift */,
+				029C67CFFC8BF7578653B27E /* DataValidationService.swift */,
+			);
+			name = Services;
 			sourceTree = "<group>";
 		};
 		7F8756D8B27F46E3366F6CEA /* Pods */ = {
@@ -141,8 +211,6 @@
 				Base,
 			);
 			mainGroup = 504EC2FB1FED79650016851F;
-			packageReferences = (
-			);
 			productRefGroup = 504EC3051FED79650016851F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -193,9 +261,14 @@
 			files = (
 			);
 			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-App/Pods-App-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/Capacitor/Capacitor.framework",
+				"${BUILT_PRODUCTS_DIR}/CapacitorCordova/CapacitorCordova.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Capacitor.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/CapacitorCordova.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -210,6 +283,24 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				C2D79FD11D334926916E2046 /* MainTabBarController.swift in Sources */,
+				375CE7451EB44CC0847D1B67 /* HomeViewController.swift in Sources */,
+				23DBA232431CDE640201E346 /* SearchViewController.swift in Sources */,
+				8D2D2F5E46B15F41F6430C72 /* FavoritesViewController.swift in Sources */,
+				E0D12F3B5568499C8B2A5757 /* ChatViewController.swift in Sources */,
+				1C46C8C79334F4404ADFEBC1 /* ProfileViewController.swift in Sources */,
+				A62A41C87B5DF43EB595E86E /* CollectionViewCells.swift in Sources */,
+				28D515232DE8F3DEBBC17A79 /* PropertyTableViewCell.swift in Sources */,
+				127B118254411CE45C923D08 /* FilterViewController.swift in Sources */,
+				A3B7518BD23FFCA75D064F83 /* PropertyDetailViewController.swift in Sources */,
+				A183A553489FEBCC5DEA3569 /* Theme.swift in Sources */,
+				2E3800F13557763D85EADB20 /* APIService.swift in Sources */,
+				522B055FF20DB86084EDE384 /* AuthViewController.swift in Sources */,
+				2F6F107C153B613131FF0901 /* MapViewController.swift in Sources */,
+				D80D1A2B92865E7D8EBD9C26 /* PropertyDetailViewController.swift in Sources */,
+				098876F33570FD2A62F341C6 /* SupabaseService.swift in Sources */,
+				6F7310BF2EAA2B52952C2FF9 /* DataValidationService.swift in Sources */,
+				B2F222A3EC366222076D87E6 /* RealDataTestViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
