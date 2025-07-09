@@ -9,11 +9,11 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.roomfinderai.app.fragments.CategoriesFragment;
+import com.roomfinderai.app.fragments.AIChatsFragment;
+import com.roomfinderai.app.fragments.DashboardFragment;
 import com.roomfinderai.app.fragments.ListingsFragment;
-import com.roomfinderai.app.fragments.MessagesFragment;
 import com.roomfinderai.app.fragments.PostFragment;
-import com.roomfinderai.app.fragments.ProfileFragment;
+import com.roomfinderai.app.fragments.SettingsFragment;
 import com.roomfinderai.app.config.ApiConfig;
 
 public class MainActivity extends AppCompatActivity {
@@ -84,14 +84,14 @@ public class MainActivity extends AppCompatActivity {
             int itemId = item.getItemId();
             if (itemId == R.id.navigation_home) {
                 fragment = new ListingsFragment();
-            } else if (itemId == R.id.navigation_categories) {
-                fragment = new CategoriesFragment();
-            } else if (itemId == R.id.navigation_post) {
+            } else if (itemId == R.id.navigation_ai_chats) {
+                fragment = new AIChatsFragment();
+            } else if (itemId == R.id.navigation_add) {
                 fragment = new PostFragment();
-            } else if (itemId == R.id.navigation_messages) {
-                fragment = new MessagesFragment();
-            } else if (itemId == R.id.navigation_profile) {
-                fragment = new ProfileFragment();
+            } else if (itemId == R.id.navigation_dashboard) {
+                fragment = new DashboardFragment();
+            } else if (itemId == R.id.navigation_settings) {
+                fragment = new SettingsFragment();
             }
             
             if (fragment != null) {
