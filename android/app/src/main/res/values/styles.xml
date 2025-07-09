@@ -46,6 +46,23 @@
         <item name="bottomNavigationStyle">@style/Widget.Marketplace.BottomNavigationView</item>
     </style>
     
+    <!-- Dark Theme -->
+    <style name="MarketplaceTheme.Dark" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#FF5722</item>
+        <item name="colorPrimaryVariant">#E64A19</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">#2196F3</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="android:colorBackground">#121212</item>
+        <item name="colorSurface">#1E1E1E</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#B0B0B0</item>
+        <item name="android:statusBarColor">#000000</item>
+        <item name="android:navigationBarColor">#000000</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="bottomNavigationStyle">@style/Widget.Marketplace.BottomNavigationView</item>
+    </style>
+    
     <!-- Bottom Navigation Style -->
     <style name="Widget.Marketplace.BottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView">
         <item name="itemIconTint">@color/nav_selector</item>
