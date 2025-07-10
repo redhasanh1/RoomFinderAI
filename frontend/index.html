@@ -2144,7 +2144,118 @@
              class="house-demo-left">
     </section>
     
+    <!-- Premium Statistics Section -->
+    <section class="py-32 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 relative overflow-hidden">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-20 reveal">
+                <div class="inline-block px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium text-white/80 mb-6">
+                    📊 Real Impact
+                </div>
+                <h2 class="text-5xl sm:text-6xl font-black text-white mb-8 font-display">Proven Results</h2>
+                <p class="text-xl text-white/80 max-w-3xl mx-auto leading-relaxed">Join thousands of satisfied renters who saved money with RoomFinderAI</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card reveal scale-in">
+                    <div class="counter">1,247</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 font-display">Successful Negotiations</h3>
+                    <p class="text-gray-600">AI-powered deals closed</p>
+                </div>
+                <div class="stat-card reveal scale-in" style="animation-delay: 0.2s;">
+                    <div class="counter">$847</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 font-display">Average Monthly Savings</h3>
+                    <p class="text-gray-600">Money saved per user</p>
+                </div>
+                <div class="stat-card reveal scale-in" style="animation-delay: 0.4s;">
+                    <div class="counter">89%</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 font-display">Success Rate</h3>
+                    <p class="text-gray-600">Negotiations that succeed</p>
+                </div>
+                <div class="stat-card reveal scale-in" style="animation-delay: 0.6s;">
+                    <div class="counter">2.3</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3 font-display">Days Average</h3>
+                    <p class="text-gray-600">To find and secure rental</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- House Image in Statistics Section -->
+        <img src="3D%20House%20Models/WhatsApp_Image_2025-07-03_at_10.44.14-removebg-preview.png" 
+             alt="Elegant Stats House Model" 
+             class="house-stats-right">
+    </section>
     
+    <!-- Premium Quick Search Section -->
+    <section id="quick-search-section" class="py-32 bg-gradient-to-b from-white to-gray-50 relative">
+        <div class="w-[90%] max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 reveal">
+                <div class="inline-block px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full text-sm font-medium text-gray-600 mb-6">
+                    🔍 Smart Search
+                </div>
+                <h2 class="text-5xl sm:text-6xl font-black mb-8 font-display">
+                    <span class="gradient-text">Quick Search</span>
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">Start your rental search or add a property listing with our intelligent search system</p>
+            </div>
+            
+            <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-10 sm:p-12 border border-white/20 reveal scale-in" style="box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.5);">
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Location -->
+                    <div class="relative">
+                        <label for="location" class="block text-base font-medium text-gray-700 mb-2">Location</label>
+                        <input type="text" id="location" class="w-full p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base bg-white/50 backdrop-blur-sm" placeholder="Toronto, ON" required autocomplete="off" data-autocomplete="off">
+                        <div id="autocomplete-dropdown" class="custom-autocomplete hidden"></div>
+                    </div>
+                    
+                    <!-- Room Type -->
+                    <div>
+                        <label for="roomType" class="block text-base font-medium text-gray-700 mb-2">Room Type</label>
+                        <select id="roomType" class="w-full p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base bg-white/50 backdrop-blur-sm" required>
+                            <option value="" disabled selected>Select type</option>
+                            <option value="House">🏠 House</option>
+                            <option value="Apartment">🏢 Apartment</option>
+                            <option value="Condo">🏘️ Condo</option>
+                            <option value="Townhouse">🏡 Townhouse</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Price -->
+                    <div>
+                        <label for="price" class="block text-base font-medium text-gray-700 mb-2">Max Price</label>
+                        <input type="number" id="price" min="0" step="1" class="w-full p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base bg-white/50 backdrop-blur-sm" placeholder="1200" required>
+                    </div>
+                </div>
+                
+                <!-- Optional fields in collapsible section -->
+                <div class="grid md:grid-cols-3 gap-6 mb-10">
+                    <div>
+                        <label for="bedrooms" class="block text-base font-medium text-gray-700 mb-2">Bedrooms</label>
+                        <input type="number" id="bedrooms" min="0" step="1" class="w-full p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base bg-white/50 backdrop-blur-sm" placeholder="Any">
+                    </div>
+                    <div>
+                        <label for="size" class="block text-base font-medium text-gray-700 mb-2">Size (sq ft)</label>
+                        <input type="number" id="size" min="0" step="1" class="w-full p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base bg-white/50 backdrop-blur-sm" placeholder="Any">
+                    </div>
+                    <div>
+                        <label for="amenities" class="block text-base font-medium text-gray-700 mb-2">Amenities</label>
+                        <input type="text" id="amenities" class="w-full p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base bg-white/50 backdrop-blur-sm" placeholder="WiFi, Parking, etc.">
+                    </div>
+                </div>
+                <!-- Premium Action buttons -->
+                <div class="flex flex-col sm:flex-row gap-6">
+                    <button onclick="smartSearch()" class="flex-1 cta-button py-5 px-8 text-lg font-semibold rounded-2xl hover:transform hover:translateY(-1px) transition-all duration-200">Smart Search</button>
+                    <button onclick="redirectToAI()" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-5 px-8 rounded-2xl hover:from-purple-600 hover:to-pink-700 hover:transform hover:translateY(-1px) transition-all duration-200 font-semibold text-lg">Ask AI</button>
+                    <button onclick="createListing()" class="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white py-5 px-8 rounded-2xl hover:from-gray-700 hover:to-gray-800 hover:transform hover:translateY(-1px) transition-all duration-200 font-semibold text-lg">Add Listing</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- House Image in Quick Search Section -->
+        <img src="3D%20House%20Models/WhatsApp_Image_2025-07-03_at_11.01.41-removebg-preview.png" 
+             alt="Contemporary House Model" 
+             class="house-search-corner">
+    </section>
     
     <!-- Room List Section -->
     <section class="py-8 bg-gray-50">
