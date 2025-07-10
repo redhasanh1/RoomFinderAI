@@ -4,30 +4,59 @@ class ProfileViewController: UIViewController {
     
     private let scrollView = UIScrollView()
     private let contentView = UIView()
+    private let headerView = ProfileHeaderView()
+    private let menuTableView = UITableView()
+    private var currentUser: User?
+    
+    private var menuItems: [ProfileMenuItem] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupMenuItems()
         setupUI()
-        setupProfile()
+        setupConstraints()
+        loadUserProfile()
+        animateOnAppear()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        setupMenuItems()
+        loadUserProfile()
+        menuTableView.reloadData()
     }
     
     private func setupUI() {
-        view.backgroundColor = AppColors.backgroundColor
-        title = "Profile"
+        view.backgroundColor = .systemBackground
         
+        // Navigation bar
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "gearshape.fill"),
-            style: .plain,
+            barButtonSystemItem: .edit,
             target: self,
-            action: #selector(settingsTapped)
+            action: #selector(editTapped)
         )
         
+        // Configure scroll view
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
         
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.translatesAutoresizingMaskIntoConstraints = false
+        // Configure header
+        headerView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(headerView)
         
+        // Configure menu table view
+        menuTableView.delegate = self
+        menuTableView.dataSource = self
+        menuTableView.register(ProfileMenuTableViewCell.self, forCellReuseIdentifier: "MenuCell")
+        menuTableView.isScrollEnabled = false
+        menuTableView.separatorStyle = .none
+        menuTableView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(menuTableView)
+    }
+    
+    private func setupConstraints() {
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -38,348 +67,489 @@ class ProfileViewController: UIViewController {
             contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
-        ])
-    }
-    
-    private func setupProfile() {
-        // Profile Header
-        let headerView = createProfileHeader()
-        
-        // Stats Section
-        let statsView = createStatsSection()
-        
-        // Menu Items
-        let menuView = createMenuSection()
-        
-        contentView.addSubview(headerView)
-        contentView.addSubview(statsView)
-        contentView.addSubview(menuView)
-        
-        headerView.translatesAutoresizingMaskIntoConstraints = false
-        statsView.translatesAutoresizingMaskIntoConstraints = false
-        menuView.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            headerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            
+            headerView.topAnchor.constraint(equalTo: contentView.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            headerView.heightAnchor.constraint(equalToConstant: 200),
             
-            statsView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 32),
-            statsView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            statsView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            
-            menuView.topAnchor.constraint(equalTo: statsView.bottomAnchor, constant: 32),
-            menuView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            menuView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            menuView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -32)
+            menuTableView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 20),
+            menuTableView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            menuTableView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            menuTableView.heightAnchor.constraint(equalToConstant: CGFloat(menuItems.count * 60)),
+            menuTableView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
         ])
     }
     
-    private func createProfileHeader() -> UIView {
-        let headerView = UIView()
+    private func animateOnAppear() {
+        headerView.transform = CGAffineTransform(translationX: 0, y: -50)
+        headerView.alpha = 0
         
-        // Profile Image
-        let profileImageView = UIImageView()
-        profileImageView.backgroundColor = AppColors.primaryPurple
+        menuTableView.transform = CGAffineTransform(translationX: 0, y: 50)
+        menuTableView.alpha = 0
+        
+        UIView.animate(withDuration: 0.5, delay: 0.1, usingSpringWithDamping: 0.8, initialSpringVelocity: 0) {
+            self.headerView.transform = .identity
+            self.headerView.alpha = 1
+        }
+        
+        UIView.animate(withDuration: 0.5, delay: 0.2, usingSpringWithDamping: 0.8, initialSpringVelocity: 0) {
+            self.menuTableView.transform = .identity
+            self.menuTableView.alpha = 1
+        }
+    }
+    
+    private func setupMenuItems() {
+        if AuthManager.shared.isLoggedIn {
+            // User is logged in - show full profile menu
+            menuItems = [
+                ProfileMenuItem(title: "Edit Profile", icon: "person.circle", action: .editProfile),
+                ProfileMenuItem(title: "My Listings", icon: "house.circle", action: .myListings),
+                ProfileMenuItem(title: "Saved Searches", icon: "magnifyingglass.circle", action: .savedSearches),
+                ProfileMenuItem(title: "Favorites", icon: "heart.circle", action: .favorites),
+                ProfileMenuItem(title: "Rental History", icon: "clock.circle", action: .rentalHistory),
+                ProfileMenuItem(title: "Payment Methods", icon: "creditcard.circle", action: .paymentMethods),
+                ProfileMenuItem(title: "Notifications", icon: "bell.circle", action: .notifications),
+                ProfileMenuItem(title: "Privacy & Security", icon: "shield.circle", action: .privacy),
+                ProfileMenuItem(title: "Settings", icon: "gear.circle", action: .settings),
+                ProfileMenuItem(title: "Test Real Data", icon: "chart.bar.xaxis", action: .testRealData),
+                ProfileMenuItem(title: "Invite Friends", icon: "person.2.circle", action: .inviteFriends),
+                ProfileMenuItem(title: "Rate App", icon: "star.circle", action: .rateApp),
+                ProfileMenuItem(title: "Help & Support", icon: "questionmark.circle", action: .support),
+                ProfileMenuItem(title: "About", icon: "info.circle", action: .about),
+                ProfileMenuItem(title: "Sign Out", icon: "rectangle.portrait.and.arrow.right", action: .signOut)
+            ]
+        } else {
+            // User is not logged in - show limited menu with sign in option
+            menuItems = [
+                ProfileMenuItem(title: "Sign In", icon: "rectangle.portrait.and.arrow.left", action: .signIn),
+                ProfileMenuItem(title: "Browse Properties", icon: "house.circle", action: .browseProperties),
+                ProfileMenuItem(title: "Test Real Data", icon: "chart.bar.xaxis", action: .testRealData),
+                ProfileMenuItem(title: "Settings", icon: "gear.circle", action: .settings),
+                ProfileMenuItem(title: "Rate App", icon: "star.circle", action: .rateApp),
+                ProfileMenuItem(title: "Help & Support", icon: "questionmark.circle", action: .support),
+                ProfileMenuItem(title: "About", icon: "info.circle", action: .about)
+            ]
+        }
+    }
+    
+    @objc private func editTapped() {
+        if AuthManager.shared.isLoggedIn {
+            let editVC = EditProfileViewController()
+            navigationController?.pushViewController(editVC, animated: true)
+        } else {
+            showSignIn()
+        }
+    }
+}
+
+// MARK: - Table View Data Source & Delegate
+extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return menuItems.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "MenuCell", for: indexPath) as! ProfileMenuTableViewCell
+        cell.configure(with: menuItems[indexPath.row])
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 60
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        let menuItem = menuItems[indexPath.row]
+        handleMenuAction(menuItem.action)
+    }
+    
+    private func handleMenuAction(_ action: ProfileMenuAction) {
+        switch action {
+        case .editProfile:
+            let editVC = EditProfileViewController()
+            navigationController?.pushViewController(editVC, animated: true)
+        case .myListings:
+            showFeatureComingSoon("My Listings")
+        case .savedSearches:
+            showFeatureComingSoon("Saved Searches")
+        case .favorites:
+            tabBarController?.selectedIndex = 2 // Navigate to favorites tab
+        case .rentalHistory:
+            showFeatureComingSoon("Rental History")
+        case .paymentMethods:
+            showFeatureComingSoon("Payment Methods")
+        case .notifications:
+            showFeatureComingSoon("Notifications")
+        case .privacy:
+            showFeatureComingSoon("Privacy & Security")
+        case .settings:
+            showFeatureComingSoon("Settings")
+        case .testRealData:
+            showRealDataTest()
+        case .inviteFriends:
+            shareApp()
+        case .rateApp:
+            rateApp()
+        case .support:
+            showSupport()
+        case .about:
+            showAbout()
+        case .browseProperties:
+            tabBarController?.selectedIndex = 0 // Navigate to home tab
+        case .signIn:
+            showSignIn()
+        case .signOut:
+            showSignOutAlert()
+        }
+    }
+    
+    private func loadUserProfile() {
+        if AuthManager.shared.isLoggedIn {
+            APIService.shared.getCurrentUser { [weak self] result in
+                switch result {
+                case .success(let user):
+                    self?.currentUser = user
+                    self?.headerView.configure(with: user)
+                case .failure(let error):
+                    print("Error loading user profile: \(error)")
+                    // Load default profile
+                    self?.headerView.configureDefault()
+                }
+            }
+        } else {
+            // User not logged in - show guest profile
+            currentUser = nil
+            headerView.configureDefault()
+        }
+    }
+    
+    private func showSignIn() {
+        let authVC = AuthViewController()
+        let navController = UINavigationController(rootViewController: authVC)
+        navController.modalPresentationStyle = .fullScreen
+        present(navController, animated: true)
+    }
+    
+    private func showSignOutAlert() {
+        let alert = UIAlertController(title: "Sign Out", message: "Are you sure you want to sign out?", preferredStyle: .alert)
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Sign Out", style: .destructive) { _ in
+            AuthManager.shared.logout()
+        })
+        
+        present(alert, animated: true)
+    }
+    
+    private func showFeatureComingSoon(_ featureName: String) {
+        let alert = UIAlertController(title: "Coming Soon", message: "\(featureName) feature is coming soon in a future update!", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+    
+    private func shareApp() {
+        let shareText = "Check out RoomFinderAI - the best app for finding your perfect home! Download it now."
+        let activityVC = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
+        
+        if let popoverController = activityVC.popoverPresentationController {
+            popoverController.sourceView = self.view
+            popoverController.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+        }
+        
+        present(activityVC, animated: true)
+    }
+    
+    private func rateApp() {
+        let alert = UIAlertController(title: "Rate RoomFinderAI", message: "We'd love to hear your feedback! Please rate us on the App Store.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Rate Now", style: .default) { _ in
+            // In a real app, this would open the App Store
+            if let url = URL(string: "https://apps.apple.com") {
+                UIApplication.shared.open(url)
+            }
+        })
+        alert.addAction(UIAlertAction(title: "Later", style: .cancel))
+        present(alert, animated: true)
+    }
+    
+    private func showSupport() {
+        let alert = UIAlertController(title: "Help & Support", message: "How can we help you?", preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "FAQ", style: .default) { _ in
+            self.showFeatureComingSoon("FAQ")
+        })
+        alert.addAction(UIAlertAction(title: "Contact Support", style: .default) { _ in
+            self.contactSupport()
+        })
+        alert.addAction(UIAlertAction(title: "Report Issue", style: .default) { _ in
+            self.showFeatureComingSoon("Report Issue")
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        if let popoverController = alert.popoverPresentationController {
+            popoverController.sourceView = self.view
+            popoverController.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+        }
+        
+        present(alert, animated: true)
+    }
+    
+    private func contactSupport() {
+        let alert = UIAlertController(title: "Contact Support", message: "Send us an email and we'll get back to you soon!", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Send Email", style: .default) { _ in
+            if let url = URL(string: "mailto:support@roomfinderai.com") {
+                UIApplication.shared.open(url)
+            }
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
+    }
+    
+    private func showAbout() {
+        let alert = UIAlertController(title: "About RoomFinderAI", message: "RoomFinderAI v1.0\n\nYour trusted partner in finding the perfect home. We use AI to match you with properties that fit your lifestyle and budget.\n\n© 2024 RoomFinderAI. All rights reserved.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+    
+    private func showRealDataTest() {
+        let testVC = RealDataTestViewController()
+        navigationController?.pushViewController(testVC, animated: true)
+    }
+}
+
+// MARK: - Profile Header View
+class ProfileHeaderView: UIView {
+    private let profileImageView = UIImageView()
+    private let nameLabel = UILabel()
+    private let emailLabel = UILabel()
+    private let statsStackView = UIStackView()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupUI() {
+        backgroundColor = .systemBackground
+        
+        // Profile image
+        profileImageView.image = UIImage(systemName: "person.circle.fill")
+        profileImageView.tintColor = .systemGray2
+        profileImageView.contentMode = .scaleAspectFit
         profileImageView.layer.cornerRadius = 50
         profileImageView.clipsToBounds = true
-        
-        let profileLabel = UILabel()
-        profileLabel.text = "JD"
-        profileLabel.font = UIFont.systemFont(ofSize: 32, weight: .bold)
-        profileLabel.textColor = .white
-        profileLabel.textAlignment = .center
-        
-        profileImageView.addSubview(profileLabel)
-        
-        // Name and Info
-        let nameLabel = UILabel()
-        nameLabel.text = "John Doe"
-        nameLabel.font = UIFont.systemFont(ofSize: 28, weight: .bold)
-        nameLabel.textColor = AppColors.textPrimary
-        nameLabel.textAlignment = .center
-        
-        let emailLabel = UILabel()
-        emailLabel.text = "john.doe@email.com"
-        emailLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        emailLabel.textColor = AppColors.textSecondary
-        emailLabel.textAlignment = .center
-        
-        let membershipBadge = UIView()
-        membershipBadge.backgroundColor = AppColors.primaryPurple.withAlphaComponent(0.1)
-        membershipBadge.layer.cornerRadius = 16
-        
-        let badgeLabel = UILabel()
-        badgeLabel.text = "Premium Member"
-        badgeLabel.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
-        badgeLabel.textColor = AppColors.primaryPurple
-        badgeLabel.textAlignment = .center
-        
-        membershipBadge.addSubview(badgeLabel)
-        
-        headerView.addSubview(profileImageView)
-        headerView.addSubview(nameLabel)
-        headerView.addSubview(emailLabel)
-        headerView.addSubview(membershipBadge)
-        
         profileImageView.translatesAutoresizingMaskIntoConstraints = false
-        profileLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(profileImageView)
+        
+        // Name
+        nameLabel.font = .systemFont(ofSize: 24, weight: .bold)
+        nameLabel.textAlignment = .center
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(nameLabel)
+        
+        // Email
+        emailLabel.font = .systemFont(ofSize: 16)
+        emailLabel.textColor = .secondaryLabel
+        emailLabel.textAlignment = .center
         emailLabel.translatesAutoresizingMaskIntoConstraints = false
-        membershipBadge.translatesAutoresizingMaskIntoConstraints = false
-        badgeLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(emailLabel)
+        
+        // Stats stack view
+        statsStackView.axis = .horizontal
+        statsStackView.distribution = .fillEqually
+        statsStackView.spacing = 20
+        statsStackView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(statsStackView)
+        
+        let favoritesView = createStatView(title: "Favorites", count: "12")
+        let viewsView = createStatView(title: "Views", count: "45")
+        let listingsView = createStatView(title: "Listings", count: "3")
+        
+        statsStackView.addArrangedSubview(favoritesView)
+        statsStackView.addArrangedSubview(viewsView)
+        statsStackView.addArrangedSubview(listingsView)
         
         NSLayoutConstraint.activate([
-            profileImageView.topAnchor.constraint(equalTo: headerView.topAnchor),
-            profileImageView.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            profileImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            profileImageView.topAnchor.constraint(equalTo: topAnchor, constant: 20),
             profileImageView.widthAnchor.constraint(equalToConstant: 100),
             profileImageView.heightAnchor.constraint(equalToConstant: 100),
             
-            profileLabel.centerXAnchor.constraint(equalTo: profileImageView.centerXAnchor),
-            profileLabel.centerYAnchor.constraint(equalTo: profileImageView.centerYAnchor),
-            
             nameLabel.topAnchor.constraint(equalTo: profileImageView.bottomAnchor, constant: 16),
-            nameLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            nameLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
             
             emailLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 4),
-            emailLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            emailLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            emailLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
             
-            membershipBadge.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 12),
-            membershipBadge.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
-            membershipBadge.bottomAnchor.constraint(equalTo: headerView.bottomAnchor),
-            
-            badgeLabel.topAnchor.constraint(equalTo: membershipBadge.topAnchor, constant: 8),
-            badgeLabel.leadingAnchor.constraint(equalTo: membershipBadge.leadingAnchor, constant: 16),
-            badgeLabel.trailingAnchor.constraint(equalTo: membershipBadge.trailingAnchor, constant: -16),
-            badgeLabel.bottomAnchor.constraint(equalTo: membershipBadge.bottomAnchor, constant: -8)
+            statsStackView.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 20),
+            statsStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 40),
+            statsStackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -40),
+            statsStackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -20)
         ])
-        
-        return headerView
     }
     
-    private func createStatsSection() -> UIView {
-        let statsView = UIView()
+    private func createStatView(title: String, count: String) -> UIView {
+        let container = UIView()
         
-        let titleLabel = UILabel()
-        titleLabel.text = "Your Activity"
-        titleLabel.font = UIFont.systemFont(ofSize: 22, weight: .bold)
-        titleLabel.textColor = AppColors.textPrimary
-        
-        let statsStackView = UIStackView()
-        statsStackView.axis = .horizontal
-        statsStackView.distribution = .fillEqually
-        statsStackView.spacing = 16
-        
-        let searchesCard = createStatCard(title: "Searches", value: "47", icon: "magnifyingglass")
-        let favoritesCard = createStatCard(title: "Favorites", value: "12", icon: "heart.fill")
-        let messagesCard = createStatCard(title: "Messages", value: "156", icon: "message.fill")
-        
-        statsStackView.addArrangedSubview(searchesCard)
-        statsStackView.addArrangedSubview(favoritesCard)
-        statsStackView.addArrangedSubview(messagesCard)
-        
-        statsView.addSubview(titleLabel)
-        statsView.addSubview(statsStackView)
-        
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        statsStackView.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: statsView.topAnchor),
-            titleLabel.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
-            
-            statsStackView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 16),
-            statsStackView.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
-            statsStackView.trailingAnchor.constraint(equalTo: statsView.trailingAnchor, constant: -20),
-            statsStackView.bottomAnchor.constraint(equalTo: statsView.bottomAnchor),
-            statsStackView.heightAnchor.constraint(equalToConstant: 80)
-        ])
-        
-        return statsView
-    }
-    
-    private func createStatCard(title: String, value: String, icon: String) -> UIView {
-        let card = UIView()
-        card.backgroundColor = AppColors.cardBackground
-        card.layer.cornerRadius = 16
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOpacity = 0.05
-        card.layer.shadowOffset = CGSize(width: 0, height: 2)
-        card.layer.shadowRadius = 8
-        
-        let iconImageView = UIImageView(image: UIImage(systemName: icon))
-        iconImageView.tintColor = AppColors.primaryPurple
-        iconImageView.contentMode = .scaleAspectFit
-        
-        let valueLabel = UILabel()
-        valueLabel.text = value
-        valueLabel.font = UIFont.systemFont(ofSize: 24, weight: .bold)
-        valueLabel.textColor = AppColors.textPrimary
-        valueLabel.textAlignment = .center
+        let countLabel = UILabel()
+        countLabel.text = count
+        countLabel.font = .systemFont(ofSize: 20, weight: .bold)
+        countLabel.textAlignment = .center
+        countLabel.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(countLabel)
         
         let titleLabel = UILabel()
         titleLabel.text = title
-        titleLabel.font = UIFont.systemFont(ofSize: 12, weight: .medium)
-        titleLabel.textColor = AppColors.textSecondary
+        titleLabel.font = .systemFont(ofSize: 14)
+        titleLabel.textColor = .secondaryLabel
         titleLabel.textAlignment = .center
-        
-        card.addSubview(iconImageView)
-        card.addSubview(valueLabel)
-        card.addSubview(titleLabel)
-        
-        iconImageView.translatesAutoresizingMaskIntoConstraints = false
-        valueLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(titleLabel)
         
         NSLayoutConstraint.activate([
-            iconImageView.topAnchor.constraint(equalTo: card.topAnchor, constant: 12),
-            iconImageView.centerXAnchor.constraint(equalTo: card.centerXAnchor),
-            iconImageView.widthAnchor.constraint(equalToConstant: 24),
-            iconImageView.heightAnchor.constraint(equalToConstant: 24),
+            countLabel.topAnchor.constraint(equalTo: container.topAnchor),
+            countLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            countLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             
-            valueLabel.centerXAnchor.constraint(equalTo: card.centerXAnchor),
-            valueLabel.centerYAnchor.constraint(equalTo: card.centerYAnchor),
-            
-            titleLabel.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -8),
-            titleLabel.centerXAnchor.constraint(equalTo: card.centerXAnchor)
+            titleLabel.topAnchor.constraint(equalTo: countLabel.bottomAnchor, constant: 4),
+            titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            titleLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            titleLabel.bottomAnchor.constraint(equalTo: container.bottomAnchor)
         ])
         
-        return card
+        return container
     }
     
-    private func createMenuSection() -> UIView {
-        let menuView = UIView()
+    func configure(with user: User) {
+        nameLabel.text = "\(user.firstName) \(user.lastName)"
+        emailLabel.text = user.email
         
-        let menuItems = [
-            ("Edit Profile", "person.crop.circle", #selector(editProfileTapped)),
-            ("Notifications", "bell.fill", #selector(notificationsTapped)),
-            ("Payment Methods", "creditcard.fill", #selector(paymentTapped)),
-            ("Help & Support", "questionmark.circle.fill", #selector(helpTapped)),
-            ("Privacy Policy", "hand.raised.fill", #selector(privacyTapped)),
-            ("Sign Out", "rectangle.portrait.and.arrow.right", #selector(signOutTapped))
-        ]
-        
-        var previousView: UIView = menuView
-        
-        for (index, item) in menuItems.enumerated() {
-            let menuItemView = createMenuItem(title: item.0, icon: item.1, action: item.2, isLast: index == menuItems.count - 1)
-            menuView.addSubview(menuItemView)
-            
-            menuItemView.translatesAutoresizingMaskIntoConstraints = false
-            
-            NSLayoutConstraint.activate([
-                menuItemView.leadingAnchor.constraint(equalTo: menuView.leadingAnchor, constant: 20),
-                menuItemView.trailingAnchor.constraint(equalTo: menuView.trailingAnchor, constant: -20),
-                menuItemView.heightAnchor.constraint(equalToConstant: 56)
-            ])
-            
-            if index == 0 {
-                menuItemView.topAnchor.constraint(equalTo: menuView.topAnchor).isActive = true
-            } else {
-                menuItemView.topAnchor.constraint(equalTo: previousView.bottomAnchor).isActive = true
-            }
-            
-            if index == menuItems.count - 1 {
-                menuItemView.bottomAnchor.constraint(equalTo: menuView.bottomAnchor).isActive = true
-            }
-            
-            previousView = menuItemView
+        // Load profile image if available
+        if let profileImageUrl = user.profileImage {
+            profileImageView.loadImage(from: profileImageUrl, placeholder: UIImage(systemName: "person.circle.fill"))
+        } else {
+            profileImageView.image = UIImage(systemName: "person.circle.fill")
+            profileImageView.tintColor = Theme.Colors.primary
         }
-        
-        return menuView
     }
     
-    private func createMenuItem(title: String, icon: String, action: Selector, isLast: Bool) -> UIView {
-        let itemView = UIView()
-        itemView.backgroundColor = AppColors.cardBackground
+    func configureDefault() {
+        nameLabel.text = "Guest User"
+        emailLabel.text = "guest@roomfinder.ai"
+        profileImageView.image = UIImage(systemName: "person.circle.fill")
+        profileImageView.tintColor = Theme.Colors.primary
+    }
+}
+
+// MARK: - Profile Menu Models
+struct ProfileMenuItem {
+    let title: String
+    let icon: String
+    let action: ProfileMenuAction
+}
+
+enum ProfileMenuAction {
+    case editProfile
+    case myListings
+    case savedSearches
+    case favorites
+    case rentalHistory
+    case paymentMethods
+    case notifications
+    case privacy
+    case settings
+    case testRealData
+    case inviteFriends
+    case rateApp
+    case support
+    case about
+    case browseProperties
+    case signIn
+    case signOut
+}
+
+// MARK: - Profile Menu Table View Cell
+class ProfileMenuTableViewCell: UITableViewCell {
+    private let iconImageView = UIImageView()
+    private let titleLabel = UILabel()
+    private let chevronImageView = UIImageView()
+    
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupUI() {
+        selectionStyle = .none
+        backgroundColor = .systemBackground
         
-        if !isLast {
-            let separator = UIView()
-            separator.backgroundColor = AppColors.separatorColor
-            itemView.addSubview(separator)
-            separator.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                separator.leadingAnchor.constraint(equalTo: itemView.leadingAnchor, constant: 56),
-                separator.trailingAnchor.constraint(equalTo: itemView.trailingAnchor),
-                separator.bottomAnchor.constraint(equalTo: itemView.bottomAnchor),
-                separator.heightAnchor.constraint(equalToConstant: 1)
-            ])
-        }
-        
-        let iconImageView = UIImageView(image: UIImage(systemName: icon))
-        iconImageView.tintColor = title == "Sign Out" ? AppColors.errorRed : AppColors.primaryPurple
+        // Icon
+        iconImageView.tintColor = .systemBlue
         iconImageView.contentMode = .scaleAspectFit
-        
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        titleLabel.textColor = title == "Sign Out" ? AppColors.errorRed : AppColors.textPrimary
-        
-        let chevronImageView = UIImageView(image: UIImage(systemName: "chevron.right"))
-        chevronImageView.tintColor = AppColors.textSecondary
-        chevronImageView.contentMode = .scaleAspectFit
-        
-        itemView.addSubview(iconImageView)
-        itemView.addSubview(titleLabel)
-        itemView.addSubview(chevronImageView)
-        
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(iconImageView)
+        
+        // Title
+        titleLabel.font = .systemFont(ofSize: 16)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(titleLabel)
+        
+        // Chevron
+        chevronImageView.image = UIImage(systemName: "chevron.right")
+        chevronImageView.tintColor = .systemGray3
+        chevronImageView.contentMode = .scaleAspectFit
         chevronImageView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(chevronImageView)
         
         NSLayoutConstraint.activate([
-            iconImageView.leadingAnchor.constraint(equalTo: itemView.leadingAnchor, constant: 16),
-            iconImageView.centerYAnchor.constraint(equalTo: itemView.centerYAnchor),
+            iconImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            iconImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: 24),
             iconImageView.heightAnchor.constraint(equalToConstant: 24),
             
             titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 16),
-            titleLabel.centerYAnchor.constraint(equalTo: itemView.centerYAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: chevronImageView.leadingAnchor, constant: -16),
             
-            chevronImageView.trailingAnchor.constraint(equalTo: itemView.trailingAnchor, constant: -16),
-            chevronImageView.centerYAnchor.constraint(equalTo: itemView.centerYAnchor),
+            chevronImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            chevronImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             chevronImageView.widthAnchor.constraint(equalToConstant: 12),
             chevronImageView.heightAnchor.constraint(equalToConstant: 12)
         ])
+    }
+    
+    func configure(with item: ProfileMenuItem) {
+        iconImageView.image = UIImage(systemName: item.icon)
+        titleLabel.text = item.title
         
-        let tapGesture = UITapGestureRecognizer(target: self, action: action)
-        itemView.addGestureRecognizer(tapGesture)
-        itemView.isUserInteractionEnabled = true
-        
-        return itemView
+        if item.action == .signOut {
+            titleLabel.textColor = .systemRed
+            iconImageView.tintColor = .systemRed
+        } else {
+            titleLabel.textColor = .label
+            iconImageView.tintColor = .systemBlue
+        }
     }
-    
-    @objc private func settingsTapped() {
-        // Implementation for settings
-    }
-    
-    @objc private func editProfileTapped() {
-        // Implementation for edit profile
-    }
-    
-    @objc private func notificationsTapped() {
-        // Implementation for notifications
-    }
-    
-    @objc private func paymentTapped() {
-        // Implementation for payment methods
-    }
-    
-    @objc private func helpTapped() {
-        // Implementation for help & support
-    }
-    
-    @objc private func privacyTapped() {
-        // Implementation for privacy policy
-    }
-    
-    @objc private func signOutTapped() {
-        let alert = UIAlertController(title: "Sign Out", message: "Are you sure you want to sign out?", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Sign Out", style: .destructive) { _ in
-            // Implementation for sign out
-        })
-        present(alert, animated: true)
+}
+
+// MARK: - Edit Profile View Controller
+class EditProfileViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemBackground
+        title = "Edit Profile"
     }
 }
