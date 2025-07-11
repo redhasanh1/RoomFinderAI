@@ -400,15 +400,29 @@
                     const result = await response.json();
                     
                     if (response.ok) {
-                        const user = {
-                            firstName: 'User',
-                            lastName: 'Name',
-                            email: email,
-                            profileImage: 'https://via.placeholder.com/40',
-                            aiChats: [],
-                            listings: []
-                        };
-                        localStorage.setItem('currentUser', JSON.stringify(user));
+                        // Find the actual user data from localStorage
+                        const users = JSON.parse(localStorage.getItem('users')) || [];
+                        let existingUser = users.find(u => u.email === email);
+                        
+                        // If user not found in localStorage, create a basic user object
+                        // This maintains backward compatibility for users registered before the fix
+                        if (!existingUser) {
+                            existingUser = {
+                                firstName: 'User',
+                                lastName: 'Name',
+                                email: email,
+                                profileImage: 'https://via.placeholder.com/40',
+                                aiChats: [],
+                                listings: [],
+                                emailVerified: true
+                            };
+                            
+                            // Add to users array for future logins
+                            users.push(existingUser);
+                            localStorage.setItem('users', JSON.stringify(users));
+                        }
+                        
+                        localStorage.setItem('currentUser', JSON.stringify(existingUser));
                         // Redirect to verification modal before going to home page
                         window.location.href = 'verification-modal.html?redirect=index.html';
                     } else {
