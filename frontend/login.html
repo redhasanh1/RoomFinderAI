@@ -204,6 +204,13 @@
                             <input type="password" id="password" name="password" required class="input-grand w-full pl-12" placeholder="••••••••">
                             <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400"></i>
                         </div>
+                        <!-- Password Requirements (Only shown during registration) -->
+                        <div id="passwordRequirements" class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg shadow-sm" style="display: none;">
+                            <div id="req-length" class="flex items-center text-sm">
+                                <span id="length-icon" class="mr-2 text-red-500">✗</span>
+                                <span>At least 8 characters</span>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- Remember Me & Forgot Password -->
@@ -308,7 +315,50 @@
         const toggleText = document.getElementById('toggleText');
         const nameFields = document.getElementById('nameFields');
         const loginOptions = document.getElementById('loginOptions');
+        const passwordRequirements = document.getElementById('passwordRequirements');
+        const passwordInput = document.getElementById('password');
         let isLogin = true;
+
+        // Password validation functions
+        function validatePassword(password) {
+            return password.length >= 8;
+        }
+
+        function updatePasswordRequirements(isValid) {
+            const icon = document.getElementById('length-icon');
+            if (icon) {
+                if (isValid) {
+                    icon.textContent = '✓';
+                    icon.className = 'mr-2 text-green-500';
+                } else {
+                    icon.textContent = '✗';
+                    icon.className = 'mr-2 text-red-500';
+                }
+            }
+        }
+
+        // Show password requirements only during registration
+        if (passwordInput && passwordRequirements) {
+            passwordInput.addEventListener('focus', function() {
+                if (!isLogin) { // Only show during registration
+                    passwordRequirements.style.display = 'block';
+                }
+            });
+            
+            passwordInput.addEventListener('blur', function() {
+                setTimeout(() => {
+                    passwordRequirements.style.display = 'none';
+                }, 200);
+            });
+
+            passwordInput.addEventListener('input', function(e) {
+                if (!isLogin) { // Only validate during registration
+                    const password = e.target.value;
+                    const isValid = validatePassword(password);
+                    updatePasswordRequirements(isValid);
+                }
+            });
+        }
 
         toggleForm.addEventListener('click', () => {
             isLogin = !isLogin;
@@ -318,6 +368,11 @@
             toggleForm.textContent = isLogin ? 'Register now' : 'Sign in';
             nameFields.classList.toggle('hidden', isLogin);
             loginOptions.classList.toggle('hidden', !isLogin);
+            
+            // Hide password requirements when switching to login
+            if (isLogin && passwordRequirements) {
+                passwordRequirements.style.display = 'none';
+            }
             
             // Reset button state when switching forms
         });
@@ -370,6 +425,12 @@
                 
                 if (!firstName || !lastName) {
                     alert('Please fill in all fields.');
+                    return;
+                }
+
+                // Validate password requirements
+                if (!validatePassword(password)) {
+                    alert('Password must be at least 8 characters long.');
                     return;
                 }
 
