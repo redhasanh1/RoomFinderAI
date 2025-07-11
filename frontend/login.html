@@ -448,13 +448,6 @@
                     return;
                 }
 
-                // Check if user already exists in localStorage
-                const existingUsers = JSON.parse(localStorage.getItem('users')) || [];
-                if (existingUsers.find(u => u.email === email)) {
-                    alert('An account with this email address already exists. Please use a different email or try signing in.');
-                    return;
-                }
-
                 try {
                     submitButton.disabled = true;
                     submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
