@@ -386,30 +386,7 @@
     </div>
 
     <script>
-        // Supabase configuration is now in config.js
-        const supabase = Supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-
-        const form = document.getElementById('authForm');
-        const formTitle = document.getElementById('formTitle');
-        const submitButton = document.getElementById('submitButton');
-        const toggleForm = document.getElementById('toggleForm');
-        const nameFields = document.getElementById('nameFields');
-        const message = document.getElementById('message');
-        let isLogin = true;
-
-        // Toggle between login and register
-        toggleForm.addEventListener('click', () => {
-            isLogin = !isLogin;
-            formTitle.textContent = isLogin ? 'Login' : 'Register';
-            submitButton.textContent = isLogin ? 'Login' : 'Register';
-            toggleForm.textContent = isLogin ? "Don't have an account? Register" : 'Already have an account? Login';
-            nameFields.classList.toggle('hidden', isLogin);
-            message.classList.add('hidden');
-        });
-
-        // Handle form submission
-        form.addEventListener('submit', async (e) => {
-        // Basic form validation and submission
+        document.addEventListener('DOMContentLoaded', function() {
         // Password validation function
         function validatePassword(password) {
             return password.length >= 8;
@@ -443,23 +420,34 @@
         const passwordInput = document.getElementById('password');
         const passwordRequirements = document.getElementById('passwordRequirements');
         
-        passwordInput.addEventListener('focus', function() {
-            passwordRequirements.classList.remove('hidden');
-        });
+        console.log('Password input:', passwordInput);
+        console.log('Password requirements:', passwordRequirements);
         
-        passwordInput.addEventListener('blur', function() {
-            // Hide after a short delay to allow for visual feedback
-            setTimeout(() => {
-                passwordRequirements.classList.add('hidden');
-            }, 200);
-        });
+        if (passwordInput && passwordRequirements) {
+            passwordInput.addEventListener('focus', function() {
+                console.log('Password input focused - showing dropdown');
+                passwordRequirements.classList.remove('hidden');
+            });
+            
+            passwordInput.addEventListener('blur', function() {
+                console.log('Password input blurred - hiding dropdown');
+                // Hide after a short delay to allow for visual feedback
+                setTimeout(() => {
+                    passwordRequirements.classList.add('hidden');
+                }, 200);
+            });
+        } else {
+            console.error('Password elements not found!');
+        }
         
         // Real-time password validation
-        passwordInput.addEventListener('input', function(e) {
-            const password = e.target.value;
-            const isValid = validatePassword(password);
-            updatePasswordRequirements(isValid);
-        });
+        if (passwordInput) {
+            passwordInput.addEventListener('input', function(e) {
+                const password = e.target.value;
+                const isValid = validatePassword(password);
+                updatePasswordRequirements(isValid);
+            });
+        }
         
         document.getElementById('signupForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -520,6 +508,8 @@
             alert('Account created successfully!');
             window.location.href = '/index';
         });
+        
+        }); // End DOMContentLoaded
         
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {
