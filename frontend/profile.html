@@ -611,13 +611,16 @@
         // Initialize configuration variables
         let configData;
         let supabase;
+        let profileInitialized = false; // Flag to prevent double initialization
 
         // Try to initialize profile directly first (for local storage functionality)
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize basic profile functionality without Supabase
-            initializeProfile().catch(err => {
-                console.error('Profile initialization error:', err);
-            });
+            if (!profileInitialized) {
+                initializeProfile().catch(err => {
+                    console.error('Profile initialization error:', err);
+                });
+            }
         });
 
         // Load configuration from Railway API and initialize
@@ -653,8 +656,10 @@
                     supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
                     console.log('✅ Supabase client created successfully');
                     
-                    // Initialize the profile page
-                    initializeProfile();
+                    // Initialize the profile page if not already done
+                    if (!profileInitialized) {
+                        initializeProfile();
+                    }
                 } catch (supabaseError) {
                     throw new Error(`Supabase initialization failed: ${supabaseError.message}`);
                 }
@@ -674,9 +679,14 @@
             });
 
         async function initializeProfile() {
-            console.log('Initializing profile...');
+            // Prevent double initialization
+            if (profileInitialized) {
+                console.log('Profile already initialized, skipping...');
+                return;
+            }
+            profileInitialized = true;
+            
             const currentUserStr = localStorage.getItem('currentUser');
-            console.log('Current user from localStorage:', currentUserStr);
             
             if (!currentUserStr) {
                 console.log('No current user found, redirecting to login');
@@ -687,7 +697,6 @@
             let currentUser;
             try {
                 currentUser = JSON.parse(currentUserStr);
-                console.log('Parsed current user:', currentUser);
             } catch (e) {
                 console.error('Error parsing current user:', e);
                 window.location.href = 'login.html';
@@ -717,7 +726,6 @@
 
             // Profile photo upload
             const profileUpload = document.getElementById('profileUpload');
-            console.log('Profile upload element:', profileUpload);
             
             if (!profileUpload) {
                 console.error('Profile upload input not found!');
@@ -725,7 +733,6 @@
             }
             
             profileUpload.addEventListener('change', (e) => {
-                console.log('File input changed');
                 const file = e.target.files[0];
                 if (!file) {
                     console.log('No file selected');
@@ -1041,9 +1048,7 @@
             // Logout
             const logoutButton = document.getElementById('logoutButton');
             if (logoutButton) {
-                console.log('Logout button found, adding event listener');
                 logoutButton.addEventListener('click', () => {
-                    console.log('Logout button clicked');
                     
                     // Set a flag to indicate this is a legitimate logout request
                     sessionStorage.setItem('legitimateLogout', 'true');
