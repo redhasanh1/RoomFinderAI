@@ -1,10 +1,49 @@
 import Foundation
 import Capacitor
 
+// MARK: - Temporary SessionManager (until properly added to Xcode project)
+class SessionManager {
+    static let shared = SessionManager()
+    private init() {}
+    
+    private var authToken: String?
+    private var currentUser: User?
+    
+    func getAccessToken() -> String? {
+        return authToken
+    }
+    
+    func setAccessToken(_ token: String) {
+        authToken = token
+    }
+    
+    func endSession() {
+        authToken = nil
+        currentUser = nil
+    }
+    
+    func getCurrentUser() -> User? {
+        return currentUser
+    }
+    
+    func setCurrentUser(_ user: User) {
+        currentUser = user
+    }
+    
+    func isSessionValid() -> Bool {
+        return authToken != nil
+    }
+}
+
 // MARK: - API Configuration
 struct APIConfig {
-    static let baseURL = "https://roomfinderai-production.up.railway.app"
+    // Railway Backend
+    static let baseURL = "https://roomfinder-ai-negotiator-production.up.railway.app"
     static let apiVersion = "v1"
+    
+    // Public configuration (safe to include in app)
+    static let supabaseURL = "https://zmxyysauqtfkvntgtjsm.supabase.co"
+    static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpteHl5c2F1cXRma3ZudGd0anNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY5NTc3OTQsImV4cCI6MjA1MjUzMzc5NH0.F6M7G-fxnRDnKzWAWgO4y0Z7IuKIDaecvSUBz8aVeQM"
     
     // Endpoints
     struct Endpoints {
@@ -14,7 +53,14 @@ struct APIConfig {
         static let user = "/api/user"
         static let auth = "/api/auth"
         static let chat = "/api/chat"
+        static let negotiate = "/api/ai/negotiate"
+        static let sublease = "/api/subleases"
+        static let analytics = "/api/analytics"
     }
+    
+    // Network Configuration
+    static let timeout: TimeInterval = 30
+    static let maxRetries = 3
 }
 
 // MARK: - Data Models
@@ -447,25 +493,27 @@ class APIService {
         return properties
     }
     
-    // MARK: - Token Management
+    // MARK: - Token Management (Secure)
     func getAuthToken() -> String? {
-        return UserDefaults.standard.string(forKey: "auth_token")
+        return SessionManager.shared.getAccessToken()
     }
     
     func setAuthToken(_ token: String) {
-        UserDefaults.standard.set(token, forKey: "auth_token")
+        // Token should be set through SessionManager.startSession()
+        print("⚠️ Use SessionManager.startSession() instead of setAuthToken()")
     }
     
     func clearAuthToken() {
-        UserDefaults.standard.removeObject(forKey: "auth_token")
+        SessionManager.shared.endSession()
     }
     
     func getCurrentUserId() -> String? {
-        return UserDefaults.standard.string(forKey: "current_user_id")
+        return SessionManager.shared.getCurrentUser()?.id
     }
     
     func setCurrentUserId(_ userId: String) {
-        UserDefaults.standard.set(userId, forKey: "current_user_id")
+        // User ID should be set through SessionManager.startSession()
+        print("⚠️ Use SessionManager.startSession() instead of setCurrentUserId()")
     }
 }
 

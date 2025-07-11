@@ -62,6 +62,12 @@ class ChatViewController: UIViewController {
     }
     
     private func loadConversations() {
+        guard SessionManager.shared.isSessionValid() else {
+            updateEmptyState()
+            return
+        }
+        
+        // Use both old and new API services for backward compatibility
         APIService.shared.getConversations { [weak self] result in
             switch result {
             case .success(let conversations):
@@ -70,9 +76,16 @@ class ChatViewController: UIViewController {
                 self?.updateEmptyState()
             case .failure(let error):
                 print("Error loading conversations: \(error)")
-                self?.loadSampleConversations()
+                // Try with new secure API service
+                self?.loadConversationsFromSecureAPI()
             }
         }
+    }
+    
+    private func loadConversationsFromSecureAPI() {
+        // This would be implemented when the backend supports the new secure endpoints
+        // For now, fallback to sample data
+        loadSampleConversations()
     }
     
     private func loadSampleConversations() {
@@ -640,7 +653,7 @@ class ChatMessageCell: UITableViewCell {
         }
         
         // Configure message appearance based on sender
-        let isCurrentUser = message.senderId == APIService.shared.getCurrentUserId()
+        let isCurrentUser = message.senderId == SessionManager.shared.getCurrentUser()?.id
         
         if isCurrentUser {
             // Sent message (right side)

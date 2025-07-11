@@ -14,6 +14,10 @@ class FavoritesViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        
+        // Update empty state message based on current login status
+        updateEmptyStateMessage()
+        
         loadFavorites()
         animateTableView()
     }
@@ -27,13 +31,23 @@ class FavoritesViewController: UIViewController {
         tableView.register(PropertyTableViewCell.self, forCellReuseIdentifier: "PropertyCell")
         tableView.separatorStyle = .none
         tableView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Add refresh control
+        let refreshControl = UIRefreshControl()
+        refreshControl.addTarget(self, action: #selector(refreshFavorites), for: .valueChanged)
+        tableView.refreshControl = refreshControl
+        
         view.addSubview(tableView)
         
-        // Configure empty state
+        // Configure empty state based on login status
+        let title = SessionManager.shared.isSessionValid() ? "No Favorites Yet" : "Login to View Favorites"
+        let message = SessionManager.shared.isSessionValid() ? "Properties you favorite will appear here" : "Sign in to sync your favorites across devices"
+        let imageName = SessionManager.shared.isSessionValid() ? "heart.slash" : "person.circle"
+        
         emptyStateView.configure(
-            title: "No Favorites Yet",
-            message: "Properties you favorite will appear here",
-            imageName: "heart.slash"
+            title: title,
+            message: message,
+            imageName: imageName
         )
         emptyStateView.translatesAutoresizingMaskIntoConstraints = false
         emptyStateView.isHidden = true
@@ -55,7 +69,16 @@ class FavoritesViewController: UIViewController {
     }
     
     private func loadFavorites() {
-        APIService.shared.getFavorites { [weak self] result in
+        // Check if user is logged in
+        guard SessionManager.shared.isSessionValid() else {
+            favoriteProperties = []
+            tableView.reloadData()
+            updateEmptyState()
+            return
+        }
+        
+        // Use secure API service for authenticated requests
+        SecureAPIService.shared.getFavorites { [weak self] result in
             switch result {
             case .success(let properties):
                 self?.favoriteProperties = properties
@@ -63,6 +86,21 @@ class FavoritesViewController: UIViewController {
                 self?.updateEmptyState()
             case .failure(let error):
                 print("Error loading favorites: \(error)")
+                // Fallback to old API service
+                self?.loadFavoritesFromOldAPI()
+            }
+        }
+    }
+    
+    private func loadFavoritesFromOldAPI() {
+        APIService.shared.getFavorites { [weak self] result in
+            switch result {
+            case .success(let properties):
+                self?.favoriteProperties = properties
+                self?.tableView.reloadData()
+                self?.updateEmptyState()
+            case .failure(let error):
+                print("Error loading favorites from old API: \(error)")
                 // Load sample data for testing
                 self?.loadSampleFavorites()
             }
@@ -100,6 +138,49 @@ class FavoritesViewController: UIViewController {
     private func updateEmptyState() {
         emptyStateView.isHidden = !favoriteProperties.isEmpty
         tableView.isHidden = favoriteProperties.isEmpty
+    }
+    
+    private func updateEmptyStateMessage() {
+        let title = SessionManager.shared.isSessionValid() ? "No Favorites Yet" : "Login to View Favorites"
+        let message = SessionManager.shared.isSessionValid() ? "Properties you favorite will appear here" : "Sign in to sync your favorites across devices"
+        let imageName = SessionManager.shared.isSessionValid() ? "heart.slash" : "person.circle"
+        
+        emptyStateView.configure(
+            title: title,
+            message: message,
+            imageName: imageName
+        )
+    }
+    
+    private func showLoginAlert() {
+        let alert = UIAlertController(title: "Login Required", message: "Please log in to manage your favorites", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Login", style: .default) { _ in
+            // Navigate to login screen
+            let authVC = AuthViewController()
+            let navController = UINavigationController(rootViewController: authVC)
+            self.present(navController, animated: true)
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
+    }
+    
+    private func showToast(message: String) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        present(alert, animated: true)
+        
+        // Auto-dismiss after 1.5 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            alert.dismiss(animated: true)
+        }
+    }
+    
+    @objc private func refreshFavorites() {
+        loadFavorites()
+        
+        // End refresh control animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.tableView.refreshControl?.endRefreshing()
+        }
     }
     
     private func animateTableView() {
@@ -154,21 +235,51 @@ extension FavoritesViewController: UITableViewDataSource, UITableViewDelegate {
         if editingStyle == .delete {
             let property = favoriteProperties[indexPath.row]
             
-            // Remove from favorites via API
-            APIService.shared.toggleFavorite(propertyId: property.id) { [weak self] result in
+            // Check if user is logged in
+            guard SessionManager.shared.isSessionValid() else {
+                showLoginAlert()
+                return
+            }
+            
+            // Remove from favorites via secure API
+            SecureAPIService.shared.removeFromFavorites(listingId: property.id) { [weak self] result in
                 switch result {
                 case .success(_):
                     // Remove from local array
                     self?.favoriteProperties.remove(at: indexPath.row)
                     self?.tableView.deleteRows(at: [indexPath], with: .fade)
                     self?.updateEmptyState()
+                    
+                    // Show success feedback
+                    self?.showToast(message: "Removed from favorites")
+                    
                 case .failure(let error):
                     print("Error removing favorite: \(error)")
-                    // Show error alert
-                    let alert = UIAlertController(title: "Error", message: "Failed to remove favorite", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "OK", style: .default))
-                    self?.present(alert, animated: true)
+                    // Try with old API as fallback
+                    self?.removeFromFavoritesOldAPI(property: property, indexPath: indexPath)
                 }
+            }
+        }
+    }
+    
+    private func removeFromFavoritesOldAPI(property: Property, indexPath: IndexPath) {
+        APIService.shared.toggleFavorite(propertyId: property.id) { [weak self] result in
+            switch result {
+            case .success(_):
+                // Remove from local array
+                self?.favoriteProperties.remove(at: indexPath.row)
+                self?.tableView.deleteRows(at: [indexPath], with: .fade)
+                self?.updateEmptyState()
+                
+                // Show success feedback
+                self?.showToast(message: "Removed from favorites")
+                
+            case .failure(let error):
+                print("Error removing favorite: \(error)")
+                // Show error alert
+                let alert = UIAlertController(title: "Error", message: "Failed to remove favorite. Please try again.", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                self?.present(alert, animated: true)
             }
         }
     }

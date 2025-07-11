@@ -7,6 +7,14 @@ class SearchViewController: UIViewController {
     private let collectionView: UICollectionView
     private let mapToggleButton = UIButton(type: .system)
     
+    // Missing UI elements
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
+    private let headerView = UIView()
+    private let quickFiltersScrollView = UIScrollView()
+    private let mapView = UIView()
+    private let noResultsView = UIView()
+    
     var selectedCategory: String?
     private var isMapView = false
     private var properties: [Property] = []
@@ -44,6 +52,28 @@ class SearchViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = .systemBackground
         
+        // Configure scroll view
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Configure header view
+        headerView.translatesAutoresizingMaskIntoConstraints = false
+        headerView.backgroundColor = .systemBackground
+        
+        // Configure quick filters
+        quickFiltersScrollView.translatesAutoresizingMaskIntoConstraints = false
+        quickFiltersScrollView.showsHorizontalScrollIndicator = false
+        
+        // Configure map view
+        mapView.translatesAutoresizingMaskIntoConstraints = false
+        mapView.backgroundColor = .systemGray6
+        mapView.isHidden = true
+        
+        // Configure no results view
+        noResultsView.translatesAutoresizingMaskIntoConstraints = false
+        noResultsView.backgroundColor = .systemBackground
+        noResultsView.isHidden = true
+        
         // Configure filter button
         filterButton.setTitle("Filters", for: .normal)
         filterButton.setImage(UIImage(systemName: "slider.horizontal.3"), for: .normal)
@@ -64,9 +94,16 @@ class SearchViewController: UIViewController {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         
         // Add subviews
-        view.addSubview(filterButton)
-        view.addSubview(mapToggleButton)
-        view.addSubview(collectionView)
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+        contentView.addSubview(headerView)
+        contentView.addSubview(quickFiltersScrollView)
+        contentView.addSubview(collectionView)
+        contentView.addSubview(mapView)
+        contentView.addSubview(noResultsView)
+        
+        headerView.addSubview(filterButton)
+        headerView.addSubview(mapToggleButton)
     }
     
     private func setupSearchController() {
@@ -79,18 +116,59 @@ class SearchViewController: UIViewController {
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            filterButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            filterButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            filterButton.heightAnchor.constraint(equalToConstant: 44),
+            // Scroll View
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
-            mapToggleButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            mapToggleButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            mapToggleButton.heightAnchor.constraint(equalToConstant: 44),
+            // Content View
+            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             
-            collectionView.topAnchor.constraint(equalTo: filterButton.bottomAnchor, constant: 8),
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            // Header View
+            headerView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            headerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            headerView.heightAnchor.constraint(equalToConstant: 50),
+            
+            // Filter Button
+            filterButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: Theme.Spacing.md),
+            filterButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+            
+            // Map Toggle Button
+            mapToggleButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -Theme.Spacing.md),
+            mapToggleButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+            
+            // Quick Filters
+            quickFiltersScrollView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: Theme.Spacing.sm),
+            quickFiltersScrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            quickFiltersScrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            quickFiltersScrollView.heightAnchor.constraint(equalToConstant: 44),
+            
+            // Collection View
+            collectionView.topAnchor.constraint(equalTo: quickFiltersScrollView.bottomAnchor, constant: Theme.Spacing.sm),
+            collectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            collectionView.heightAnchor.constraint(equalToConstant: 600), // Fixed height for scroll
+            
+            // Map View (same position as collection view)
+            mapView.topAnchor.constraint(equalTo: quickFiltersScrollView.bottomAnchor, constant: Theme.Spacing.sm),
+            mapView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            mapView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            mapView.heightAnchor.constraint(equalToConstant: 600),
+            
+            // No Results View
+            noResultsView.topAnchor.constraint(equalTo: quickFiltersScrollView.bottomAnchor, constant: Theme.Spacing.sm),
+            noResultsView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            noResultsView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            noResultsView.heightAnchor.constraint(equalToConstant: 400),
+            
+            // Content bottom
+            contentView.bottomAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: Theme.Spacing.xl)
         ])
     }
     
@@ -168,7 +246,7 @@ extension SearchViewController: UICollectionViewDataSource, UICollectionViewDele
             case .success(let properties):
                 print("✅ Successfully loaded \(properties.count) properties from API")
                 self?.properties = properties
-                self?.collectionView.reloadData()
+                self?.updateUI()
             case .failure(let error):
                 print("❌ Error loading properties: \(error)")
                 print("🔄 Falling back to sample data")
@@ -184,12 +262,36 @@ extension SearchViewController: UICollectionViewDataSource, UICollectionViewDele
             case .success(let properties):
                 print("✅ Successfully found \(properties.count) properties matching search")
                 self?.properties = properties
-                self?.collectionView.reloadData()
+                self?.updateUI()
             case .failure(let error):
                 print("❌ Error searching properties: \(error)")
                 print("🔄 Falling back to sample data")
                 self?.loadSampleData()
             }
+        }
+    }
+    
+    private func updateUI() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Update collection view
+            self.collectionView.reloadData()
+            
+            // Show/hide appropriate views
+            if self.properties.isEmpty {
+                self.collectionView.isHidden = true
+                self.noResultsView.isHidden = false
+                self.mapView.isHidden = true
+            } else {
+                self.collectionView.isHidden = self.isMapView
+                self.noResultsView.isHidden = true
+                self.mapView.isHidden = !self.isMapView
+            }
+            
+            // Update map toggle button
+            self.mapToggleButton.setTitle(self.isMapView ? "List" : "Map", for: .normal)
+            self.mapToggleButton.setImage(UIImage(systemName: self.isMapView ? "list.bullet" : "map"), for: .normal)
         }
     }
     
@@ -212,7 +314,7 @@ extension SearchViewController: UICollectionViewDataSource, UICollectionViewDele
             case .success(let properties):
                 print("✅ Successfully found \(properties.count) properties in category '\(category)'")
                 self?.properties = properties
-                self?.collectionView.reloadData()
+                self?.updateUI()
             case .failure(let error):
                 print("❌ Error searching by category: \(error)")
                 print("🔄 Falling back to sample data")
