@@ -328,7 +328,7 @@
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
                     <input type="password" id="password" name="password" required class="modern-input w-full" placeholder="Enter a secure password">
-                    <div id="passwordRequirements" class="hidden mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg shadow-sm">
+                    <div id="passwordRequirements" class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg shadow-sm" style="display: none;">
                         <div id="req-length" class="flex items-center text-sm">
                             <span id="length-icon" class="mr-2 text-red-500">✗</span>
                             <span>At least 8 characters</span>
@@ -395,12 +395,15 @@
         // Update password requirements display
         function updatePasswordRequirements(isValid) {
             const icon = document.getElementById('length-icon');
-            if (isValid) {
-                icon.textContent = '✓';
-                icon.className = 'mr-2 text-green-500';
-            } else {
-                icon.textContent = '✗';
-                icon.className = 'mr-2 text-red-500';
+            console.log('Updating password requirements, isValid:', isValid, 'icon:', icon);
+            if (icon) {
+                if (isValid) {
+                    icon.textContent = '✓';
+                    icon.className = 'mr-2 text-green-500';
+                } else {
+                    icon.textContent = '✗';
+                    icon.className = 'mr-2 text-red-500';
+                }
             }
         }
         
@@ -423,17 +426,25 @@
         console.log('Password input:', passwordInput);
         console.log('Password requirements:', passwordRequirements);
         
+        // Test: Show dropdown for 3 seconds on page load
+        if (passwordRequirements) {
+            passwordRequirements.style.display = 'block';
+            setTimeout(() => {
+                passwordRequirements.style.display = 'none';
+            }, 3000);
+        }
+        
         if (passwordInput && passwordRequirements) {
             passwordInput.addEventListener('focus', function() {
                 console.log('Password input focused - showing dropdown');
-                passwordRequirements.classList.remove('hidden');
+                passwordRequirements.style.display = 'block';
             });
             
             passwordInput.addEventListener('blur', function() {
                 console.log('Password input blurred - hiding dropdown');
                 // Hide after a short delay to allow for visual feedback
                 setTimeout(() => {
-                    passwordRequirements.classList.add('hidden');
+                    passwordRequirements.style.display = 'none';
                 }, 200);
             });
         } else {
@@ -445,6 +456,7 @@
             passwordInput.addEventListener('input', function(e) {
                 const password = e.target.value;
                 const isValid = validatePassword(password);
+                console.log('Password input event - password:', password, 'isValid:', isValid);
                 updatePasswordRequirements(isValid);
             });
         }
