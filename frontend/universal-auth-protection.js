@@ -48,6 +48,12 @@ Object.defineProperty(window.location, 'href', {
 
 window.location.assign = function(url) {
     if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
+        // Check if this is a legitimate logout request
+        if (sessionStorage.getItem('legitimateLogout') === 'true') {
+            console.log('✅ Allowing legitimate logout redirect via assign');
+            sessionStorage.removeItem('legitimateLogout');
+            return ORIGINAL_LOCATION_ASSIGN.call(this, url);
+        }
         console.error('🚫 BLOCKED location.assign to login:', url);
         console.trace('Stack trace for blocked redirect:');
         return; // Block the redirect
@@ -57,6 +63,12 @@ window.location.assign = function(url) {
 
 window.location.replace = function(url) {
     if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
+        // Check if this is a legitimate logout request
+        if (sessionStorage.getItem('legitimateLogout') === 'true') {
+            console.log('✅ Allowing legitimate logout redirect via replace');
+            sessionStorage.removeItem('legitimateLogout');
+            return ORIGINAL_LOCATION_REPLACE.call(this, url);
+        }
         console.error('🚫 BLOCKED location.replace to login:', url);
         console.trace('Stack trace for blocked redirect:');
         return; // Block the redirect

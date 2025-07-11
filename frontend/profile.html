@@ -612,6 +612,14 @@
         let configData;
         let supabase;
 
+        // Try to initialize profile directly first (for local storage functionality)
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize basic profile functionality without Supabase
+            initializeProfile().catch(err => {
+                console.error('Profile initialization error:', err);
+            });
+        });
+
         // Load configuration from Railway API and initialize
         fetch('/api/config')
             .then(response => {
@@ -666,21 +674,58 @@
             });
 
         async function initializeProfile() {
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            if (!currentUser) {
+            console.log('Initializing profile...');
+            const currentUserStr = localStorage.getItem('currentUser');
+            console.log('Current user from localStorage:', currentUserStr);
+            
+            if (!currentUserStr) {
+                console.log('No current user found, redirecting to login');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            let currentUser;
+            try {
+                currentUser = JSON.parse(currentUserStr);
+                console.log('Parsed current user:', currentUser);
+            } catch (e) {
+                console.error('Error parsing current user:', e);
                 window.location.href = 'login.html';
                 return;
             }
 
             // Update profile info
-            document.getElementById('profileLogo').src = currentUser.profileImage || 'https://via.placeholder.com/40';
-            document.getElementById('profileImage').src = currentUser.profileImage || 'https://via.placeholder.com/100';
-            document.getElementById('userName').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
-            document.getElementById('userEmail').textContent = currentUser.email;
+            const profileLogo = document.getElementById('profileLogo');
+            if (profileLogo) {
+                profileLogo.src = currentUser.profileImage || 'https://via.placeholder.com/40';
+            }
+            
+            const profileImageEl = document.getElementById('profileImage');
+            if (profileImageEl) {
+                profileImageEl.src = currentUser.profileImage || 'https://via.placeholder.com/100';
+            }
+            
+            const userNameEl = document.getElementById('userName');
+            if (userNameEl) {
+                userNameEl.textContent = `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'User';
+            }
+            
+            const userEmailEl = document.getElementById('userEmail');
+            if (userEmailEl) {
+                userEmailEl.textContent = currentUser.email || '';
+            }
 
             // Profile photo upload
             const profileUpload = document.getElementById('profileUpload');
+            console.log('Profile upload element:', profileUpload);
+            
+            if (!profileUpload) {
+                console.error('Profile upload input not found!');
+                return;
+            }
+            
             profileUpload.addEventListener('change', (e) => {
+                console.log('File input changed');
                 const file = e.target.files[0];
                 if (!file) {
                     console.log('No file selected');
@@ -994,41 +1039,70 @@
             };
 
             // Logout
-            document.getElementById('logoutButton').addEventListener('click', () => {
-                // Set a flag to indicate this is a legitimate logout request
-                sessionStorage.setItem('legitimateLogout', 'true');
-                
-                // Clear all user data including backups
-                const keysToRemove = [
-                    'currentUser',
-                    'currentUser_backup',
-                    'currentUser_backup_2',
-                    'currentUser_emergency',
-                    'currentUser_backup_timestamp'
-                ];
-                
-                // Use the original localStorage.removeItem if available
-                const removeItem = window.ORIGINAL_REMOVE_ITEM || localStorage.removeItem;
-                keysToRemove.forEach(key => {
-                    try {
-                        removeItem.call(localStorage, key);
-                    } catch (e) {
-                        console.error('Error removing', key, e);
-                    }
+            const logoutButton = document.getElementById('logoutButton');
+            if (logoutButton) {
+                console.log('Logout button found, adding event listener');
+                logoutButton.addEventListener('click', () => {
+                    console.log('Logout button clicked');
+                    
+                    // Set a flag to indicate this is a legitimate logout request
+                    sessionStorage.setItem('legitimateLogout', 'true');
+                    
+                    // Clear all user data including backups
+                    const keysToRemove = [
+                        'currentUser',
+                        'currentUser_backup',
+                        'currentUser_backup_2',
+                        'currentUser_emergency',
+                        'currentUser_backup_timestamp',
+                        'users' // Also clear users array
+                    ];
+                    
+                    // Try multiple methods to clear data
+                    keysToRemove.forEach(key => {
+                        try {
+                            // Method 1: Use original function if available
+                            if (window.ORIGINAL_REMOVE_ITEM) {
+                                window.ORIGINAL_REMOVE_ITEM.call(localStorage, key);
+                            }
+                            // Method 2: Try direct removal
+                            localStorage.removeItem(key);
+                            // Method 3: Set to null
+                            localStorage.setItem(key, null);
+                        } catch (e) {
+                            console.error('Error removing', key, e);
+                        }
+                    });
+                    
+                    // Try multiple redirect methods
+                    setTimeout(() => {
+                        // Method 1: Original location setter
+                        if (window.ORIGINAL_LOCATION_HREF) {
+                            try {
+                                window.ORIGINAL_LOCATION_HREF.set.call(window.location, 'login.html');
+                            } catch (e) {
+                                console.error('Original href failed:', e);
+                            }
+                        }
+                        
+                        // Method 2: Direct assignment
+                        try {
+                            window.location = 'login.html';
+                        } catch (e) {
+                            console.error('Direct assignment failed:', e);
+                        }
+                        
+                        // Method 3: Form submission
+                        const form = document.createElement('form');
+                        form.method = 'GET';
+                        form.action = 'login.html';
+                        document.body.appendChild(form);
+                        form.submit();
+                    }, 100); // Small delay to ensure storage operations complete
                 });
-                
-                // Force redirect using the original location setter
-                if (window.ORIGINAL_LOCATION_HREF) {
-                    window.ORIGINAL_LOCATION_HREF.set.call(window.location, 'login.html');
-                } else {
-                    // Fallback: use a form submission to bypass the protection
-                    const form = document.createElement('form');
-                    form.method = 'GET';
-                    form.action = 'login.html';
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            });
+            } else {
+                console.error('Logout button not found!');
+            }
         }
 
         // Success metrics tracking for user satisfaction and performance
