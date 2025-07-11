@@ -716,6 +716,21 @@
                         localStorage.setItem('users', JSON.stringify(users));
                         localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
+                        // Update profile image in Supabase if available
+                        if (window.supabase && currentUser.id) {
+                            window.supabase
+                                .from('profiles')
+                                .update({ profile_image: imageDataUrl })
+                                .eq('id', currentUser.id)
+                                .then(({ error }) => {
+                                    if (error) {
+                                        console.error('Error updating profile image in Supabase:', error);
+                                    } else {
+                                        console.log('Profile image updated in Supabase');
+                                    }
+                                });
+                        }
+
                         // Update displayed images
                         const profileLogo = document.getElementById('profileLogo');
                         const profileImage = document.getElementById('profileImage');
@@ -729,6 +744,9 @@
                             profileImage.src = imageDataUrl;
                             console.log('Updated main profile image');
                         }
+
+                        // Dispatch event to update auth section
+                        window.dispatchEvent(new Event('userProfileUpdated'));
 
                         alert('Profile photo updated successfully!');
                     } catch (error) {
@@ -977,8 +995,39 @@
 
             // Logout
             document.getElementById('logoutButton').addEventListener('click', () => {
-                localStorage.removeItem('currentUser');
-                window.location.href = 'login.html';
+                // Set a flag to indicate this is a legitimate logout request
+                sessionStorage.setItem('legitimateLogout', 'true');
+                
+                // Clear all user data including backups
+                const keysToRemove = [
+                    'currentUser',
+                    'currentUser_backup',
+                    'currentUser_backup_2',
+                    'currentUser_emergency',
+                    'currentUser_backup_timestamp'
+                ];
+                
+                // Use the original localStorage.removeItem if available
+                const removeItem = window.ORIGINAL_REMOVE_ITEM || localStorage.removeItem;
+                keysToRemove.forEach(key => {
+                    try {
+                        removeItem.call(localStorage, key);
+                    } catch (e) {
+                        console.error('Error removing', key, e);
+                    }
+                });
+                
+                // Force redirect using the original location setter
+                if (window.ORIGINAL_LOCATION_HREF) {
+                    window.ORIGINAL_LOCATION_HREF.set.call(window.location, 'login.html');
+                } else {
+                    // Fallback: use a form submission to bypass the protection
+                    const form = document.createElement('form');
+                    form.method = 'GET';
+                    form.action = 'login.html';
+                    document.body.appendChild(form);
+                    form.submit();
+                }
             });
         }
 

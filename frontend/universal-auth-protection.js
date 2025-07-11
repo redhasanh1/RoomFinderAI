@@ -21,10 +21,20 @@ const ORIGINAL_LOCATION_RELOAD = window.location.reload;
 const ORIGINAL_REMOVE_ITEM = localStorage.removeItem;
 const ORIGINAL_CLEAR = localStorage.clear;
 
-// 🚫 BLOCK ALL REDIRECTS TO LOGIN PAGES
+// Expose original functions globally for legitimate logout
+window.ORIGINAL_LOCATION_HREF = ORIGINAL_LOCATION_HREF;
+window.ORIGINAL_REMOVE_ITEM = ORIGINAL_REMOVE_ITEM;
+
+// 🚫 BLOCK ALL REDIRECTS TO LOGIN PAGES (unless legitimate logout)
 Object.defineProperty(window.location, 'href', {
     set: function(url) {
         if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
+            // Check if this is a legitimate logout request
+            if (sessionStorage.getItem('legitimateLogout') === 'true') {
+                console.log('✅ Allowing legitimate logout redirect');
+                sessionStorage.removeItem('legitimateLogout');
+                return ORIGINAL_LOCATION_HREF.set.call(this, url);
+            }
             console.error('🚫 BLOCKED location.href redirect to login:', url);
             console.trace('Stack trace for blocked redirect:');
             return; // Block the redirect
@@ -54,11 +64,16 @@ window.location.replace = function(url) {
     return ORIGINAL_LOCATION_REPLACE.call(this, url);
 };
 
-// 🛡️ PROTECT LOCALSTORAGE FROM CURRENTUSER REMOVAL
+// 🛡️ PROTECT LOCALSTORAGE FROM CURRENTUSER REMOVAL (unless legitimate logout)
 localStorage.removeItem = function(key) {
-    if (key === 'currentUser') {
-        console.error('⚠️ BLOCKING currentUser removal - keeping user logged in');
-        console.trace('Stack trace for blocked currentUser removal:');
+    if (key === 'currentUser' || key.startsWith('currentUser_')) {
+        // Check if this is a legitimate logout request
+        if (sessionStorage.getItem('legitimateLogout') === 'true') {
+            console.log('✅ Allowing legitimate logout data removal');
+            return ORIGINAL_REMOVE_ITEM.call(this, key);
+        }
+        console.error('⚠️ BLOCKING ' + key + ' removal - keeping user logged in');
+        console.trace('Stack trace for blocked ' + key + ' removal:');
         return; // Block the removal
     }
     return ORIGINAL_REMOVE_ITEM.call(this, key);
