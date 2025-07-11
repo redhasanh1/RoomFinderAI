@@ -434,6 +434,13 @@
                     return;
                 }
 
+                // Check if user already exists in localStorage
+                const existingUsers = JSON.parse(localStorage.getItem('users')) || [];
+                if (existingUsers.find(u => u.email === email)) {
+                    alert('An account with this email address already exists. Please use a different email or try signing in.');
+                    return;
+                }
+
                 try {
                     submitButton.disabled = true;
                     submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
@@ -511,6 +518,13 @@
                         listings: [],
                         emailVerified: true
                     };
+                    
+                    // Add user to users array in localStorage
+                    const users = JSON.parse(localStorage.getItem('users')) || [];
+                    users.push(user);
+                    localStorage.setItem('users', JSON.stringify(users));
+                    
+                    // Set as current user
                     localStorage.setItem('currentUser', JSON.stringify(user));
                     alert('Email verified successfully! Welcome to RoomFinder AI.');
                     // Redirect to verification modal before going to home page
