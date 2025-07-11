@@ -450,12 +450,7 @@
 
                 // Check if user already exists in localStorage
                 const existingUsers = JSON.parse(localStorage.getItem('users')) || [];
-                console.log('Checking existing users:', existingUsers);
-                console.log('Email to register:', email);
-                const duplicateUser = existingUsers.find(u => u.email === email);
-                console.log('Duplicate user found:', duplicateUser);
-                
-                if (duplicateUser) {
+                if (existingUsers.find(u => u.email === email)) {
                     alert('An account with this email address already exists. Please use a different email or try signing in.');
                     return;
                 }
@@ -464,7 +459,6 @@
                     submitButton.disabled = true;
                     submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
                     
-                    console.log('Making API call to /api/send-verification');
                     const response = await fetch('/api/send-verification', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -476,15 +470,11 @@
                         })
                     });
 
-                    console.log('Response status:', response.status);
                     const result = await response.json();
-                    console.log('Response body:', result);
                     
                     if (response.ok) {
-                        console.log('Success - showing verification section');
                         showVerificationSection(email, { firstName, lastName, email, password });
                     } else {
-                        console.log('Error response:', result.error);
                         alert(result.error || 'Failed to send verification email');
                     }
                 } catch (error) {
