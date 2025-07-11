@@ -300,6 +300,16 @@ const users = [];
 const emailVerificationCodes = new Map(); // Store verification codes with expiration
 const passwordResetCodes = new Map(); // Store password reset codes with expiration
 
+// Password validation function
+function validatePassword(password) {
+    const isValid = password.length >= 8;
+    
+    return {
+        isValid,
+        message: isValid ? 'Password meets requirements' : 'Password must be at least 8 characters long'
+    };
+}
+
 // Location overrides for problematic North American cities
 const locationOverrides = {
     'los angeles': 'la',
@@ -998,6 +1008,13 @@ app.post('/api/send-verification', async (req, res) => {
             return res.status(400).json({ error: 'All fields are required' });
         }
 
+        // Validate password
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.isValid) {
+            console.log('❌ Password validation failed:', passwordValidation.message);
+            return res.status(400).json({ error: passwordValidation.message });
+        }
+
         // Check if user already exists
         const existingUser = users.find(u => u.email === email);
         if (existingUser) {
@@ -1285,6 +1302,12 @@ app.post('/api/reset-password', async (req, res) => {
         
         if (!email || !code || !newPassword || !sessionId) {
             return res.status(400).json({ error: 'All fields are required' });
+        }
+
+        // Validate new password
+        const passwordValidation = validatePassword(newPassword);
+        if (!passwordValidation.isValid) {
+            return res.status(400).json({ error: passwordValidation.message });
         }
 
         // Get stored reset data
