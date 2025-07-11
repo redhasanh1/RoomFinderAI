@@ -328,24 +328,10 @@
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
                     <input type="password" id="password" name="password" required class="modern-input w-full" placeholder="Enter a secure password">
-                    <div id="passwordRequirements" class="mt-2 text-sm text-gray-600">
-                        <div class="grid grid-cols-2 gap-2">
-                            <div id="req-length" class="flex items-center">
-                                <span class="mr-2">🔴</span>
-                                <span>At least 8 characters</span>
-                            </div>
-                            <div id="req-uppercase" class="flex items-center">
-                                <span class="mr-2">🔴</span>
-                                <span>One uppercase letter</span>
-                            </div>
-                            <div id="req-lowercase" class="flex items-center">
-                                <span class="mr-2">🔴</span>
-                                <span>One lowercase letter</span>
-                            </div>
-                            <div id="req-number" class="flex items-center">
-                                <span class="mr-2">🔴</span>
-                                <span>One number</span>
-                            </div>
+                    <div id="passwordRequirements" class="hidden mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg shadow-sm">
+                        <div id="req-length" class="flex items-center text-sm">
+                            <span id="length-icon" class="mr-2 text-red-500">✗</span>
+                            <span>At least 8 characters</span>
                         </div>
                     </div>
                 </div>
@@ -426,40 +412,19 @@
         // Basic form validation and submission
         // Password validation function
         function validatePassword(password) {
-            const requirements = {
-                length: password.length >= 8,
-                uppercase: /[A-Z]/.test(password),
-                lowercase: /[a-z]/.test(password),
-                number: /[0-9]/.test(password)
-            };
-            
-            return requirements;
+            return password.length >= 8;
         }
         
         // Update password requirements display
-        function updatePasswordRequirements(requirements) {
-            const elements = {
-                length: document.getElementById('req-length'),
-                uppercase: document.getElementById('req-uppercase'),
-                lowercase: document.getElementById('req-lowercase'),
-                number: document.getElementById('req-number')
-            };
-            
-            Object.keys(requirements).forEach(req => {
-                const element = elements[req];
-                if (element) {
-                    const icon = element.querySelector('span');
-                    if (requirements[req]) {
-                        icon.textContent = '🟢';
-                        element.classList.add('text-green-600');
-                        element.classList.remove('text-gray-600');
-                    } else {
-                        icon.textContent = '🔴';
-                        element.classList.add('text-gray-600');
-                        element.classList.remove('text-green-600');
-                    }
-                }
-            });
+        function updatePasswordRequirements(isValid) {
+            const icon = document.getElementById('length-icon');
+            if (isValid) {
+                icon.textContent = '✓';
+                icon.className = 'mr-2 text-green-500';
+            } else {
+                icon.textContent = '✗';
+                icon.className = 'mr-2 text-red-500';
+            }
         }
         
         // Show error message
@@ -474,11 +439,26 @@
             }, 5000);
         }
         
+        // Show/hide password requirements on focus/blur
+        const passwordInput = document.getElementById('password');
+        const passwordRequirements = document.getElementById('passwordRequirements');
+        
+        passwordInput.addEventListener('focus', function() {
+            passwordRequirements.classList.remove('hidden');
+        });
+        
+        passwordInput.addEventListener('blur', function() {
+            // Hide after a short delay to allow for visual feedback
+            setTimeout(() => {
+                passwordRequirements.classList.add('hidden');
+            }, 200);
+        });
+        
         // Real-time password validation
-        document.getElementById('password').addEventListener('input', function(e) {
+        passwordInput.addEventListener('input', function(e) {
             const password = e.target.value;
-            const requirements = validatePassword(password);
-            updatePasswordRequirements(requirements);
+            const isValid = validatePassword(password);
+            updatePasswordRequirements(isValid);
         });
         
         document.getElementById('signupForm').addEventListener('submit', function(e) {
@@ -498,11 +478,10 @@
             }
             
             // Password validation
-            const passwordReqs = validatePassword(password);
-            const allPasswordReqsMet = Object.values(passwordReqs).every(req => req);
+            const isPasswordValid = validatePassword(password);
             
-            if (!allPasswordReqsMet) {
-                showError('Password must meet all requirements listed above');
+            if (!isPasswordValid) {
+                showError('Password must be at least 8 characters long');
                 return;
             }
             

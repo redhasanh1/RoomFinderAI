@@ -302,19 +302,11 @@ const passwordResetCodes = new Map(); // Store password reset codes with expirat
 
 // Password validation function
 function validatePassword(password) {
-    const requirements = {
-        length: password.length >= 8,
-        uppercase: /[A-Z]/.test(password),
-        lowercase: /[a-z]/.test(password),
-        number: /[0-9]/.test(password)
-    };
-    
-    const isValid = Object.values(requirements).every(req => req);
+    const isValid = password.length >= 8;
     
     return {
         isValid,
-        requirements,
-        message: isValid ? 'Password meets all requirements' : 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number'
+        message: isValid ? 'Password meets requirements' : 'Password must be at least 8 characters long'
     };
 }
 
