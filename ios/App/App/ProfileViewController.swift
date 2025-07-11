@@ -1,5 +1,101 @@
 import UIKit
 
+// Temporary stub classes until properly added to Xcode project
+class StudentHousingViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemBackground
+        title = "Student Housing"
+        
+        let label = UILabel()
+        label.text = "Student Housing Coming Soon"
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(label)
+        
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+    }
+}
+
+class SubleaseViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemBackground
+        title = "Sublease"
+        
+        let label = UILabel()
+        label.text = "Sublease Coming Soon"
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(label)
+        
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+    }
+}
+
+class MortgageToolsViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemBackground
+        title = "Mortgage Tools"
+        
+        let label = UILabel()
+        label.text = "Mortgage Tools Coming Soon"
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(label)
+        
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+    }
+}
+
+class LegalHelpViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemBackground
+        title = "Legal Help"
+        
+        let label = UILabel()
+        label.text = "Legal Help Coming Soon"
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(label)
+        
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+    }
+}
+
+class PricingPlansViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemBackground
+        title = "Pricing Plans"
+        
+        let label = UILabel()
+        label.text = "Pricing Plans Coming Soon"
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(label)
+        
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+    }
+}
+
 class ProfileViewController: UIViewController {
     
     private let scrollView = UIScrollView()
@@ -101,19 +197,25 @@ class ProfileViewController: UIViewController {
     }
     
     private func setupMenuItems() {
-        if AuthManager.shared.isLoggedIn {
-            // User is logged in - show full profile menu
+        if SessionManager.shared.isSessionValid() {
+            // User is logged in - show full profile menu with all website features
             menuItems = [
                 ProfileMenuItem(title: "Edit Profile", icon: "person.circle", action: .editProfile),
+                ProfileMenuItem(title: "Dashboard", icon: "chart.bar.xaxis", action: .dashboard),
                 ProfileMenuItem(title: "My Listings", icon: "house.circle", action: .myListings),
-                ProfileMenuItem(title: "Saved Searches", icon: "magnifyingglass.circle", action: .savedSearches),
+                ProfileMenuItem(title: "Student Housing", icon: "graduationcap", action: .studentHousing),
+                ProfileMenuItem(title: "Sublease Property", icon: "doc.text.magnifyingglass", action: .sublease),
+                ProfileMenuItem(title: "AI Negotiator", icon: "brain.head.profile", action: .aiNegotiator),
+                ProfileMenuItem(title: "Mortgage Tools", icon: "calculator", action: .mortgageTools),
+                ProfileMenuItem(title: "Legal Help", icon: "scale.3d", action: .legalHelp),
                 ProfileMenuItem(title: "Favorites", icon: "heart.circle", action: .favorites),
+                ProfileMenuItem(title: "Saved Searches", icon: "magnifyingglass.circle", action: .savedSearches),
                 ProfileMenuItem(title: "Rental History", icon: "clock.circle", action: .rentalHistory),
                 ProfileMenuItem(title: "Payment Methods", icon: "creditcard.circle", action: .paymentMethods),
                 ProfileMenuItem(title: "Notifications", icon: "bell.circle", action: .notifications),
                 ProfileMenuItem(title: "Privacy & Security", icon: "shield.circle", action: .privacy),
-                ProfileMenuItem(title: "Settings", icon: "gear.circle", action: .settings),
-                ProfileMenuItem(title: "Test Real Data", icon: "chart.bar.xaxis", action: .testRealData),
+                ProfileMenuItem(title: "Test Real Data", icon: "testtube.2", action: .testRealData),
+                ProfileMenuItem(title: "Pricing Plans", icon: "crown", action: .pricing),
                 ProfileMenuItem(title: "Invite Friends", icon: "person.2.circle", action: .inviteFriends),
                 ProfileMenuItem(title: "Rate App", icon: "star.circle", action: .rateApp),
                 ProfileMenuItem(title: "Help & Support", icon: "questionmark.circle", action: .support),
@@ -121,12 +223,16 @@ class ProfileViewController: UIViewController {
                 ProfileMenuItem(title: "Sign Out", icon: "rectangle.portrait.and.arrow.right", action: .signOut)
             ]
         } else {
-            // User is not logged in - show limited menu with sign in option
+            // User is not logged in - show limited menu with website features
             menuItems = [
                 ProfileMenuItem(title: "Sign In", icon: "rectangle.portrait.and.arrow.left", action: .signIn),
                 ProfileMenuItem(title: "Browse Properties", icon: "house.circle", action: .browseProperties),
-                ProfileMenuItem(title: "Test Real Data", icon: "chart.bar.xaxis", action: .testRealData),
-                ProfileMenuItem(title: "Settings", icon: "gear.circle", action: .settings),
+                ProfileMenuItem(title: "Student Housing", icon: "graduationcap", action: .studentHousing),
+                ProfileMenuItem(title: "AI Negotiator", icon: "brain.head.profile", action: .aiNegotiator),
+                ProfileMenuItem(title: "Mortgage Calculator", icon: "calculator", action: .mortgageTools),
+                ProfileMenuItem(title: "Legal Help", icon: "scale.3d", action: .legalHelp),
+                ProfileMenuItem(title: "Test Real Data", icon: "testtube.2", action: .testRealData),
+                ProfileMenuItem(title: "Pricing Plans", icon: "crown", action: .pricing),
                 ProfileMenuItem(title: "Rate App", icon: "star.circle", action: .rateApp),
                 ProfileMenuItem(title: "Help & Support", icon: "questionmark.circle", action: .support),
                 ProfileMenuItem(title: "About", icon: "info.circle", action: .about)
@@ -135,7 +241,7 @@ class ProfileViewController: UIViewController {
     }
     
     @objc private func editTapped() {
-        if AuthManager.shared.isLoggedIn {
+        if SessionManager.shared.isSessionValid() {
             let editVC = EditProfileViewController()
             navigationController?.pushViewController(editVC, animated: true)
         } else {
@@ -172,12 +278,32 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
         case .editProfile:
             let editVC = EditProfileViewController()
             navigationController?.pushViewController(editVC, animated: true)
+        case .dashboard:
+            tabBarController?.selectedIndex = 0 // Navigate to dashboard tab
+        case .studentHousing:
+            let studentHousingVC = StudentHousingViewController()
+            navigationController?.pushViewController(studentHousingVC, animated: true)
+        case .sublease:
+            let subleaseVC = SubleaseViewController()
+            navigationController?.pushViewController(subleaseVC, animated: true)
+        case .aiNegotiator:
+            let aiNegotiatorVC = AINegotiatorViewController()
+            navigationController?.pushViewController(aiNegotiatorVC, animated: true)
+        case .mortgageTools:
+            let mortgageToolsVC = MortgageToolsViewController()
+            navigationController?.pushViewController(mortgageToolsVC, animated: true)
+        case .legalHelp:
+            let legalHelpVC = LegalHelpViewController()
+            navigationController?.pushViewController(legalHelpVC, animated: true)
+        case .pricing:
+            let pricingVC = PricingPlansViewController()
+            navigationController?.pushViewController(pricingVC, animated: true)
         case .myListings:
             showFeatureComingSoon("My Listings")
         case .savedSearches:
             showFeatureComingSoon("Saved Searches")
         case .favorites:
-            tabBarController?.selectedIndex = 2 // Navigate to favorites tab
+            tabBarController?.selectedIndex = 3 // Navigate to favorites tab
         case .rentalHistory:
             showFeatureComingSoon("Rental History")
         case .paymentMethods:
@@ -199,7 +325,7 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
         case .about:
             showAbout()
         case .browseProperties:
-            tabBarController?.selectedIndex = 0 // Navigate to home tab
+            tabBarController?.selectedIndex = 1 // Navigate to browse tab
         case .signIn:
             showSignIn()
         case .signOut:
@@ -208,16 +334,23 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     private func loadUserProfile() {
-        if AuthManager.shared.isLoggedIn {
-            APIService.shared.getCurrentUser { [weak self] result in
-                switch result {
-                case .success(let user):
-                    self?.currentUser = user
-                    self?.headerView.configure(with: user)
-                case .failure(let error):
-                    print("Error loading user profile: \(error)")
-                    // Load default profile
-                    self?.headerView.configureDefault()
+        if SessionManager.shared.isSessionValid() {
+            // Use current user from session manager
+            if let user = SessionManager.shared.getCurrentUser() {
+                currentUser = user
+                headerView.configure(with: user)
+            } else {
+                // Fallback to API call if needed
+                APIService.shared.getCurrentUser { [weak self] result in
+                    switch result {
+                    case .success(let user):
+                        self?.currentUser = user
+                        self?.headerView.configure(with: user)
+                    case .failure(let error):
+                        print("Error loading user profile: \(error)")
+                        // Load default profile
+                        self?.headerView.configureDefault()
+                    }
                 }
             }
         } else {
@@ -239,7 +372,11 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
         
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         alert.addAction(UIAlertAction(title: "Sign Out", style: .destructive) { _ in
-            AuthManager.shared.logout()
+            SessionManager.shared.endSession()
+            // Refresh the profile view
+            self.setupMenuItems()
+            self.loadUserProfile()
+            self.menuTableView.reloadData()
         })
         
         present(alert, animated: true)
@@ -459,7 +596,13 @@ struct ProfileMenuItem {
 
 enum ProfileMenuAction {
     case editProfile
+    case dashboard
     case myListings
+    case studentHousing
+    case sublease
+    case aiNegotiator
+    case mortgageTools
+    case legalHelp
     case savedSearches
     case favorites
     case rentalHistory
@@ -468,6 +611,7 @@ enum ProfileMenuAction {
     case privacy
     case settings
     case testRealData
+    case pricing
     case inviteFriends
     case rateApp
     case support

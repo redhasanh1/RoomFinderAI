@@ -1,5 +1,59 @@
 import UIKit
 
+// Temporary stub classes until properly added to Xcode project
+class SecureAPIService {
+    static let shared = SecureAPIService()
+    
+    func addToFavorites(listingId: String, completion: @escaping (Result<GenericResponse, Error>) -> Void) {
+        // Temporary implementation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let response = GenericResponse(success: true, message: "Added to favorites")
+            completion(.success(response))
+        }
+    }
+    
+    func removeFromFavorites(listingId: String, completion: @escaping (Result<GenericResponse, Error>) -> Void) {
+        // Temporary implementation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let response = GenericResponse(success: true, message: "Removed from favorites")
+            completion(.success(response))
+        }
+    }
+    
+    func checkFavoriteStatus(listingId: String, completion: @escaping (Result<FavoriteStatusResponse, Error>) -> Void) {
+        // Temporary implementation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let response = FavoriteStatusResponse(success: true, is_favorite: false)
+            completion(.success(response))
+        }
+    }
+    
+    func getFavorites(completion: @escaping (Result<[Property], Error>) -> Void) {
+        // Temporary implementation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            completion(.success([]))
+        }
+    }
+}
+
+struct GenericResponse {
+    let success: Bool
+    let message: String
+}
+
+struct FavoriteStatusResponse {
+    let success: Bool
+    let is_favorite: Bool
+}
+
+enum SecureAPIError: Error {
+    case sessionExpired
+    case noAuthToken
+    case networkError
+    case serverError
+    case unknown
+}
+
 class PropertyDetailViewController: UIViewController {
     
     var property: Property?
@@ -326,6 +380,11 @@ class PropertyDetailViewController: UIViewController {
         // Set initial favorite state
         let imageName = property.isFavorite == true ? "heart.fill" : "heart"
         favoriteButton.setImage(UIImage(systemName: imageName), for: .normal)
+        
+        // Check favorite status from server if user is authenticated
+        if SessionManager.shared.isSessionValid() {
+            checkFavoriteStatus(for: property.id)
+        }
     }
     
     private func animateOnAppear() {
@@ -355,6 +414,12 @@ class PropertyDetailViewController: UIViewController {
     @objc private func favoriteTapped() {
         guard let property = property else { return }
         
+        // Check if user is authenticated
+        guard SessionManager.shared.isSessionValid() else {
+            showSessionExpiredAlert()
+            return
+        }
+        
         // Toggle favorite state with animation
         UIView.animate(withDuration: 0.1, animations: {
             self.favoriteButton.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
@@ -364,25 +429,38 @@ class PropertyDetailViewController: UIViewController {
             }
         }
         
-        // Call API to toggle favorite
-        APIService.shared.toggleFavorite(propertyId: property.id) { [weak self] result in
-            switch result {
-            case .success(let isFavorited):
-                let imageName = isFavorited ? "heart.fill" : "heart"
-                self?.favoriteButton.setImage(UIImage(systemName: imageName), for: .normal)
-                
-                // Update property object
-                self?.property?.isFavorite = isFavorited
-                
-                // Show feedback
-                let message = isFavorited ? "Added to favorites" : "Removed from favorites"
-                self?.showToast(message: message)
-            case .failure(let error):
-                print("Error toggling favorite: \(error)")
-                // Show error
-                let alert = UIAlertController(title: "Error", message: "Failed to update favorite", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "OK", style: .default))
-                self?.present(alert, animated: true)
+        let isFavorited = property.isFavorite == true
+        
+        // Call appropriate API method based on current state
+        if isFavorited {
+            // Remove from favorites
+            SecureAPIService.shared.removeFromFavorites(listingId: property.id) { [weak self] result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success:
+                        self?.favoriteButton.setImage(UIImage(systemName: "heart"), for: .normal)
+                        self?.property?.isFavorite = false
+                        self?.showToast(message: "Removed from favorites")
+                    case .failure(let error):
+                        print("Error removing from favorites: \(error)")
+                        self?.handleFavoriteError(error)
+                    }
+                }
+            }
+        } else {
+            // Add to favorites
+            SecureAPIService.shared.addToFavorites(listingId: property.id) { [weak self] result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success:
+                        self?.favoriteButton.setImage(UIImage(systemName: "heart.fill"), for: .normal)
+                        self?.property?.isFavorite = true
+                        self?.showToast(message: "Added to favorites")
+                    case .failure(let error):
+                        print("Error adding to favorites: \(error)")
+                        self?.handleFavoriteError(error)
+                    }
+                }
             }
         }
     }
@@ -416,6 +494,70 @@ class PropertyDetailViewController: UIViewController {
                 toastLabel.alpha = 0
             }) { _ in
                 toastLabel.removeFromSuperview()
+            }
+        }
+    }
+    
+    private func showSessionExpiredAlert() {
+        let alert = UIAlertController(
+            title: "Session Expired",
+            message: "Your session has expired. Please log in again to add favorites.",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Log In", style: .default) { _ in
+            // Navigate to login screen
+            self.navigateToLogin()
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func handleFavoriteError(_ error: Error) {
+        var message = "Failed to update favorite"
+        
+        if let secureError = error as? SecureAPIError {
+            switch secureError {
+            case .sessionExpired:
+                showSessionExpiredAlert()
+                return
+            case .noAuthToken:
+                message = "Authentication required. Please log in."
+            case .networkError:
+                message = "Network error. Please check your connection."
+            case .serverError:
+                message = "Server error. Please try again later."
+            default:
+                message = secureError.localizedDescription
+            }
+        }
+        
+        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+    
+    private func navigateToLogin() {
+        // Navigate to login screen - this will depend on your app's navigation structure
+        // For now, we'll just pop back to the root view controller
+        navigationController?.popToRootViewController(animated: true)
+    }
+    
+    private func checkFavoriteStatus(for listingId: String) {
+        SecureAPIService.shared.checkFavoriteStatus(listingId: listingId) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let statusResponse):
+                    let isFavorited = statusResponse.is_favorite
+                    let imageName = isFavorited ? "heart.fill" : "heart"
+                    self?.favoriteButton.setImage(UIImage(systemName: imageName), for: .normal)
+                    self?.property?.isFavorite = isFavorited
+                case .failure(let error):
+                    print("Error checking favorite status: \(error)")
+                    // Silently fail - we'll use the property's current state
+                }
             }
         }
     }

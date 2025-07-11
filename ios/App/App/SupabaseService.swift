@@ -3,8 +3,13 @@ import UIKit
 
 // MARK: - Configuration
 struct SupabaseConfig {
-    static let url = "https://roomfinderai-production.up.railway.app"
+    // Use Railway backend for now, but can switch to direct Supabase later
+    static let url = "https://roomfinder-ai-negotiator-production.up.railway.app"
     static let apiPath = "/api"
+    
+    // Direct Supabase configuration (for future use)
+    static let supabaseURL = "https://zmxyysauqtfkvntgtjsm.supabase.co"
+    static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpteHl5c2F1cXRma3ZudGd0anNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY5NTc3OTQsImV4cCI6MjA1MjUzMzc5NH0.F6M7G-fxnRDnKzWAWgO4y0Z7IuKIDaecvSUBz8aVeQM"
     
     struct Endpoints {
         static let config = "/config"
@@ -14,6 +19,8 @@ struct SupabaseConfig {
         static let messages = "/messages"
         static let aiChats = "/ai-chats"
         static let auth = "/auth"
+        static let negotiate = "/ai/negotiate"
+        static let analytics = "/analytics"
     }
 }
 

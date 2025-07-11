@@ -38,7 +38,10 @@
       "Bash(npm install:*)",
       "Bash(npx tailwindcss init:*)",
       "Bash(npx cap copy:*)",
-      "Bash(npx cap open:*)"
+      "Bash(npx cap open:*)",
+      "Bash(sudo gem install:*)",
+      "Bash(gem install:*)",
+      "Bash(/Users/arsalanamirali/.gem/ruby/2.6.0/bin/pod install)"
     ],
     "deny": []
   }
