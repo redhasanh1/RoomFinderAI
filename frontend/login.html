@@ -401,13 +401,23 @@
                     
                     if (response.ok) {
                         // Find the actual user data from localStorage
-                        const users = JSON.parse(localStorage.getItem('users')) || [];
-                        let existingUser = users.find(u => u.email === email);
+                        let users = [];
+                        try {
+                            users = JSON.parse(localStorage.getItem('users')) || [];
+                        } catch (e) {
+                            console.error('Error parsing users from localStorage:', e);
+                            users = [];
+                        }
                         
-                        // If user not found in localStorage, create a basic user object
-                        // This maintains backward compatibility for users registered before the fix
-                        if (!existingUser) {
-                            existingUser = {
+                        let existingUser = users.find(u => u && u.email === email);
+                        
+                        // If user found, use their saved data; otherwise create basic user
+                        if (existingUser) {
+                            // Use existing user data (preserves name and profile picture)
+                            localStorage.setItem('currentUser', JSON.stringify(existingUser));
+                        } else {
+                            // Create basic user for backward compatibility
+                            const newUser = {
                                 firstName: 'User',
                                 lastName: 'Name',
                                 email: email,
@@ -418,11 +428,11 @@
                             };
                             
                             // Add to users array for future logins
-                            users.push(existingUser);
+                            users.push(newUser);
                             localStorage.setItem('users', JSON.stringify(users));
+                            localStorage.setItem('currentUser', JSON.stringify(newUser));
                         }
                         
-                        localStorage.setItem('currentUser', JSON.stringify(existingUser));
                         // Redirect to verification modal before going to home page
                         window.location.href = 'verification-modal.html?redirect=index.html';
                     } else {
@@ -527,11 +537,25 @@
                     };
                     
                     // Add user to users array in localStorage
-                    const users = JSON.parse(localStorage.getItem('users')) || [];
-                    users.push(user);
-                    localStorage.setItem('users', JSON.stringify(users));
+                    let users = [];
+                    try {
+                        users = JSON.parse(localStorage.getItem('users')) || [];
+                    } catch (e) {
+                        console.error('Error parsing users:', e);
+                        users = [];
+                    }
                     
-                    // Set as current user
+                    // Check if user already exists to avoid duplicates
+                    const existingUserIndex = users.findIndex(u => u && u.email === user.email);
+                    if (existingUserIndex >= 0) {
+                        // Update existing user
+                        users[existingUserIndex] = user;
+                    } else {
+                        // Add new user
+                        users.push(user);
+                    }
+                    
+                    localStorage.setItem('users', JSON.stringify(users));
                     localStorage.setItem('currentUser', JSON.stringify(user));
                     alert('Email verified successfully! Welcome to RoomFinder AI.');
                     // Redirect to verification modal before going to home page
