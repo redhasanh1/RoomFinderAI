@@ -56,7 +56,7 @@ function updateAuthSection() {
         const profileImage = currentUser.profileImage || DEFAULT_PROFILE_IMAGE;
         
         authSection.innerHTML = `
-            <a href="/profile" class="profile-link">
+            <a href="profile.html" class="profile-link">
                 <img id="profileLogo" src="${profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo hover:ring-2 hover:ring-blue-500 transition-all duration-200">
             </a>
         `;
@@ -65,7 +65,7 @@ function updateAuthSection() {
     } else {
         // User is not logged in - show login/register
         authSection.innerHTML = `
-            <a href="/login" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+            <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
                 Login/Register
             </a>
         `;
@@ -203,6 +203,20 @@ document.addEventListener('visibilitychange', function() {
     if (!document.hidden) {
         refreshAuthState();
     }
+});
+
+// Listen for storage changes to update profile image
+window.addEventListener('storage', (e) => {
+    if (e.key === 'currentUser') {
+        console.log('Current user updated in storage, refreshing auth section');
+        updateAuthSection();
+    }
+});
+
+// Also listen for custom events for same-window updates
+window.addEventListener('userProfileUpdated', () => {
+    console.log('User profile updated, refreshing auth section');
+    updateAuthSection();
 });
 
 // Export functions for use in other scripts
