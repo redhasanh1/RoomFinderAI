@@ -400,37 +400,74 @@
                     const result = await response.json();
                     
                     if (response.ok) {
-                        // Find the actual user data from localStorage
-                        let users = [];
+                        // First check if we have a currentUser that matches this email
+                        let currentUser = null;
                         try {
-                            users = JSON.parse(localStorage.getItem('users')) || [];
+                            const storedUser = localStorage.getItem('currentUser');
+                            if (storedUser) {
+                                const parsedUser = JSON.parse(storedUser);
+                                if (parsedUser && parsedUser.email === email) {
+                                    currentUser = parsedUser;
+                                }
+                            }
                         } catch (e) {
-                            console.error('Error parsing users from localStorage:', e);
-                            users = [];
+                            console.error('Error parsing currentUser:', e);
                         }
                         
-                        let existingUser = users.find(u => u && u.email === email);
-                        
-                        // If user found, use their saved data; otherwise create basic user
-                        if (existingUser) {
-                            // Use existing user data (preserves name and profile picture)
-                            localStorage.setItem('currentUser', JSON.stringify(existingUser));
-                        } else {
-                            // Create basic user for backward compatibility
-                            const newUser = {
-                                firstName: 'User',
-                                lastName: 'Name',
-                                email: email,
-                                profileImage: 'https://via.placeholder.com/40',
-                                aiChats: [],
-                                listings: [],
-                                emailVerified: true
-                            };
+                        // If we have a matching currentUser, use it
+                        if (currentUser) {
+                            // Preserve the existing user data including name
+                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
                             
-                            // Add to users array for future logins
-                            users.push(newUser);
+                            // Also ensure this user is in the users array
+                            let users = [];
+                            try {
+                                users = JSON.parse(localStorage.getItem('users')) || [];
+                            } catch (e) {
+                                users = [];
+                            }
+                            
+                            // Update or add user to users array
+                            const userIndex = users.findIndex(u => u && u.email === email);
+                            if (userIndex >= 0) {
+                                users[userIndex] = currentUser;
+                            } else {
+                                users.push(currentUser);
+                            }
                             localStorage.setItem('users', JSON.stringify(users));
-                            localStorage.setItem('currentUser', JSON.stringify(newUser));
+                        } else {
+                            // No currentUser match, check users array
+                            let users = [];
+                            try {
+                                users = JSON.parse(localStorage.getItem('users')) || [];
+                            } catch (e) {
+                                console.error('Error parsing users from localStorage:', e);
+                                users = [];
+                            }
+                            
+                            let existingUser = users.find(u => u && u.email === email);
+                            
+                            // If user found, use their saved data; otherwise create basic user
+                            if (existingUser) {
+                                // Use existing user data (preserves name and profile picture)
+                                localStorage.setItem('currentUser', JSON.stringify(existingUser));
+                            } else {
+                                // Create basic user for backward compatibility
+                                const newUser = {
+                                    firstName: 'User',
+                                    lastName: 'Name',
+                                    email: email,
+                                    profileImage: 'https://via.placeholder.com/40',
+                                    aiChats: [],
+                                    listings: [],
+                                    emailVerified: true
+                                };
+                                
+                                // Add to users array for future logins
+                                users.push(newUser);
+                                localStorage.setItem('users', JSON.stringify(users));
+                                localStorage.setItem('currentUser', JSON.stringify(newUser));
+                            }
                         }
                         
                         // Redirect to verification modal before going to home page
