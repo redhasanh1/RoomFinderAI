@@ -428,6 +428,57 @@
             color: white;
             transform: translateY(-2px);
         }
+        
+        /* Mobile-specific optimizations */
+        @media (max-width: 768px) {
+            .modern-pricing-card {
+                margin-bottom: 1.5rem;
+                border-radius: 16px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            }
+            
+            .modern-pricing-card:hover {
+                transform: none; /* Disable hover scaling on mobile */
+            }
+            
+            /* Improve touch targets */
+            .mobile-menu-item,
+            .pricing-button,
+            .pricing-button-secondary {
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            /* Better spacing for mobile */
+            .grid.grid-cols-1 {
+                gap: 1rem;
+            }
+            
+            /* Improved typography for mobile readability */
+            h1, h2, h3 {
+                line-height: 1.2;
+            }
+            
+            /* Feature list optimization for mobile */
+            ul li {
+                padding: 0.5rem 0;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            }
+            
+            ul li:last-child {
+                border-bottom: none;
+            }
+        }
+        
+        /* Safe area handling for devices with notches */
+        @supports (padding: max(0px)) {
+            .mobile-menu-content {
+                padding-top: max(1rem, env(safe-area-inset-top));
+                padding-bottom: max(1rem, env(safe-area-inset-bottom));
+            }
+        }
         .login-link {
             transition: color 0.2s ease-in-out;
         }
@@ -439,6 +490,42 @@
         }
         .profile-logo:hover {
             transform: scale(1.1);
+        }
+        
+        /* Pricing card styles */
+        .modern-pricing-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            border: 1px solid #f1f5f9;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .modern-pricing-card:hover {
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            transform: translateY(-4px);
+        }
+        
+        .featured-card {
+            border: 2px solid #667eea;
+            position: relative;
+        }
+        
+        .featured-card::before {
+            content: 'Most Popular';
+            position: absolute;
+            top: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 24px;
+            border-radius: 0 0 12px 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            z-index: 10;
         }
     </style>
 </head>
@@ -564,26 +651,26 @@
     </header>
 
     <!-- Pricing Section -->
-    <section class="flex-grow w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 class="text-5xl font-extrabold gradient-text text-center mb-8">Choose Your Plan</h1>
-        <p class="text-xl text-gray-600 text-center mb-16">Select the perfect subscription plan to unlock the full potential of RoomFinderAI, tailored to your needs.</p>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <section class="flex-grow w-[95%] sm:w-[90%] lg:w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold gradient-text text-center mb-6 sm:mb-8 leading-tight">Choose Your Plan</h1>
+        <p class="text-lg sm:text-xl text-gray-600 text-center mb-12 sm:mb-16 max-w-3xl mx-auto px-4">Select the perfect subscription plan to unlock the full potential of RoomFinderAI, tailored to your needs.</p>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
             <!-- Basic Plan -->
-            <div class="modern-pricing-card p-8 text-center">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Basic</h2>
-                <p class="text-4xl font-extrabold text-blue-600 mb-4">$9.99<span class="text-lg font-normal text-gray-600">/mo</span></p>
+            <div class="modern-pricing-card p-6 sm:p-8 text-center transition-all duration-300 hover:scale-105">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Basic</h2>
+                <p class="text-3xl sm:text-4xl font-extrabold text-blue-600 mb-4">$9.99<span class="text-base sm:text-lg font-normal text-gray-600">/mo</span></p>
                 <p class="text-gray-600 mb-6">Perfect for individuals starting their room search.</p>
                 <ul class="text-gray-600 text-left mb-6 space-y-2">
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Up to 5 listings per month</li>
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Basic search filters</li>
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Email support</li>
                 </ul>
-                <a href="/payment?plan=basic&price=9.99" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Choose Basic</a>
+                <a href="/payment?plan=basic&price=9.99" class="inline-block w-full sm:w-auto bg-blue-600 text-white px-6 py-4 sm:py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg text-center min-h-[44px] flex items-center justify-center">Choose Basic</a>
             </div>
             <!-- Pro Plan -->
-            <div class="modern-pricing-card featured-card p-8 text-center">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Pro</h2>
-                <p class="text-4xl font-extrabold text-blue-600 mb-4">$19.99<span class="text-lg font-normal text-gray-600">/mo</span></p>
+            <div class="modern-pricing-card featured-card p-6 sm:p-8 text-center transition-all duration-300 hover:scale-105 relative">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Pro</h2>
+                <p class="text-3xl sm:text-4xl font-extrabold text-blue-600 mb-4">$19.99<span class="text-base sm:text-lg font-normal text-gray-600">/mo</span></p>
                 <p class="text-gray-600 mb-6">Ideal for active searchers with advanced needs.</p>
                 <ul class="text-gray-600 text-left mb-6 space-y-2">
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Up to 20 listings per month</li>
@@ -592,12 +679,12 @@
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Advanced search filters</li>
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Priority email support</li>
                 </ul>
-                <a href="/payment?plan=pro&price=19.99" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Choose Pro</a>
+                <a href="/payment?plan=pro&price=19.99" class="inline-block w-full sm:w-auto bg-blue-600 text-white px-6 py-4 sm:py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg text-center min-h-[44px] flex items-center justify-center">Choose Pro</a>
             </div>
             <!-- Premium Plan -->
-            <div class="modern-pricing-card p-8 text-center">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Premium</h2>
-                <p class="text-4xl font-extrabold text-blue-600 mb-4">$39.99<span class="text-lg font-normal text-gray-600">/mo</span></p>
+            <div class="modern-pricing-card p-6 sm:p-8 text-center transition-all duration-300 hover:scale-105">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Premium</h2>
+                <p class="text-3xl sm:text-4xl font-extrabold text-blue-600 mb-4">$39.99<span class="text-base sm:text-lg font-normal text-gray-600">/mo</span></p>
                 <p class="text-gray-600 mb-6">Ultimate plan for power users and landlords.</p>
                 <ul class="text-gray-600 text-left mb-6 space-y-2">
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Unlimited listings</li>
@@ -608,23 +695,23 @@
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Analytics dashboard</li>
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Dedicated account manager</li>
                 </ul>
-                <a href="/payment?plan=premium&price=39.99" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">Choose Premium</a>
+                <a href="/payment?plan=premium&price=39.99" class="inline-block w-full sm:w-auto bg-blue-600 text-white px-6 py-4 sm:py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg text-center min-h-[44px] flex items-center justify-center">Choose Premium</a>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
     <footer class="bg-gray-800 text-white py-8">
-        <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="w-[95%] sm:w-[90%] lg:w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
-            <div class="mt-4 flex justify-center space-x-4">
-                <a href="/index" class="hover:text-blue-400">Home</a>
-                <a href="/index#about" class="hover:text-blue-400">About</a>
-                <a href="/sublease" class="hover:text-blue-400">Sublease</a>
-                <a href="/ai-negotiator" class="hover:text-blue-400">AI Negotiator</a>
-                <a href="/listings" class="hover:text-blue-400">Listings</a>
-                <a href="/pricing" class="hover:text-blue-400">Pricing</a>
-                <a href="/index#contact" class="hover:text-blue-400">Contact</a>
+            <div class="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2 sm:gap-x-6">
+                <a href="/index" class="hover:text-blue-400 transition-colors py-2 px-1">Home</a>
+                <a href="/index#about" class="hover:text-blue-400 transition-colors py-2 px-1">About</a>
+                <a href="/sublease" class="hover:text-blue-400 transition-colors py-2 px-1">Sublease</a>
+                <a href="/ai-negotiator" class="hover:text-blue-400 transition-colors py-2 px-1">AI Negotiator</a>
+                <a href="/listings" class="hover:text-blue-400 transition-colors py-2 px-1">Listings</a>
+                <a href="/pricing" class="hover:text-blue-400 transition-colors py-2 px-1">Pricing</a>
+                <a href="/index#contact" class="hover:text-blue-400 transition-colors py-2 px-1">Contact</a>
             </div>
         </div>
     </footer>
