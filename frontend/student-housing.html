@@ -471,17 +471,81 @@
         .step-card.active .step-number {
             opacity: 0;
         }
+        
+        /* Enhanced step states */
+        .step-card.completed {
+            border-color: #10b981;
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        }
+        
+        .step-card.completed .step-circle {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .step-card.completed .step-title {
+            color: #059669;
+        }
+        
+        .step-card.pending {
+            border-color: #d1d5db;
+            background: #f9fafb;
+            opacity: 0.7;
+        }
+        
+        .step-card.pending .step-circle {
+            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+        }
+        
+        .step-card.pending .step-title {
+            color: #6b7280;
+        }
 
         .step-title {
             font-size: 1.125rem;
             font-weight: 600;
             color: #374151;
             margin-bottom: 0.5rem;
+            transition: color 0.3s ease;
         }
 
         .step-desc {
             font-size: 0.875rem;
             color: #6b7280;
+            transition: color 0.3s ease;
+        }
+        
+        /* Navigation buttons */
+        .step-nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            border: 2px solid transparent;
+        }
+        
+        .step-nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .step-nav-button.primary {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            color: white;
+        }
+        
+        .step-nav-button.secondary {
+            background: white;
+            color: #6b7280;
+            border-color: #d1d5db;
+        }
+        
+        .step-nav-button.secondary:hover {
+            border-color: #8b5cf6;
+            color: #8b5cf6;
         }
 
         /* Modern Input Styles */
@@ -1904,6 +1968,17 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Step Navigation -->
+            <div class="flex justify-between items-center mt-12">
+                <button onclick="scrollToSection('quick-start')" class="step-nav-button secondary">
+                    ← Back to Overview
+                </button>
+                <span class="text-gray-500 font-medium">Step 1 of 5</span>
+                <button onclick="goToStep(2)" class="step-nav-button primary">
+                    Next: Housing Options →
+                </button>
+            </div>
         </div>
     </section>
 
@@ -2133,6 +2208,446 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Step Navigation -->
+            <div class="flex justify-between items-center mt-12">
+                <button onclick="goToStep(1)" class="step-nav-button secondary">
+                    ← Previous: Budget Calculator
+                </button>
+                <span class="text-gray-500 font-medium">Step 2 of 5</span>
+                <button onclick="goToStep(3)" class="step-nav-button primary">
+                    Next: Find Roommates →
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Step 3: Roommate Matching -->
+    <section id="roommate-step" class="py-16 bg-white">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <div class="inline-flex items-center bg-green-100 rounded-full px-4 py-2 mb-4">
+                    <span class="text-green-600 font-medium">👥 Step 3 of 5</span>
+                </div>
+                <h2 class="text-4xl font-bold mb-4 gradient-text-student">Find Your Perfect Roommates</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Get matched with compatible roommates based on lifestyle, habits, and preferences.</p>
+            </div>
+            
+            <div class="grid lg:grid-cols-2 gap-12 items-start">
+                <!-- Compatibility Quiz -->
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-8 border border-green-100">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Compatibility Quiz</h3>
+                        <p class="text-gray-700 mb-6">Answer a few questions to get matched with compatible roommates based on lifestyle, habits, and preferences.</p>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">What's your ideal bedtime?</label>
+                                <select class="modern-input">
+                                    <option>Before 10 PM (Early Bird)</option>
+                                    <option>10 PM - 11 PM (Moderate)</option>
+                                    <option>11 PM - 12 AM (Night Owl)</option>
+                                    <option>After 12 AM (Late Night)</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">How clean do you keep your space?</label>
+                                <select class="modern-input">
+                                    <option>Very organized and clean</option>
+                                    <option>Moderately clean</option>
+                                    <option>Lived-in but not messy</option>
+                                    <option>Relaxed about cleanliness</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">How often do you have guests over?</label>
+                                <select class="modern-input">
+                                    <option>Rarely/Never</option>
+                                    <option>Occasionally (weekends)</option>
+                                    <option>Regularly (few times a week)</option>
+                                    <option>Frequently (daily)</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Study environment preference?</label>
+                                <select class="modern-input">
+                                    <option>Complete silence</option>
+                                    <option>Background music okay</option>
+                                    <option>Group study friendly</option>
+                                    <option>Flexible/adaptable</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button class="w-full mt-6 bg-green-600 text-white font-bold py-4 rounded-lg hover:bg-green-700 transition-all duration-300">
+                            🧠 Start Compatibility Quiz (2 min)
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Roommate Matches Preview -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg sticky top-8">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Your Potential Matches</h3>
+                        
+                        <div class="space-y-4">
+                            <!-- Match 1 -->
+                            <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                                <div class="flex items-center gap-4">
+                                    <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Sarah" class="w-12 h-12 rounded-full">
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-green-800">Sarah M.</h4>
+                                        <p class="text-sm text-green-600">95% Match • Psychology Major</p>
+                                        <div class="flex gap-2 mt-2">
+                                            <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Early sleeper</span>
+                                            <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Very clean</span>
+                                        </div>
+                                    </div>
+                                    <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">Connect</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Match 2 -->
+                            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                <div class="flex items-center gap-4">
+                                    <img src="https://randomuser.me/api/portraits/men/24.jpg" alt="Alex" class="w-12 h-12 rounded-full">
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-blue-800">Alex K.</h4>
+                                        <p class="text-sm text-blue-600">87% Match • Engineering Major</p>
+                                        <div class="flex gap-2 mt-2">
+                                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Study friendly</span>
+                                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Active lifestyle</span>
+                                        </div>
+                                    </div>
+                                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Connect</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Match 3 -->
+                            <div class="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                                <div class="flex items-center gap-4">
+                                    <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Emma" class="w-12 h-12 rounded-full">
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-purple-800">Emma R.</h4>
+                                        <p class="text-sm text-purple-600">82% Match • Art Major</p>
+                                        <div class="flex gap-2 mt-2">
+                                            <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">Creative</span>
+                                            <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">Music lover</span>
+                                        </div>
+                                    </div>
+                                    <button class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">Connect</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Next Step -->
+                        <button onclick="goToStep(4)" class="w-full mt-6 bg-gradient-to-r from-green-600 to-blue-600 text-white font-bold py-4 rounded-lg hover:from-green-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                            Next: Safety & Legal Protection →
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step Navigation -->
+            <div class="flex justify-between items-center mt-12">
+                <button onclick="goToStep(2)" class="step-nav-button secondary">
+                    ← Previous: Housing Options
+                </button>
+                <span class="text-gray-500 font-medium">Step 3 of 5</span>
+                <button onclick="goToStep(4)" class="step-nav-button primary">
+                    Next: Stay Protected →
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Step 4: Safety & Legal Protection -->
+    <section id="safety-step" class="py-16 bg-gradient-to-br from-gray-50 to-red-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <div class="inline-flex items-center bg-red-100 rounded-full px-4 py-2 mb-4">
+                    <span class="text-red-600 font-medium">🛡️ Step 4 of 5</span>
+                </div>
+                <h2 class="text-4xl font-bold mb-4 gradient-text-student">Stay Protected & Safe</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Essential safety tips, legal guidance, and protection from housing scams.</p>
+            </div>
+            
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Safety Checklist -->
+                <div class="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Safety Checklist</h3>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-3 text-red-600">
+                            <span class="text-sm">Check all locks on doors and windows</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-3 text-red-600">
+                            <span class="text-sm">Test smoke and carbon detectors</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-3 text-red-600">
+                            <span class="text-sm">Locate fire exits and emergency routes</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-3 text-red-600">
+                            <span class="text-sm">Verify lighting in hallways</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-3 text-red-600">
+                            <span class="text-sm">Get emergency contact numbers</span>
+                        </label>
+                    </div>
+                    
+                    <button class="w-full mt-6 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold">
+                        📋 Download Full Safety Checklist
+                    </button>
+                </div>
+                
+                <!-- Legal Protection -->
+                <div class="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Legal Protection</h3>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-blue-800 mb-2">Lease Review</h4>
+                            <p class="text-sm text-blue-700">Free legal review of your lease agreement before signing</p>
+                        </div>
+                        
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-green-800 mb-2">Tenant Rights</h4>
+                            <p class="text-sm text-green-700">Know your rights and responsibilities as a tenant</p>
+                        </div>
+                        
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-yellow-800 mb-2">Scam Protection</h4>
+                            <p class="text-sm text-yellow-700">Learn to identify and avoid housing scams</p>
+                        </div>
+                    </div>
+                    
+                    <button class="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                        ⚖️ Get Free Legal Help
+                    </button>
+                </div>
+                
+                <!-- Emergency Contacts -->
+                <div class="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Emergency Contacts</h3>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="bg-red-100 p-3 rounded-lg">
+                            <div class="font-semibold text-red-800">Emergency: 911</div>
+                            <div class="text-sm text-red-700">Police, Fire, Medical</div>
+                        </div>
+                        
+                        <div class="bg-blue-100 p-3 rounded-lg">
+                            <div class="font-semibold text-blue-800">Campus Security</div>
+                            <div class="text-sm text-blue-700">Check with your university</div>
+                        </div>
+                        
+                        <div class="bg-green-100 p-3 rounded-lg">
+                            <div class="font-semibold text-green-800">Maintenance</div>
+                            <div class="text-sm text-green-700">For non-emergency issues</div>
+                        </div>
+                        
+                        <div class="bg-purple-100 p-3 rounded-lg">
+                            <div class="font-semibold text-purple-800">RoomFinderAI Support</div>
+                            <div class="text-sm text-purple-700">24/7 housing assistance</div>
+                        </div>
+                    </div>
+                    
+                    <button class="w-full mt-6 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold">
+                        📞 Save Contacts to Phone
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Next Step -->
+            <div class="text-center mt-12">
+                <button onclick="goToStep(5)" class="bg-gradient-to-r from-red-600 to-green-600 text-white font-bold px-12 py-5 rounded-full hover:from-red-700 hover:to-green-700 transition-all duration-300 text-xl transform hover:scale-105 shadow-xl">
+                    🎉 Final Step: Complete Your Journey →
+                </button>
+            </div>
+            
+            <!-- Step Navigation -->
+            <div class="flex justify-between items-center mt-12">
+                <button onclick="goToStep(3)" class="step-nav-button secondary">
+                    ← Previous: Find Roommates
+                </button>
+                <span class="text-gray-500 font-medium">Step 4 of 5</span>
+                <button onclick="goToStep(5)" class="step-nav-button primary">
+                    Final Step: Move In! →
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Step 5: Move In & Resources -->
+    <section id="resources-step" class="py-16 bg-gradient-to-br from-green-50 to-purple-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <div class="inline-flex items-center bg-green-100 rounded-full px-4 py-2 mb-4">
+                    <span class="text-green-600 font-medium">🎉 Step 5 of 5</span>
+                </div>
+                <h2 class="text-4xl font-bold mb-4 gradient-text-student">You're Ready to Move In!</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Congratulations! You now have everything you need for successful student housing.</p>
+            </div>
+            
+            <div class="grid lg:grid-cols-2 gap-12">
+                <!-- Move-in Checklist -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Move-In Checklist</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <h4 class="font-semibold text-green-800 mb-2">📋 Before Move-In</h4>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="mr-2 text-green-600">
+                                        <span class="text-sm">Confirm move-in date and time</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="mr-2 text-green-600">
+                                        <span class="text-sm">Get keys and access codes</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="mr-2 text-green-600">
+                                        <span class="text-sm">Document existing damage</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="font-semibold text-blue-800 mb-2">📦 First Week Tasks</h4>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="mr-2 text-blue-600">
+                                        <span class="text-sm">Set up utilities and internet</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="mr-2 text-blue-600">
+                                        <span class="text-sm">Update your address</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="mr-2 text-blue-600">
+                                        <span class="text-sm">Meet your neighbors</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-purple-50 p-4 rounded-lg">
+                                <h4 class="font-semibold text-purple-800 mb-2">🏠 Getting Settled</h4>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="mr-2 text-purple-600">
+                                        <span class="text-sm">Organize common areas with roommates</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="mr-2 text-purple-600">
+                                        <span class="text-sm">Establish house rules and schedules</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" class="mr-2 text-purple-600">
+                                        <span class="text-sm">Plan your study space</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Success & Resources -->
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl p-8 text-white text-center">
+                        <h3 class="text-2xl font-bold mb-4">🎉 Congratulations!</h3>
+                        <p class="text-green-100 mb-6">You've completed your housing journey! You now have:</p>
+                        
+                        <div class="grid grid-cols-2 gap-4 text-left">
+                            <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                                <div class="font-semibold">💰 Clear Budget</div>
+                                <div class="text-sm text-green-100">Know exactly what you can afford</div>
+                            </div>
+                            <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                                <div class="font-semibold">🏠 Housing Options</div>
+                                <div class="text-sm text-blue-100">Compared all the best choices</div>
+                            </div>
+                            <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                                <div class="font-semibold">👥 Roommate Matches</div>
+                                <div class="text-sm text-green-100">Found compatible people</div>
+                            </div>
+                            <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                                <div class="font-semibold">🛡️ Legal Protection</div>
+                                <div class="text-sm text-blue-100">Know your rights and safety</div>
+                            </div>
+                        </div>
+                        
+                        <button class="w-full mt-6 bg-white text-green-600 font-bold py-4 rounded-lg hover:bg-gray-100 transition-colors shadow-lg">
+                            🏡 Start Your Housing Search Now
+                        </button>
+                    </div>
+                    
+                    <!-- Ongoing Support -->
+                    <div class="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
+                        <h3 class="text-xl font-bold mb-4 text-gray-800">Ongoing Support & Resources</h3>
+                        
+                        <div class="space-y-3">
+                            <a href="https://www.roomfinderai.com/profile.html" class="block bg-blue-50 p-3 rounded-lg hover:bg-blue-100 transition-colors">
+                                <div class="font-semibold text-blue-800">📊 Your Dashboard</div>
+                                <div class="text-sm text-blue-600">Track applications and manage your profile</div>
+                            </a>
+                            
+                            <a href="https://www.roomfinderai.com/legal.html" class="block bg-green-50 p-3 rounded-lg hover:bg-green-100 transition-colors">
+                                <div class="font-semibold text-green-800">⚖️ Legal Help Center</div>
+                                <div class="text-sm text-green-600">Free legal assistance and resources</div>
+                            </a>
+                            
+                            <a href="https://www.roomfinderai.com/listings" class="block bg-purple-50 p-3 rounded-lg hover:bg-purple-100 transition-colors">
+                                <div class="font-semibold text-purple-800">🔍 Browse Listings</div>
+                                <div class="text-sm text-purple-600">Search available housing options</div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step Navigation -->
+            <div class="flex justify-between items-center mt-12">
+                <button onclick="goToStep(4)" class="step-nav-button secondary">
+                    ← Previous: Stay Protected
+                </button>
+                <span class="text-gray-500 font-medium">Step 5 of 5 - Complete!</span>
+                <button onclick="scrollToSection('quick-start')" class="step-nav-button primary">
+                    Start Over →
+                </button>
+            </div>
+        </div>
+    </section>
 
             <!-- Budget Calculator Tab -->
             <div id="budget-tab" class="tab-content hidden">
@@ -2873,20 +3388,28 @@
         let currentStep = 1;
         
         function goToStep(stepNumber) {
+            if (stepNumber < 1 || stepNumber > 5) return;
+            
             currentStep = stepNumber;
             
-            // Update step cards
+            // Update step cards with completed, active, and pending states
             document.querySelectorAll('.step-card').forEach((card, index) => {
-                card.classList.remove('active');
-                if (index + 1 === stepNumber) {
+                const stepNum = index + 1;
+                card.classList.remove('active', 'completed', 'pending');
+                
+                if (stepNum < stepNumber) {
+                    card.classList.add('completed');
+                } else if (stepNum === stepNumber) {
                     card.classList.add('active');
+                } else {
+                    card.classList.add('pending');
                 }
             });
             
-            // Update progress line
+            // Update progress line with smooth animation
             const progressLine = document.getElementById('progress-line');
             if (progressLine) {
-                const percentage = (stepNumber / 5) * 100;
+                const percentage = ((stepNumber - 1) / 4) * 100; // 0% to 100% for 5 steps
                 progressLine.style.width = percentage + '%';
             }
             
@@ -2901,8 +3424,56 @@
             
             const targetSection = document.getElementById(sectionMap[stepNumber]);
             if (targetSection) {
-                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Add a small delay to allow CSS transitions to complete
+                setTimeout(() => {
+                    targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
             }
+            
+            // Update step cards with better visual feedback
+            updateStepVisuals(stepNumber);
+        }
+        
+        function goToNextStep() {
+            if (currentStep < 5) {
+                goToStep(currentStep + 1);
+            }
+        }
+        
+        function goToPreviousStep() {
+            if (currentStep > 1) {
+                goToStep(currentStep - 1);
+            }
+        }
+        
+        function updateStepVisuals(activeStep) {
+            document.querySelectorAll('.step-card').forEach((card, index) => {
+                const stepNum = index + 1;
+                const stepCircle = card.querySelector('.step-circle');
+                const stepNumber = card.querySelector('.step-number');
+                const stepIcon = card.querySelector('.step-icon');
+                
+                if (stepNum < activeStep) {
+                    // Completed step
+                    if (stepNumber) stepNumber.style.display = 'none';
+                    if (stepIcon) stepIcon.style.display = 'none';
+                    stepCircle.innerHTML = '<span class="text-white text-lg">✓</span>';
+                    stepCircle.classList.add('bg-green-500');
+                    stepCircle.classList.remove('bg-gray-200', 'bg-purple-500');
+                } else if (stepNum === activeStep) {
+                    // Active step
+                    if (stepNumber) stepNumber.style.display = 'block';
+                    if (stepIcon) stepIcon.style.display = 'block';
+                    stepCircle.classList.add('bg-purple-500');
+                    stepCircle.classList.remove('bg-gray-200', 'bg-green-500');
+                } else {
+                    // Pending step
+                    if (stepNumber) stepNumber.style.display = 'block';
+                    if (stepIcon) stepIcon.style.display = 'block';
+                    stepCircle.classList.add('bg-gray-200');
+                    stepCircle.classList.remove('bg-purple-500', 'bg-green-500');
+                }
+            });
         }
         
         function scrollToSection(sectionId) {
@@ -3079,6 +3650,9 @@
             
             // Initialize budget calculator
             updateBudget();
+            
+            // Initialize step navigation
+            goToStep(1);
         });
     </script>
 
