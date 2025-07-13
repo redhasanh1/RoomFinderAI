@@ -591,6 +591,7 @@
             overflow: hidden;
             transform-style: preserve-3d;
             perspective: 1000px;
+            z-index: 50;
         }
         
         .feature-card::before {
@@ -617,6 +618,13 @@
         
         .feature-card:hover::before {
             opacity: 1;
+        }
+        
+        /* Ensure links in feature cards are clickable */
+        .feature-card a {
+            position: relative;
+            z-index: 100;
+            display: inline-flex;
         }
         
         .feature-icon {
