@@ -276,10 +276,10 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from parent directory (frontend files)
-const staticPath = path.join(__dirname, '..');
-console.log('📁 Serving static files from:', staticPath);
-app.use(express.static(staticPath, {
+// Serve static files from frontend directory
+const frontendPath = path.join(__dirname, '..', 'frontend');
+console.log('📁 Serving static files from:', frontendPath);
+app.use(express.static(frontendPath, {
     setHeaders: (res, path) => {
         // Allow CORS for images
         res.setHeader('Access-Control-Allow-Origin', '*');

@@ -38,7 +38,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/chatHeader"
-        android:layout_above="@id/typingIndicator"
+        android:layout_above="@id/aiTypingIndicator"
         android:padding="16dp"
         android:clipToPadding="false" />
 
