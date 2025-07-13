@@ -9,6 +9,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.Priority;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.card.MaterialCardView;
@@ -27,6 +28,15 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
     public ListingsAdapter(List<Listing> listings, Context context) {
         this.listings = listings;
         this.context = context;
+        // Enable stable IDs for better RecyclerView performance
+        setHasStableIds(true);
+    }
+    
+    @Override
+    public long getItemId(int position) {
+        // Use listing ID as stable ID for better recycling
+        Listing listing = listings.get(position);
+        return listing.getId() != null ? listing.getId().hashCode() : position;
     }
 
     @NonNull
@@ -40,6 +50,9 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
     @Override
     public void onBindViewHolder(@NonNull ListingViewHolder holder, int position) {
         Listing listing = listings.get(position);
+        
+        // Clear any pending Glide requests for this ImageView to prevent loading wrong images
+        Glide.with(holder.propertyImage.getContext()).clear(holder.propertyImage);
         
         // Bind actual listing data to views
         holder.price.setText(String.format(Locale.US, "$%.0f/month", listing.getPrice()));
@@ -78,48 +91,58 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
     }
     
     /**
-     * Load property image from Supabase media bucket (matches website implementation)
+     * Load property image from Supabase media bucket with optimized performance
      * Uses Glide for efficient loading, caching, and error handling
      */
     private void loadPropertyImage(ImageView imageView, Listing listing) {
+        // Clear any previous image to prevent flickering during recycling
+        imageView.setImageDrawable(null);
+        
         String imageUrl = null;
         
-        // Get first available image from media array
+        // Get first available image from media array (optimized search)
         if (listing.getMedia() != null && !listing.getMedia().isEmpty()) {
-            for (MediaItem mediaItem : listing.getMedia()) {
-                if (mediaItem != null && mediaItem.isImage() && mediaItem.hasValidUrl()) {
-                    imageUrl = mediaItem.getPublicUrl(); // Uses proper Supabase URL construction
-                    break;
-                }
+            MediaItem firstMedia = listing.getMedia().get(0); // Just get first item for performance
+            if (firstMedia != null && firstMedia.isImage() && firstMedia.hasValidUrl()) {
+                imageUrl = firstMedia.getPublicUrl();
             }
         }
         
-        // Configure Glide with performance optimizations (matching website)
+        // Configure Glide with RecyclerView optimizations
         RequestOptions options = new RequestOptions()
                 .centerCrop()
-                .diskCacheStrategy(DiskCacheStrategy.ALL) // Cache both original & resized
+                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC) // Let Glide decide optimal caching
                 .placeholder(R.drawable.ic_home) // Placeholder while loading
                 .error(R.drawable.ic_home) // Fallback for broken images
-                .override(400, 300); // Resize to reasonable size for performance
+                .override(150, 100) // Even smaller for better performance
+                .skipMemoryCache(false) // Use memory cache
+                .priority(Priority.NORMAL) // Normal priority for better balance
+                .dontTransform(); // Skip unnecessary transformations
         
         if (imageUrl != null && !imageUrl.isEmpty()) {
-            // Load image from Supabase storage
+            // Load image with proper error handling
             Glide.with(imageView.getContext())
                     .load(imageUrl)
                     .apply(options)
+                    .thumbnail(0.25f) // Larger thumbnail for better UX
                     .into(imageView);
         } else {
-            // No valid image available, show placeholder
-            Glide.with(imageView.getContext())
-                    .load(R.drawable.ic_home)
-                    .apply(options)
-                    .into(imageView);
+            // No valid image available, show placeholder immediately
+            imageView.setImageResource(R.drawable.ic_home);
         }
     }
 
     @Override
     public int getItemCount() {
         return listings.size();
+    }
+    
+    /**
+     * Update listings data efficiently
+     */
+    public void updateListings(List<Listing> newListings) {
+        this.listings = newListings;
+        notifyDataSetChanged();
     }
 
     static class ListingViewHolder extends RecyclerView.ViewHolder {

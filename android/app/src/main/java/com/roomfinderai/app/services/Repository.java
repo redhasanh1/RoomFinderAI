@@ -39,23 +39,33 @@ public class Repository {
     
     // Listings methods using Supabase
     public void getListings(ApiCallback<List<Listing>> callback) {
+        getListings(callback, 20, 0); // Default to first 20 listings for better performance
+    }
+    
+    public void getListings(ApiCallback<List<Listing>> callback, int limit, int offset) {
         if (!ApiConfig.isConfigValid()) {
             Log.e(TAG, "API configuration not valid");
             callback.onError("API configuration missing or invalid.");
             return;
         }
         
-        Log.d(TAG, "🔍 Getting listings from Supabase...");
+        Log.d(TAG, "🔍 Getting listings from Supabase (limit: " + limit + ", offset: " + offset + ")...");
         Log.d(TAG, "Using: " + ApiConfig.getConfigSource());
+        
+        // Fetch essential fields including media for images (optimized for mobile)
+        String essentialFields = "id,title,description,price,bedrooms,house_type,city,country,created_at,user_email,media";
         
         supabaseApiService.getListings(
             ApiConfig.getSupabaseAuthHeader(),
-            ApiConfig.getSupabaseAnonKey()
+            ApiConfig.getSupabaseAnonKey(),
+            limit,
+            offset,
+            essentialFields
         ).enqueue(new Callback<List<Listing>>() {
             @Override
             public void onResponse(Call<List<Listing>> call, Response<List<Listing>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    Log.d(TAG, "✅ Supabase listings success: " + response.body().size() + " items");
+                    Log.d(TAG, "✅ Supabase listings success: " + response.body().size() + " items (limited)");
                     callback.onSuccess(response.body());
                 } else {
                     String error = "HTTP " + response.code() + ": " + response.message();
@@ -128,12 +138,13 @@ public class Repository {
             ApiConfig.getSupabaseAnonKey(),
             "return=representation",
             new Listing.SupabaseCreateDto(listing)
-        ).enqueue(new Callback<Listing>() {
+        ).enqueue(new Callback<List<Listing>>() {
             @Override
-            public void onResponse(Call<Listing> call, Response<Listing> response) {
-                if (response.isSuccessful() && response.body() != null) {
+            public void onResponse(Call<List<Listing>> call, Response<List<Listing>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     Log.d(TAG, "✅ Supabase create listing success");
-                    callback.onSuccess(response.body());
+                    // Supabase returns array even for single insert, extract first item
+                    callback.onSuccess(response.body().get(0));
                 } else {
                     String error = "HTTP " + response.code() + ": " + response.message();
                     Log.e(TAG, "❌ Supabase create listing error: " + error);
@@ -142,7 +153,7 @@ public class Repository {
             }
             
             @Override
-            public void onFailure(Call<Listing> call, Throwable t) {
+            public void onFailure(Call<List<Listing>> call, Throwable t) {
                 Log.e(TAG, "❌ Supabase create listing network error", t);
                 callback.onError("Network error: " + t.getMessage());
             }

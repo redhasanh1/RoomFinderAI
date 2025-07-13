@@ -15,6 +15,13 @@ public interface SupabaseApiService {
     @GET("listings")
     Call<List<Listing>> getListings(@Header("Authorization") String auth,
                                    @Header("apikey") String apikey,
+                                   @Query("limit") int limit,
+                                   @Query("offset") int offset,
+                                   @Query("select") String fields);
+    
+    @GET("listings")
+    Call<List<Listing>> getListings(@Header("Authorization") String auth,
+                                   @Header("apikey") String apikey,
                                    @Query("title") String titleFilter);
     
     @GET("listings")
@@ -23,10 +30,10 @@ public interface SupabaseApiService {
                                      @Query("title") String searchQuery);
     
     @POST("listings")
-    Call<Listing> createListing(@Header("Authorization") String auth,
-                               @Header("apikey") String apikey,
-                               @Header("Prefer") String prefer,
-                               @Body Listing.SupabaseCreateDto listing);
+    Call<List<Listing>> createListing(@Header("Authorization") String auth,
+                                     @Header("apikey") String apikey,
+                                     @Header("Prefer") String prefer,
+                                     @Body Listing.SupabaseCreateDto listing);
     
     @PATCH("listings")
     Call<Listing> updateListing(@Header("Authorization") String auth,

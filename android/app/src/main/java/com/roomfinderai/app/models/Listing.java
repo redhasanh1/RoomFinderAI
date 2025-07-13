@@ -38,7 +38,7 @@ public class Listing {
     @SerializedName("updated_at")
     private String updatedAt;
     
-    @SerializedName("room_type")
+    @SerializedName("house_type")
     private String houseType;
     
     @SerializedName("utilities")
@@ -170,36 +170,51 @@ public class Listing {
     public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
     
     /**
-     * Create a DTO for sending to Supabase API (based on actual table structure)
-     * Visible columns: id, user_email, updated_at, country + likely others
+     * Create a DTO for sending to Supabase API (based on confirmed working schema)
+     * Required fields: title, price, house_type, description, bedrooms, utilities
      */
     public static class SupabaseCreateDto {
-        @SerializedName("user_email")
-        public String user_email;
-        
-        @SerializedName("country")
-        public String country;
-        
-        // Try these common fields that might exist but aren't visible in the UI
         @SerializedName("title")
         public String title;
         
         @SerializedName("price")
         public Integer price;
         
-        @SerializedName("city") 
-        public String city;
+        @SerializedName("house_type")
+        public String house_type;
         
         @SerializedName("description")
         public String description;
         
+        @SerializedName("bedrooms")
+        public Integer bedrooms;
+        
+        @SerializedName("utilities")
+        public String utilities;
+        
+        // Optional fields
+        @SerializedName("city")
+        public String city;
+        
+        @SerializedName("country")
+        public String country;
+        
+        @SerializedName("user_email")
+        public String user_email;
+        
         public SupabaseCreateDto(Listing listing) {
-            this.user_email = "test@roomfinder.ai"; // Required field we can see
-            this.country = listing.country != null ? listing.country : "US"; // Required field we can see
+            // Required fields
             this.title = listing.title != null ? listing.title : "Test Listing";
             this.price = (int) listing.price;
-            this.city = listing.city != null ? listing.city : "Test City";
+            this.house_type = listing.houseType != null ? listing.houseType : "Apartment";
             this.description = listing.description != null ? listing.description : "Test description";
+            this.bedrooms = listing.bedrooms;
+            this.utilities = listing.utilities != null ? listing.utilities : "Not included";
+            
+            // Optional fields
+            this.city = listing.city;
+            this.country = listing.country;
+            this.user_email = listing.userEmail != null ? listing.userEmail : "test@roomfinder.ai";
         }
     }
 }
