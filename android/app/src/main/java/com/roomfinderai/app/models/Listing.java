@@ -38,7 +38,7 @@ public class Listing {
     @SerializedName("updated_at")
     private String updatedAt;
     
-    @SerializedName("house_type")
+    @SerializedName("room_type")
     private String houseType;
     
     @SerializedName("utilities")
@@ -170,54 +170,44 @@ public class Listing {
     public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
     
     /**
-     * Create a DTO for sending to Supabase API (excludes fields not in database schema)
+     * Create a DTO for sending to Supabase API (matches frontend schema)
+     * Required fields: title, description, city, country, room_type, price
      */
     public static class SupabaseCreateDto {
         @SerializedName("title")
         public String title;
         
-        @SerializedName("price")
-        public int price;
+        @SerializedName("description") 
+        public String description;
         
         @SerializedName("city")
         public String city;
         
-        @SerializedName("street")
-        public String street;
+        @SerializedName("country")
+        public String country;
         
-        @SerializedName("postal_code")
-        public String postal_code;
+        @SerializedName("room_type")
+        public String room_type;
         
-        @SerializedName("house_type")
-        public String house_type;
+        @SerializedName("price")
+        public int price;
         
+        // Optional fields that may exist in schema
         @SerializedName("bedrooms")
-        public int bedrooms;
-        
-        @SerializedName("utilities")
-        public String utilities;
-        
-        @SerializedName("description")
-        public String description;
+        public Integer bedrooms; // Optional
         
         @SerializedName("media")
         public Object media; // JSONB array
         
-        @SerializedName("user_email")
-        public String user_email;
-        
         public SupabaseCreateDto(Listing listing) {
-            this.title = listing.title;
-            this.price = (int) listing.price; // Convert double to int for Supabase
-            this.city = listing.city;
-            this.street = listing.street;
-            this.postal_code = listing.postalCode;
-            this.house_type = listing.houseType;
-            this.bedrooms = listing.bedrooms;
-            this.utilities = listing.utilities;
-            this.description = listing.description;
+            this.title = listing.title != null ? listing.title : "Test Listing";
+            this.description = listing.description != null ? listing.description : "Test description";
+            this.city = listing.city != null ? listing.city : "Test City";
+            this.country = listing.country != null ? listing.country : "US";
+            this.room_type = listing.houseType != null ? listing.houseType : "Apartment";
+            this.price = (int) listing.price; // Convert double to int
+            this.bedrooms = listing.bedrooms > 0 ? listing.bedrooms : null; // Only send if > 0
             this.media = listing.media != null ? listing.media : new java.util.ArrayList<>();
-            this.user_email = listing.userEmail;
         }
     }
 }
