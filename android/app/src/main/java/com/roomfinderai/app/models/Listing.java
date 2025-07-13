@@ -23,7 +23,7 @@ public class Listing {
     @SerializedName("bedrooms")
     private int bedrooms;
     
-    @SerializedName("bathrooms")
+    // Note: bathrooms not in Supabase schema - excluded from API calls
     private double bathrooms;
     
     @SerializedName("media")
@@ -47,7 +47,7 @@ public class Listing {
     @SerializedName("city")
     private String city;
     
-    @SerializedName("postalCode")
+    @SerializedName("postal_code")
     private String postalCode;
     
     @SerializedName("street")
@@ -168,4 +168,56 @@ public class Listing {
 
     public String getUserEmail() { return userEmail; }
     public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
+    
+    /**
+     * Create a DTO for sending to Supabase API (excludes fields not in database schema)
+     */
+    public static class SupabaseCreateDto {
+        @SerializedName("title")
+        public String title;
+        
+        @SerializedName("price")
+        public int price;
+        
+        @SerializedName("city")
+        public String city;
+        
+        @SerializedName("street")
+        public String street;
+        
+        @SerializedName("postal_code")
+        public String postal_code;
+        
+        @SerializedName("house_type")
+        public String house_type;
+        
+        @SerializedName("bedrooms")
+        public int bedrooms;
+        
+        @SerializedName("utilities")
+        public String utilities;
+        
+        @SerializedName("description")
+        public String description;
+        
+        @SerializedName("media")
+        public Object media; // JSONB array
+        
+        @SerializedName("user_email")
+        public String user_email;
+        
+        public SupabaseCreateDto(Listing listing) {
+            this.title = listing.title;
+            this.price = (int) listing.price; // Convert double to int for Supabase
+            this.city = listing.city;
+            this.street = listing.street;
+            this.postal_code = listing.postalCode;
+            this.house_type = listing.houseType;
+            this.bedrooms = listing.bedrooms;
+            this.utilities = listing.utilities;
+            this.description = listing.description;
+            this.media = listing.media != null ? listing.media : new java.util.ArrayList<>();
+            this.user_email = listing.userEmail;
+        }
+    }
 }

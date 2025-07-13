@@ -53,9 +53,9 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
         }
         holder.propertyType.setText(propertyType);
         
-        // Bedrooms and bathrooms
+        // Bedrooms (bathrooms not available in current database schema)
         holder.bedrooms.setText(listing.getBedrooms() + " Beds");
-        holder.bathrooms.setText(String.format(Locale.US, "%.1f Bath", listing.getBathrooms()));
+        holder.bathrooms.setText("N/A Bath"); // Bathrooms field not in database
         
         // Area - this would need to be added to the Listing model
         holder.area.setText("N/A sqft");
