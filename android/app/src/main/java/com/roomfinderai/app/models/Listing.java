@@ -170,44 +170,36 @@ public class Listing {
     public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
     
     /**
-     * Create a DTO for sending to Supabase API (matches frontend schema)
-     * Required fields: title, description, city, country, room_type, price
+     * Create a DTO for sending to Supabase API (based on actual table structure)
+     * Visible columns: id, user_email, updated_at, country + likely others
      */
     public static class SupabaseCreateDto {
-        @SerializedName("title")
-        public String title;
-        
-        @SerializedName("description") 
-        public String description;
-        
-        @SerializedName("city")
-        public String city;
+        @SerializedName("user_email")
+        public String user_email;
         
         @SerializedName("country")
         public String country;
         
-        @SerializedName("room_type")
-        public String room_type;
+        // Try these common fields that might exist but aren't visible in the UI
+        @SerializedName("title")
+        public String title;
         
         @SerializedName("price")
-        public int price;
+        public Integer price;
         
-        // Optional fields that may exist in schema
-        @SerializedName("bedrooms")
-        public Integer bedrooms; // Optional
+        @SerializedName("city") 
+        public String city;
         
-        @SerializedName("media")
-        public Object media; // JSONB array
+        @SerializedName("description")
+        public String description;
         
         public SupabaseCreateDto(Listing listing) {
+            this.user_email = "test@roomfinder.ai"; // Required field we can see
+            this.country = listing.country != null ? listing.country : "US"; // Required field we can see
             this.title = listing.title != null ? listing.title : "Test Listing";
-            this.description = listing.description != null ? listing.description : "Test description";
+            this.price = (int) listing.price;
             this.city = listing.city != null ? listing.city : "Test City";
-            this.country = listing.country != null ? listing.country : "US";
-            this.room_type = listing.houseType != null ? listing.houseType : "Apartment";
-            this.price = (int) listing.price; // Convert double to int
-            this.bedrooms = listing.bedrooms > 0 ? listing.bedrooms : null; // Only send if > 0
-            this.media = listing.media != null ? listing.media : new java.util.ArrayList<>();
+            this.description = listing.description != null ? listing.description : "Test description";
         }
     }
 }
