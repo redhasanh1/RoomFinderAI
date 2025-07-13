@@ -26,7 +26,7 @@ public interface SupabaseApiService {
     Call<Listing> createListing(@Header("Authorization") String auth,
                                @Header("apikey") String apikey,
                                @Header("Prefer") String prefer,
-                               @Body Listing listing);
+                               @Body Listing.SupabaseCreateDto listing);
     
     @PATCH("listings")
     Call<Listing> updateListing(@Header("Authorization") String auth,

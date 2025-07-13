@@ -127,7 +127,7 @@ public class Repository {
             ApiConfig.getSupabaseAuthHeader(),
             ApiConfig.getSupabaseAnonKey(),
             "return=representation",
-            listing
+            new Listing.SupabaseCreateDto(listing)
         ).enqueue(new Callback<Listing>() {
             @Override
             public void onResponse(Call<Listing> call, Response<Listing> response) {
