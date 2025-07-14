@@ -108,8 +108,7 @@ class SecureAPIService {
                     self.sessionManager.startSession(
                         user: user,
                         accessToken: token,
-                        refreshToken: nil, // Backend doesn't return refresh token yet
-                        expiresIn: 24 * 3600 // 24 hours
+                        refreshToken: nil // Backend doesn't return refresh token yet
                     )
                 }
                 completion(.success(authResponse))
@@ -540,13 +539,6 @@ class SecureAPIService {
 }
 
 // MARK: - HTTP Methods
-enum HTTPMethod: String {
-    case GET = "GET"
-    case POST = "POST"
-    case PUT = "PUT"
-    case DELETE = "DELETE"
-    case PATCH = "PATCH"
-}
 
 // MARK: - Response Models
 struct GenericResponse: Codable {
