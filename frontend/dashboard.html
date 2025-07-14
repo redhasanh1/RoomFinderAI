@@ -123,13 +123,16 @@
             border-radius: var(--border-radius-sm);
             font-weight: 600;
             transition: var(--transition);
-            cursor: pointer;
+            cursor: pointer !important;
             display: flex;
             align-items: center;
             gap: 12px;
             position: relative;
             overflow: hidden;
-            z-index: 10;
+            z-index: 999 !important;
+            pointer-events: auto !important;
+            border: none;
+            background: transparent;
         }
         
         .tab-button.active {
@@ -200,16 +203,23 @@
             font-weight: 600;
             transition: var(--transition);
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            cursor: pointer;
+            cursor: pointer !important;
             position: relative;
             overflow: hidden;
-            z-index: 10;
+            z-index: 999 !important;
             display: inline-block;
             text-decoration: none;
+            pointer-events: auto !important;
+            user-select: none;
         }
         
         a.modern-button {
             text-decoration: none;
+            display: inline-block;
+        }
+        
+        button.modern-button:active {
+            transform: scale(0.98);
         }
         
         .modern-button::before {
@@ -938,6 +948,11 @@
 
     <!-- Main Dashboard -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pt-24">
+        <!-- Debug Button -->
+        <div style="position: fixed; top: 100px; right: 20px; z-index: 99999;">
+            <button onclick="alert('Debug: Buttons are working!')" style="background: red; color: white; padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px;">Debug Test</button>
+        </div>
+        
         <!-- Welcome Section -->
         <div class="mb-12">
             <div class="glass-card p-8">
@@ -967,7 +982,7 @@
 
         <!-- Tab Navigation -->
         <div class="mb-12">
-            <div class="glass-card p-2">
+            <div class="glass-card p-2" style="position: relative; z-index: 1;">
                 <div class="flex flex-wrap gap-2">
                 <button class="tab-button active" onclick="switchTab('overview', this)">
                     <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
