@@ -948,11 +948,6 @@
 
     <!-- Main Dashboard -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pt-24">
-        <!-- Debug Button -->
-        <div style="position: fixed; top: 100px; right: 20px; z-index: 99999;">
-            <button onclick="alert('Debug: Buttons are working!')" style="background: red; color: white; padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px;">Debug Test</button>
-        </div>
-        
         <!-- Welcome Section -->
         <div class="mb-12">
             <div class="glass-card p-8">
@@ -984,49 +979,49 @@
         <div class="mb-12">
             <div class="glass-card p-2" style="position: relative; z-index: 1;">
                 <div class="flex flex-wrap gap-2">
-                <button class="tab-button active" onclick="switchTab('overview', this)">
+                <button class="tab-button active" onclick="switchTab('overview', this)" style="position: relative; z-index: 99999; cursor: pointer; border: none;">
                     <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
                     Account Overview
                 </button>
-                <button class="tab-button" onclick="switchTab('subscriptions', this)">
+                <button class="tab-button" onclick="switchTab('subscriptions', this)" style="position: relative; z-index: 99999; cursor: pointer; border: none;">
                     <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
                     </svg>
                     Subscriptions
                 </button>
-                <button class="tab-button" onclick="switchTab('listings', this)">
+                <button class="tab-button" onclick="switchTab('listings', this)" style="position: relative; z-index: 99999; cursor: pointer; border: none;">
                     <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                     </svg>
                     Listings
                 </button>
-                <button class="tab-button" onclick="switchTab('verification', this)">
+                <button class="tab-button" onclick="switchTab('verification', this)" style="position: relative; z-index: 99999; cursor: pointer; border: none;">
                     <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                     </svg>
                     Verification
                 </button>
-                <button class="tab-button" onclick="switchTab('ai-analytics', this)">
+                <button class="tab-button" onclick="switchTab('ai-analytics', this)" style="position: relative; z-index: 99999; cursor: pointer; border: none;">
                     <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                     </svg>
                     AI Analytics
                 </button>
-                <button class="tab-button" onclick="switchTab('market-data', this)">
+                <button class="tab-button" onclick="switchTab('market-data', this)" style="position: relative; z-index: 99999; cursor: pointer; border: none;">
                     <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                     </svg>
                     Market Data
                 </button>
-                <button class="tab-button" onclick="switchTab('rent-reminders', this)">
+                <button class="tab-button" onclick="switchTab('rent-reminders', this)" style="position: relative; z-index: 99999; cursor: pointer; border: none;">
                     <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     Rent Reminders
                 </button>
-                <button class="tab-button" onclick="switchTab('mortgage', this)">
+                <button class="tab-button" onclick="switchTab('mortgage', this)" style="position: relative; z-index: 99999; cursor: pointer; border: none;">
                     <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                     </svg>
@@ -1170,7 +1165,7 @@
             <div id="listings-tab" class="tab-content hidden">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold text-gray-900">Your Listings</h3>
-                    <a href="/listings" class="modern-button" style="text-decoration: none;">Create New Listing</a>
+                    <a href="/listings" class="modern-button" style="text-decoration: none; position: relative; z-index: 99999; cursor: pointer;">Create New Listing</a>
                 </div>
                 <div id="dashboardListings" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <!-- Listings will be populated here -->
@@ -1223,7 +1218,7 @@
                                     <p id="bankVerificationDesc" class="text-sm text-gray-600">Add your banking information for payments</p>
                                 </div>
                             </div>
-                            <button id="addBankBtn" class="modern-button" onclick="openBankInfoModal()">Add Bank Info</button>
+                            <button id="addBankBtn" class="modern-button" onclick="openBankInfoModal()" style="position: relative; z-index: 99999; cursor: pointer; border: none;">Add Bank Info</button>
                         </div>
 
                         <div class="flex items-center justify-between p-4 bg-white rounded-lg border">
@@ -1238,7 +1233,7 @@
                                     <p class="text-sm text-gray-600">Upload ID and take selfie for verification</p>
                                 </div>
                             </div>
-                            <button id="uploadIdBtn" class="modern-button" onclick="openVerificationModal()">Upload ID</button>
+                            <button id="uploadIdBtn" class="modern-button" onclick="openVerificationModal()" style="position: relative; z-index: 99999; cursor: pointer; border: none;">Upload ID</button>
                         </div>
 
                         <div class="flex items-center justify-between p-4 bg-white rounded-lg border">
@@ -1253,7 +1248,7 @@
                                     <p class="text-sm text-gray-600">Add and verify your phone number</p>
                                 </div>
                             </div>
-                            <button class="modern-button" onclick="alert('Phone verification feature coming soon!')">Add Phone</button>
+                            <button class="modern-button" onclick="alert('Phone verification feature coming soon!')" style="position: relative; z-index: 99999; cursor: pointer; border: none;">Add Phone</button>
                         </div>
                     </div>
                 </div>
@@ -4078,7 +4073,7 @@
                         </div>
                         <h4 class="text-lg font-medium text-gray-900 mb-2">No Payment Method Added</h4>
                         <p class="text-gray-600 mb-6">You haven't added any credit or debit card to your account yet.</p>
-                        <button onclick="openAddCardSection()" class="modern-button">
+                        <button onclick="openAddCardSection()" class="modern-button" style="position: relative; z-index: 99999; cursor: pointer; border: none;">
                             <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                             </svg>
@@ -4793,7 +4788,7 @@
                                     <h4 class="text-lg font-semibold text-gray-600 mb-2">No Active Subscription</h4>
                                     <p class="text-gray-500 mb-2">Your subscription ended on ${effectiveDate}</p>
                                     <p class="text-gray-500 mb-4">Subscribe to unlock premium features</p>
-                                    <a href="/pricing" class="modern-button">View Plans</a>
+                                    <a href="/pricing" class="modern-button" style="position: relative; z-index: 99999; cursor: pointer; text-decoration: none;">View Plans</a>
                                 </div>
                             </div>
                         `;
@@ -4869,7 +4864,7 @@
                             <div class="text-center">
                                 <h4 class="text-lg font-semibold text-gray-600 mb-2">No Active Subscription</h4>
                                 <p class="text-gray-500 mb-4">Subscribe to unlock premium features</p>
-                                <a href="/pricing" class="modern-button">View Plans</a>
+                                <a href="/pricing" class="modern-button" style="position: relative; z-index: 99999; cursor: pointer; text-decoration: none;">View Plans</a>
                             </div>
                         </div>
                     `;
@@ -5145,7 +5140,7 @@
                 container.innerHTML = `
                     <div class="col-span-full text-center py-12">
                         <p class="text-gray-500 mb-4">No listings yet</p>
-                        <a href="/listings" class="modern-button">Create Your First Listing</a>
+                        <a href="/listings" class="modern-button" style="position: relative; z-index: 99999; cursor: pointer; text-decoration: none;">Create Your First Listing</a>
                     </div>
                 `;
                 return;
