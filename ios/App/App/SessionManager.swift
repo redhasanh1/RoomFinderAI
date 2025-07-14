@@ -51,7 +51,7 @@ class SessionManager {
         let user = getCurrentUser()
         
         currentSession = nil
-        keychain.clearUserSession()
+        keychain.deleteUserSession()
         
         NotificationCenter.default.post(name: Self.sessionDidEndNotification, object: user)
         print("✅ Session ended")

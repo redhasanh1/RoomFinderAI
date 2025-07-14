@@ -1,4 +1,5 @@
 import UIKit
+import Foundation
 
 // Temporary stub classes until properly added to Xcode project
 class StudentHousingViewController: UIViewController {
