@@ -979,14 +979,14 @@
         <div class="mb-12">
             <div class="glass-card p-2" style="position: relative; z-index: 1;">
                 <div class="flex flex-wrap gap-2">
-                <button class="tab-button active" onclick="switchTab('overview', this)" style="position: relative; z-index: 99999; cursor: pointer; border: none;">
-                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button onclick="switchTab('overview', this)" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; cursor: pointer; border: none; border-radius: 12px; position: relative; z-index: 99999; display: flex; align-items: center; gap: 12px;">
+                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
                     Account Overview
                 </button>
-                <button class="tab-button" onclick="switchTab('subscriptions', this)" style="position: relative; z-index: 99999; cursor: pointer; border: none;">
-                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button onclick="switchTab('subscriptions', this)" style="background: rgba(255, 255, 255, 0.95); color: #64748b; padding: 16px 32px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; position: relative; z-index: 99999; display: flex; align-items: center; gap: 12px;">
+                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
                     </svg>
                     Subscriptions
@@ -1218,7 +1218,7 @@
                                     <p id="bankVerificationDesc" class="text-sm text-gray-600">Add your banking information for payments</p>
                                 </div>
                             </div>
-                            <button id="addBankBtn" class="modern-button" onclick="openBankInfoModal()" style="position: relative; z-index: 99999; cursor: pointer; border: none;">Add Bank Info</button>
+                            <button onclick="openBankInfoModal()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; cursor: pointer; border: none; border-radius: 12px; position: relative; z-index: 99999; display: inline-block;">Add Bank Info</button>
                         </div>
 
                         <div class="flex items-center justify-between p-4 bg-white rounded-lg border">
@@ -1233,7 +1233,7 @@
                                     <p class="text-sm text-gray-600">Upload ID and take selfie for verification</p>
                                 </div>
                             </div>
-                            <button id="uploadIdBtn" class="modern-button" onclick="openVerificationModal()" style="position: relative; z-index: 99999; cursor: pointer; border: none;">Upload ID</button>
+                            <button onclick="openVerificationModal()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; cursor: pointer; border: none; border-radius: 12px; position: relative; z-index: 99999; display: inline-block;">Upload ID</button>
                         </div>
 
                         <div class="flex items-center justify-between p-4 bg-white rounded-lg border">
@@ -1248,7 +1248,7 @@
                                     <p class="text-sm text-gray-600">Add and verify your phone number</p>
                                 </div>
                             </div>
-                            <button class="modern-button" onclick="alert('Phone verification feature coming soon!')" style="position: relative; z-index: 99999; cursor: pointer; border: none;">Add Phone</button>
+                            <button onclick="alert('Phone verification feature coming soon!')" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; cursor: pointer; border: none; border-radius: 12px; position: relative; z-index: 99999; display: inline-block;">Add Phone</button>
                         </div>
                     </div>
                 </div>
