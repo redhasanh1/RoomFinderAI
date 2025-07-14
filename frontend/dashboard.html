@@ -1231,7 +1231,7 @@
                                     <p class="text-sm text-gray-600">Add and verify your phone number</p>
                                 </div>
                             </div>
-                            <button class="modern-button">Add Phone</button>
+                            <button class="modern-button" onclick="alert('Phone verification feature coming soon!')">Add Phone</button>
                         </div>
                     </div>
                 </div>
@@ -5182,6 +5182,10 @@
         function openVerificationModal() {
             document.getElementById('verificationModal').classList.remove('hidden');
             resetModal();
+        }
+
+        function openVerificationModal() {
+            document.getElementById('verificationModal').classList.remove('hidden');
         }
 
         function closeVerificationModal() {
