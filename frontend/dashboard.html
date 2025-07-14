@@ -48,6 +48,11 @@
             line-height: 1.6;
         }
         
+        /* Prevent double-tap zoom on interactive elements without breaking clicks */
+        button, .mobile-menu-item, .nav-item {
+            touch-action: manipulation;
+        }
+        
         /* Typography System */
         .font-display {
             font-family: 'Space Grotesk', sans-serif;
@@ -9959,13 +9964,6 @@
             }
         });
         
-        // Touch event handling for better mobile experience
-        document.addEventListener('touchstart', function(event) {
-            // Prevent zoom on double tap for buttons
-            if (event.target.matches('button, .mobile-menu-item, .nav-item')) {
-                event.preventDefault();
-            }
-        }, { passive: false });
         
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {
