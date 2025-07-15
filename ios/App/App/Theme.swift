@@ -153,6 +153,7 @@ struct Theme {
     // MARK: - Animation Timing
     struct Animation {
         static let quick: TimeInterval = 0.2
+        static let fast: TimeInterval = 0.25
         static let standard: TimeInterval = 0.3
         static let slow: TimeInterval = 0.5
         static let verySlow: TimeInterval = 0.8
@@ -162,6 +163,36 @@ struct Theme {
         static let easeInOut = CAMediaTimingFunction(name: .easeInEaseOut)
         static let spring = CAMediaTimingFunction(controlPoints: 0.175, 0.885, 0.32, 1.275)
     }
+}
+
+// MARK: - UIButton Extensions
+extension UIButton {
+    func applyPrimaryButtonStyle() {
+        backgroundColor = Theme.Colors.primary
+        setTitleColor(.white, for: .normal)
+        layer.cornerRadius = Theme.CornerRadius.button
+        titleLabel?.font = Theme.Fonts.buttonMedium
+        applyShadow(Theme.Shadow.medium)
+    }
+    
+    func applySecondaryButtonStyle() {
+        backgroundColor = Theme.Colors.surface
+        setTitleColor(Theme.Colors.primary, for: .normal)
+        layer.cornerRadius = Theme.CornerRadius.button
+        layer.borderWidth = 1
+        layer.borderColor = Theme.Colors.cardBorder.cgColor
+        titleLabel?.font = Theme.Fonts.buttonMedium
+        applyShadow(Theme.Shadow.small)
+    }
+    
+    func applyGlassStyle() {
+        backgroundColor = Theme.Colors.surface
+        setTitleColor(Theme.Colors.textPrimary, for: .normal)
+        layer.cornerRadius = Theme.CornerRadius.button
+        titleLabel?.font = Theme.Fonts.buttonMedium
+        applyGlassEffect()
+    }
+    
 }
 
 // MARK: - UIView Extensions
@@ -208,17 +239,6 @@ extension UIView {
         applyShadow(Theme.Shadow.medium)
     }
     
-    // Premium card style matching website
-    func applyPremiumCardStyle() {
-        backgroundColor = Theme.Colors.cardBackground
-        layer.cornerRadius = Theme.CornerRadius.card
-        applyShadow(Theme.Shadow.large)
-        
-        // Add subtle border
-        layer.borderWidth = 1
-        layer.borderColor = Theme.Colors.cardBorder.cgColor
-    }
-    
     // Floating animation for premium feel
     func addFloatingAnimation() {
         let animation = CABasicAnimation(keyPath: "transform.translation.y")
@@ -244,6 +264,14 @@ extension UIView {
                 self.applyShadow(Theme.Shadow.medium)
             }
         }
+    }
+    
+    func applyPremiumCardStyle() {
+        backgroundColor = Theme.Colors.cardBackground
+        layer.cornerRadius = Theme.CornerRadius.card
+        layer.borderWidth = 1
+        layer.borderColor = Theme.Colors.cardBorder.cgColor
+        applyShadow(Theme.Shadow.medium)
     }
 }
 
@@ -296,25 +324,7 @@ extension UIButton {
         addTarget(self, action: #selector(magneticReleased), for: [.touchUpInside, .touchUpOutside, .touchCancel])
     }
     
-    // Glass morphism button
-    func applyGlassStyle() {
-        backgroundColor = UIColor.white.withAlphaComponent(0.2)
-        setTitleColor(Theme.Colors.textPrimary, for: .normal)
-        titleLabel?.font = Theme.Fonts.buttonMedium
-        layer.cornerRadius = Theme.CornerRadius.button
-        layer.borderWidth = 1
-        layer.borderColor = UIColor.white.withAlphaComponent(0.3).cgColor
-        applyShadow(Theme.Shadow.medium)
-        
-        // Add backdrop blur effect
-        let blurEffect = UIBlurEffect(style: .systemUltraThinMaterial)
-        let blurView = UIVisualEffectView(effect: blurEffect)
-        blurView.frame = bounds
-        blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        blurView.layer.cornerRadius = Theme.CornerRadius.button
-        blurView.clipsToBounds = true
-        insertSubview(blurView, at: 0)
-    }
+    // Glass morphism button implementation handled in UIButton extension
     
     // Floating action button style
     func applyFloatingStyle() {

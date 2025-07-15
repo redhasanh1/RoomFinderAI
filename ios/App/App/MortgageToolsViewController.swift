@@ -52,33 +52,33 @@ class MortgageToolsViewController: UIViewController {
     // MARK: - UI Setup
     
     private func setupUI() {
-        view.backgroundColor = Theme.backgroundColor
+        view.backgroundColor = Theme.Colors.background
         title = "Mortgage Tools"
         
         // Configure scroll view
-        scrollView.backgroundColor = Theme.backgroundColor
+        scrollView.backgroundColor = Theme.Colors.background
         scrollView.showsVerticalScrollIndicator = false
         
         // Configure content view
-        contentView.backgroundColor = Theme.backgroundColor
+        contentView.backgroundColor = Theme.Colors.background
         
         // Configure title
         titleLabel.text = "Mortgage Calculator"
-        titleLabel.font = Theme.boldFont(size: 28)
-        titleLabel.textColor = Theme.textColor
+        titleLabel.font = Theme.Fonts.title1
+        titleLabel.textColor = Theme.Colors.textPrimary
         titleLabel.textAlignment = .center
         
         // Configure subtitle
         subtitleLabel.text = "Calculate your monthly mortgage payment"
-        subtitleLabel.font = Theme.regularFont(size: 16)
-        subtitleLabel.textColor = Theme.secondaryTextColor
+        subtitleLabel.font = Theme.Fonts.body
+        subtitleLabel.textColor = Theme.Colors.textSecondary
         subtitleLabel.textAlignment = .center
         subtitleLabel.numberOfLines = 0
         
         // Configure calculator segment
-        calculatorSegment.backgroundColor = Theme.cardBackgroundColor
-        calculatorSegment.selectedSegmentTintColor = Theme.primaryColor
-        calculatorSegment.setTitleTextAttributes([.foregroundColor: Theme.textColor], for: .normal)
+        calculatorSegment.backgroundColor = Theme.Colors.cardBackground
+        calculatorSegment.selectedSegmentTintColor = Theme.Colors.primary
+        calculatorSegment.setTitleTextAttributes([.foregroundColor: Theme.Colors.textPrimary], for: .normal)
         calculatorSegment.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
         calculatorSegment.layer.cornerRadius = 8
         calculatorSegment.selectedSegmentIndex = 0
@@ -94,7 +94,7 @@ class MortgageToolsViewController: UIViewController {
         configureInputField(monthlyRentField, placeholder: "Monthly Rent ($)")
         
         // Configure results container
-        resultsContainerView.backgroundColor = Theme.cardBackgroundColor
+        resultsContainerView.backgroundColor = Theme.Colors.cardBackground
         resultsContainerView.layer.cornerRadius = 12
         resultsContainerView.layer.shadowColor = UIColor.black.cgColor
         resultsContainerView.layer.shadowOffset = CGSize(width: 0, height: 2)
@@ -111,9 +111,9 @@ class MortgageToolsViewController: UIViewController {
         
         // Configure calculate button
         calculateButton.setTitle("Calculate", for: .normal)
-        calculateButton.backgroundColor = Theme.primaryColor
+        calculateButton.backgroundColor = Theme.Colors.primary
         calculateButton.setTitleColor(.white, for: .normal)
-        calculateButton.titleLabel?.font = Theme.boldFont(size: 18)
+        calculateButton.titleLabel?.font = Theme.Fonts.buttonLarge
         calculateButton.layer.cornerRadius = 12
         calculateButton.addTarget(self, action: #selector(calculateTapped), for: .touchUpInside)
         
@@ -144,12 +144,12 @@ class MortgageToolsViewController: UIViewController {
     
     private func configureInputField(_ field: UITextField, placeholder: String) {
         field.placeholder = placeholder
-        field.backgroundColor = Theme.cardBackgroundColor
-        field.textColor = Theme.textColor
-        field.font = Theme.regularFont(size: 16)
+        field.backgroundColor = Theme.Colors.cardBackground
+        field.textColor = Theme.Colors.textPrimary
+        field.font = Theme.Fonts.body
         field.layer.cornerRadius = 8
         field.layer.borderWidth = 1
-        field.layer.borderColor = Theme.borderColor.cgColor
+        field.layer.borderColor = Theme.Colors.cardBorder.cgColor
         field.keyboardType = .decimalPad
         field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 0))
         field.leftViewMode = .always
@@ -166,8 +166,8 @@ class MortgageToolsViewController: UIViewController {
     
     private func configureResultLabel(_ label: UILabel, title: String) {
         label.text = title + ": $0"
-        label.font = Theme.regularFont(size: 16)
-        label.textColor = Theme.textColor
+        label.font = Theme.Fonts.body
+        label.textColor = Theme.Colors.textPrimary
         label.numberOfLines = 0
     }
     

@@ -21,6 +21,103 @@ class EnhancedSearchViewController: UIViewController {
     }
 }
 
+// MARK: - Dashboard Activity Model
+struct DashboardActivity {
+    let title: String
+    let time: String
+    let icon: String
+    let type: ActivityType
+    
+    enum ActivityType {
+        case view
+        case favorite
+        case negotiation
+        case application
+        case search
+    }
+}
+
+// MARK: - Activity Table View Cell
+class ActivityTableViewCell: UITableViewCell {
+    private let iconView = UIImageView()
+    private let titleLabel = UILabel()
+    private let timeLabel = UILabel()
+    
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupUI() {
+        backgroundColor = .clear
+        selectionStyle = .none
+        
+        let containerView = UIView()
+        containerView.applyGlassEffect(alpha: 0.5)
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(containerView)
+        
+        iconView.contentMode = .scaleAspectFit
+        iconView.tintColor = Theme.Colors.primary
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(iconView)
+        
+        titleLabel.font = Theme.Fonts.body
+        titleLabel.textColor = Theme.Colors.textPrimary
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(titleLabel)
+        
+        timeLabel.font = Theme.Fonts.caption1
+        timeLabel.textColor = Theme.Colors.textSecondary
+        timeLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(timeLabel)
+        
+        NSLayoutConstraint.activate([
+            containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Theme.Spacing.xs),
+            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Theme.Spacing.md),
+            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Theme.Spacing.md),
+            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Theme.Spacing.xs),
+            
+            iconView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Theme.Spacing.md),
+            iconView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: 24),
+            iconView.heightAnchor.constraint(equalToConstant: 24),
+            
+            titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: Theme.Spacing.md),
+            titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: Theme.Spacing.md),
+            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Theme.Spacing.md),
+            
+            timeLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            timeLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: Theme.Spacing.xxs),
+            timeLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+            timeLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Theme.Spacing.md)
+        ])
+    }
+    
+    func configure(with activity: DashboardActivity) {
+        iconView.image = UIImage(systemName: activity.icon)
+        titleLabel.text = activity.title
+        timeLabel.text = activity.time
+        
+        switch activity.type {
+        case .view:
+            iconView.tintColor = Theme.Colors.primary
+        case .favorite:
+            iconView.tintColor = Theme.Colors.accent
+        case .negotiation:
+            iconView.tintColor = Theme.Colors.success
+        case .application:
+            iconView.tintColor = Theme.Colors.warning
+        case .search:
+            iconView.tintColor = Theme.Colors.secondary
+        }
+    }
+}
+
 // Full Dashboard Implementation
 class DashboardViewController: UIViewController {
     
@@ -476,6 +573,66 @@ class DashboardViewController: UIViewController {
     
     @objc private func profileTapped() {
         tabBarController?.selectedIndex = 4
+    }
+}
+
+// MARK: - UITableViewDataSource & Delegate
+extension DashboardViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return recentActivities.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "ActivityCell", for: indexPath) as! ActivityTableViewCell
+        cell.configure(with: recentActivities[indexPath.row])
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 60
+    }
+}
+
+// MARK: - Main Tab Bar Controller
+class MainTabBarController: UITabBarController {
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupViewControllers()
+        setupAppearance()
+    }
+    
+    private func setupViewControllers() {
+        let dashboardVC = UINavigationController(rootViewController: DashboardViewController())
+        dashboardVC.tabBarItem = UITabBarItem(title: "Dashboard", image: UIImage(systemName: "house.fill"), tag: 0)
+        
+        let searchVC = UINavigationController(rootViewController: EnhancedSearchViewController())
+        searchVC.tabBarItem = UITabBarItem(title: "Search", image: UIImage(systemName: "magnifyingglass"), tag: 1)
+        
+        let chatVC = UINavigationController(rootViewController: ChatViewController())
+        chatVC.tabBarItem = UITabBarItem(title: "Chat", image: UIImage(systemName: "message.fill"), tag: 2)
+        
+        let favoritesVC = UINavigationController(rootViewController: FavoritesViewController())
+        favoritesVC.tabBarItem = UITabBarItem(title: "Favorites", image: UIImage(systemName: "heart.fill"), tag: 3)
+        
+        let profileVC = UINavigationController(rootViewController: ProfileViewController())
+        profileVC.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person.fill"), tag: 4)
+        
+        viewControllers = [dashboardVC, searchVC, chatVC, favoritesVC, profileVC]
+    }
+    
+    private func setupAppearance() {
+        tabBar.tintColor = Theme.Colors.primary
+        tabBar.backgroundColor = Theme.Colors.surface
+        tabBar.isTranslucent = true
+        
+        if #available(iOS 15.0, *) {
+            let appearance = UITabBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = Theme.Colors.surface
+            tabBar.standardAppearance = appearance
+            tabBar.scrollEdgeAppearance = appearance
+        }
     }
 }
 

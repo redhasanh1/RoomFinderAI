@@ -1226,19 +1226,19 @@ class SubleaseViewController: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = Theme.backgroundColor
+        view.backgroundColor = Theme.Colors.background
         title = "Student Housing"
         
         // Configure navigation
         navigationItem.largeTitleDisplayMode = .never
         
         // Configure scroll view
-        scrollView.backgroundColor = Theme.backgroundColor
+        scrollView.backgroundColor = Theme.Colors.background
         scrollView.showsVerticalScrollIndicator = false
         
         // Configure segment control
-        segmentControl.backgroundColor = Theme.cardBackgroundColor
-        segmentControl.selectedSegmentTintColor = Theme.primaryColor
+        segmentControl.backgroundColor = Theme.Colors.cardBackground
+        segmentControl.selectedSegmentTintColor = Theme.Colors.primary
         segmentControl.layer.cornerRadius = 8
         segmentControl.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
         
@@ -1256,19 +1256,19 @@ class SubleaseViewController: UIViewController {
     }
     
     private func setupFindSubleaseView() {
-        findContainer.backgroundColor = Theme.cardBackgroundColor
+        findContainer.backgroundColor = Theme.Colors.cardBackground
         findContainer.layer.cornerRadius = 12
         
         let titleLabel = UILabel()
         titleLabel.text = "Find Subleases"
-        titleLabel.font = Theme.boldFont(size: 24)
-        titleLabel.textColor = Theme.textColor
+        titleLabel.font = Theme.Fonts.title2
+        titleLabel.textColor = Theme.Colors.textPrimary
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         findContainer.addSubview(titleLabel)
         
         let searchBar = UISearchBar()
         searchBar.placeholder = "Search by location, price, or amenities..."
-        searchBar.backgroundColor = Theme.backgroundColor
+        searchBar.backgroundColor = Theme.Colors.background
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         findContainer.addSubview(searchBar)
         
@@ -1285,27 +1285,27 @@ class SubleaseViewController: UIViewController {
     }
     
     private func setupPostRequestView() {
-        postContainer.backgroundColor = Theme.cardBackgroundColor
+        postContainer.backgroundColor = Theme.Colors.cardBackground
         postContainer.layer.cornerRadius = 12
         
         let titleLabel = UILabel()
         titleLabel.text = "Post Sublease Request"
-        titleLabel.font = Theme.boldFont(size: 24)
-        titleLabel.textColor = Theme.textColor
+        titleLabel.font = Theme.Fonts.title2
+        titleLabel.textColor = Theme.Colors.textPrimary
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         postContainer.addSubview(titleLabel)
         
         let descriptionLabel = UILabel()
         descriptionLabel.text = "Tell us what you're looking for and we'll help you find the perfect sublease"
-        descriptionLabel.font = Theme.regularFont(size: 16)
-        descriptionLabel.textColor = Theme.secondaryTextColor
+        descriptionLabel.font = Theme.Fonts.body
+        descriptionLabel.textColor = Theme.Colors.textSecondary
         descriptionLabel.numberOfLines = 0
         descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
         postContainer.addSubview(descriptionLabel)
         
         let postButton = UIButton(type: .system)
         postButton.setTitle("Create Request", for: .normal)
-        postButton.backgroundColor = Theme.primaryColor
+        postButton.backgroundColor = Theme.Colors.primary
         postButton.setTitleColor(.white, for: .normal)
         postButton.layer.cornerRadius = 12
         postButton.translatesAutoresizingMaskIntoConstraints = false
@@ -1329,20 +1329,20 @@ class SubleaseViewController: UIViewController {
     }
     
     private func setupMyRequestsView() {
-        requestsContainer.backgroundColor = Theme.cardBackgroundColor
+        requestsContainer.backgroundColor = Theme.Colors.cardBackground
         requestsContainer.layer.cornerRadius = 12
         
         let titleLabel = UILabel()
         titleLabel.text = "My Requests"
-        titleLabel.font = Theme.boldFont(size: 24)
-        titleLabel.textColor = Theme.textColor
+        titleLabel.font = Theme.Fonts.title2
+        titleLabel.textColor = Theme.Colors.textPrimary
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         requestsContainer.addSubview(titleLabel)
         
         let emptyLabel = UILabel()
         emptyLabel.text = "No requests yet.\nCreate your first request to get started!"
-        emptyLabel.font = Theme.regularFont(size: 16)
-        emptyLabel.textColor = Theme.secondaryTextColor
+        emptyLabel.font = Theme.Fonts.body
+        emptyLabel.textColor = Theme.Colors.textSecondary
         emptyLabel.numberOfLines = 0
         emptyLabel.textAlignment = .center
         emptyLabel.translatesAutoresizingMaskIntoConstraints = false
