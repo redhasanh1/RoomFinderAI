@@ -54,7 +54,10 @@
       "Bash(bash gradlew assembleDebug)",
       "Bash(swiftc:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npx cap:*)",
+      "Bash(xattr:*)"
     ],
     "deny": []
   }

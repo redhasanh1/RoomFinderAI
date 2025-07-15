@@ -25,21 +25,22 @@
 		522B055FF20DB86084EDE384 /* AuthViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19708FCE683311F278CB4967 /* AuthViewController.swift */; };
 		6F7310BF2EAA2B52952C2FF9 /* DataValidationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 029C67CFFC8BF7578653B27E /* DataValidationService.swift */; };
 		8D2D2F5E46B15F41F6430C72 /* FavoritesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD6A1BE9C8A4513E9F2E63F /* FavoritesViewController.swift */; };
+		95DFE7725787FFB80BD3A061 /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F1AB083FB64EAA04E4255471 /* Pods_App.framework */; };
 		A183A553489FEBCC5DEA3569 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77D695E09A84E63D781ED9BE /* Theme.swift */; };
 		A3B7518BD23FFCA75D064F83 /* PropertyDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72BE15FEC0579CC5AF9D2869 /* PropertyDetailViewController.swift */; };
 		A62A41C87B5DF43EB595E86E /* CollectionViewCells.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F5A6CE707272AEE57CEA2E /* CollectionViewCells.swift */; };
+		AINEGOTIATOR1234567890AB /* AINegotiatorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AINEGOTIATORFILE123456 /* AINegotiatorViewController.swift */; };
 		B2F222A3EC366222076D87E6 /* RealDataTestViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DBFE353505A8B666D78ACF6 /* RealDataTestViewController.swift */; };
 		C2D79FD11D334926916E2046 /* MainTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A880FA421D3585370C0BF8 /* MainTabBarController.swift */; };
-		E0D12F3B5568499C8B2A5757 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76FDF7FB9606A760CE06FA83 /* ChatViewController.swift */; };
-		LOCALAPI1234567890ABCDEF /* LocalAPIKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = LOCALAPIFILE1234567890AB /* LocalAPIKeys.swift */; };
-		IOSTEST1234567890ABCDEF0 /* iOSAPITestViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = IOSTESTFILE1234567890ABC /* iOSAPITestViewController.swift */; };
 		CAPBRIDGE123456789ABCDEF /* CapacitorBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAPBRIDGEFILE123456789A /* CapacitorBridge.swift */; };
+		E0D12F3B5568499C8B2A5757 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76FDF7FB9606A760CE06FA83 /* ChatViewController.swift */; };
+		IOSTEST1234567890ABCDEF0 /* iOSAPITestViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = IOSTESTFILE1234567890ABC /* iOSAPITestViewController.swift */; };
 		KEYCHAIN1234567890ABCDEF /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = KEYCHAINFILE1234567890AB /* KeychainService.swift */; };
-		STUDENT1234567890ABCDEF0 /* StudentHousingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = STUDENTFILE1234567890ABC /* StudentHousingViewController.swift */; };
 		LEGAL123456789ABCDEF00 /* LegalHelpViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = LEGALFILE123456789ABCD /* LegalHelpViewController.swift */; };
+		LOCALAPI1234567890ABCDEF /* LocalAPIKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = LOCALAPIFILE1234567890AB /* LocalAPIKeys.swift */; };
 		MORTGAGE123456789ABCDEF /* MortgageToolsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = MORTGAGEFILE123456789A /* MortgageToolsViewController.swift */; };
 		PRICING1234567890ABCDEF /* PricingPlansViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRICINGFILE1234567890AB /* PricingPlansViewController.swift */; };
-		AINEGOTIATOR1234567890AB /* AINegotiatorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AINEGOTIATORFILE123456 /* AINegotiatorViewController.swift */; };
+		STUDENT1234567890ABCDEF0 /* StudentHousingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = STUDENTFILE1234567890ABC /* StudentHousingViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,19 +68,20 @@
 		72BE15FEC0579CC5AF9D2869 /* PropertyDetailViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PropertyDetailViewController.swift; path = App/PropertyDetailViewController.swift; sourceTree = "<group>"; };
 		76FDF7FB9606A760CE06FA83 /* ChatViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChatViewController.swift; path = App/ChatViewController.swift; sourceTree = "<group>"; };
 		77D695E09A84E63D781ED9BE /* Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = App/Theme.swift; sourceTree = "<group>"; };
+		AINEGOTIATORFILE123456 /* AINegotiatorViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AINegotiatorViewController.swift; path = App/AINegotiatorViewController.swift; sourceTree = "<group>"; };
 		B0F43A8052FDC5C149657D60 /* SupabaseService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
 		C9A07BC80591AD44CA6059E8 /* SearchViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SearchViewController.swift; path = App/SearchViewController.swift; sourceTree = "<group>"; };
 		C9F704DD261ACBF4E66EA37D /* APIService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = APIService.swift; path = App/APIService.swift; sourceTree = "<group>"; };
-		F3609BFBABAB377BD954FCB0 /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
-		LOCALAPIFILE1234567890AB /* LocalAPIKeys.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LocalAPIKeys.swift; path = App/LocalAPIKeys.swift; sourceTree = "<group>"; };
-		IOSTESTFILE1234567890ABC /* iOSAPITestViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = iOSAPITestViewController.swift; path = App/iOSAPITestViewController.swift; sourceTree = "<group>"; };
 		CAPBRIDGEFILE123456789A /* CapacitorBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CapacitorBridge.swift; path = App/CapacitorBridge.swift; sourceTree = "<group>"; };
+		F1AB083FB64EAA04E4255471 /* Pods_App.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_App.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F3609BFBABAB377BD954FCB0 /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
+		IOSTESTFILE1234567890ABC /* iOSAPITestViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = iOSAPITestViewController.swift; path = App/iOSAPITestViewController.swift; sourceTree = "<group>"; };
 		KEYCHAINFILE1234567890AB /* KeychainService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = KeychainService.swift; path = Services/KeychainService.swift; sourceTree = "<group>"; };
-		STUDENTFILE1234567890ABC /* StudentHousingViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = StudentHousingViewController.swift; path = App/StudentHousingViewController.swift; sourceTree = "<group>"; };
 		LEGALFILE123456789ABCD /* LegalHelpViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LegalHelpViewController.swift; path = App/LegalHelpViewController.swift; sourceTree = "<group>"; };
+		LOCALAPIFILE1234567890AB /* LocalAPIKeys.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LocalAPIKeys.swift; path = App/LocalAPIKeys.swift; sourceTree = "<group>"; };
 		MORTGAGEFILE123456789A /* MortgageToolsViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MortgageToolsViewController.swift; path = App/MortgageToolsViewController.swift; sourceTree = "<group>"; };
 		PRICINGFILE1234567890AB /* PricingPlansViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PricingPlansViewController.swift; path = App/PricingPlansViewController.swift; sourceTree = "<group>"; };
-		AINEGOTIATORFILE123456 /* AINegotiatorViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AINegotiatorViewController.swift; path = App/AINegotiatorViewController.swift; sourceTree = "<group>"; };
+		STUDENTFILE1234567890ABC /* StudentHousingViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = StudentHousingViewController.swift; path = App/StudentHousingViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,6 +89,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				95DFE7725787FFB80BD3A061 /* Pods_App.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -184,6 +187,7 @@
 		CCD8AAB3A2EAC8329034CAB8 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F1AB083FB64EAA04E4255471 /* Pods_App.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
