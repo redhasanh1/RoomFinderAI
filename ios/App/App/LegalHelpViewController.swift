@@ -41,35 +41,35 @@ class LegalHelpViewController: UIViewController {
     // MARK: - UI Setup
     
     private func setupUI() {
-        view.backgroundColor = Theme.backgroundColor
+        view.backgroundColor = Theme.Colors.background
         title = "Legal Help"
         
         // Configure scroll view
-        scrollView.backgroundColor = Theme.backgroundColor
+        scrollView.backgroundColor = Theme.Colors.background
         scrollView.showsVerticalScrollIndicator = false
         
         // Configure content view
-        contentView.backgroundColor = Theme.backgroundColor
+        contentView.backgroundColor = Theme.Colors.background
         
         // Configure title
         titleLabel.text = "Legal Resources"
-        titleLabel.font = Theme.boldFont(size: 28)
-        titleLabel.textColor = Theme.textColor
+        titleLabel.font = Theme.Fonts.title1
+        titleLabel.textColor = Theme.Colors.textPrimary
         titleLabel.textAlignment = .center
         
         // Configure subtitle
         subtitleLabel.text = "Get help with rental agreements, tenant rights, and legal issues"
-        subtitleLabel.font = Theme.regularFont(size: 16)
-        subtitleLabel.textColor = Theme.secondaryTextColor
+        subtitleLabel.font = Theme.Fonts.body
+        subtitleLabel.textColor = Theme.Colors.textSecondary
         subtitleLabel.textAlignment = .center
         subtitleLabel.numberOfLines = 0
         
         // Configure categories collection view
-        categoriesCollectionView.backgroundColor = Theme.backgroundColor
+        categoriesCollectionView.backgroundColor = Theme.Colors.background
         categoriesCollectionView.showsHorizontalScrollIndicator = false
         
         // Configure articles table view
-        articlesTableView.backgroundColor = Theme.backgroundColor
+        articlesTableView.backgroundColor = Theme.Colors.background
         articlesTableView.separatorStyle = .none
         articlesTableView.showsVerticalScrollIndicator = false
         
@@ -77,7 +77,7 @@ class LegalHelpViewController: UIViewController {
         emergencyContactButton.setTitle("🚨 Emergency Legal Help", for: .normal)
         emergencyContactButton.backgroundColor = UIColor.systemRed
         emergencyContactButton.setTitleColor(.white, for: .normal)
-        emergencyContactButton.titleLabel?.font = Theme.boldFont(size: 18)
+        emergencyContactButton.titleLabel?.font = Theme.Fonts.buttonLarge
         emergencyContactButton.layer.cornerRadius = 12
         emergencyContactButton.addTarget(self, action: #selector(emergencyContactTapped), for: .touchUpInside)
         
@@ -650,9 +650,10 @@ extension LegalHelpViewController: UITableViewDelegate, UITableViewDataSource {
         tableView.deselectRow(at: indexPath, animated: true)
         let article = articles[indexPath.row]
         
-        let detailVC = LegalArticleDetailViewController()
-        detailVC.article = article
-        navigationController?.pushViewController(detailVC, animated: true)
+        // TODO: Implement LegalArticleDetailViewController
+        let alert = UIAlertController(title: "Article Details", message: "Article: \(article.title)", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 
@@ -691,7 +692,7 @@ class LegalCategoryCell: UICollectionViewCell {
     }
     
     private func setupUI() {
-        backgroundColor = Theme.cardBackgroundColor
+        backgroundColor = Theme.Colors.cardBackground
         layer.cornerRadius = 12
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOffset = CGSize(width: 0, height: 2)
@@ -701,8 +702,8 @@ class LegalCategoryCell: UICollectionViewCell {
         iconLabel.font = UIFont.systemFont(ofSize: 24)
         iconLabel.textAlignment = .center
         
-        nameLabel.font = Theme.regularFont(size: 12)
-        nameLabel.textColor = Theme.textColor
+        nameLabel.font = Theme.Fonts.caption1
+        nameLabel.textColor = Theme.Colors.textPrimary
         nameLabel.textAlignment = .center
         nameLabel.numberOfLines = 2
         
@@ -732,7 +733,7 @@ class LegalCategoryCell: UICollectionViewCell {
             layer.borderWidth = 2
             layer.borderColor = category.color.cgColor
         } else {
-            backgroundColor = Theme.cardBackgroundColor
+            backgroundColor = Theme.Colors.cardBackground
             layer.borderWidth = 0
         }
     }
@@ -755,26 +756,26 @@ class LegalArticleCell: UITableViewCell {
     }
     
     private func setupUI() {
-        backgroundColor = Theme.backgroundColor
+        backgroundColor = Theme.Colors.background
         selectionStyle = .none
         
-        containerView.backgroundColor = Theme.cardBackgroundColor
+        containerView.backgroundColor = Theme.Colors.cardBackground
         containerView.layer.cornerRadius = 12
         containerView.layer.shadowColor = UIColor.black.cgColor
         containerView.layer.shadowOffset = CGSize(width: 0, height: 2)
         containerView.layer.shadowOpacity = 0.1
         containerView.layer.shadowRadius = 4
         
-        titleLabel.font = Theme.boldFont(size: 16)
-        titleLabel.textColor = Theme.textColor
+        titleLabel.font = Theme.Fonts.headline
+        titleLabel.textColor = Theme.Colors.textPrimary
         titleLabel.numberOfLines = 2
         
-        summaryLabel.font = Theme.regularFont(size: 14)
-        summaryLabel.textColor = Theme.secondaryTextColor
+        summaryLabel.font = Theme.Fonts.subheadline
+        summaryLabel.textColor = Theme.Colors.textSecondary
         summaryLabel.numberOfLines = 2
         
-        readTimeLabel.font = Theme.regularFont(size: 12)
-        readTimeLabel.textColor = Theme.tertiaryTextColor
+        readTimeLabel.font = Theme.Fonts.caption1
+        readTimeLabel.textColor = Theme.Colors.textTertiary
         
         urgentIndicator.backgroundColor = UIColor.systemRed
         urgentIndicator.layer.cornerRadius = 4
