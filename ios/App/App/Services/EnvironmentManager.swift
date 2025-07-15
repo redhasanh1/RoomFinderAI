@@ -113,7 +113,7 @@ class EnvironmentManager {
     }
     
     private func getDeviceId() -> String {
-        return KeychainService.shared.getOrCreateDeviceId()
+        return UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
     }
     
     private func getOSVersion() -> String {

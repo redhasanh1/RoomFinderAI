@@ -11,6 +11,32 @@
     <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
     <script src="universal-auth-manager.js"></script>
     
+    <!-- 📱 iOS WebView Support -->
+    <script type="module">
+        import { Capacitor } from '@capacitor/core';
+        
+        // Only load iOS support on native platforms
+        if (Capacitor.isNativePlatform()) {
+            console.log('🍎 Loading iOS support...');
+            
+            // Load network interceptor
+            import('./capacitor-fetch-interceptor.js').then(() => {
+                console.log('✅ iOS network interceptor loaded');
+            }).catch(error => {
+                console.error('❌ Failed to load iOS network interceptor:', error);
+            });
+            
+            // Load anonymous Supabase config
+            import('./supabase-anon-config.js').then(() => {
+                console.log('✅ iOS Supabase config loaded');
+            }).catch(error => {
+                console.error('❌ Failed to load iOS Supabase config:', error);
+            });
+        } else {
+            console.log('🌐 Running on web - iOS support not needed');
+        }
+    </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
