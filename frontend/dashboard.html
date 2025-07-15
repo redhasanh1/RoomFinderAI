@@ -48,6 +48,11 @@
             line-height: 1.6;
         }
         
+        /* Prevent double-tap zoom on interactive elements without breaking clicks */
+        button, .mobile-menu-item, .nav-item {
+            touch-action: manipulation;
+        }
+        
         /* Typography System */
         .font-display {
             font-family: 'Space Grotesk', sans-serif;
@@ -104,7 +109,6 @@
         }
         
         .glass-card:hover {
-            transform: translateY(-4px);
             box-shadow: var(--shadow-lg);
         }
         
@@ -124,12 +128,16 @@
             border-radius: var(--border-radius-sm);
             font-weight: 600;
             transition: var(--transition);
-            cursor: pointer;
+            cursor: pointer !important;
             display: flex;
             align-items: center;
             gap: 12px;
             position: relative;
             overflow: hidden;
+            z-index: 999 !important;
+            pointer-events: auto !important;
+            border: none;
+            background: transparent;
         }
         
         .tab-button.active {
@@ -200,9 +208,23 @@
             font-weight: 600;
             transition: var(--transition);
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            cursor: pointer;
+            cursor: pointer !important;
             position: relative;
             overflow: hidden;
+            z-index: 999 !important;
+            display: inline-block;
+            text-decoration: none;
+            pointer-events: auto !important;
+            user-select: none;
+        }
+        
+        a.modern-button {
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        button.modern-button:active {
+            transform: scale(0.98);
         }
         
         .modern-button::before {
@@ -217,7 +239,7 @@
         }
         
         .modern-button:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: 0 12px 30px rgba(102, 126, 234, 0.6);
         }
         
@@ -960,63 +982,72 @@
 
         <!-- Tab Navigation -->
         <div class="mb-12">
-            <div class="glass-card p-2">
+            <div style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 28px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); padding: 8px;">
                 <div class="flex flex-wrap gap-2">
-                <button class="tab-button active" onclick="switchTab('overview', this)">
-                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                
+                <button class="dashboard-tab-btn" data-tab="overview" onclick="switchTab('overview')" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; cursor: pointer; border: none; border-radius: 12px; position: relative; z-index: 99999; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
                     Account Overview
                 </button>
-                <button class="tab-button" onclick="switchTab('subscriptions', this)">
-                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                
+                <button class="dashboard-tab-btn" data-tab="subscriptions" onclick="switchTab('subscriptions')" style="background: rgba(255, 255, 255, 0.95); color: #64748b; padding: 16px 32px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; position: relative; z-index: 99999; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
                     </svg>
                     Subscriptions
                 </button>
-                <button class="tab-button" onclick="switchTab('listings', this)">
-                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                
+                <button class="dashboard-tab-btn" data-tab="listings" onclick="switchTab('listings')" style="background: rgba(255, 255, 255, 0.95); color: #64748b; padding: 16px 32px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; position: relative; z-index: 99999; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                     </svg>
                     Listings
                 </button>
-                <button class="tab-button" onclick="switchTab('verification', this)">
-                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                
+                <button class="dashboard-tab-btn" data-tab="verification" onclick="switchTab('verification')" style="background: rgba(255, 255, 255, 0.95); color: #64748b; padding: 16px 32px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; position: relative; z-index: 99999; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                     </svg>
                     Verification
                 </button>
-                <button class="tab-button" onclick="switchTab('ai-analytics', this)">
-                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                
+                <button class="dashboard-tab-btn" data-tab="ai-analytics" onclick="switchTab('ai-analytics')" style="background: rgba(255, 255, 255, 0.95); color: #64748b; padding: 16px 32px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; position: relative; z-index: 99999; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                     </svg>
                     AI Analytics
                 </button>
-                <button class="tab-button" onclick="switchTab('market-data', this)">
-                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                
+                <button class="dashboard-tab-btn" data-tab="market-data" onclick="switchTab('market-data')" style="background: rgba(255, 255, 255, 0.95); color: #64748b; padding: 16px 32px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; position: relative; z-index: 99999; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                     </svg>
                     Market Data
                 </button>
-                <button class="tab-button" onclick="switchTab('rent-reminders', this)">
-                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                
+                <button class="dashboard-tab-btn" data-tab="rent-reminders" onclick="switchTab('rent-reminders')" style="background: rgba(255, 255, 255, 0.95); color: #64748b; padding: 16px 32px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; position: relative; z-index: 99999; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     Rent Reminders
                 </button>
-                <button class="tab-button" onclick="switchTab('mortgage', this)">
-                    <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                
+                <button class="dashboard-tab-btn" data-tab="mortgage" onclick="switchTab('mortgage')" style="background: rgba(255, 255, 255, 0.95); color: #64748b; padding: 16px 32px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; position: relative; z-index: 99999; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                     </svg>
                     Mortgage
                 </button>
+                
             </div>
         </div>
 
         <!-- Tab Content -->
         <div id="tab-content">
             <!-- Overview Tab -->
-            <div id="overview-tab" class="tab-content">
+            <div id="overview-tab" style="display: block;">
                 <!-- Stats Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div class="stats-card">
@@ -1129,7 +1160,7 @@
             </div>
 
             <!-- Subscriptions Tab -->
-            <div id="subscriptions-tab" class="tab-content hidden">
+            <div id="subscriptions-tab" style="display: none;">
                 <div class="glass-card p-6">
                     <h3 class="text-xl font-bold text-gray-900 mb-6">Subscription Management</h3>
                     <div id="subscriptionDetails" class="mb-6">
@@ -1145,10 +1176,10 @@
             </div>
 
             <!-- Listings Tab -->
-            <div id="listings-tab" class="tab-content hidden">
+            <div id="listings-tab" style="display: none;">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold text-gray-900">Your Listings</h3>
-                    <a href="/listings" class="modern-button">Create New Listing</a>
+                    <a href="/listings" class="modern-button" style="text-decoration: none; position: relative; z-index: 99999; cursor: pointer;">Create New Listing</a>
                 </div>
                 <div id="dashboardListings" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <!-- Listings will be populated here -->
@@ -1156,7 +1187,7 @@
             </div>
 
             <!-- Verification Tab -->
-            <div id="verification-tab" class="tab-content hidden">
+            <div id="verification-tab" style="display: none;">
                 <div class="glass-card p-6">
                     <h3 class="text-xl font-bold text-gray-900 mb-6">Account Verification</h3>
                     
@@ -1201,7 +1232,7 @@
                                     <p id="bankVerificationDesc" class="text-sm text-gray-600">Add your banking information for payments</p>
                                 </div>
                             </div>
-                            <button id="addBankBtn" class="modern-button" onclick="openBankInfoModal()">Add Bank Info</button>
+                            <button onclick="openBankInfoModal()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; cursor: pointer; border: none; border-radius: 12px; position: relative; z-index: 99999; display: inline-block;">Add Bank Info</button>
                         </div>
 
                         <div class="flex items-center justify-between p-4 bg-white rounded-lg border">
@@ -1216,7 +1247,7 @@
                                     <p class="text-sm text-gray-600">Upload ID and take selfie for verification</p>
                                 </div>
                             </div>
-                            <button id="uploadIdBtn" class="modern-button" onclick="openVerificationModal()">Upload ID</button>
+                            <button onclick="openVerificationModal()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; cursor: pointer; border: none; border-radius: 12px; position: relative; z-index: 99999; display: inline-block;">Upload ID</button>
                         </div>
 
                         <div class="flex items-center justify-between p-4 bg-white rounded-lg border">
@@ -1231,14 +1262,14 @@
                                     <p class="text-sm text-gray-600">Add and verify your phone number</p>
                                 </div>
                             </div>
-                            <button class="modern-button">Add Phone</button>
+                            <button onclick="alert('Phone verification feature coming soon!')" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; cursor: pointer; border: none; border-radius: 12px; position: relative; z-index: 99999; display: inline-block;">Add Phone</button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- AI Analytics Tab -->
-            <div id="ai-analytics-tab" class="tab-content hidden">
+            <div id="ai-analytics-tab" style="display: none;">
                 <div class="glass-card p-6">
                     <h3 class="text-xl font-bold text-gray-900 mb-6">🎯 AI Negotiation Analytics</h3>
                     
@@ -1344,7 +1375,7 @@
             </div>
 
             <!-- Market Data Tab -->
-            <div id="market-data-tab" class="tab-content hidden">
+            <div id="market-data-tab" style="display: none;">
                 <div class="glass-card p-6">
                     <h3 class="text-xl font-bold text-gray-900 mb-6">📈 Market Intelligence</h3>
                     
@@ -2132,7 +2163,7 @@
             </div>
 
             <!-- Rent Reminders Tab -->
-            <div id="rent-reminders-tab" class="tab-content hidden">
+            <div id="rent-reminders-tab" style="display: none;">
                 <div class="glass-card p-6">
                     <h3 class="text-xl font-bold text-gray-900 mb-6">🏠 Rent Reminders</h3>
                     
@@ -2226,7 +2257,7 @@
             </div>
 
             <!-- Mortgage Tab -->
-            <div id="mortgage-tab" class="tab-content hidden">
+            <div id="mortgage-tab" style="display: none;">
                 <div class="glass-card p-6">
                     <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                         <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2800,7 +2831,7 @@
             </div>
 
             <!-- Mortgage Tab -->
-            <div id="mortgage-tab" class="tab-content hidden">
+            <div id="mortgage-tab" style="display: none;">
                 <div class="glass-card p-6">
                     <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                         <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4056,7 +4087,7 @@
                         </div>
                         <h4 class="text-lg font-medium text-gray-900 mb-2">No Payment Method Added</h4>
                         <p class="text-gray-600 mb-6">You haven't added any credit or debit card to your account yet.</p>
-                        <button onclick="openAddCardSection()" class="modern-button">
+                        <button onclick="openAddCardSection()" class="modern-button" style="position: relative; z-index: 99999; cursor: pointer; border: none;">
                             <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                             </svg>
@@ -4771,7 +4802,7 @@
                                     <h4 class="text-lg font-semibold text-gray-600 mb-2">No Active Subscription</h4>
                                     <p class="text-gray-500 mb-2">Your subscription ended on ${effectiveDate}</p>
                                     <p class="text-gray-500 mb-4">Subscribe to unlock premium features</p>
-                                    <a href="/pricing" class="modern-button">View Plans</a>
+                                    <a href="/pricing" class="modern-button" style="position: relative; z-index: 99999; cursor: pointer; text-decoration: none;">View Plans</a>
                                 </div>
                             </div>
                         `;
@@ -4847,7 +4878,7 @@
                             <div class="text-center">
                                 <h4 class="text-lg font-semibold text-gray-600 mb-2">No Active Subscription</h4>
                                 <p class="text-gray-500 mb-4">Subscribe to unlock premium features</p>
-                                <a href="/pricing" class="modern-button">View Plans</a>
+                                <a href="/pricing" class="modern-button" style="position: relative; z-index: 99999; cursor: pointer; text-decoration: none;">View Plans</a>
                             </div>
                         </div>
                     `;
@@ -5123,7 +5154,7 @@
                 container.innerHTML = `
                     <div class="col-span-full text-center py-12">
                         <p class="text-gray-500 mb-4">No listings yet</p>
-                        <a href="/listings" class="modern-button">Create Your First Listing</a>
+                        <a href="/listings" class="modern-button" style="position: relative; z-index: 99999; cursor: pointer; text-decoration: none;">Create Your First Listing</a>
                     </div>
                 `;
                 return;
@@ -5144,20 +5175,40 @@
 
 
         // Tab switching functionality
-        function switchTab(tabName, buttonElement) {
+        function switchTab(tabName) {
+            console.log('switchTab called with:', tabName);
+            
             // Hide all tab contents
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.add('hidden');
+            const allTabs = ['overview', 'subscriptions', 'listings', 'verification', 'ai-analytics', 'market-data', 'rent-reminders', 'mortgage'];
+            allTabs.forEach(tab => {
+                const tabElement = document.getElementById(tab + '-tab');
+                if (tabElement) {
+                    tabElement.style.display = 'none';
+                }
             });
 
             // Show selected tab
-            document.getElementById(tabName + '-tab').classList.remove('hidden');
+            const selectedTab = document.getElementById(tabName + '-tab');
+            if (selectedTab) {
+                selectedTab.style.display = 'block';
+                console.log('Showed tab:', tabName);
+            } else {
+                console.error('Tab not found:', tabName + '-tab');
+            }
 
             // Update button states
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
+            const allButtons = document.querySelectorAll('.dashboard-tab-btn');
+            allButtons.forEach(btn => {
+                btn.style.background = 'rgba(255, 255, 255, 0.95)';
+                btn.style.color = '#64748b';
             });
-            buttonElement.classList.add('active');
+            
+            // Set active button
+            const activeButton = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeButton) {
+                activeButton.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                activeButton.style.color = 'white';
+            }
         }
 
         // Utility functions
@@ -5182,6 +5233,10 @@
         function openVerificationModal() {
             document.getElementById('verificationModal').classList.remove('hidden');
             resetModal();
+        }
+
+        function openVerificationModal() {
+            document.getElementById('verificationModal').classList.remove('hidden');
         }
 
         function closeVerificationModal() {
@@ -9938,13 +9993,6 @@
             }
         });
         
-        // Touch event handling for better mobile experience
-        document.addEventListener('touchstart', function(event) {
-            // Prevent zoom on double tap for buttons
-            if (event.target.matches('button, .mobile-menu-item, .nav-item')) {
-                event.preventDefault();
-            }
-        }, { passive: false });
         
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {

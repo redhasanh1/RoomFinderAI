@@ -1,5 +1,4 @@
 import Foundation
-import Capacitor
 
 // Backend Service - Bridge between Swift and JavaScript services
 class BackendService {

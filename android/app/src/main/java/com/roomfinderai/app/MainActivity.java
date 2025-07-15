@@ -14,6 +14,7 @@ import com.roomfinderai.app.fragments.DashboardFragment;
 import com.roomfinderai.app.fragments.ListingsFragment;
 import com.roomfinderai.app.fragments.PostFragment;
 import com.roomfinderai.app.fragments.SettingsFragment;
+import com.roomfinderai.app.fragments.TestApiFragment;
 import com.roomfinderai.app.config.ApiConfig;
 
 public class MainActivity extends AppCompatActivity {
@@ -80,24 +81,40 @@ public class MainActivity extends AppCompatActivity {
         
         bottomNavigation.setOnNavigationItemSelectedListener(item -> {
             Fragment fragment = null;
+            String tabName = "Unknown";
             
             int itemId = item.getItemId();
+            Log.d(TAG, "🔄 Navigation item tapped - ID: " + itemId);
+            
             if (itemId == R.id.navigation_home) {
                 fragment = new ListingsFragment();
+                tabName = "Home";
             } else if (itemId == R.id.navigation_ai_chats) {
                 fragment = new AIChatsFragment();
+                tabName = "AI Chats";
             } else if (itemId == R.id.navigation_add) {
                 fragment = new PostFragment();
+                tabName = "Add/Post";
             } else if (itemId == R.id.navigation_dashboard) {
                 fragment = new DashboardFragment();
+                tabName = "Dashboard";
             } else if (itemId == R.id.navigation_settings) {
-                fragment = new SettingsFragment();
+                // Temporarily using TestApiFragment for testing
+                fragment = new TestApiFragment();
+                tabName = "Settings (API TEST FRAGMENT)";
+                Log.d(TAG, "🧪 LOADING API TEST FRAGMENT - This should show test buttons!");
+                // fragment = new SettingsFragment(); // Original settings
             }
             
+            Log.d(TAG, "📱 Tab selected: " + tabName);
+            
             if (fragment != null) {
+                Log.d(TAG, "✅ Fragment created: " + fragment.getClass().getSimpleName());
                 loadFragment(fragment);
-                Log.d(TAG, "Navigation: Loaded " + fragment.getClass().getSimpleName());
+                Log.d(TAG, "🔄 loadFragment() called for " + fragment.getClass().getSimpleName());
                 return true;
+            } else {
+                Log.e(TAG, "❌ Fragment is NULL! Tab: " + tabName);
             }
             return false;
         });
@@ -105,6 +122,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadFragment(Fragment fragment) {
         try {
+            Log.d(TAG, "🔄 loadFragment() starting for: " + fragment.getClass().getSimpleName());
+            Log.d(TAG, "📦 Fragment container ID: R.id.fragmentContainer");
+            
             FragmentTransaction transaction = fragmentManager.beginTransaction();
             transaction.setCustomAnimations(
                 android.R.anim.fade_in,
@@ -115,9 +135,14 @@ public class MainActivity extends AppCompatActivity {
             transaction.replace(R.id.fragmentContainer, fragment);
             transaction.commit();
             
-            Log.d(TAG, "Fragment loaded: " + fragment.getClass().getSimpleName());
+            Log.d(TAG, "✅ Fragment transaction committed successfully: " + fragment.getClass().getSimpleName());
+            
+            if (fragment instanceof com.roomfinderai.app.fragments.TestApiFragment) {
+                Log.d(TAG, "🧪🧪🧪 API TEST FRAGMENT LOADED! You should see test buttons now! 🧪🧪🧪");
+            }
+            
         } catch (Exception e) {
-            Log.e(TAG, "Error loading fragment: " + e.getMessage(), e);
+            Log.e(TAG, "❌ Error loading fragment: " + e.getMessage(), e);
         }
     }
 
