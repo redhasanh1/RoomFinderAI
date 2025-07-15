@@ -265,22 +265,28 @@ extension HomeViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     private func loadData() {
-        // Show loading indicator or placeholder if needed
+        print("🚀 HomeViewController: Starting data load...")
         
-        // Load featured properties from real API
+        // Always load sample data first to show something immediately
+        loadSampleData()
+        
+        // Then try to load real data from API in background
         APIService.shared.fetchProperties(page: 1, limit: 5) { [weak self] result in
-            switch result {
-            case .success(let properties):
-                print("✅ Successfully loaded \(properties.count) featured properties from API")
-                self?.featuredProperties = properties
-                self?.featuredCollectionView.reloadData()
-                
-                // If we got real data, don't load sample data for recent properties
-                self?.loadRecentProperties()
-            case .failure(let error):
-                print("❌ Error loading featured properties: \(error)")
-                // Load sample data as fallback
-                self?.loadSampleData()
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let properties):
+                    print("✅ Successfully loaded \(properties.count) real properties from API")
+                    if !properties.isEmpty {
+                        self?.featuredProperties = properties
+                        self?.recentProperties = properties
+                        self?.featuredCollectionView.reloadData()
+                        self?.recentListingsTableView.reloadData()
+                    }
+                case .failure(let error):
+                    print("❌ Error loading real properties: \(error.localizedDescription)")
+                    print("📊 Using sample data as fallback")
+                    // Sample data is already loaded, so we're good
+                }
             }
         }
     }
@@ -302,6 +308,8 @@ extension HomeViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     private func loadSampleData() {
+        print("📦 Loading sample data for immediate display...")
+        
         // Diverse sample properties with real images
         let properties = [
             Property(
