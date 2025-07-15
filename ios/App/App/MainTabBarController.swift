@@ -1,23 +1,363 @@
 import UIKit
 import Foundation
 
-// Temporary stub class until properly added to Xcode project
+// Real Enhanced Search Implementation
 class EnhancedSearchViewController: UIViewController {
+    
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
+    private let searchBar = UISearchBar()
+    private let filtersStackView = UIStackView()
+    private let resultsTableView = UITableView()
+    private let mapToggleButton = UIButton(type: .system)
+    private let sortButton = UIButton(type: .system)
+    
+    private var properties: [Property] = []
+    private var filteredProperties: [Property] = []
+    private var isMapView = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Enhanced Search"
+        setupUI()
+        setupConstraints()
+        loadProperties()
+    }
+    
+    private func setupUI() {
+        view.backgroundColor = Theme.Colors.background
+        title = "Search Properties"
         
-        let label = UILabel()
-        label.text = "Enhanced Search Coming Soon"
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(label)
+        // Search bar
+        searchBar.delegate = self
+        searchBar.placeholder = "Search properties..."
+        searchBar.searchBarStyle = .minimal
         
+        // Filters stack view
+        filtersStackView.axis = .horizontal
+        filtersStackView.spacing = Theme.Spacing.sm
+        filtersStackView.distribution = .fillEqually
+        
+        // Add filter buttons
+        let priceFilterButton = createFilterButton(title: "Price", action: #selector(showPriceFilter))
+        let typeFilterButton = createFilterButton(title: "Type", action: #selector(showTypeFilter))
+        let bedsFilterButton = createFilterButton(title: "Beds", action: #selector(showBedsFilter))
+        let locationFilterButton = createFilterButton(title: "Location", action: #selector(showLocationFilter))
+        
+        filtersStackView.addArrangedSubview(priceFilterButton)
+        filtersStackView.addArrangedSubview(typeFilterButton)
+        filtersStackView.addArrangedSubview(bedsFilterButton)
+        filtersStackView.addArrangedSubview(locationFilterButton)
+        
+        // Map toggle button
+        mapToggleButton.setTitle("Map View", for: .normal)
+        mapToggleButton.applySecondaryButtonStyle()
+        mapToggleButton.addTarget(self, action: #selector(toggleMapView), for: .touchUpInside)
+        
+        // Sort button
+        sortButton.setTitle("Sort", for: .normal)
+        sortButton.applySecondaryButtonStyle()
+        sortButton.addTarget(self, action: #selector(showSortOptions), for: .touchUpInside)
+        
+        // Results table view
+        resultsTableView.delegate = self
+        resultsTableView.dataSource = self
+        resultsTableView.register(PropertyTableViewCell.self, forCellReuseIdentifier: "PropertyCell")
+        resultsTableView.backgroundColor = .clear
+        resultsTableView.separatorStyle = .none
+        
+        // Setup scroll view
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        filtersStackView.translatesAutoresizingMaskIntoConstraints = false
+        mapToggleButton.translatesAutoresizingMaskIntoConstraints = false
+        sortButton.translatesAutoresizingMaskIntoConstraints = false
+        resultsTableView.translatesAutoresizingMaskIntoConstraints = false
+        
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+        contentView.addSubview(searchBar)
+        contentView.addSubview(filtersStackView)
+        contentView.addSubview(mapToggleButton)
+        contentView.addSubview(sortButton)
+        contentView.addSubview(resultsTableView)
+    }
+    
+    private func setupConstraints() {
         NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            
+            searchBar.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Theme.Spacing.md),
+            searchBar.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Theme.Spacing.md),
+            searchBar.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Theme.Spacing.md),
+            
+            filtersStackView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: Theme.Spacing.md),
+            filtersStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Theme.Spacing.md),
+            filtersStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Theme.Spacing.md),
+            filtersStackView.heightAnchor.constraint(equalToConstant: 44),
+            
+            mapToggleButton.topAnchor.constraint(equalTo: filtersStackView.bottomAnchor, constant: Theme.Spacing.md),
+            mapToggleButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Theme.Spacing.md),
+            mapToggleButton.widthAnchor.constraint(equalToConstant: 100),
+            
+            sortButton.topAnchor.constraint(equalTo: filtersStackView.bottomAnchor, constant: Theme.Spacing.md),
+            sortButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Theme.Spacing.md),
+            sortButton.widthAnchor.constraint(equalToConstant: 80),
+            
+            resultsTableView.topAnchor.constraint(equalTo: mapToggleButton.bottomAnchor, constant: Theme.Spacing.md),
+            resultsTableView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            resultsTableView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            resultsTableView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            resultsTableView.heightAnchor.constraint(equalToConstant: 600)
         ])
+    }
+    
+    private func createFilterButton(title: String, action: Selector) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setTitle(title, for: .normal)
+        button.applySecondaryButtonStyle()
+        button.addTarget(self, action: action, for: .touchUpInside)
+        return button
+    }
+    
+    private func loadProperties() {
+        // Load properties from API
+        APIService.shared.fetchProperties { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let properties):
+                    self?.properties = properties
+                    self?.filteredProperties = properties
+                    self?.resultsTableView.reloadData()
+                case .failure(let error):
+                    print("Error loading properties: \(error)")
+                    // Show error message
+                }
+            }
+        }
+    }
+    
+    @objc private func showPriceFilter() {
+        let alert = UIAlertController(title: "Price Range", message: "Select price range", preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "Under $1,000", style: .default) { _ in
+            self.filterByPrice(max: 1000)
+        })
+        alert.addAction(UIAlertAction(title: "$1,000 - $2,000", style: .default) { _ in
+            self.filterByPrice(min: 1000, max: 2000)
+        })
+        alert.addAction(UIAlertAction(title: "$2,000 - $3,000", style: .default) { _ in
+            self.filterByPrice(min: 2000, max: 3000)
+        })
+        alert.addAction(UIAlertAction(title: "Over $3,000", style: .default) { _ in
+            self.filterByPrice(min: 3000)
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    @objc private func showTypeFilter() {
+        let alert = UIAlertController(title: "Property Type", message: "Select property type", preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "Apartment", style: .default) { _ in
+            self.filterByType("apartment")
+        })
+        alert.addAction(UIAlertAction(title: "House", style: .default) { _ in
+            self.filterByType("house")
+        })
+        alert.addAction(UIAlertAction(title: "Condo", style: .default) { _ in
+            self.filterByType("condo")
+        })
+        alert.addAction(UIAlertAction(title: "Townhouse", style: .default) { _ in
+            self.filterByType("townhouse")
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    @objc private func showBedsFilter() {
+        let alert = UIAlertController(title: "Bedrooms", message: "Select number of bedrooms", preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "Studio", style: .default) { _ in
+            self.filterByBeds(0)
+        })
+        alert.addAction(UIAlertAction(title: "1 Bedroom", style: .default) { _ in
+            self.filterByBeds(1)
+        })
+        alert.addAction(UIAlertAction(title: "2 Bedrooms", style: .default) { _ in
+            self.filterByBeds(2)
+        })
+        alert.addAction(UIAlertAction(title: "3+ Bedrooms", style: .default) { _ in
+            self.filterByBeds(3)
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    @objc private func showLocationFilter() {
+        let alert = UIAlertController(title: "Location", message: "Select location", preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "Downtown", style: .default) { _ in
+            self.filterByLocation("downtown")
+        })
+        alert.addAction(UIAlertAction(title: "Midtown", style: .default) { _ in
+            self.filterByLocation("midtown")
+        })
+        alert.addAction(UIAlertAction(title: "Uptown", style: .default) { _ in
+            self.filterByLocation("uptown")
+        })
+        alert.addAction(UIAlertAction(title: "Suburbs", style: .default) { _ in
+            self.filterByLocation("suburbs")
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    @objc private func toggleMapView() {
+        isMapView.toggle()
+        mapToggleButton.setTitle(isMapView ? "List View" : "Map View", for: .normal)
+        
+        if isMapView {
+            let mapVC = MapViewController()
+            mapVC.properties = filteredProperties
+            navigationController?.pushViewController(mapVC, animated: true)
+        }
+    }
+    
+    @objc private func showSortOptions() {
+        let alert = UIAlertController(title: "Sort By", message: "Select sorting option", preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "Price: Low to High", style: .default) { _ in
+            self.sortProperties(by: .priceAsc)
+        })
+        alert.addAction(UIAlertAction(title: "Price: High to Low", style: .default) { _ in
+            self.sortProperties(by: .priceDesc)
+        })
+        alert.addAction(UIAlertAction(title: "Newest First", style: .default) { _ in
+            self.sortProperties(by: .newest)
+        })
+        alert.addAction(UIAlertAction(title: "Relevance", style: .default) { _ in
+            self.sortProperties(by: .relevance)
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func filterByPrice(min: Int? = nil, max: Int? = nil) {
+        filteredProperties = properties.filter { property in
+            let price = Int(property.price)
+            if let min = min, let max = max {
+                return price >= min && price <= max
+            } else if let min = min {
+                return price >= min
+            } else if let max = max {
+                return price <= max
+            }
+            return true
+        }
+        resultsTableView.reloadData()
+    }
+    
+    private func filterByType(_ type: String) {
+        filteredProperties = properties.filter { property in
+            property.propertyType.lowercased() == type.lowercased()
+        }
+        resultsTableView.reloadData()
+    }
+    
+    private func filterByBeds(_ beds: Int) {
+        filteredProperties = properties.filter { property in
+            if beds == 0 {
+                return property.bedrooms == 0
+            } else if beds == 3 {
+                return property.bedrooms >= 3
+            } else {
+                return property.bedrooms == beds
+            }
+        }
+        resultsTableView.reloadData()
+    }
+    
+    private func filterByLocation(_ location: String) {
+        filteredProperties = properties.filter { property in
+            property.city.lowercased().contains(location.lowercased()) ||
+            property.address.lowercased().contains(location.lowercased())
+        }
+        resultsTableView.reloadData()
+    }
+    
+    private enum SortOption {
+        case priceAsc, priceDesc, newest, relevance
+    }
+    
+    private func sortProperties(by option: SortOption) {
+        switch option {
+        case .priceAsc:
+            filteredProperties.sort { $0.price < $1.price }
+        case .priceDesc:
+            filteredProperties.sort { $0.price > $1.price }
+        case .newest:
+            filteredProperties.sort { $0.createdAt > $1.createdAt }
+        case .relevance:
+            // Sort by relevance (implement based on search criteria)
+            break
+        }
+        resultsTableView.reloadData()
+    }
+}
+
+// MARK: - UISearchBarDelegate
+extension EnhancedSearchViewController: UISearchBarDelegate {
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchText.isEmpty {
+            filteredProperties = properties
+        } else {
+            filteredProperties = properties.filter { property in
+                property.title.lowercased().contains(searchText.lowercased()) ||
+                property.address.lowercased().contains(searchText.lowercased()) ||
+                property.city.lowercased().contains(searchText.lowercased())
+            }
+        }
+        resultsTableView.reloadData()
+    }
+}
+
+// MARK: - UITableViewDataSource & Delegate
+extension EnhancedSearchViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return filteredProperties.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "PropertyCell", for: indexPath) as! PropertyTableViewCell
+        cell.configure(with: filteredProperties[indexPath.row])
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 120
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let property = filteredProperties[indexPath.row]
+        let detailVC = PropertyDetailViewController()
+        detailVC.property = property
+        navigationController?.pushViewController(detailVC, animated: true)
     }
 }
 

@@ -11,7 +11,7 @@ class MapViewController: UIViewController {
     private let listToggleButton = UIButton(type: .system)
     private let currentLocationButton = UIButton(type: .system)
     
-    private var properties: [Property] = []
+    var properties: [Property] = []
     private var selectedProperty: Property?
     
     override func viewDidLoad() {

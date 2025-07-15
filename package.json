@@ -29,6 +29,7 @@
     "@azure/ai-form-recognizer": "^5.0.0",
     "@azure/cognitiveservices-face": "^4.1.0",
     "@azure/ms-rest-azure-js": "^2.1.0",
+    "@capacitor-community/http": "^1.4.1",
     "@capacitor/android": "^7.4.1",
     "@capacitor/cli": "^7.4.1",
     "@capacitor/core": "^7.4.1",
