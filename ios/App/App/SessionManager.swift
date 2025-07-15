@@ -116,20 +116,10 @@ class SessionManager {
             return
         }
         
-        SecureAPIService.shared.refreshAccessToken(refreshToken: refreshToken) { [weak self] result in
-            switch result {
-            case .success(let authResponse):
-                if let user = authResponse.user, let token = authResponse.token {
-                    self?.startSession(user: user, accessToken: token, refreshToken: refreshToken)
-                    completion(true)
-                } else {
-                    completion(false)
-                }
-            case .failure:
-                self?.endSession()
-                completion(false)
-            }
-        }
+        // TODO: Add refresh token functionality when SecureAPIService is available
+        // For now, just end the session if refresh is needed
+        endSession()
+        completion(false)
     }
     
     // MARK: - Private Methods

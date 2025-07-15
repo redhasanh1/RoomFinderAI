@@ -7,14 +7,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Create window
-        window = UIWindow(frame: UIScreen.main.bounds)
-        
-        // Set up native tab bar controller
-        let mainTabBarController = MainTabBarController()
-        window?.rootViewController = mainTabBarController
-        window?.makeKeyAndVisible()
-        
+        // Override point for customization after application launch.
         return true
     }
 
@@ -52,5 +45,4 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // tracking app url opens, make sure to keep this call
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
     }
-
 }
