@@ -51,7 +51,7 @@ class NetworkManager {
     
     func performRequest<T: Codable>(
         _ request: URLRequest,
-        retryCount: Int = APIConfig.maxRetries,
+        retryCount: Int = SecureAPIConfig.maxRetries,
         completion: @escaping (Result<T, Error>) -> Void
     ) {
         // Check network availability
@@ -83,7 +83,7 @@ class NetworkManager {
             if let error = error {
                 if retryCount > 0 && self?.isRetryableError(error) == true {
                     // Exponential backoff
-                    let delay = Double(APIConfig.maxRetries - retryCount + 1) * 2.0
+                    let delay = Double(SecureAPIConfig.maxRetries - retryCount + 1) * 2.0
                     DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
                         self?.performRequestWithRetry(
                             request,
@@ -272,7 +272,7 @@ extension URLRequest {
         url: URL,
         method: String = "GET",
         body: Data? = nil,
-        timeout: TimeInterval = APIConfig.timeout
+        timeout: TimeInterval = SecureAPIConfig.timeout
     ) -> URLRequest {
         var request = URLRequest(url: url, timeoutInterval: timeout)
         request.httpMethod = method

@@ -8,19 +8,35 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.Priority;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.roomfinderai.app.R;
+import com.roomfinderai.app.models.Listing;
+import com.roomfinderai.app.models.MediaItem;
 import java.util.List;
+import java.util.Locale;
 
 public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.ListingViewHolder> {
 
-    private List<Object> listings;
+    private List<Listing> listings;
     private Context context;
 
-    public ListingsAdapter(List<Object> listings, Context context) {
+    public ListingsAdapter(List<Listing> listings, Context context) {
         this.listings = listings;
         this.context = context;
+        // Enable stable IDs for better RecyclerView performance
+        setHasStableIds(true);
+    }
+    
+    @Override
+    public long getItemId(int position) {
+        // Use listing ID as stable ID for better recycling
+        Listing listing = listings.get(position);
+        return listing.getId() != null ? listing.getId().hashCode() : position;
     }
 
     @NonNull
@@ -33,20 +49,100 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
 
     @Override
     public void onBindViewHolder(@NonNull ListingViewHolder holder, int position) {
-        // Bind data to views
-        holder.price.setText("$1,500/month");
-        holder.title.setText("Beautiful Downtown Apartment");
-        holder.location.setText("Downtown, Toronto");
-        holder.propertyType.setText("Apartment");
-        holder.bedrooms.setText("2 Beds");
-        holder.bathrooms.setText("1 Bath");
-        holder.area.setText("850 sqft");
-        holder.postedDate.setText("Posted 2 hours ago");
+        Listing listing = listings.get(position);
+        
+        // Clear any pending Glide requests for this ImageView to prevent loading wrong images
+        Glide.with(holder.propertyImage.getContext()).clear(holder.propertyImage);
+        
+        // Bind actual listing data to views
+        holder.price.setText(String.format(Locale.US, "$%.0f/month", listing.getPrice()));
+        holder.title.setText(listing.getTitle() != null ? listing.getTitle() : "No title");
+        holder.location.setText(listing.getLocation() != null ? listing.getLocation() : "Location not specified");
+        
+        // Property type
+        String propertyType = listing.getPropertyType();
+        if (propertyType == null || propertyType.isEmpty()) {
+            propertyType = "Property";
+        }
+        holder.propertyType.setText(propertyType);
+        
+        // Bedrooms (bathrooms not available in current database schema)
+        holder.bedrooms.setText(listing.getBedrooms() + " Beds");
+        holder.bathrooms.setText("N/A Bath"); // Bathrooms field not in database
+        
+        // Area - this would need to be added to the Listing model
+        holder.area.setText("N/A sqft");
+        
+        // Posted date - use created_at if available
+        String postedDate = "Recently posted";
+        if (listing.getCreatedAt() != null) {
+            // In a real app, you'd format this date properly
+            postedDate = "Posted recently";
+        }
+        holder.postedDate.setText(postedDate);
+        
+        // Load property image from Supabase media bucket (matching website implementation)
+        loadPropertyImage(holder.propertyImage, listing);
+        
+        // Handle favorite button click
+        holder.favoriteButton.setOnClickListener(v -> {
+            // TODO: Implement favorite functionality
+        });
+    }
+    
+    /**
+     * Load property image from Supabase media bucket with optimized performance
+     * Uses Glide for efficient loading, caching, and error handling
+     */
+    private void loadPropertyImage(ImageView imageView, Listing listing) {
+        // Clear any previous image to prevent flickering during recycling
+        imageView.setImageDrawable(null);
+        
+        String imageUrl = null;
+        
+        // Get first available image from media array (optimized search)
+        if (listing.getMedia() != null && !listing.getMedia().isEmpty()) {
+            MediaItem firstMedia = listing.getMedia().get(0); // Just get first item for performance
+            if (firstMedia != null && firstMedia.isImage() && firstMedia.hasValidUrl()) {
+                imageUrl = firstMedia.getPublicUrl();
+            }
+        }
+        
+        // Configure Glide with RecyclerView optimizations
+        RequestOptions options = new RequestOptions()
+                .centerCrop()
+                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC) // Let Glide decide optimal caching
+                .placeholder(R.drawable.ic_home) // Placeholder while loading
+                .error(R.drawable.ic_home) // Fallback for broken images
+                .override(150, 100) // Even smaller for better performance
+                .skipMemoryCache(false) // Use memory cache
+                .priority(Priority.NORMAL) // Normal priority for better balance
+                .dontTransform(); // Skip unnecessary transformations
+        
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            // Load image with proper error handling
+            Glide.with(imageView.getContext())
+                    .load(imageUrl)
+                    .apply(options)
+                    .thumbnail(0.25f) // Larger thumbnail for better UX
+                    .into(imageView);
+        } else {
+            // No valid image available, show placeholder immediately
+            imageView.setImageResource(R.drawable.ic_home);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return listings.size() > 0 ? listings.size() : 10; // Show 10 demo items
+        return listings.size();
+    }
+    
+    /**
+     * Update listings data efficiently
+     */
+    public void updateListings(List<Listing> newListings) {
+        this.listings = newListings;
+        notifyDataSetChanged();
     }
 
     static class ListingViewHolder extends RecyclerView.ViewHolder {
