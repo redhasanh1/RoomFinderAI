@@ -30,6 +30,90 @@ files_to_add = [
         'path': 'App/CapacitorBridge.swift', 
         'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
         'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'WebBridge.swift',
+        'path': 'App/WebBridge.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'AppModels.swift',
+        'path': 'App/Models/AppModels.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'MainTabView.swift',
+        'path': 'App/Views/MainTabView.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'HomeView.swift',
+        'path': 'App/Views/HomeView.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'SearchView.swift',
+        'path': 'App/Views/SearchView.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'PropertyDetailView.swift',
+        'path': 'App/Views/PropertyDetailView.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'FilterView.swift',
+        'path': 'App/Views/FilterView.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'AISearchView.swift',
+        'path': 'App/Views/AISearchView.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'ChatListView.swift',
+        'path': 'App/Views/ChatListView.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'ChatDetailView.swift',
+        'path': 'App/Views/ChatDetailView.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'ProfileView.swift',
+        'path': 'App/Views/ProfileView.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'SettingsView.swift',
+        'path': 'App/Views/SettingsView.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'SubscriptionView.swift',
+        'path': 'App/Views/SubscriptionView.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
+    },
+    {
+        'name': 'NegotiationView.swift',
+        'path': 'App/Views/NegotiationView.swift',
+        'uuid_file': str(uuid.uuid4()).upper().replace('-', '')[:24],
+        'uuid_build': str(uuid.uuid4()).upper().replace('-', '')[:24]
     }
 ]
 

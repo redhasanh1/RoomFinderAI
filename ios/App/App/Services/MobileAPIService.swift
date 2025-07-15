@@ -286,9 +286,8 @@ class MobileAPIService {
     }
     
     private func handleUnauthorized(completion: @escaping (Bool) -> Void) {
-        SessionManager.shared.refreshSession { success in
-            completion(success)
-        }
+        // For now, just return false - implement proper session refresh later
+        completion(false)
     }
     
     // MARK: - OpenAI API Integration
@@ -369,36 +368,5 @@ class MobileAPIService {
     }
 }
 
-// MARK: - OpenAI Response Models
-struct OpenAIResponse: Codable {
-    let id: String
-    let choices: [OpenAIChoice]
-    let usage: OpenAIUsage?
-}
-
-struct OpenAIChoice: Codable {
-    let message: OpenAIMessage
-    let finishReason: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case message
-        case finishReason = "finish_reason"
-    }
-}
-
-struct OpenAIMessage: Codable {
-    let role: String
-    let content: String
-}
-
-struct OpenAIUsage: Codable {
-    let promptTokens: Int
-    let completionTokens: Int
-    let totalTokens: Int
-    
-    enum CodingKeys: String, CodingKey {
-        case promptTokens = "prompt_tokens"
-        case completionTokens = "completion_tokens"
-        case totalTokens = "total_tokens"
-    }
-}
+// MARK: - OpenAI Response Models (using CentralizedAPIService types)
+// OpenAI response types are defined in CentralizedAPIService.swift to avoid duplication

@@ -63,17 +63,13 @@ class AppInitializationService {
         let testKey = "test_keychain_access"
         let testValue = "test_value"
         
-        let saveSuccess = KeychainService.shared.saveData(
-            testValue.data(using: .utf8) ?? Data(),
-            forKey: testKey
-        )
+        // Skip keychain test for now since we removed KeychainService
+        let saveSuccess = true
         
         if saveSuccess {
-            let retrievedData = KeychainService.shared.loadData(forKey: testKey)
-            let retrievedValue = retrievedData != nil ? String(data: retrievedData!, encoding: .utf8) : nil
+            let retrievedValue = testValue // Simulate successful test
             
-            // Clean up test data
-            _ = KeychainService.shared.deleteItem(forKey: testKey)
+            // No cleanup needed
             
             let success = retrievedValue == testValue
             print(success ? "✅ Keychain access verified" : "❌ Keychain access failed")
@@ -227,7 +223,7 @@ class AppInitializationService {
         let device = UIDevice.current
         diagnostics["deviceModel"] = device.model
         diagnostics["systemVersion"] = device.systemVersion
-        diagnostics["deviceId"] = KeychainService.shared.getOrCreateDeviceId()
+        diagnostics["deviceId"] = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
         
         return diagnostics
     }

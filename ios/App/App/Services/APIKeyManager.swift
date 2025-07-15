@@ -1,10 +1,30 @@
 import Foundation
 
+// MARK: - Simple Key Storage (UserDefaults for now)
+class SimpleKeyStorage {
+    static let shared = SimpleKeyStorage()
+    private let userDefaults = UserDefaults.standard
+    
+    func save(_ value: String, forKey key: String) -> Bool {
+        userDefaults.set(value, forKey: key)
+        return true
+    }
+    
+    func load(_ type: String.Type, forKey key: String) -> String? {
+        return userDefaults.string(forKey: key)
+    }
+    
+    func deleteItem(forKey key: String) -> Bool {
+        userDefaults.removeObject(forKey: key)
+        return true
+    }
+}
+
 // MARK: - API Key Manager
 class APIKeyManager {
     static let shared = APIKeyManager()
     
-    private let keychain = KeychainService.shared
+    private let keyStorage = SimpleKeyStorage.shared
     
     // Key identifiers
     private struct KeyIdentifiers {
@@ -35,59 +55,59 @@ class APIKeyManager {
     // MARK: - API Key Getters
     
     func getOpenAIKey() -> String? {
-        return keychain.load(String.self, forKey: KeyIdentifiers.openAIKey)
+        return keyStorage.load(String.self, forKey: KeyIdentifiers.openAIKey)
     }
     
     func getSupabaseAnonKey() -> String? {
-        return keychain.load(String.self, forKey: KeyIdentifiers.supabaseAnonKey)
+        return keyStorage.load(String.self, forKey: KeyIdentifiers.supabaseAnonKey)
     }
     
     func getSupabaseServiceKey() -> String? {
-        return keychain.load(String.self, forKey: KeyIdentifiers.supabaseServiceKey)
+        return keyStorage.load(String.self, forKey: KeyIdentifiers.supabaseServiceKey)
     }
     
     func getGoogleAPIKey() -> String? {
-        return keychain.load(String.self, forKey: KeyIdentifiers.googleAPIKey)
+        return keyStorage.load(String.self, forKey: KeyIdentifiers.googleAPIKey)
     }
     
     func getStripePublishableKey() -> String? {
-        return keychain.load(String.self, forKey: KeyIdentifiers.stripePublishableKey)
+        return keyStorage.load(String.self, forKey: KeyIdentifiers.stripePublishableKey)
     }
     
     func getSentryDSN() -> String? {
-        return keychain.load(String.self, forKey: KeyIdentifiers.sentryDSN)
+        return keyStorage.load(String.self, forKey: KeyIdentifiers.sentryDSN)
     }
     
     // MARK: - API Key Setters (Should only be used during secure configuration)
     
     @discardableResult
     func setOpenAIKey(_ key: String) -> Bool {
-        return keychain.save(key, forKey: KeyIdentifiers.openAIKey)
+        return keyStorage.save(key, forKey: KeyIdentifiers.openAIKey)
     }
     
     @discardableResult
     func setSupabaseAnonKey(_ key: String) -> Bool {
-        return keychain.save(key, forKey: KeyIdentifiers.supabaseAnonKey)
+        return keyStorage.save(key, forKey: KeyIdentifiers.supabaseAnonKey)
     }
     
     @discardableResult
     func setSupabaseServiceKey(_ key: String) -> Bool {
-        return keychain.save(key, forKey: KeyIdentifiers.supabaseServiceKey)
+        return keyStorage.save(key, forKey: KeyIdentifiers.supabaseServiceKey)
     }
     
     @discardableResult
     func setGoogleAPIKey(_ key: String) -> Bool {
-        return keychain.save(key, forKey: KeyIdentifiers.googleAPIKey)
+        return keyStorage.save(key, forKey: KeyIdentifiers.googleAPIKey)
     }
     
     @discardableResult
     func setStripePublishableKey(_ key: String) -> Bool {
-        return keychain.save(key, forKey: KeyIdentifiers.stripePublishableKey)
+        return keyStorage.save(key, forKey: KeyIdentifiers.stripePublishableKey)
     }
     
     @discardableResult
     func setSentryDSN(_ dsn: String) -> Bool {
-        return keychain.save(dsn, forKey: KeyIdentifiers.sentryDSN)
+        return keyStorage.save(dsn, forKey: KeyIdentifiers.sentryDSN)
     }
     
     // MARK: - Secure Key Exchange
@@ -174,11 +194,11 @@ class APIKeyManager {
     // MARK: - Cleanup
     
     func clearAllKeys() {
-        _ = keychain.deleteItem(forKey: KeyIdentifiers.openAIKey)
-        _ = keychain.deleteItem(forKey: KeyIdentifiers.supabaseServiceKey)
-        _ = keychain.deleteItem(forKey: KeyIdentifiers.googleAPIKey)
-        _ = keychain.deleteItem(forKey: KeyIdentifiers.stripePublishableKey)
-        _ = keychain.deleteItem(forKey: KeyIdentifiers.sentryDSN)
+        _ = keyStorage.deleteItem(forKey: KeyIdentifiers.openAIKey)
+        _ = keyStorage.deleteItem(forKey: KeyIdentifiers.supabaseServiceKey)
+        _ = keyStorage.deleteItem(forKey: KeyIdentifiers.googleAPIKey)
+        _ = keyStorage.deleteItem(forKey: KeyIdentifiers.stripePublishableKey)
+        _ = keyStorage.deleteItem(forKey: KeyIdentifiers.sentryDSN)
         // Keep anon key as it's public
     }
 }
