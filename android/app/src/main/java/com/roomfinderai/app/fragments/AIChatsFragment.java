@@ -1,7 +1,6 @@
 package com.roomfinderai.app.fragments;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,36 +8,25 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
-import android.widget.Toast;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.roomfinderai.app.R;
-import com.roomfinderai.app.models.ChatMessage;
-import com.roomfinderai.app.services.Repository;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class AIChatsFragment extends Fragment {
     
-    private static final String TAG = "AIChatsFragment";
     private RecyclerView chatRecyclerView;
     private EditText messageInput;
     private ImageButton sendButton;
     private TextView aiTypingIndicator;
     private ChatAdapter chatAdapter;
     private List<ChatMessage> messages;
-    private Repository repository;
-    private String sessionId;
-    private String userId = "user123"; // TODO: Get from user session
     
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_ai_chats, container, false);
-        
-        repository = new Repository();
-        sessionId = UUID.randomUUID().toString();
         
         initializeViews(view);
         setupChatInterface();
@@ -72,9 +60,7 @@ public class AIChatsFragment extends Fragment {
     private void sendMessage() {
         String message = messageInput.getText().toString().trim();
         if (!message.isEmpty()) {
-            // Add user message to chat
-            ChatMessage userMessage = new ChatMessage(message, true);
-            messages.add(userMessage);
+            messages.add(new ChatMessage(message, true));
             chatAdapter.notifyItemInserted(messages.size() - 1);
             chatRecyclerView.scrollToPosition(messages.size() - 1);
             
@@ -83,64 +69,25 @@ public class AIChatsFragment extends Fragment {
             // Show typing indicator
             aiTypingIndicator.setVisibility(View.VISIBLE);
             
-            // Send message to AI API
-            sendMessageToAI(message);
+            // Simulate AI response (replace with actual API call)
+            simulateAIResponse(message);
         }
     }
     
-    private void sendMessageToAI(String message) {
-        repository.sendMessage(message, userId, sessionId, new Repository.ApiCallback<ChatMessage>() {
-            @Override
-            public void onSuccess(ChatMessage result) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        aiTypingIndicator.setVisibility(View.GONE);
-                        
-                        if (result != null && result.getMessage() != null) {
-                            // Add AI response to chat
-                            ChatMessage aiMessage = new ChatMessage(result.getMessage(), false);
-                            messages.add(aiMessage);
-                            chatAdapter.notifyItemInserted(messages.size() - 1);
-                            chatRecyclerView.scrollToPosition(messages.size() - 1);
-                            
-                            Log.d(TAG, "Received AI response: " + result.getMessage());
-                        } else {
-                            // Fallback to local response if API response is empty
-                            String fallbackResponse = generateFallbackResponse(message);
-                            ChatMessage aiMessage = new ChatMessage(fallbackResponse, false);
-                            messages.add(aiMessage);
-                            chatAdapter.notifyItemInserted(messages.size() - 1);
-                            chatRecyclerView.scrollToPosition(messages.size() - 1);
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public void onError(String error) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        aiTypingIndicator.setVisibility(View.GONE);
-                        
-                        Log.e(TAG, "AI API error: " + error);
-                        
-                        // Show error message to user
-                        Toast.makeText(getContext(), "AI service temporarily unavailable", Toast.LENGTH_SHORT).show();
-                        
-                        // Provide fallback response
-                        String fallbackResponse = generateFallbackResponse(message);
-                        ChatMessage aiMessage = new ChatMessage(fallbackResponse, false);
-                        messages.add(aiMessage);
-                        chatAdapter.notifyItemInserted(messages.size() - 1);
-                        chatRecyclerView.scrollToPosition(messages.size() - 1);
-                    });
-                }
-            }
-        });
+    private void simulateAIResponse(String userMessage) {
+        // Simulate network delay
+        new android.os.Handler().postDelayed(() -> {
+            aiTypingIndicator.setVisibility(View.GONE);
+            
+            String response = generateAIResponse(userMessage);
+            messages.add(new ChatMessage(response, false));
+            chatAdapter.notifyItemInserted(messages.size() - 1);
+            chatRecyclerView.scrollToPosition(messages.size() - 1);
+        }, 1500);
     }
     
-    private String generateFallbackResponse(String userMessage) {
-        // Fallback response logic when API is unavailable
+    private String generateAIResponse(String userMessage) {
+        // Basic response logic - replace with actual AI integration
         if (userMessage.toLowerCase().contains("price") || userMessage.toLowerCase().contains("negotiate")) {
             return "I can help you negotiate the price. What's your budget range and what features are most important to you?";
         } else if (userMessage.toLowerCase().contains("location")) {
@@ -152,6 +99,16 @@ public class AIChatsFragment extends Fragment {
         }
     }
     
+    // Chat message model
+    public static class ChatMessage {
+        public String message;
+        public boolean isUser;
+        
+        public ChatMessage(String message, boolean isUser) {
+            this.message = message;
+            this.isUser = isUser;
+        }
+    }
     
     // Chat adapter
     private class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder> {
@@ -190,11 +147,11 @@ public class AIChatsFragment extends Fragment {
             }
             
             void bind(ChatMessage message) {
-                messageText.setText(message.getMessage());
+                messageText.setText(message.message);
                 
                 // Align message based on sender
                 ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) messageContainer.getLayoutParams();
-                if (message.isUser()) {
+                if (message.isUser) {
                     params.leftMargin = 100;
                     params.rightMargin = 16;
                     messageContainer.setBackgroundResource(R.drawable.user_message_background);

@@ -1,5 +1,4 @@
 import UIKit
-import Foundation
 
 // Temporary stub class until properly added to Xcode project
 class EnhancedSearchViewController: UIViewController {

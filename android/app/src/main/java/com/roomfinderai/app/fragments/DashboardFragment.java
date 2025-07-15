@@ -1,27 +1,21 @@
 package com.roomfinderai.app.fragments;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.roomfinderai.app.R;
-import com.roomfinderai.app.models.Listing;
-import com.roomfinderai.app.services.Repository;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DashboardFragment extends Fragment {
     
-    private static final String TAG = "DashboardFragment";
     private TextView totalListingsText;
     private TextView activeListingsText;
     private TextView totalViewsText;
@@ -29,18 +23,12 @@ public class DashboardFragment extends Fragment {
     private RecyclerView myListingsRecycler;
     private RecyclerView recentActivityRecycler;
     private LinearLayout quickActionsContainer;
-    private SwipeRefreshLayout swipeRefreshLayout;
-    private Repository repository;
-    private List<Listing> userListings = new ArrayList<>();
     
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_dashboard, container, false);
         
-        repository = new Repository();
-        
         initializeViews(view);
-        setupRefreshLayout();
         loadDashboardData();
         setupQuickActions();
         
@@ -60,122 +48,28 @@ public class DashboardFragment extends Fragment {
         
         // Quick actions
         quickActionsContainer = view.findViewById(R.id.quickActionsContainer);
-        
-        // SwipeRefreshLayout (if available in layout)
-        swipeRefreshLayout = view.findViewById(R.id.swipeRefresh);
-    }
-    
-    private void setupRefreshLayout() {
-        if (swipeRefreshLayout != null) {
-            swipeRefreshLayout.setOnRefreshListener(this::loadDashboardData);
-            swipeRefreshLayout.setColorSchemeResources(
-                R.color.purple_primary,
-                R.color.purple_secondary,
-                R.color.accent_blue
-            );
-        }
     }
     
     private void loadDashboardData() {
-        if (swipeRefreshLayout != null) {
-            swipeRefreshLayout.setRefreshing(true);
-        }
+        // Load statistics (replace with actual API calls)
+        totalListingsText.setText("12");
+        activeListingsText.setText("8");
+        totalViewsText.setText("3,456");
+        messagesCountText.setText("24");
         
-        // Load user's listings from API
-        repository.getListings(new Repository.ApiCallback<List<Listing>>() {
-            @Override
-            public void onSuccess(List<Listing> result) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        userListings.clear();
-                        if (result != null) {
-                            userListings.addAll(result);
-                        }
-                        
-                        updateStatistics();
-                        setupMyListings();
-                        setupRecentActivity();
-                        
-                        if (swipeRefreshLayout != null) {
-                            swipeRefreshLayout.setRefreshing(false);
-                        }
-                        
-                        Log.d(TAG, "Loaded " + userListings.size() + " user listings");
-                    });
-                }
-            }
-
-            @Override
-            public void onError(String error) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        if (swipeRefreshLayout != null) {
-                            swipeRefreshLayout.setRefreshing(false);
-                        }
-                        
-                        Log.e(TAG, "Error loading dashboard data: " + error);
-                        Toast.makeText(getContext(), "Error loading dashboard data", Toast.LENGTH_SHORT).show();
-                        
-                        // Show fallback data
-                        loadFallbackData();
-                    });
-                }
-            }
-        });
-    }
-    
-    private void updateStatistics() {
-        // Calculate real statistics from loaded data
-        int totalListings = userListings.size();
-        int activeListings = 0;
-        int totalViews = 0;
-        
-        for (Listing listing : userListings) {
-            // Count all listings as active since 'available' field doesn't exist in database
-            activeListings++;
-            // Note: Views would need to be added to the Listing model in a real implementation
-            totalViews += 50; // Placeholder calculation
-        }
-        
-        // Update UI with real data
-        totalListingsText.setText(String.valueOf(totalListings));
-        activeListingsText.setText(String.valueOf(activeListings));
-        totalViewsText.setText(String.format("%,d", totalViews));
-        messagesCountText.setText("0"); // Would need separate API call for messages
-    }
-    
-    private void loadFallbackData() {
-        // Fallback to mock data if API fails
-        totalListingsText.setText("--");
-        activeListingsText.setText("--");
-        totalViewsText.setText("--");
-        messagesCountText.setText("--");
-        
+        // Setup my listings
         setupMyListings();
+        
+        // Setup recent activity
         setupRecentActivity();
     }
     
     private void setupMyListings() {
         List<ListingItem> myListings = new ArrayList<>();
-        
-        // Convert real Listing objects to ListingItem for display
-        if (!userListings.isEmpty()) {
-            for (Listing listing : userListings) {
-                String priceText = "$" + String.format("%.0f", listing.getPrice()) + "/mo";
-                String status = "Active"; // All listings are considered active since 'available' field doesn't exist in database
-                int views = 50; // Placeholder - would come from analytics API
-                
-                myListings.add(new ListingItem(
-                    listing.getTitle(), 
-                    priceText, 
-                    status, 
-                    views
-                ));
-            }
-        } else {
-            // Show placeholder if no data
-            myListings.add(new ListingItem("No listings yet", "Create your first listing", "Get started", 0));
-        }
+        myListings.add(new ListingItem("Downtown Studio", "$1,200/mo", "Active", 234));
+        myListings.add(new ListingItem("2BR Near Campus", "$1,800/mo", "Active", 567));
+        myListings.add(new ListingItem("Shared Room", "$600/mo", "Inactive", 123));
+        myListings.add(new ListingItem("Luxury Condo", "$3,500/mo", "Active", 890));
         
         MyListingsAdapter adapter = new MyListingsAdapter(myListings);
         myListingsRecycler.setLayoutManager(new GridLayoutManager(getContext(), 2));
