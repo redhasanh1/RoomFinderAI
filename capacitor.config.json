@@ -10,6 +10,23 @@
     "webDir": "frontend"
   },
   "ios": {
-    "contentInset": "automatic"
+    "contentInset": "automatic",
+    "allowsLinkPreview": false,
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "server": {
+    "url": "https://roomfinder-ai-negotiator-production.up.railway.app",
+    "allowNavigation": [
+      "roomfinder-ai-negotiator-production.up.railway.app",
+      "*.supabase.co",
+      "api.openai.com",
+      "*.stripe.com",
+      "*.googleapis.com"
+    ]
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
   }
 }

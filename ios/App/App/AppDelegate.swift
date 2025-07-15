@@ -14,6 +14,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         window?.rootViewController = mainTabBarController
         window?.makeKeyAndVisible()
         
+        // Initialize basic services
+        print("🚀 RoomFinderAI iOS App starting...")
+        
         return true
     }
 
@@ -40,3 +43,4 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
 }
+

@@ -1,101 +1,12 @@
 import UIKit
 import Foundation
 
-// Temporary stub classes until properly added to Xcode project
-class StudentHousingViewController: UIViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Student Housing"
-        
-        let label = UILabel()
-        label.text = "Student Housing Coming Soon"
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(label)
-        
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
-    }
-}
-
-class SubleaseViewController: UIViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Sublease"
-        
-        let label = UILabel()
-        label.text = "Sublease Coming Soon"
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(label)
-        
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
-    }
-}
-
-class MortgageToolsViewController: UIViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Mortgage Tools"
-        
-        let label = UILabel()
-        label.text = "Mortgage Tools Coming Soon"
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(label)
-        
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
-    }
-}
-
-class LegalHelpViewController: UIViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Legal Help"
-        
-        let label = UILabel()
-        label.text = "Legal Help Coming Soon"
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(label)
-        
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
-    }
-}
-
-class PricingPlansViewController: UIViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Pricing Plans"
-        
-        let label = UILabel()
-        label.text = "Pricing Plans Coming Soon"
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(label)
-        
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
-    }
-}
+// Note: Real view controllers are now available in separate files:
+// - StudentHousingViewController.swift
+// - LegalHelpViewController.swift  
+// - AINegotiatorViewController.swift
+// - MortgageToolsViewController.swift
+// - PricingPlansViewController.swift
 
 class ProfileViewController: UIViewController {
     
@@ -453,8 +364,43 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     private func showRealDataTest() {
-        let testVC = RealDataTestViewController()
-        navigationController?.pushViewController(testVC, animated: true)
+        // Show both test options
+        let alert = UIAlertController(title: "API Testing", message: "Choose a test to run:", preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "iOS API Test Suite", style: .default) { _ in
+            let testVC = iOSAPITestViewController()
+            let navController = UINavigationController(rootViewController: testVC)
+            self.present(navController, animated: true)
+        })
+        
+        alert.addAction(UIAlertAction(title: "Real Data Test", style: .default) { _ in
+            let testVC = RealDataTestViewController()
+            self.navigationController?.pushViewController(testVC, animated: true)
+        })
+        
+        alert.addAction(UIAlertAction(title: "Quick API Test", style: .default) { _ in
+            // Run quick API connectivity test
+            APIService.shared.fetchProperties { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let properties):
+                        self.showAlert(title: "Quick Test ✅", message: "Successfully loaded \(properties.count) properties")
+                    case .failure(let error):
+                        self.showAlert(title: "Quick Test ❌", message: "Failed: \(error.localizedDescription)")
+                    }
+                }
+            }
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 
