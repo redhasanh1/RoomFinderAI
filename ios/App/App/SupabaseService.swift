@@ -357,6 +357,12 @@ class SupabaseService {
 }
 
 // MARK: - HTTP Methods
+enum HTTPMethod: String {
+    case GET = "GET"
+    case POST = "POST"
+    case PUT = "PUT"
+    case DELETE = "DELETE"
+}
 
 // MARK: - Errors
 extension APIError {

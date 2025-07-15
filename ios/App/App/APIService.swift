@@ -1,6 +1,39 @@
 import Foundation
-import UIKit
+import Capacitor
 
+// MARK: - Temporary SessionManager (until properly added to Xcode project)
+class SessionManager {
+    static let shared = SessionManager()
+    private init() {}
+    
+    private var authToken: String?
+    private var currentUser: User?
+    
+    func getAccessToken() -> String? {
+        return authToken
+    }
+    
+    func setAccessToken(_ token: String) {
+        authToken = token
+    }
+    
+    func endSession() {
+        authToken = nil
+        currentUser = nil
+    }
+    
+    func getCurrentUser() -> User? {
+        return currentUser
+    }
+    
+    func setCurrentUser(_ user: User) {
+        currentUser = user
+    }
+    
+    func isSessionValid() -> Bool {
+        return authToken != nil
+    }
+}
 
 // MARK: - API Configuration
 struct APIConfig {
@@ -31,34 +64,6 @@ struct APIConfig {
 }
 
 // MARK: - Data Models
-
-// HTTP Methods
-enum HTTPMethod: String {
-    case GET = "GET"
-    case POST = "POST"
-    case PUT = "PUT"
-    case DELETE = "DELETE"
-    case PATCH = "PATCH"
-}
-
-// Core Data Models
-struct User: Codable {
-    let id: String
-    let email: String
-    let firstName: String
-    let lastName: String
-    let phone: String?
-    let profileImage: String?
-    let createdAt: String
-    
-    enum CodingKeys: String, CodingKey {
-        case id, email, phone, createdAt
-        case firstName = "first_name"
-        case lastName = "last_name"
-        case profileImage = "profile_image"
-    }
-}
-
 struct Property: Codable {
     let id: String
     let title: String
@@ -100,6 +105,23 @@ struct SearchFilters: Codable {
     let amenities: [String]?
     let sortBy: String?
     let sortOrder: String?
+}
+
+struct User: Codable {
+    let id: String
+    let email: String
+    let firstName: String
+    let lastName: String
+    let phone: String?
+    let profileImage: String?
+    let createdAt: String
+    
+    enum CodingKeys: String, CodingKey {
+        case id, email, phone, createdAt
+        case firstName = "first_name"
+        case lastName = "last_name"
+        case profileImage = "profile_image"
+    }
 }
 
 struct AuthResponse: Codable {
@@ -154,48 +176,6 @@ struct ChatConversation: Codable {
         case otherParticipant = "other_participant"
     }
 }
-
-// Session management stub (since SessionManager.swift is not included in project)
-class SessionManager {
-    static let shared = SessionManager()
-    private init() {}
-    
-    func getAccessToken() -> String? {
-        // Stub implementation - in real app this would be from keychain
-        return UserDefaults.standard.string(forKey: "access_token")
-    }
-    
-    func endSession() {
-        // Stub implementation
-        UserDefaults.standard.removeObject(forKey: "access_token")
-        UserDefaults.standard.removeObject(forKey: "current_user")
-    }
-    
-    func getCurrentUser() -> User? {
-        // Stub implementation
-        if let userData = UserDefaults.standard.data(forKey: "current_user"),
-           let user = try? JSONDecoder().decode(User.self, from: userData) {
-            return user
-        }
-        return nil
-    }
-    
-    func isSessionValid() -> Bool {
-        // Stub implementation
-        return getAccessToken() != nil
-    }
-    
-    func startSession(user: User, accessToken: String, refreshToken: String? = nil) {
-        // Stub implementation
-        UserDefaults.standard.set(accessToken, forKey: "access_token")
-        if let userData = try? JSONEncoder().encode(user) {
-            UserDefaults.standard.set(userData, forKey: "current_user")
-        }
-    }
-}
-
-
-
 
 // MARK: - API Service
 class APIService {
@@ -296,13 +276,13 @@ class APIService {
     func login(email: String, password: String, completion: @escaping (Result<AuthResponse, Error>) -> Void) {
         let urlString = "\(APIConfig.baseURL)\(APIConfig.Endpoints.auth)/login"
         let body = ["email": email, "password": password]
-        performRequest<AuthResponse>(urlString: urlString, method: "POST", body: body, completion: completion)
+        performRequest(urlString: urlString, method: "POST", body: body, completion: completion)
     }
     
     func register(email: String, password: String, firstName: String, lastName: String, completion: @escaping (Result<AuthResponse, Error>) -> Void) {
         let urlString = "\(APIConfig.baseURL)\(APIConfig.Endpoints.auth)/register"
         let body = ["email": email, "password": password, "first_name": firstName, "last_name": lastName]
-        performRequest<AuthResponse>(urlString: urlString, method: "POST", body: body, completion: completion)
+        performRequest(urlString: urlString, method: "POST", body: body, completion: completion)
     }
     
     func getCurrentUser(completion: @escaping (Result<User, Error>) -> Void) {
