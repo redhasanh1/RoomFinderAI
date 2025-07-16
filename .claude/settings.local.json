@@ -36,7 +36,9 @@
       "Bash(git fetch:*)",
       "Bash(npm uninstall:*)",
       "Bash(xattr:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(open App.xcworkspace)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }
