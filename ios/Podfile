@@ -1,0 +1,10 @@
+platform :ios, '12.0'
+
+target 'RoomFinderAI' do
+  # Basic iOS development
+  
+  target 'RoomFinderAITests' do
+    inherit! :complete
+    # Pods for testing
+  end
+end

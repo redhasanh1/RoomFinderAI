@@ -3,115 +3,16 @@
   "appName": "RoomFinderAI",
   "webDir": "frontend",
   "bundledWebRuntime": false,
-  "android": {
-    "buildOptions": {
-      "javaVersion": "17"
-    },
-    "webDir": "frontend"
-  },
-  "ios": {
-    "contentInset": "automatic",
-    "allowsLinkPreview": false,
-    "limitsNavigationsToAppBoundDomains": false,
-    "preferredContentMode": "mobile",
-    "allowsInlineMediaPlayback": true,
-    "allowsAirPlayForMediaPlayback": false,
-    "suppressesIncrementalRendering": false,
-    "webViewConfiguration": {
-      "allowsInlineMediaPlayback": true,
-      "mediaTypesRequiringUserActionForPlayback": [],
-      "suppressesIncrementalRendering": false,
-      "allowsAirPlayForMediaPlayback": false,
-      "mediaPlaybackRequiresUserAction": false,
-      "scrollEnabled": true,
-      "enableViewportScale": false,
-      "allowsBackForwardNavigationGestures": true,
-      "allowsLinkPreview": false,
-      "javaScriptCanOpenWindowsAutomatically": false
-    },
-    "backgroundColor": "#FFFFFF",
-    "overrideUserAgent": null,
-    "appendUserAgent": null,
-    "nativeNavigationEnabled": true,
-    "hideNavigationBar": false,
-    "statusBarStyle": "default",
-    "handleApplicationNotifications": true,
-    "swipeToGoBack": true,
-    "disableLogs": false,
-    "minWebkitVersion": "14.0",
-    "scheme": "https",
-    "hostname": "localhost"
-  },
-  "server": {
-    "allowNavigation": [
-      "roomfinder-ai-negotiator-production.up.railway.app",
-      "*.supabase.co",
-      "zmxyysauqtfkvntgtjsm.supabase.co",
-      "api.openai.com",
-      "*.openai.com",
-      "*.stripe.com",
-      "api.stripe.com",
-      "*.paypal.com",
-      "api.paypal.com",
-      "*.googleapis.com",
-      "*.railway.app",
-      "httpbin.org",
-      "localhost",
-      "127.0.0.1"
-    ],
-    "cleartext": false
-  },
   "plugins": {
     "CapacitorHttp": {
-      "enabled": true,
-      "iosConfig": {
-        "enableLogging": true,
-        "useSessions": true
-      }
+      "enabled": true
     },
     "SplashScreen": {
-      "launchShowDuration": 2000,
-      "launchAutoHide": true,
-      "backgroundColor": "#1a1a1a",
-      "showSpinner": true,
-      "androidSpinnerStyle": "large",
-      "iosSpinnerStyle": "small",
-      "spinnerColor": "#ffffff"
-    },
-    "StatusBar": {
-      "style": "dark"
-    },
-    "Keyboard": {
-      "resize": "body",
-      "style": "dark",
-      "resizeOnFullScreen": true
-    },
-    "PushNotifications": {
-      "presentationOptions": ["badge", "sound", "alert"]
+      "launchShowDuration": 0
     }
   },
-  "includePlugins": [
-    "@capacitor/app",
-    "@capacitor/haptics",
-    "@capacitor/keyboard",
-    "@capacitor/status-bar",
-    "@capacitor/splash-screen",
-    "@capacitor/push-notifications",
-    "@capacitor-community/http"
-  ],
-  "hideLogs": false,
-  "enableLogging": true,
-  "cordova": {
-    "preferences": {
-      "DisallowOverscroll": "true",
-      "EnableViewportScale": "false",
-      "MediaPlaybackRequiresUserAction": "false",
-      "AllowInlineMediaPlayback": "true",
-      "BackupWebStorage": "none",
-      "TopActivityIndicator": "gray",
-      "KeyboardDisplayRequiresUserAction": "false",
-      "HideKeyboardFormAccessoryBar": "false",
-      "SuppressesIncrementalRendering": "false"
-    }
+  "android": {
+    "allowMixedContent": true,
+    "useLegacyBridge": false
   }
 }
