@@ -1,3 +1,4 @@
+// This file is configured to use local API keys for both debug and release builds.
 apply plugin: 'com.android.application'
 
 android {
@@ -36,7 +37,7 @@ android {
         }
         release {
             // Production - use Railway environment variables
-            buildConfigField "boolean", "USE_LOCAL_CONFIG", "false"
+            buildConfigField "boolean", "USE_LOCAL_CONFIG", "true"
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
