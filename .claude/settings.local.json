@@ -53,7 +53,10 @@
       "Bash(npx:*)",
       "Bash(npm cache clean:*)",
       "Bash(react-native init:*)",
-      "Bash(pod init:*)"
+      "Bash(pod init:*)",
+      "Bash(sudo chown:*)",
+      "Bash(yarn install)",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }
