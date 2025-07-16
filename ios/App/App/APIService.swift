@@ -1,6 +1,39 @@
 import Foundation
-import UIKit
+import Capacitor
 
+// MARK: - Temporary SessionManager (until properly added to Xcode project)
+class SessionManager {
+    static let shared = SessionManager()
+    private init() {}
+    
+    private var authToken: String?
+    private var currentUser: User?
+    
+    func getAccessToken() -> String? {
+        return authToken
+    }
+    
+    func setAccessToken(_ token: String) {
+        authToken = token
+    }
+    
+    func endSession() {
+        authToken = nil
+        currentUser = nil
+    }
+    
+    func getCurrentUser() -> User? {
+        return currentUser
+    }
+    
+    func setCurrentUser(_ user: User) {
+        currentUser = user
+    }
+    
+    func isSessionValid() -> Bool {
+        return authToken != nil
+    }
+}
 
 // MARK: - API Configuration
 struct APIConfig {
@@ -31,34 +64,6 @@ struct APIConfig {
 }
 
 // MARK: - Data Models
-
-// HTTP Methods
-enum HTTPMethod: String {
-    case GET = "GET"
-    case POST = "POST"
-    case PUT = "PUT"
-    case DELETE = "DELETE"
-    case PATCH = "PATCH"
-}
-
-// Core Data Models
-struct User: Codable {
-    let id: String
-    let email: String
-    let firstName: String
-    let lastName: String
-    let phone: String?
-    let profileImage: String?
-    let createdAt: String
-    
-    enum CodingKeys: String, CodingKey {
-        case id, email, phone, createdAt
-        case firstName = "first_name"
-        case lastName = "last_name"
-        case profileImage = "profile_image"
-    }
-}
-
 struct Property: Codable {
     let id: String
     let title: String
@@ -100,6 +105,23 @@ struct SearchFilters: Codable {
     let amenities: [String]?
     let sortBy: String?
     let sortOrder: String?
+}
+
+struct User: Codable {
+    let id: String
+    let email: String
+    let firstName: String
+    let lastName: String
+    let phone: String?
+    let profileImage: String?
+    let createdAt: String
+    
+    enum CodingKeys: String, CodingKey {
+        case id, email, phone, createdAt
+        case firstName = "first_name"
+        case lastName = "last_name"
+        case profileImage = "profile_image"
+    }
 }
 
 struct AuthResponse: Codable {
@@ -155,6 +177,8 @@ struct ChatConversation: Codable {
     }
 }
 
+<<<<<<< HEAD
+=======
 // MARK: - Session Manager Fallback (until proper SessionManager is linked)
 class SessionManager {
     static let shared = SessionManager()
@@ -192,6 +216,7 @@ class SessionManager {
 
 
 
+>>>>>>> a3b9f3b2ca982a714d6e5fb3b88aca1e5a867296
 // MARK: - API Service
 class APIService: @unchecked Sendable {
     static let shared = APIService()
