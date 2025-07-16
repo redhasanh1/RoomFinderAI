@@ -20,8 +20,27 @@
     "webViewConfiguration": {
       "allowsInlineMediaPlayback": true,
       "mediaTypesRequiringUserActionForPlayback": [],
-      "suppressesIncrementalRendering": false
-    }
+      "suppressesIncrementalRendering": false,
+      "allowsAirPlayForMediaPlayback": false,
+      "mediaPlaybackRequiresUserAction": false,
+      "scrollEnabled": true,
+      "enableViewportScale": false,
+      "allowsBackForwardNavigationGestures": true,
+      "allowsLinkPreview": false,
+      "javaScriptCanOpenWindowsAutomatically": false
+    },
+    "backgroundColor": "#FFFFFF",
+    "overrideUserAgent": null,
+    "appendUserAgent": null,
+    "nativeNavigationEnabled": true,
+    "hideNavigationBar": false,
+    "statusBarStyle": "default",
+    "handleApplicationNotifications": true,
+    "swipeToGoBack": true,
+    "disableLogs": false,
+    "minWebkitVersion": "14.0",
+    "scheme": "https",
+    "hostname": "localhost"
   },
   "server": {
     "allowNavigation": [
@@ -44,7 +63,11 @@
   },
   "plugins": {
     "CapacitorHttp": {
-      "enabled": true
+      "enabled": true,
+      "iosConfig": {
+        "enableLogging": true,
+        "useSessions": true
+      }
     },
     "SplashScreen": {
       "launchShowDuration": 2000,
@@ -67,7 +90,6 @@
       "presentationOptions": ["badge", "sound", "alert"]
     }
   },
-  "cordova": {},
   "includePlugins": [
     "@capacitor/app",
     "@capacitor/haptics",
@@ -76,5 +98,20 @@
     "@capacitor/splash-screen",
     "@capacitor/push-notifications",
     "@capacitor-community/http"
-  ]
+  ],
+  "hideLogs": false,
+  "enableLogging": true,
+  "cordova": {
+    "preferences": {
+      "DisallowOverscroll": "true",
+      "EnableViewportScale": "false",
+      "MediaPlaybackRequiresUserAction": "false",
+      "AllowInlineMediaPlayback": "true",
+      "BackupWebStorage": "none",
+      "TopActivityIndicator": "gray",
+      "KeyboardDisplayRequiresUserAction": "false",
+      "HideKeyboardFormAccessoryBar": "false",
+      "SuppressesIncrementalRendering": "false"
+    }
+  }
 }

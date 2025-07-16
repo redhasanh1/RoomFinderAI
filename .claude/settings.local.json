@@ -38,7 +38,15 @@
       "Bash(xattr:*)",
       "Bash(python3:*)",
       "Bash(open App.xcworkspace)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(touch:*)",
+      "Bash(open /Users/arsalanamirali/Downloads/RoomFinderAI/ios/App/App.xcworkspace)",
+      "Bash(open \"/Users/arsalanamirali/Downloads/RoomFinderAI/ios/App/App.xcworkspace\")",
+      "Bash(npm install:*)"
     ],
     "deny": []
   }

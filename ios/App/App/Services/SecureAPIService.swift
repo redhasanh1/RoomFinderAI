@@ -539,14 +539,6 @@ class SecureAPIService {
     }
 }
 
-// MARK: - HTTP Methods
-enum HTTPMethod: String {
-    case GET = "GET"
-    case POST = "POST"
-    case PUT = "PUT"
-    case DELETE = "DELETE"
-    case PATCH = "PATCH"
-}
 
 // MARK: - Response Models
 struct GenericResponse: Codable {
