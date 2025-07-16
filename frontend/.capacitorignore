@@ -1,6 +1,0 @@
-backend/
-node_modules/
-*.gz
-*.map
-.DS_Store
-Thumbs.db
