@@ -45,8 +45,4 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // tracking app url opens, make sure to keep this call
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
     }
-<<<<<<< HEAD
-
-=======
->>>>>>> a3b9f3b2ca982a714d6e5fb3b88aca1e5a867296
 }
