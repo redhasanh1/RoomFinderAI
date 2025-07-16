@@ -3,11 +3,11 @@ import UIKit
 
 // MARK: - Configuration
 struct SupabaseConfig {
-    // Use Railway backend for now, but can switch to direct Supabase later
+    // Static configuration - will be enhanced with EnvironmentManager once added to project
     static let url = "https://roomfinder-ai-negotiator-production.up.railway.app"
     static let apiPath = "/api"
     
-    // Direct Supabase configuration (for future use)
+    // Direct Supabase configuration
     static let supabaseURL = "https://zmxyysauqtfkvntgtjsm.supabase.co"
     static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpteHl5c2F1cXRma3ZudGd0anNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY5NTc3OTQsImV4cCI6MjA1MjUzMzc5NH0.F6M7G-fxnRDnKzWAWgO4y0Z7IuKIDaecvSUBz8aVeQM"
     
@@ -199,12 +199,17 @@ class SupabaseService {
             throw APIError.invalidURL
         }
         
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: url, timeoutInterval: 30)
         request.httpMethod = method.rawValue
         request.setValue("Bearer \(supabaseKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("return=representation", forHTTPHeaderField: "Prefer")
+        
+        // Add mobile-specific headers
+        request.setValue("iOS", forHTTPHeaderField: "X-Platform")
+        request.setValue("RoomFinderAI/1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue(SupabaseConfig.url, forHTTPHeaderField: "Origin")
         
         // Add body for POST/PUT requests
         if let parameters = parameters, method != .GET {

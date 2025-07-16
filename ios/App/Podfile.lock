@@ -1,15 +1,39 @@
 PODS:
   - Capacitor (7.4.1):
     - CapacitorCordova
+<<<<<<< HEAD
   - CapacitorCordova (7.4.1)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+=======
+  - CapacitorApp (7.0.1):
+    - Capacitor
+  - CapacitorCommunityHttp (1.4.1):
+    - Capacitor
+  - CapacitorCordova (7.4.1)
+  - CapacitorHaptics (7.0.1):
+    - Capacitor
+  - CapacitorKeyboard (7.0.1):
+    - Capacitor
+  - CapacitorStatusBar (7.0.1):
+    - Capacitor
+
+DEPENDENCIES:
+  - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
+  - "CapacitorCommunityHttp (from `../../node_modules/@capacitor-community/http`)"
+  - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorHaptics (from `../../node_modules/@capacitor/haptics`)"
+  - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
+  - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
+>>>>>>> a3b9f3b2ca982a714d6e5fb3b88aca1e5a867296
 
 EXTERNAL SOURCES:
   Capacitor:
     :path: "../../node_modules/@capacitor/ios"
+<<<<<<< HEAD
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
 
@@ -18,5 +42,30 @@ SPEC CHECKSUMS:
   CapacitorCordova: 34618fa1b14b6b091fd60a7658f7654044ae8d8a
 
 PODFILE CHECKSUM: e5aad413742a07f9e736126612b43b6c058babcd
+=======
+  CapacitorApp:
+    :path: "../../node_modules/@capacitor/app"
+  CapacitorCommunityHttp:
+    :path: "../../node_modules/@capacitor-community/http"
+  CapacitorCordova:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorHaptics:
+    :path: "../../node_modules/@capacitor/haptics"
+  CapacitorKeyboard:
+    :path: "../../node_modules/@capacitor/keyboard"
+  CapacitorStatusBar:
+    :path: "../../node_modules/@capacitor/status-bar"
+
+SPEC CHECKSUMS:
+  Capacitor: 4738747ece274c45e4d9bec9ae394a6269169e64
+  CapacitorApp: d63334c052278caf5d81585d80b21905c6f93f39
+  CapacitorCommunityHttp: 7be90668527ef14ee10d08135b0e00fac9cf8247
+  CapacitorCordova: 34618fa1b14b6b091fd60a7658f7654044ae8d8a
+  CapacitorHaptics: 70e47470fa1a6bd6338cd102552e3846b7f9a1b3
+  CapacitorKeyboard: 969647d0ca2e5c737d7300088e2517aa832434e2
+  CapacitorStatusBar: 275cbf2f4dfc00388f519ef80c7ec22edda342c9
+
+PODFILE CHECKSUM: 074e562d7d102cf4a0f0ba57d4d1810371123908
+>>>>>>> a3b9f3b2ca982a714d6e5fb3b88aca1e5a867296
 
 COCOAPODS: 1.16.2

@@ -37,7 +37,7 @@ class SessionManager {
 
 // MARK: - API Configuration
 struct APIConfig {
-    // Railway Backend
+    // Static configuration (will be enhanced when LocalAPIKeys is added)
     static let baseURL = "https://roomfinder-ai-negotiator-production.up.railway.app"
     static let apiVersion = "v1"
     
@@ -177,8 +177,48 @@ struct ChatConversation: Codable {
     }
 }
 
+<<<<<<< HEAD
+=======
+// MARK: - Session Manager Fallback (until proper SessionManager is linked)
+class SessionManager {
+    static let shared = SessionManager()
+    private init() {}
+    
+    func getAccessToken() -> String? {
+        return UserDefaults.standard.string(forKey: "access_token")
+    }
+    
+    func endSession() {
+        UserDefaults.standard.removeObject(forKey: "access_token")
+        UserDefaults.standard.removeObject(forKey: "current_user")
+    }
+    
+    func getCurrentUser() -> User? {
+        if let userData = UserDefaults.standard.data(forKey: "current_user"),
+           let user = try? JSONDecoder().decode(User.self, from: userData) {
+            return user
+        }
+        return nil
+    }
+    
+    func isSessionValid() -> Bool {
+        return getAccessToken() != nil
+    }
+    
+    func startSession(user: User, accessToken: String, refreshToken: String? = nil) {
+        UserDefaults.standard.set(accessToken, forKey: "access_token")
+        if let userData = try? JSONEncoder().encode(user) {
+            UserDefaults.standard.set(userData, forKey: "current_user")
+        }
+    }
+}
+
+
+
+
+>>>>>>> a3b9f3b2ca982a714d6e5fb3b88aca1e5a867296
 // MARK: - API Service
-class APIService {
+class APIService: @unchecked Sendable {
     static let shared = APIService()
     
     private init() {}
@@ -337,9 +377,14 @@ class APIService {
             return
         }
         
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: url, timeoutInterval: 30)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        
+        // Add mobile-specific headers
+        request.setValue("iOS", forHTTPHeaderField: "X-Platform")
+        request.setValue("RoomFinderAI/1.0", forHTTPHeaderField: "User-Agent")
         
         // Add authentication token if available
         if let token = getAuthToken() {
@@ -369,6 +414,16 @@ class APIService {
                     completion(.failure(APIError.noData))
                 }
                 return
+            }
+            
+            // Check HTTP status
+            if let httpResponse = response as? HTTPURLResponse {
+                guard 200...299 ~= httpResponse.statusCode else {
+                    DispatchQueue.main.async {
+                        completion(.failure(APIError.serverError(httpResponse.statusCode)))
+                    }
+                    return
+                }
             }
             
             do {
@@ -493,27 +548,47 @@ class APIService {
         return properties
     }
     
-    // MARK: - Token Management (Secure)
+    // MARK: - Token Management (Basic)
     func getAuthToken() -> String? {
-        return SessionManager.shared.getAccessToken()
+        // Use SessionManager if available, otherwise fallback to UserDefaults
+        if let sessionManager = getSessionManagerIfAvailable() {
+            return sessionManager.getAccessToken()
+        }
+        return UserDefaults.standard.string(forKey: "access_token")
     }
     
     func setAuthToken(_ token: String) {
-        // Token should be set through SessionManager.startSession()
-        print("⚠️ Use SessionManager.startSession() instead of setAuthToken()")
+        UserDefaults.standard.set(token, forKey: "access_token")
     }
     
     func clearAuthToken() {
-        SessionManager.shared.endSession()
+        if let sessionManager = getSessionManagerIfAvailable() {
+            sessionManager.endSession()
+        }
+        UserDefaults.standard.removeObject(forKey: "access_token")
+        UserDefaults.standard.removeObject(forKey: "current_user")
     }
     
     func getCurrentUserId() -> String? {
-        return SessionManager.shared.getCurrentUser()?.id
+        if let sessionManager = getSessionManagerIfAvailable() {
+            return sessionManager.getCurrentUser()?.id
+        }
+        
+        if let userData = UserDefaults.standard.data(forKey: "current_user"),
+           let user = try? JSONDecoder().decode(User.self, from: userData) {
+            return user.id
+        }
+        return nil
     }
     
     func setCurrentUserId(_ userId: String) {
-        // User ID should be set through SessionManager.startSession()
-        print("⚠️ Use SessionManager.startSession() instead of setCurrentUserId()")
+        UserDefaults.standard.set(userId, forKey: "current_user_id")
+    }
+    
+    // Helper to safely access SessionManager if available
+    private func getSessionManagerIfAvailable() -> SessionManager? {
+        // This will work when SessionManager is properly linked
+        return NSClassFromString("SessionManager") != nil ? SessionManager.shared : nil
     }
 }
 
