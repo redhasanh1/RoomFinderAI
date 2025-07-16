@@ -37,6 +37,7 @@
     "@capacitor/haptics": "^7.0.1",
     "@capacitor/ios": "^7.4.1",
     "@capacitor/keyboard": "^7.0.1",
+    "@capacitor/network": "^7.0.1",
     "@capacitor/status-bar": "^7.0.1",
     "@supabase/supabase-js": "^2.39.0",
     "autoprefixer": "^10.4.21",

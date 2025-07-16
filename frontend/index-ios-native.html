@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>RoomFinderAI - Native iOS</title>
+    
+    <!-- iOS Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="RoomFinderAI">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/ios-native.css">
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Capacitor Scripts -->
+    <script type="module" src="https://unpkg.com/@capacitor/core@latest/dist/capacitor.js"></script>
+    <script type="module">
+        import { CapacitorHttp } from '@capacitor/core';
+        import { Haptics, ImpactStyle } from '@capacitor/haptics';
+        import { StatusBar, Style } from '@capacitor/status-bar';
+        import { App } from '@capacitor/app';
+        import { Keyboard } from '@capacitor/keyboard';
+        
+        window.CapacitorHttp = CapacitorHttp;
+        window.Haptics = Haptics;
+        window.ImpactStyle = ImpactStyle;
+        window.StatusBar = StatusBar;
+        window.StatusBarStyle = Style;
+        window.CapacitorApp = App;
+        window.Keyboard = Keyboard;
+    </script>
+</head>
+<body class="ios-body">
+    <!-- Status Bar Spacer -->
+    <div class="ios-status-bar-adjustment"></div>
+    
+    <!-- Navigation Bar -->
+    <nav class="ios-navbar ios-safe-area-top">
+        <button class="ios-navbar-button back" onclick="handleBackNavigation()">Back</button>
+        <h1 class="ios-navbar-title">RoomFinderAI</h1>
+        <button class="ios-navbar-button" onclick="showSettingsModal()">Settings</button>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="ios-main-content">
+        <!-- Large Title -->
+        <h1 class="ios-large-title">Find Your Perfect Room</h1>
+        
+        <!-- Search Section -->
+        <div class="ios-card">
+            <div class="ios-card-header">
+                <h2 class="ios-card-title">Quick Search</h2>
+                <p class="ios-card-subtitle">Find properties near you</p>
+            </div>
+            
+            <div class="search-form">
+                <input type="text" class="ios-input" placeholder="Enter location or keywords" id="searchInput">
+                <button class="ios-button ios-button-primary" onclick="performSearch()" style="margin-top: 12px;">
+                    Search Properties
+                </button>
+            </div>
+        </div>
+        
+        <!-- Segmented Control -->
+        <div class="ios-segmented-control" id="propertyTypeSegment">
+            <div class="ios-segmented-option active" data-value="all">All</div>
+            <div class="ios-segmented-option" data-value="apartments">Apartments</div>
+            <div class="ios-segmented-option" data-value="houses">Houses</div>
+        </div>
+        
+        <!-- Property List -->
+        <div class="ios-list">
+            <div class="ios-list-item ios-list-item-chevron" onclick="showPropertyDetail('1')">
+                <div class="ios-list-item-content">
+                    <h3 class="ios-list-item-title">Luxury Downtown Apartment</h3>
+                    <p class="ios-list-item-subtitle">2 bed, 2 bath • $2,500/month</p>
+                </div>
+                <div class="ios-list-item-accessory">$2,500</div>
+            </div>
+            
+            <div class="ios-list-item ios-list-item-chevron" onclick="showPropertyDetail('2')">
+                <div class="ios-list-item-content">
+                    <h3 class="ios-list-item-title">Modern Studio</h3>
+                    <p class="ios-list-item-subtitle">1 bed, 1 bath • $1,800/month</p>
+                </div>
+                <div class="ios-list-item-accessory">$1,800</div>
+            </div>
+            
+            <div class="ios-list-item ios-list-item-chevron" onclick="showPropertyDetail('3')">
+                <div class="ios-list-item-content">
+                    <h3 class="ios-list-item-title">Cozy House</h3>
+                    <p class="ios-list-item-subtitle">3 bed, 2 bath • $3,200/month</p>
+                </div>
+                <div class="ios-list-item-accessory">$3,200</div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div style="padding: 16px;">
+            <button class="ios-button ios-button-primary" onclick="showAIChat()" style="width: 100%; margin-bottom: 12px;">
+                💬 Chat with AI Assistant
+            </button>
+            
+            <button class="ios-button ios-button-secondary" onclick="showFavorites()" style="width: 100%; margin-bottom: 12px;">
+                ❤️ View Favorites
+            </button>
+            
+            <button class="ios-button ios-button-text" onclick="showActionSheet()" style="width: 100%;">
+                More Options
+            </button>
+        </div>
+        
+        <!-- Loading Indicator (Hidden by default) -->
+        <div id="loadingIndicator" style="display: none; text-align: center; padding: 20px;">
+            <div class="ios-spinner"></div>
+            <p style="margin-top: 10px; color: var(--ios-secondary-label);">Loading...</p>
+        </div>
+    </main>
+    
+    <!-- Tab Bar -->
+    <div class="ios-tab-bar ios-safe-area-bottom" id="mainTabBar">
+        <div class="ios-tab-item active" data-tab="home">
+            <div class="ios-tab-icon">🏠</div>
+            <div class="ios-tab-label">Home</div>
+        </div>
+        <div class="ios-tab-item" data-tab="search">
+            <div class="ios-tab-icon">🔍</div>
+            <div class="ios-tab-label">Search</div>
+        </div>
+        <div class="ios-tab-item" data-tab="favorites">
+            <div class="ios-tab-icon">❤️</div>
+            <div class="ios-tab-label">Favorites</div>
+        </div>
+        <div class="ios-tab-item" data-tab="chat">
+            <div class="ios-tab-icon">💬</div>
+            <div class="ios-tab-label">Chat</div>
+        </div>
+        <div class="ios-tab-item" data-tab="profile">
+            <div class="ios-tab-icon">👤</div>
+            <div class="ios-tab-label">Profile</div>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div class="ios-modal-overlay" id="settingsModal" style="display: none;">
+        <div class="ios-modal">
+            <div class="ios-modal-header">
+                <h2 class="ios-modal-title">Settings</h2>
+                <button class="ios-modal-close">Done</button>
+            </div>
+            
+            <div style="padding: 16px;">
+                <div class="ios-list">
+                    <div class="ios-list-item">
+                        <div class="ios-list-item-content">
+                            <h3 class="ios-list-item-title">Notifications</h3>
+                        </div>
+                        <div class="ios-switch">
+                            <input type="checkbox" checked>
+                            <span class="ios-switch-slider"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="ios-list-item">
+                        <div class="ios-list-item-content">
+                            <h3 class="ios-list-item-title">Dark Mode</h3>
+                        </div>
+                        <div class="ios-switch">
+                            <input type="checkbox">
+                            <span class="ios-switch-slider"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="ios-list-item ios-list-item-chevron">
+                        <div class="ios-list-item-content">
+                            <h3 class="ios-list-item-title">Privacy Policy</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="ios-list-item ios-list-item-chevron">
+                        <div class="ios-list-item-content">
+                            <h3 class="ios-list-item-title">Terms of Service</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript Files -->
+    <script src="js/capacitor-http-service.js"></script>
+    <script src="js/ios-native-components.js"></script>
+    
+    <!-- App Logic -->
+    <script>
+        // Global app instance
+        let app = null;
+        
+        // Initialize app when DOM is ready
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Initializing iOS Native App');
+            
+            // Initialize iOS components
+            app = window.iOSComponents;
+            
+            // Setup tab bar
+            app.setupTabBar('mainTabBar', [
+                { id: 'home', label: 'Home', icon: '🏠' },
+                { id: 'search', label: 'Search', icon: '🔍' },
+                { id: 'favorites', label: 'Favorites', icon: '❤️' },
+                { id: 'chat', label: 'Chat', icon: '💬' },
+                { id: 'profile', label: 'Profile', icon: '👤' }
+            ], handleTabChange);
+            
+            // Setup segmented control
+            app.setupSegmentedControl('propertyTypeSegment', [
+                { label: 'All', value: 'all' },
+                { label: 'Apartments', value: 'apartments' },
+                { label: 'Houses', value: 'houses' }
+            ], handlePropertyTypeChange);
+            
+            // Setup status bar
+            await app.setStatusBarStyle('default');
+            
+            console.log('✅ App initialized successfully');
+        });
+        
+        // Navigation functions
+        function handleBackNavigation() {
+            app.handleBackNavigation();
+        }
+        
+        function handleTabChange(tabId) {
+            console.log('Tab changed to:', tabId);
+            app.triggerHapticFeedback('light');
+            
+            // Handle tab navigation
+            switch (tabId) {
+                case 'home':
+                    // Already on home
+                    break;
+                case 'search':
+                    showSearchPage();
+                    break;
+                case 'favorites':
+                    showFavorites();
+                    break;
+                case 'chat':
+                    showAIChat();
+                    break;
+                case 'profile':
+                    showProfile();
+                    break;
+            }
+        }
+        
+        function handlePropertyTypeChange(value) {
+            console.log('Property type changed to:', value);
+            app.triggerHapticFeedback('light');
+            
+            // Filter properties based on selection
+            filterProperties(value);
+        }
+        
+        // API functions using Capacitor HTTP
+        async function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value;
+            
+            if (!searchTerm.trim()) {
+                app.showToast('Please enter a search term');
+                return;
+            }
+            
+            app.showLoading('Searching properties...');
+            app.triggerHapticFeedback('light');
+            
+            try {
+                const response = await window.capacitorHttp.get('/api/search', {
+                    params: { q: searchTerm, type: 'properties' }
+                });
+                
+                console.log('Search results:', response.data);
+                
+                app.hideLoading();
+                app.showToast('Found ' + response.data.results.length + ' properties');
+                app.triggerHapticFeedback('success');
+                
+                // Update UI with results
+                displaySearchResults(response.data.results);
+                
+            } catch (error) {
+                console.error('Search failed:', error);
+                app.hideLoading();
+                app.showAlert('Search Failed', 'Unable to search properties. Please try again.', [
+                    { text: 'OK', style: 'default' }
+                ]);
+                app.triggerHapticFeedback('error');
+            }
+        }
+        
+        async function showPropertyDetail(propertyId) {
+            app.triggerHapticFeedback('light');
+            app.showLoading('Loading property details...');
+            
+            try {
+                const response = await window.capacitorHttp.get(`/api/properties/${propertyId}`);
+                console.log('Property details:', response.data);
+                
+                app.hideLoading();
+                
+                // Navigate to property detail page
+                // For this example, we'll show an alert
+                app.showAlert(
+                    response.data.title || 'Property Details',
+                    `${response.data.description || 'No description available'}\n\nPrice: ${response.data.price || 'N/A'}`,
+                    [
+                        { text: 'Contact Owner', style: 'default', handler: () => contactOwner(propertyId) },
+                        { text: 'Add to Favorites', style: 'default', handler: () => addToFavorites(propertyId) },
+                        { text: 'Close', style: 'cancel' }
+                    ]
+                );
+                
+            } catch (error) {
+                console.error('Failed to load property:', error);
+                app.hideLoading();
+                app.showToast('Failed to load property details');
+                app.triggerHapticFeedback('error');
+            }
+        }
+        
+        // UI functions
+        function showSettingsModal() {
+            app.showModal('settingsModal');
+        }
+        
+        function showAIChat() {
+            app.triggerHapticFeedback('medium');
+            app.showToast('Opening AI Chat...');
+            
+            // Navigate to chat page
+            window.location.href = 'chat.html';
+        }
+        
+        function showFavorites() {
+            app.triggerHapticFeedback('light');
+            app.showToast('Loading favorites...');
+            
+            // Navigate to favorites page
+            window.location.href = 'favorites.html';
+        }
+        
+        function showProfile() {
+            app.triggerHapticFeedback('light');
+            
+            // Navigate to profile page
+            window.location.href = 'profile.html';
+        }
+        
+        function showSearchPage() {
+            app.triggerHapticFeedback('light');
+            
+            // Focus on search input
+            document.getElementById('searchInput').focus();
+        }
+        
+        function showActionSheet() {
+            app.showActionSheet('More Options', [
+                { text: 'Share App', style: 'default', handler: () => shareApp() },
+                { text: 'Report Issue', style: 'default', handler: () => reportIssue() },
+                { text: 'Rate App', style: 'default', handler: () => rateApp() },
+                { text: 'Delete All Data', style: 'destructive', handler: () => confirmDeleteData() }
+            ]);
+        }
+        
+        // Helper functions
+        function displaySearchResults(results) {
+            // Update the property list with search results
+            console.log('Displaying search results:', results);
+        }
+        
+        function filterProperties(type) {
+            // Filter displayed properties
+            console.log('Filtering properties by type:', type);
+        }
+        
+        function contactOwner(propertyId) {
+            app.triggerHapticFeedback('light');
+            app.showToast('Contacting property owner...');
+        }
+        
+        function addToFavorites(propertyId) {
+            app.triggerHapticFeedback('success');
+            app.showToast('Added to favorites ❤️');
+        }
+        
+        function shareApp() {
+            app.triggerHapticFeedback('light');
+            app.showToast('Sharing app...');
+        }
+        
+        function reportIssue() {
+            app.triggerHapticFeedback('light');
+            app.showToast('Opening issue reporter...');
+        }
+        
+        function rateApp() {
+            app.triggerHapticFeedback('light');
+            app.showToast('Opening App Store...');
+        }
+        
+        function confirmDeleteData() {
+            app.showAlert(
+                'Delete All Data',
+                'This will permanently delete all your data. This action cannot be undone.',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete', style: 'destructive', handler: () => deleteAllData() }
+                ]
+            );
+        }
+        
+        function deleteAllData() {
+            app.triggerHapticFeedback('heavy');
+            app.showToast('All data deleted');
+        }
+        
+        // Handle native back button events
+        window.addEventListener('nativeBackButton', () => {
+            console.log('Native back button pressed');
+            handleBackNavigation();
+        });
+        
+        // Handle Capacitor app events
+        if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+            window.CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+                if (!canGoBack) {
+                    window.CapacitorApp.exitApp();
+                } else {
+                    window.history.back();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

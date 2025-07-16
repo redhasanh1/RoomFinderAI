@@ -45,6 +45,18 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleDefault</string>
+	<key>UIUserInterfaceStyle</key>
+	<string>Automatic</string>
+	<key>UIRequiresFullScreen</key>
+	<false/>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UISupportedInterfaceOrientations~iphone</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -177,8 +189,64 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>roomfinderai</string>
+				<string>https</string>
 			</array>
 		</dict>
 	</array>
+	<!-- iOS 14+ Native App Appearance -->
+	<key>UIAppFonts</key>
+	<array>
+		<string>SF-Pro-Display-Regular.otf</string>
+		<string>SF-Pro-Display-Medium.otf</string>
+		<string>SF-Pro-Display-Semibold.otf</string>
+		<string>SF-Pro-Display-Bold.otf</string>
+	</array>
+	<!-- Native iOS Features -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>background-refresh</string>
+		<string>remote-notification</string>
+	</array>
+	<key>UISupportsDocumentBrowser</key>
+	<false/>
+	<key>UIUserInterfaceStyle</key>
+	<string>Automatic</string>
+	<key>UIStatusBarHidden</key>
+	<false/>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+	<!-- Web App Enhancements -->
+	<key>UIWebViewBounce</key>
+	<false/>
+	<key>DisallowOverscroll</key>
+	<string>true</string>
+	<key>EnableViewportScale</key>
+	<string>false</string>
+	<key>MediaPlaybackRequiresUserAction</key>
+	<false/>
+	<key>AllowInlineMediaPlayback</key>
+	<true/>
+	<key>WebKitSuppressesIncrementalRendering</key>
+	<false/>
+	<!-- Performance Optimizations -->
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIRequiresFullScreen</key>
+	<false/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UISceneStoryboardFile</key>
+	<string>Main</string>
+	<!-- Accessibility -->
+	<key>UIAccessibilityTraits</key>
+	<string>UIAccessibilityTraitNone</string>
+	<!-- Content Security -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 </dict>
 </plist>
