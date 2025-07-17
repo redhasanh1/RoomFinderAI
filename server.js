@@ -107,6 +107,149 @@ app.post('/api/predict', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+// API Endpoint for chat functionality
+app.post('/api/chat', async (req, res) => {
+    try {
+        console.log('Received chat request:', req.body);
+        const { message, userId } = req.body;
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+
+        // Simple chat responses (would integrate with OpenAI API in production)
+        let response = generateChatResponse(message);
+        
+        console.log('Generated chat response:', response);
+        res.json({ response: response });
+    } catch (error) {
+        console.error('Error in /api/chat:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// API Endpoint to get listings
+app.get('/api/listings', async (req, res) => {
+    try {
+        console.log('Fetching listings...');
+        
+        // Simple static listings - you can replace with your real data
+        const listings = [
+            {
+                id: "1",
+                title: "2BR Downtown Apartment",
+                location: "Downtown Toronto",
+                price: "$2,500/month",
+                size: "2 bedrooms, 1 bathroom",
+                imageUrl: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800",
+                description: "Beautiful downtown apartment with city views",
+                amenities: "Parking, Gym, Balcony",
+                contactInfo: "contact@roomfinder.com"
+            },
+            {
+                id: "2",
+                title: "1BR Cozy Studio",
+                location: "Yorkville",
+                price: "$1,800/month",
+                size: "1 bedroom, 1 bathroom",
+                imageUrl: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
+                description: "Perfect for students and professionals",
+                amenities: "Laundry, Pet-friendly",
+                contactInfo: "landlord@roomfinder.com"
+            },
+            {
+                id: "3",
+                title: "3BR Family Home",
+                location: "Liberty Village",
+                price: "$3,200/month",
+                size: "3 bedrooms, 2 bathrooms",
+                imageUrl: "https://images.unsplash.com/photo-1449844908441-8829872d2607?w=800",
+                description: "Spacious family home with backyard",
+                amenities: "Parking, Backyard, Garage",
+                contactInfo: "family@roomfinder.com"
+            }
+        ];
+        
+        console.log(`Returning ${listings.length} listings`);
+        res.json(listings);
+    } catch (error) {
+        console.error('Error in /api/listings:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// API Endpoint to search listings
+app.post('/api/listings/search', async (req, res) => {
+    try {
+        console.log('Search request:', req.body);
+        const { query } = req.body;
+        
+        // Simple search - just return filtered results
+        const allListings = [
+            {
+                id: "1",
+                title: "2BR Downtown Apartment",
+                location: "Downtown Toronto",
+                price: "$2,500/month",
+                size: "2 bedrooms, 1 bathroom",
+                imageUrl: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800",
+                description: "Beautiful downtown apartment with city views",
+                amenities: "Parking, Gym, Balcony",
+                contactInfo: "contact@roomfinder.com"
+            },
+            {
+                id: "2",
+                title: "1BR Cozy Studio",
+                location: "Yorkville",
+                price: "$1,800/month",
+                size: "1 bedroom, 1 bathroom",
+                imageUrl: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
+                description: "Perfect for students and professionals",
+                amenities: "Laundry, Pet-friendly",
+                contactInfo: "landlord@roomfinder.com"
+            }
+        ];
+        
+        let filteredListings = allListings;
+        
+        if (query) {
+            const lowerQuery = query.toLowerCase();
+            filteredListings = allListings.filter(listing => 
+                listing.title.toLowerCase().includes(lowerQuery) ||
+                listing.location.toLowerCase().includes(lowerQuery) ||
+                listing.description.toLowerCase().includes(lowerQuery)
+            );
+        }
+        
+        console.log(`Found ${filteredListings.length} matching listings`);
+        res.json(filteredListings);
+    } catch (error) {
+        console.error('Error in /api/listings/search:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+
+// Helper function to generate chat responses
+function generateChatResponse(message) {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('price') || lowerMessage.includes('negotiate')) {
+        return "I can help you negotiate the price. What's your budget range and what features are most important to you?";
+    } else if (lowerMessage.includes('location')) {
+        return "Location is crucial! Are you looking for something near public transit, schools, or specific neighborhoods?";
+    } else if (lowerMessage.includes('room') || lowerMessage.includes('apartment')) {
+        return "I'll help you find the perfect place. What size are you looking for and when do you need to move in?";
+    } else if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+        return "Hi there! I'm your AI housing assistant. I can help you find apartments, negotiate prices, and answer questions about housing. What can I help you with today?";
+    } else if (lowerMessage.includes('help')) {
+        return "I can help you with:\n• Finding apartments and rooms\n• Negotiating rental prices\n• Understanding lease terms\n• Answering housing questions\n\nWhat would you like to know?";
+    } else {
+        return "I understand. Let me help you with that. Could you provide more details about what you're looking for?";
+    }
+}
+
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server running at http://0.0.0.0:${port}`);
+    console.log(`Also accessible at http://localhost:${port}`);
+    console.log(`For Android emulator use: http://10.0.2.2:${port}`);
 });
