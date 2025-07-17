@@ -13,6 +13,112 @@
             font-family: 'Comic Neue', cursive;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             min-height: 100vh;
+            scroll-behavior: smooth;
+        }
+        
+        /* Enhanced Navigation Styles */
+        .floating-nav {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 10px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .nav-step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #64748b;
+        }
+        
+        .nav-step.active {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+        
+        .nav-step.completed {
+            background: linear-gradient(135deg, #1dd1a1, #10ac84);
+            color: white;
+        }
+        
+        .nav-step:hover:not(.active) {
+            background: #f1f5f9;
+        }
+        
+        .sticky-progress {
+            position: fixed;
+            top: 80px;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 999;
+            display: none;
+        }
+        
+        .sticky-progress.visible {
+            display: block;
+        }
+        
+        .back-button {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 50px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+        }
+        
+        .back-button:hover {
+            border-color: #667eea;
+            background: #f8fafc;
+            transform: translateY(-2px);
+        }
+        
+        .help-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .help-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
         }
         
         .kid-friendly-title {
@@ -173,9 +279,204 @@
             border-radius: 15px;
             margin-bottom: 15px;
         }
+        
+        /* Tooltip Styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background: #333;
+            color: white;
+            text-align: center;
+            border-radius: 10px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Budget Preset Buttons */
+        .budget-presets {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .budget-preset {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 25px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .budget-preset:hover {
+            border-color: #667eea;
+            background: #f8fafc;
+            transform: translateY(-2px);
+        }
+        
+        .budget-preset.selected {
+            border-color: #4ecdc4;
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+        
+        /* Visual Examples */
+        .budget-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .budget-example {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .budget-example:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .floating-nav {
+                position: relative;
+                top: 0;
+                left: 0;
+                transform: none;
+                margin: 20px;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .nav-step {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .help-button {
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            
+            .budget-presets {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        /* Accessibility */
+        .focus-visible {
+            outline: 3px solid #667eea;
+            outline-offset: 2px;
+        }
+        
+        /* Save indicator */
+        .save-indicator {
+            position: fixed;
+            top: 50%;
+            right: 30px;
+            transform: translateY(-50%);
+            background: #10b981;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .save-indicator.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
+    <!-- Floating Navigation -->
+    <nav class="floating-nav" id="floating-nav">
+        <div class="nav-step active" onclick="goToStep(1)" data-step="1">
+            <span>🏠</span>
+            <span>Room Style</span>
+        </div>
+        <div class="nav-step" onclick="goToStep(2)" data-step="2">
+            <span>💰</span>
+            <span>Budget</span>
+        </div>
+        <div class="nav-step" onclick="goToStep(3)" data-step="3">
+            <span>🎉</span>
+            <span>Results</span>
+        </div>
+    </nav>
+    
+    <!-- Sticky Progress Bar -->
+    <div class="sticky-progress" id="sticky-progress">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="flex justify-between items-center">
+                <div class="text-center flex-1">
+                    <div class="text-sm font-bold text-gray-800">Pick Your Style</div>
+                </div>
+                <div class="flex-1 h-2 bg-gray-200 rounded-full mx-4">
+                    <div id="sticky-progress-bar" class="h-2 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full transition-all duration-1000" style="width: 50%"></div>
+                </div>
+                <div class="text-center flex-1">
+                    <div class="text-sm font-bold text-gray-800">Your Budget</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Help Button -->
+    <div class="help-button tooltip" id="help-button">
+        <span>?</span>
+        <div class="tooltip-text">Need help? Click for tips and guidance!</div>
+    </div>
+    
+    <!-- Save Indicator -->
+    <div class="save-indicator" id="save-indicator">
+        ✓ Progress Saved
+    </div>
     <!-- Fun Header -->
     <header class="text-center py-12">
         <div class="max-w-6xl mx-auto px-4">
@@ -217,6 +518,18 @@
     <!-- Step 1: Room Type Selection -->
     <section id="step1" class="max-w-6xl mx-auto px-4 mb-12">
         <div class="bouncy-card p-12">
+            <!-- Step Header with Navigation -->
+            <div class="flex justify-between items-center mb-8">
+                <button onclick="goHome()" class="back-button">
+                    <span>←</span>
+                    <span>Home</span>
+                </button>
+                <div class="tooltip">
+                    <span class="text-lg font-semibold text-gray-600">Step 1 of 2</span>
+                    <div class="tooltip-text">Choose your preferred housing style. You can change this anytime!</div>
+                </div>
+            </div>
+            
             <div class="text-center mb-12">
                 <h2 class="text-5xl font-bold text-gray-800 mb-4">
                     🎨 What's Your Style?
@@ -224,11 +537,14 @@
                 <p class="text-2xl text-gray-600">
                     Pick the type of room that sounds fun to you!
                 </p>
+                <div class="mt-4 text-lg text-gray-500">
+                    Click any option to see what it's like! 👆
+                </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Dorm Room -->
-                <div class="room-option" onclick="selectRoom('dorm')">
+                <div class="room-option tooltip" onclick="selectRoom('dorm')" data-room="dorm">
                     <div class="text-center">
                         <div class="text-8xl mb-4">🏫</div>
                         <h3 class="text-3xl font-bold mb-4">Dorm Room</h3>
@@ -238,11 +554,15 @@
                         <div class="bg-blue-100 rounded-full px-4 py-2 text-blue-800 font-bold">
                             🎓 Perfect for school!
                         </div>
+                        <div class="mt-3 text-sm text-gray-500">
+                            Usually $200-$800/month
+                        </div>
                     </div>
+                    <div class="tooltip-text">Dorm rooms are great for meeting people and being close to classes. They often include meal plans and utilities!</div>
                 </div>
                 
                 <!-- Shared Apartment -->
-                <div class="room-option" onclick="selectRoom('shared')">
+                <div class="room-option tooltip" onclick="selectRoom('shared')" data-room="shared">
                     <div class="text-center">
                         <div class="text-8xl mb-4">🏠</div>
                         <h3 class="text-3xl font-bold mb-4">Shared House</h3>
@@ -252,11 +572,15 @@
                         <div class="bg-green-100 rounded-full px-4 py-2 text-green-800 font-bold">
                             👥 Fun with friends!
                         </div>
+                        <div class="mt-3 text-sm text-gray-500">
+                            Usually $400-$1200/month
+                        </div>
                     </div>
+                    <div class="tooltip-text">Shared housing gives you more space and independence while splitting costs with roommates. Great for cooking and hanging out!</div>
                 </div>
                 
                 <!-- Studio/Own Place -->
-                <div class="room-option" onclick="selectRoom('studio')">
+                <div class="room-option tooltip" onclick="selectRoom('studio')" data-room="studio">
                     <div class="text-center">
                         <div class="text-8xl mb-4">🏡</div>
                         <h3 class="text-3xl font-bold mb-4">My Own Place</h3>
@@ -266,7 +590,11 @@
                         <div class="bg-purple-100 rounded-full px-4 py-2 text-purple-800 font-bold">
                             ⭐ All yours!
                         </div>
+                        <div class="mt-3 text-sm text-gray-500">
+                            Usually $600-$2000+/month
+                        </div>
                     </div>
+                    <div class="tooltip-text">Your own place means total privacy and freedom! Perfect if you like quiet study time and having your own space.</div>
                 </div>
             </div>
             
@@ -281,13 +609,48 @@
     <!-- Step 2: Budget Selection -->
     <section id="step2" class="max-w-4xl mx-auto px-4 mb-12" style="display: none;">
         <div class="bouncy-card p-12">
+            <!-- Step Header with Navigation -->
+            <div class="flex justify-between items-center mb-8">
+                <button onclick="goToStep(1)" class="back-button">
+                    <span>←</span>
+                    <span>Back to Room Style</span>
+                </button>
+                <div class="tooltip">
+                    <span class="text-lg font-semibold text-gray-600">Step 2 of 2</span>
+                    <div class="tooltip-text">Set your budget range. Don't worry, you can always adjust this later!</div>
+                </div>
+            </div>
+            
             <div class="text-center mb-12">
                 <h2 class="text-5xl font-bold text-gray-800 mb-4">
                     💰 What's Your Budget?
                 </h2>
                 <p class="text-2xl text-gray-600">
-                    Slide to show how much money you have for your room each month!
+                    Choose how much you want to spend on housing each month!
                 </p>
+                <div class="mt-4 text-lg text-gray-500">
+                    Use the slider below or click a preset amount 👇
+                </div>
+            </div>
+            
+            <!-- Budget Presets -->
+            <div class="budget-presets" id="budget-presets">
+                <div class="budget-preset" onclick="setPresetBudget(300)" data-budget="300">
+                    <div class="font-bold">😰 $300</div>
+                    <div class="text-sm">Tight Budget</div>
+                </div>
+                <div class="budget-preset" onclick="setPresetBudget(500)" data-budget="500">
+                    <div class="font-bold">😊 $500</div>
+                    <div class="text-sm">Good Choice</div>
+                </div>
+                <div class="budget-preset" onclick="setPresetBudget(800)" data-budget="800">
+                    <div class="font-bold">😊 $800</div>
+                    <div class="text-sm">Comfortable</div>
+                </div>
+                <div class="budget-preset" onclick="setPresetBudget(1200)" data-budget="1200">
+                    <div class="font-bold">🤩 $1200</div>
+                    <div class="text-sm">Lots of Options</div>
+                </div>
             </div>
             
             <div class="space-y-8">
@@ -331,6 +694,18 @@
     <!-- Success Message -->
     <section id="success" class="max-w-4xl mx-auto px-4 mb-12" style="display: none;">
         <div class="bouncy-card p-12 text-center">
+            <!-- Step Header with Navigation -->
+            <div class="flex justify-between items-center mb-8">
+                <button onclick="goToStep(2)" class="back-button">
+                    <span>←</span>
+                    <span>Back to Budget</span>
+                </button>
+                <div class="tooltip">
+                    <span class="text-lg font-semibold text-green-600">All Done! ✓</span>
+                    <div class="tooltip-text">Your preferences are saved. You can always come back and change them!</div>
+                </div>
+            </div>
+            
             <div class="text-8xl mb-6">🎉</div>
             <h2 class="text-5xl font-bold text-gray-800 mb-6">
                 Awesome! You're All Set!
@@ -338,6 +713,21 @@
             <p class="text-2xl text-gray-600 mb-8">
                 Now let's find you some amazing rooms that are perfect for you!
             </p>
+            
+            <!-- Summary of Selections -->
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-6 mb-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Your Preferences:</h3>
+                <div class="flex justify-center gap-8 text-lg">
+                    <div class="text-center">
+                        <div class="text-3xl mb-2" id="summary-room-icon">🏠</div>
+                        <div class="font-bold" id="summary-room-type">Room Type</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl mb-2">💰</div>
+                        <div class="font-bold" id="summary-budget">$500/month</div>
+                    </div>
+                </div>
+            </div>
             
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <button onclick="window.location.href='https://www.roomfinderai.com/listings'" 
@@ -347,6 +737,10 @@
                 <button onclick="restartProcess()" 
                         class="bg-white text-purple-600 font-bold px-8 py-4 rounded-full border-4 border-purple-600 hover:bg-purple-50 transition-all text-xl">
                     🔄 Start Over
+                </button>
+                <button onclick="savePreferences()" 
+                        class="bg-white text-green-600 font-bold px-8 py-4 rounded-full border-4 border-green-600 hover:bg-green-50 transition-all text-xl">
+                    💾 Save Preferences
                 </button>
             </div>
         </div>
@@ -385,8 +779,159 @@
     <script>
         let selectedRoom = '';
         let selectedBudget = 500;
+        let currentStep = 1;
+        let userPreferences = {
+            roomType: '',
+            budget: 500,
+            timestamp: null
+        };
         
-        // Room selection
+        // Auto-save functionality
+        function saveProgress() {
+            userPreferences.roomType = selectedRoom;
+            userPreferences.budget = selectedBudget;
+            userPreferences.timestamp = Date.now();
+            localStorage.setItem('housingPreferences', JSON.stringify(userPreferences));
+            showSaveIndicator();
+        }
+        
+        function loadProgress() {
+            const saved = localStorage.getItem('housingPreferences');
+            if (saved) {
+                userPreferences = JSON.parse(saved);
+                selectedRoom = userPreferences.roomType;
+                selectedBudget = userPreferences.budget;
+                
+                // Restore UI state
+                if (selectedRoom) {
+                    const roomElement = document.querySelector(`[data-room="${selectedRoom}"]`);
+                    if (roomElement) {
+                        roomElement.classList.add('selected');
+                    }
+                }
+                
+                updateBudget(selectedBudget);
+                document.getElementById('budget-slider').value = selectedBudget;
+            }
+        }
+        
+        function showSaveIndicator() {
+            const indicator = document.getElementById('save-indicator');
+            indicator.classList.add('show');
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+        }
+        
+        // Enhanced navigation
+        function goToStep(step) {
+            currentStep = step;
+            
+            // Hide all steps
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('success').style.display = 'none';
+            
+            // Show target step
+            if (step === 1) {
+                document.getElementById('step1').style.display = 'block';
+                updateNavigation(1, 'pending', 'pending');
+            } else if (step === 2) {
+                if (!selectedRoom) {
+                    alert('Please select a room type first! 😊');
+                    goToStep(1);
+                    return;
+                }
+                document.getElementById('step2').style.display = 'block';
+                updateNavigation('completed', 2, 'pending');
+            } else if (step === 3) {
+                if (!selectedRoom || !selectedBudget) {
+                    alert('Please complete all steps first! 😊');
+                    return;
+                }
+                document.getElementById('success').style.display = 'block';
+                updateNavigation('completed', 'completed', 3);
+                updateSummary();
+            }
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Update sticky progress
+            updateStickyProgress();
+        }
+        
+        function updateNavigation(step1Status, step2Status, step3Status) {
+            const nav1 = document.querySelector('[data-step="1"]');
+            const nav2 = document.querySelector('[data-step="2"]');
+            const nav3 = document.querySelector('[data-step="3"]');
+            
+            nav1.className = `nav-step ${step1Status === 1 ? 'active' : step1Status}`;
+            nav2.className = `nav-step ${step2Status === 2 ? 'active' : step2Status}`;
+            nav3.className = `nav-step ${step3Status === 3 ? 'active' : step3Status}`;
+        }
+        
+        function updateStickyProgress() {
+            const stickyProgress = document.getElementById('sticky-progress');
+            const progressBar = document.getElementById('sticky-progress-bar');
+            
+            if (window.pageYOffset > 300) {
+                stickyProgress.classList.add('visible');
+            } else {
+                stickyProgress.classList.remove('visible');
+            }
+            
+            // Update progress bar
+            let progress = 0;
+            if (currentStep === 1) progress = 33;
+            else if (currentStep === 2) progress = 66;
+            else if (currentStep === 3) progress = 100;
+            
+            progressBar.style.width = progress + '%';
+        }
+        
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+        
+        function setPresetBudget(amount) {
+            selectedBudget = amount;
+            document.getElementById('budget-slider').value = amount;
+            updateBudget(amount);
+            
+            // Update preset button states
+            document.querySelectorAll('.budget-preset').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.querySelector(`[data-budget="${amount}"]`).classList.add('selected');
+            
+            saveProgress();
+        }
+        
+        function updateSummary() {
+            const roomIcons = {
+                'dorm': '🏫',
+                'shared': '🏠',
+                'studio': '🏡'
+            };
+            
+            const roomNames = {
+                'dorm': 'Dorm Room',
+                'shared': 'Shared House',
+                'studio': 'My Own Place'
+            };
+            
+            document.getElementById('summary-room-icon').textContent = roomIcons[selectedRoom] || '🏠';
+            document.getElementById('summary-room-type').textContent = roomNames[selectedRoom] || 'Room Type';
+            document.getElementById('summary-budget').textContent = `$${selectedBudget}/month`;
+        }
+        
+        function savePreferences() {
+            saveProgress();
+            alert('Your preferences have been saved! 💾\n\nYou can come back anytime and your choices will be remembered.');
+        }
+        
+        // Enhanced room selection
         function selectRoom(roomType) {
             selectedRoom = roomType;
             
@@ -410,29 +955,25 @@
                 nextBtn.style.transform = 'translateY(0)';
             }, 100);
             
+            // Auto-save progress
+            saveProgress();
+            
             // Celebration animation
             createConfetti();
+            
+            // Update navigation
+            updateNavigation('completed', 'pending', 'pending');
         }
         
-        // Go to step 2
+        // Go to step 2 (enhanced)
         function goToStep2() {
-            // Update progress
-            document.getElementById('step1-indicator').className = 'step-indicator step-complete';
-            document.getElementById('step2-indicator').className = 'step-indicator step-active';
-            document.getElementById('progress-bar').style.width = '100%';
-            
-            // Hide step 1, show step 2
-            document.getElementById('step1').style.display = 'none';
-            document.getElementById('step2').style.display = 'block';
-            
-            // Scroll to step 2
-            document.getElementById('step2').scrollIntoView({ behavior: 'smooth' });
+            goToStep(2);
             
             // More confetti!
             setTimeout(() => createConfetti(), 500);
         }
         
-        // Update budget slider
+        // Enhanced budget slider
         function updateBudget(value) {
             selectedBudget = parseInt(value);
             const budgetText = document.getElementById('budget-text');
@@ -440,6 +981,15 @@
             const budgetAdvice = document.getElementById('budget-advice');
             
             budgetText.textContent = `$${value} per month`;
+            
+            // Update preset button states
+            document.querySelectorAll('.budget-preset').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            const closestPreset = document.querySelector(`[data-budget="${value}"]`);
+            if (closestPreset) {
+                closestPreset.classList.add('selected');
+            }
             
             // Update emoji and advice based on budget
             if (value < 400) {
@@ -471,26 +1021,28 @@
                 `;
                 budgetAdvice.className = 'bg-purple-100 rounded-2xl p-6 text-center';
             }
+            
+            // Auto-save progress
+            saveProgress();
         }
         
-        // Find rooms (final step)
+        // Find rooms (enhanced final step)
         function findRooms() {
-            // Hide step 2, show success
-            document.getElementById('step2').style.display = 'none';
-            document.getElementById('success').style.display = 'block';
-            
-            // Scroll to success
-            document.getElementById('success').scrollIntoView({ behavior: 'smooth' });
+            goToStep(3);
             
             // Epic confetti celebration!
             createConfetti();
             setTimeout(() => createConfetti(), 300);
             setTimeout(() => createConfetti(), 600);
             
-            // Save preferences (you could send this to your backend)
-            console.log('Room preferences:', {
+            // Save final preferences
+            saveProgress();
+            
+            // Log preferences for backend integration
+            console.log('Final room preferences:', {
                 roomType: selectedRoom,
-                budget: selectedBudget
+                budget: selectedBudget,
+                timestamp: Date.now()
             });
         }
         
@@ -562,10 +1114,106 @@
         `;
         document.head.appendChild(style);
         
-        // Initialize
+        // Enhanced initialization
         document.addEventListener('DOMContentLoaded', function() {
-            updateBudget(500);
+            // Load saved progress
+            loadProgress();
+            
+            // Initialize budget
+            updateBudget(selectedBudget || 500);
+            
+            // Set up scroll listener for sticky progress
+            window.addEventListener('scroll', updateStickyProgress);
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
+                    if (currentStep > 1) {
+                        e.preventDefault();
+                        goToStep(currentStep - 1);
+                    }
+                } else if (e.key === 'ArrowRight' || e.key === 'Enter') {
+                    if (currentStep < 3) {
+                        e.preventDefault();
+                        if (currentStep === 1 && selectedRoom) {
+                            goToStep(2);
+                        } else if (currentStep === 2 && selectedBudget) {
+                            goToStep(3);
+                        }
+                    }
+                } else if (e.key === 'Escape') {
+                    restartProcess();
+                }
+            });
+            
+            // Initialize navigation
+            updateNavigation(1, 'pending', 'pending');
+            
+            // Welcome message for returning users
+            const saved = localStorage.getItem('housingPreferences');
+            if (saved) {
+                const preferences = JSON.parse(saved);
+                if (preferences.timestamp && Date.now() - preferences.timestamp < 7 * 24 * 60 * 60 * 1000) { // 7 days
+                    setTimeout(() => {
+                        alert('Welcome back! 👋\n\nWe\'ve restored your previous choices. You can continue where you left off or start fresh!');
+                    }, 1000);
+                }
+            }
         });
+        
+        // Help system
+        document.getElementById('help-button').addEventListener('click', function() {
+            const helpText = `
+🏠 HOUSING FINDER HELP 🏠
+
+✨ How it works:
+• Step 1: Pick your room style
+• Step 2: Set your budget
+• Step 3: See your matches!
+
+🎯 Pro tips:
+• Hover over options for more info
+• Use arrow keys to navigate
+• Your progress is auto-saved
+• Try the budget presets!
+
+❓ Need more help?
+Click the floating navigation to jump between steps!
+            `;
+            alert(helpText);
+        });
+        
+        // Touch/swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        document.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            const threshold = 50;
+            if (touchEndX < touchStartX - threshold) {
+                // Swipe left - next step
+                if (currentStep < 3) {
+                    if (currentStep === 1 && selectedRoom) {
+                        goToStep(2);
+                    } else if (currentStep === 2 && selectedBudget) {
+                        goToStep(3);
+                    }
+                }
+            } else if (touchEndX > touchStartX + threshold) {
+                // Swipe right - previous step
+                if (currentStep > 1) {
+                    goToStep(currentStep - 1);
+                }
+            }
+        }
     </script>
 </body>
 </html>
