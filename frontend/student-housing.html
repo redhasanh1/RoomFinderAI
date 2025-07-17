@@ -3,433 +3,569 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Housing Hub - RoomFinderAI</title>
-
-    <!-- 🚨 BULLETPROOF EMERGENCY AUTHENTICATION SYSTEM 🚨 -->
-    <script>
-        (function() {
-            console.log("🛡️ BULLETPROOF EMERGENCY AUTHENTICATION SYSTEM: ACTIVATED");
-
-            const currentUserKey = 'currentUser';
-            const backupKey = 'currentUser_backup_bulletproof';
-
-            // Function to perform a robust backup
-            function performBackup() {
-                try {
-                    const currentUser = localStorage.getItem(currentUserKey);
-                    if (currentUser) {
-                        localStorage.setItem(backupKey, currentUser);
-                        console.log("🛡️ Backup updated.");
-                    }
-                } catch (e) {
-                    console.error("🛡️ Backup failed:", e);
-                }
-            }
-
-            // Function to perform a robust restore
-            function performRestore() {
-                try {
-                    const currentUser = localStorage.getItem(currentUserKey);
-                    const backupUser = localStorage.getItem(backupKey);
-
-                    if (backupUser && (!currentUser || currentUser === 'null' || currentUser === 'undefined')) {
-                        localStorage.setItem(currentUserKey, backupUser);
-                        console.warn("🛡️ USER LOGOUT DETECTED. SESSION INSTANTLY RESTORED.");
-                        return true;
-                    }
-                } catch (e) {
-                    console.error("🛡️ Restore failed:", e);
-                }
-                return false;
-            }
-
-            // Override localStorage.removeItem to prevent logout
-            const originalRemoveItem = localStorage.removeItem;
-            localStorage.removeItem = function(key) {
-                if (key === currentUserKey) {
-                    console.error("🛡️ BLOCKED localStorage.removeItem('currentUser') attempt.");
-                    performRestore();
-                    return;
-                }
-                originalRemoveItem.apply(this, arguments);
-            };
-
-            // Override localStorage.clear to prevent logout
-            const originalClear = localStorage.clear;
-            localStorage.clear = function() {
-                console.error("🛡️ BLOCKED localStorage.clear() attempt.");
-                performRestore();
-                return;
-            };
-
-            // Override window.location.assign to prevent login page redirects
-            const originalLocationAssign = window.location.assign;
-            window.location.assign = function(url) {
-                if (typeof url === 'string' && (url.includes('login.html') || url.includes('/login'))) {
-                    console.error("🛡️ BLOCKED window.location.assign to login page:", url);
-                    return;
-                }
-                originalLocationAssign.apply(this, arguments);
-            };
-
-            // Override window.location.replace to prevent login page redirects
-            const originalLocationReplace = window.location.replace;
-            window.location.replace = function(url) {
-                if (typeof url === 'string' && (url.includes('login.html') || url.includes('/login'))) {
-                    console.error("🛡️ BLOCKED window.location.replace to login page:", url);
-                    return;
-                }
-                originalLocationReplace.apply(this, arguments);
-            };
-
-            // Aggressive monitoring and restoration loop
-            setInterval(() => {
-                performRestore();
-                performBackup(); // Keep backup fresh
-            }, 100); // Check every 100 milliseconds
-
-            // Initial backup and restore on load
-            performBackup();
-            performRestore();
-
-            console.log("✅ BULLETPROOF EMERGENCY AUTHENTICATION SYSTEM: FULLY OPERATIONAL");
-        })();
-    </script>
+    <title>🏠 Find Your Perfect Room! - RoomFinderAI</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&family=Fredoka+One:wght@400&display=swap" rel="stylesheet">
     
     <style>
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            overflow-x: hidden;
+            font-family: 'Comic Neue', cursive;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
         }
         
-        .gradient-text-student {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .kid-friendly-title {
+            font-family: 'Fredoka One', cursive;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            background-size: 300% 300%;
+            animation: gradient-shift 3s ease-in-out infinite;
         }
         
-        .glass-card {
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .bouncy-card {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-        }
-        
-        .modern-input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            font-size: 16px;
+            border-radius: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
-            background: white;
+            border: 4px solid transparent;
+            background-clip: padding-box;
         }
         
-        .modern-input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        .bouncy-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
         }
         
-        .simple-buffer-btn {
-            padding: 12px 20px;
-            border: 2px solid #e5e7eb;
-            background: white;
-            border-radius: 12px;
+        .rainbow-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #53a0fd 75%, #667eea 100%);
+            background-size: 300% 300%;
+            animation: rainbow-flow 3s ease-in-out infinite;
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            padding: 20px 40px;
             cursor: pointer;
             transition: all 0.3s ease;
-            min-width: 100px;
-            text-align: center;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
         }
         
-        .simple-buffer-btn:hover {
-            border-color: #9333ea;
-            background: #f3e8ff;
+        .rainbow-button:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.6);
         }
         
-        .simple-buffer-btn.active {
-            border-color: #9333ea;
-            background: #9333ea;
+        @keyframes rainbow-flow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .room-option {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 4px solid transparent;
+            border-radius: 20px;
+            padding: 20px;
+            background: white;
+        }
+        
+        .room-option:hover {
+            border-color: #667eea;
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .room-option.selected {
+            border-color: #4ecdc4;
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .budget-slider {
+            width: 100%;
+            height: 15px;
+            border-radius: 50px;
+            background: linear-gradient(to right, #ff6b6b, #feca57, #48dbfb, #0abde3, #1dd1a1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .budget-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: 4px solid #667eea;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .budget-slider::-moz-range-thumb {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: 4px solid #667eea;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 auto 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .step-active {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        .step-complete {
+            background: linear-gradient(135deg, #1dd1a1, #10ac84);
             color: white;
         }
         
+        .step-pending {
+            background: #f1f2f6;
+            color: #747d8c;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .room-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Ultra-Simple 3-Step Process -->
-    <section id="simple-flow" class="py-16 bg-gradient-to-r from-green-50 to-blue-50">
-        <div class="w-[90%] max-w-7xl mx-auto px-4">
+<body>
+    <!-- Fun Header -->
+    <header class="text-center py-12">
+        <div class="max-w-6xl mx-auto px-4">
+            <h1 class="kid-friendly-title text-6xl md:text-8xl font-bold mb-6">
+                🏠 Find Your Perfect Room!
+            </h1>
+            <p class="text-white text-2xl md:text-3xl font-bold">
+                Let's find you an awesome place to live! 🌟
+            </p>
+            <div class="mt-6 text-white text-xl">
+                It's super easy - just 2 fun steps! 🎉
+            </div>
+        </div>
+    </header>
+
+    <!-- Progress Tracker -->
+    <section class="max-w-4xl mx-auto px-4 mb-12">
+        <div class="bg-white rounded-3xl p-8 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <div class="text-center flex-1">
+                    <div id="step1-indicator" class="step-indicator step-active">1️⃣</div>
+                    <div class="text-lg font-bold text-gray-800">Pick Your Style</div>
+                    <div class="text-sm text-gray-600">What kind of room?</div>
+                </div>
+                
+                <div class="flex-1 h-2 bg-gray-200 rounded-full mx-4">
+                    <div id="progress-bar" class="h-2 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full transition-all duration-1000" style="width: 50%"></div>
+                </div>
+                
+                <div class="text-center flex-1">
+                    <div id="step2-indicator" class="step-indicator step-pending">2️⃣</div>
+                    <div class="text-lg font-bold text-gray-800">Your Budget</div>
+                    <div class="text-sm text-gray-600">How much money?</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Step 1: Room Type Selection -->
+    <section id="step1" class="max-w-6xl mx-auto px-4 mb-12">
+        <div class="bouncy-card p-12">
             <div class="text-center mb-12">
-                <h2 class="text-4xl font-bold mb-4 gradient-text-student">Get Housing in 3 Simple Steps</h2>
-                <p class="text-xl text-gray-600 max-w-2xl mx-auto">No overwhelm, no confusion. Just the easiest path to your perfect student housing.</p>
+                <h2 class="text-5xl font-bold text-gray-800 mb-4">
+                    🎨 What's Your Style?
+                </h2>
+                <p class="text-2xl text-gray-600">
+                    Pick the type of room that sounds fun to you!
+                </p>
             </div>
             
-            <!-- Simple Progress Bar -->
-            <div class="max-w-md mx-auto mb-12">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-gray-600">Your Progress</span>
-                    <span id="simple-progress-text" class="text-sm font-medium text-purple-600">Ready to start</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div id="simple-progress-bar" class="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-                </div>
-            </div>
-            
-            <!-- Super Simple Step Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 text-center border-l-4 border-purple-500">
-                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl">💰</span>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Dorm Room -->
+                <div class="room-option" onclick="selectRoom('dorm')">
+                    <div class="text-center">
+                        <div class="text-8xl mb-4">🏫</div>
+                        <h3 class="text-3xl font-bold mb-4">Dorm Room</h3>
+                        <p class="text-lg text-gray-600 mb-4">
+                            Live on campus with lots of friends nearby!
+                        </p>
+                        <div class="bg-blue-100 rounded-full px-4 py-2 text-blue-800 font-bold">
+                            🎓 Perfect for school!
+                        </div>
                     </div>
-                    <h3 class="text-xl font-bold mb-2 text-gray-800">Step 1: Budget</h3>
-                    <p class="text-gray-600 mb-4">Quick calculator - just answer 3 simple questions about your money</p>
-                    <div class="text-sm text-purple-600 font-medium">⏱️ Takes 1 minute</div>
                 </div>
                 
-                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 text-center border-l-4 border-blue-500">
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl">🏠</span>
+                <!-- Shared Apartment -->
+                <div class="room-option" onclick="selectRoom('shared')">
+                    <div class="text-center">
+                        <div class="text-8xl mb-4">🏠</div>
+                        <h3 class="text-3xl font-bold mb-4">Shared House</h3>
+                        <p class="text-lg text-gray-600 mb-4">
+                            Share a cool house with roommates!
+                        </p>
+                        <div class="bg-green-100 rounded-full px-4 py-2 text-green-800 font-bold">
+                            👥 Fun with friends!
+                        </div>
                     </div>
-                    <h3 class="text-xl font-bold mb-2 text-gray-800">Step 2: Housing Type</h3>
-                    <p class="text-gray-600 mb-4">Choose your style: dorm, apartment, or shared house</p>
-                    <div class="text-sm text-blue-600 font-medium">⏱️ Takes 30 seconds</div>
                 </div>
                 
-                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 text-center border-l-4 border-green-500">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl">✨</span>
+                <!-- Studio/Own Place -->
+                <div class="room-option" onclick="selectRoom('studio')">
+                    <div class="text-center">
+                        <div class="text-8xl mb-4">🏡</div>
+                        <h3 class="text-3xl font-bold mb-4">My Own Place</h3>
+                        <p class="text-lg text-gray-600 mb-4">
+                            Your very own apartment - so cool!
+                        </p>
+                        <div class="bg-purple-100 rounded-full px-4 py-2 text-purple-800 font-bold">
+                            ⭐ All yours!
+                        </div>
                     </div>
-                    <h3 class="text-xl font-bold mb-2 text-gray-800">Step 3: Get Matched</h3>
-                    <p class="text-gray-600 mb-4">Our AI finds your perfect housing options instantly</p>
-                    <div class="text-sm text-green-600 font-medium">⏱️ Instant results</div>
                 </div>
             </div>
             
-            <!-- Single Big CTA -->
-            <div class="text-center">
-                <button onclick="startStep1()" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold px-16 py-6 rounded-full hover:from-purple-700 hover:to-blue-700 transition-all duration-300 text-2xl transform hover:scale-105 shadow-2xl">
-                    🚀 Start Step 1: Budget Check
+            <div class="text-center mt-12">
+                <button id="next-to-step2" onclick="goToStep2()" class="rainbow-button" style="display: none;">
+                    Next: Tell Us Your Budget! 💰 →
                 </button>
-                <p class="text-gray-600 mt-4 text-sm">
-                    Simple, fast, stress-free housing search
+            </div>
+        </div>
+    </section>
+
+    <!-- Step 2: Budget Selection -->
+    <section id="step2" class="max-w-4xl mx-auto px-4 mb-12" style="display: none;">
+        <div class="bouncy-card p-12">
+            <div class="text-center mb-12">
+                <h2 class="text-5xl font-bold text-gray-800 mb-4">
+                    💰 What's Your Budget?
+                </h2>
+                <p class="text-2xl text-gray-600">
+                    Slide to show how much money you have for your room each month!
+                </p>
+            </div>
+            
+            <div class="space-y-8">
+                <!-- Budget Slider -->
+                <div class="text-center">
+                    <div id="budget-emoji" class="text-8xl mb-6">😊</div>
+                    <div id="budget-text" class="text-4xl font-bold text-gray-800 mb-8">$500 per month</div>
+                    
+                    <div class="max-w-2xl mx-auto">
+                        <input type="range" id="budget-slider" class="budget-slider" 
+                               min="200" max="2000" value="500" step="50"
+                               oninput="updateBudget(this.value)">
+                        
+                        <div class="flex justify-between text-lg font-bold mt-4">
+                            <span class="text-red-500">😰 $200</span>
+                            <span class="text-yellow-500">😐 $600</span>
+                            <span class="text-green-500">😊 $1000</span>
+                            <span class="text-blue-500">🤩 $2000+</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Budget Advice -->
+                <div id="budget-advice" class="bg-green-100 rounded-2xl p-6 text-center">
+                    <div class="text-2xl font-bold text-green-800 mb-2">Great choice! 👍</div>
+                    <div class="text-lg text-green-700">You'll have lots of good options for shared housing!</div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-12">
+                <button onclick="findRooms()" class="rainbow-button">
+                    🎉 Find My Perfect Room! →
+                </button>
+                <p class="text-gray-600 mt-4 text-lg">
+                    Let's see what awesome places we can find for you!
                 </p>
             </div>
         </div>
     </section>
 
-    <!-- Ultra-Simple Budget Step -->
-    <section id="budget-step" class="py-16 bg-white">
-        <div class="w-[90%] max-w-4xl mx-auto px-4">
-            <div class="text-center mb-12">
-                <div class="inline-flex items-center bg-purple-100 rounded-full px-4 py-2 mb-4">
-                    <span class="text-purple-600 font-medium">💰 Step 1 of 3</span>
-                </div>
-                <h2 class="text-4xl font-bold mb-4 gradient-text-student">Quick Budget Check</h2>
-                <p class="text-xl text-gray-600 max-w-2xl mx-auto">Just 3 simple questions to find your perfect housing budget</p>
-            </div>
+    <!-- Success Message -->
+    <section id="success" class="max-w-4xl mx-auto px-4 mb-12" style="display: none;">
+        <div class="bouncy-card p-12 text-center">
+            <div class="text-8xl mb-6">🎉</div>
+            <h2 class="text-5xl font-bold text-gray-800 mb-6">
+                Awesome! You're All Set!
+            </h2>
+            <p class="text-2xl text-gray-600 mb-8">
+                Now let's find you some amazing rooms that are perfect for you!
+            </p>
             
-            <!-- Ultra-Simple 3-Question Form -->
-            <div class="max-w-2xl mx-auto">
-                <div class="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-8 border border-purple-100">
-                    <div class="space-y-8">
-                        <!-- Question 1: Total Monthly Money -->
-                        <div class="text-center">
-                            <h3 class="text-2xl font-bold mb-4 text-gray-800">💰 How much money do you have each month?</h3>
-                            <p class="text-gray-600 mb-6">Include everything: job, family help, financial aid, savings</p>
-                            <div class="relative max-w-sm mx-auto">
-                                <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
-                                <input type="number" id="simple-total-money" placeholder="0" class="w-full pl-8 pr-4 py-4 text-2xl font-bold text-center border-2 border-purple-200 rounded-xl focus:border-purple-500 focus:outline-none bg-white">
-                            </div>
-                            <p class="text-sm text-gray-500 mt-2">Examples: $800, $1200, $2000</p>
-                        </div>
-                        
-                        <!-- Question 2: Essential Expenses -->
-                        <div class="text-center">
-                            <h3 class="text-2xl font-bold mb-4 text-gray-800">📱 How much for food, transport, and other essentials?</h3>
-                            <p class="text-gray-600 mb-6">Everything except housing (food, gas, phone, fun, etc.)</p>
-                            <div class="relative max-w-sm mx-auto">
-                                <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
-                                <input type="number" id="simple-expenses" placeholder="0" class="w-full pl-8 pr-4 py-4 text-2xl font-bold text-center border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:outline-none bg-white">
-                            </div>
-                            <p class="text-sm text-gray-500 mt-2">Most students: $300-600</p>
-                        </div>
-                        
-                        <!-- Question 3: Safety Buffer -->
-                        <div class="text-center">
-                            <h3 class="text-2xl font-bold mb-4 text-gray-800">🛡️ Want a safety buffer for emergencies?</h3>
-                            <div class="flex justify-center gap-4">
-                                <button onclick="setBuffer(0)" class="simple-buffer-btn" data-buffer="0">
-                                    <span class="block font-bold">No Buffer</span>
-                                    <span class="block text-sm">Use all money</span>
-                                </button>
-                                <button onclick="setBuffer(10)" class="simple-buffer-btn active" data-buffer="10">
-                                    <span class="block font-bold">10% Buffer</span>
-                                    <span class="block text-sm">Recommended</span>
-                                </button>
-                                <button onclick="setBuffer(20)" class="simple-buffer-btn" data-buffer="20">
-                                    <span class="block font-bold">20% Buffer</span>
-                                    <span class="block text-sm">Extra safe</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Instant Results -->
-                    <div id="simple-budget-result" class="mt-8 p-6 bg-white rounded-xl border-2 border-green-200 text-center">
-                        <h4 class="text-xl font-bold text-green-800 mb-2">Your Housing Budget</h4>
-                        <div id="simple-housing-budget" class="text-4xl font-bold text-green-600 mb-2">$0</div>
-                        <p class="text-gray-600 text-sm">per month for housing</p>
-                        <div id="simple-budget-advice" class="mt-4 p-3 bg-green-50 rounded-lg">
-                            <p class="text-sm text-green-700">Enter your numbers above to see your budget!</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Next Step Button -->
-                    <div class="text-center mt-8">
-                        <button onclick="window.location.href='https://www.roomfinderai.com/listings'" id="simple-next-btn" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold px-12 py-4 rounded-full hover:from-purple-700 hover:to-blue-700 transition-all duration-300 text-xl transform hover:scale-105 shadow-lg">
-                            🎉 Find My Perfect Housing →
-                        </button>
-                        <p class="text-gray-500 text-sm mt-3">Start browsing housing that fits your budget</p>
-                    </div>
-                </div>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button onclick="window.location.href='https://www.roomfinderai.com/listings'" 
+                        class="rainbow-button">
+                    🏠 See My Room Options
+                </button>
+                <button onclick="restartProcess()" 
+                        class="bg-white text-purple-600 font-bold px-8 py-4 rounded-full border-4 border-purple-600 hover:bg-purple-50 transition-all text-xl">
+                    🔄 Start Over
+                </button>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="bg-gradient-to-r from-gray-900 to-blue-900 text-white py-16">
-        <div class="w-[90%] max-w-7xl mx-auto px-4">
-            <div class="text-center">
-                <h3 class="text-2xl font-bold mb-4">🎉 You're Ready for Housing Success!</h3>
-                <p class="text-gray-300 mb-8 max-w-2xl mx-auto">Your housing journey just became 10x easier. Get matched with perfect housing options that fit your budget.</p>
-                
-                <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-                    <button onclick="window.location.href='https://www.roomfinderai.com/listings'" class="bg-white text-purple-600 font-bold px-8 py-4 rounded-full hover:bg-gray-100 transition-colors">
-                        🏠 Browse Housing Now
-                    </button>
-                    <button onclick="window.location.href='https://www.roomfinderai.com/profile.html'" class="border-2 border-white text-white font-bold px-8 py-4 rounded-full hover:bg-white hover:text-purple-600 transition-colors">
-                        📊 Go to Dashboard
-                    </button>
-                </div>
-                
-                <div class="text-sm text-gray-400">
-                    <p>© 2024 RoomFinderAI. Making student housing simple, safe, and stress-free.</p>
-                </div>
+    <!-- Fun Footer -->
+    <footer class="text-center py-12 text-white">
+        <div class="max-w-4xl mx-auto px-4">
+            <h3 class="text-3xl font-bold mb-4">🌟 You're Going to Love Your New Room!</h3>
+            <p class="text-xl mb-8">
+                Finding the perfect place to live just got super easy and fun!
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center text-lg">
+                <a href="https://www.roomfinderai.com/listings" class="hover:text-yellow-300 transition-colors">
+                    🏠 Browse Rooms
+                </a>
+                <a href="https://www.roomfinderai.com/profile.html" class="hover:text-yellow-300 transition-colors">
+                    📱 My Account
+                </a>
+                <a href="#" onclick="restartProcess()" class="hover:text-yellow-300 transition-colors">
+                    🔄 Start Over
+                </a>
+            </div>
+            
+            <div class="mt-8 text-lg opacity-75">
+                © 2024 RoomFinderAI - Making room finding fun and easy for everyone! 🎈
             </div>
         </div>
     </footer>
 
-    <!-- JavaScript Functions -->
+    <!-- Confetti Container -->
+    <div id="confetti-container" class="confetti"></div>
+
+    <!-- JavaScript -->
     <script>
-        let selectedBuffer = 10; // Default 10% buffer
+        let selectedRoom = '';
+        let selectedBudget = 500;
         
-        // Start the simple 3-step flow
-        function startSimpleFlow() {
-            scrollToSection('simple-flow');
-            updateProgress(0, 'Ready to start');
-        }
-        
-        // Start Step 1: Budget
-        function startStep1() {
-            scrollToSection('budget-step');
-            updateProgress(33, 'Step 1: Budget');
-        }
-        
-        // Set safety buffer
-        function setBuffer(percent) {
-            selectedBuffer = percent;
+        // Room selection
+        function selectRoom(roomType) {
+            selectedRoom = roomType;
             
-            // Update button states
-            document.querySelectorAll('.simple-buffer-btn').forEach(btn => {
-                btn.classList.remove('active');
+            // Update all room options
+            document.querySelectorAll('.room-option').forEach(option => {
+                option.classList.remove('selected');
             });
             
-            const selectedBtn = document.querySelector(`[data-buffer="${percent}"]`);
-            if (selectedBtn) {
-                selectedBtn.classList.add('active');
-            }
+            // Select the clicked option
+            event.currentTarget.classList.add('selected');
             
-            // Recalculate budget
-            calculateSimpleBudget();
+            // Show next button with animation
+            const nextBtn = document.getElementById('next-to-step2');
+            nextBtn.style.display = 'block';
+            nextBtn.style.opacity = '0';
+            nextBtn.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                nextBtn.style.transition = 'all 0.5s ease';
+                nextBtn.style.opacity = '1';
+                nextBtn.style.transform = 'translateY(0)';
+            }, 100);
+            
+            // Celebration animation
+            createConfetti();
         }
         
-        // Calculate simple budget instantly
-        function calculateSimpleBudget() {
-            const totalMoney = parseFloat(document.getElementById('simple-total-money')?.value || 0);
-            const expenses = parseFloat(document.getElementById('simple-expenses')?.value || 0);
+        // Go to step 2
+        function goToStep2() {
+            // Update progress
+            document.getElementById('step1-indicator').className = 'step-indicator step-complete';
+            document.getElementById('step2-indicator').className = 'step-indicator step-active';
+            document.getElementById('progress-bar').style.width = '100%';
             
-            if (totalMoney > 0 && expenses >= 0) {
-                // Calculate available money after expenses
-                const afterExpenses = totalMoney - expenses;
+            // Hide step 1, show step 2
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'block';
+            
+            // Scroll to step 2
+            document.getElementById('step2').scrollIntoView({ behavior: 'smooth' });
+            
+            // More confetti!
+            setTimeout(() => createConfetti(), 500);
+        }
+        
+        // Update budget slider
+        function updateBudget(value) {
+            selectedBudget = parseInt(value);
+            const budgetText = document.getElementById('budget-text');
+            const budgetEmoji = document.getElementById('budget-emoji');
+            const budgetAdvice = document.getElementById('budget-advice');
+            
+            budgetText.textContent = `$${value} per month`;
+            
+            // Update emoji and advice based on budget
+            if (value < 400) {
+                budgetEmoji.textContent = '😰';
+                budgetAdvice.innerHTML = `
+                    <div class="text-2xl font-bold text-orange-800 mb-2">Tight budget, but we can help! 💪</div>
+                    <div class="text-lg text-orange-700">Look for shared rooms or dorms - they're perfect for saving money!</div>
+                `;
+                budgetAdvice.className = 'bg-orange-100 rounded-2xl p-6 text-center';
+            } else if (value < 700) {
+                budgetEmoji.textContent = '😊';
+                budgetAdvice.innerHTML = `
+                    <div class="text-2xl font-bold text-green-800 mb-2">Great choice! 👍</div>
+                    <div class="text-lg text-green-700">You'll have lots of good options for shared housing!</div>
+                `;
+                budgetAdvice.className = 'bg-green-100 rounded-2xl p-6 text-center';
+            } else if (value < 1200) {
+                budgetEmoji.textContent = '🤩';
+                budgetAdvice.innerHTML = `
+                    <div class="text-2xl font-bold text-blue-800 mb-2">Awesome budget! 🌟</div>
+                    <div class="text-lg text-blue-700">You can get a really nice place with this budget!</div>
+                `;
+                budgetAdvice.className = 'bg-blue-100 rounded-2xl p-6 text-center';
+            } else {
+                budgetEmoji.textContent = '🏆';
+                budgetAdvice.innerHTML = `
+                    <div class="text-2xl font-bold text-purple-800 mb-2">Amazing! You're all set! 🎉</div>
+                    <div class="text-lg text-purple-700">With this budget, you can get any type of place you want!</div>
+                `;
+                budgetAdvice.className = 'bg-purple-100 rounded-2xl p-6 text-center';
+            }
+        }
+        
+        // Find rooms (final step)
+        function findRooms() {
+            // Hide step 2, show success
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('success').style.display = 'block';
+            
+            // Scroll to success
+            document.getElementById('success').scrollIntoView({ behavior: 'smooth' });
+            
+            // Epic confetti celebration!
+            createConfetti();
+            setTimeout(() => createConfetti(), 300);
+            setTimeout(() => createConfetti(), 600);
+            
+            // Save preferences (you could send this to your backend)
+            console.log('Room preferences:', {
+                roomType: selectedRoom,
+                budget: selectedBudget
+            });
+        }
+        
+        // Restart the process
+        function restartProcess() {
+            selectedRoom = '';
+            selectedBudget = 500;
+            
+            // Reset all steps
+            document.getElementById('step1').style.display = 'block';
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('success').style.display = 'none';
+            
+            // Reset indicators
+            document.getElementById('step1-indicator').className = 'step-indicator step-active';
+            document.getElementById('step2-indicator').className = 'step-indicator step-pending';
+            document.getElementById('progress-bar').style.width = '50%';
+            
+            // Reset selections
+            document.querySelectorAll('.room-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            document.getElementById('next-to-step2').style.display = 'none';
+            
+            // Reset budget
+            document.getElementById('budget-slider').value = 500;
+            updateBudget(500);
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // Create confetti animation
+        function createConfetti() {
+            const confettiContainer = document.getElementById('confetti-container');
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8', '#fdcb6e'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'absolute';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-10px';
+                confetti.style.width = '10px';
+                confetti.style.height = '10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.borderRadius = '50%';
+                confetti.style.animation = `fall ${Math.random() * 3 + 2}s linear forwards`;
                 
-                // Apply safety buffer
-                const bufferAmount = afterExpenses * (selectedBuffer / 100);
-                const housingBudget = Math.max(0, afterExpenses - bufferAmount);
+                confettiContainer.appendChild(confetti);
                 
-                // Update display
-                document.getElementById('simple-housing-budget').textContent = '$' + Math.round(housingBudget);
-                
-                // Update advice
-                let advice = '';
-                if (housingBudget <= 0) {
-                    advice = '⚠️ Your expenses are too high. Try reducing other costs or increasing income.';
-                } else if (housingBudget < 300) {
-                    advice = '🏠 Consider shared housing or dorms to stay within budget.';
-                } else if (housingBudget < 600) {
-                    advice = '👍 Good budget! Look for shared apartments or nice dorms.';
-                } else if (housingBudget < 1000) {
-                    advice = '💰 Great budget! You have lots of good housing options.';
-                } else {
-                    advice = '🎉 Excellent budget! You can afford premium housing options.';
+                // Remove confetti after animation
+                setTimeout(() => {
+                    if (confetti.parentNode) {
+                        confetti.parentNode.removeChild(confetti);
+                    }
+                }, 5000);
+            }
+        }
+        
+        // Add CSS for confetti animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fall {
+                to {
+                    transform: translateY(100vh) rotate(360deg);
+                    opacity: 0;
                 }
-                
-                document.getElementById('simple-budget-advice').innerHTML = `<p class="text-sm text-green-700">${advice}</p>`;
             }
-        }
+        `;
+        document.head.appendChild(style);
         
-        // Update progress bar
-        function updateProgress(percent, text) {
-            const progressBar = document.getElementById('simple-progress-bar');
-            const progressText = document.getElementById('simple-progress-text');
-            
-            if (progressBar) {
-                progressBar.style.width = percent + '%';
-            }
-            if (progressText) {
-                progressText.textContent = text;
-            }
-        }
-        
-        // Scroll to section helper
-        function scrollToSection(sectionId) {
-            const section = document.getElementById(sectionId);
-            if (section) {
-                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }
-        
-        // Add event listeners for budget inputs
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Budget calculator real-time updates
-            const totalMoneyInput = document.getElementById('simple-total-money');
-            const expensesInput = document.getElementById('simple-expenses');
-            
-            if (totalMoneyInput) {
-                totalMoneyInput.addEventListener('input', calculateSimpleBudget);
-            }
-            if (expensesInput) {
-                expensesInput.addEventListener('input', calculateSimpleBudget);
-            }
-            
-            // Initialize progress
-            updateProgress(0, 'Ready to start');
+            updateBudget(500);
         });
     </script>
-    
 </body>
 </html>
