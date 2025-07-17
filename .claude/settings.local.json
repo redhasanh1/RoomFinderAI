@@ -56,7 +56,10 @@
       "Bash(pod init:*)",
       "Bash(sudo chown:*)",
       "Bash(yarn install)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git checkout:*)",
+      "Bash(git restore:*)"
     ],
     "deny": []
   }
