@@ -53,9 +53,14 @@
 		CC3E6D2735651C7F1155FF14 /* ImageLoadingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A5B6A5CE41FF03A15654FB /* ImageLoadingService.swift */; };
 		E458F1861CCBEE5CB6B835A3 /* OfflineDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D0DCD9A78649B53673427A2 /* OfflineDataService.swift */; };
 		F349008C9C28FC83C56CCA10 /* MarketAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FE929DB73790A72C72A27A /* MarketAnalyticsService.swift */; };
+		6B5ADBA1B5BEB5DD7E8F9C14 /* CDListing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35159452F1AF1D948AD5CA9 /* CDListing.swift */; };
+		81AEB01802DCBC50B4B30A85 /* CDUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC9D5E45A0AFA9175B56C1C /* CDUser.swift */; };
+		1B95453E99AF3E94EF234011 /* CDMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B43F481766A171A59D0553B /* CDMessage.swift */; };
+		80ACF44A0B30C1BEBAD4D245 /* CDChat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0209AAACD6803211889008AE /* CDChat.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0209AAACD6803211889008AE /* CDChat.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CDChat.swift; path = ../Source/RoomFinderAI/Models/CoreData/CDChat.swift; sourceTree = "<group>"; };
 		0BF5AC2EF5D35067CF8BA242 /* NetworkMonitoringService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = NetworkMonitoringService.swift; path = ../Source/RoomFinderAI/Services/NetworkMonitoringService.swift; sourceTree = "<group>"; };
 		14B3A01CDC6A16AEDF69AE22 /* RateLimitingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RateLimitingService.swift; path = ../Source/RoomFinderAI/Services/RateLimitingService.swift; sourceTree = "<group>"; };
 		21555555564F87EC787E2FEC /* MediaLoadingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MediaLoadingService.swift; path = ../Source/RoomFinderAI/Services/MediaLoadingService.swift; sourceTree = "<group>"; };
@@ -72,9 +77,12 @@
 		6C1F874F608B396521435D67 /* SubleaseView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SubleaseView.swift; path = ../Source/RoomFinderAI/Views/SubleaseView.swift; sourceTree = "<group>"; };
 		7F5E522C33E1045B2C995B89 /* PaginationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaginationService.swift; path = ../Source/RoomFinderAI/Services/PaginationService.swift; sourceTree = "<group>"; };
 		8EE8BD18CF14F7A629526B62 /* RetryService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RetryService.swift; path = ../Source/RoomFinderAI/Services/RetryService.swift; sourceTree = "<group>"; };
+		8FC9D5E45A0AFA9175B56C1C /* CDUser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CDUser.swift; path = ../Source/RoomFinderAI/Models/CoreData/CDUser.swift; sourceTree = "<group>"; };
+		9B43F481766A171A59D0553B /* CDMessage.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CDMessage.swift; path = ../Source/RoomFinderAI/Models/CoreData/CDMessage.swift; sourceTree = "<group>"; };
 		9B484D9DF9F6313172561C84 /* DatabasePerformanceService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DatabasePerformanceService.swift; path = ../Source/RoomFinderAI/Services/DatabasePerformanceService.swift; sourceTree = "<group>"; };
 		A01234567890123456789000 /* RoomFinderAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoomFinderAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A01234567890123456789011 /* RoomFinderAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RoomFinderAIApp.swift; path = ../Source/RoomFinderAI/RoomFinderAIApp.swift; sourceTree = "<group>"; };
+		A35159452F1AF1D948AD5CA9 /* CDListing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CDListing.swift; path = ../Source/RoomFinderAI/Models/CoreData/CDListing.swift; sourceTree = "<group>"; };
 		A01234567890123456789013 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = ../Source/RoomFinderAI/ContentView.swift; sourceTree = "<group>"; };
 		A01234567890123456789015 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = ../Source/RoomFinderAI/Resources/Assets.xcassets; sourceTree = "<group>"; };
 		A01234567890123456789017 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SupabaseService.swift; path = ../Source/RoomFinderAI/Services/SupabaseService.swift; sourceTree = "<group>"; };
@@ -345,6 +353,10 @@
 				A78BF66C018CCD2A69FE6A12 /* PaymentView.swift in Sources */,
 				A4CFE945359F885F4431C048 /* SubleaseView.swift in Sources */,
 				66F8B0453A76099F5A0A97A4 /* OfflineStatusView.swift in Sources */,
+				6B5ADBA1B5BEB5DD7E8F9C14 /* CDListing.swift in Sources */,
+				81AEB01802DCBC50B4B30A85 /* CDUser.swift in Sources */,
+				1B95453E99AF3E94EF234011 /* CDMessage.swift in Sources */,
+				80ACF44A0B30C1BEBAD4D245 /* CDChat.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
