@@ -238,7 +238,7 @@ class NetworkMonitoringService: ObservableObject {
     
     // MARK: - Public Methods
     func startMonitoring() {
-        guard !monitor.queue.isSuspended else { return }
+        guard monitor.queue == nil else { return }
         monitor.start(queue: queue)
     }
     

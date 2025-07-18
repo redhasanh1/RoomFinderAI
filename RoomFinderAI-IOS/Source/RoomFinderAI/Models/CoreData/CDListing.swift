@@ -26,6 +26,7 @@ extension CDListing {
     @NSManaged public var details: String?
     @NSManaged public var imageURLs: [String]?
     @NSManaged public var isActive: Bool
+    @NSManaged public var isFavorite: Bool
     @NSManaged public var availableDate: Date?
     @NSManaged public var createdAt: Date?
     @NSManaged public var updatedAt: Date?
