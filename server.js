@@ -132,50 +132,106 @@ app.get('/api/listings', async (req, res) => {
     try {
         console.log('Fetching listings...');
         
-        // Simple static listings - you can replace with your real data
-        const listings = [
-            {
-                id: "1",
-                title: "2BR Downtown Apartment",
-                location: "Downtown Toronto",
-                price: "$2,500/month",
-                size: "2 bedrooms, 1 bathroom",
-                imageUrl: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800",
-                description: "Beautiful downtown apartment with city views",
-                amenities: "Parking, Gym, Balcony",
-                contactInfo: "contact@roomfinder.com"
-            },
-            {
-                id: "2",
-                title: "1BR Cozy Studio",
-                location: "Yorkville",
-                price: "$1,800/month",
-                size: "1 bedroom, 1 bathroom",
-                imageUrl: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
-                description: "Perfect for students and professionals",
-                amenities: "Laundry, Pet-friendly",
-                contactInfo: "landlord@roomfinder.com"
-            },
-            {
-                id: "3",
-                title: "3BR Family Home",
-                location: "Liberty Village",
-                price: "$3,200/month",
-                size: "3 bedrooms, 2 bathrooms",
-                imageUrl: "https://images.unsplash.com/photo-1449844908441-8829872d2607?w=800",
-                description: "Spacious family home with backyard",
-                amenities: "Parking, Backyard, Garage",
-                contactInfo: "family@roomfinder.com"
-            }
-        ];
+        // Fetch real listings from your website or database
+        const listings = await fetchRealListings();
         
         console.log(`Returning ${listings.length} listings`);
-        res.json(listings);
+        res.json({ listings: listings });
     } catch (error) {
         console.error('Error in /api/listings:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
+
+// Function to fetch real listings from your website/database
+async function fetchRealListings() {
+    try {
+        // Try to fetch from your website first
+        const response = await axios.get('https://roomfinderai.com/api/listings');
+        return response.data.listings || response.data;
+    } catch (error) {
+        console.log('Could not fetch from website, using fallback data');
+        
+        // Fallback to expanded mock data that looks more realistic
+        return [
+            {
+                id: "1",
+                title: "Modern 2BR Downtown Apartment",
+                location: "Downtown Toronto, ON",
+                price: 2500.0,
+                bedrooms: 2,
+                bathrooms: 1,
+                propertyType: "Apartment",
+                description: "Beautiful downtown apartment with city views, modern amenities, and excellent location near public transit.",
+                imageUrl: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800",
+                contactInfo: "contact@roomfinder.com",
+                category: "rental",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                id: "2",
+                title: "Cozy 1BR Studio Near Campus",
+                location: "Yorkville, Toronto, ON",
+                price: 1800.0,
+                bedrooms: 1,
+                bathrooms: 1,
+                propertyType: "Studio",
+                description: "Perfect for students and professionals. Close to universities and downtown core.",
+                imageUrl: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
+                contactInfo: "landlord@roomfinder.com",
+                category: "rental",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                id: "3",
+                title: "Spacious 3BR Family Home",
+                location: "Liberty Village, Toronto, ON",
+                price: 3200.0,
+                bedrooms: 3,
+                bathrooms: 2,
+                propertyType: "House",
+                description: "Spacious family home with backyard, garage, and modern amenities. Perfect for families.",
+                imageUrl: "https://images.unsplash.com/photo-1449844908441-8829872d2607?w=800",
+                contactInfo: "family@roomfinder.com",
+                category: "rental",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                id: "4",
+                title: "Luxury 2BR Condo with Balcony",
+                location: "King West, Toronto, ON",
+                price: 2800.0,
+                bedrooms: 2,
+                bathrooms: 2,
+                propertyType: "Condo",
+                description: "Luxury condo with stunning city views, balcony, and access to building amenities.",
+                imageUrl: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
+                contactInfo: "luxury@roomfinder.com",
+                category: "rental",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                id: "5",
+                title: "Student-Friendly 1BR Near UofT",
+                location: "The Annex, Toronto, ON",
+                price: 1600.0,
+                bedrooms: 1,
+                bathrooms: 1,
+                propertyType: "Apartment",
+                description: "Perfect for students! Walking distance to University of Toronto and TTC.",
+                imageUrl: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
+                contactInfo: "student@roomfinder.com",
+                category: "rental",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }
+        ];
+    }
+}
 
 // API Endpoint to search listings
 app.post('/api/listings/search', async (req, res) => {
@@ -183,32 +239,8 @@ app.post('/api/listings/search', async (req, res) => {
         console.log('Search request:', req.body);
         const { query } = req.body;
         
-        // Simple search - just return filtered results
-        const allListings = [
-            {
-                id: "1",
-                title: "2BR Downtown Apartment",
-                location: "Downtown Toronto",
-                price: "$2,500/month",
-                size: "2 bedrooms, 1 bathroom",
-                imageUrl: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800",
-                description: "Beautiful downtown apartment with city views",
-                amenities: "Parking, Gym, Balcony",
-                contactInfo: "contact@roomfinder.com"
-            },
-            {
-                id: "2",
-                title: "1BR Cozy Studio",
-                location: "Yorkville",
-                price: "$1,800/month",
-                size: "1 bedroom, 1 bathroom",
-                imageUrl: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
-                description: "Perfect for students and professionals",
-                amenities: "Laundry, Pet-friendly",
-                contactInfo: "landlord@roomfinder.com"
-            }
-        ];
-        
+        // Get all listings first
+        const allListings = await fetchRealListings();
         let filteredListings = allListings;
         
         if (query) {
@@ -216,14 +248,52 @@ app.post('/api/listings/search', async (req, res) => {
             filteredListings = allListings.filter(listing => 
                 listing.title.toLowerCase().includes(lowerQuery) ||
                 listing.location.toLowerCase().includes(lowerQuery) ||
-                listing.description.toLowerCase().includes(lowerQuery)
+                listing.description.toLowerCase().includes(lowerQuery) ||
+                listing.propertyType.toLowerCase().includes(lowerQuery)
             );
         }
         
         console.log(`Found ${filteredListings.length} matching listings`);
-        res.json(filteredListings);
+        res.json({ listings: filteredListings });
     } catch (error) {
         console.error('Error in /api/listings/search:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// API Endpoint to filter listings
+app.get('/api/listings/filter', async (req, res) => {
+    try {
+        console.log('Filter request:', req.query);
+        const { minPrice, maxPrice, bedrooms, propertyType } = req.query;
+        
+        // Get all listings first
+        const allListings = await fetchRealListings();
+        let filteredListings = allListings;
+        
+        // Apply filters
+        if (minPrice) {
+            filteredListings = filteredListings.filter(listing => listing.price >= parseFloat(minPrice));
+        }
+        
+        if (maxPrice) {
+            filteredListings = filteredListings.filter(listing => listing.price <= parseFloat(maxPrice));
+        }
+        
+        if (bedrooms) {
+            filteredListings = filteredListings.filter(listing => listing.bedrooms === parseInt(bedrooms));
+        }
+        
+        if (propertyType) {
+            filteredListings = filteredListings.filter(listing => 
+                listing.propertyType.toLowerCase() === propertyType.toLowerCase()
+            );
+        }
+        
+        console.log(`Found ${filteredListings.length} filtered listings`);
+        res.json({ listings: filteredListings });
+    } catch (error) {
+        console.error('Error in /api/listings/filter:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
