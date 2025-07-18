@@ -647,7 +647,7 @@ class LoggingService {
             errorMetadata["error_severity"] = appError.severity.rawValue
         }
         
-        log(level: .error, category: category, message: "Error occurred: \(error.localizedDescription)", metadata: errorMetadata)
+        log(level: .error, category: category, message: "Error occurred: \(error.localizedDescription)", metadata: errorMetadata, function: #function, file: #file, line: #line)
     }
     
     // MARK: - Performance Logging
@@ -663,7 +663,7 @@ class LoggingService {
         perfMetadata["duration_ms"] = duration * 1000
         
         let level: LogLevel = duration > 1.0 ? .warning : .info
-        log(level: level, category: category, message: "Performance: \(operation) took \(String(format: "%.2f", duration * 1000))ms", metadata: perfMetadata)
+        log(level: level, category: category, message: "Performance: \(operation) took \(String(format: "%.2f", duration * 1000))ms", metadata: perfMetadata, function: #function, file: #file, line: #line)
     }
     
     // MARK: - Network Logging
@@ -686,7 +686,7 @@ class LoggingService {
         let level: LogLevel = error != nil ? .error : .info
         let message = "Network request: \(method) \(url) - \(statusCode ?? 0) (\(String(format: "%.2f", duration * 1000))ms)"
         
-        log(level: level, category: .network, message: message, metadata: metadata)
+        log(level: level, category: .network, message: message, metadata: metadata, function: #function, file: #file, line: #line)
     }
     
     // MARK: - Private Methods
