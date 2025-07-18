@@ -1,89 +1,5 @@
 import Foundation
 
-// MARK: - AI Chat Types
-struct AIChat: Identifiable, Codable, Equatable {
-    let id: String
-    let title: String
-    let createdAt: Date
-    let updatedAt: Date
-    let isActive: Bool
-    let context: String?
-    var messages: [AIMessage] = []
-    
-    init(id: String = UUID().uuidString, title: String, createdAt: Date = Date(), updatedAt: Date = Date(), isActive: Bool = true, context: String? = nil, messages: [AIMessage] = []) {
-        self.id = id
-        self.title = title
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
-        self.isActive = isActive
-        self.context = context
-        self.messages = messages
-    }
-}
-
-struct AIMessage: Identifiable, Codable, Equatable {
-    let id: String
-    let chatId: String
-    let content: String
-    let role: AIMessageRole
-    let createdAt: Date
-    let tokens: Int?
-    let model: String?
-    
-    init(id: String = UUID().uuidString, chatId: String, content: String, role: AIMessageRole, createdAt: Date = Date(), tokens: Int? = nil, model: String? = nil) {
-        self.id = id
-        self.chatId = chatId
-        self.content = content
-        self.role = role
-        self.createdAt = createdAt
-        self.tokens = tokens
-        self.model = model
-    }
-}
-
-struct AIMessageMetadata: Codable, Equatable {
-    let model: String?
-    let temperature: Double?
-    let maxTokens: Int?
-    let promptTokens: Int?
-    let completionTokens: Int?
-    let totalTokens: Int?
-    let processingTime: TimeInterval?
-    
-    init(
-        model: String? = nil,
-        temperature: Double? = nil,
-        maxTokens: Int? = nil,
-        promptTokens: Int? = nil,
-        completionTokens: Int? = nil,
-        totalTokens: Int? = nil,
-        processingTime: TimeInterval? = nil
-    ) {
-        self.model = model
-        self.temperature = temperature
-        self.maxTokens = maxTokens
-        self.promptTokens = promptTokens
-        self.completionTokens = completionTokens
-        self.totalTokens = totalTokens
-        self.processingTime = processingTime
-    }
-}
-
-enum AIMessageRole: String, Codable, CaseIterable {
-    case user = "user"
-    case assistant = "assistant"
-    case system = "system"
-    
-    var displayName: String {
-        switch self {
-        case .user: return "You"
-        case .assistant: return "AI Assistant"
-        case .system: return "System"
-        }
-    }
-}
-
-// MARK: - Regular Chat Types
 struct Chat: Identifiable, Codable, Equatable {
     let id: String
     let title: String
@@ -261,9 +177,26 @@ struct CreateChatRequest: Codable, Equatable {
     }
 }
 
+struct AIChat: Identifiable, Codable, Equatable {
+    let id: String
+    let userId: String
+    let title: String
+    let messages: [AIMessage]
+    let context: AIContext?
+    let createdAt: Date
+    let updatedAt: Date
+    let status: AIChatStatus
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case title, messages, context
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case status
+    }
+}
 
-<<<<<<< HEAD:RoomFinderAI-IOS/Source/RoomFinderAI/Models/Chat.swift
-=======
 struct AIMessage: Identifiable, Codable, Equatable {
     let id: String
     let role: AIMessageRole
@@ -365,4 +298,3 @@ struct AINegotiationResponse: Codable, Equatable {
         case negotiationStrategy = "negotiation_strategy"
     }
 }
->>>>>>> 4ebf3a8 (Add comprehensive iOS native app with enhanced features and services):ios-native/RoomFinderAI/Models/Chat.swift

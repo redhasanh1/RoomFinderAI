@@ -308,8 +308,6 @@ struct OpenAIResponse: Codable {
 
 // MARK: - Errors
 
-<<<<<<< HEAD:RoomFinderAI-IOS/Source/RoomFinderAI/Services/AIService.swift
-=======
 enum AIError: Error {
     case invalidURL
     case apiError
@@ -329,4 +327,3 @@ enum AIError: Error {
         }
     }
 }
->>>>>>> 4ebf3a8 (Add comprehensive iOS native app with enhanced features and services):ios-native/RoomFinderAI/Services/AIService.swift
