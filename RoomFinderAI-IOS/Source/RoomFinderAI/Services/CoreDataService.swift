@@ -15,13 +15,9 @@ class CoreDataService: ObservableObject {
             fatalError("Could not retrieve a persistent store description.")
         }
         
+        // CloudKit configuration
         description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
         description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
-        
-        // CloudKit configuration
-        if let cloudKitOptions = description.cloudKitContainerOptions {
-            cloudKitOptions.containerIdentifier = "iCloud.com.roomfinder.app"
-        }
         
         container.loadPersistentStores { _, error in
             if let error = error {

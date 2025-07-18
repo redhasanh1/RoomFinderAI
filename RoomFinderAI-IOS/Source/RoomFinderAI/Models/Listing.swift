@@ -45,14 +45,23 @@ struct Location: Codable, Equatable {
     let city: String
     let state: String
     let zipCode: String
-    let coordinate: CLLocationCoordinate2D?
+    let country: String
+    let latitude: Double
+    let longitude: Double
+    let neighborhood: String?
     
-    init(address: String, city: String, state: String, zipCode: String, coordinate: CLLocationCoordinate2D? = nil) {
-        self.address = address
-        self.city = city
-        self.state = state
-        self.zipCode = zipCode
-        self.coordinate = coordinate
+    enum CodingKeys: String, CodingKey {
+        case address, city, state, country, neighborhood
+        case zipCode = "zip_code"
+        case latitude, longitude
+    }
+    
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+    
+    var fullAddress: String {
+        "\(address), \(city), \(state) \(zipCode)"
     }
 }
 
@@ -126,28 +135,35 @@ struct Listing: Identifiable, Codable, Equatable {
     }
 }
 
-struct Location: Codable, Equatable {
-    let address: String
-    let city: String
-    let state: String
-    let zipCode: String
-    let country: String
-    let latitude: Double
-    let longitude: Double
-    let neighborhood: String?
+// MARK: - Search and Response Types
+struct ListingSearchRequest: Codable {
+    let query: String?
+    let location: String?
+    let propertyType: String?
+    let minPrice: Double?
+    let maxPrice: Double?
+    let bedrooms: Int?
+    let bathrooms: Int?
+    let radius: Double?
+    let sortBy: String?
+    let page: Int
+    let limit: Int
     
     enum CodingKeys: String, CodingKey {
-        case address, city, state, country, neighborhood
-        case zipCode = "zip_code"
-        case latitude, longitude
+        case query, location, propertyType, minPrice, maxPrice
+        case bedrooms, bathrooms, radius, sortBy, page, limit
     }
+}
+
+struct ListingResponse: Codable {
+    let listings: [Listing]
+    let totalCount: Int
+    let page: Int
+    let limit: Int
+    let hasMore: Bool
     
-    var coordinate: CLLocationCoordinate2D {
-        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-    }
-    
-    var fullAddress: String {
-        "\(address), \(city), \(state) \(zipCode)"
+    enum CodingKeys: String, CodingKey {
+        case listings, totalCount, page, limit, hasMore
     }
 }
 
