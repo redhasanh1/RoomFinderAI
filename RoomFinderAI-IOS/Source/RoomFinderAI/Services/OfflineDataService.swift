@@ -272,7 +272,14 @@ class OfflineDataService: ObservableObject {
                 
                 // Sync with remote service
                 // This would typically call your API service
-                try await SupabaseService.shared.sendMessage(message)
+                let sendRequest = SendMessageRequest(
+                    chatId: message.chatId,
+                    content: message.content,
+                    messageType: message.messageType,
+                    replyTo: message.replyTo,
+                    attachments: message.attachments.map { $0.url }
+                )
+                try await SupabaseService.shared.sendMessage(request: sendRequest)
                 
                 coreDataService.markSynced(object: cdMessage)
             }
