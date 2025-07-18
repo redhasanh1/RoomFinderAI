@@ -1,8 +1,4 @@
 import SwiftUI
-<<<<<<< HEAD:RoomFinderAI-IOS/Source/RoomFinderAI/Views/MortgageCalculatorView.swift
-// ResultRow is now in SharedComponents
-=======
->>>>>>> 4ebf3a8 (Add comprehensive iOS native app with enhanced features and services):ios-native/RoomFinderAI/Views/MortgageCalculatorView.swift
 
 struct MortgageCalculatorView: View {
     @StateObject private var mortgageService = MortgageCalculatorService.shared
@@ -668,9 +664,6 @@ struct InputField: View {
     }
 }
 
-<<<<<<< HEAD:RoomFinderAI-IOS/Source/RoomFinderAI/Views/MortgageCalculatorView.swift
-// ResultRow moved to SharedComponents
-=======
 struct ResultRow: View {
     let title: String
     let value: String
@@ -691,7 +684,6 @@ struct ResultRow: View {
         }
     }
 }
->>>>>>> 4ebf3a8 (Add comprehensive iOS native app with enhanced features and services):ios-native/RoomFinderAI/Views/MortgageCalculatorView.swift
 
 enum CalculatorType: String, CaseIterable {
     case mortgage = "mortgage"

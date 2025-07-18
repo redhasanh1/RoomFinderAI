@@ -61,6 +61,7 @@
       "Bash(git checkout:*)",
       "Bash(git restore:*)",
       "Bash(xcode-select:*)",
+<<<<<<< HEAD
       "Bash(swift:*)",
       "Bash(gem list)",
       "Bash(ruby:*)",
@@ -73,6 +74,9 @@
       "Bash(ln:*)",
       "Bash(gemini:*)",
       "Bash(git merge:*)"
+=======
+      "Bash(swift:*)"
+>>>>>>> 4ebf3a8 (Add comprehensive iOS native app with enhanced features and services)
     ],
     "deny": []
   }

@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Workspace
    version = "1.0">
+<<<<<<< HEAD
+=======
+   <FileRef
+      location = "self:">
+   </FileRef>
+>>>>>>> 4ebf3a8 (Add comprehensive iOS native app with enhanced features and services)
 </Workspace>

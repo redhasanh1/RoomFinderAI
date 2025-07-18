@@ -1,8 +1,4 @@
 import SwiftUI
-<<<<<<< HEAD:RoomFinderAI-IOS/Source/RoomFinderAI/Views/SubleaseView.swift
-// StatCard is now in SharedComponents
-=======
->>>>>>> 4ebf3a8 (Add comprehensive iOS native app with enhanced features and services):ios-native/RoomFinderAI/Views/SubleaseView.swift
 
 struct SubleaseView: View {
     @EnvironmentObject var listingsViewModel: ListingsViewModel
@@ -270,9 +266,6 @@ struct SubleaseCard: View {
     }
 }
 
-<<<<<<< HEAD:RoomFinderAI-IOS/Source/RoomFinderAI/Views/SubleaseView.swift
-// StatCard moved to shared component
-=======
 struct StatCard: View {
     let title: String
     let value: String
@@ -294,7 +287,6 @@ struct StatCard: View {
         .cornerRadius(8)
     }
 }
->>>>>>> 4ebf3a8 (Add comprehensive iOS native app with enhanced features and services):ios-native/RoomFinderAI/Views/SubleaseView.swift
 
 struct EmptySubleaseView: View {
     var body: some View {
