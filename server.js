@@ -150,86 +150,9 @@ async function fetchRealListings() {
         const response = await axios.get('https://roomfinderai.com/api/listings');
         return response.data.listings || response.data;
     } catch (error) {
-        console.log('Could not fetch from website, using fallback data');
-        
-        // Fallback to expanded mock data that looks more realistic
-        return [
-            {
-                id: "1",
-                title: "Modern 2BR Downtown Apartment",
-                location: "Downtown Toronto, ON",
-                price: 2500.0,
-                bedrooms: 2,
-                bathrooms: 1,
-                propertyType: "Apartment",
-                description: "Beautiful downtown apartment with city views, modern amenities, and excellent location near public transit.",
-                imageUrl: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800",
-                contactInfo: "contact@roomfinder.com",
-                category: "rental",
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            },
-            {
-                id: "2",
-                title: "Cozy 1BR Studio Near Campus",
-                location: "Yorkville, Toronto, ON",
-                price: 1800.0,
-                bedrooms: 1,
-                bathrooms: 1,
-                propertyType: "Studio",
-                description: "Perfect for students and professionals. Close to universities and downtown core.",
-                imageUrl: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
-                contactInfo: "landlord@roomfinder.com",
-                category: "rental",
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            },
-            {
-                id: "3",
-                title: "Spacious 3BR Family Home",
-                location: "Liberty Village, Toronto, ON",
-                price: 3200.0,
-                bedrooms: 3,
-                bathrooms: 2,
-                propertyType: "House",
-                description: "Spacious family home with backyard, garage, and modern amenities. Perfect for families.",
-                imageUrl: "https://images.unsplash.com/photo-1449844908441-8829872d2607?w=800",
-                contactInfo: "family@roomfinder.com",
-                category: "rental",
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            },
-            {
-                id: "4",
-                title: "Luxury 2BR Condo with Balcony",
-                location: "King West, Toronto, ON",
-                price: 2800.0,
-                bedrooms: 2,
-                bathrooms: 2,
-                propertyType: "Condo",
-                description: "Luxury condo with stunning city views, balcony, and access to building amenities.",
-                imageUrl: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
-                contactInfo: "luxury@roomfinder.com",
-                category: "rental",
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            },
-            {
-                id: "5",
-                title: "Student-Friendly 1BR Near UofT",
-                location: "The Annex, Toronto, ON",
-                price: 1600.0,
-                bedrooms: 1,
-                bathrooms: 1,
-                propertyType: "Apartment",
-                description: "Perfect for students! Walking distance to University of Toronto and TTC.",
-                imageUrl: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
-                contactInfo: "student@roomfinder.com",
-                category: "rental",
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            }
-        ];
+        console.log('Could not fetch from website, returning empty array');
+        // Return empty array instead of mock data
+        return [];
     }
 }
 
