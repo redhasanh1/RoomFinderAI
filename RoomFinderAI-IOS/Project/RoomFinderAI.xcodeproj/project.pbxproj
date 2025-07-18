@@ -1,0 +1,576 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2C1D1B5B8AC647F5BBAFC1CE /* CachingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8415D91C614563E2A0E40B2 /* CachingService.swift */; };
+		3052E01731ECE2E89D3BD914 /* RetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EE8BD18CF14F7A629526B62 /* RetryService.swift */; };
+		31F72BF1E28F42F0ED6772E1 /* NetworkMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF5AC2EF5D35067CF8BA242 /* NetworkMonitoringService.swift */; };
+		345C9AB06BB88C1DC856DFC5 /* MortgageCalculatorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0A68A0589B1F08E6302669 /* MortgageCalculatorService.swift */; };
+		353AE009D92CE8AD9AB03332 /* ErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE28299C5DC26266857D0C05 /* ErrorHandler.swift */; };
+		3C0F1238D696D2D160913642 /* StripeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846A55562B2F4A62D2449C1 /* StripeService.swift */; };
+		475A8E4999255D81D41C7DAB /* NetworkInterceptorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1533008041E96B77347363 /* NetworkInterceptorService.swift */; };
+		4AD81DBAD80B0338AF792DB3 /* PaginationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F5E522C33E1045B2C995B89 /* PaginationService.swift */; };
+		6260A4D8ABA072708CBC6F66 /* InterceptedURLSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39903831FABA684812E8CA47 /* InterceptedURLSession.swift */; };
+		66F8B0453A76099F5A0A97A4 /* OfflineStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C95564652464DBA2B75243EA /* OfflineStatusView.swift */; };
+		67B110A00D4F93C0C3FD47B0 /* DatabasePerformanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B484D9DF9F6313172561C84 /* DatabasePerformanceService.swift */; };
+		6D75B3BEE31B09B4563EF319 /* DatabaseOptimizationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DD025A726C2D7EC30CECA2B /* DatabaseOptimizationService.swift */; };
+		6E958954723DAC2FB69E7230 /* MediaLoadingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21555555564F87EC787E2FEC /* MediaLoadingService.swift */; };
+		79C76D0ABB7B8FD448703E05 /* MarketAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD094B61872254618E0A0E3 /* MarketAnalyticsView.swift */; };
+		83A44063831AE90F3C96D3A3 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ADE3ACEA8484FF4DC0932CE /* AIService.swift */; };
+		97FF02F53D4FD23F5EDB6565 /* CoreDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5196889A51E02888C1A12922 /* CoreDataService.swift */; };
+		9A529DA55F0A9A1064BDA21F /* LoggingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 301FEB51B6282F5227DE67DE /* LoggingService.swift */; };
+		A01234567890123456789012 /* RoomFinderAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789011 /* RoomFinderAIApp.swift */; };
+		A01234567890123456789014 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789013 /* ContentView.swift */; };
+		A01234567890123456789016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789015 /* Assets.xcassets */; };
+		A01234567890123456789018 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789017 /* SupabaseService.swift */; };
+		A01234567890123456789020 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789019 /* AuthViewModel.swift */; };
+		A01234567890123456789022 /* ListingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789021 /* ListingsViewModel.swift */; };
+		A01234567890123456789024 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789023 /* ChatViewModel.swift */; };
+		A01234567890123456789026 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789025 /* NetworkManager.swift */; };
+		A01234567890123456789028 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789027 /* LoginView.swift */; };
+		A01234567890123456789030 /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789029 /* SignUpView.swift */; };
+		A01234567890123456789032 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789031 /* DashboardView.swift */; };
+		A01234567890123456789034 /* ListingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789033 /* ListingsView.swift */; };
+		A01234567890123456789036 /* PropertyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789035 /* PropertyDetailView.swift */; };
+		A01234567890123456789038 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789037 /* ChatView.swift */; };
+		A01234567890123456789040 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789039 /* ProfileView.swift */; };
+		A01234567890123456789042 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789041 /* User.swift */; };
+		A01234567890123456789044 /* Listing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789043 /* Listing.swift */; };
+		A01234567890123456789046 /* Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789045 /* Chat.swift */; };
+		A01234567890123456789048 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789047 /* Message.swift */; };
+		A01234567890123456789050 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789049 /* Constants.swift */; };
+		A01234567890123456789052 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789051 /* Extensions.swift */; };
+		A01234567890123456789080 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A01234567890123456789079 /* Supabase */; };
+		A4CFE945359F885F4431C048 /* SubleaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1F874F608B396521435D67 /* SubleaseView.swift */; };
+		A78BF66C018CCD2A69FE6A12 /* PaymentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3437590DE2FD25CA29B11E90 /* PaymentView.swift */; };
+		B0CEB2518D02003DC8418A7E /* MortgageCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C5A7F5591D4DA4C357B1B4 /* MortgageCalculatorView.swift */; };
+		B2CB882D211CCE07932794B5 /* RateLimitingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B3A01CDC6A16AEDF69AE22 /* RateLimitingService.swift */; };
+		CC3E6D2735651C7F1155FF14 /* ImageLoadingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A5B6A5CE41FF03A15654FB /* ImageLoadingService.swift */; };
+		E458F1861CCBEE5CB6B835A3 /* OfflineDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D0DCD9A78649B53673427A2 /* OfflineDataService.swift */; };
+		F349008C9C28FC83C56CCA10 /* MarketAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FE929DB73790A72C72A27A /* MarketAnalyticsService.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0BF5AC2EF5D35067CF8BA242 /* NetworkMonitoringService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = NetworkMonitoringService.swift; path = ../Source/RoomFinderAI/Services/NetworkMonitoringService.swift; sourceTree = "<group>"; };
+		14B3A01CDC6A16AEDF69AE22 /* RateLimitingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RateLimitingService.swift; path = ../Source/RoomFinderAI/Services/RateLimitingService.swift; sourceTree = "<group>"; };
+		21555555564F87EC787E2FEC /* MediaLoadingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MediaLoadingService.swift; path = ../Source/RoomFinderAI/Services/MediaLoadingService.swift; sourceTree = "<group>"; };
+		2DD025A726C2D7EC30CECA2B /* DatabaseOptimizationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DatabaseOptimizationService.swift; path = ../Source/RoomFinderAI/Services/DatabaseOptimizationService.swift; sourceTree = "<group>"; };
+		301FEB51B6282F5227DE67DE /* LoggingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LoggingService.swift; path = ../Source/RoomFinderAI/Services/LoggingService.swift; sourceTree = "<group>"; };
+		3437590DE2FD25CA29B11E90 /* PaymentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaymentView.swift; path = ../Source/RoomFinderAI/Views/PaymentView.swift; sourceTree = "<group>"; };
+		38FE929DB73790A72C72A27A /* MarketAnalyticsService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MarketAnalyticsService.swift; path = ../Source/RoomFinderAI/Services/MarketAnalyticsService.swift; sourceTree = "<group>"; };
+		39903831FABA684812E8CA47 /* InterceptedURLSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = InterceptedURLSession.swift; path = ../Source/RoomFinderAI/Services/InterceptedURLSession.swift; sourceTree = "<group>"; };
+		3D0DCD9A78649B53673427A2 /* OfflineDataService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OfflineDataService.swift; path = ../Source/RoomFinderAI/Services/OfflineDataService.swift; sourceTree = "<group>"; };
+		47C5A7F5591D4DA4C357B1B4 /* MortgageCalculatorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MortgageCalculatorView.swift; path = ../Source/RoomFinderAI/Views/MortgageCalculatorView.swift; sourceTree = "<group>"; };
+		4ADE3ACEA8484FF4DC0932CE /* AIService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIService.swift; path = ../Source/RoomFinderAI/Services/AIService.swift; sourceTree = "<group>"; };
+		4CD094B61872254618E0A0E3 /* MarketAnalyticsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MarketAnalyticsView.swift; path = ../Source/RoomFinderAI/Views/MarketAnalyticsView.swift; sourceTree = "<group>"; };
+		5196889A51E02888C1A12922 /* CoreDataService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CoreDataService.swift; path = ../Source/RoomFinderAI/Services/CoreDataService.swift; sourceTree = "<group>"; };
+		6C1F874F608B396521435D67 /* SubleaseView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SubleaseView.swift; path = ../Source/RoomFinderAI/Views/SubleaseView.swift; sourceTree = "<group>"; };
+		7F5E522C33E1045B2C995B89 /* PaginationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaginationService.swift; path = ../Source/RoomFinderAI/Services/PaginationService.swift; sourceTree = "<group>"; };
+		8EE8BD18CF14F7A629526B62 /* RetryService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RetryService.swift; path = ../Source/RoomFinderAI/Services/RetryService.swift; sourceTree = "<group>"; };
+		9B484D9DF9F6313172561C84 /* DatabasePerformanceService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DatabasePerformanceService.swift; path = ../Source/RoomFinderAI/Services/DatabasePerformanceService.swift; sourceTree = "<group>"; };
+		A01234567890123456789000 /* RoomFinderAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoomFinderAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A01234567890123456789011 /* RoomFinderAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RoomFinderAIApp.swift; path = ../Source/RoomFinderAI/RoomFinderAIApp.swift; sourceTree = "<group>"; };
+		A01234567890123456789013 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = ../Source/RoomFinderAI/ContentView.swift; sourceTree = "<group>"; };
+		A01234567890123456789015 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = ../Source/RoomFinderAI/Resources/Assets.xcassets; sourceTree = "<group>"; };
+		A01234567890123456789017 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SupabaseService.swift; path = ../Source/RoomFinderAI/Services/SupabaseService.swift; sourceTree = "<group>"; };
+		A01234567890123456789019 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AuthViewModel.swift; path = ../Source/RoomFinderAI/Services/AuthViewModel.swift; sourceTree = "<group>"; };
+		A01234567890123456789021 /* ListingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsViewModel.swift; path = ../Source/RoomFinderAI/Services/ListingsViewModel.swift; sourceTree = "<group>"; };
+		A01234567890123456789023 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatViewModel.swift; path = ../Source/RoomFinderAI/Services/ChatViewModel.swift; sourceTree = "<group>"; };
+		A01234567890123456789025 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NetworkManager.swift; path = ../Source/RoomFinderAI/Services/NetworkManager.swift; sourceTree = "<group>"; };
+		A01234567890123456789027 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LoginView.swift; path = ../Source/RoomFinderAI/Views/LoginView.swift; sourceTree = "<group>"; };
+		A01234567890123456789029 /* SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SignUpView.swift; path = ../Source/RoomFinderAI/Views/SignUpView.swift; sourceTree = "<group>"; };
+		A01234567890123456789031 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DashboardView.swift; path = ../Source/RoomFinderAI/Views/DashboardView.swift; sourceTree = "<group>"; };
+		A01234567890123456789033 /* ListingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsView.swift; path = ../Source/RoomFinderAI/Views/ListingsView.swift; sourceTree = "<group>"; };
+		A01234567890123456789035 /* PropertyDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PropertyDetailView.swift; path = ../Source/RoomFinderAI/Views/PropertyDetailView.swift; sourceTree = "<group>"; };
+		A01234567890123456789037 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatView.swift; path = ../Source/RoomFinderAI/Views/ChatView.swift; sourceTree = "<group>"; };
+		A01234567890123456789039 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProfileView.swift; path = ../Source/RoomFinderAI/Views/ProfileView.swift; sourceTree = "<group>"; };
+		A01234567890123456789041 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = User.swift; path = ../Source/RoomFinderAI/Models/User.swift; sourceTree = "<group>"; };
+		A01234567890123456789043 /* Listing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Listing.swift; path = ../Source/RoomFinderAI/Models/Listing.swift; sourceTree = "<group>"; };
+		A01234567890123456789045 /* Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Chat.swift; path = ../Source/RoomFinderAI/Models/Chat.swift; sourceTree = "<group>"; };
+		A01234567890123456789047 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Message.swift; path = ../Source/RoomFinderAI/Models/Message.swift; sourceTree = "<group>"; };
+		A01234567890123456789049 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Constants.swift; path = ../Source/RoomFinderAI/Utils/Constants.swift; sourceTree = "<group>"; };
+		A01234567890123456789051 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Extensions.swift; path = ../Source/RoomFinderAI/Utils/Extensions.swift; sourceTree = "<group>"; };
+		A01234567890123456789053 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = ../Source/RoomFinderAI/Resources/Info.plist; sourceTree = "<group>"; };
+		AE28299C5DC26266857D0C05 /* ErrorHandler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ErrorHandler.swift; path = ../Source/RoomFinderAI/Utils/ErrorHandler.swift; sourceTree = "<group>"; };
+		C8415D91C614563E2A0E40B2 /* CachingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CachingService.swift; path = ../Source/RoomFinderAI/Services/CachingService.swift; sourceTree = "<group>"; };
+		C95564652464DBA2B75243EA /* OfflineStatusView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OfflineStatusView.swift; path = ../Source/RoomFinderAI/Views/OfflineStatusView.swift; sourceTree = "<group>"; };
+		CB1533008041E96B77347363 /* NetworkInterceptorService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = NetworkInterceptorService.swift; path = ../Source/RoomFinderAI/Services/NetworkInterceptorService.swift; sourceTree = "<group>"; };
+		CE0A68A0589B1F08E6302669 /* MortgageCalculatorService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MortgageCalculatorService.swift; path = ../Source/RoomFinderAI/Services/MortgageCalculatorService.swift; sourceTree = "<group>"; };
+		F2A5B6A5CE41FF03A15654FB /* ImageLoadingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ImageLoadingService.swift; path = ../Source/RoomFinderAI/Services/ImageLoadingService.swift; sourceTree = "<group>"; };
+		F846A55562B2F4A62D2449C1 /* StripeService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = StripeService.swift; path = ../Source/RoomFinderAI/Services/StripeService.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A01234567890123456789054 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A01234567890123456789080 /* Supabase in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A01234567890123456789055 = {
+			isa = PBXGroup;
+			children = (
+				A01234567890123456789056 /* RoomFinderAI */,
+				A01234567890123456789057 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A01234567890123456789056 /* RoomFinderAI */ = {
+			isa = PBXGroup;
+			children = (
+				A01234567890123456789011 /* RoomFinderAIApp.swift */,
+				A01234567890123456789013 /* ContentView.swift */,
+				A01234567890123456789058 /* Views */,
+				A01234567890123456789059 /* Services */,
+				A01234567890123456789060 /* Models */,
+				A01234567890123456789061 /* Utils */,
+				A01234567890123456789062 /* Resources */,
+			);
+			path = RoomFinderAI;
+			sourceTree = "<group>";
+		};
+		A01234567890123456789057 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A01234567890123456789000 /* RoomFinderAI.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A01234567890123456789058 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A01234567890123456789027 /* LoginView.swift */,
+				A01234567890123456789029 /* SignUpView.swift */,
+				A01234567890123456789031 /* DashboardView.swift */,
+				A01234567890123456789033 /* ListingsView.swift */,
+				A01234567890123456789035 /* PropertyDetailView.swift */,
+				A01234567890123456789037 /* ChatView.swift */,
+				A01234567890123456789039 /* ProfileView.swift */,
+				4CD094B61872254618E0A0E3 /* MarketAnalyticsView.swift */,
+				47C5A7F5591D4DA4C357B1B4 /* MortgageCalculatorView.swift */,
+				3437590DE2FD25CA29B11E90 /* PaymentView.swift */,
+				6C1F874F608B396521435D67 /* SubleaseView.swift */,
+				C95564652464DBA2B75243EA /* OfflineStatusView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A01234567890123456789059 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A01234567890123456789017 /* SupabaseService.swift */,
+				A01234567890123456789019 /* AuthViewModel.swift */,
+				A01234567890123456789021 /* ListingsViewModel.swift */,
+				A01234567890123456789023 /* ChatViewModel.swift */,
+				A01234567890123456789025 /* NetworkManager.swift */,
+				7F5E522C33E1045B2C995B89 /* PaginationService.swift */,
+				3D0DCD9A78649B53673427A2 /* OfflineDataService.swift */,
+				301FEB51B6282F5227DE67DE /* LoggingService.swift */,
+				C8415D91C614563E2A0E40B2 /* CachingService.swift */,
+				0BF5AC2EF5D35067CF8BA242 /* NetworkMonitoringService.swift */,
+				2DD025A726C2D7EC30CECA2B /* DatabaseOptimizationService.swift */,
+				9B484D9DF9F6313172561C84 /* DatabasePerformanceService.swift */,
+				8EE8BD18CF14F7A629526B62 /* RetryService.swift */,
+				CB1533008041E96B77347363 /* NetworkInterceptorService.swift */,
+				39903831FABA684812E8CA47 /* InterceptedURLSession.swift */,
+				14B3A01CDC6A16AEDF69AE22 /* RateLimitingService.swift */,
+				5196889A51E02888C1A12922 /* CoreDataService.swift */,
+				F2A5B6A5CE41FF03A15654FB /* ImageLoadingService.swift */,
+				21555555564F87EC787E2FEC /* MediaLoadingService.swift */,
+				4ADE3ACEA8484FF4DC0932CE /* AIService.swift */,
+				38FE929DB73790A72C72A27A /* MarketAnalyticsService.swift */,
+				CE0A68A0589B1F08E6302669 /* MortgageCalculatorService.swift */,
+				F846A55562B2F4A62D2449C1 /* StripeService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A01234567890123456789060 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A01234567890123456789041 /* User.swift */,
+				A01234567890123456789043 /* Listing.swift */,
+				A01234567890123456789045 /* Chat.swift */,
+				A01234567890123456789047 /* Message.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A01234567890123456789061 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				A01234567890123456789049 /* Constants.swift */,
+				A01234567890123456789051 /* Extensions.swift */,
+				AE28299C5DC26266857D0C05 /* ErrorHandler.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		A01234567890123456789062 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A01234567890123456789015 /* Assets.xcassets */,
+				A01234567890123456789053 /* Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A01234567890123456789063 /* RoomFinderAI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A01234567890123456789064 /* Build configuration list for PBXNativeTarget "RoomFinderAI" */;
+			buildPhases = (
+				A01234567890123456789065 /* Sources */,
+				A01234567890123456789054 /* Frameworks */,
+				A01234567890123456789066 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RoomFinderAI;
+			packageProductDependencies = (
+				A01234567890123456789079 /* Supabase */,
+			);
+			productName = RoomFinderAI;
+			productReference = A01234567890123456789000 /* RoomFinderAI.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A01234567890123456789067 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A01234567890123456789063 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A01234567890123456789068 /* Build configuration list for PBXProject "RoomFinderAI" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A01234567890123456789055;
+			packageReferences = (
+				A01234567890123456789078 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
+			productRefGroup = A01234567890123456789057 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A01234567890123456789063 /* RoomFinderAI */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A01234567890123456789066 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A01234567890123456789016 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A01234567890123456789065 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A01234567890123456789012 /* RoomFinderAIApp.swift in Sources */,
+				A01234567890123456789014 /* ContentView.swift in Sources */,
+				A01234567890123456789018 /* SupabaseService.swift in Sources */,
+				A01234567890123456789020 /* AuthViewModel.swift in Sources */,
+				A01234567890123456789022 /* ListingsViewModel.swift in Sources */,
+				A01234567890123456789024 /* ChatViewModel.swift in Sources */,
+				A01234567890123456789026 /* NetworkManager.swift in Sources */,
+				A01234567890123456789028 /* LoginView.swift in Sources */,
+				A01234567890123456789030 /* SignUpView.swift in Sources */,
+				A01234567890123456789032 /* DashboardView.swift in Sources */,
+				A01234567890123456789034 /* ListingsView.swift in Sources */,
+				A01234567890123456789036 /* PropertyDetailView.swift in Sources */,
+				A01234567890123456789038 /* ChatView.swift in Sources */,
+				A01234567890123456789040 /* ProfileView.swift in Sources */,
+				A01234567890123456789042 /* User.swift in Sources */,
+				A01234567890123456789044 /* Listing.swift in Sources */,
+				A01234567890123456789046 /* Chat.swift in Sources */,
+				A01234567890123456789048 /* Message.swift in Sources */,
+				A01234567890123456789050 /* Constants.swift in Sources */,
+				A01234567890123456789052 /* Extensions.swift in Sources */,
+				4AD81DBAD80B0338AF792DB3 /* PaginationService.swift in Sources */,
+				E458F1861CCBEE5CB6B835A3 /* OfflineDataService.swift in Sources */,
+				9A529DA55F0A9A1064BDA21F /* LoggingService.swift in Sources */,
+				2C1D1B5B8AC647F5BBAFC1CE /* CachingService.swift in Sources */,
+				31F72BF1E28F42F0ED6772E1 /* NetworkMonitoringService.swift in Sources */,
+				6D75B3BEE31B09B4563EF319 /* DatabaseOptimizationService.swift in Sources */,
+				67B110A00D4F93C0C3FD47B0 /* DatabasePerformanceService.swift in Sources */,
+				3052E01731ECE2E89D3BD914 /* RetryService.swift in Sources */,
+				475A8E4999255D81D41C7DAB /* NetworkInterceptorService.swift in Sources */,
+				6260A4D8ABA072708CBC6F66 /* InterceptedURLSession.swift in Sources */,
+				B2CB882D211CCE07932794B5 /* RateLimitingService.swift in Sources */,
+				97FF02F53D4FD23F5EDB6565 /* CoreDataService.swift in Sources */,
+				CC3E6D2735651C7F1155FF14 /* ImageLoadingService.swift in Sources */,
+				6E958954723DAC2FB69E7230 /* MediaLoadingService.swift in Sources */,
+				83A44063831AE90F3C96D3A3 /* AIService.swift in Sources */,
+				F349008C9C28FC83C56CCA10 /* MarketAnalyticsService.swift in Sources */,
+				345C9AB06BB88C1DC856DFC5 /* MortgageCalculatorService.swift in Sources */,
+				3C0F1238D696D2D160913642 /* StripeService.swift in Sources */,
+				353AE009D92CE8AD9AB03332 /* ErrorHandler.swift in Sources */,
+				79C76D0ABB7B8FD448703E05 /* MarketAnalyticsView.swift in Sources */,
+				B0CEB2518D02003DC8418A7E /* MortgageCalculatorView.swift in Sources */,
+				A78BF66C018CCD2A69FE6A12 /* PaymentView.swift in Sources */,
+				A4CFE945359F885F4431C048 /* SubleaseView.swift in Sources */,
+				66F8B0453A76099F5A0A97A4 /* OfflineStatusView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A01234567890123456789069 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A01234567890123456789070 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A01234567890123456789071 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"RoomFinderAI/Resources\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RoomFinderAI/Resources/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.roomfinderai.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A01234567890123456789072 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"RoomFinderAI/Resources\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RoomFinderAI/Resources/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.roomfinderai.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A01234567890123456789064 /* Build configuration list for PBXNativeTarget "RoomFinderAI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A01234567890123456789071 /* Debug */,
+				A01234567890123456789072 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A01234567890123456789068 /* Build configuration list for PBXProject "RoomFinderAI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A01234567890123456789069 /* Debug */,
+				A01234567890123456789070 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A01234567890123456789078 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A01234567890123456789079 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A01234567890123456789078 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A01234567890123456789067 /* Project object */;
+}

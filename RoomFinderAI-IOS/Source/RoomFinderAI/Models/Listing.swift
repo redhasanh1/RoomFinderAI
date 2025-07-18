@@ -1,0 +1,358 @@
+import Foundation
+import CoreLocation
+
+// MARK: - Supporting Types
+enum PropertyType: String, CaseIterable, Codable {
+    case apartment = "apartment"
+    case house = "house"
+    case condo = "condo"
+    case studio = "studio"
+    case townhouse = "townhouse"
+    case room = "room"
+    
+    var displayName: String {
+        switch self {
+        case .apartment: return "Apartment"
+        case .house: return "House"
+        case .condo: return "Condo"
+        case .studio: return "Studio"
+        case .townhouse: return "Townhouse"
+        case .room: return "Room"
+        }
+    }
+}
+
+enum SortOption: String, CaseIterable {
+    case date = "date"
+    case price = "price"
+    case priceHigh = "price_high"
+    case location = "location"
+    case bedrooms = "bedrooms"
+    
+    var displayName: String {
+        switch self {
+        case .date: return "Date"
+        case .price: return "Price (Low to High)"
+        case .priceHigh: return "Price (High to Low)"
+        case .location: return "Location"
+        case .bedrooms: return "Bedrooms"
+        }
+    }
+}
+
+struct Location: Codable, Equatable {
+    let address: String
+    let city: String
+    let state: String
+    let zipCode: String
+    let coordinate: CLLocationCoordinate2D?
+    
+    init(address: String, city: String, state: String, zipCode: String, coordinate: CLLocationCoordinate2D? = nil) {
+        self.address = address
+        self.city = city
+        self.state = state
+        self.zipCode = zipCode
+        self.coordinate = coordinate
+    }
+}
+
+// MARK: - Main Listing Model
+struct Listing: Identifiable, Codable, Equatable {
+    let id: String
+    let title: String
+    let description: String?
+    let price: Int
+    let city: String
+    let street: String
+    let postalCode: String
+    let houseType: String
+    let bedrooms: Int
+    let utilities: String
+    let media: [String]
+    let userEmail: String
+    let createdAt: Date
+    let updatedAt: Date
+    
+    // Computed properties for backwards compatibility
+    var propertyType: PropertyType {
+        PropertyType(rawValue: houseType.lowercased()) ?? .apartment
+    }
+    
+    var location: Location {
+        Location(
+            address: "\(street), \(city)",
+            city: city,
+            state: "",
+            zipCode: postalCode,
+            country: "Canada",
+            latitude: 43.6532 + Double.random(in: -0.1...0.1), // Mock Toronto coordinates
+            longitude: -79.3832 + Double.random(in: -0.1...0.1),
+            neighborhood: nil
+        )
+    }
+    
+    var images: [String] {
+        return media
+    }
+    
+    var imageURLs: [String] {
+        return media
+    }
+    
+    var isActive: Bool {
+        return true // For now, assume all listings are active
+    }
+    
+    var availableDate: Date {
+        return Date() // Default to current date
+    }
+    
+    var bathrooms: Int {
+        return 1 // Default to 1 bathroom
+    }
+    
+    var isFavorited: Bool {
+        // This will be determined by checking favorites table
+        return false
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, title, description, price, city, street, bedrooms, utilities, media
+        case postalCode = "postal_code"
+        case houseType = "house_type"
+        case userEmail = "user_email"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct Location: Codable, Equatable {
+    let address: String
+    let city: String
+    let state: String
+    let zipCode: String
+    let country: String
+    let latitude: Double
+    let longitude: Double
+    let neighborhood: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case address, city, state, country, neighborhood
+        case zipCode = "zip_code"
+        case latitude, longitude
+    }
+    
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+    
+    var fullAddress: String {
+        "\(address), \(city), \(state) \(zipCode)"
+    }
+}
+
+enum PropertyType: String, Codable, CaseIterable {
+    case apartment = "apartment"
+    case house = "house"
+    case condo = "condo"
+    case townhouse = "townhouse"
+    case studio = "studio"
+    case room = "room"
+    case sublease = "sublease"
+    
+    var displayName: String {
+        switch self {
+        case .apartment: return "Apartment"
+        case .house: return "House"
+        case .condo: return "Condo"
+        case .townhouse: return "Townhouse"
+        case .studio: return "Studio"
+        case .room: return "Room"
+        case .sublease: return "Sublease"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .apartment: return "building.2"
+        case .house: return "house"
+        case .condo: return "building"
+        case .townhouse: return "house.lodge"
+        case .studio: return "rectangle.stack"
+        case .room: return "bed.double"
+        case .sublease: return "arrow.2.squarepath"
+        }
+    }
+}
+
+enum PetPolicy: String, Codable, CaseIterable {
+    case allowed = "allowed"
+    case notAllowed = "not_allowed"
+    case negotiable = "negotiable"
+    case catsOnly = "cats_only"
+    case dogsOnly = "dogs_only"
+    case deposit = "deposit_required"
+    
+    var displayName: String {
+        switch self {
+        case .allowed: return "Pets Allowed"
+        case .notAllowed: return "No Pets"
+        case .negotiable: return "Negotiable"
+        case .catsOnly: return "Cats Only"
+        case .dogsOnly: return "Dogs Only"
+        case .deposit: return "Pet Deposit Required"
+        }
+    }
+}
+
+enum SmokingPolicy: String, Codable, CaseIterable {
+    case allowed = "allowed"
+    case notAllowed = "not_allowed"
+    case outdoorOnly = "outdoor_only"
+    case negotiable = "negotiable"
+    
+    var displayName: String {
+        switch self {
+        case .allowed: return "Smoking Allowed"
+        case .notAllowed: return "No Smoking"
+        case .outdoorOnly: return "Outdoor Only"
+        case .negotiable: return "Negotiable"
+        }
+    }
+}
+
+struct UtilitiesInfo: Codable, Equatable {
+    let electricity: Bool
+    let water: Bool
+    let gas: Bool
+    let internet: Bool
+    let cable: Bool
+    let heating: Bool
+    let airConditioning: Bool
+    let trash: Bool
+    let sewer: Bool
+    let additionalCosts: Double?
+    
+    enum CodingKeys: String, CodingKey {
+        case electricity, water, gas, internet, cable, heating, trash, sewer
+        case airConditioning = "air_conditioning"
+        case additionalCosts = "additional_costs"
+    }
+}
+
+struct ContactInfo: Codable, Equatable {
+    let name: String
+    let email: String
+    let phone: String?
+    let preferredContact: ContactMethod
+    let responseTime: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case name, email, phone
+        case preferredContact = "preferred_contact"
+        case responseTime = "response_time"
+    }
+}
+
+enum ContactMethod: String, Codable, CaseIterable {
+    case email = "email"
+    case phone = "phone"
+    case text = "text"
+    case app = "app"
+    
+    var displayName: String {
+        switch self {
+        case .email: return "Email"
+        case .phone: return "Phone"
+        case .text: return "Text"
+        case .app: return "In-App"
+        }
+    }
+}
+
+enum ListingStatus: String, Codable, CaseIterable {
+    case active = "active"
+    case pending = "pending"
+    case rented = "rented"
+    case withdrawn = "withdrawn"
+    case expired = "expired"
+    
+    var displayName: String {
+        switch self {
+        case .active: return "Active"
+        case .pending: return "Pending"
+        case .rented: return "Rented"
+        case .withdrawn: return "Withdrawn"
+        case .expired: return "Expired"
+        }
+    }
+}
+
+struct ListingSearchRequest: Codable {
+    let query: String?
+    let location: String?
+    let minPrice: Double?
+    let maxPrice: Double?
+    let bedrooms: Int?
+    let bathrooms: Int?
+    let propertyType: PropertyType?
+    let petFriendly: Bool?
+    let smokingAllowed: Bool?
+    let availableDate: Date?
+    let radius: Double?
+    let latitude: Double?
+    let longitude: Double?
+    let sortBy: SortOption?
+    let page: Int
+    let limit: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case query, location
+        case minPrice = "min_price"
+        case maxPrice = "max_price"
+        case bedrooms, bathrooms
+        case propertyType = "property_type"
+        case petFriendly = "pet_friendly"
+        case smokingAllowed = "smoking_allowed"
+        case availableDate = "available_date"
+        case radius, latitude, longitude
+        case sortBy = "sort_by"
+        case page, limit
+    }
+}
+
+enum SortOption: String, Codable, CaseIterable {
+    case price = "price"
+    case date = "date"
+    case distance = "distance"
+    case bedrooms = "bedrooms"
+    case popularity = "popularity"
+    
+    var displayName: String {
+        switch self {
+        case .price: return "Price"
+        case .date: return "Date"
+        case .distance: return "Distance"
+        case .bedrooms: return "Bedrooms"
+        case .popularity: return "Popularity"
+        }
+    }
+}
+
+struct ListingResponse: Codable {
+    let listings: [Listing]
+    let totalCount: Int
+    let page: Int
+    let totalPages: Int
+    let hasNextPage: Bool
+    let hasPreviousPage: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case listings
+        case totalCount = "total_count"
+        case page
+        case totalPages = "total_pages"
+        case hasNextPage = "has_next_page"
+        case hasPreviousPage = "has_previous_page"
+    }
+}
