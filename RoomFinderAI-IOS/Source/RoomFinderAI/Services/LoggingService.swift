@@ -124,7 +124,7 @@ struct DeviceInfo {
     let diskSpace: UInt64
     let networkType: String
     
-    static var current: DeviceInfo {
+    static var currentDevice: DeviceInfo {
         let device = UIDevice.current
         let processInfo = ProcessInfo.processInfo
         

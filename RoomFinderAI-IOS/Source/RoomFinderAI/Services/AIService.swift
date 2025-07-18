@@ -308,22 +308,3 @@ struct OpenAIResponse: Codable {
 
 // MARK: - Errors
 
-enum AIError: Error {
-    case invalidURL
-    case apiError
-    case noResponse
-    case invalidResponse
-    
-    var localizedDescription: String {
-        switch self {
-        case .invalidURL:
-            return "Invalid API URL"
-        case .apiError:
-            return "AI API request failed"
-        case .noResponse:
-            return "No response from AI service"
-        case .invalidResponse:
-            return "Invalid response format"
-        }
-    }
-}
