@@ -1,0 +1,251 @@
+import Foundation
+import Network
+
+// MARK: - HTTP Types
+enum HTTPMethod: String, CaseIterable {
+    case GET = "GET"
+    case POST = "POST"
+    case PUT = "PUT"
+    case DELETE = "DELETE"
+    case PATCH = "PATCH"
+}
+
+class NetworkManager: ObservableObject {
+    static let shared = NetworkManager()
+    
+    private let monitor = NWPathMonitor()
+    private let queue = DispatchQueue(label: "NetworkMonitor")
+    
+    @Published var isConnected = false
+    @Published var connectionType: NWInterface.InterfaceType?
+    
+    private init() {
+        startMonitoring()
+    }
+    
+    private func startMonitoring() {
+        monitor.pathUpdateHandler = { [weak self] path in
+            DispatchQueue.main.async {
+                self?.isConnected = path.status == .satisfied
+                self?.connectionType = path.availableInterfaces.first?.type
+            }
+        }
+        monitor.start(queue: queue)
+    }
+    
+    func stopMonitoring() {
+        monitor.cancel()
+    }
+    
+    // MARK: - HTTP Client
+    
+    func performRequest<T: Codable>(
+        url: URL,
+        method: HTTPMethod,
+        body: Data? = nil,
+        headers: [String: String] = [:],
+        responseType: T.Type
+    ) async throws -> T {
+        var request = URLRequest(url: url)
+        request.httpMethod = method.rawValue
+        request.timeoutInterval = Constants.API.timeoutInterval
+        
+        var defaultHeaders = [
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        ]
+        
+        if let token = getAuthToken() {
+            defaultHeaders["Authorization"] = "Bearer \(token)"
+        }
+        
+        for (key, value) in headers {
+            defaultHeaders[key] = value
+        }
+        
+        for (key, value) in defaultHeaders {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        
+        if let body = body {
+            request.httpBody = body
+        }
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw NetworkError.invalidResponse
+            }
+            
+            guard 200...299 ~= httpResponse.statusCode else {
+                switch httpResponse.statusCode {
+                case 401:
+                    throw NetworkError.unauthorized
+                case 403:
+                    throw NetworkError.forbidden
+                case 404:
+                    throw NetworkError.notFound
+                case 500...599:
+                    throw NetworkError.internalServerError
+                default:
+                    throw NetworkError.serverError(httpResponse.statusCode)
+                }
+            }
+            
+            if responseType == EmptyResponse.self {
+                return EmptyResponse() as! T
+            }
+            
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            
+            return try decoder.decode(responseType, from: data)
+            
+        } catch {
+            if error is DecodingError {
+                throw NetworkError.parseError
+            } else if error is URLError {
+                let urlError = error as! URLError
+                switch urlError.code {
+                case .notConnectedToInternet, .networkConnectionLost:
+                    throw NetworkError.noInternetConnection
+                case .timedOut:
+                    throw NetworkError.timeoutError
+                default:
+                    throw NetworkError.noInternetConnection
+                }
+            } else {
+                throw error
+            }
+        }
+    }
+    
+    // MARK: - File Upload
+    
+    func uploadFile(
+        url: URL,
+        fileData: Data,
+        fileName: String,
+        mimeType: String,
+        fieldName: String = "file"
+    ) async throws -> Data {
+        let boundary = UUID().uuidString
+        let contentType = "multipart/form-data; boundary=\(boundary)"
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 60.0
+        
+        if let token = getAuthToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        var body = Data()
+        
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"\(fieldName)\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(fileData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.invalidResponse
+        }
+        
+        guard 200...299 ~= httpResponse.statusCode else {
+            switch httpResponse.statusCode {
+            case 401:
+                throw NetworkError.unauthorized
+            case 403:
+                throw NetworkError.forbidden
+            case 404:
+                throw NetworkError.notFound
+            case 500...599:
+                throw NetworkError.internalServerError
+            default:
+                throw NetworkError.serverError(httpResponse.statusCode)
+            }
+        }
+        
+        return data
+    }
+    
+    // MARK: - Authentication Token Management
+    
+    private func getAuthToken() -> String? {
+        return KeychainManager.shared.getString(for: Constants.KeychainKeys.accessToken)
+    }
+    
+    // MARK: - Request Helpers
+    
+    func get<T: Codable>(
+        url: URL,
+        responseType: T.Type,
+        headers: [String: String] = [:]
+    ) async throws -> T {
+        return try await performRequest(
+            url: url,
+            method: .GET,
+            headers: headers,
+            responseType: responseType
+        )
+    }
+    
+    func post<T: Codable, U: Codable>(
+        url: URL,
+        body: T,
+        responseType: U.Type,
+        headers: [String: String] = [:]
+    ) async throws -> U {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(body)
+        
+        return try await performRequest(
+            url: url,
+            method: .POST,
+            body: data,
+            headers: headers,
+            responseType: responseType
+        )
+    }
+    
+    func put<T: Codable, U: Codable>(
+        url: URL,
+        body: T,
+        responseType: U.Type,
+        headers: [String: String] = [:]
+    ) async throws -> U {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(body)
+        
+        return try await performRequest(
+            url: url,
+            method: .PUT,
+            body: data,
+            headers: headers,
+            responseType: responseType
+        )
+    }
+    
+    func delete<T: Codable>(
+        url: URL,
+        responseType: T.Type,
+        headers: [String: String] = [:]
+    ) async throws -> T {
+        return try await performRequest(
+            url: url,
+            method: .DELETE,
+            headers: headers,
+            responseType: responseType
+        )
+    }
+}
+
