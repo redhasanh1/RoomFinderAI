@@ -56,7 +56,21 @@
       "Bash(pod init:*)",
       "Bash(sudo chown:*)",
       "Bash(yarn install)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git checkout:*)",
+      "Bash(git restore:*)",
+      "Bash(xcode-select:*)",
+      "Bash(swift:*)",
+      "Bash(gem list)",
+      "Bash(ruby:*)",
+      "Bash(sed:*)",
+      "Bash(diff:*)",
+      "Bash(true)",
+      "Bash(bash:*)",
+      "Bash(Scripts/verify_build.sh:*)",
+      "Bash(Scripts/final_path_fix.rb)",
+      "Bash(ln:*)"
     ],
     "deny": []
   }
