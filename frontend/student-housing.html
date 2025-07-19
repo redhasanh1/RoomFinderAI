@@ -3,1217 +3,554 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏠 Find Your Perfect Room! - RoomFinderAI</title>
+    <title>Student Housing Search - RoomFinderAI</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&family=Fredoka+One:wght@400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
         body {
-            font-family: 'Comic Neue', cursive;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            min-height: 100vh;
-            scroll-behavior: smooth;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fafc;
         }
         
-        /* Enhanced Navigation Styles */
-        .floating-nav {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 25px;
-            padding: 10px 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-size: 14px;
-            font-weight: 600;
+        .step-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
         }
         
-        .nav-step {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: #64748b;
+        .step-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         
-        .nav-step.active {
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
-            color: white;
-        }
-        
-        .nav-step.completed {
-            background: linear-gradient(135deg, #1dd1a1, #10ac84);
-            color: white;
-        }
-        
-        .nav-step:hover:not(.active) {
-            background: #f1f5f9;
-        }
-        
-        .sticky-progress {
-            position: fixed;
-            top: 80px;
-            left: 0;
-            right: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 15px 0;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            z-index: 999;
-            display: none;
-        }
-        
-        .sticky-progress.visible {
-            display: block;
-        }
-        
-        .back-button {
+        .option-card {
             background: white;
             border: 2px solid #e5e7eb;
-            border-radius: 50px;
-            padding: 12px 24px;
+            border-radius: 8px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .option-card:hover {
+            border-color: #3b82f6;
+            background: #f0f9ff;
+        }
+        
+        .option-card.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .primary-button {
+            background: #3b82f6;
+            color: white;
+            padding: 12px 32px;
+            border-radius: 8px;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #64748b;
-        }
-        
-        .back-button:hover {
-            border-color: #667eea;
-            background: #f8fafc;
-            transform: translateY(-2px);
-        }
-        
-        .help-button {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-            z-index: 1000;
-            transition: all 0.3s ease;
-        }
-        
-        .help-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
-        }
-        
-        .kid-friendly-title {
-            font-family: 'Fredoka One', cursive;
-            background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            background-size: 300% 300%;
-            animation: gradient-shift 3s ease-in-out infinite;
-        }
-        
-        @keyframes gradient-shift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-        
-        .bouncy-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 25px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            border: 4px solid transparent;
-            background-clip: padding-box;
-        }
-        
-        .bouncy-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
-        }
-        
-        .rainbow-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #53a0fd 75%, #667eea 100%);
-            background-size: 300% 300%;
-            animation: rainbow-flow 3s ease-in-out infinite;
             border: none;
-            border-radius: 50px;
-            color: white;
-            font-weight: bold;
-            font-size: 24px;
-            padding: 20px 40px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            transition: all 0.2s ease;
         }
         
-        .rainbow-button:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.6);
+        .primary-button:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
         }
         
-        @keyframes rainbow-flow {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+        .primary-button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
         }
         
-        .room-option {
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 4px solid transparent;
-            border-radius: 20px;
-            padding: 20px;
+        .secondary-button {
             background: white;
-        }
-        
-        .room-option:hover {
-            border-color: #667eea;
-            transform: scale(1.05);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-        }
-        
-        .room-option.selected {
-            border-color: #4ecdc4;
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
-            color: white;
-            transform: scale(1.1);
-        }
-        
-        .budget-slider {
-            width: 100%;
-            height: 15px;
-            border-radius: 50px;
-            background: linear-gradient(to right, #ff6b6b, #feca57, #48dbfb, #0abde3, #1dd1a1);
-            outline: none;
-            -webkit-appearance: none;
-        }
-        
-        .budget-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: white;
+            color: #64748b;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            border: 1px solid #e5e7eb;
             cursor: pointer;
-            border: 4px solid #667eea;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
         }
         
-        .budget-slider::-moz-range-thumb {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: white;
-            cursor: pointer;
-            border: 4px solid #667eea;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        .secondary-button:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
         }
         
         .step-indicator {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            font-size: 24px;
-            font-weight: bold;
-            margin: 0 auto 20px;
-            transition: all 0.3s ease;
-        }
-        
-        .step-active {
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
-            color: white;
-            animation: pulse 2s infinite;
-        }
-        
-        .step-complete {
-            background: linear-gradient(135deg, #1dd1a1, #10ac84);
-            color: white;
-        }
-        
-        .step-pending {
-            background: #f1f2f6;
-            color: #747d8c;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        .confetti {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1000;
-        }
-        
-        .room-image {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 15px;
-            margin-bottom: 15px;
-        }
-        
-        /* Tooltip Styles */
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .tooltip .tooltip-text {
-            visibility: hidden;
-            width: 200px;
-            background: #333;
-            color: white;
-            text-align: center;
-            border-radius: 10px;
-            padding: 10px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -100px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-        
-        .tooltip .tooltip-text::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #333 transparent transparent transparent;
-        }
-        
-        .tooltip:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
-        }
-        
-        /* Budget Preset Buttons */
-        .budget-presets {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 20px 0;
-        }
-        
-        .budget-preset {
-            background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 25px;
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
             font-weight: 600;
-            text-align: center;
-        }
-        
-        .budget-preset:hover {
-            border-color: #667eea;
-            background: #f8fafc;
-            transform: translateY(-2px);
-        }
-        
-        .budget-preset.selected {
-            border-color: #4ecdc4;
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
-            color: white;
-        }
-        
-        /* Visual Examples */
-        .budget-examples {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
-        
-        .budget-example {
-            background: white;
-            border-radius: 15px;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            font-size: 18px;
             transition: all 0.3s ease;
         }
         
-        .budget-example:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        .step-indicator.active {
+            background: #3b82f6;
+            color: white;
         }
         
-        /* Mobile Optimizations */
-        @media (max-width: 768px) {
-            .floating-nav {
-                position: relative;
-                top: 0;
-                left: 0;
-                transform: none;
-                margin: 20px;
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .nav-step {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .help-button {
-                bottom: 20px;
-                right: 20px;
-                width: 50px;
-                height: 50px;
-                font-size: 20px;
-            }
-            
-            .budget-presets {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-        
-        /* Accessibility */
-        .focus-visible {
-            outline: 3px solid #667eea;
-            outline-offset: 2px;
-        }
-        
-        /* Save indicator */
-        .save-indicator {
-            position: fixed;
-            top: 50%;
-            right: 30px;
-            transform: translateY(-50%);
+        .step-indicator.completed {
             background: #10b981;
             color: white;
-            padding: 10px 15px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            opacity: 0;
-            transition: all 0.3s ease;
-            z-index: 1000;
         }
         
-        .save-indicator.show {
-            opacity: 1;
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #94a3b8;
+        }
+        
+        .step-line {
+            height: 2px;
+            background: #e5e7eb;
+            flex: 1;
+            margin: 0 12px;
+        }
+        
+        .step-line.completed {
+            background: #10b981;
+        }
+        
+        .budget-option {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        
+        .budget-option:hover {
+            border-color: #3b82f6;
+            background: #f0f9ff;
+        }
+        
+        .budget-option.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .info-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #64748b;
+            margin: 4px;
         }
     </style>
 </head>
 <body>
-    <!-- Floating Navigation -->
-    <nav class="floating-nav" id="floating-nav">
-        <div class="nav-step active" onclick="goToStep(1)" data-step="1">
-            <span>🏠</span>
-            <span>Room Style</span>
-        </div>
-        <div class="nav-step" onclick="goToStep(2)" data-step="2">
-            <span>💰</span>
-            <span>Budget</span>
-        </div>
-        <div class="nav-step" onclick="goToStep(3)" data-step="3">
-            <span>🎉</span>
-            <span>Results</span>
-        </div>
-    </nav>
-    
-    <!-- Sticky Progress Bar -->
-    <div class="sticky-progress" id="sticky-progress">
-        <div class="max-w-4xl mx-auto px-4">
-            <div class="flex justify-between items-center">
-                <div class="text-center flex-1">
-                    <div class="text-sm font-bold text-gray-800">Pick Your Style</div>
-                </div>
-                <div class="flex-1 h-2 bg-gray-200 rounded-full mx-4">
-                    <div id="sticky-progress-bar" class="h-2 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full transition-all duration-1000" style="width: 50%"></div>
-                </div>
-                <div class="text-center flex-1">
-                    <div class="text-sm font-bold text-gray-800">Your Budget</div>
+    <div class="min-h-screen bg-gray-50">
+        <!-- Header -->
+        <header class="bg-white border-b border-gray-200">
+            <div class="max-w-6xl mx-auto px-4 py-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Student Housing Search</h1>
+                        <p class="text-gray-600 mt-1">Find your ideal college housing in 3 simple steps</p>
+                    </div>
+                    <a href="index.html" class="text-gray-600 hover:text-gray-900">
+                        Back to Home
+                    </a>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- Help Button -->
-    <div class="help-button tooltip" id="help-button">
-        <span>?</span>
-        <div class="tooltip-text">Need help? Click for tips and guidance!</div>
-    </div>
-    
-    <!-- Save Indicator -->
-    <div class="save-indicator" id="save-indicator">
-        ✓ Progress Saved
-    </div>
-    <!-- Fun Header -->
-    <header class="text-center py-12">
-        <div class="max-w-6xl mx-auto px-4">
-            <h1 class="kid-friendly-title text-6xl md:text-8xl font-bold mb-6">
-                🏠 Find Your Perfect Room!
-            </h1>
-            <p class="text-white text-2xl md:text-3xl font-bold">
-                Let's find you an awesome place to live! 🌟
-            </p>
-            <div class="mt-6 text-white text-xl">
-                It's super easy - just 2 fun steps! 🎉
-            </div>
-        </div>
-    </header>
+        </header>
 
-    <!-- Progress Tracker -->
-    <section class="max-w-4xl mx-auto px-4 mb-12">
-        <div class="bg-white rounded-3xl p-8 shadow-2xl">
-            <div class="flex justify-between items-center">
-                <div class="text-center flex-1">
-                    <div id="step1-indicator" class="step-indicator step-active">1️⃣</div>
-                    <div class="text-lg font-bold text-gray-800">Pick Your Style</div>
-                    <div class="text-sm text-gray-600">What kind of room?</div>
+        <!-- Progress Steps -->
+        <div class="max-w-4xl mx-auto px-4 py-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div id="step1-indicator" class="step-indicator active">1</div>
+                    <div id="line1" class="step-line"></div>
+                    <div id="step2-indicator" class="step-indicator pending">2</div>
+                    <div id="line2" class="step-line"></div>
+                    <div id="step3-indicator" class="step-indicator pending">3</div>
                 </div>
-                
-                <div class="flex-1 h-2 bg-gray-200 rounded-full mx-4">
-                    <div id="progress-bar" class="h-2 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full transition-all duration-1000" style="width: 50%"></div>
-                </div>
-                
-                <div class="text-center flex-1">
-                    <div id="step2-indicator" class="step-indicator step-pending">2️⃣</div>
-                    <div class="text-lg font-bold text-gray-800">Your Budget</div>
-                    <div class="text-sm text-gray-600">How much money?</div>
-                </div>
+            </div>
+            <div class="flex justify-between mt-3">
+                <span class="text-sm font-medium text-gray-900">Location</span>
+                <span class="text-sm font-medium text-gray-500">Budget</span>
+                <span class="text-sm font-medium text-gray-500">Housing Type</span>
             </div>
         </div>
-    </section>
 
-    <!-- Step 1: Room Type Selection -->
-    <section id="step1" class="max-w-6xl mx-auto px-4 mb-12">
-        <div class="bouncy-card p-12">
-            <!-- Step Header with Navigation -->
-            <div class="flex justify-between items-center mb-8">
-                <button onclick="goHome()" class="back-button">
-                    <span>←</span>
-                    <span>Home</span>
-                </button>
-                <div class="tooltip">
-                    <span class="text-lg font-semibold text-gray-600">Step 1 of 2</span>
-                    <div class="tooltip-text">Choose your preferred housing style. You can change this anytime!</div>
-                </div>
-            </div>
-            
-            <div class="text-center mb-12">
-                <h2 class="text-5xl font-bold text-gray-800 mb-4">
-                    🎨 What's Your Style?
-                </h2>
-                <p class="text-2xl text-gray-600">
-                    Pick the type of room that sounds fun to you!
-                </p>
-                <div class="mt-4 text-lg text-gray-500">
-                    Click any option to see what it's like! 👆
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Dorm Room -->
-                <div class="room-option tooltip" onclick="selectRoom('dorm')" data-room="dorm">
-                    <div class="text-center">
-                        <div class="text-8xl mb-4">🏫</div>
-                        <h3 class="text-3xl font-bold mb-4">Dorm Room</h3>
-                        <p class="text-lg text-gray-600 mb-4">
-                            Live on campus with lots of friends nearby!
-                        </p>
-                        <div class="bg-blue-100 rounded-full px-4 py-2 text-blue-800 font-bold">
-                            🎓 Perfect for school!
-                        </div>
-                        <div class="mt-3 text-sm text-gray-500">
-                            Usually $200-$800/month
+        <!-- Step 1: Location -->
+        <section id="step1" class="max-w-4xl mx-auto px-4 pb-12">
+            <div class="step-card p-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Step 1: Where do you want to live?</h2>
+                <p class="text-gray-600 mb-8">Choose your preferred location relative to campus</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="option-card" onclick="selectLocation('on-campus')" data-location="on-campus">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">On-Campus</h3>
+                        <p class="text-gray-600 mb-4">Live in university-managed housing</p>
+                        <div class="space-y-2">
+                            <p class="text-sm text-gray-500">• Walk to classes</p>
+                            <p class="text-sm text-gray-500">• Meal plans available</p>
+                            <p class="text-sm text-gray-500">• Built-in community</p>
                         </div>
                     </div>
-                    <div class="tooltip-text">Dorm rooms are great for meeting people and being close to classes. They often include meal plans and utilities!</div>
-                </div>
-                
-                <!-- Shared Apartment -->
-                <div class="room-option tooltip" onclick="selectRoom('shared')" data-room="shared">
-                    <div class="text-center">
-                        <div class="text-8xl mb-4">🏠</div>
-                        <h3 class="text-3xl font-bold mb-4">Shared House</h3>
-                        <p class="text-lg text-gray-600 mb-4">
-                            Share a cool house with roommates!
-                        </p>
-                        <div class="bg-green-100 rounded-full px-4 py-2 text-green-800 font-bold">
-                            👥 Fun with friends!
-                        </div>
-                        <div class="mt-3 text-sm text-gray-500">
-                            Usually $400-$1200/month
-                        </div>
-                    </div>
-                    <div class="tooltip-text">Shared housing gives you more space and independence while splitting costs with roommates. Great for cooking and hanging out!</div>
-                </div>
-                
-                <!-- Studio/Own Place -->
-                <div class="room-option tooltip" onclick="selectRoom('studio')" data-room="studio">
-                    <div class="text-center">
-                        <div class="text-8xl mb-4">🏡</div>
-                        <h3 class="text-3xl font-bold mb-4">My Own Place</h3>
-                        <p class="text-lg text-gray-600 mb-4">
-                            Your very own apartment - so cool!
-                        </p>
-                        <div class="bg-purple-100 rounded-full px-4 py-2 text-purple-800 font-bold">
-                            ⭐ All yours!
-                        </div>
-                        <div class="mt-3 text-sm text-gray-500">
-                            Usually $600-$2000+/month
-                        </div>
-                    </div>
-                    <div class="tooltip-text">Your own place means total privacy and freedom! Perfect if you like quiet study time and having your own space.</div>
-                </div>
-            </div>
-            
-            <div class="text-center mt-12">
-                <button id="next-to-step2" onclick="goToStep2()" class="rainbow-button" style="display: none;">
-                    Next: Tell Us Your Budget! 💰 →
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <!-- Step 2: Budget Selection -->
-    <section id="step2" class="max-w-4xl mx-auto px-4 mb-12" style="display: none;">
-        <div class="bouncy-card p-12">
-            <!-- Step Header with Navigation -->
-            <div class="flex justify-between items-center mb-8">
-                <button onclick="goToStep(1)" class="back-button">
-                    <span>←</span>
-                    <span>Back to Room Style</span>
-                </button>
-                <div class="tooltip">
-                    <span class="text-lg font-semibold text-gray-600">Step 2 of 2</span>
-                    <div class="tooltip-text">Set your budget range. Don't worry, you can always adjust this later!</div>
-                </div>
-            </div>
-            
-            <div class="text-center mb-12">
-                <h2 class="text-5xl font-bold text-gray-800 mb-4">
-                    💰 What's Your Budget?
-                </h2>
-                <p class="text-2xl text-gray-600">
-                    Choose how much you want to spend on housing each month!
-                </p>
-                <div class="mt-4 text-lg text-gray-500">
-                    Use the slider below or click a preset amount 👇
-                </div>
-            </div>
-            
-            <!-- Budget Presets -->
-            <div class="budget-presets" id="budget-presets">
-                <div class="budget-preset" onclick="setPresetBudget(300)" data-budget="300">
-                    <div class="font-bold">😰 $300</div>
-                    <div class="text-sm">Tight Budget</div>
-                </div>
-                <div class="budget-preset" onclick="setPresetBudget(500)" data-budget="500">
-                    <div class="font-bold">😊 $500</div>
-                    <div class="text-sm">Good Choice</div>
-                </div>
-                <div class="budget-preset" onclick="setPresetBudget(800)" data-budget="800">
-                    <div class="font-bold">😊 $800</div>
-                    <div class="text-sm">Comfortable</div>
-                </div>
-                <div class="budget-preset" onclick="setPresetBudget(1200)" data-budget="1200">
-                    <div class="font-bold">🤩 $1200</div>
-                    <div class="text-sm">Lots of Options</div>
-                </div>
-            </div>
-            
-            <div class="space-y-8">
-                <!-- Budget Slider -->
-                <div class="text-center">
-                    <div id="budget-emoji" class="text-8xl mb-6">😊</div>
-                    <div id="budget-text" class="text-4xl font-bold text-gray-800 mb-8">$500 per month</div>
                     
-                    <div class="max-w-2xl mx-auto">
-                        <input type="range" id="budget-slider" class="budget-slider" 
-                               min="200" max="2000" value="500" step="50"
-                               oninput="updateBudget(this.value)">
-                        
-                        <div class="flex justify-between text-lg font-bold mt-4">
-                            <span class="text-red-500">😰 $200</span>
-                            <span class="text-yellow-500">😐 $600</span>
-                            <span class="text-green-500">😊 $1000</span>
-                            <span class="text-blue-500">🤩 $2000+</span>
+                    <div class="option-card" onclick="selectLocation('near-campus')" data-location="near-campus">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Near Campus</h3>
+                        <p class="text-gray-600 mb-4">Walking or biking distance</p>
+                        <div class="space-y-2">
+                            <p class="text-sm text-gray-500">• 5-15 min to campus</p>
+                            <p class="text-sm text-gray-500">• More independence</p>
+                            <p class="text-sm text-gray-500">• Local amenities</p>
+                        </div>
+                    </div>
+                    
+                    <div class="option-card" onclick="selectLocation('off-campus')" data-location="off-campus">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Off-Campus</h3>
+                        <p class="text-gray-600 mb-4">Requires transportation</p>
+                        <div class="space-y-2">
+                            <p class="text-sm text-gray-500">• 15+ min commute</p>
+                            <p class="text-sm text-gray-500">• Lower prices</p>
+                            <p class="text-sm text-gray-500">• Need car/bus pass</p>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Budget Advice -->
-                <div id="budget-advice" class="bg-green-100 rounded-2xl p-6 text-center">
-                    <div class="text-2xl font-bold text-green-800 mb-2">Great choice! 👍</div>
-                    <div class="text-lg text-green-700">You'll have lots of good options for shared housing!</div>
+                <div class="flex justify-end mt-8">
+                    <button id="next1" class="primary-button" onclick="goToStep2()" disabled>
+                        Next: Set Budget
+                    </button>
                 </div>
             </div>
-            
-            <div class="text-center mt-12">
-                <button onclick="findRooms()" class="rainbow-button">
-                    🎉 Find My Perfect Room! →
-                </button>
-                <p class="text-gray-600 mt-4 text-lg">
-                    Let's see what awesome places we can find for you!
-                </p>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Success Message -->
-    <section id="success" class="max-w-4xl mx-auto px-4 mb-12" style="display: none;">
-        <div class="bouncy-card p-12 text-center">
-            <!-- Step Header with Navigation -->
-            <div class="flex justify-between items-center mb-8">
-                <button onclick="goToStep(2)" class="back-button">
-                    <span>←</span>
-                    <span>Back to Budget</span>
-                </button>
-                <div class="tooltip">
-                    <span class="text-lg font-semibold text-green-600">All Done! ✓</span>
-                    <div class="tooltip-text">Your preferences are saved. You can always come back and change them!</div>
-                </div>
-            </div>
-            
-            <div class="text-8xl mb-6">🎉</div>
-            <h2 class="text-5xl font-bold text-gray-800 mb-6">
-                Awesome! You're All Set!
-            </h2>
-            <p class="text-2xl text-gray-600 mb-8">
-                Now let's find you some amazing rooms that are perfect for you!
-            </p>
-            
-            <!-- Summary of Selections -->
-            <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-6 mb-8">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">Your Preferences:</h3>
-                <div class="flex justify-center gap-8 text-lg">
-                    <div class="text-center">
-                        <div class="text-3xl mb-2" id="summary-room-icon">🏠</div>
-                        <div class="font-bold" id="summary-room-type">Room Type</div>
+        <!-- Step 2: Budget -->
+        <section id="step2" class="max-w-4xl mx-auto px-4 pb-12" style="display: none;">
+            <div class="step-card p-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Step 2: What's your monthly budget?</h2>
+                <p class="text-gray-600 mb-8">Select your comfortable price range for housing</p>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="budget-option" onclick="selectBudget('under-500')" data-budget="under-500">
+                        <div class="text-2xl font-bold text-gray-900">Under $500</div>
+                        <div class="text-sm text-gray-600 mt-1">Shared rooms</div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-3xl mb-2">💰</div>
-                        <div class="font-bold" id="summary-budget">$500/month</div>
+                    <div class="budget-option" onclick="selectBudget('500-800')" data-budget="500-800">
+                        <div class="text-2xl font-bold text-gray-900">$500-$800</div>
+                        <div class="text-sm text-gray-600 mt-1">Standard options</div>
+                    </div>
+                    <div class="budget-option" onclick="selectBudget('800-1200')" data-budget="800-1200">
+                        <div class="text-2xl font-bold text-gray-900">$800-$1200</div>
+                        <div class="text-sm text-gray-600 mt-1">Premium choices</div>
+                    </div>
+                    <div class="budget-option" onclick="selectBudget('over-1200')" data-budget="over-1200">
+                        <div class="text-2xl font-bold text-gray-900">$1200+</div>
+                        <div class="text-sm text-gray-600 mt-1">Luxury housing</div>
                     </div>
                 </div>
+                
+                <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-blue-900">
+                        <strong>Tip:</strong> Remember to factor in utilities, internet, and other monthly expenses when setting your budget.
+                    </p>
+                </div>
+                
+                <div class="flex justify-between mt-8">
+                    <button class="secondary-button" onclick="goToStep1()">
+                        Back
+                    </button>
+                    <button id="next2" class="primary-button" onclick="goToStep3()" disabled>
+                        Next: Choose Housing Type
+                    </button>
+                </div>
             </div>
-            
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <button onclick="window.location.href='https://www.roomfinderai.com/listings'" 
-                        class="rainbow-button">
-                    🏠 See My Room Options
-                </button>
-                <button onclick="restartProcess()" 
-                        class="bg-white text-purple-600 font-bold px-8 py-4 rounded-full border-4 border-purple-600 hover:bg-purple-50 transition-all text-xl">
-                    🔄 Start Over
-                </button>
-                <button onclick="savePreferences()" 
-                        class="bg-white text-green-600 font-bold px-8 py-4 rounded-full border-4 border-green-600 hover:bg-green-50 transition-all text-xl">
-                    💾 Save Preferences
-                </button>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Fun Footer -->
-    <footer class="text-center py-12 text-white">
-        <div class="max-w-4xl mx-auto px-4">
-            <h3 class="text-3xl font-bold mb-4">🌟 You're Going to Love Your New Room!</h3>
-            <p class="text-xl mb-8">
-                Finding the perfect place to live just got super easy and fun!
-            </p>
-            
-            <div class="flex flex-col sm:flex-row gap-4 justify-center text-lg">
-                <a href="https://www.roomfinderai.com/listings" class="hover:text-yellow-300 transition-colors">
-                    🏠 Browse Rooms
-                </a>
-                <a href="https://www.roomfinderai.com/profile.html" class="hover:text-yellow-300 transition-colors">
-                    📱 My Account
-                </a>
-                <a href="#" onclick="restartProcess()" class="hover:text-yellow-300 transition-colors">
-                    🔄 Start Over
-                </a>
+        <!-- Step 3: Housing Type -->
+        <section id="step3" class="max-w-4xl mx-auto px-4 pb-12" style="display: none;">
+            <div class="step-card p-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Step 3: What type of housing do you prefer?</h2>
+                <p class="text-gray-600 mb-8">Select the housing arrangement that suits your lifestyle</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="option-card" onclick="selectHousing('single-room')" data-housing="single-room">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Single Room</h3>
+                        <p class="text-gray-600 mb-3">Your own private bedroom</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="info-tag">Private space</span>
+                            <span class="info-tag">Shared common areas</span>
+                            <span class="info-tag">Ideal for studying</span>
+                        </div>
+                    </div>
+                    
+                    <div class="option-card" onclick="selectHousing('shared-room')" data-housing="shared-room">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Shared Room</h3>
+                        <p class="text-gray-600 mb-3">Share bedroom with roommate(s)</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="info-tag">Most affordable</span>
+                            <span class="info-tag">Built-in social life</span>
+                            <span class="info-tag">Common in dorms</span>
+                        </div>
+                    </div>
+                    
+                    <div class="option-card" onclick="selectHousing('apartment')" data-housing="apartment">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Apartment</h3>
+                        <p class="text-gray-600 mb-3">Full apartment with roommates</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="info-tag">Full kitchen</span>
+                            <span class="info-tag">Living room</span>
+                            <span class="info-tag">More independence</span>
+                        </div>
+                    </div>
+                    
+                    <div class="option-card" onclick="selectHousing('studio')" data-housing="studio">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Studio/1BR</h3>
+                        <p class="text-gray-600 mb-3">Complete privacy</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="info-tag">No roommates</span>
+                            <span class="info-tag">Higher cost</span>
+                            <span class="info-tag">Total independence</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between mt-8">
+                    <button class="secondary-button" onclick="goToStep2()">
+                        Back
+                    </button>
+                    <button id="submitBtn" class="primary-button" onclick="submitSearch()" disabled>
+                        View Available Housing
+                    </button>
+                </div>
             </div>
-            
-            <div class="mt-8 text-lg opacity-75">
-                © 2024 RoomFinderAI - Making room finding fun and easy for everyone! 🎈
+        </section>
+
+        <!-- Results Summary -->
+        <section id="results" class="max-w-4xl mx-auto px-4 pb-12" style="display: none;">
+            <div class="step-card p-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Search Complete</h2>
+                    <p class="text-gray-600 mb-8">Here's your housing search summary</p>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-6 mb-8">
+                    <h3 class="font-semibold text-gray-900 mb-4">Your Preferences:</h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Location:</span>
+                            <span class="font-medium text-gray-900" id="result-location">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Budget:</span>
+                            <span class="font-medium text-gray-900" id="result-budget">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Housing Type:</span>
+                            <span class="font-medium text-gray-900" id="result-housing">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button onclick="window.location.href='https://www.roomfinderai.com/listings'" class="primary-button">
+                        Browse Matching Listings
+                    </button>
+                    <button onclick="startOver()" class="secondary-button">
+                        Start New Search
+                    </button>
+                </div>
             </div>
-        </div>
-    </footer>
+        </section>
+    </div>
 
-    <!-- Confetti Container -->
-    <div id="confetti-container" class="confetti"></div>
-
-    <!-- JavaScript -->
     <script>
-        let selectedRoom = '';
-        let selectedBudget = 500;
-        let currentStep = 1;
-        let userPreferences = {
-            roomType: '',
-            budget: 500,
-            timestamp: null
+        // User selections
+        let userChoices = {
+            location: '',
+            budget: '',
+            housing: ''
         };
-        
-        // Auto-save functionality
-        function saveProgress() {
-            userPreferences.roomType = selectedRoom;
-            userPreferences.budget = selectedBudget;
-            userPreferences.timestamp = Date.now();
-            localStorage.setItem('housingPreferences', JSON.stringify(userPreferences));
-            showSaveIndicator();
-        }
-        
-        function loadProgress() {
-            const saved = localStorage.getItem('housingPreferences');
-            if (saved) {
-                userPreferences = JSON.parse(saved);
-                selectedRoom = userPreferences.roomType;
-                selectedBudget = userPreferences.budget;
-                
-                // Restore UI state
-                if (selectedRoom) {
-                    const roomElement = document.querySelector(`[data-room="${selectedRoom}"]`);
-                    if (roomElement) {
-                        roomElement.classList.add('selected');
-                    }
-                }
-                
-                updateBudget(selectedBudget);
-                document.getElementById('budget-slider').value = selectedBudget;
-            }
-        }
-        
-        function showSaveIndicator() {
-            const indicator = document.getElementById('save-indicator');
-            indicator.classList.add('show');
-            setTimeout(() => {
-                indicator.classList.remove('show');
-            }, 2000);
-        }
-        
-        // Enhanced navigation
-        function goToStep(step) {
-            currentStep = step;
+
+        // Step 1: Location selection
+        function selectLocation(location) {
+            userChoices.location = location;
             
-            // Hide all steps
-            document.getElementById('step1').style.display = 'none';
-            document.getElementById('step2').style.display = 'none';
-            document.getElementById('success').style.display = 'none';
-            
-            // Show target step
-            if (step === 1) {
-                document.getElementById('step1').style.display = 'block';
-                updateNavigation(1, 'pending', 'pending');
-            } else if (step === 2) {
-                if (!selectedRoom) {
-                    alert('Please select a room type first! 😊');
-                    goToStep(1);
-                    return;
-                }
-                document.getElementById('step2').style.display = 'block';
-                updateNavigation('completed', 2, 'pending');
-            } else if (step === 3) {
-                if (!selectedRoom || !selectedBudget) {
-                    alert('Please complete all steps first! 😊');
-                    return;
-                }
-                document.getElementById('success').style.display = 'block';
-                updateNavigation('completed', 'completed', 3);
-                updateSummary();
-            }
-            
-            // Scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            // Update sticky progress
-            updateStickyProgress();
-        }
-        
-        function updateNavigation(step1Status, step2Status, step3Status) {
-            const nav1 = document.querySelector('[data-step="1"]');
-            const nav2 = document.querySelector('[data-step="2"]');
-            const nav3 = document.querySelector('[data-step="3"]');
-            
-            nav1.className = `nav-step ${step1Status === 1 ? 'active' : step1Status}`;
-            nav2.className = `nav-step ${step2Status === 2 ? 'active' : step2Status}`;
-            nav3.className = `nav-step ${step3Status === 3 ? 'active' : step3Status}`;
-        }
-        
-        function updateStickyProgress() {
-            const stickyProgress = document.getElementById('sticky-progress');
-            const progressBar = document.getElementById('sticky-progress-bar');
-            
-            if (window.pageYOffset > 300) {
-                stickyProgress.classList.add('visible');
-            } else {
-                stickyProgress.classList.remove('visible');
-            }
-            
-            // Update progress bar
-            let progress = 0;
-            if (currentStep === 1) progress = 33;
-            else if (currentStep === 2) progress = 66;
-            else if (currentStep === 3) progress = 100;
-            
-            progressBar.style.width = progress + '%';
-        }
-        
-        function goHome() {
-            window.location.href = 'index.html';
-        }
-        
-        function setPresetBudget(amount) {
-            selectedBudget = amount;
-            document.getElementById('budget-slider').value = amount;
-            updateBudget(amount);
-            
-            // Update preset button states
-            document.querySelectorAll('.budget-preset').forEach(btn => {
-                btn.classList.remove('selected');
+            // Update UI
+            document.querySelectorAll('[data-location]').forEach(card => {
+                card.classList.remove('selected');
             });
-            document.querySelector(`[data-budget="${amount}"]`).classList.add('selected');
+            document.querySelector(`[data-location="${location}"]`).classList.add('selected');
             
-            saveProgress();
+            // Enable next button
+            document.getElementById('next1').disabled = false;
         }
-        
-        function updateSummary() {
-            const roomIcons = {
-                'dorm': '🏫',
-                'shared': '🏠',
-                'studio': '🏡'
-            };
+
+        // Step 2: Budget selection
+        function selectBudget(budget) {
+            userChoices.budget = budget;
             
-            const roomNames = {
-                'dorm': 'Dorm Room',
-                'shared': 'Shared House',
-                'studio': 'My Own Place'
-            };
-            
-            document.getElementById('summary-room-icon').textContent = roomIcons[selectedRoom] || '🏠';
-            document.getElementById('summary-room-type').textContent = roomNames[selectedRoom] || 'Room Type';
-            document.getElementById('summary-budget').textContent = `$${selectedBudget}/month`;
-        }
-        
-        function savePreferences() {
-            saveProgress();
-            alert('Your preferences have been saved! 💾\n\nYou can come back anytime and your choices will be remembered.');
-        }
-        
-        // Enhanced room selection
-        function selectRoom(roomType) {
-            selectedRoom = roomType;
-            
-            // Update all room options
-            document.querySelectorAll('.room-option').forEach(option => {
-                option.classList.remove('selected');
+            // Update UI
+            document.querySelectorAll('[data-budget]').forEach(card => {
+                card.classList.remove('selected');
             });
+            document.querySelector(`[data-budget="${budget}"]`).classList.add('selected');
             
-            // Select the clicked option
-            event.currentTarget.classList.add('selected');
-            
-            // Show next button with animation
-            const nextBtn = document.getElementById('next-to-step2');
-            nextBtn.style.display = 'block';
-            nextBtn.style.opacity = '0';
-            nextBtn.style.transform = 'translateY(20px)';
-            
-            setTimeout(() => {
-                nextBtn.style.transition = 'all 0.5s ease';
-                nextBtn.style.opacity = '1';
-                nextBtn.style.transform = 'translateY(0)';
-            }, 100);
-            
-            // Auto-save progress
-            saveProgress();
-            
-            // Celebration animation
-            createConfetti();
-            
-            // Update navigation
-            updateNavigation('completed', 'pending', 'pending');
+            // Enable next button
+            document.getElementById('next2').disabled = false;
         }
-        
-        // Go to step 2 (enhanced)
-        function goToStep2() {
-            goToStep(2);
+
+        // Step 3: Housing type selection
+        function selectHousing(housing) {
+            userChoices.housing = housing;
             
-            // More confetti!
-            setTimeout(() => createConfetti(), 500);
-        }
-        
-        // Enhanced budget slider
-        function updateBudget(value) {
-            selectedBudget = parseInt(value);
-            const budgetText = document.getElementById('budget-text');
-            const budgetEmoji = document.getElementById('budget-emoji');
-            const budgetAdvice = document.getElementById('budget-advice');
-            
-            budgetText.textContent = `$${value} per month`;
-            
-            // Update preset button states
-            document.querySelectorAll('.budget-preset').forEach(btn => {
-                btn.classList.remove('selected');
+            // Update UI
+            document.querySelectorAll('[data-housing]').forEach(card => {
+                card.classList.remove('selected');
             });
-            const closestPreset = document.querySelector(`[data-budget="${value}"]`);
-            if (closestPreset) {
-                closestPreset.classList.add('selected');
-            }
+            document.querySelector(`[data-housing="${housing}"]`).classList.add('selected');
             
-            // Update emoji and advice based on budget
-            if (value < 400) {
-                budgetEmoji.textContent = '😰';
-                budgetAdvice.innerHTML = `
-                    <div class="text-2xl font-bold text-orange-800 mb-2">Tight budget, but we can help! 💪</div>
-                    <div class="text-lg text-orange-700">Look for shared rooms or dorms - they're perfect for saving money!</div>
-                `;
-                budgetAdvice.className = 'bg-orange-100 rounded-2xl p-6 text-center';
-            } else if (value < 700) {
-                budgetEmoji.textContent = '😊';
-                budgetAdvice.innerHTML = `
-                    <div class="text-2xl font-bold text-green-800 mb-2">Great choice! 👍</div>
-                    <div class="text-lg text-green-700">You'll have lots of good options for shared housing!</div>
-                `;
-                budgetAdvice.className = 'bg-green-100 rounded-2xl p-6 text-center';
-            } else if (value < 1200) {
-                budgetEmoji.textContent = '🤩';
-                budgetAdvice.innerHTML = `
-                    <div class="text-2xl font-bold text-blue-800 mb-2">Awesome budget! 🌟</div>
-                    <div class="text-lg text-blue-700">You can get a really nice place with this budget!</div>
-                `;
-                budgetAdvice.className = 'bg-blue-100 rounded-2xl p-6 text-center';
-            } else {
-                budgetEmoji.textContent = '🏆';
-                budgetAdvice.innerHTML = `
-                    <div class="text-2xl font-bold text-purple-800 mb-2">Amazing! You're all set! 🎉</div>
-                    <div class="text-lg text-purple-700">With this budget, you can get any type of place you want!</div>
-                `;
-                budgetAdvice.className = 'bg-purple-100 rounded-2xl p-6 text-center';
-            }
-            
-            // Auto-save progress
-            saveProgress();
+            // Enable submit button
+            document.getElementById('submitBtn').disabled = false;
         }
-        
-        // Find rooms (enhanced final step)
-        function findRooms() {
-            goToStep(3);
-            
-            // Epic confetti celebration!
-            createConfetti();
-            setTimeout(() => createConfetti(), 300);
-            setTimeout(() => createConfetti(), 600);
-            
-            // Save final preferences
-            saveProgress();
-            
-            // Log preferences for backend integration
-            console.log('Final room preferences:', {
-                roomType: selectedRoom,
-                budget: selectedBudget,
-                timestamp: Date.now()
-            });
-        }
-        
-        // Restart the process
-        function restartProcess() {
-            selectedRoom = '';
-            selectedBudget = 500;
-            
-            // Reset all steps
+
+        // Navigation functions
+        function goToStep1() {
             document.getElementById('step1').style.display = 'block';
             document.getElementById('step2').style.display = 'none';
-            document.getElementById('success').style.display = 'none';
-            
-            // Reset indicators
-            document.getElementById('step1-indicator').className = 'step-indicator step-active';
-            document.getElementById('step2-indicator').className = 'step-indicator step-pending';
-            document.getElementById('progress-bar').style.width = '50%';
-            
-            // Reset selections
-            document.querySelectorAll('.room-option').forEach(option => {
-                option.classList.remove('selected');
-            });
-            document.getElementById('next-to-step2').style.display = 'none';
-            
-            // Reset budget
-            document.getElementById('budget-slider').value = 500;
-            updateBudget(500);
-            
-            // Scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('step3').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            updateProgressIndicators(1);
         }
-        
-        // Create confetti animation
-        function createConfetti() {
-            const confettiContainer = document.getElementById('confetti-container');
-            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8', '#fdcb6e'];
+
+        function goToStep2() {
+            if (!userChoices.location) return;
             
-            for (let i = 0; i < 50; i++) {
-                const confetti = document.createElement('div');
-                confetti.style.position = 'absolute';
-                confetti.style.left = Math.random() * 100 + '%';
-                confetti.style.top = '-10px';
-                confetti.style.width = '10px';
-                confetti.style.height = '10px';
-                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.borderRadius = '50%';
-                confetti.style.animation = `fall ${Math.random() * 3 + 2}s linear forwards`;
-                
-                confettiContainer.appendChild(confetti);
-                
-                // Remove confetti after animation
-                setTimeout(() => {
-                    if (confetti.parentNode) {
-                        confetti.parentNode.removeChild(confetti);
-                    }
-                }, 5000);
-            }
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'block';
+            document.getElementById('step3').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            updateProgressIndicators(2);
         }
-        
-        // Add CSS for confetti animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes fall {
-                to {
-                    transform: translateY(100vh) rotate(360deg);
-                    opacity: 0;
+
+        function goToStep3() {
+            if (!userChoices.budget) return;
+            
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('step3').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            updateProgressIndicators(3);
+        }
+
+        function updateProgressIndicators(currentStep) {
+            // Update step indicators
+            const indicators = ['step1-indicator', 'step2-indicator', 'step3-indicator'];
+            const lines = ['line1', 'line2'];
+            
+            indicators.forEach((id, index) => {
+                const element = document.getElementById(id);
+                const stepNum = index + 1;
+                
+                if (stepNum < currentStep) {
+                    element.className = 'step-indicator completed';
+                    element.innerHTML = '✓';
+                } else if (stepNum === currentStep) {
+                    element.className = 'step-indicator active';
+                    element.innerHTML = stepNum.toString();
+                } else {
+                    element.className = 'step-indicator pending';
+                    element.innerHTML = stepNum.toString();
                 }
-            }
-        `;
-        document.head.appendChild(style);
-        
-        // Enhanced initialization
+            });
+            
+            // Update connecting lines
+            lines.forEach((id, index) => {
+                const element = document.getElementById(id);
+                if (index + 1 < currentStep) {
+                    element.classList.add('completed');
+                } else {
+                    element.classList.remove('completed');
+                }
+            });
+        }
+
+        function submitSearch() {
+            if (!userChoices.location || !userChoices.budget || !userChoices.housing) return;
+            
+            // Format results
+            const locationText = {
+                'on-campus': 'On-Campus',
+                'near-campus': 'Near Campus (Walking Distance)',
+                'off-campus': 'Off-Campus (Commute Required)'
+            };
+            
+            const budgetText = {
+                'under-500': 'Under $500/month',
+                '500-800': '$500-$800/month',
+                '800-1200': '$800-$1200/month',
+                'over-1200': 'Over $1200/month'
+            };
+            
+            const housingText = {
+                'single-room': 'Single Room',
+                'shared-room': 'Shared Room',
+                'apartment': 'Apartment',
+                'studio': 'Studio/1BR'
+            };
+            
+            // Update results
+            document.getElementById('result-location').textContent = locationText[userChoices.location];
+            document.getElementById('result-budget').textContent = budgetText[userChoices.budget];
+            document.getElementById('result-housing').textContent = housingText[userChoices.housing];
+            
+            // Show results
+            document.getElementById('step3').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+            
+            // Update progress to show completion
+            updateProgressIndicators(4);
+        }
+
+        function startOver() {
+            userChoices = {
+                location: '',
+                budget: '',
+                housing: ''
+            };
+            
+            // Reset all selections
+            document.querySelectorAll('.option-card, .budget-option').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Reset buttons
+            document.getElementById('next1').disabled = true;
+            document.getElementById('next2').disabled = true;
+            document.getElementById('submitBtn').disabled = true;
+            
+            // Go to step 1
+            goToStep1();
+        }
+
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Load saved progress
-            loadProgress();
-            
-            // Initialize budget
-            updateBudget(selectedBudget || 500);
-            
-            // Set up scroll listener for sticky progress
-            window.addEventListener('scroll', updateStickyProgress);
-            
-            // Keyboard navigation
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
-                    if (currentStep > 1) {
-                        e.preventDefault();
-                        goToStep(currentStep - 1);
-                    }
-                } else if (e.key === 'ArrowRight' || e.key === 'Enter') {
-                    if (currentStep < 3) {
-                        e.preventDefault();
-                        if (currentStep === 1 && selectedRoom) {
-                            goToStep(2);
-                        } else if (currentStep === 2 && selectedBudget) {
-                            goToStep(3);
-                        }
-                    }
-                } else if (e.key === 'Escape') {
-                    restartProcess();
-                }
-            });
-            
-            // Initialize navigation
-            updateNavigation(1, 'pending', 'pending');
-            
-            // Welcome message for returning users
-            const saved = localStorage.getItem('housingPreferences');
-            if (saved) {
-                const preferences = JSON.parse(saved);
-                if (preferences.timestamp && Date.now() - preferences.timestamp < 7 * 24 * 60 * 60 * 1000) { // 7 days
-                    setTimeout(() => {
-                        alert('Welcome back! 👋\n\nWe\'ve restored your previous choices. You can continue where you left off or start fresh!');
-                    }, 1000);
-                }
-            }
+            updateProgressIndicators(1);
         });
-        
-        // Help system
-        document.getElementById('help-button').addEventListener('click', function() {
-            const helpText = `
-🏠 HOUSING FINDER HELP 🏠
-
-✨ How it works:
-• Step 1: Pick your room style
-• Step 2: Set your budget
-• Step 3: See your matches!
-
-🎯 Pro tips:
-• Hover over options for more info
-• Use arrow keys to navigate
-• Your progress is auto-saved
-• Try the budget presets!
-
-❓ Need more help?
-Click the floating navigation to jump between steps!
-            `;
-            alert(helpText);
-        });
-        
-        // Touch/swipe support for mobile
-        let touchStartX = 0;
-        let touchEndX = 0;
-        
-        document.addEventListener('touchstart', function(e) {
-            touchStartX = e.changedTouches[0].screenX;
-        });
-        
-        document.addEventListener('touchend', function(e) {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        });
-        
-        function handleSwipe() {
-            const threshold = 50;
-            if (touchEndX < touchStartX - threshold) {
-                // Swipe left - next step
-                if (currentStep < 3) {
-                    if (currentStep === 1 && selectedRoom) {
-                        goToStep(2);
-                    } else if (currentStep === 2 && selectedBudget) {
-                        goToStep(3);
-                    }
-                }
-            } else if (touchEndX > touchStartX + threshold) {
-                // Swipe right - previous step
-                if (currentStep > 1) {
-                    goToStep(currentStep - 1);
-                }
-            }
-        }
     </script>
 </body>
 </html>
