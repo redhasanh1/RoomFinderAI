@@ -2,6 +2,45 @@ import Foundation
 import SwiftUI
 import Combine
 
+// MARK: - AI Chat Models
+struct AIChat: Identifiable, Codable {
+    let id: String
+    let title: String
+    let createdAt: Date
+    let updatedAt: Date
+    let isActive: Bool
+    let context: String?
+    let messages: [AIMessage]
+}
+
+struct AIMessage: Identifiable, Codable {
+    let id: String
+    let chatId: String
+    let content: String
+    let role: AIMessageRole
+    let createdAt: Date
+    let tokens: Int?
+    let model: String?
+}
+
+enum AIMessageRole: String, Codable {
+    case user = "user"
+    case assistant = "assistant"
+    case system = "system"
+}
+
+// MARK: - Request Models
+struct CreateChatRequest {
+    let participantIds: [String]
+    let listingId: String?
+    let title: String?
+    let isGroupChat: Bool
+}
+
+struct MarkAsReadRequest {
+    let messageIds: [String]
+}
+
 class ChatViewModel: ObservableObject {
     @Published var chats: [Chat] = []
     @Published var currentChat: Chat?
@@ -90,7 +129,7 @@ class ChatViewModel: ObservableObject {
     }
     
     func loadMoreMessages() {
-        guard let chatId = currentChat?.id else { return }
+        guard (currentChat?.id) != nil else { return }
         
         Task {
             await loadMessages(for: chatId, append: true)
@@ -206,10 +245,10 @@ class ChatViewModel: ObservableObject {
         
         let userMessage = AIMessage(
             id: UUID().uuidString,
-            role: .user,
+            chatId: currentAIChat.id,
             content: content,
-            timestamp: Date(),
-            metadata: nil
+            role: .user,
+            createdAt: Date()
         )
         
         aiMessages.append(userMessage)
@@ -217,21 +256,17 @@ class ChatViewModel: ObservableObject {
         isAIResponding = true
         
         do {
-            let aiMessage = try await supabaseService.sendAIMessage(chatId: currentAIChat.id, message: content)
+            _ = try await supabaseService.sendAIMessage(chatId: currentAIChat.id, message: content)
             
             // Simulate AI response (in real app, this would be handled by the backend)
             let aiResponse = AIMessage(
                 id: UUID().uuidString,
-                role: .assistant,
+                chatId: currentAIChat.id,
                 content: generateAIResponse(for: content),
-                timestamp: Date(),
-                metadata: AIMessageMetadata(
-                    tokens: 150,
-                    model: "gpt-4",
-                    temperature: 0.7,
-                    confidence: 0.85,
-                    processingTime: 1.2
-                )
+                role: .assistant,
+                createdAt: Date(),
+                tokens: 150,
+                model: "gpt-4"
             )
             
             aiMessages.append(aiResponse)
@@ -268,17 +303,16 @@ class ChatViewModel: ObservableObject {
     
     @MainActor
     private func createAIChat(title: String) async {
-        guard let userId = getCurrentUserId() else { return }
+        guard getCurrentUserId() != nil else { return }
         
         let newAIChat = AIChat(
             id: UUID().uuidString,
-            userId: userId,
             title: title,
-            messages: [],
-            context: nil,
             createdAt: Date(),
             updatedAt: Date(),
-            status: .active
+            isActive: true,
+            context: nil,
+            messages: []
         )
         
         aiChats.insert(newAIChat, at: 0)
@@ -288,37 +322,33 @@ class ChatViewModel: ObservableObject {
     
     @MainActor
     private func markAsRead(messageIds: [String]) async {
-        do {
-            let request = MarkAsReadRequest(messageIds: messageIds)
-            // This would typically call the Supabase service to mark messages as read
-            
-            // Update local state
-            for messageId in messageIds {
-                if let index = messages.firstIndex(where: { $0.id == messageId }) {
-                    messages[index] = Message(
-                        id: messages[index].id,
-                        chatId: messages[index].chatId,
-                        senderId: messages[index].senderId,
-                        senderName: messages[index].senderName,
-                        content: messages[index].content,
-                        messageType: messages[index].messageType,
-                        attachments: messages[index].attachments,
-                        replyTo: messages[index].replyTo,
-                        timestamp: messages[index].timestamp,
-                        editedAt: messages[index].editedAt,
-                        isRead: true,
-                        isDelivered: messages[index].isDelivered,
-                        reactions: messages[index].reactions
-                    )
-                }
+        _ = MarkAsReadRequest(messageIds: messageIds)
+        // This would typically call the Supabase service to mark messages as read
+        
+        // Update local state
+        for messageId in messageIds {
+            if let index = messages.firstIndex(where: { $0.id == messageId }) {
+                messages[index] = Message(
+                    id: messages[index].id,
+                    chatId: messages[index].chatId,
+                    senderId: messages[index].senderId,
+                    senderName: messages[index].senderName,
+                    content: messages[index].content,
+                    messageType: messages[index].messageType,
+                    attachments: messages[index].attachments,
+                    replyTo: messages[index].replyTo,
+                    timestamp: messages[index].timestamp,
+                    editedAt: messages[index].editedAt,
+                    isRead: true,
+                    isDelivered: messages[index].isDelivered,
+                    reactions: messages[index].reactions
+                )
             }
-        } catch {
-            print("Error marking messages as read: \(error)")
         }
     }
     
     private func handleTypingIndicator(isTyping: Bool) {
-        guard let chatId = currentChat?.id else { return }
+        guard (currentChat?.id) != nil else { return }
         
         self.isTyping = isTyping
         

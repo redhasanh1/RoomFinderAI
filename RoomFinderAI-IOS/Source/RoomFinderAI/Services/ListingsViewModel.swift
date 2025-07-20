@@ -3,6 +3,43 @@ import SwiftUI
 import Combine
 import CoreLocation
 
+// MARK: - Enums and Types
+enum SortOption: String, CaseIterable, Codable {
+    case date = "date"
+    case price = "price"
+    case distance = "distance"
+    case popularity = "popularity"
+    
+    var displayName: String {
+        switch self {
+        case .date: return "Date"
+        case .price: return "Price"
+        case .distance: return "Distance"
+        case .popularity: return "Popularity"
+        }
+    }
+}
+
+// MARK: - Request Models
+struct ListingSearchRequest {
+    let query: String?
+    let location: String?
+    let propertyType: String?
+    let minPrice: Double?
+    let maxPrice: Double?
+    let bedrooms: Int?
+    let bathrooms: Int?
+    let radius: Double?
+    let sortBy: String
+    let page: Int
+    let limit: Int
+    let availableDate: Date?
+    let latitude: Double?
+    let longitude: Double?
+    let petFriendly: Bool?
+    let smokingAllowed: Bool?
+}
+
 // MARK: - Listing Data Source
 class ListingDataSource: PaginationDataSource {
     typealias Item = Listing
@@ -37,6 +74,7 @@ class ListingDataSource: PaginationDataSource {
     }
 }
 
+@MainActor
 class ListingsViewModel: ObservableObject {
     @Published var listings: [Listing] = []
     @Published var featuredListings: [Listing] = []
@@ -328,20 +366,20 @@ class ListingsViewModel: ObservableObject {
         return ListingSearchRequest(
             query: searchQuery.isEmpty ? nil : searchQuery,
             location: selectedLocation.isEmpty ? nil : selectedLocation,
+            propertyType: selectedPropertyType?.rawValue,
             minPrice: minPrice > 0 ? minPrice : nil,
             maxPrice: maxPrice < 5000 ? maxPrice : nil,
             bedrooms: selectedBedrooms,
             bathrooms: selectedBathrooms,
-            propertyType: selectedPropertyType,
-            petFriendly: petFriendly ? true : nil,
-            smokingAllowed: smokingAllowed ? true : nil,
-            availableDate: nil,
             radius: nil,
+            sortBy: sortBy.rawValue,
+            page: 1,
+            limit: itemsPerPage,
+            availableDate: nil,
             latitude: nil,
             longitude: nil,
-            sortBy: sortBy,
-            page: 1,
-            limit: itemsPerPage
+            petFriendly: petFriendly ? true : nil,
+            smokingAllowed: smokingAllowed ? true : nil
         )
     }
     
@@ -429,7 +467,7 @@ class ListingsViewModel: ObservableObject {
                 maxPrice: maxPrice < 5000 ? maxPrice : nil,
                 bedrooms: selectedBedrooms,
                 bathrooms: selectedBathrooms,
-                propertyType: selectedPropertyType,
+                propertyType: selectedPropertyType?.rawValue,
                 petFriendly: petFriendly ? true : nil,
                 smokingAllowed: smokingAllowed ? true : nil,
                 availableDate: nil,

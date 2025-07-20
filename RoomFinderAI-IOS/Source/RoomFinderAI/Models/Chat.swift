@@ -8,14 +8,16 @@ struct AIChat: Identifiable, Codable, Equatable {
     let updatedAt: Date
     let isActive: Bool
     let context: String?
+    var messages: [AIMessage] = []
     
-    init(id: String = UUID().uuidString, title: String, createdAt: Date = Date(), updatedAt: Date = Date(), isActive: Bool = true, context: String? = nil) {
+    init(id: String = UUID().uuidString, title: String, createdAt: Date = Date(), updatedAt: Date = Date(), isActive: Bool = true, context: String? = nil, messages: [AIMessage] = []) {
         self.id = id
         self.title = title
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.isActive = isActive
         self.context = context
+        self.messages = messages
     }
 }
 
@@ -36,6 +38,34 @@ struct AIMessage: Identifiable, Codable, Equatable {
         self.createdAt = createdAt
         self.tokens = tokens
         self.model = model
+    }
+}
+
+struct AIMessageMetadata: Codable, Equatable {
+    let model: String?
+    let temperature: Double?
+    let maxTokens: Int?
+    let promptTokens: Int?
+    let completionTokens: Int?
+    let totalTokens: Int?
+    let processingTime: TimeInterval?
+    
+    init(
+        model: String? = nil,
+        temperature: Double? = nil,
+        maxTokens: Int? = nil,
+        promptTokens: Int? = nil,
+        completionTokens: Int? = nil,
+        totalTokens: Int? = nil,
+        processingTime: TimeInterval? = nil
+    ) {
+        self.model = model
+        self.temperature = temperature
+        self.maxTokens = maxTokens
+        self.promptTokens = promptTokens
+        self.completionTokens = completionTokens
+        self.totalTokens = totalTokens
+        self.processingTime = processingTime
     }
 }
 
@@ -230,4 +260,5 @@ struct CreateChatRequest: Codable, Equatable {
         case isGroupChat = "is_group_chat"
     }
 }
+
 

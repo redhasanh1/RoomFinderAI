@@ -1,6 +1,7 @@
 import Foundation
 import CoreData
 import Combine
+import UIKit
 
 // MARK: - Database Performance Service
 class DatabasePerformanceService: ObservableObject {
@@ -36,7 +37,7 @@ class DatabasePerformanceService: ObservableObject {
         }
         
         NotificationCenter.default.addObserver(
-            forName: .NSManagedObjectContextDidMergeChangesFromParent,
+            forName: .NSManagedObjectContextDidMergeChanges,
             object: nil,
             queue: .main
         ) { [weak self] notification in
@@ -623,7 +624,7 @@ class DatabasePerformanceService: ObservableObject {
                 do {
                     let cdListings = try context.fetch(fetchRequest)
                     if let cdListing = cdListings.first {
-                        cdListing.price = listing.price + 100 // Update price
+                        cdListing.price = Double(listing.price + 100) // Update price
                         cdListing.updatedAt = Date()
                         try context.save()
                     }
@@ -727,19 +728,16 @@ class DatabasePerformanceService: ObservableObject {
         return Listing(
             id: id,
             title: "Performance Test Listing \(id)",
-            price: Double.random(in: 1000...5000),
+            description: "Test listing for performance testing",
+            price: Int.random(in: 1000...5000),
+            city: "Test City",
+            street: "123 Test St",
+            postalCode: "12345",
+            houseType: PropertyType.allCases.randomElement()?.rawValue ?? "apartment",
             bedrooms: Int.random(in: 1...4),
-            bathrooms: Int.random(in: 1...3),
-            propertyType: PropertyType.allCases.randomElement() ?? .apartment,
-            location: [
-                "city": "Test City",
-                "state": "Test State",
-                "address": "123 Test St",
-                "zipCode": "12345"
-            ],
-            description: "This is a test listing for performance testing",
-            isActive: true,
-            availableDate: Date(),
+            utilities: "Heat, Water, Electricity",
+            media: ["test-image.jpg"],
+            userEmail: "test@example.com",
             createdAt: Date(),
             updatedAt: Date()
         )
@@ -832,7 +830,7 @@ struct PerformanceTestResult {
         let speedBonus = min(operationsPerSecond / 10, 50) // Up to 50 bonus points
         let penaltyForErrors = Double(errors.count) * 10
         
-        return max(0, baseScore + speedBonus - penaltyForErrors)
+        return max(0, Double(baseScore) + speedBonus - penaltyForErrors)
     }
 }
 
@@ -887,6 +885,8 @@ extension DeviceInfo {
             preferredLanguage: Locale.current.languageCode ?? "en",
             timeZone: TimeZone.current.identifier,
             batteryLevel: UIDevice.current.batteryLevel,
+            isLowPowerModeEnabled: ProcessInfo.processInfo.isLowPowerModeEnabled,
+            availableMemory: 0, // Will need a static method for this
             totalMemory: ProcessInfo.processInfo.physicalMemory,
             diskSpace: getDiskSpace(),
             networkType: getNetworkType()
