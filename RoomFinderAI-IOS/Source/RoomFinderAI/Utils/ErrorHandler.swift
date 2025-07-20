@@ -40,39 +40,65 @@ struct ErrorContext {
 
 // MARK: - Specific Error Types
 enum NetworkError: Error, LocalizedError {
+    case noInternetConnection
+    case timeoutError
     case noConnection
     case timeout
     case invalidResponse
     case serverError(Int)
     case decodingError
+    case unauthorized
+    case forbidden
+    case notFound
+    case internalServerError
+    case parseError
+    case requestFailed(String)
     
     var errorDescription: String? {
         switch self {
-        case .noConnection: return "No internet connection"
-        case .timeout: return "Request timed out"
+        case .noInternetConnection, .noConnection: return "No internet connection"
+        case .timeoutError, .timeout: return "Request timed out"
         case .invalidResponse: return "Invalid response from server"
         case .serverError(let code): return "Server error: \(code)"
         case .decodingError: return "Data decoding error"
+        case .unauthorized: return "Unauthorized access"
+        case .forbidden: return "Access forbidden"
+        case .notFound: return "Resource not found"
+        case .internalServerError: return "Internal server error"
+        case .parseError: return "Failed to parse response"
+        case .requestFailed(let message): return "Request failed: \(message)"
         }
     }
     
     var code: String {
         switch self {
-        case .noConnection: return "NET_NO_CONNECTION"
-        case .timeout: return "NET_TIMEOUT"
+        case .noInternetConnection, .noConnection: return "NET_NO_CONNECTION"
+        case .timeoutError, .timeout: return "NET_TIMEOUT"
         case .invalidResponse: return "NET_INVALID_RESPONSE"
         case .serverError(let code): return "NET_SERVER_ERROR_\(code)"
         case .decodingError: return "NET_DECODING_ERROR"
+        case .unauthorized: return "NET_UNAUTHORIZED"
+        case .forbidden: return "NET_FORBIDDEN"
+        case .notFound: return "NET_NOT_FOUND"
+        case .internalServerError: return "NET_INTERNAL_SERVER_ERROR"
+        case .parseError: return "NET_PARSE_ERROR"
+        case .requestFailed: return "NET_REQUEST_FAILED"
         }
     }
     
     var severity: ErrorSeverity {
         switch self {
-        case .noConnection: return .high
-        case .timeout: return .medium
+        case .noInternetConnection, .noConnection: return .high
+        case .timeoutError, .timeout: return .medium
         case .invalidResponse: return .high
         case .serverError: return .high
         case .decodingError: return .medium
+        case .unauthorized: return .high
+        case .forbidden: return .high
+        case .notFound: return .medium
+        case .internalServerError: return .critical
+        case .parseError: return .medium
+        case .requestFailed: return .high
         }
     }
 }
@@ -82,6 +108,12 @@ enum SupabaseError: Error, LocalizedError {
     case authenticationFailed
     case connectionError
     case queryError(String)
+    case rateLimitExceeded
+    case permissionDenied
+    case insertError(String)
+    case updateError(String)
+    case deleteError(String)
+    case databaseError(String)
     
     var errorDescription: String? {
         switch self {
@@ -89,6 +121,12 @@ enum SupabaseError: Error, LocalizedError {
         case .authenticationFailed: return "Authentication failed"
         case .connectionError: return "Connection to Supabase failed"
         case .queryError(let message): return "Query error: \(message)"
+        case .rateLimitExceeded: return "Rate limit exceeded"
+        case .permissionDenied: return "Permission denied"
+        case .insertError(let message): return "Insert error: \(message)"
+        case .updateError(let message): return "Update error: \(message)"
+        case .deleteError(let message): return "Delete error: \(message)"
+        case .databaseError(let message): return "Database error: \(message)"
         }
     }
     
@@ -98,6 +136,12 @@ enum SupabaseError: Error, LocalizedError {
         case .authenticationFailed: return "SUPABASE_AUTH_FAILED"
         case .connectionError: return "SUPABASE_CONNECTION_ERROR"
         case .queryError: return "SUPABASE_QUERY_ERROR"
+        case .rateLimitExceeded: return "SUPABASE_RATE_LIMIT"
+        case .permissionDenied: return "SUPABASE_PERMISSION_DENIED"
+        case .insertError: return "SUPABASE_INSERT_ERROR"
+        case .updateError: return "SUPABASE_UPDATE_ERROR"
+        case .deleteError: return "SUPABASE_DELETE_ERROR"
+        case .databaseError: return "SUPABASE_DATABASE_ERROR"
         }
     }
     
@@ -107,6 +151,12 @@ enum SupabaseError: Error, LocalizedError {
         case .authenticationFailed: return .high
         case .connectionError: return .high
         case .queryError: return .medium
+        case .rateLimitExceeded: return .high
+        case .permissionDenied: return .high
+        case .insertError: return .medium
+        case .updateError: return .medium
+        case .deleteError: return .medium
+        case .databaseError: return .high
         }
     }
 }
@@ -117,6 +167,9 @@ enum AuthError: Error, LocalizedError {
     case accountDisabled
     case tokenExpired
     case emailNotVerified
+    case emailAlreadyExists
+    case weakPassword
+    case signInFailed(String)
     
     var errorDescription: String? {
         switch self {
@@ -125,6 +178,9 @@ enum AuthError: Error, LocalizedError {
         case .accountDisabled: return "Account has been disabled"
         case .tokenExpired: return "Session expired"
         case .emailNotVerified: return "Email not verified"
+        case .emailAlreadyExists: return "Email already exists"
+        case .weakPassword: return "Password is too weak"
+        case .signInFailed(let message): return "Sign in failed: \(message)"
         }
     }
 }
@@ -175,6 +231,19 @@ enum ValidationError: Error, LocalizedError {
         case .invalidInput(let message): return "Invalid input: \(message)"
         }
     }
+    
+    var code: String {
+        switch self {
+        case .invalidEmail: return "VALIDATION_INVALID_EMAIL"
+        case .passwordTooShort: return "VALIDATION_PASSWORD_TOO_SHORT"
+        case .missingRequiredField(let field): return "VALIDATION_MISSING_\(field.uppercased())"
+        case .invalidInput: return "VALIDATION_INVALID_INPUT"
+        }
+    }
+    
+    var severity: ErrorSeverity {
+        return .medium
+    }
 }
 
 // MARK: - Main App Error
@@ -212,12 +281,12 @@ enum AppError: Error, LocalizedError {
             return error.code
         case .supabaseError(let error):
             return error.code
-        case .authError(let error):
-            return error.code
-        case .paymentError(let error):
-            return error.code
-        case .aiError(let error):
-            return error.code
+        case .authError:
+            return "AUTH_ERROR"
+        case .paymentError:
+            return "PAYMENT_ERROR"
+        case .aiError:
+            return "AI_ERROR"
         case .validationError(let error):
             return error.code
         case .unknownError:
@@ -231,16 +300,68 @@ enum AppError: Error, LocalizedError {
             return error.severity
         case .supabaseError(let error):
             return error.severity
-        case .authError(let error):
-            return error.severity
-        case .paymentError(let error):
-            return error.severity
-        case .aiError(let error):
-            return error.severity
+        case .authError:
+            return .high
+        case .paymentError:
+            return .high
+        case .aiError:
+            return .medium
         case .validationError(let error):
             return error.severity
         case .unknownError:
             return .high
         }
+    }
+}
+
+// MARK: - ErrorHandler Class
+class ErrorHandler: ObservableObject {
+    static let shared = ErrorHandler()
+    
+    @Published var currentError: AppError?
+    @Published var isShowingError = false
+    
+    private let loggingService = LoggingService.shared
+    
+    private init() {}
+    
+    func handle(_ error: AppError, context: ErrorContext? = nil) {
+        let errorContext = context ?? ErrorContext()
+        
+        // Log the error
+        loggingService.error(
+            error.localizedDescription,
+            category: .error,
+            metadata: [
+                "errorCode": error.errorCode,
+                "severity": error.severity.rawValue,
+                "timestamp": errorContext.timestamp.iso8601String,
+                "userID": errorContext.userID ?? "unknown",
+                "sessionID": errorContext.sessionID ?? "unknown"
+            ]
+        )
+        
+        // Show error to user if severity is medium or higher
+        if error.severity.priority >= ErrorSeverity.medium.priority {
+            DispatchQueue.main.async {
+                self.currentError = error
+                self.isShowingError = true
+            }
+        }
+    }
+    
+    func clearError() {
+        DispatchQueue.main.async {
+            self.currentError = nil
+            self.isShowingError = false
+        }
+    }
+}
+
+// MARK: - Date Extension for ISO8601
+extension Date {
+    var iso8601String: String {
+        let formatter = ISO8601DateFormatter()
+        return formatter.string(from: self)
     }
 }

@@ -243,23 +243,16 @@ class OfflineDataService: ObservableObject {
         syncStatus = .syncing
         
         Task {
-            do {
-                await syncPendingMessages()
-                await syncPendingListings()
-                await syncPendingUsers()
-                
-                DispatchQueue.main.async {
-                    self.syncStatus = .synced
-                    self.updatePendingSyncCount()
-                }
-                
-                loggingService.info("Sync completed successfully", category: .database)
-            } catch {
-                DispatchQueue.main.async {
-                    self.syncStatus = .failed
-                }
-                loggingService.error("Sync failed: \(error.localizedDescription)", category: .database)
+            await syncPendingMessages()
+            await syncPendingListings()
+            await syncPendingUsers()
+            
+            DispatchQueue.main.async {
+                self.syncStatus = .synced
+                self.updatePendingSyncCount()
             }
+            
+            loggingService.info("Sync completed successfully", category: .database)
         }
     }
     
@@ -297,7 +290,7 @@ class OfflineDataService: ObservableObject {
             let pendingListings = try coreDataService.fetchPendingSyncObjects(entityType: CDListing.self)
             
             for cdListing in pendingListings {
-                let listing = cdListing.toListing()
+                _ = cdListing.toListing()
                 
                 // Sync with remote service
                 // This would typically call your API service

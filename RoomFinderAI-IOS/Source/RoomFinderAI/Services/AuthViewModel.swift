@@ -292,3 +292,26 @@ class AuthViewModel: ObservableObject {
         return errorMessage != nil
     }
 }
+
+enum AuthError: Error {
+    case userNotFound
+    case invalidCredentials
+    case networkError
+    case sessionExpired
+    case unknownError
+    
+    var localizedDescription: String {
+        switch self {
+        case .userNotFound:
+            return "User not found"
+        case .invalidCredentials:
+            return "Invalid credentials"
+        case .networkError:
+            return "Network error occurred"
+        case .sessionExpired:
+            return "Session has expired"
+        case .unknownError:
+            return "An unknown error occurred"
+        }
+    }
+}
