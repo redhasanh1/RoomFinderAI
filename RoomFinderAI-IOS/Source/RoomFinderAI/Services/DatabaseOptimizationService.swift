@@ -13,7 +13,7 @@ class DatabaseOptimizationService {
     // MARK: - Optimized Query Builders
     
     /// Optimized listings query with proper indexing
-    func buildOptimizedListingsQuery(request: ListingSearchRequest) -> PostgrestQueryBuilder {
+    func buildOptimizedListingsQuery(request: ListingSearchRequest) -> PostgrestFilterBuilder {
         var query = supabaseService.client
             .from("listings")
             .select("*")
@@ -48,7 +48,7 @@ class DatabaseOptimizationService {
         }
         
         if let propertyType = request.propertyType {
-            query = query.eq("property_type", value: propertyType.rawValue)
+            query = query.eq("property_type", value: propertyType)
         }
         
         // Policy filters using partial indexes
@@ -73,7 +73,7 @@ class DatabaseOptimizationService {
     
     /// Optimized sorting and pagination
     func applyOptimizedSorting(
-        query: PostgrestQueryBuilder,
+        query: PostgrestFilterBuilder,
         sortBy: SortOption,
         page: Int,
         limit: Int,
@@ -99,9 +99,14 @@ class DatabaseOptimizationService {
                 .order("price", ascending: true)
                 .range(from: offset, to: offset + limit - 1)
             
-        case .popularity:
-            // Use index: view_count
-            return query.order("view_count", ascending: false)
+        case .priceHigh:
+            // Use composite index: property_type_price or price (descending)
+            return query.order("price", ascending: false)
+                .range(from: offset, to: offset + limit - 1)
+            
+        case .location:
+            // Sort by city name alphabetically
+            return query.order("city", ascending: true)
                 .range(from: offset, to: offset + limit - 1)
             
         case .distance:

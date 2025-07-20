@@ -80,7 +80,7 @@ class CoreDataService: ObservableObject {
     }
     
     // MARK: - Batch Operations
-    func batchInsert<T: NSManagedObject>(entityName: String, objects: [[String: Any]]) throws {
+    func batchInsert(entityName: String, objects: [[String: Any]]) throws {
         let batchInsert = NSBatchInsertRequest(entityName: entityName, objects: objects)
         batchInsert.resultType = .statusOnly
         

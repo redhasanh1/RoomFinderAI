@@ -207,7 +207,7 @@ extension InterceptedURLSession {
             decoder.dateDecodingStrategy = .iso8601
             return try decoder.decode(type, from: data)
         } catch {
-            throw NetworkError.decodingError(error.localizedDescription)
+            throw NetworkError.requestFailed("Decoding error: \(error.localizedDescription)")
         }
     }
     
@@ -230,7 +230,7 @@ extension InterceptedURLSession {
             encoder.dateEncodingStrategy = .iso8601
             request.httpBody = try encoder.encode(body)
         } catch {
-            throw NetworkError.encodingError(error.localizedDescription)
+            throw NetworkError.requestFailed("Encoding error: \(error.localizedDescription)")
         }
         
         return try await json(for: request, type: responseType)
@@ -250,7 +250,7 @@ extension InterceptedURLSession {
             encoder.dateEncodingStrategy = .iso8601
             request.httpBody = try encoder.encode(body)
         } catch {
-            throw NetworkError.encodingError(error.localizedDescription)
+            throw NetworkError.requestFailed("Encoding error: \(error.localizedDescription)")
         }
         
         return try await json(for: request, type: responseType)
@@ -384,8 +384,8 @@ extension URL {
 
 extension NetworkError {
     static let noData = NetworkError.requestFailed("No data received")
-    static let encodingError = { (message: String) in NetworkError.requestFailed("Encoding error: \(message)") }
-    static let decodingError = { (message: String) in NetworkError.requestFailed("Decoding error: \(message)") }
+    static let encodingFailure = { (message: String) in NetworkError.requestFailed("Encoding error: \(message)") }
+    static let decodingFailure = { (message: String) in NetworkError.requestFailed("Decoding error: \(message)") }
 }
 
 // MARK: - Usage Examples

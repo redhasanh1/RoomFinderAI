@@ -10,6 +10,46 @@ enum HTTPMethod: String, CaseIterable {
     case PATCH = "PATCH"
 }
 
+// MARK: - Empty Response
+struct EmptyResponse: Codable {
+    init() {}
+}
+
+enum NetworkError: Error {
+    case invalidResponse
+    case unauthorized
+    case forbidden
+    case notFound
+    case internalServerError
+    case serverError(Int)
+    case parseError
+    case noInternetConnection
+    case timeoutError
+    
+    var localizedDescription: String {
+        switch self {
+        case .invalidResponse:
+            return "Invalid response received"
+        case .unauthorized:
+            return "Unauthorized access"
+        case .forbidden:
+            return "Access forbidden"
+        case .notFound:
+            return "Resource not found"
+        case .internalServerError:
+            return "Internal server error"
+        case .serverError(let code):
+            return "Server error with code: \(code)"
+        case .parseError:
+            return "Failed to parse response"
+        case .noInternetConnection:
+            return "No internet connection"
+        case .timeoutError:
+            return "Request timed out"
+        }
+    }
+}
+
 class NetworkManager: ObservableObject {
     static let shared = NetworkManager()
     

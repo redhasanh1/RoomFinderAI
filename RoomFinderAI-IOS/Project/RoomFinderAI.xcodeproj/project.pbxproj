@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1B95453E99AF3E94EF234011 /* CDMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B43F481766A171A59D0553B /* CDMessage.swift */; };
 		2C1D1B5B8AC647F5BBAFC1CE /* CachingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8415D91C614563E2A0E40B2 /* CachingService.swift */; };
 		3052E01731ECE2E89D3BD914 /* RetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EE8BD18CF14F7A629526B62 /* RetryService.swift */; };
 		31F72BF1E28F42F0ED6772E1 /* NetworkMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF5AC2EF5D35067CF8BA242 /* NetworkMonitoringService.swift */; };
@@ -18,9 +19,12 @@
 		6260A4D8ABA072708CBC6F66 /* InterceptedURLSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39903831FABA684812E8CA47 /* InterceptedURLSession.swift */; };
 		66F8B0453A76099F5A0A97A4 /* OfflineStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C95564652464DBA2B75243EA /* OfflineStatusView.swift */; };
 		67B110A00D4F93C0C3FD47B0 /* DatabasePerformanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B484D9DF9F6313172561C84 /* DatabasePerformanceService.swift */; };
+		6B5ADBA1B5BEB5DD7E8F9C14 /* CDListing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35159452F1AF1D948AD5CA9 /* CDListing.swift */; };
 		6D75B3BEE31B09B4563EF319 /* DatabaseOptimizationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DD025A726C2D7EC30CECA2B /* DatabaseOptimizationService.swift */; };
 		6E958954723DAC2FB69E7230 /* MediaLoadingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21555555564F87EC787E2FEC /* MediaLoadingService.swift */; };
 		79C76D0ABB7B8FD448703E05 /* MarketAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD094B61872254618E0A0E3 /* MarketAnalyticsView.swift */; };
+		80ACF44A0B30C1BEBAD4D245 /* CDChat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0209AAACD6803211889008AE /* CDChat.swift */; };
+		81AEB01802DCBC50B4B30A85 /* CDUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC9D5E45A0AFA9175B56C1C /* CDUser.swift */; };
 		83A44063831AE90F3C96D3A3 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ADE3ACEA8484FF4DC0932CE /* AIService.swift */; };
 		97FF02F53D4FD23F5EDB6565 /* CoreDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5196889A51E02888C1A12922 /* CoreDataService.swift */; };
 		9A529DA55F0A9A1064BDA21F /* LoggingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 301FEB51B6282F5227DE67DE /* LoggingService.swift */; };
@@ -53,10 +57,6 @@
 		CC3E6D2735651C7F1155FF14 /* ImageLoadingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A5B6A5CE41FF03A15654FB /* ImageLoadingService.swift */; };
 		E458F1861CCBEE5CB6B835A3 /* OfflineDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D0DCD9A78649B53673427A2 /* OfflineDataService.swift */; };
 		F349008C9C28FC83C56CCA10 /* MarketAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FE929DB73790A72C72A27A /* MarketAnalyticsService.swift */; };
-		6B5ADBA1B5BEB5DD7E8F9C14 /* CDListing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35159452F1AF1D948AD5CA9 /* CDListing.swift */; };
-		81AEB01802DCBC50B4B30A85 /* CDUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC9D5E45A0AFA9175B56C1C /* CDUser.swift */; };
-		1B95453E99AF3E94EF234011 /* CDMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B43F481766A171A59D0553B /* CDMessage.swift */; };
-		80ACF44A0B30C1BEBAD4D245 /* CDChat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0209AAACD6803211889008AE /* CDChat.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -82,7 +82,6 @@
 		9B484D9DF9F6313172561C84 /* DatabasePerformanceService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DatabasePerformanceService.swift; path = ../Source/RoomFinderAI/Services/DatabasePerformanceService.swift; sourceTree = "<group>"; };
 		A01234567890123456789000 /* RoomFinderAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoomFinderAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A01234567890123456789011 /* RoomFinderAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RoomFinderAIApp.swift; path = ../Source/RoomFinderAI/RoomFinderAIApp.swift; sourceTree = "<group>"; };
-		A35159452F1AF1D948AD5CA9 /* CDListing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CDListing.swift; path = ../Source/RoomFinderAI/Models/CoreData/CDListing.swift; sourceTree = "<group>"; };
 		A01234567890123456789013 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = ../Source/RoomFinderAI/ContentView.swift; sourceTree = "<group>"; };
 		A01234567890123456789015 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = ../Source/RoomFinderAI/Resources/Assets.xcassets; sourceTree = "<group>"; };
 		A01234567890123456789017 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SupabaseService.swift; path = ../Source/RoomFinderAI/Services/SupabaseService.swift; sourceTree = "<group>"; };
@@ -104,6 +103,7 @@
 		A01234567890123456789049 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Constants.swift; path = ../Source/RoomFinderAI/Utils/Constants.swift; sourceTree = "<group>"; };
 		A01234567890123456789051 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Extensions.swift; path = ../Source/RoomFinderAI/Utils/Extensions.swift; sourceTree = "<group>"; };
 		A01234567890123456789053 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = ../Source/RoomFinderAI/Resources/Info.plist; sourceTree = "<group>"; };
+		A35159452F1AF1D948AD5CA9 /* CDListing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CDListing.swift; path = ../Source/RoomFinderAI/Models/CoreData/CDListing.swift; sourceTree = "<group>"; };
 		AE28299C5DC26266857D0C05 /* ErrorHandler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ErrorHandler.swift; path = ../Source/RoomFinderAI/Utils/ErrorHandler.swift; sourceTree = "<group>"; };
 		C8415D91C614563E2A0E40B2 /* CachingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CachingService.swift; path = ../Source/RoomFinderAI/Services/CachingService.swift; sourceTree = "<group>"; };
 		C95564652464DBA2B75243EA /* OfflineStatusView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OfflineStatusView.swift; path = ../Source/RoomFinderAI/Views/OfflineStatusView.swift; sourceTree = "<group>"; };
@@ -125,11 +125,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		70E8D37F2E2BEEDD00188FC1 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				A35159452F1AF1D948AD5CA9 /* CDListing.swift */,
+				8FC9D5E45A0AFA9175B56C1C /* CDUser.swift */,
+				9B43F481766A171A59D0553B /* CDMessage.swift */,
+				0209AAACD6803211889008AE /* CDChat.swift */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		A01234567890123456789055 = {
 			isa = PBXGroup;
 			children = (
 				A01234567890123456789056 /* RoomFinderAI */,
 				A01234567890123456789057 /* Products */,
+				70E8D37F2E2BEEDD00188FC1 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -163,11 +175,11 @@
 				A01234567890123456789031 /* DashboardView.swift */,
 				A01234567890123456789033 /* ListingsView.swift */,
 				A01234567890123456789035 /* PropertyDetailView.swift */,
-				A01234567890123456789037 /* ChatView.swift */,
 				A01234567890123456789039 /* ProfileView.swift */,
 				4CD094B61872254618E0A0E3 /* MarketAnalyticsView.swift */,
 				47C5A7F5591D4DA4C357B1B4 /* MortgageCalculatorView.swift */,
 				3437590DE2FD25CA29B11E90 /* PaymentView.swift */,
+				A01234567890123456789037 /* ChatView.swift */,
 				6C1F874F608B396521435D67 /* SubleaseView.swift */,
 				C95564652464DBA2B75243EA /* OfflineStatusView.swift */,
 			);

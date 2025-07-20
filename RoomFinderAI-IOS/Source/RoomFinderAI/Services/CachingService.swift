@@ -178,7 +178,7 @@ class CacheStatistics {
 }
 
 // MARK: - Multi-Level Cache
-class MultiLevelCache {
+class MultiLevelCache: @unchecked Sendable {
     private let memoryCache: NSCache<NSString, CacheEntry>
     private let diskCache: DiskCache
     private let configuration: CacheConfiguration

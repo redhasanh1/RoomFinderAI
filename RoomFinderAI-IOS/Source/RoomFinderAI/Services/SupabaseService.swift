@@ -119,8 +119,8 @@ class SupabaseService: ObservableObject {
     // MARK: - Listings
     
     func fetchAllListings() async throws -> [Listing] {
-        return try await executeWithRetry {
-            let listings: [Listing] = try await _client
+        return try await executeWithRetry { [self] in
+            let listings: [Listing] = try await self._client
                 .from("listings")
                 .select("*")
                 .order("created_at", ascending: false)
@@ -134,7 +134,7 @@ class SupabaseService: ObservableObject {
     func fetchListings(request: ListingSearchRequest) async throws -> ListingResponse {
         return try await executeWithRetry {
             do {
-                var query = _client
+                var query = self._client
                     .from("listings")
                     .select("*")
                 
@@ -164,7 +164,7 @@ class SupabaseService: ObservableObject {
                 }
                 
                 if let propertyType = request.propertyType {
-                    query = query.eq("property_type", value: propertyType.rawValue)
+                    query = query.eq("property_type", value: propertyType)
                 }
                 
                 if let petFriendly = request.petFriendly, petFriendly {
@@ -180,31 +180,33 @@ class SupabaseService: ObservableObject {
                 }
                 
                 // Apply sorting and pagination
-                let sortBy = request.sortBy ?? .date
+                let sortBy = request.sortBy ?? SortOption.date.rawValue
                 let offset = (request.page - 1) * request.limit
                 
                 let finalQuery: PostgrestTransformBuilder
                 switch sortBy {
-                case .price:
+                case "price":
                     finalQuery = query.order("price", ascending: true).range(from: offset, to: offset + request.limit - 1)
-                case .date:
+                case "date":
                     finalQuery = query.order("created_at", ascending: false).range(from: offset, to: offset + request.limit - 1)
-                case .bedrooms:
+                case "bedrooms":
                     finalQuery = query.order("bedrooms", ascending: false).range(from: offset, to: offset + request.limit - 1)
-                case .popularity:
+                case "popularity":
                     finalQuery = query.order("view_count", ascending: false).range(from: offset, to: offset + request.limit - 1)
-                case .distance:
+                case "distance":
                     if let lat = request.latitude, let lon = request.longitude {
                         finalQuery = query.order("location->>'latitude'", ascending: true).range(from: offset, to: offset + request.limit - 1)
                     } else {
                         finalQuery = query.order("created_at", ascending: false).range(from: offset, to: offset + request.limit - 1)
                     }
+                default:
+                    finalQuery = query.order("created_at", ascending: false).range(from: offset, to: offset + request.limit - 1)
                 }
                 
                 let listings: [Listing] = try await finalQuery.execute().value
                 
                 // Get total count
-                let countQuery = client
+                let countQuery = self.client
                     .from("listings")
                     .select("count", head: true)
                 
@@ -217,9 +219,8 @@ class SupabaseService: ObservableObject {
                     listings: listings,
                     totalCount: totalCount,
                     page: request.page,
-                    totalPages: totalPages,
-                    hasNextPage: request.page < totalPages,
-                    hasPreviousPage: request.page > 1
+                    limit: request.limit,
+                    hasMore: request.page < totalPages
                 )
             } catch {
                 let context = ErrorContext(
@@ -238,8 +239,8 @@ class SupabaseService: ObservableObject {
     }
     
     func fetchListingById(_ id: String) async throws -> Listing {
-        return try await executeWithRetry {
-            let listing: Listing = try await client
+        return try await executeWithRetry { [self] in
+            let listing: Listing = try await self.client
                 .from("listings")
                 .select("*")
                 .eq("id", value: id)
