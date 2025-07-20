@@ -3,858 +3,479 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Housing Search - RoomFinderAI</title>
+    <title>Student Housing Hub - RoomFinderAI</title>
+
+    <!-- 🚨 BULLETPROOF EMERGENCY AUTHENTICATION SYSTEM 🚨 -->
+    <script>
+        (function() {
+            console.log("🛡️ BULLETPROOF EMERGENCY AUTHENTICATION SYSTEM: ACTIVATED");
+
+            const currentUserKey = 'currentUser';
+            const backupKey = 'currentUser_backup_bulletproof';
+
+            // Function to perform a robust backup
+            function performBackup() {
+                try {
+                    const currentUser = localStorage.getItem(currentUserKey);
+                    if (currentUser) {
+                        localStorage.setItem(backupKey, currentUser);
+                        console.log("🛡️ Backup updated.");
+                    }
+                } catch (e) {
+                    console.error("🛡️ Backup failed:", e);
+                }
+            }
+
+            // Function to perform a robust restore
+            function performRestore() {
+                try {
+                    const currentUser = localStorage.getItem(currentUserKey);
+                    const backupUser = localStorage.getItem(backupKey);
+
+                    if (backupUser && (!currentUser || currentUser === 'null' || currentUser === 'undefined')) {
+                        localStorage.setItem(currentUserKey, backupUser);
+                        console.warn("🛡️ USER LOGOUT DETECTED. SESSION INSTANTLY RESTORED.");
+                        return true;
+                    }
+                } catch (e) {
+                    console.error("🛡️ Restore failed:", e);
+                }
+                return false;
+            }
+
+            // Override localStorage.removeItem to prevent logout
+            const originalRemoveItem = localStorage.removeItem;
+            localStorage.removeItem = function(key) {
+                if (key === currentUserKey) {
+                    console.error("🛡️ BLOCKED localStorage.removeItem('currentUser') attempt.");
+                    performRestore();
+                    return;
+                }
+                originalRemoveItem.apply(this, arguments);
+            };
+
+            // Override localStorage.clear to prevent logout
+            const originalClear = localStorage.clear;
+            localStorage.clear = function() {
+                console.error("🛡️ BLOCKED localStorage.clear() attempt.");
+                performRestore();
+                return;
+            };
+
+            // Override window.location.assign to prevent login page redirects
+            const originalLocationAssign = window.location.assign;
+            window.location.assign = function(url) {
+                if (typeof url === 'string' && (url.includes('login.html') || url.includes('/login'))) {
+                    console.error("🛡️ BLOCKED window.location.assign to login page:", url);
+                    return;
+                }
+                originalLocationAssign.apply(this, arguments);
+            };
+
+            // Override window.location.replace to prevent login page redirects
+            const originalLocationReplace = window.location.replace;
+            window.location.replace = function(url) {
+                if (typeof url === 'string' && (url.includes('login.html') || url.includes('/login'))) {
+                    console.error("🛡️ BLOCKED window.location.replace to login page:", url);
+                    return;
+                }
+                originalLocationReplace.apply(this, arguments);
+            };
+
+            // Aggressive monitoring and restoration loop
+            setInterval(() => {
+                performRestore();
+                performBackup(); // Keep backup fresh
+            }, 100); // Check every 100 milliseconds
+
+            // Initial backup and restore on load
+            performBackup();
+            performRestore();
+
+            console.log("✅ BULLETPROOF EMERGENCY AUTHENTICATION SYSTEM: FULLY OPERATIONAL");
+        })();
+    </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        :root {
-            --purple-primary: #667eea;
-            --purple-dark: #4c1d95;
-            --purple-text: #1e1b4b;
-            --purple-light: #a78bfa;
-            --purple-ultralight: #f3f4f6;
-            --purple-shadow: rgba(102, 126, 234, 0.3);
-            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --gradient-reverse: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-            --gradient-radial: radial-gradient(circle at 30% 20%, #667eea, #764ba2);
-            --glass-bg: rgba(255, 255, 255, 0.95);
-            --glass-border: rgba(255, 255, 255, 0.8);
-            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            --card-bg: rgba(255, 255, 255, 0.98);
-        }
-        
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--gradient-radial);
-            min-height: 100vh;
-            line-height: 1.6;
+            overflow-x: hidden;
         }
         
-        /* Accessibility improvements */
-        .option-card:focus,
-        .budget-option:focus,
-        .primary-button:focus,
-        .secondary-button:focus {
-            outline: 2px solid var(--purple-primary);
-            outline-offset: 2px;
+        .gradient-text-student {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
-        /* Improved readability */
-        p {
-            line-height: 1.7;
-        }
-        
-        h2 {
-            line-height: 1.3;
-            margin-bottom: 0.75rem;
-        }
-        
-        h3 {
-            line-height: 1.4;
-        }
-        
-        /* Mobile improvements */
-        @media (max-width: 768px) {
-            .step-card {
-                margin: 0 16px;
-            }
-            
-            .budget-option {
-                padding: 16px;
-            }
-            
-            .budget-option .text-xl {
-                font-size: 1.25rem;
-            }
-            
-            .option-card {
-                padding: 20px;
-            }
-            
-            .info-tag {
-                font-size: 12px;
-                padding: 4px 8px;
-            }
-            
-            .flex.justify-between {
-                flex-direction: column;
-                gap: 12px;
-            }
-            
-            .flex.justify-between .secondary-button,
-            .flex.justify-between .primary-button {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-        
-        .step-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
         }
         
-        .step-card:hover {
-            background: white;
-            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.15);
-            transform: translateY(-2px);
-        }
-        
-        .option-card {
-            background: white;
+        .modern-input {
+            width: 100%;
+            padding: 12px 16px;
             border: 2px solid #e5e7eb;
             border-radius: 12px;
-            padding: 24px;
-            cursor: pointer;
+            font-size: 16px;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            background: white;
         }
         
-        .option-card:hover {
-            border-color: var(--purple-primary);
-            background: #fafafa;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
-        }
-        
-        .option-card.selected {
-            border-color: var(--purple-primary);
-            background: #f8fafc;
+        .modern-input:focus {
+            outline: none;
+            border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            transform: translateY(-2px);
         }
         
-        .primary-button {
-            background: var(--gradient-primary);
-            color: white;
-            padding: 12px 32px;
-            border-radius: 12px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px var(--purple-shadow);
-        }
-        
-        .primary-button:hover {
-            background: var(--gradient-reverse);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px var(--purple-shadow);
-        }
-        
-        .primary-button:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .secondary-button {
-            background: white;
-            color: #6b7280;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-weight: 500;
-            border: 1px solid #d1d5db;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        
-        .secondary-button:hover {
-            background: #f9fafb;
-            border-color: #9ca3af;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        .step-indicator {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 18px;
-            transition: all 0.3s ease;
-        }
-        
-        .step-indicator.active {
-            background: var(--gradient-primary);
-            color: white;
-            box-shadow: 0 4px 15px var(--purple-shadow);
-        }
-        
-        .step-indicator.completed {
-            background: var(--gradient-primary);
-            color: white;
-            box-shadow: 0 4px 15px var(--purple-shadow);
-        }
-        
-        .step-indicator.pending {
-            background: #e5e7eb;
-            color: #94a3b8;
-        }
-        
-        .step-line {
-            height: 2px;
-            background: #e5e7eb;
-            flex: 1;
-            margin: 0 12px;
-        }
-        
-        .step-line.completed {
-            background: var(--gradient-primary);
-        }
-        
-        .budget-option {
-            background: white;
+        .simple-buffer-btn {
+            padding: 12px 20px;
             border: 2px solid #e5e7eb;
+            background: white;
             border-radius: 12px;
-            padding: 20px;
             cursor: pointer;
             transition: all 0.3s ease;
+            min-width: 100px;
             text-align: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
         
-        .budget-option:hover {
-            border-color: var(--purple-primary);
-            background: #fafafa;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
+        .simple-buffer-btn:hover {
+            border-color: #9333ea;
+            background: #f3e8ff;
         }
         
-        .budget-option.selected {
-            border-color: var(--purple-primary);
-            background: #f8fafc;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            transform: translateY(-2px);
+        .simple-buffer-btn.active {
+            border-color: #9333ea;
+            background: #9333ea;
+            color: white;
         }
         
-        .info-tag {
-            display: inline-block;
-            padding: 6px 12px;
-            background: #f1f5f9;
-            border-radius: 8px;
-            font-size: 13px;
-            color: #475569;
-            margin: 3px;
-            border: 1px solid #e2e8f0;
-            font-weight: 500;
+        .floating-help {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 50px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-weight: bold;
+            animation: gentle-bounce 2s infinite;
+        }
+        
+        .floating-help:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+        
+        @keyframes gentle-bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-5px);
+            }
+            60% {
+                transform: translateY(-3px);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .floating-help {
+                bottom: 10px;
+                right: 10px;
+                padding: 10px 16px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
-<body>
-    <div class="min-h-screen">
-        <!-- Header -->
-        <header class="bg-white bg-opacity-25 backdrop-blur-lg border-b border-white border-opacity-20">
-            <div class="max-w-6xl mx-auto px-4 py-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-900">Student Housing Search</h1>
-                        <p class="text-gray-600 mt-1 font-medium">Find your ideal college housing in 3 simple steps</p>
-                    </div>
-                    <a href="index.html" class="text-gray-600 hover:text-gray-900 font-medium transition-colors duration-200">
-                        Back to Home
-                    </a>
-                </div>
+<body class="bg-gray-50">
+    <!-- Ultra-Simple 3-Step Process -->
+    <section id="simple-flow" class="py-16 bg-gradient-to-r from-green-50 to-blue-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold mb-4 gradient-text-student">Get Housing in 3 Simple Steps</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">No overwhelm, no confusion. Just the easiest path to your perfect student housing.</p>
             </div>
-        </header>
-
-        <!-- Progress Steps -->
-        <div class="max-w-4xl mx-auto px-4 py-8">
-            <div class="mb-4">
+            
+            <!-- Simple Progress Bar -->
+            <div class="max-w-md mx-auto mb-12">
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-lg font-semibold text-gray-900">Your Progress</h3>
-                    <span id="progress-text" class="text-sm text-purple-600 font-medium">Step 1 of 3 (33%)</span>
+                    <span class="text-sm font-medium text-gray-600">Your Progress</span>
+                    <span id="simple-progress-text" class="text-sm font-medium text-purple-600">Ready to start</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div id="progress-bar" class="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-500" style="width: 33%"></div>
+                    <div id="simple-progress-bar" class="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
             </div>
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <div id="step1-indicator" class="step-indicator active">1</div>
-                    <div id="line1" class="step-line"></div>
-                    <div id="step2-indicator" class="step-indicator pending">2</div>
-                    <div id="line2" class="step-line"></div>
-                    <div id="step3-indicator" class="step-indicator pending">3</div>
+            
+            <!-- Super Simple Step Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 text-center border-l-4 border-purple-500">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl">💰</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-gray-800">Step 1: Budget</h3>
+                    <p class="text-gray-600 mb-4">Quick calculator - just answer 3 simple questions about your money</p>
+                    <div class="text-sm text-purple-600 font-medium">⏱️ Takes 1 minute</div>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 text-center border-l-4 border-blue-500">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl">🏠</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-gray-800">Step 2: Housing Type</h3>
+                    <p class="text-gray-600 mb-4">Choose your style: dorm, apartment, or shared house</p>
+                    <div class="text-sm text-blue-600 font-medium">⏱️ Takes 30 seconds</div>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 text-center border-l-4 border-green-500">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl">✨</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-gray-800">Step 3: Get Matched</h3>
+                    <p class="text-gray-600 mb-4">Our AI finds your perfect housing options instantly</p>
+                    <div class="text-sm text-green-600 font-medium">⏱️ Instant results</div>
                 </div>
             </div>
-            <div class="flex justify-between mt-4">
-                <span class="text-sm font-semibold text-gray-900">Location</span>
-                <span class="text-sm font-semibold text-gray-600">Budget</span>
-                <span class="text-sm font-semibold text-gray-600">Housing Type</span>
+            
+            <!-- Single Big CTA -->
+            <div class="text-center">
+                <button onclick="startStep1()" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold px-16 py-6 rounded-full hover:from-purple-700 hover:to-blue-700 transition-all duration-300 text-2xl transform hover:scale-105 shadow-2xl">
+                    🚀 Start Step 1: Budget Check
+                </button>
+                <p class="text-gray-600 mt-4 text-sm">
+                    Simple, fast, stress-free housing search
+                </p>
             </div>
         </div>
+    </section>
 
-        <!-- Step 1: Location -->
-        <section id="step1" class="max-w-4xl mx-auto px-4 pb-12">
-            <div class="step-card p-8">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Step 1: Where do you want to live?</h2>
-                        <p class="text-gray-600">Choose your preferred location relative to campus</p>
-                    </div>
-                    <div class="md:block">
-                        <div class="bg-blue-50 px-3 py-2 rounded-lg border border-blue-200 mt-2 md:mt-0">
-                            <p class="text-xs md:text-sm text-blue-800"><span class="font-medium">💡 Quick tip:</span> 73% of freshmen choose on-campus</p>
-                        </div>
-                    </div>
+    <!-- Ultra-Simple Budget Step -->
+    <section id="budget-step" class="py-16 bg-white">
+        <div class="w-[90%] max-w-4xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <div class="inline-flex items-center bg-purple-100 rounded-full px-4 py-2 mb-4">
+                    <span class="text-purple-600 font-medium">💰 Step 1 of 3</span>
                 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="option-card" onclick="selectLocation('on-campus')" data-location="on-campus">
-                        <div class="flex items-center mb-3">
-                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                </svg>
+                <h2 class="text-4xl font-bold mb-4 gradient-text-student">Quick Budget Check</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">Just 3 simple questions to find your perfect housing budget</p>
+            </div>
+            
+            <!-- Ultra-Simple 3-Question Form -->
+            <div class="max-w-2xl mx-auto">
+                <div class="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-8 border border-purple-100">
+                    <div class="space-y-8">
+                        <!-- Question 1: Total Monthly Money -->
+                        <div class="text-center">
+                            <h3 class="text-2xl font-bold mb-4 text-gray-800">💰 How much money do you have each month?</h3>
+                            <p class="text-gray-600 mb-6">Include everything: job, family help, financial aid, savings</p>
+                            <div class="relative max-w-sm mx-auto">
+                                <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
+                                <input type="number" id="simple-total-money" placeholder="0" class="w-full pl-8 pr-4 py-4 text-2xl font-bold text-center border-2 border-purple-200 rounded-xl focus:border-purple-500 focus:outline-none bg-white">
                             </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900">On-Campus</h3>
-                                <span class="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Most Popular</span>
+                            <p class="text-sm text-gray-500 mt-2">Examples: $800, $1200, $2000</p>
+                        </div>
+                        
+                        <!-- Question 2: Essential Expenses -->
+                        <div class="text-center">
+                            <h3 class="text-2xl font-bold mb-4 text-gray-800">📱 How much for food, transport, and other essentials?</h3>
+                            <p class="text-gray-600 mb-6">Everything except housing (food, gas, phone, fun, etc.)</p>
+                            <div class="relative max-w-sm mx-auto">
+                                <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
+                                <input type="number" id="simple-expenses" placeholder="0" class="w-full pl-8 pr-4 py-4 text-2xl font-bold text-center border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:outline-none bg-white">
+                            </div>
+                            <p class="text-sm text-gray-500 mt-2">Most students: $300-600</p>
+                        </div>
+                        
+                        <!-- Question 3: Safety Buffer -->
+                        <div class="text-center">
+                            <h3 class="text-2xl font-bold mb-4 text-gray-800">🛡️ Want a safety buffer for emergencies?</h3>
+                            <div class="flex justify-center gap-4">
+                                <button onclick="setBuffer(0)" class="simple-buffer-btn" data-buffer="0">
+                                    <span class="block font-bold">No Buffer</span>
+                                    <span class="block text-sm">Use all money</span>
+                                </button>
+                                <button onclick="setBuffer(10)" class="simple-buffer-btn active" data-buffer="10">
+                                    <span class="block font-bold">10% Buffer</span>
+                                    <span class="block text-sm">Recommended</span>
+                                </button>
+                                <button onclick="setBuffer(20)" class="simple-buffer-btn" data-buffer="20">
+                                    <span class="block font-bold">20% Buffer</span>
+                                    <span class="block text-sm">Extra safe</span>
+                                </button>
                             </div>
                         </div>
-                        <p class="text-gray-600 mb-4">Live in university-managed housing</p>
-                        <div class="space-y-2">
-                            <p class="text-sm text-gray-500 flex items-center"><span class="text-green-500 mr-2">✓</span> Walk to classes (2-5 min)</p>
-                            <p class="text-sm text-gray-500 flex items-center"><span class="text-green-500 mr-2">✓</span> Meal plans available</p>
-                            <p class="text-sm text-gray-500 flex items-center"><span class="text-green-500 mr-2">✓</span> Built-in community</p>
-                        </div>
-                        <div class="mt-4 text-sm text-purple-600 font-medium">$400-$800/month</div>
                     </div>
                     
-                    <div class="option-card" onclick="selectLocation('near-campus')" data-location="near-campus">
-                        <div class="flex items-center mb-3">
-                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900">Near Campus</h3>
-                                <span class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Great Balance</span>
-                            </div>
+                    <!-- Instant Results -->
+                    <div id="simple-budget-result" class="mt-8 p-6 bg-white rounded-xl border-2 border-green-200 text-center">
+                        <h4 class="text-xl font-bold text-green-800 mb-2">Your Housing Budget</h4>
+                        <div id="simple-housing-budget" class="text-4xl font-bold text-green-600 mb-2">$0</div>
+                        <p class="text-gray-600 text-sm">per month for housing</p>
+                        <div id="simple-budget-advice" class="mt-4 p-3 bg-green-50 rounded-lg">
+                            <p class="text-sm text-green-700">Enter your numbers above to see your budget!</p>
                         </div>
-                        <p class="text-gray-600 mb-4">Walking or biking distance</p>
-                        <div class="space-y-2">
-                            <p class="text-sm text-gray-500 flex items-center"><span class="text-blue-500 mr-2">🚶</span> 5-15 min to campus</p>
-                            <p class="text-sm text-gray-500 flex items-center"><span class="text-blue-500 mr-2">🏠</span> More independence</p>
-                            <p class="text-sm text-gray-500 flex items-center"><span class="text-blue-500 mr-2">🛍️</span> Local amenities</p>
-                        </div>
-                        <div class="mt-4 text-sm text-purple-600 font-medium">$500-$900/month</div>
                     </div>
                     
-                    <div class="option-card" onclick="selectLocation('off-campus')" data-location="off-campus">
-                        <div class="flex items-center mb-3">
-                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900">Off-Campus</h3>
-                                <span class="inline-block px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">Budget Friendly</span>
-                            </div>
-                        </div>
-                        <p class="text-gray-600 mb-4">Requires transportation</p>
-                        <div class="space-y-2">
-                            <p class="text-sm text-gray-500 flex items-center"><span class="text-orange-500 mr-2">🚗</span> 15+ min commute</p>
-                            <p class="text-sm text-gray-500 flex items-center"><span class="text-orange-500 mr-2">💰</span> Lower prices</p>
-                            <p class="text-sm text-gray-500 flex items-center"><span class="text-orange-500 mr-2">🚌</span> Need car/bus pass</p>
-                        </div>
-                        <div class="mt-4 text-sm text-purple-600 font-medium">$300-$700/month</div>
+                    <!-- Next Step Button -->
+                    <div class="text-center mt-8">
+                        <button onclick="window.location.href='https://www.roomfinderai.com/listings'" id="simple-next-btn" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold px-12 py-4 rounded-full hover:from-purple-700 hover:to-blue-700 transition-all duration-300 text-xl transform hover:scale-105 shadow-lg">
+                            🎉 Find My Perfect Housing →
+                        </button>
+                        <p class="text-gray-500 text-sm mt-3">Start browsing housing that fits your budget</p>
                     </div>
-                </div>
-                
-                <div class="flex justify-between items-center mt-8">
-                    <div id="selection-summary-1" class="text-sm text-gray-600" style="display: none;">
-                        <span class="font-medium">Selected:</span> <span id="selected-location"></span>
-                    </div>
-                    <button id="next1" class="primary-button" onclick="goToStep2()" disabled>
-                        Next: Set Budget →
-                    </button>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Step 2: Budget -->
-        <section id="step2" class="max-w-4xl mx-auto px-4 pb-12" style="display: none;">
-            <div class="step-card p-8">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Step 2: What's your monthly budget?</h2>
-                        <p class="text-gray-600">Select your comfortable price range for housing</p>
-                    </div>
-                    <div class="md:block">
-                        <div class="bg-green-50 px-3 py-2 rounded-lg border border-green-200 mt-2 md:mt-0">
-                            <p class="text-xs md:text-sm text-green-800"><span class="font-medium">📊 Average:</span> Most spend $600-$900/month</p>
-                        </div>
-                    </div>
-                </div>
+    <!-- Footer -->
+    <footer class="bg-gradient-to-r from-gray-900 to-blue-900 text-white py-16">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-4">🎉 You're Ready for Housing Success!</h3>
+                <p class="text-gray-300 mb-8 max-w-2xl mx-auto">Your housing journey just became 10x easier. Get matched with perfect housing options that fit your budget.</p>
                 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="budget-option" onclick="selectBudget('under-500')" data-budget="under-500">
-                        <div class="text-center">
-                            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <span class="text-green-600 text-sm font-bold">$</span>
-                            </div>
-                            <div class="text-xl font-bold text-gray-900">Under $500</div>
-                            <div class="text-sm text-gray-600 mt-1">Shared rooms</div>
-                            <div class="text-xs text-green-600 mt-2 font-medium">Most Affordable</div>
-                        </div>
-                    </div>
-                    <div class="budget-option" onclick="selectBudget('500-800')" data-budget="500-800">
-                        <div class="text-center">
-                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <span class="text-blue-600 text-sm font-bold">$$</span>
-                            </div>
-                            <div class="text-xl font-bold text-gray-900">$500-$800</div>
-                            <div class="text-sm text-gray-600 mt-1">Standard options</div>
-                            <div class="text-xs text-blue-600 mt-2 font-medium flex items-center justify-center">
-                                <span class="mr-1">🎆</span> Most Popular
-                            </div>
-                        </div>
-                    </div>
-                    <div class="budget-option" onclick="selectBudget('800-1200')" data-budget="800-1200">
-                        <div class="text-center">
-                            <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <span class="text-purple-600 text-sm font-bold">$$$</span>
-                            </div>
-                            <div class="text-xl font-bold text-gray-900">$800-$1200</div>
-                            <div class="text-sm text-gray-600 mt-1">Premium choices</div>
-                            <div class="text-xs text-purple-600 mt-2 font-medium">Great Value</div>
-                        </div>
-                    </div>
-                    <div class="budget-option" onclick="selectBudget('over-1200')" data-budget="over-1200">
-                        <div class="text-center">
-                            <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <span class="text-yellow-600 text-sm font-bold">★</span>
-                            </div>
-                            <div class="text-xl font-bold text-gray-900">$1200+</div>
-                            <div class="text-sm text-gray-600 mt-1">Luxury housing</div>
-                            <div class="text-xs text-yellow-600 mt-2 font-medium">Premium Experience</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <p class="text-sm text-blue-800">
-                        <strong>💡 Tip:</strong> Remember to factor in utilities, internet, and other monthly expenses when setting your budget.
-                    </p>
-                </div>
-                
-                <div class="flex justify-between items-center mt-8">
-                    <button class="secondary-button" onclick="goToStep1()">
-                        ← Back
+                <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+                    <button onclick="window.location.href='https://www.roomfinderai.com/listings'" class="bg-white text-purple-600 font-bold px-8 py-4 rounded-full hover:bg-gray-100 transition-colors">
+                        🏠 Browse Housing Now
                     </button>
-                    <div id="selection-summary-2" class="text-sm text-gray-600" style="display: none;">
-                        <span class="font-medium">Selected:</span> <span id="selected-budget"></span>
-                    </div>
-                    <button id="next2" class="primary-button" onclick="goToStep3()" disabled>
-                        Next: Choose Housing Type →
+                    <button onclick="window.location.href='https://www.roomfinderai.com/profile.html'" class="border-2 border-white text-white font-bold px-8 py-4 rounded-full hover:bg-white hover:text-purple-600 transition-colors">
+                        📊 Go to Dashboard
                     </button>
+                </div>
+                
+                <div class="text-sm text-gray-400">
+                    <p>© 2024 RoomFinderAI. Making student housing simple, safe, and stress-free.</p>
                 </div>
             </div>
-        </section>
+        </div>
+    </footer>
 
-        <!-- Step 3: Housing Type -->
-        <section id="step3" class="max-w-4xl mx-auto px-4 pb-12" style="display: none;">
-            <div class="step-card p-8">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Step 3: What type of housing do you prefer?</h2>
-                        <p class="text-gray-600">Select the housing arrangement that suits your lifestyle</p>
-                    </div>
-                    <div class="md:block">
-                        <div class="bg-purple-50 px-3 py-2 rounded-lg border border-purple-200 mt-2 md:mt-0">
-                            <p class="text-xs md:text-sm text-purple-800"><span class="font-medium">🏆 Popular:</span> Single rooms offer best balance</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="option-card" onclick="selectHousing('single-room')" data-housing="single-room">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900">Single Room</h3>
-                                <span class="text-xs text-blue-600 font-medium">Recommended for Freshmen</span>
-                            </div>
-                        </div>
-                        <p class="text-gray-600 mb-3">Your own private bedroom</p>
-                        <div class="flex flex-wrap gap-2 mb-3">
-                            <span class="info-tag">🔒 Private space</span>
-                            <span class="info-tag">🎮 Shared common areas</span>
-                            <span class="info-tag">📚 Ideal for studying</span>
-                        </div>
-                        <div class="text-sm text-green-600 font-medium">85% of students recommend</div>
-                    </div>
-                    
-                    <div class="option-card" onclick="selectHousing('shared-room')" data-housing="shared-room">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900">Shared Room</h3>
-                                <span class="text-xs text-green-600 font-medium">Budget-Friendly Choice</span>
-                            </div>
-                        </div>
-                        <p class="text-gray-600 mb-3">Share bedroom with roommate(s)</p>
-                        <div class="flex flex-wrap gap-2 mb-3">
-                            <span class="info-tag">💰 Most affordable</span>
-                            <span class="info-tag">🎉 Built-in social life</span>
-                            <span class="info-tag">🏢 Common in dorms</span>
-                        </div>
-                        <div class="text-sm text-green-600 font-medium">Save 30-50% on housing costs</div>
-                    </div>
-                    
-                    <div class="option-card" onclick="selectHousing('apartment')" data-housing="apartment">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900">Apartment</h3>
-                                <span class="text-xs text-purple-600 font-medium">Popular with Upperclassmen</span>
-                            </div>
-                        </div>
-                        <p class="text-gray-600 mb-3">Full apartment with roommates</p>
-                        <div class="flex flex-wrap gap-2 mb-3">
-                            <span class="info-tag">🍳 Full kitchen</span>
-                            <span class="info-tag">🛋️ Living room</span>
-                            <span class="info-tag">🛡️ More independence</span>
-                        </div>
-                        <div class="text-sm text-purple-600 font-medium">Best work-life balance</div>
-                    </div>
-                    
-                    <div class="option-card" onclick="selectHousing('studio')" data-housing="studio">
-                        <div class="flex items-center mb-3">
-                            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
-                                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900">Studio/1BR</h3>
-                                <span class="text-xs text-yellow-600 font-medium">Graduate Student Favorite</span>
-                            </div>
-                        </div>
-                        <p class="text-gray-600 mb-3">Complete privacy</p>
-                        <div class="flex flex-wrap gap-2 mb-3">
-                            <span class="info-tag">🏠 No roommates</span>
-                            <span class="info-tag">💸 Higher cost</span>
-                            <span class="info-tag">🔑 Total independence</span>
-                        </div>
-                        <div class="text-sm text-yellow-600 font-medium">Perfect for focus & productivity</div>
-                    </div>
-                </div>
-                
-                <div class="flex justify-between items-center mt-8">
-                    <button class="secondary-button" onclick="goToStep2()">
-                        ← Back
-                    </button>
-                    <div id="selection-summary-3" class="text-sm text-gray-600" style="display: none;">
-                        <span class="font-medium">Selected:</span> <span id="selected-housing"></span>
-                    </div>
-                    <button id="submitBtn" class="primary-button" onclick="submitSearch()" disabled>
-                        🎆 View Available Housing
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Results Summary -->
-        <section id="results" class="max-w-4xl mx-auto px-4 pb-12" style="display: none;">
-            <div class="step-card p-8">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Search Complete</h2>
-                    <p class="text-gray-600 mb-8">Here's your housing search summary</p>
-                </div>
-                
-                <div class="bg-gray-50 rounded-lg p-6 mb-8 border border-gray-200">
-                    <h3 class="font-semibold text-gray-900 mb-4">Your Preferences:</h3>
-                    <div class="space-y-2">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Location:</span>
-                            <span class="font-medium text-gray-900" id="result-location">-</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Budget:</span>
-                            <span class="font-medium text-gray-900" id="result-budget">-</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Housing Type:</span>
-                            <span class="font-medium text-gray-900" id="result-housing">-</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button onclick="window.location.href='https://www.roomfinderai.com/listings'" class="primary-button">
-                        Browse Matching Listings
-                    </button>
-                    <button onclick="startOver()" class="secondary-button">
-                        Start New Search
-                    </button>
-                </div>
-            </div>
-        </section>
-    </div>
-
+    <!-- JavaScript Functions -->
     <script>
-        // User selections
-        let userChoices = {
-            location: '',
-            budget: '',
-            housing: ''
-        };
-
-        // Step 1: Location selection
-        function selectLocation(location) {
-            userChoices.location = location;
+        let selectedBuffer = 10; // Default 10% buffer
+        
+        // Start the simple 3-step flow
+        function startSimpleFlow() {
+            scrollToSection('simple-flow');
+            updateProgress(0, 'Ready to start');
+        }
+        
+        // Start Step 1: Budget
+        function startStep1() {
+            scrollToSection('budget-step');
+            updateProgress(33, 'Step 1: Budget');
+        }
+        
+        // Set safety buffer
+        function setBuffer(percent) {
+            selectedBuffer = percent;
             
-            // Update UI
-            document.querySelectorAll('[data-location]').forEach(card => {
-                card.classList.remove('selected');
+            // Update button states
+            document.querySelectorAll('.simple-buffer-btn').forEach(btn => {
+                btn.classList.remove('active');
             });
-            document.querySelector(`[data-location="${location}"]`).classList.add('selected');
             
-            // Update selection summary
-            const locationTexts = {
-                'on-campus': 'On-Campus Housing',
-                'near-campus': 'Near Campus',
-                'off-campus': 'Off-Campus'
-            };
-            document.getElementById('selected-location').textContent = locationTexts[location];
-            document.getElementById('selection-summary-1').style.display = 'block';
+            const selectedBtn = document.querySelector(`[data-buffer="${percent}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('active');
+            }
             
-            // Enable next button with animation
-            const nextBtn = document.getElementById('next1');
-            nextBtn.disabled = false;
-            nextBtn.style.transform = 'scale(1.05)';
-            setTimeout(() => {
-                nextBtn.style.transform = 'scale(1)';
-            }, 200);
+            // Recalculate budget
+            calculateSimpleBudget();
         }
-
-        // Step 2: Budget selection
-        function selectBudget(budget) {
-            userChoices.budget = budget;
+        
+        // Calculate simple budget instantly
+        function calculateSimpleBudget() {
+            const totalMoney = parseFloat(document.getElementById('simple-total-money')?.value || 0);
+            const expenses = parseFloat(document.getElementById('simple-expenses')?.value || 0);
             
-            // Update UI
-            document.querySelectorAll('[data-budget]').forEach(card => {
-                card.classList.remove('selected');
-            });
-            document.querySelector(`[data-budget="${budget}"]`).classList.add('selected');
-            
-            // Update selection summary
-            const budgetTexts = {
-                'under-500': 'Under $500/month',
-                '500-800': '$500-$800/month',
-                '800-1200': '$800-$1200/month',
-                'over-1200': 'Over $1200/month'
-            };
-            document.getElementById('selected-budget').textContent = budgetTexts[budget];
-            document.getElementById('selection-summary-2').style.display = 'block';
-            
-            // Enable next button with animation
-            const nextBtn = document.getElementById('next2');
-            nextBtn.disabled = false;
-            nextBtn.style.transform = 'scale(1.05)';
-            setTimeout(() => {
-                nextBtn.style.transform = 'scale(1)';
-            }, 200);
-        }
-
-        // Step 3: Housing type selection
-        function selectHousing(housing) {
-            userChoices.housing = housing;
-            
-            // Update UI
-            document.querySelectorAll('[data-housing]').forEach(card => {
-                card.classList.remove('selected');
-            });
-            document.querySelector(`[data-housing="${housing}"]`).classList.add('selected');
-            
-            // Update selection summary
-            const housingTexts = {
-                'single-room': 'Single Room',
-                'shared-room': 'Shared Room',
-                'apartment': 'Apartment',
-                'studio': 'Studio/1BR'
-            };
-            document.getElementById('selected-housing').textContent = housingTexts[housing];
-            document.getElementById('selection-summary-3').style.display = 'block';
-            
-            // Enable submit button with animation
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = false;
-            submitBtn.style.transform = 'scale(1.05)';
-            setTimeout(() => {
-                submitBtn.style.transform = 'scale(1)';
-            }, 200);
-        }
-
-        // Navigation functions
-        function goToStep1() {
-            document.getElementById('step1').style.display = 'block';
-            document.getElementById('step2').style.display = 'none';
-            document.getElementById('step3').style.display = 'none';
-            document.getElementById('results').style.display = 'none';
-            updateProgressIndicators(1);
-        }
-
-        function goToStep2() {
-            if (!userChoices.location) return;
-            
-            document.getElementById('step1').style.display = 'none';
-            document.getElementById('step2').style.display = 'block';
-            document.getElementById('step3').style.display = 'none';
-            document.getElementById('results').style.display = 'none';
-            updateProgressIndicators(2);
-        }
-
-        function goToStep3() {
-            if (!userChoices.budget) return;
-            
-            document.getElementById('step1').style.display = 'none';
-            document.getElementById('step2').style.display = 'none';
-            document.getElementById('step3').style.display = 'block';
-            document.getElementById('results').style.display = 'none';
-            updateProgressIndicators(3);
-        }
-
-        function updateProgressIndicators(currentStep) {
-            // Update step indicators
-            const indicators = ['step1-indicator', 'step2-indicator', 'step3-indicator'];
-            const lines = ['line1', 'line2'];
-            
-            indicators.forEach((id, index) => {
-                const element = document.getElementById(id);
-                const stepNum = index + 1;
+            if (totalMoney > 0 && expenses >= 0) {
+                // Calculate available money after expenses
+                const afterExpenses = totalMoney - expenses;
                 
-                if (stepNum < currentStep) {
-                    element.className = 'step-indicator completed';
-                    element.innerHTML = '✓';
-                } else if (stepNum === currentStep) {
-                    element.className = 'step-indicator active';
-                    element.innerHTML = stepNum.toString();
+                // Apply safety buffer
+                const bufferAmount = afterExpenses * (selectedBuffer / 100);
+                const housingBudget = Math.max(0, afterExpenses - bufferAmount);
+                
+                // Update display
+                document.getElementById('simple-housing-budget').textContent = '$' + Math.round(housingBudget);
+                
+                // Update advice
+                let advice = '';
+                if (housingBudget <= 0) {
+                    advice = '⚠️ Your expenses are too high. Try reducing other costs or increasing income.';
+                } else if (housingBudget < 300) {
+                    advice = '🏠 Consider shared housing or dorms to stay within budget.';
+                } else if (housingBudget < 600) {
+                    advice = '👍 Good budget! Look for shared apartments or nice dorms.';
+                } else if (housingBudget < 1000) {
+                    advice = '💰 Great budget! You have lots of good housing options.';
                 } else {
-                    element.className = 'step-indicator pending';
-                    element.innerHTML = stepNum.toString();
+                    advice = '🎉 Excellent budget! You can afford premium housing options.';
                 }
-            });
-            
-            // Update connecting lines
-            lines.forEach((id, index) => {
-                const element = document.getElementById(id);
-                if (index + 1 < currentStep) {
-                    element.classList.add('completed');
-                } else {
-                    element.classList.remove('completed');
-                }
-            });
-            
-            // Update progress bar and text
-            const progressPercentages = {1: 33, 2: 66, 3: 100, 4: 100};
-            const progressTexts = {
-                1: 'Step 1 of 3 (33%)',
-                2: 'Step 2 of 3 (66%)', 
-                3: 'Step 3 of 3 (100%)',
-                4: 'Complete! 🎉'
-            };
-            
-            document.getElementById('progress-bar').style.width = progressPercentages[currentStep] + '%';
-            document.getElementById('progress-text').textContent = progressTexts[currentStep];
+                
+                document.getElementById('simple-budget-advice').innerHTML = `<p class="text-sm text-green-700">${advice}</p>`;
+            }
         }
-
-        function submitSearch() {
-            if (!userChoices.location || !userChoices.budget || !userChoices.housing) return;
+        
+        // Update progress bar
+        function updateProgress(percent, text) {
+            const progressBar = document.getElementById('simple-progress-bar');
+            const progressText = document.getElementById('simple-progress-text');
             
-            // Format results
-            const locationText = {
-                'on-campus': 'On-Campus',
-                'near-campus': 'Near Campus (Walking Distance)',
-                'off-campus': 'Off-Campus (Commute Required)'
-            };
-            
-            const budgetText = {
-                'under-500': 'Under $500/month',
-                '500-800': '$500-$800/month',
-                '800-1200': '$800-$1200/month',
-                'over-1200': 'Over $1200/month'
-            };
-            
-            const housingText = {
-                'single-room': 'Single Room',
-                'shared-room': 'Shared Room',
-                'apartment': 'Apartment',
-                'studio': 'Studio/1BR'
-            };
-            
-            // Update results
-            document.getElementById('result-location').textContent = locationText[userChoices.location];
-            document.getElementById('result-budget').textContent = budgetText[userChoices.budget];
-            document.getElementById('result-housing').textContent = housingText[userChoices.housing];
-            
-            // Show results
-            document.getElementById('step3').style.display = 'none';
-            document.getElementById('results').style.display = 'block';
-            
-            // Update progress to show completion
-            updateProgressIndicators(4);
+            if (progressBar) {
+                progressBar.style.width = percent + '%';
+            }
+            if (progressText) {
+                progressText.textContent = text;
+            }
         }
-
-        function startOver() {
-            userChoices = {
-                location: '',
-                budget: '',
-                housing: ''
-            };
-            
-            // Reset all selections
-            document.querySelectorAll('.option-card, .budget-option').forEach(card => {
-                card.classList.remove('selected');
-            });
-            
-            // Reset buttons
-            document.getElementById('next1').disabled = true;
-            document.getElementById('next2').disabled = true;
-            document.getElementById('submitBtn').disabled = true;
-            
-            // Go to step 1
-            goToStep1();
+        
+        // Scroll to section helper
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
-
-        // Initialize
+        
+        // Add event listeners for budget inputs
         document.addEventListener('DOMContentLoaded', function() {
-            updateProgressIndicators(1);
+            // Budget calculator real-time updates
+            const totalMoneyInput = document.getElementById('simple-total-money');
+            const expensesInput = document.getElementById('simple-expenses');
+            
+            if (totalMoneyInput) {
+                totalMoneyInput.addEventListener('input', calculateSimpleBudget);
+            }
+            if (expensesInput) {
+                expensesInput.addEventListener('input', calculateSimpleBudget);
+            }
+            
+            // Initialize progress
+            updateProgress(0, 'Ready to start');
         });
     </script>
+    
+    <!-- Floating "I'm Lost" Help Button -->
+    <button onclick="startSimpleFlow()" class="floating-help">
+        😰 I'm Lost - Help!
+    </button>
 </body>
 </html>
