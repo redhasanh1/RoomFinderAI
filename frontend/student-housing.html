@@ -226,36 +226,36 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                 <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 text-center border-l-4 border-purple-500">
                     <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl">💰</span>
+                        <span class="text-2xl font-bold text-purple-600">$</span>
                     </div>
                     <h3 class="text-xl font-bold mb-2 text-gray-800">Step 1: Budget</h3>
                     <p class="text-gray-600 mb-4">Quick calculator - just answer 3 simple questions about your money</p>
-                    <div class="text-sm text-purple-600 font-medium">⏱️ Takes 1 minute</div>
+                    <div class="text-sm text-purple-600 font-medium">Takes 1 minute</div>
                 </div>
                 
                 <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 text-center border-l-4 border-blue-500">
                     <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl">🏠</span>
+                        <span class="text-2xl font-bold text-blue-600">H</span>
                     </div>
                     <h3 class="text-xl font-bold mb-2 text-gray-800">Step 2: Housing Type</h3>
                     <p class="text-gray-600 mb-4">Choose your style: dorm, apartment, or shared house</p>
-                    <div class="text-sm text-blue-600 font-medium">⏱️ Takes 30 seconds</div>
+                    <div class="text-sm text-blue-600 font-medium">Takes 30 seconds</div>
                 </div>
                 
                 <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 text-center border-l-4 border-green-500">
                     <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl">✨</span>
+                        <span class="text-2xl font-bold text-green-600">M</span>
                     </div>
                     <h3 class="text-xl font-bold mb-2 text-gray-800">Step 3: Get Matched</h3>
                     <p class="text-gray-600 mb-4">Our AI finds your perfect housing options instantly</p>
-                    <div class="text-sm text-green-600 font-medium">⏱️ Instant results</div>
+                    <div class="text-sm text-green-600 font-medium">Instant results</div>
                 </div>
             </div>
             
             <!-- Single Big CTA -->
             <div class="text-center">
                 <button onclick="startStep1()" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold px-16 py-6 rounded-full hover:from-purple-700 hover:to-blue-700 transition-all duration-300 text-2xl transform hover:scale-105 shadow-2xl">
-                    🚀 Start Step 1: Budget Check
+                    Start Step 1: Budget Check
                 </button>
                 <p class="text-gray-600 mt-4 text-sm">
                     Simple, fast, stress-free housing search
@@ -269,7 +269,7 @@
         <div class="w-[90%] max-w-4xl mx-auto px-4">
             <div class="text-center mb-12">
                 <div class="inline-flex items-center bg-purple-100 rounded-full px-4 py-2 mb-4">
-                    <span class="text-purple-600 font-medium">💰 Step 1 of 3</span>
+                    <span class="text-purple-600 font-medium">Step 1 of 3</span>
                 </div>
                 <h2 class="text-4xl font-bold mb-4 gradient-text-student">Quick Budget Check</h2>
                 <p class="text-xl text-gray-600 max-w-2xl mx-auto">Just 3 simple questions to find your perfect housing budget</p>
@@ -281,7 +281,7 @@
                     <div class="space-y-8">
                         <!-- Question 1: Total Monthly Money -->
                         <div class="text-center">
-                            <h3 class="text-2xl font-bold mb-4 text-gray-800">💰 How much money do you have each month?</h3>
+                            <h3 class="text-2xl font-bold mb-4 text-gray-800">How much money do you have each month?</h3>
                             <p class="text-gray-600 mb-6">Include everything: job, family help, financial aid, savings</p>
                             <div class="relative max-w-sm mx-auto">
                                 <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
@@ -292,7 +292,7 @@
                         
                         <!-- Question 2: Essential Expenses -->
                         <div class="text-center">
-                            <h3 class="text-2xl font-bold mb-4 text-gray-800">📱 How much for food, transport, and other essentials?</h3>
+                            <h3 class="text-2xl font-bold mb-4 text-gray-800">How much for food, transport, and other essentials?</h3>
                             <p class="text-gray-600 mb-6">Everything except housing (food, gas, phone, fun, etc.)</p>
                             <div class="relative max-w-sm mx-auto">
                                 <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
@@ -303,7 +303,7 @@
                         
                         <!-- Question 3: Safety Buffer -->
                         <div class="text-center">
-                            <h3 class="text-2xl font-bold mb-4 text-gray-800">🛡️ Want a safety buffer for emergencies?</h3>
+                            <h3 class="text-2xl font-bold mb-4 text-gray-800">Want a safety buffer for emergencies?</h3>
                             <div class="flex justify-center gap-4">
                                 <button onclick="setBuffer(0)" class="simple-buffer-btn" data-buffer="0">
                                     <span class="block font-bold">No Buffer</span>
@@ -334,7 +334,7 @@
                     <!-- Next Step Button -->
                     <div class="text-center mt-8">
                         <button onclick="window.location.href='https://www.roomfinderai.com/listings'" id="simple-next-btn" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold px-12 py-4 rounded-full hover:from-purple-700 hover:to-blue-700 transition-all duration-300 text-xl transform hover:scale-105 shadow-lg">
-                            🎉 Find My Perfect Housing →
+                            Find My Perfect Housing
                         </button>
                         <p class="text-gray-500 text-sm mt-3">Start browsing housing that fits your budget</p>
                     </div>
@@ -347,15 +347,15 @@
     <footer class="bg-gradient-to-r from-gray-900 to-blue-900 text-white py-16">
         <div class="w-[90%] max-w-7xl mx-auto px-4">
             <div class="text-center">
-                <h3 class="text-2xl font-bold mb-4">🎉 You're Ready for Housing Success!</h3>
+                <h3 class="text-2xl font-bold mb-4">You're Ready for Housing Success!</h3>
                 <p class="text-gray-300 mb-8 max-w-2xl mx-auto">Your housing journey just became 10x easier. Get matched with perfect housing options that fit your budget.</p>
                 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
                     <button onclick="window.location.href='https://www.roomfinderai.com/listings'" class="bg-white text-purple-600 font-bold px-8 py-4 rounded-full hover:bg-gray-100 transition-colors">
-                        🏠 Browse Housing Now
+                        Browse Housing Now
                     </button>
                     <button onclick="window.location.href='https://www.roomfinderai.com/profile.html'" class="border-2 border-white text-white font-bold px-8 py-4 rounded-full hover:bg-white hover:text-purple-600 transition-colors">
-                        📊 Go to Dashboard
+                        Go to Dashboard
                     </button>
                 </div>
                 
@@ -419,15 +419,15 @@
                 // Update advice
                 let advice = '';
                 if (housingBudget <= 0) {
-                    advice = '⚠️ Your expenses are too high. Try reducing other costs or increasing income.';
+                    advice = 'Warning: Your expenses are too high. Try reducing other costs or increasing income.';
                 } else if (housingBudget < 300) {
-                    advice = '🏠 Consider shared housing or dorms to stay within budget.';
+                    advice = 'Consider shared housing or dorms to stay within budget.';
                 } else if (housingBudget < 600) {
-                    advice = '👍 Good budget! Look for shared apartments or nice dorms.';
+                    advice = 'Good budget! Look for shared apartments or nice dorms.';
                 } else if (housingBudget < 1000) {
-                    advice = '💰 Great budget! You have lots of good housing options.';
+                    advice = 'Great budget! You have lots of good housing options.';
                 } else {
-                    advice = '🎉 Excellent budget! You can afford premium housing options.';
+                    advice = 'Excellent budget! You can afford premium housing options.';
                 }
                 
                 document.getElementById('simple-budget-advice').innerHTML = `<p class="text-sm text-green-700">${advice}</p>`;
@@ -475,7 +475,7 @@
     
     <!-- Floating "I'm Lost" Help Button -->
     <button onclick="startSimpleFlow()" class="floating-help">
-        😰 I'm Lost - Help!
+        I'm Lost - Help!
     </button>
 </body>
 </html>
