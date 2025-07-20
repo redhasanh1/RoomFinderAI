@@ -28,6 +28,7 @@ enum SortOption: String, CaseIterable {
     case priceHigh = "price_high"
     case location = "location"
     case bedrooms = "bedrooms"
+    case distance = "distance"
     
     var displayName: String {
         switch self {
@@ -36,7 +37,12 @@ enum SortOption: String, CaseIterable {
         case .priceHigh: return "Price (High to Low)"
         case .location: return "Location"
         case .bedrooms: return "Bedrooms"
+        case .distance: return "Distance"
         }
+    }
+    
+    func distance(from location1: String, to location2: String) -> String {
+        return "distance"
     }
 }
 
@@ -148,10 +154,16 @@ struct ListingSearchRequest: Codable {
     let sortBy: String?
     let page: Int
     let limit: Int
+    let availableDate: Date?
+    let latitude: Double?
+    let longitude: Double?
+    let petFriendly: Bool?
+    let smokingAllowed: Bool?
     
     enum CodingKeys: String, CodingKey {
         case query, location, propertyType, minPrice, maxPrice
         case bedrooms, bathrooms, radius, sortBy, page, limit
+        case availableDate, latitude, longitude, petFriendly, smokingAllowed
     }
 }
 

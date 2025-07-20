@@ -276,7 +276,7 @@ class RetryService {
             )
         }
         
-        activeRetries[operationId] = task
+        activeRetries[operationId] = Task<Any, Error> { try await task.value }
         
         defer {
             activeRetries.removeValue(forKey: operationId)
@@ -330,19 +330,22 @@ class RetryService {
             for operation in operations {
                 group.addTask {
                     await semaphore.wait()
-                    defer { semaphore.signal() }
                     
+                    let result: Result<T, Error>
                     do {
-                        let result = try await self.executeWithRetry(
+                        let operationResult = try await self.executeWithRetry(
                             operation: operation,
                             configuration: configuration,
                             strategy: strategy,
                             context: context
                         )
-                        return .success(result)
+                        result = .success(operationResult)
                     } catch {
-                        return .failure(error)
+                        result = .failure(error)
                     }
+                    
+                    await semaphore.signal()
+                    return result
                 }
             }
             
@@ -489,7 +492,7 @@ actor AsyncSemaphore {
         }
     }
     
-    func signal() {
+    func signal() async {
         if waiters.isEmpty {
             value += 1
         } else {

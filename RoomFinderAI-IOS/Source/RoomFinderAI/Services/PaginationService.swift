@@ -89,6 +89,61 @@ class PaginationManager<T>: ObservableObject {
         hasMorePages = true
         await loadNextPage()
     }
+    
+    func loadInitialPage() async {
+        await refresh()
+    }
+    
+    func updateFilters(_ filters: [String: Any]) async {
+        initialRequest = PaginationRequest(
+            page: initialRequest.page,
+            size: initialRequest.size,
+            sortBy: initialRequest.sortBy,
+            sortOrder: initialRequest.sortOrder,
+            filters: filters
+        )
+        await refresh()
+    }
+    
+    func loadPreviousPage() async {
+        // Previous page functionality would need to be implemented based on your data source
+        // For now, this is a no-op since most pagination goes forward only
+    }
+    
+    var totalItems: Int {
+        return items.count // Simple implementation
+    }
+    
+    var totalPages: Int {
+        let pageSize = configuration.pageSize
+        return max(1, (totalItems + pageSize - 1) / pageSize)
+    }
+    
+    var hasNext: Bool {
+        return hasMorePages
+    }
+    
+    var hasPrevious: Bool {
+        return currentPage > 1
+    }
+    
+    func canLoadMore() -> Bool {
+        return hasMorePages && !isLoading
+    }
+    
+    func getLoadingState() -> PaginationState {
+        if isLoading {
+            return currentPage == 0 ? .loading : .loadingMore
+        } else if let error = errorMessage {
+            return .error(NSError(domain: "PaginationError", code: 0, userInfo: [NSLocalizedDescriptionKey: error]))
+        } else if !hasMorePages {
+            return .complete
+        } else {
+            return .idle
+        }
+    }
+    
+    @Published var state: PaginationState = .idle
 }
 
 // MARK: - Pagination Configuration
