@@ -10,6 +10,7 @@ public class ApiConfig {
     }
     
     // Local development configuration values
+    private static final String LOCAL_API_BASE_URL = "http://10.0.2.2:3000/";
     private static final String LOCAL_OPENAI_API_KEY = "sk-proj-CbQtehx5UM0V9mXWrdZnM-hP3l98a0ZVguNWb51K7G63M0dfChAziWYeIO_AOPE2cEnVGOcwyT3BlbkFJliQDGy85OmZ3UGhQS7RSltE9YKO_5qrdLaLEweqkbxs-dDtMy3FMf6Msuot00O58p9L9XQBucA";
     private static final String LOCAL_SUPABASE_URL = "https://fkktwhjybuflxqzopaex.supabase.co/";
     private static final String LOCAL_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs";
@@ -49,6 +50,20 @@ public class ApiConfig {
     // Brevo Configuration
     public static String getBrevoApiKey() {
         return useLocalConfig() ? LOCAL_BREVO_API_KEY : BuildConfig.BREVO_API_KEY;
+    }
+    
+    // API Base URL Configuration
+    public static String getApiBaseUrl() {
+        if (useLocalConfig()) {
+            return LOCAL_API_BASE_URL;
+        }
+        // Check if API_BASE_URL is defined in BuildConfig
+        try {
+            return BuildConfig.class.getField("API_BASE_URL").get(null).toString();
+        } catch (Exception e) {
+            // Fallback to your production URL
+            return "https://roomfinderai-production.up.railway.app/";
+        }
     }
     
     // Validation methods
