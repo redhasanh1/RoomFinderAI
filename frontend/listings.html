@@ -1932,7 +1932,15 @@
                 }
             });
             
-            await displayListings();
+            // Load listings with error handling
+            try {
+                console.log('🔄 Attempting to load listings automatically...');
+                await displayListings();
+                console.log('✅ Listings loaded successfully in initializeListingsPage()');
+            } catch (error) {
+                console.error('❌ Failed to load listings in initializeListingsPage():', error);
+                // Don't throw the error - let the fallback mechanism handle it
+            }
         }
 
 
@@ -4972,7 +4980,43 @@
                 });
             });
             
-            // Note: updateListingCount will be called by displayListings() in initializeListingsPage()
+            // Fallback mechanism to ensure listings load automatically
+            console.log('🔄 Setting up fallback listings loading...');
+            
+            // Wait a moment for main initialization, then load as fallback
+            setTimeout(async () => {
+                try {
+                    // Check if listings are already loaded
+                    const container = document.getElementById('listingsContainer');
+                    const hasListings = container && container.children.length > 0;
+                    
+                    if (!hasListings) {
+                        console.log('⚡ Fallback: Loading listings (main initialization may have failed)');
+                        await displayListings();
+                        console.log('✅ Fallback listings loading successful');
+                    } else {
+                        console.log('✅ Listings already loaded, fallback not needed');
+                    }
+                } catch (error) {
+                    console.error('❌ Fallback listings loading failed:', error);
+                }
+            }, 2000); // Wait 2 seconds for main initialization
+            
+            // Safety timeout - force load after 5 seconds if still no listings
+            setTimeout(async () => {
+                try {
+                    const container = document.getElementById('listingsContainer');
+                    const hasListings = container && container.children.length > 0;
+                    
+                    if (!hasListings) {
+                        console.log('🚨 Safety timeout: Force loading listings after 5 seconds');
+                        await displayListings();
+                        console.log('✅ Safety timeout listings loading successful');
+                    }
+                } catch (error) {
+                    console.error('❌ Safety timeout listings loading failed:', error);
+                }
+            }, 5000); // 5-second safety timeout
         });
     </script>
     
