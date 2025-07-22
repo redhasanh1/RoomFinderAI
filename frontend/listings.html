@@ -1054,11 +1054,11 @@
 </head>
 <body class="flex flex-col min-h-screen">
     <!-- Header -->
-    <header class="sticky top-0 premium-header z-50">
+    <header id="header" class="fixed top-0 w-full premium-header z-50">
         <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
             <!-- Mobile Layout -->
             <div class="flex items-center justify-between w-full md:w-auto">
-                <div class="text-xl md:text-2xl font-bold gradient-text">RoomFinderAI</div>
+                <div class="text-xl md:text-2xl font-bold brand-logo font-display">RoomFinderAI</div>
                 
                 <!-- Mobile Menu Button -->
                 <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
@@ -1071,7 +1071,7 @@
             <!-- Desktop Navigation -->
             <div class="desktop-nav hidden md:flex items-center space-x-8">
                 <!-- Home - Standalone -->
-                <a href="/index" class="nav-item">Home</a>
+                <a href="index.html" class="nav-item">Home</a>
                 
                 <!-- Browse Dropdown -->
                 <div class="dropdown">
@@ -1079,10 +1079,10 @@
                         Browse <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="dropdown-menu" id="browse-dropdown">
-                        <a href="/listings" class="dropdown-item">Browse Listings</a>
-                        <a href="/sublease" class="dropdown-item">Sublease Property</a>
+                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
+                        <a href="sublease.html" class="dropdown-item">Sublease Property</a>
                         <a href="#add-listing" class="dropdown-item" onclick="document.querySelector('#listingForm').scrollIntoView()">Add Listing</a>
-                        <a href="/student-housing" class="dropdown-item">Student Housing</a>
+                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
                     </div>
                 </div>
                 
@@ -1092,10 +1092,10 @@
                         Tools <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="dropdown-menu" id="tools-dropdown">
-                        <a href="/ai-negotiator" class="dropdown-item">AI Negotiator</a>
-                        <a href="/pricing" class="dropdown-item">Pricing Plans</a>
-                        <a href="/legal" class="dropdown-item">Legal Help</a>
-                        <a href="/mortgage" class="dropdown-item">Mortgage Tools</a>
+                        <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
+                        <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
+                        <a href="legal.html" class="dropdown-item">Legal Help</a>
+                        <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
                     </div>
                 </div>
                 
@@ -1105,9 +1105,9 @@
                         About <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="dropdown-menu" id="about-dropdown">
-                        <a href="/index#about" class="dropdown-item">About Us</a>
-                        <a href="/index#contact" class="dropdown-item">Contact</a>
-                        <a href="/support" class="dropdown-item">Support</a>
+                        <a href="index.html#about" class="dropdown-item">About Us</a>
+                        <a href="index.html#contact" class="dropdown-item">Contact</a>
+                        <a href="support.html" class="dropdown-item">Support</a>
                     </div>
                 </div>
             </div>
@@ -1123,12 +1123,12 @@
             <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
             <div class="mobile-menu-content">
                 <div class="mobile-menu-header">
-                    <div class="text-lg font-bold gradient-text">RoomFinderAI</div>
+                    <div class="text-lg font-bold brand-logo font-display">RoomFinderAI</div>
                     <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
                 </div>
                 
                 <div class="mobile-menu-items">
-                    <a href="/index" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
+                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
                     
                     <!-- Browse Section -->
                     <div class="mobile-section">
@@ -1136,10 +1136,10 @@
                             🔍 Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
                         </button>
                         <div class="mobile-section-content" id="browse-section">
-                            <a href="/listings" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
-                            <a href="/sublease" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
+                            <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
+                            <a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
                             <a href="#add-listing" class="mobile-menu-item" onclick="closeMobileMenu(); document.querySelector('#listingForm').scrollIntoView()">Add Listing</a>
-                            <a href="/student-housing" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
+                            <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
                         </div>
                     </div>
                     
@@ -1149,10 +1149,10 @@
                             🛠️ Tools <span class="mobile-arrow" id="tools-arrow">▼</span>
                         </button>
                         <div class="mobile-section-content" id="tools-section">
-                            <a href="/ai-negotiator" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
-                            <a href="/pricing" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing Plans</a>
-                            <a href="/legal" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Help</a>
-                            <a href="/mortgage" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
+                            <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
+                            <a href="pricing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing Plans</a>
+                            <a href="legal.html" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Help</a>
+                            <a href="mortgage.html" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
                         </div>
                     </div>
                     
@@ -1162,14 +1162,14 @@
                             ℹ️ About <span class="mobile-arrow" id="about-arrow">▼</span>
                         </button>
                         <div class="mobile-section-content" id="about-section">
-                            <a href="/index#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
-                            <a href="/index#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
-                            <a href="/support" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
+                            <a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
+                            <a href="index.html#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
+                            <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
                         </div>
                     </div>
                     
                     <!-- Mobile Auth -->
-                    <a href="/login" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
+                    <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
                 </div>
             </div>
         </div>
