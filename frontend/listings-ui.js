@@ -160,13 +160,13 @@ export function createListingCard(listing) {
             <p class="listing-description text-gray-600 text-sm mb-4 line-clamp-2">${sanitizeHtml(listing.description || 'No description provided')}</p>
             <div class="flex space-x-2">
                 <button 
-                    class="view-details-btn flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-semibold shadow-md hover:shadow-lg"
+                    class="view-details-btn flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-colors duration-200 font-semibold shadow-md hover:shadow-lg"
                     data-listing='${JSON.stringify(listing)}'
                     title="View full details">
                     View Details
                 </button>
                 <button 
-                    class="chat-btn flex-1 bg-green-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-semibold shadow-md hover:shadow-lg ${hasOwner ? 'hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'}"
+                    class="chat-btn flex-1 ${hasOwner ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition-colors duration-200 font-semibold shadow-md hover:shadow-lg"
                     data-listing='${JSON.stringify(listing)}'
                     ${hasOwner ? '' : 'disabled'}
                     title="${hasOwner ? 'Start conversation with owner' : 'No owner specified for this listing'}">
