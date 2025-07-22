@@ -496,13 +496,70 @@ app.post('/api/listings', (req, res) => {
     }
 });
 
+// Transform listing data to match Android model
+function transformListingForAndroid(listing) {
+    return {
+        id: listing.id,
+        title: listing.title,
+        description: listing.description,
+        price: listing.price,
+        location: listing.city, // Map city to location
+        address: `${listing.street || ''}, ${listing.city || ''} ${listing.postal_code || listing.postalCode || ''}`.trim(),
+        bedrooms: listing.bedrooms,
+        bathrooms: listing.bathrooms || 1, // Default to 1 if not specified
+        imageUrl: listing.media && listing.media.length > 0 ? listing.media[0] : null,
+        propertyType: listing.house_type || listing.houseType, // Handle both snake_case and camelCase
+        available: true, // Default to available
+        createdAt: listing.created_at || listing.createdAt,
+        updatedAt: listing.updated_at || listing.updatedAt || listing.created_at || listing.createdAt
+    };
+}
+
 // API: Get all listings
-app.get('/api/listings', (req, res) => {
+app.get('/api/listings', async (req, res) => {
     try {
-        res.json({ listings });
+        // Check if Supabase is connected
+        if (!supabase) {
+            return res.status(500).json({ 
+                success: false,
+                data: null,
+                message: 'Database not connected'
+            });
+        }
+
+        // Fetch listings from Supabase
+        const { data: dbListings, error } = await supabase
+            .from('listings')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching listings from Supabase:', error);
+            // Fallback to in-memory listings if database fetch fails
+            const transformedListings = listings.map(transformListingForAndroid);
+            return res.json({ 
+                success: true,
+                data: transformedListings,
+                message: 'Listings retrieved from cache'
+            });
+        }
+
+        // Transform listings to match Android model
+        const transformedListings = (dbListings || []).map(transformListingForAndroid);
+        
+        // Return in the format expected by Android app
+        res.json({ 
+            success: true,
+            data: transformedListings,
+            message: 'Listings retrieved successfully'
+        });
     } catch (error) {
         console.error('Error in /api/listings:', error.message);
-        res.status(500).json({ error: 'Failed to retrieve listings' });
+        res.status(500).json({ 
+            success: false,
+            data: null,
+            message: 'Failed to retrieve listings'
+        });
     }
 });
 
@@ -559,6 +616,79 @@ app.put('/api/listings/:id', (req, res) => {
     } catch (error) {
         console.error('Error in PUT /api/listings/:id:', error.message);
         res.status(500).json({ error: 'Failed to update listing' });
+    }
+});
+
+// API: Search listings
+app.post('/api/listings/search', async (req, res) => {
+    try {
+        const { query } = req.body;
+        
+        // Check if Supabase is connected
+        if (!supabase) {
+            return res.status(500).json({ 
+                success: false,
+                data: null,
+                message: 'Database not connected'
+            });
+        }
+        
+        if (!query || query.trim() === '') {
+            // Return all listings if no query
+            const { data: dbListings, error } = await supabase
+                .from('listings')
+                .select('*')
+                .order('created_at', { ascending: false });
+                
+            if (error) {
+                console.error('Error fetching listings:', error);
+                return res.status(500).json({
+                    success: false,
+                    data: null,
+                    message: 'Failed to fetch listings'
+                });
+            }
+            
+            const transformedListings = (dbListings || []).map(transformListingForAndroid);
+            return res.json({
+                success: true,
+                data: transformedListings,
+                message: 'All listings returned'
+            });
+        }
+        
+        const searchTerm = query.toLowerCase().trim();
+        
+        // Use Supabase full-text search or ILIKE for searching
+        const { data: dbListings, error } = await supabase
+            .from('listings')
+            .select('*')
+            .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,street.ilike.%${searchTerm}%,house_type.ilike.%${searchTerm}%`)
+            .order('created_at', { ascending: false });
+            
+        if (error) {
+            console.error('Error searching listings:', error);
+            return res.status(500).json({
+                success: false,
+                data: null,
+                message: 'Search failed'
+            });
+        }
+        
+        const transformedListings = (dbListings || []).map(transformListingForAndroid);
+        
+        res.json({
+            success: true,
+            data: transformedListings,
+            message: `Found ${transformedListings.length} listings`
+        });
+    } catch (error) {
+        console.error('Error in search:', error.message);
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: 'Search failed'
+        });
     }
 });
 
