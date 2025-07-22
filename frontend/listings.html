@@ -858,11 +858,7 @@
             border-radius: 0.5rem;
             background-color: #e5e7eb;
         }
-        .listing-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
+        /* Grid layout handled by Tailwind classes */
         #map {
             height: 400px;
             width: 100%;
@@ -1498,6 +1494,7 @@
             <!-- Map Container (Initially Hidden) -->
             <div id="mapContainer" class="hidden">
                 <div id="map" class="h-96 rounded-xl overflow-hidden"></div>
+                <p id="map-error" class="text-red-600 text-center mt-4 hidden">Failed to load map. Please check your connection or try again later.</p>
             </div>
             
             <!-- Empty State -->
@@ -2284,16 +2281,22 @@
         // Display listings
         async function displayListings() {
             console.log('🔄 Starting displayListings function');
+            
+            // Show loading state
+            updateListingCount(0, false, true);
+            
             let listings = await fetchListings();
             console.log('📋 Fetched listings:', listings);
             
             const container = document.getElementById('listingsContainer');
             container.innerHTML = '';
 
+            // Update listing count with actual data
+            updateListingCount(listings.length, false);
+
             if (listings.length === 0) {
-                container.innerHTML = '<p class="text-gray-600 text-center mb-4">No listings available in database.</p>';
                 console.log('📝 No listings found in database');
-                return;
+                return; // updateListingCount already handles empty state
             }
 
             listings.forEach(listing => {
@@ -4923,10 +4926,23 @@
         }
 
         // Enhanced Listing Count Update
-        function updateListingCount(count, isFiltered = false) {
+        function updateListingCount(count, isFiltered = false, isLoading = false) {
             const countElement = document.getElementById('listingCount');
             const emptyState = document.getElementById('emptyState');
             const listingsContainer = document.getElementById('listingsContainer');
+            
+            if (isLoading) {
+                countElement.textContent = 'Loading properties...';
+                emptyState.classList.add('hidden');
+                listingsContainer.classList.remove('hidden');
+                // Show loading skeleton
+                listingsContainer.innerHTML = `
+                    <div class="loading-skeleton h-64 rounded-xl"></div>
+                    <div class="loading-skeleton h-64 rounded-xl"></div>
+                    <div class="loading-skeleton h-64 rounded-xl"></div>
+                `;
+                return;
+            }
             
             if (count === 0) {
                 emptyState.classList.remove('hidden');
@@ -4942,9 +4958,6 @@
 
         // Initialize enhanced features when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            // Set initial listing count
-            updateListingCount(0);
-            
             // Initialize view mode
             setViewMode('grid');
             
@@ -4958,6 +4971,8 @@
                     }
                 });
             });
+            
+            // Note: updateListingCount will be called by displayListings() in initializeListingsPage()
         });
     </script>
     
