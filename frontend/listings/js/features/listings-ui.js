@@ -381,7 +381,7 @@ function populateModalContent(listing) {
                 <div class="flex space-x-3">
                     <button 
                         onclick="openChatModal('${listing.id}', '${sanitizeText(listing.title)}')"
-                        class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors"
+                        class="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
                     >
                         Contact Owner
                     </button>
