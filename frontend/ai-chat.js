@@ -481,7 +481,7 @@ class AIChatHandler {
         }
 
         // Create HTML for the listings
-        let listingsHTML = '<h4 class="text-sm font-semibold text-gray-700 mb-3">🏠 Matching Listings</h4>';
+        let listingsHTML = '<h4 class="text-sm font-semibold text-gray-700 mb-3">Matching Listings</h4>';
         
         listings.slice(0, 5).forEach((listing) => {
             const titleText = listing.title || 'Untitled Property';
@@ -494,7 +494,7 @@ class AIChatHandler {
                 <div class="bg-gray-50 rounded-lg p-3 mb-3 border border-gray-200 hover:bg-gray-100 transition-colors">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-800">🏠 ${titleText}</p>
+                            <p class="text-sm font-medium text-gray-800">${titleText}</p>
                             <p class="text-xs text-gray-600 mt-1">📍 ${cityText}${streetText}</p>
                             <p class="text-xs text-blue-600 font-medium">💰 ${priceText} • ${typeText}</p>
                             <p class="text-xs text-gray-400 mt-1">ID: ${listing.id}</p>
@@ -560,7 +560,7 @@ class AIChatHandler {
                 const streetText = listing.street ? ` - ${listing.street}` : '';
                 const priceText = listing.price ? ` - $${listing.price}` : '';
                 const typeText = listing.house_type ? ` (${listing.house_type})` : '';
-                this.appendMessage('AI', `🏠 ${titleText} - ${cityText}${streetText}${priceText}${typeText}`, 'left');
+                this.appendMessage('AI', `${titleText} - ${cityText}${streetText}${priceText}${typeText}`, 'left');
             }
             
             // Ask if user wants to negotiate
@@ -626,7 +626,7 @@ class AIChatHandler {
                 if (this.userNeeds.preferredLocation) suggestions.push(`try nearby areas or add "${this.userNeeds.preferredLocation}" to listing titles`);
                 
                 if (suggestions.length > 0) {
-                    this.appendMessage('AI', `💡 Suggestions: ${suggestions.join(' or ')}.`, 'left');
+                    this.appendMessage('AI', `Suggestions: ${suggestions.join(' or ')}.`, 'left');
                 }
             }
         } else {

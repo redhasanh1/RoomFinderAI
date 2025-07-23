@@ -187,7 +187,7 @@
                                 <div style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">
                                     ${listing.bedrooms} Bed • ${listing.house_type} • ${listing.utilities}
                                 </div>
-                                <a href="/listing_details?id=${listing.id}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500;">View Details</a>
+                                <a href="/listing_details?id=${listing.id}" style="background: #3b82f6; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500;">View Details</a>
                             </div>
                         `;
 
@@ -931,8 +931,8 @@
                     </div>
                     <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
                     <div class="flex space-x-2 mt-4">
-                        <button class="view-details-btn bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition font-semibold shadow-md hover:shadow-lg flex-1" data-listing-id="${listing.id}">View Details</button>
-                        <button class="chat-btn ${hasOwner ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-3 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg flex-1" data-listing-id="${listing.id}" ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
+                        <button class="view-details-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg flex-1" data-listing-id="${listing.id}">View Details</button>
+                        <button class="chat-btn ${hasOwner ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-3 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg flex-1" data-listing-id="${listing.id}" ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
                         <button class="visit-btn bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition font-semibold shadow-md hover:shadow-lg" data-listing-id="${listing.id}" title="Start property visit">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
