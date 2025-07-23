@@ -21,8 +21,8 @@ public interface ApiService {
     Call<ChatResponse> sendChatMessage(@Body ChatRequest request);
     
     @GET("api/listings")
-    Call<java.util.List<Listing>> getListings();
+    Call<ApiResponse<java.util.List<Listing>>> getListings();
     
     @POST("api/listings/search")
-    Call<java.util.List<Listing>> searchListings(@Body SearchRequest request);
+    Call<ApiResponse<java.util.List<Listing>>> searchListings(@Body SearchRequest request);
 }
