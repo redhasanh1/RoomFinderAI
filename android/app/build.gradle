@@ -31,13 +31,13 @@ android {
     }
     buildTypes {
         debug {
-            // Local development - use local config
-            buildConfigField "boolean", "USE_LOCAL_CONFIG", "true"
+            // Development - use production config for testing
+            buildConfigField "boolean", "USE_LOCAL_CONFIG", "false"
             minifyEnabled false
         }
         release {
-            // Production - use Railway environment variables
-            buildConfigField "boolean", "USE_LOCAL_CONFIG", "true"
+            // Production - use production config
+            buildConfigField "boolean", "USE_LOCAL_CONFIG", "false"
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
