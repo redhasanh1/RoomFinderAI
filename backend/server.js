@@ -498,6 +498,19 @@ app.post('/api/listings', (req, res) => {
 
 // Transform listing data to match Android model
 function transformListingForAndroid(listing) {
+    // Extract imageUrl from media array, ensuring it's always a string
+    let imageUrl = null;
+    if (listing.media && listing.media.length > 0) {
+        const firstMedia = listing.media[0];
+        if (typeof firstMedia === 'string') {
+            // If media[0] is already a string URL
+            imageUrl = firstMedia;
+        } else if (firstMedia && typeof firstMedia === 'object') {
+            // If media[0] is an object, extract the URL
+            imageUrl = firstMedia.url || firstMedia.data || null;
+        }
+    }
+    
     return {
         id: listing.id,
         title: listing.title,
@@ -507,7 +520,7 @@ function transformListingForAndroid(listing) {
         address: `${listing.street || ''}, ${listing.city || ''} ${listing.postal_code || listing.postalCode || ''}`.trim(),
         bedrooms: listing.bedrooms,
         bathrooms: listing.bathrooms || 1, // Default to 1 if not specified
-        imageUrl: listing.media && listing.media.length > 0 ? listing.media[0] : null,
+        imageUrl: imageUrl, // Always a string or null
         propertyType: listing.house_type || listing.houseType, // Handle both snake_case and camelCase
         available: true, // Default to available
         createdAt: listing.created_at || listing.createdAt,
