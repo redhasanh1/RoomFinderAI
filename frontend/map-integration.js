@@ -217,7 +217,7 @@ class MapIntegration {
                 <div style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">
                     ${listing.bedrooms} Bed • ${listing.house_type} • ${listing.utilities}
                 </div>
-                <a href="/listing_details?id=${listing.id}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500;">View Details</a>
+                <a href="/listing_details?id=${listing.id}" style="background: #3b82f6; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500;">View Details</a>
             </div>
         `;
     }

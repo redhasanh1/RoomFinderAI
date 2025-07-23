@@ -241,13 +241,13 @@ function createListingCard(listing) {
                 <div class="flex gap-3 pt-4 border-t border-gray-100">
                     <button 
                         onclick="event.stopPropagation(); showListingModal(${JSON.stringify(listing).replace(/"/g, '&quot;')})"
-                        class="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
                     >
                         View Details
                     </button>
                     <button 
                         onclick="event.stopPropagation(); contactOwner('${listing.id}')"
-                        class="px-6 py-3 border-2 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white rounded-lg font-semibold transition-all"
+                        class="px-6 py-3 border-2 border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white rounded-lg font-semibold transition-all"
                     >
                         💬 Contact
                     </button>
