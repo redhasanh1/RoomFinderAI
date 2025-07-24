@@ -241,7 +241,7 @@ function createListingCard(listing) {
                 <div class="flex gap-3 pt-4 border-t border-gray-100">
                     <button 
                         onclick="event.stopPropagation(); showListingModal(${JSON.stringify(listing).replace(/"/g, '&quot;')})"
-                        class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
+                        class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
                     >
                         View Details
                     </button>
