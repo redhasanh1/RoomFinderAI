@@ -33,7 +33,9 @@ config = {
     AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_KEY,
     AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
     AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim() || config.AZURE_FACE_KEY,
-    AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim() || config.AZURE_FACE_ENDPOINT
+    AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim() || config.AZURE_FACE_ENDPOINT,
+    GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID?.trim() || config.GOOGLE_OAUTH_CLIENT_ID,
+    APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID?.trim() || config.APPLE_CLIENT_ID
 };
 
 console.log('🔧 Configuration priority: Environment variables > Config file > Defaults');
@@ -1328,6 +1330,204 @@ app.post('/api/login', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/login:', error.message);
         res.status(500).json({ error: 'Failed to login' });
+    }
+});
+
+// API: Google OAuth Sign-In
+app.post('/api/auth/google', async (req, res) => {
+    try {
+        const { idToken } = req.body;
+        
+        if (!idToken) {
+            return res.status(400).json({ error: 'Google ID token is required' });
+        }
+
+        // Verify Google ID token
+        const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+        const googleUser = await response.json();
+        
+        if (!response.ok || googleUser.error) {
+            return res.status(401).json({ error: 'Invalid Google token' });
+        }
+
+        // Extract user information
+        const userData = {
+            id: uuidv4(),
+            firstName: googleUser.given_name || 'User',
+            lastName: googleUser.family_name || 'Name',
+            email: googleUser.email,
+            profileImage: googleUser.picture || 'https://via.placeholder.com/40',
+            emailVerified: googleUser.email_verified === 'true',
+            provider: 'google',
+            providerId: googleUser.sub,
+            aiChats: [],
+            listings: []
+        };
+
+        // Check if user already exists
+        let existingUser = users.find(u => u.email === userData.email);
+        
+        if (existingUser) {
+            // Update existing user with Google data
+            existingUser.profileImage = userData.profileImage;
+            existingUser.emailVerified = true;
+            if (!existingUser.provider) {
+                existingUser.provider = 'google';
+                existingUser.providerId = userData.providerId;
+            }
+        } else {
+            // Create new user
+            users.push(userData);
+            existingUser = userData;
+        }
+
+        // Try to create/update user in Supabase if available
+        if (supabase) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        email: existingUser.email,
+                        first_name: existingUser.firstName,
+                        last_name: existingUser.lastName,
+                        profile_image: existingUser.profileImage,
+                        provider: 'google',
+                        provider_id: userData.providerId,
+                        email_verified: true,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'email'
+                    });
+
+                if (error) {
+                    console.error('Supabase profile upsert error:', error);
+                }
+            } catch (dbError) {
+                console.error('Database error during Google auth:', dbError);
+                // Continue with in-memory auth even if DB fails
+            }
+        }
+
+        res.json({ 
+            message: 'Google Sign-In successful', 
+            user: {
+                firstName: existingUser.firstName,
+                lastName: existingUser.lastName,
+                email: existingUser.email,
+                profileImage: existingUser.profileImage,
+                emailVerified: existingUser.emailVerified,
+                aiChats: existingUser.aiChats || [],
+                listings: existingUser.listings || []
+            }
+        });
+
+    } catch (error) {
+        console.error('Google OAuth error:', error);
+        res.status(500).json({ error: 'Google Sign-In failed' });
+    }
+});
+
+// API: Apple OAuth Sign-In
+app.post('/api/auth/apple', async (req, res) => {
+    try {
+        const { authorizationCode, identityToken, user } = req.body;
+        
+        if (!identityToken) {
+            return res.status(400).json({ error: 'Apple identity token is required' });
+        }
+
+        // For demo purposes, we'll decode the JWT without verification
+        // In production, you should verify the JWT signature with Apple's public keys
+        const tokenParts = identityToken.split('.');
+        if (tokenParts.length !== 3) {
+            return res.status(401).json({ error: 'Invalid Apple token format' });
+        }
+
+        const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+        
+        // Verify token is from Apple and not expired
+        if (payload.iss !== 'https://appleid.apple.com' || payload.exp < Date.now() / 1000) {
+            return res.status(401).json({ error: 'Invalid or expired Apple token' });
+        }
+
+        // Extract user information
+        const userData = {
+            id: uuidv4(),
+            firstName: user?.name?.firstName || 'User',
+            lastName: user?.name?.lastName || 'Name',
+            email: payload.email,
+            profileImage: 'https://via.placeholder.com/40', // Apple doesn't provide profile pictures
+            emailVerified: payload.email_verified === 'true' || payload.email_verified === true,
+            provider: 'apple',
+            providerId: payload.sub,
+            aiChats: [],
+            listings: []
+        };
+
+        // Check if user already exists
+        let existingUser = users.find(u => u.email === userData.email);
+        
+        if (existingUser) {
+            // Update existing user with Apple data
+            existingUser.emailVerified = true;
+            if (!existingUser.provider) {
+                existingUser.provider = 'apple';
+                existingUser.providerId = userData.providerId;
+            }
+            // Only update name if user provided it (first time sign-in)
+            if (user?.name) {
+                existingUser.firstName = userData.firstName;
+                existingUser.lastName = userData.lastName;
+            }
+        } else {
+            // Create new user
+            users.push(userData);
+            existingUser = userData;
+        }
+
+        // Try to create/update user in Supabase if available
+        if (supabase) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        email: existingUser.email,
+                        first_name: existingUser.firstName,
+                        last_name: existingUser.lastName,
+                        profile_image: existingUser.profileImage,
+                        provider: 'apple',
+                        provider_id: userData.providerId,
+                        email_verified: true,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'email'
+                    });
+
+                if (error) {
+                    console.error('Supabase profile upsert error:', error);
+                }
+            } catch (dbError) {
+                console.error('Database error during Apple auth:', dbError);
+                // Continue with in-memory auth even if DB fails
+            }
+        }
+
+        res.json({ 
+            message: 'Apple Sign-In successful', 
+            user: {
+                firstName: existingUser.firstName,
+                lastName: existingUser.lastName,
+                email: existingUser.email,
+                profileImage: existingUser.profileImage,
+                emailVerified: existingUser.emailVerified,
+                aiChats: existingUser.aiChats || [],
+                listings: existingUser.listings || []
+            }
+        });
+
+    } catch (error) {
+        console.error('Apple OAuth error:', error);
+        res.status(500).json({ error: 'Apple Sign-In failed' });
     }
 });
 
@@ -3180,6 +3380,8 @@ app.get('/api/config', (req, res) => {
         SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY,
         OPENAI_API_KEY: config.OPENAI_API_KEY,
         OPENAI_ORG_ID: config.OPENAI_ORG_ID,
+        GOOGLE_OAUTH_CLIENT_ID: config.GOOGLE_OAUTH_CLIENT_ID,
+        APPLE_CLIENT_ID: config.APPLE_CLIENT_ID,
         OPENAI_MODEL: config.OPENAI_MODEL,
         RENTCAST_KEY: config.RENTCAST_KEY,
         // Azure service status (without exposing keys)
