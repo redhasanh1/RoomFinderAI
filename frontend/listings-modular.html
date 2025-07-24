@@ -121,6 +121,35 @@
             -webkit-box-orient: vertical;
             -webkit-line-clamp: 2;
         }
+
+        /* Responsive auth section improvements */
+        #authSection {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Small screen improvements for auth buttons */
+        @media (max-width: 768px) {
+            #authSection {
+                gap: 0.5rem;
+            }
+            
+            #authSection a {
+                font-size: 0.875rem;
+                white-space: nowrap;
+            }
+        }
+
+        /* Very small screens - stack buttons if needed */
+        @media (max-width: 640px) {
+            #authSection {
+                flex-direction: column;
+                gap: 0.25rem;
+                align-items: flex-end;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100">

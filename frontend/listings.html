@@ -327,6 +327,49 @@
             border-color: #667eea;
             background: rgba(102, 126, 234, 0.05);
         }
+
+        /* Responsive auth button improvements */
+        .desktop-auth {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Small screen improvements for auth buttons */
+        @media (max-width: 1024px) {
+            .auth-link {
+                padding: 0.375rem 1rem;
+                font-size: 0.875rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .auth-link {
+                padding: 0.25rem 0.75rem;
+                font-size: 0.8rem;
+                white-space: nowrap;
+            }
+            
+            .desktop-auth {
+                gap: 0.25rem;
+            }
+        }
+
+        /* Very small screens - stack buttons if needed */
+        @media (max-width: 640px) {
+            .desktop-auth {
+                flex-direction: column;
+                gap: 0.25rem;
+                align-items: flex-end;
+            }
+            
+            .auth-link {
+                min-width: 80px;
+                text-align: center;
+                padding: 0.25rem 0.5rem;
+            }
+        }
         
         .auth-link.primary {
             background: var(--primary-gradient);
@@ -1849,8 +1892,10 @@
                 console.log('No current user, showing anonymous interface');
                 // Show login/register interface for anonymous users
                 authSection.innerHTML = `
-                    <a href="/login" class="auth-link">Login</a>
-                    <a href="/signup" class="auth-link">Sign Up</a>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <a href="/login" class="auth-link">Login</a>
+                        <a href="/signup" class="auth-link">Sign Up</a>
+                    </div>
                 `;
                 // Continue loading page without authentication
                 loadListings();
