@@ -90,11 +90,11 @@ window.ListingsManager = (function() {
                     <p class="text-gray-700 text-sm mb-4">${(listing.description || '').substring(0, 100)}${listing.description && listing.description.length > 100 ? '...' : ''}</p>
                     <div class="flex space-x-2">
                         <button onclick="window.ListingsManager.showListingModal(${JSON.stringify(listing).replace(/"/g, '&quot;')})" 
-                                class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                                class="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
                             View Details
                         </button>
                         <button onclick="window.ChatManager?.startConversation('${listing.user_email}', '${listing.title}')" 
-                                class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                                class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
                             Chat
                         </button>
                     </div>
@@ -138,7 +138,7 @@ window.ListingsManager = (function() {
             <p class="text-gray-700 mb-4"><strong>Description:</strong> ${listing.description || 'No description provided.'}</p>
             <div class="modal-media-container mb-4">${mediaHtml}</div>
             <button onclick="window.ChatManager?.startConversation('${listing.user_email}', '${listing.title}')" 
-                    class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                    class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
                 Contact Owner
             </button>
         `;

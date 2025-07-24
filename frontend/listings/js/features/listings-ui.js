@@ -247,7 +247,7 @@ function createListingCard(listing) {
                     </button>
                     <button 
                         onclick="event.stopPropagation(); contactOwner('${listing.id}')"
-                        class="px-6 py-3 border-2 border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white rounded-lg font-semibold transition-all"
+                        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
                     >
                         💬 Contact
                     </button>
