@@ -47,7 +47,7 @@ public class ListingsFragment extends Fragment {
         emptyStateText = view.findViewById(R.id.emptyStateText);
         
         // Initialize API service
-        apiService = ApiClient.getClient().create(ApiService.class);
+        apiService = ApiClient.getInstance().getApiService();
         
         setupRecyclerView();
         setupSwipeRefresh();
