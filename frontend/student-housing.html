@@ -522,6 +522,26 @@
             color: #667eea;
         }
         
+        /* Desktop Auth Standardization */
+        .desktop-auth {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .desktop-auth {
+                gap: 0.5rem;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .desktop-auth {
+                gap: 0.25rem;
+            }
+        }
+        
         @media (max-width: 768px) {
             .desktop-nav {
                 display: none;
@@ -802,16 +822,14 @@
                 </span>
             </h1>
             
-            <p class="text-2xl text-white/90 mb-8 leading-relaxed max-w-3xl mx-auto">
-                Find perfect housing, compatible roommates, and stay within budget. 
-                <strong>100% free for students.</strong>
+            <p class="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+                Find housing at your university. <strong>Free for students.</strong>
             </p>
 
             <!-- University Search Bar -->
-            <div class="max-w-2xl mx-auto mb-12">
+            <div class="max-w-xl mx-auto mb-8">
                 <div class="relative">
                     <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-                        <h3 class="text-xl font-semibold mb-4 text-center">Start by finding your university</h3>
                         <div class="relative">
                             <input 
                                 type="text" 
@@ -848,232 +866,99 @@
                 </div>
             </div>
             
-            <!-- Primary CTA Options -->
-            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
-                <button onclick="startHousingSearch()" class="bg-white text-purple-600 font-bold px-10 py-5 rounded-full hover:bg-yellow-300 hover:text-purple-700 transition-all duration-300 text-xl transform hover:scale-105 shadow-xl">
+            <!-- Single Primary CTA -->
+            <div class="text-center mb-8">
+                <button onclick="startHousingSearch()" class="bg-white text-purple-600 font-bold px-12 py-5 rounded-full hover:bg-yellow-300 hover:text-purple-700 transition-all duration-300 text-xl transform hover:scale-105 shadow-xl">
                     Find Housing Options
                 </button>
-                <button onclick="scrollToSection('quick-start')" class="border-2 border-white text-white font-semibold px-10 py-5 rounded-full hover:bg-white hover:text-purple-600 transition-all duration-300 backdrop-blur-md text-xl">
-                    Learn How It Works
-                </button>
             </div>
             
-            <!-- Trust & Value Indicators -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300">
-                    <div class="text-3xl font-bold mb-2 text-green-300">FREE</div>
-                    <div class="text-white/80 text-sm">For Students</div>
+            <!-- Simple Trust Line -->
+            <div class="text-center text-white/80 text-sm">
+                Trusted by 50,000+ students • 100% free • Legal protection included
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Simple 3-Step Process -->
+    <section id="quick-start" class="py-12 bg-white">
+        <div class="w-[90%] max-w-4xl mx-auto px-4">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold mb-2 text-gray-900">How it works</h2>
+                <p class="text-gray-600">Three simple steps to find your housing</p>
+            </div>
+            
+            <!-- Horizontal Step Icons -->
+            <div class="flex justify-center items-center gap-8 md:gap-16 mb-8">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M9.5 16a6.5 6.5 0 100-13 6.5 6.5 0 000 13zM23 21l-6.35-6.35"/>
+                        </svg>
+                    </div>
+                    <div class="text-sm font-semibold text-gray-800">Search</div>
+                    <div class="text-xs text-gray-600">Find options</div>
                 </div>
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300">
-                    <div class="text-3xl font-bold mb-2 text-yellow-300">$850</div>
-                    <div class="text-white/80 text-sm">Avg. Savings</div>
+                
+                <div class="text-gray-300 text-2xl">→</div>
+                
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+                        </svg>
+                    </div>
+                    <div class="text-sm font-semibold text-gray-800">Match</div>
+                    <div class="text-xs text-gray-600">Find roommates</div>
                 </div>
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300">
-                    <div class="text-3xl font-bold mb-2 text-blue-300">3 MIN</div>
-                    <div class="text-white/80 text-sm">Setup Time</div>
-                </div>
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300">
-                    <div class="text-3xl font-bold mb-2 text-green-300">SAFE</div>
-                    <div class="text-white/80 text-sm">Legal Protected</div>
+                
+                <div class="text-gray-300 text-2xl">→</div>
+                
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <div class="text-sm font-semibold text-gray-800">Apply</div>
+                    <div class="text-xs text-gray-600">Move in safely</div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Quick Features Section -->
-    <section id="features" class="py-16 bg-white">
-        <div class="w-[90%] max-w-7xl mx-auto px-4">
-            <div class="text-center mb-12">
-                <h2 class="text-4xl font-bold mb-4 text-gray-900">How RoomFinderAI Helps Students</h2>
-                <p class="text-xl text-gray-600">Everything you need to find, secure, and succeed in student housing</p>
+    <!-- Simple Budget Input -->
+    <section id="budget-step" class="py-12 bg-gray-50">
+        <div class="w-[90%] max-w-2xl mx-auto px-4">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold mb-2 text-gray-900">What's your housing budget?</h2>
+                <p class="text-gray-600">Help us find options in your price range</p>
             </div>
             
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="text-center p-6">
-                    <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
+            <div class="bg-white rounded-2xl p-8 shadow-lg">
+                <div class="text-center">
+                    <label class="block text-lg font-semibold text-gray-800 mb-4">Monthly housing budget</label>
+                    <div class="relative max-w-xs mx-auto">
+                        <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl font-bold text-gray-600">$</span>
+                        <input 
+                            type="number" 
+                            id="housing-budget" 
+                            placeholder="800" 
+                            class="w-full pl-12 pr-4 py-4 text-3xl font-bold text-center border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none"
+                            oninput="updateSimpleBudget(this.value)"
+                        >
                     </div>
-                    <h3 class="text-xl font-bold mb-2">Smart Housing Search</h3>
-                    <p class="text-gray-600">AI-powered search finds housing that matches your budget, location preferences, and lifestyle needs.</p>
-                </div>
-                
-                <div class="text-center p-6">
-                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
+                    <div class="mt-4 flex justify-center gap-4">
+                        <button onclick="setBudget(500)" class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm">$500</button>
+                        <button onclick="setBudget(800)" class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm">$800</button>
+                        <button onclick="setBudget(1200)" class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm">$1,200</button>
                     </div>
-                    <h3 class="text-xl font-bold mb-2">Perfect Roommate Matching</h3>
-                    <p class="text-gray-600">Advanced compatibility algorithms match you with roommates based on lifestyle, habits, and preferences.</p>
-                </div>
-                
-                <div class="text-center p-6">
-                    <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold mb-2">Legal Protection</h3>
-                    <p class="text-gray-600">Get lease review, tenant rights guidance, and legal support to protect yourself from housing scams and unfair practices.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Streamlined 3-Step Process -->
-    <section id="quick-start" class="py-16 bg-gradient-to-r from-blue-50 to-purple-50">
-        <div class="w-[90%] max-w-6xl mx-auto px-4">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold mb-4 gradient-text-student">Your Housing Journey in 3 Simple Steps</h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">A clear, stress-free path to finding your perfect student housing</p>
-            </div>
-            
-            <!-- Modern Step Cards -->
-            <div class="grid md:grid-cols-3 gap-8 mb-16">
-                <!-- Step 1: Discover -->
-                <div class="relative bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-purple-100">
-                    <div class="absolute -top-4 left-8">
-                        <div class="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">1</div>
-                    </div>
-                    <div class="pt-4">
-                        <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                            <svg class="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M9.5 16a6.5 6.5 0 100-13 6.5 6.5 0 000 13zM23 21l-6.35-6.35"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-2xl font-bold mb-3 text-center text-gray-800">Discover</h3>
-                        <p class="text-gray-600 text-center mb-6">Explore housing options and set your budget. See what's available in your area and price range.</p>
-                        <button onclick="startDiscover()" class="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition-colors">
-                            Start Exploring
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Step 2: Match -->
-                <div class="relative bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-blue-100">
-                    <div class="absolute -top-4 left-8">
-                        <div class="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">2</div>
-                    </div>
-                    <div class="pt-4">
-                        <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                            <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-2xl font-bold mb-3 text-center text-gray-800">Match</h3>
-                        <p class="text-gray-600 text-center mb-6">Find compatible roommates and perfect properties that fit your lifestyle and preferences.</p>
-                        <button onclick="startMatching()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
-                            Find Matches
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Step 3: Secure -->
-                <div class="relative bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-green-100">
-                    <div class="absolute -top-4 left-8">
-                        <div class="w-8 h-8 bg-gradient-to-r from-green-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">3</div>
-                    </div>
-                    <div class="pt-4">
-                        <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                            <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-2xl font-bold mb-3 text-center text-gray-800">Secure</h3>
-                        <p class="text-gray-600 text-center mb-6">Apply safely with legal protection, lease review, and expert guidance throughout the process.</p>
-                        <button onclick="startSecuring()" class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
-                            Get Protected
-                        </button>
+                    <div id="budget-result" class="mt-6 p-4 bg-green-50 rounded-lg hidden">
+                        <div class="text-green-800 font-semibold">Great! We'll show you options under <span id="budget-display">$0</span>/month</div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Primary CTA -->
-            <div class="text-center">
-                <button onclick="startJourney()" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold px-12 py-5 rounded-full hover:from-purple-700 hover:to-blue-700 transition-all duration-300 text-xl transform hover:scale-105 shadow-xl">
-                    Start Your Housing Journey
-                </button>
-                <p class="text-gray-600 mt-4">Takes less than 5 minutes to get started</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Step 1: Budget Calculator -->
-    <section id="budget-step" class="py-16 bg-white">
-        <div class="w-[90%] max-w-7xl mx-auto px-4">
-            <div class="text-center mb-12">
-                <div class="progress-indicator mb-4">
-                    <span>Step 1 of 5</span>
-                </div>
-                <h2 class="text-4xl font-bold mb-4 gradient-text-student">Calculate Your Student Housing Budget</h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Know exactly what you can afford before you start looking. Our calculator includes all hidden costs.</p>
-            </div>
-            
-            <div class="grid lg:grid-cols-2 gap-12 items-start">
-                <!-- Budget Calculator Form -->
-                <div class="space-y-6">
-                    <div class="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-8 border border-purple-100">
-                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Smart Budget Calculator</h3>
-                        
-                        <!-- Monthly Income -->
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Income Sources</label>
-                                <div class="space-y-3">
-                                    <div class="flex items-center gap-4">
-                                        <span class="w-24 text-sm text-gray-600">Part-time job:</span>
-                                        <input type="number" id="income-job" placeholder="$0" class="flex-1 modern-input" oninput="updateBudget()">
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <span class="w-24 text-sm text-gray-600">Family support:</span>
-                                        <input type="number" id="income-family" placeholder="$0" class="flex-1 modern-input" oninput="updateBudget()">
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <span class="w-24 text-sm text-gray-600">Financial aid:</span>
-                                        <input type="number" id="income-aid" placeholder="$0" class="flex-1 modern-input" oninput="updateBudget()">
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <span class="w-24 text-sm text-gray-600">Savings:</span>
-                                        <input type="number" id="income-savings" placeholder="$0" class="flex-1 modern-input" oninput="updateBudget()">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Monthly Expenses -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Expenses</label>
-                                <div class="space-y-3">
-                                    <div class="flex items-center gap-4">
-                                        <span class="w-24 text-sm text-gray-600">Tuition/Books:</span>
-                                        <input type="number" id="expense-tuition" placeholder="$0" class="flex-1 modern-input" oninput="updateBudget()">
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <span class="w-24 text-sm text-gray-600">Food:</span>
-                                        <input type="number" id="expense-food" placeholder="$300" class="flex-1 modern-input" oninput="updateBudget()">
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <span class="w-24 text-sm text-gray-600">Transportation:</span>
-                                        <input type="number" id="expense-transport" placeholder="$100" class="flex-1 modern-input" oninput="updateBudget()">
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <span class="w-24 text-sm text-gray-600">Personal:</span>
-                                        <input type="number" id="expense-personal" placeholder="$200" class="flex-1 modern-input" oninput="updateBudget()">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Emergency Buffer -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Emergency Buffer (%)</label>
-                                <input type="range" id="emergency-buffer" min="5" max="25" value="15" class="w-full" oninput="updateBudget(); document.getElementById('buffer-display').textContent = this.value + '%'">
-                                <div class="flex justify-between text-xs text-gray-500 mt-1">
-                                    <span>5%</span>
-                                    <span id="buffer-display" class="font-medium text-purple-600">15%</span>
-                                    <span>25%</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                     
@@ -1099,970 +984,15 @@
                 
                 <!-- Real-time Results -->
                 <div class="space-y-6">
-                    <div class="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg sticky top-8">
-                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Your Housing Budget</h3>
-                        
-                        <!-- Budget Summary -->
-                        <div class="space-y-4 mb-6">
-                            <div class="flex justify-between items-center p-4 bg-green-50 rounded-lg">
-                                <span class="font-medium text-green-800">Total Monthly Income</span>
-                                <span id="total-income" class="text-2xl font-bold text-green-600">$0</span>
-                            </div>
-                            <div class="flex justify-between items-center p-4 bg-red-50 rounded-lg">
-                                <span class="font-medium text-red-800">Total Monthly Expenses</span>
-                                <span id="total-expenses" class="text-2xl font-bold text-red-600">$0</span>
-                            </div>
-                            <div class="flex justify-between items-center p-4 bg-purple-50 rounded-lg">
-                                <span class="font-medium text-purple-800">Available for Housing</span>
-                                <span id="housing-budget" class="text-3xl font-bold text-purple-600">$0</span>
                             </div>
                         </div>
                         
-                        <!-- Budget Breakdown Chart -->
-                        <div class="mb-6">
-                            <h4 class="font-semibold mb-3 text-gray-700">Budget Breakdown</h4>
-                            <div class="space-y-2">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-4 h-4 bg-purple-500 rounded"></div>
-                                    <span class="text-sm">Housing</span>
-                                    <span id="housing-percentage" class="text-sm text-gray-500 ml-auto">0%</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div id="housing-bar" class="bg-purple-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Recommendations -->
-                        <div id="budget-recommendations" class="space-y-3">
-                            <div class="bg-blue-50 p-4 rounded-lg">
-                                <div class="flex items-start gap-3">
-                                    <div class="text-blue-600 text-xl">i</div>
-                                    <div>
-                                        <div class="font-medium text-blue-800">Smart Tip</div>
-                                        <div class="text-sm text-blue-700">Add your income sources to see your housing budget</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Next Step -->
-                        <button onclick="goToStep(2)" class="w-full mt-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
-                            Next: Compare Housing Options →
-                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Step 2: Housing Comparison -->
-    <section id="housing-comparison" class="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
-        <div class="w-[90%] max-w-7xl mx-auto px-4">
-            <div class="text-center mb-12">
-                <div class="inline-flex items-center bg-blue-100 rounded-full px-4 py-2 mb-4">
-                    <span class="text-blue-600 font-medium">Step 2 of 5</span>
-                </div>
-                <h2 class="text-4xl font-bold mb-4 gradient-text-student">Compare Your Housing Options</h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">See side-by-side comparisons to make the best choice for your lifestyle and budget.</p>
-            </div>
-                <div class="mb-12">
-                    <h2 class="text-4xl font-bold mb-6 text-center gradient-text-student">Complete Student Housing Guide</h2>
-                    <p class="text-xl text-gray-600 text-center max-w-3xl mx-auto">Make informed decisions about your housing options with our comprehensive comparison tools and expert guidance.</p>
-                </div>
-                
-                <!-- Housing Options Comparison -->
-                <div class="grid lg:grid-cols-3 gap-8 mb-12">
-                    <!-- Dorms/On-Campus -->
-                    <div class="student-feature-card">
-                        <div class="text-center mb-6">
-                            <div class="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2-2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                </svg>
-                            </div>
-                            <h3 class="text-2xl font-bold mb-2">Dorms & On-Campus</h3>
-                            <p class="text-gray-600">Traditional campus living experience</p>
-                        </div>
-                        
-                        <div class="space-y-4">
-                            <div class="bg-green-50 p-4 rounded-lg">
-                                <h4 class="font-semibold text-green-800 mb-2">Pros:</h4>
-                                <ul class="text-sm text-green-700 space-y-1">
-                                    <li>• All-inclusive (utilities, internet, food)</li>
-                                    <li>• Close to classes and campus activities</li>
-                                    <li>• Built-in social opportunities</li>
-                                    <li>• 24/7 support and security</li>
-                                    <li>• No furniture or setup needed</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="bg-red-50 p-4 rounded-lg">
-                                <h4 class="font-semibold text-red-800 mb-2">Cons:</h4>
-                                <ul class="text-sm text-red-700 space-y-1">
-                                    <li>• Higher cost per square foot</li>
-                                    <li>• Limited privacy and space</li>
-                                    <li>• Strict rules and regulations</li>
-                                    <li>• Mandatory meal plans</li>
-                                    <li>• Limited storage space</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="bg-blue-50 p-4 rounded-lg">
-                                <h4 class="font-semibold text-blue-800 mb-2">Average Cost:</h4>
-                                <p class="text-blue-700 font-bold text-lg">$8,000 - $15,000/year</p>
-                                <p class="text-sm text-blue-600">Includes room, board, utilities</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Off-Campus Apartments -->
-                    <div class="student-feature-card">
-                        <div class="text-center mb-6">
-                            <div class="w-20 h-20 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-10 h-10 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                                </svg>
-                            </div>
-                            <h3 class="text-2xl font-bold mb-2">Off-Campus Apartments</h3>
-                            <p class="text-gray-600">Independent apartment living</p>
-                        </div>
-                        
-                        <div class="space-y-4">
-                            <div class="bg-green-50 p-4 rounded-lg">
-                                <h4 class="font-semibold text-green-800 mb-2">Pros:</h4>
-                                <ul class="text-sm text-green-700 space-y-1">
-                                    <li>• More space and privacy</li>
-                                    <li>• Often cheaper than dorms</li>
-                                    <li>• Cook your own meals</li>
-                                    <li>• Choose your roommates</li>
-                                    <li>• Real-world living experience</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="bg-red-50 p-4 rounded-lg">
-                                <h4 class="font-semibold text-red-800 mb-2">Cons:</h4>
-                                <ul class="text-sm text-red-700 space-y-1">
-                                    <li>• Separate utility bills</li>
-                                    <li>• Commute to campus</li>
-                                    <li>• Furniture and setup costs</li>
-                                    <li>• Less social interaction</li>
-                                    <li>• Lease responsibilities</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="bg-purple-50 p-4 rounded-lg">
-                                <h4 class="font-semibold text-purple-800 mb-2">Average Cost:</h4>
-                                <p class="text-purple-700 font-bold text-lg">$400 - $1,200/month</p>
-                                <p class="text-sm text-purple-600">Plus utilities, groceries, furniture</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Shared Houses -->
-                    <div class="student-feature-card">
-                        <div class="text-center mb-6">
-                            <div class="w-20 h-20 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="text-2xl font-bold mb-2">Shared Houses</h3>
-                            <p class="text-gray-600">Group living with multiple roommates</p>
-                        </div>
-                        
-                        <div class="space-y-4">
-                            <div class="bg-green-50 p-4 rounded-lg">
-                                <h4 class="font-semibold text-green-800 mb-2">Pros:</h4>
-                                <ul class="text-sm text-green-700 space-y-1">
-                                    <li>• Lowest cost per person</li>
-                                    <li>• More space than apartments</li>
-                                    <li>• Built-in friend group</li>
-                                    <li>• Shared household responsibilities</li>
-                                    <li>• Often includes yard/outdoor space</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="bg-red-50 p-4 rounded-lg">
-                                <h4 class="font-semibold text-red-800 mb-2">Cons:</h4>
-                                <ul class="text-sm text-red-700 space-y-1">
-                                    <li>• More potential for conflicts</li>
-                                    <li>• Shared bathrooms/common areas</li>
-                                    <li>• Group liability for damages</li>
-                                    <li>• Harder to find quality houses</li>
-                                    <li>• Coordination challenges</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="bg-green-50 p-4 rounded-lg">
-                                <h4 class="font-semibold text-green-800 mb-2">Average Cost:</h4>
-                                <p class="text-green-700 font-bold text-lg">$300 - $800/month</p>
-                                <p class="text-sm text-green-600">Per person, plus shared utilities</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Decision Matrix Tool -->
-                <div class="glass-card p-8 mb-12">
-                    <h3 class="text-2xl font-bold mb-6">Housing Decision Matrix</h3>
-                    <p class="text-gray-600 mb-6">Rate each factor's importance to you (1-5 scale) and get a personalized recommendation.</p>
-                    
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Budget Concerns</label>
-                                <input type="range" min="1" max="5" value="3" class="slider" id="budget-importance">
-                                <span class="ml-2 font-bold" id="budget-value">3</span>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Social Life</label>
-                                <input type="range" min="1" max="5" value="3" class="slider" id="social-importance">
-                                <span class="ml-2 font-bold" id="social-value">3</span>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Privacy</label>
-                                <input type="range" min="1" max="5" value="3" class="slider" id="privacy-importance">
-                                <span class="ml-2 font-bold" id="privacy-value">3</span>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Convenience</label>
-                                <input type="range" min="1" max="5" value="3" class="slider" id="convenience-importance">
-                                <span class="ml-2 font-bold" id="convenience-value">3</span>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Independence</label>
-                                <input type="range" min="1" max="5" value="3" class="slider" id="independence-importance">
-                                <span class="ml-2 font-bold" id="independence-value">3</span>
-                            </div>
-                        </div>
-                        
-                        <div id="housing-recommendation" class="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-xl">
-                            <h4 class="text-xl font-bold mb-4">Your Recommended Option:</h4>
-                            <div id="recommendation-content">
-                                <p class="text-gray-600">Adjust the sliders to get your personalized recommendation!</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button onclick="calculateHousingRecommendation()" class="w-full mt-6 gradient-bg-student text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
-                        Get My Housing Recommendation
-                    </button>
-                </div>
-
-                <!-- University-Specific Information -->
-                <div class="glass-card p-8">
-                    <h3 class="text-2xl font-bold mb-6">University-Specific Housing Info</h3>
-                    
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Your University</label>
-                            <select id="university-select" class="modern-input" onchange="loadUniversityInfo()">
-                                <option value="">Choose your university...</option>
-                                <option value="harvard">Harvard University</option>
-                                <option value="stanford">Stanford University</option>
-                                <option value="mit">MIT</option>
-                                <option value="yale">Yale University</n>
-                                <option value="princeton">Princeton University</option>
-                                <option value="columbia">Columbia University</option>
-                                <option value="uchicago">University of Chicago</option>
-                                <option value="penn">University of Pennsylvania</option>
-                                <option value="caltech">California Institute of Technology</option>
-                                <option value="duke">Duke University</option>
-                            </select>
-                        </div>
-                        
-                        <div id="university-info" class="bg-gray-50 p-6 rounded-xl">
-                            <p class="text-gray-600">Select a university to see specific housing information, costs, and deadlines.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Budget Calculator Tab -->
-            <div id="budget-tab" class="tab-content hidden">
-                <div class="mb-12">
-                    <h2 class="text-4xl font-bold mb-6 text-center gradient-text-student">Student Housing Budget Calculator</h2>
-                    <p class="text-xl text-gray-600 text-center max-w-3xl mx-auto">Plan your housing budget with precision. Factor in all costs including financial aid, part-time work, and family support.</p>
-                </div>
-                
-                <div class="grid lg:grid-cols-2 gap-8">
-                    <!-- Income Sources -->
-                    <div class="glass-card p-8">
-                        <h3 class="text-2xl font-bold mb-6">Income & Financial Aid</h3>
-                        
-                        <div class="space-y-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Financial Aid (per semester)</label>
-                                <input type="number" id="financial-aid" class="modern-input" placeholder="8000">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Part-time Job Income (monthly)</label>
-                                <input type="number" id="job-income" class="modern-input" placeholder="800">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Family Support (monthly)</label>
-                                <input type="number" id="family-support" class="modern-input" placeholder="500">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Savings for School</label>
-                                <input type="number" id="savings" class="modern-input" placeholder="5000">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Student Loans (per semester)</label>
-                                <input type="number" id="loans" class="modern-input" placeholder="3000">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Housing Costs -->
-                    <div class="glass-card p-8">
-                        <h3 class="text-2xl font-bold mb-6">Housing Expenses</h3>
-                        
-                        <div class="space-y-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Rent/Dorm Cost (monthly)</label>
-                                <input type="number" id="rent-cost" class="modern-input" placeholder="800">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Utilities (monthly)</label>
-                                <input type="number" id="utilities" class="modern-input" placeholder="100">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Groceries/Meal Plan (monthly)</label>
-                                <input type="number" id="food" class="modern-input" placeholder="300">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Internet & Phone (monthly)</label>
-                                <input type="number" id="internet-phone" class="modern-input" placeholder="80">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Transportation (monthly)</label>
-                                <input type="number" id="transportation" class="modern-input" placeholder="150">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Personal Expenses (monthly)</label>
-                                <input type="number" id="personal" class="modern-input" placeholder="200">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-8 text-center">
-                    <button onclick="calculateBudget()" class="gradient-bg-student text-white px-12 py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 text-lg">
-                        Calculate My Budget
-                    </button>
-                </div>
-                
-                <!-- Budget Results -->
-                <div id="budget-results" class="hidden mt-8 grid md:grid-cols-3 gap-6">
-                    <div class="glass-card p-6 text-center">
-                        <h4 class="text-lg font-bold text-gray-800 mb-2">Monthly Income</h4>
-                        <div id="monthly-income" class="text-3xl font-bold gradient-text-student">$0</div>
-                    </div>
-                    
-                    <div class="glass-card p-6 text-center">
-                        <h4 class="text-lg font-bold text-gray-800 mb-2">Monthly Expenses</h4>
-                        <div id="monthly-expenses" class="text-3xl font-bold text-red-600">$0</div>
-                    </div>
-                    
-                    <div class="glass-card p-6 text-center">
-                        <h4 class="text-lg font-bold text-gray-800 mb-2">Net Balance</h4>
-                        <div id="net-balance" class="text-3xl font-bold">$0</div>
-                    </div>
-                </div>
-                
-                <!-- Budget Breakdown Chart -->
-                <div id="budget-chart-section" class="hidden mt-8 glass-card p-8">
-                    <h3 class="text-2xl font-bold mb-6">Budget Breakdown</h3>
-                    <div class="chart-container">
-                        <canvas id="budgetChart"></canvas>
-                    </div>
-                </div>
-                
-                <!-- Budget Tips -->
-                <div id="budget-tips" class="hidden mt-8 glass-card p-8">
-                    <h3 class="text-2xl font-bold mb-6">Personalized Budget Tips</h3>
-                    <div id="tips-content" class="space-y-4">
-                        <!-- Tips will be populated here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Roommate Tools Tab -->
-            <div id="roommate-tab" class="tab-content hidden">
-                <div class="mb-12">
-                    <h2 class="text-4xl font-bold mb-6 text-center gradient-text-student">Roommate Success Tools</h2>
-                    <p class="text-xl text-gray-600 text-center max-w-3xl mx-auto">Build successful roommate relationships with our comprehensive tools for agreements, compatibility, and conflict resolution.</p>
-                </div>
-                
-                <!-- Roommate Agreement Generator -->
-                <div class="glass-card p-8 mb-8">
-                    <h3 class="text-2xl font-bold mb-6">AI Roommate Agreement Generator</h3>
-                    
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Number of Roommates</label>
-                                <select id="num-roommates" class="modern-input">
-                                    <option value="2">2 people</option>
-                                    <option value="3">3 people</option>
-                                    <option value="4">4 people</option>
-                                    <option value="5">5+ people</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Housing Type</label>
-                                <select id="housing-type" class="modern-input">
-                                    <option value="dorm">Dorm Room</option>
-                                    <option value="apartment">Apartment</option>
-                                    <option value="house">House</option>
-                                    <option value="shared-room">Shared Room</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Total Monthly Rent</label>
-                                <input type="number" id="total-rent" class="modern-input" placeholder="1200">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Special Circumstances</label>
-                                <textarea id="special-circumstances" class="modern-input" rows="3" placeholder="Any special arrangements, different room sizes, etc."></textarea>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h4 class="font-semibold mb-4">Agreement Topics to Include:</h4>
-                            <div class="space-y-2">
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-2" checked>
-                                    <span>Rent and utility splits</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-2" checked>
-                                    <span>Cleaning schedule and responsibilities</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-2" checked>
-                                    <span>Guest policies and overnight stays</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-2" checked>
-                                    <span>Quiet hours and study time</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-2" checked>
-                                    <span>Shared space usage</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-2">
-                                    <span>Pet policies</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-2">
-                                    <span>Parking arrangements</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-2">
-                                    <span>Food sharing policies</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button onclick="generateRoommateAgreement()" class="w-full mt-6 gradient-bg-student text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
-                        Generate Roommate Agreement
-                    </button>
-                    
-                    <!-- Agreement Preview -->
-                    <div id="agreement-preview" class="hidden mt-8 bg-white p-6 rounded-xl border">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="text-xl font-bold">Generated Agreement</h4>
-                            <button onclick="downloadAgreement()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                                Download PDF
-                            </button>
-                        </div>
-                        <div id="agreement-content" class="prose max-w-none">
-                            <!-- Agreement content will be populated here -->
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Roommate Compatibility Quiz -->
-                <div class="glass-card p-8 mb-8">
-                    <h3 class="text-2xl font-bold mb-6">Roommate Compatibility Quiz</h3>
-                    <p class="text-gray-600 mb-6">Take this quiz to understand your living style and find compatible roommates.</p>
-                    
-                    <div id="compatibility-quiz" class="space-y-6">
-                        <!-- Quiz questions will be populated here -->
-                    </div>
-                    
-                    <button onclick="startCompatibilityQuiz()" class="gradient-bg-student text-white px-8 py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
-                        Start Compatibility Quiz
-                    </button>
-                </div>
-                
-                <!-- Conflict Resolution Guide -->
-                <div class="glass-card p-8">
-                    <h3 class="text-2xl font-bold mb-6">Conflict Resolution Guide</h3>
-                    
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div>
-                            <h4 class="text-xl font-semibold mb-4">Common Issues & Solutions</h4>
-                            <div class="space-y-4">
-                                <div class="bg-red-50 p-4 rounded-lg">
-                                    <h5 class="font-semibold text-red-800">Noise Complaints</h5>
-                                    <p class="text-sm text-red-700 mt-1">Set clear quiet hours, use white noise, discuss study schedules</p>
-                                </div>
-                                
-                                <div class="bg-yellow-50 p-4 rounded-lg">
-                                    <h5 class="font-semibold text-yellow-800">Cleaning Disputes</h5>
-                                    <p class="text-sm text-yellow-700 mt-1">Create a cleaning schedule, rotate responsibilities, set consequences</p>
-                                </div>
-                                
-                                <div class="bg-blue-50 p-4 rounded-lg">
-                                    <h5 class="font-semibold text-blue-800">Guest Policies</h5>
-                                    <p class="text-sm text-blue-700 mt-1">Establish guest limits, overnight policies, advance notice requirements</p>
-                                </div>
-                                
-                                <div class="bg-green-50 p-4 rounded-lg">
-                                    <h5 class="font-semibold text-green-800">Financial Issues</h5>
-                                    <p class="text-sm text-green-700 mt-1">Use payment apps, set due dates, discuss late fees in advance</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h4 class="text-xl font-semibold mb-4">Communication Templates</h4>
-                            <div class="space-y-4">
-                                <button onclick="showTemplate('noise')" class="w-full text-left p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                                    📢 Addressing Noise Issues
-                                </button>
-                                <button onclick="showTemplate('cleaning')" class="w-full text-left p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                                    🧹 Cleaning Conversation
-                                </button>
-                                <button onclick="showTemplate('guests')" class="w-full text-left p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                                    Guest Policy Discussion
-                                </button>
-                                <button onclick="showTemplate('money')" class="w-full text-left p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                                    Money Conversations
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Safety & Security Tab -->
-            <div id="safety-tab" class="tab-content hidden">
-                <div class="mb-12">
-                    <h2 class="text-4xl font-bold mb-6 text-center gradient-text-student">Student Housing Safety & Security</h2>
-                    <p class="text-xl text-gray-600 text-center max-w-3xl mx-auto">Essential safety information, security tips, and emergency preparedness for student housing.</p>
-                </div>
-                
-                <!-- Safety Checklist -->
-                <div class="glass-card p-8 mb-8">
-                    <h3 class="text-2xl font-bold mb-6">Housing Safety Checklist</h3>
-                    
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div>
-                            <h4 class="text-xl font-semibold mb-4">Before Moving In</h4>
-                            <div class="space-y-3">
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-3">
-                                    <span>Check all locks on doors and windows</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-3">
-                                    <span>Test smoke and carbon monoxide detectors</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-3">
-                                    <span>Locate fire exits and emergency routes</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-3">
-                                    <span>Check lighting in hallways and exterior</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-3">
-                                    <span>Verify security systems are working</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-3">
-                                    <span>Get emergency contact numbers</span>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h4 class="text-xl font-semibold mb-4">Ongoing Safety Practices</h4>
-                            <div class="space-y-3">
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-3">
-                                    <span>Always lock doors and windows</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-3">
-                                    <span>Don't prop open security doors</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-3">
-                                    <span>Be cautious about who you let in</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-3">
-                                    <span>Keep valuables secured or hidden</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-3">
-                                    <span>Report suspicious activity immediately</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" class="mr-3">
-                                    <span>Share your schedule with trusted friends</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Emergency Contacts -->
-                <div class="glass-card p-8 mb-8">
-                    <h3 class="text-2xl font-bold mb-6">Emergency Contacts & Resources</h3>
-                    
-                    <div class="grid md:grid-cols-3 gap-6">
-                        <div class="bg-red-50 p-6 rounded-xl">
-                            <h4 class="text-xl font-bold text-red-800 mb-4">Emergency Services</h4>
-                            <p class="font-semibold">911 - Police/Fire/Medical</p>
-                            <p>Campus Police: <span class="font-mono">[Your Campus Number]</span></p>
-                            <p>Poison Control: <span class="font-mono">1-800-222-1222</span></p>
-                            <p>Crisis Text Line: <span class="font-mono">Text HOME to 741741</span></p>
-                        </div>
-                        
-                        <div class="bg-blue-50 p-6 rounded-xl">
-                            <h4 class="text-xl font-bold text-blue-800 mb-4">Campus Resources</h4>
-                            <p>Campus Security</p>
-                            <p>Student Health Center</p>
-                            <p>Counseling Services</p>
-                            <p>Residential Life Office</p>
-                            <p>Student Legal Services</p>
-                        </div>
-                        
-                        <div class="bg-green-50 p-6 rounded-xl">
-                            <h4 class="text-xl font-bold text-green-800 mb-4">Safety Apps</h4>
-                            <p>Campus safety apps</p>
-                            <p>bSafe personal safety</p>
-                            <p>Circle of 6 emergency</p>
-                            <p>Watch Over Me</p>
-                            <p>Life360 family locator</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Insurance Guide -->
-                <div class="glass-card p-8">
-                    <h3 class="text-2xl font-bold mb-6">Student Renters Insurance Guide</h3>
-                    
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div>
-                            <h4 class="text-xl font-semibold mb-4">Why You Need Renters Insurance</h4>
-                            <ul class="space-y-2 text-gray-700">
-                                <li>• Protects personal belongings from theft or damage</li>
-                                <li>• Covers additional living expenses if displaced</li>
-                                <li>• Provides liability protection for accidents</li>
-                                <li>• Required by many landlords and lease agreements</li>
-                                <li>• Often very affordable for students ($10-20/month)</li>
-                            </ul>
-                            
-                            <h4 class="text-xl font-semibold mb-4 mt-6">What's Typically Covered</h4>
-                            <ul class="space-y-2 text-gray-700">
-                                <li>• Electronics (laptop, phone, gaming systems)</li>
-                                <li>• Clothing and personal items</li>
-                                <li>• Textbooks and school supplies</li>
-                                <li>• Bike and sports equipment</li>
-                                <li>• Temporary housing if your place is uninhabitable</li>
-                            </ul>
-                        </div>
-                        
-                        <div>
-                            <h4 class="text-xl font-semibold mb-4">How to Get Coverage</h4>
-                            <div class="space-y-4">
-                                <div class="bg-blue-50 p-4 rounded-lg">
-                                    <h5 class="font-semibold text-blue-800">1. Check Parents' Policy</h5>
-                                    <p class="text-sm text-blue-700">You might be covered under parents' homeowners insurance while in school</p>
-                                </div>
-                                
-                                <div class="bg-green-50 p-4 rounded-lg">
-                                    <h5 class="font-semibold text-green-800">2. Get Student Discounts</h5>
-                                    <p class="text-sm text-green-700">Many insurers offer special rates for students</p>
-                                </div>
-                                
-                                <div class="bg-purple-50 p-4 rounded-lg">
-                                    <h5 class="font-semibold text-purple-800">3. Compare Quotes</h5>
-                                    <p class="text-sm text-purple-700">Shop around with multiple providers for best rates</p>
-                                </div>
-                                
-                                <div class="bg-yellow-50 p-4 rounded-lg">
-                                    <h5 class="font-semibold text-yellow-800">4. Document Your Belongings</h5>
-                                    <p class="text-sm text-yellow-700">Take photos/video of valuable items for claims</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Student Rights Tab -->
-            <div id="legal-tab" class="tab-content hidden">
-                <div class="mb-12">
-                    <h2 class="text-4xl font-bold mb-6 text-center gradient-text-student">Student Tenant Rights</h2>
-                    <p class="text-xl text-gray-600 text-center max-w-3xl mx-auto">Know your rights as a student tenant and learn how to protect yourself legally.</p>
-                </div>
-                
-                <!-- Student-Specific Rights -->
-                <div class="glass-card p-8 mb-8">
-                    <h3 class="text-2xl font-bold mb-6">Student Tenant Rights Overview</h3>
-                    
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div>
-                            <h4 class="text-xl font-semibold mb-4 text-green-700">Your Rights Include:</h4>
-                            <ul class="space-y-3">
-                                <li>• Protection from discrimination based on student status</li>
-                                <li>• Right to habitable living conditions</li>
-                                <li>• Security deposit return within legal timeframe</li>
-                                <li>• Privacy rights and advance notice for inspections</li>
-                                <li>• Protection from retaliatory eviction</li>
-                            </ul>
-                        </div>
-                        
-                        <div>
-                            <h4 class="text-xl font-semibold mb-4 text-red-700">Common Violations:</h4>
-                            <ul class="space-y-3">
-                                <li>• Refusing to rent to students</li>
-                                <li>• Withholding security deposits without cause</li>
-                                <li>• Entering without proper notice</li>
-                                <li>• Failing to make necessary repairs</li>
-                                <li>• Discriminatory lease terms for students</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Rights Checker Tool -->
-                <div class="glass-card p-8 mb-8">
-                    <h3 class="text-2xl font-bold mb-6">Student Rights Checker</h3>
-                    
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">What's your situation?</label>
-                            <select id="rights-situation" class="modern-input">
-                                <option value="">Select your situation...</option>
-                                <option value="application">Application was denied</option>
-                                <option value="deposit">Security deposit issues</option>
-                                <option value="repairs">Landlord won't make repairs</option>
-                                <option value="privacy">Privacy violations</option>
-                                <option value="eviction">Received eviction notice</option>
-                                <option value="discrimination">Felt discriminated against</option>
-                                <option value="lease">Lease break for school</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Your State</label>
-                            <select id="rights-state" class="modern-input">
-                                <option value="">Select your state...</option>
-                                <option value="CA">California</option>
-                                <option value="NY">New York</option>
-                                <option value="TX">Texas</option>
-                                <option value="FL">Florida</option>
-                                <option value="PA">Pennsylvania</option>
-                                <option value="IL">Illinois</option>
-                                <option value="OH">Ohio</option>
-                                <option value="MI">Michigan</option>
-                            </select>
-                        </div>
-                        
-                        <button onclick="checkStudentRights()" class="w-full gradient-bg-student text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
-                            Check My Rights
-                        </button>
-                    </div>
-                    
-                    <div id="rights-results" class="bg-gray-50 p-6 rounded-xl">
-                        <p class="text-gray-600">Select your situation and state to get personalized rights information and next steps.</p>
-                    </div>
-                </div>
-                
-                <!-- Legal Resources -->
-                <div class="glass-card p-8">
-                    <h3 class="text-2xl font-bold mb-6">Student Legal Resources</h3>
-                    
-                    <div class="grid md:grid-cols-3 gap-6">
-                        <div class="bg-blue-50 p-6 rounded-xl">
-                            <h4 class="text-xl font-bold text-blue-800 mb-4">Free Legal Help</h4>
-                            <p>Student Legal Services (on-campus)</p>
-                            <p>Local Legal Aid Societies</p>
-                            <p>Tenant Rights Organizations</p>
-                            <p>Law School Clinics</p>
-                            <p>State Bar Pro Bono Programs</p>
-                        </div>
-                        
-                        <div class="bg-green-50 p-6 rounded-xl">
-                            <h4 class="text-xl font-bold text-green-800 mb-4">Document Templates</h4>
-                            <p>Complaint Letters to Landlords</p>
-                            <p>Security Deposit Demand Letters</p>
-                            <p>Repair Request Forms</p>
-                            <p>Lease Break Requests</p>
-                            <p>Small Claims Court Filing</p>
-                        </div>
-                        
-                        <div class="bg-purple-50 p-6 rounded-xl">
-                            <h4 class="text-xl font-bold text-purple-800 mb-4">Know Before You Sign</h4>
-                            <p>Read entire lease carefully</p>
-                            <p>Understand your state's laws</p>
-                            <p>Document existing damage</p>
-                            <p>Get everything in writing</p>
-                            <p>Know your move-out requirements</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Resources Tab -->
-            <div id="resources-tab" class="tab-content hidden">
-                <div class="mb-12">
-                    <h2 class="text-4xl font-bold mb-6 text-center gradient-text-student">Student Housing Resources</h2>
-                    <p class="text-xl text-gray-600 text-center max-w-3xl mx-auto">Comprehensive resources, guides, and tools to help you succeed in student housing.</p>
-                </div>
-                
-                <!-- Quick Links -->
-                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                    <div class="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center">
-                        <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold mb-2">Student Housing Guide</h3>
-                        <p class="text-gray-600 text-sm">Complete PDF guide to student housing</p>
-                    </div>
-                    
-                    <div class="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center">
-                        <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold mb-2">Legal Templates</h3>
-                        <p class="text-gray-600 text-sm">Free lease and agreement templates</p>
-                    </div>
-                    
-                    <div class="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center">
-                        <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold mb-2">Financial Aid Guide</h3>
-                        <p class="text-gray-600 text-sm">Housing costs and financial aid</p>
-                    </div>
-                    
-                    <div class="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center">
-                        <div class="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold mb-2">Mobile App</h3>
-                        <p class="text-gray-600 text-sm">Student housing tools on-the-go</p>
-                    </div>
-                </div>
-                
-                <!-- University Directory -->
-                <div class="glass-card p-8 mb-8">
-                    <h3 class="text-2xl font-bold mb-6">University Housing Directory</h3>
-                    
-                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div class="bg-white p-4 rounded-lg border hover:shadow-lg transition-all duration-300">
-                            <h4 class="font-bold text-lg mb-2">Top Public Universities</h4>
-                            <ul class="space-y-1 text-sm text-gray-700">
-                                <li>• University of California, Berkeley</li>
-                                <li>• University of Michigan</li>
-                                <li>• UCLA</li>
-                                <li>• University of Virginia</li>
-                                <li>• Georgia Institute of Technology</li>
-                            </ul>
-                        </div>
-                        
-                        <div class="bg-white p-4 rounded-lg border hover:shadow-lg transition-all duration-300">
-                            <h4 class="font-bold text-lg mb-2">Ivy League Schools</h4>
-                            <ul class="space-y-1 text-sm text-gray-700">
-                                <li>• Harvard University</li>
-                                <li>• Yale University</li>
-                                <li>• Princeton University</li>
-                                <li>• Columbia University</li>
-                                <li>• University of Pennsylvania</li>
-                            </ul>
-                        </div>
-                        
-                        <div class="bg-white p-4 rounded-lg border hover:shadow-lg transition-all duration-300">
-                            <h4 class="font-bold text-lg mb-2">Tech Schools</h4>
-                            <ul class="space-y-1 text-sm text-gray-700">
-                                <li>• MIT</li>
-                                <li>• Stanford University</li>
-                                <li>• California Institute of Technology</li>
-                                <li>• Carnegie Mellon</li>
-                                <li>• Georgia Tech</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Success Stories -->
-                <div class="glass-card p-8">
-                    <h3 class="text-2xl font-bold mb-6">Student Success Stories</h3>
-                    
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div class="bg-white p-6 rounded-xl border-l-4 border-green-500">
-                            <div class="flex items-start space-x-4">
-                                <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Student" class="w-12 h-12 rounded-full">
-                                <div>
-                                    <h4 class="font-bold text-lg">Sarah, UCLA Sophomore</h4>
-                                    <p class="text-gray-600 mb-3">"The roommate agreement template prevented so many conflicts. When my roommate wanted to have her boyfriend stay over every night, we just referred to our agreement!"</p>
-                                    <div class="text-green-600 font-semibold text-sm">Saved $400/month on housing</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white p-6 rounded-xl border-l-4 border-blue-500">
-                            <div class="flex items-start space-x-4">
-                                <img src="https://randomuser.me/api/portraits/men/24.jpg" alt="Student" class="w-12 h-12 rounded-full">
-                                <div>
-                                    <h4 class="font-bold text-lg">Marcus, NYU Junior</h4>
-                                    <p class="text-gray-600 mb-3">"The budget calculator helped me realize I could afford off-campus housing. I'm saving money and have way more space!"</p>
-                                    <div class="text-blue-600 font-semibold text-sm">Found perfect off-campus apartment</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
 
     <!-- CTA Section -->

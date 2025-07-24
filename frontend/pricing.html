@@ -869,13 +869,17 @@
                     localStorage.setItem('currentUser', JSON.stringify(currentUser));
                 }
                 authSection.innerHTML = `
-                    <a href="/profile">
-                        <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
-                    </a>
+                    <div class="flex items-center space-x-4">
+                        <a href="/profile">
+                            <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
+                        </a>
+                    </div>
                 `;
             } else {
                 authSection.innerHTML = `
-                    <a href="/login" class="auth-link">Login/Register</a>
+                    <div class="flex items-center space-x-4">
+                        <a href="/login" class="auth-link">Login/Register</a>
+                    </div>
                 `;
             }
         });

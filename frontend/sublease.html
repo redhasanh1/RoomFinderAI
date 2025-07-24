@@ -1938,9 +1938,11 @@
                         localStorage.setItem('currentUser', JSON.stringify(currentUser));
                     }
                     authSection.innerHTML = `
-                        <a href="/profile" aria-label="View user profile">
-                            <img id="profileLogo" src="${currentUser.profileImage}" alt="User's profile image" class="w-10 h-10 rounded-full profile-logo">
-                        </a>
+                        <div class="flex items-center space-x-4">
+                            <a href="/profile" aria-label="View user profile">
+                                <img id="profileLogo" src="${currentUser.profileImage}" alt="User's profile image" class="w-10 h-10 rounded-full profile-logo">
+                            </a>
+                        </div>
                     `;
                 } else {
                     subleaseSection.innerHTML = `
@@ -1994,7 +1996,9 @@
                 console.error('Authentication error:', error);
                 const authSection = document.getElementById('authSection');
                 authSection.innerHTML = `
-                    <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
+                    <div class="flex items-center space-x-4">
+                        <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
+                    </div>
                 `;
             }
 

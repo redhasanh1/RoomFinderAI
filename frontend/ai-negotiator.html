@@ -97,6 +97,26 @@
             background-color: rgba(102, 126, 234, 0.05);
         }
         
+        /* Desktop Auth Standardization */
+        .desktop-auth {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .desktop-auth {
+                gap: 0.5rem;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .desktop-auth {
+                gap: 0.25rem;
+            }
+        }
+        
         /* Dropdown Styles */
         .dropdown {
             position: relative;
@@ -917,9 +937,11 @@
                 const authSection = document.getElementById('authSection');
                 if (authSection) {
                     authSection.innerHTML = `
-                        <a href="/profile">
-                            <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
-                        </a>
+                        <div class="flex items-center space-x-4">
+                            <a href="/profile">
+                                <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
+                            </a>
+                        </div>
                     `;
                 }
                 
