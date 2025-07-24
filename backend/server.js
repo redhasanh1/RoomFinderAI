@@ -1428,7 +1428,7 @@ app.post('/api/auth/google-signin', async (req, res) => {
     }
 });
 
-// API: Simple registration for Android app
+// API: Android app registration - sends verification code
 app.post('/api/register', async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -1437,71 +1437,98 @@ app.post('/api/register', async (req, res) => {
             return res.status(400).json({ error: 'Name, email, and password are required' });
         }
         
-        // Check if user already exists
-        const existingUser = users.find(u => u.email === email);
-        if (existingUser) {
-            return res.status(400).json({ error: 'Email already exists' });
-        }
-        
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-        
         // Parse first and last name
         const nameParts = name.trim().split(' ');
         const firstName = nameParts[0];
         const lastName = nameParts.slice(1).join(' ') || '';
         
-        // Create new user
-        const newUser = {
-            id: Date.now().toString(),
-            firstName,
-            lastName,
-            email,
-            password: hashedPassword,
-            profileImage: null,
-            emailVerified: false,
-            createdAt: new Date().toISOString(),
-            aiChats: [],
-            listings: []
+        // Use the existing send-verification logic
+        const verificationReq = {
+            body: { firstName, lastName, email, password }
         };
         
-        users.push(newUser);
-        
-        // If Supabase is configured, create user there too
-        if (supabase) {
-            try {
-                const { data, error } = await supabase.auth.signUp({
-                    email,
-                    password,
-                    options: {
-                        data: {
-                            firstName,
-                            lastName
-                        }
+        const verificationRes = {
+            status: (code) => ({
+                json: (data) => {
+                    if (code >= 400) {
+                        res.status(code).json(data);
+                    } else {
+                        // For Android, we return a different response
+                        res.json({
+                            message: 'Verification code sent to your email',
+                            requiresVerification: true,
+                            email: email
+                        });
                     }
-                });
-                
-                if (error) {
-                    console.error('Supabase signUp error:', error);
                 }
-            } catch (dbError) {
-                console.error('Database error during registration:', dbError);
+            }),
+            json: (data) => {
+                res.json({
+                    message: 'Verification code sent to your email',
+                    requiresVerification: true,
+                    email: email
+                });
             }
-        }
+        };
         
-        res.json({ 
-            message: 'Registration successful',
-            access_token: `token_${newUser.id}`, // Simple token for now
-            user: {
-                firstName: newUser.firstName,
-                lastName: newUser.lastName,
-                email: newUser.email
-            }
-        });
+        // Call the existing send-verification handler
+        await app._router.stack.find(r => r.route && r.route.path === '/api/send-verification').route.stack[0].handle(verificationReq, verificationRes);
         
     } catch (error) {
         console.error('Registration error:', error);
-        res.status(500).json({ error: 'Failed to register user' });
+        res.status(500).json({ error: 'Failed to process registration' });
+    }
+});
+
+// API: Android app verify code
+app.post('/api/auth/verify-code', async (req, res) => {
+    try {
+        const { email, code } = req.body;
+        
+        // Use the existing verify-email logic
+        const verifyReq = { body: { email, code } };
+        let verifySuccess = false;
+        let userId = null;
+        
+        const verifyRes = {
+            status: (statusCode) => ({
+                json: (data) => {
+                    if (statusCode >= 400) {
+                        res.status(statusCode).json(data);
+                    } else {
+                        verifySuccess = true;
+                        userId = data.user?.id;
+                    }
+                }
+            }),
+            json: (data) => {
+                verifySuccess = true;
+                userId = data.user?.id;
+            }
+        };
+        
+        // Call the existing verify-email handler
+        await app._router.stack.find(r => r.route && r.route.path === '/api/verify-email').route.stack[0].handle(verifyReq, verifyRes);
+        
+        if (verifySuccess && userId) {
+            // Get the newly created user
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                res.json({
+                    message: 'Account verified successfully',
+                    access_token: `token_${user.id}`,
+                    user: {
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        email: user.email
+                    }
+                });
+            }
+        }
+        
+    } catch (error) {
+        console.error('Verification error:', error);
+        res.status(500).json({ error: 'Failed to verify code' });
     }
 });
 

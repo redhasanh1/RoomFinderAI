@@ -98,7 +98,17 @@ public class SignUpActivity extends AppCompatActivity {
                     String accessToken = responseBody.has("access_token") ? 
                             responseBody.get("access_token").getAsString() : null;
                     
-                    if (accessToken != null) {
+                    // Check if verification is required
+                    boolean requiresVerification = responseBody.has("requiresVerification") && 
+                            responseBody.get("requiresVerification").getAsBoolean();
+                    
+                    if (requiresVerification) {
+                        // Navigate to verification activity
+                        Intent intent = new Intent(SignUpActivity.this, VerificationActivity.class);
+                        intent.putExtra("email", email);
+                        startActivity(intent);
+                        finish();
+                    } else if (accessToken != null) {
                         saveCredentials(accessToken, email);
                         navigateToMainActivity();
                     } else {
