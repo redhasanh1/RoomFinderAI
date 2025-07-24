@@ -62,7 +62,7 @@ public class ApiConfig {
             return BuildConfig.class.getField("API_BASE_URL").get(null).toString();
         } catch (Exception e) {
             // Fallback to your production URL
-            return "https://roomfinderai-production.up.railway.app/";
+            return "https://www.roomfinderai.com/";
         }
     }
     
