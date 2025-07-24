@@ -23,6 +23,7 @@ android {
         buildConfigField "String", "GOOGLE_API_KEY", "\"${System.getenv('GOOGLE_API_KEY') ?: ''}\""
         buildConfigField "String", "STRIPE_PUBLISHABLE_KEY", "\"${System.getenv('STRIPE_PUBLISHABLE_KEY') ?: ''}\""
         buildConfigField "String", "BREVO_API_KEY", "\"${System.getenv('BREVO_API_KEY') ?: ''}\""
+        buildConfigField "String", "GOOGLE_WEB_CLIENT_ID", "\"${System.getenv('GOOGLE_WEB_CLIENT_ID') ?: ''}\""
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -89,6 +90,9 @@ dependencies {
     // Glide for image loading
     implementation 'com.github.bumptech.glide:glide:4.15.1'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.15.1'
+    
+    // Google Sign-In
+    implementation 'com.google.android.gms:play-services-auth:20.7.0'
 }
 
 // Removed capacitor.build.gradle - using native Android only

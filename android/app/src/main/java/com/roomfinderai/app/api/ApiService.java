@@ -1,5 +1,6 @@
 package com.roomfinderai.app.api;
 
+import com.google.gson.JsonObject;
 import com.roomfinderai.app.models.ApiResponse;
 import com.roomfinderai.app.models.ChatRequest;
 import com.roomfinderai.app.models.ChatResponse;
@@ -25,4 +26,13 @@ public interface ApiService {
     
     @POST("api/listings/search")
     Call<ApiResponse<java.util.List<Listing>>> searchListings(@Body SearchRequest request);
+    
+    @POST("api/auth/login")
+    Call<JsonObject> login(@Body JsonObject loginRequest);
+    
+    @POST("api/auth/google-signin")
+    Call<JsonObject> googleSignIn(@Body JsonObject googleSignInRequest);
+    
+    @POST("api/auth/signup")
+    Call<JsonObject> signUp(@Body JsonObject signUpRequest);
 }

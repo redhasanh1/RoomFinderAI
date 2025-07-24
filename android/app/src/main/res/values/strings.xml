@@ -1,7 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">roomfinderai</string>
-    <string name="title_activity_main">roomfinderai</string>
+    <string name="app_name">RoomFinder AI</string>
+    <string name="title_activity_main">RoomFinder AI</string>
     <string name="package_name">com.roomfinderai.app</string>
     <string name="custom_url_scheme">com.roomfinderai.app</string>
+    <!-- Google OAuth Web Client ID -->
+    <string name="web_client_id">971569749460-a8c7vqutq3eqjf1q6jtit28gqnos268v.apps.googleusercontent.com</string>
 </resources>
