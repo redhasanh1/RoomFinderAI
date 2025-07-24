@@ -33,6 +33,6 @@ public interface ApiService {
     @POST("api/auth/google-signin")
     Call<JsonObject> googleSignIn(@Body JsonObject googleSignInRequest);
     
-    @POST("api/auth/signup")
+    @POST("api/register")
     Call<JsonObject> signUp(@Body JsonObject signUpRequest);
 }
