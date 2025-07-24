@@ -653,49 +653,38 @@
     <!-- Pricing Section -->
     <section class="flex-grow w-[95%] sm:w-[90%] lg:w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold gradient-text text-center mb-6 sm:mb-8 leading-tight">Choose Your Plan</h1>
-        <p class="text-lg sm:text-xl text-gray-600 text-center mb-12 sm:mb-16 max-w-3xl mx-auto px-4">Select the perfect subscription plan to unlock the full potential of RoomFinderAI, tailored to your needs.</p>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
-            <!-- Basic Plan -->
+        <p class="text-lg sm:text-xl text-gray-600 text-center mb-12 sm:mb-16 max-w-3xl mx-auto px-4">Start free with unlimited listings and generous AI access, then upgrade to Pro for unlimited everything.</p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
+            <!-- Free Plan -->
             <div class="modern-pricing-card p-6 sm:p-8 text-center transition-all duration-300 hover:scale-105">
-                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Basic</h2>
-                <p class="text-3xl sm:text-4xl font-extrabold text-blue-600 mb-4">$9.99<span class="text-base sm:text-lg font-normal text-gray-600">/mo</span></p>
-                <p class="text-gray-600 mb-6">Perfect for individuals starting their room search.</p>
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Free</h2>
+                <p class="text-3xl sm:text-4xl font-extrabold text-green-600 mb-4">$0<span class="text-base sm:text-lg font-normal text-gray-600">/mo</span></p>
+                <p class="text-gray-600 mb-6">Perfect for casual renters and browsers to get started.</p>
                 <ul class="text-gray-600 text-left mb-6 space-y-2">
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Up to 5 listings per month</li>
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Basic search filters</li>
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Email support</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Unlimited listings and browsing</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Up to 20 AI Negotiator sessions/month</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Basic search filters and sublease tools</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Community/email support</li>
                 </ul>
-                <a href="/payment?plan=basic&price=9.99" class="inline-block w-full sm:w-auto bg-blue-600 text-white px-6 py-4 sm:py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg text-center min-h-[44px] flex items-center justify-center">Choose Basic</a>
+                <a href="/signup" class="inline-block w-full sm:w-auto bg-green-600 text-white px-6 py-4 sm:py-3 rounded-lg hover:bg-green-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg text-center min-h-[44px] flex items-center justify-center">Get Started Free</a>
             </div>
             <!-- Pro Plan -->
             <div class="modern-pricing-card featured-card p-6 sm:p-8 text-center transition-all duration-300 hover:scale-105 relative">
                 <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Pro</h2>
                 <p class="text-3xl sm:text-4xl font-extrabold text-blue-600 mb-4">$19.99<span class="text-base sm:text-lg font-normal text-gray-600">/mo</span></p>
-                <p class="text-gray-600 mb-6">Ideal for active searchers with advanced needs.</p>
+                <p class="text-gray-600 mb-6">Ultimate plan for active searchers, landlords, and power users.</p>
                 <ul class="text-gray-600 text-left mb-6 space-y-2">
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Up to 20 listings per month</li>
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Access to AI Negotiator (5 sessions/mo)</li>
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Sublease management tools</li>
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Advanced search filters</li>
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Priority email support</li>
-                </ul>
-                <a href="/payment?plan=pro&price=19.99" class="inline-block w-full sm:w-auto bg-blue-600 text-white px-6 py-4 sm:py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg text-center min-h-[44px] flex items-center justify-center">Choose Pro</a>
-            </div>
-            <!-- Premium Plan -->
-            <div class="modern-pricing-card p-6 sm:p-8 text-center transition-all duration-300 hover:scale-105">
-                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Premium</h2>
-                <p class="text-3xl sm:text-4xl font-extrabold text-blue-600 mb-4">$39.99<span class="text-base sm:text-lg font-normal text-gray-600">/mo</span></p>
-                <p class="text-gray-600 mb-6">Ultimate plan for power users and landlords.</p>
-                <ul class="text-gray-600 text-left mb-6 space-y-2">
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Unlimited listings</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Unlimited listings, sessions, and everything</li>
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Unlimited AI Negotiator sessions</li>
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Advanced sublease management</li>
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Premium search filters</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Advanced filters, sublease management, analytics</li>
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Priority phone & email support</li>
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Analytics dashboard</li>
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Dedicated account manager</li>
+                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Analytics dashboard</li>
                 </ul>
-                <a href="/payment?plan=premium&price=39.99" class="inline-block w-full sm:w-auto bg-blue-600 text-white px-6 py-4 sm:py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg text-center min-h-[44px] flex items-center justify-center">Choose Premium</a>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-500">💰 Save 20% with annual billing</p>
+                </div>
+                <a href="/payment?plan=pro&price=19.99" class="inline-block w-full sm:w-auto bg-blue-600 text-white px-6 py-4 sm:py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg text-center min-h-[44px] flex items-center justify-center">Choose Pro</a>
             </div>
         </div>
     </section>
