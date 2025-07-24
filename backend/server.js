@@ -1299,15 +1299,6 @@ app.post('/api/verify-email', async (req, res) => {
     }
 });
 
-// API: User registration (Deprecated - use /api/send-verification + /api/verify-email instead)
-app.post('/api/register', async (req, res) => {
-    // Redirect to new email verification flow
-    res.status(400).json({ 
-        error: 'Direct registration is no longer supported. Please use the email verification flow.',
-        redirect: '/api/send-verification'
-    });
-});
-
 // API: User login
 app.post('/api/login', async (req, res) => {
     try {
@@ -1326,7 +1317,16 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        res.json({ message: 'Login successful', userId: user.id });
+        res.json({ 
+            message: 'Login successful', 
+            access_token: `token_${user.id}`,
+            userId: user.id,
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email
+            }
+        });
     } catch (error) {
         console.error('Error in /api/login:', error.message);
         res.status(500).json({ error: 'Failed to login' });
@@ -1334,7 +1334,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // API: Google OAuth Sign-In
-app.post('/api/auth/google', async (req, res) => {
+app.post('/api/auth/google-signin', async (req, res) => {
     try {
         const { idToken } = req.body;
         
@@ -1409,7 +1409,8 @@ app.post('/api/auth/google', async (req, res) => {
         }
 
         res.json({ 
-            message: 'Google Sign-In successful', 
+            message: 'Google Sign-In successful',
+            access_token: `token_${existingUser.id}`,
             user: {
                 firstName: existingUser.firstName,
                 lastName: existingUser.lastName,
@@ -1424,6 +1425,83 @@ app.post('/api/auth/google', async (req, res) => {
     } catch (error) {
         console.error('Google OAuth error:', error);
         res.status(500).json({ error: 'Google Sign-In failed' });
+    }
+});
+
+// API: Simple registration for Android app
+app.post('/api/register', async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: 'Name, email, and password are required' });
+        }
+        
+        // Check if user already exists
+        const existingUser = users.find(u => u.email === email);
+        if (existingUser) {
+            return res.status(400).json({ error: 'Email already exists' });
+        }
+        
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        // Parse first and last name
+        const nameParts = name.trim().split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        // Create new user
+        const newUser = {
+            id: Date.now().toString(),
+            firstName,
+            lastName,
+            email,
+            password: hashedPassword,
+            profileImage: null,
+            emailVerified: false,
+            createdAt: new Date().toISOString(),
+            aiChats: [],
+            listings: []
+        };
+        
+        users.push(newUser);
+        
+        // If Supabase is configured, create user there too
+        if (supabase) {
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            firstName,
+                            lastName
+                        }
+                    }
+                });
+                
+                if (error) {
+                    console.error('Supabase signUp error:', error);
+                }
+            } catch (dbError) {
+                console.error('Database error during registration:', dbError);
+            }
+        }
+        
+        res.json({ 
+            message: 'Registration successful',
+            access_token: `token_${newUser.id}`, // Simple token for now
+            user: {
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
+                email: newUser.email
+            }
+        });
+        
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({ error: 'Failed to register user' });
     }
 });
 
