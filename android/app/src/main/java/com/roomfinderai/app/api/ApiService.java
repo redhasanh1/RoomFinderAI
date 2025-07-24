@@ -35,4 +35,7 @@ public interface ApiService {
     
     @POST("api/register")
     Call<JsonObject> signUp(@Body JsonObject signUpRequest);
+    
+    @POST("api/auth/verify-code")
+    Call<JsonObject> verifyCode(@Body JsonObject verifyRequest);
 }
