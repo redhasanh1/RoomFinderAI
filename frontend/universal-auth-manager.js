@@ -52,6 +52,32 @@ function updateAuthSection() {
     const currentUser = getCurrentUser();
     
     if (isUserAuthenticated() && currentUser) {
+        // Force update to new default profile icon if user has old placeholder images
+        const oldPlaceholderPatterns = [
+            'https://via.placeholder.com/',
+            'https://ui-avatars.com/api/',
+            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA',
+            'PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA'
+        ];
+        
+        const needsUpdate = !currentUser.profileImage || 
+            oldPlaceholderPatterns.some(pattern => currentUser.profileImage.includes(pattern));
+        
+        if (needsUpdate) {
+            currentUser.profileImage = DEFAULT_PROFILE_IMAGE;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            // Also update users array
+            try {
+                let users = JSON.parse(localStorage.getItem('users')) || [];
+                users = users.map(u => u && u.email === currentUser.email ? currentUser : u);
+                localStorage.setItem('users', JSON.stringify(users));
+                console.log('✅ Profile image migrated from old placeholder to face icon');
+            } catch (e) {
+                console.error('Error updating users array:', e);
+            }
+        }
+        
         // User is logged in - show profile
         const profileImage = currentUser.profileImage || DEFAULT_PROFILE_IMAGE;
         
