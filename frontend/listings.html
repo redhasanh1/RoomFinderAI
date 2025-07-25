@@ -850,6 +850,45 @@
             box-shadow: var(--shadow-lg);
             border-color: #667eea;
         }
+        
+        /* Heart/Favorite Button Styles */
+        .favorite-btn {
+            transition: all 0.2s ease;
+            z-index: 20;
+        }
+        
+        .favorite-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .favorite-btn[data-favorited="true"] svg {
+            fill: #ef4444;
+            color: #ef4444;
+        }
+        
+        .favorite-btn[data-favorited="false"] svg {
+            fill: none;
+            color: #9ca3af;
+        }
+        
+        .favorite-btn[data-favorited="false"]:hover svg {
+            color: #ef4444;
+        }
+        
+        /* Favorite button animation */
+        .favorite-btn.favoriting {
+            animation: heartBeat 0.6s ease-in-out;
+        }
+        
+        @keyframes heartBeat {
+            0% { transform: scale(1); }
+            20% { transform: scale(1.25); }
+            40% { transform: scale(1.1); }
+            60% { transform: scale(1.25); }
+            80% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
 
         /* Original .listing-card:hover is effectively replaced by the above */
 
@@ -1892,7 +1931,7 @@
                 console.log('No current user, showing anonymous interface');
                 // Show login/register interface for anonymous users
                 authSection.innerHTML = `
-                    <div class="flex items-center gap-2 flex-wrap">
+                    <div class="flex items-center space-x-4">
                         <a href="/login" class="auth-link">Login</a>
                         <a href="/signup" class="auth-link">Sign Up</a>
                     </div>
@@ -2381,11 +2420,22 @@
                     .catch(err => console.error('Failed to fetch MIME type for', primaryImage, err));
 
                 const listingCard = document.createElement('div');
-                listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden';
+                listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
 
                 const hasOwner = !!listing.user_email;
                 listingCard.innerHTML = `
-                    <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'">
+                    <div class="relative">
+                        <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+">
+                        <button class="favorite-btn absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 z-10" 
+                                data-listing-id="${listing.id}" 
+                                data-favorited="false" 
+                                title="Save to favorites"
+                                onclick="toggleFavorite('${listing.id}', this)">
+                            <svg class="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                            </svg>
+                        </button>
+                    </div>
                     <div class="p-4">
                         <h3 class="text-lg font-semibold text-gray-800 truncate">${listing.title}</h3>
                         <p class="text-xl font-bold text-blue-600">$${listing.price.toLocaleString()}/mo</p>
@@ -4635,7 +4685,124 @@
         
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {
-            window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: true });
+            window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: true })
+                .then(result => {
+                    if (result.authenticated) {
+                        console.log('✅ User authenticated, loading listings...');
+                    } else {
+                        console.log('ℹ️ Anonymous user, loading listings...');
+                    }
+                    loadListings().then(() => {
+                        // Load favorite states after listings are loaded
+                        loadFavoriteStates();
+                    });
+                })
+                .catch(error => {
+                    console.error('Auth initialization error:', error);
+                    loadListings().then(() => {
+                        loadFavoriteStates();
+                    });
+                });
+        }
+
+        // Favorites functionality
+        async function toggleFavorite(listingId, buttonElement) {
+            const currentUser = window.UniversalAuth.getCurrentUser();
+            
+            if (!currentUser) {
+                // Show login prompt for anonymous users
+                if (confirm('Please log in to save listings to your favorites. Would you like to go to the login page?')) {
+                    window.location.href = '/login';
+                }
+                return;
+            }
+
+            try {
+                const isFavorited = buttonElement.getAttribute('data-favorited') === 'true';
+                
+                // Add heartbeat animation
+                buttonElement.classList.add('favoriting');
+                setTimeout(() => buttonElement.classList.remove('favoriting'), 600);
+                
+                if (isFavorited) {
+                    // Remove from favorites
+                    const response = await fetch('/api/favorites', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            userId: currentUser.id,
+                            listingId: listingId
+                        })
+                    });
+
+                    if (response.ok) {
+                        buttonElement.setAttribute('data-favorited', 'false');
+                        buttonElement.setAttribute('title', 'Save to favorites');
+                        console.log('✅ Removed from favorites:', listingId);
+                    } else {
+                        throw new Error('Failed to remove from favorites');
+                    }
+                } else {
+                    // Add to favorites
+                    const response = await fetch('/api/favorites', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            userId: currentUser.id,
+                            listingId: listingId
+                        })
+                    });
+
+                    if (response.ok) {
+                        buttonElement.setAttribute('data-favorited', 'true');
+                        buttonElement.setAttribute('title', 'Remove from favorites');
+                        console.log('✅ Added to favorites:', listingId);
+                    } else {
+                        throw new Error('Failed to add to favorites');
+                    }
+                }
+            } catch (error) {
+                console.error('Error toggling favorite:', error);
+                // Show user-friendly error message
+                alert('Unable to update favorites. Please try again.');
+            }
+        }
+
+        async function loadFavoriteStates() {
+            const currentUser = window.UniversalAuth.getCurrentUser();
+            
+            if (!currentUser || !currentUser.id) {
+                console.log('No authenticated user, skipping favorite states');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/favorites/${currentUser.id}`);
+                
+                if (response.ok) {
+                    const favorites = await response.json();
+                    const favoriteIds = new Set(favorites.map(fav => fav.listing_id));
+                    
+                    // Update heart button states
+                    document.querySelectorAll('.favorite-btn').forEach(button => {
+                        const listingId = button.getAttribute('data-listing-id');
+                        if (favoriteIds.has(listingId)) {
+                            button.setAttribute('data-favorited', 'true');
+                            button.setAttribute('title', 'Remove from favorites');
+                        }
+                    });
+                    
+                    console.log(`✅ Loaded ${favorites.length} favorite states`);
+                } else {
+                    console.log('Could not load favorite states');
+                }
+            } catch (error) {
+                console.error('Error loading favorite states:', error);
+            }
         }
     </script>
     
