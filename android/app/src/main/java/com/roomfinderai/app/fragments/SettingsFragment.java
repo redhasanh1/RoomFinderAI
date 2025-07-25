@@ -79,14 +79,35 @@ public class SettingsFragment extends Fragment {
     }
     
     private void loadUserPreferences() {
-        // Load user data (replace with actual data from preferences/database)
-        profileNameText.setText("John Doe");
-        profileEmailText.setText("john.doe@example.com");
-        currentLocationText.setText("Toronto, ON");
+        // Load real user data from SharedPreferences
+        android.content.SharedPreferences sharedPreferences = 
+            getContext().getSharedPreferences("RoomFinderAIPrefs", getContext().MODE_PRIVATE);
         
-        // Load preferences
-        darkModeSwitch.setChecked(false); // Load from SharedPreferences
-        notificationSwitch.setChecked(true); // Load from SharedPreferences
+        String userEmail = sharedPreferences.getString("user_email", "");
+        
+        // Extract name from email (before @) or set a default
+        String userName = "";
+        if (!userEmail.isEmpty()) {
+            userName = userEmail.substring(0, userEmail.indexOf('@'));
+            // Capitalize first letter and replace dots/underscores with spaces
+            userName = userName.replace(".", " ").replace("_", " ");
+            userName = userName.substring(0, 1).toUpperCase() + userName.substring(1);
+        }
+        
+        // Set real user data
+        profileNameText.setText(!userName.isEmpty() ? userName : "User");
+        profileEmailText.setText(!userEmail.isEmpty() ? userEmail : "Not logged in");
+        
+        // Load saved location or use default
+        String savedLocation = sharedPreferences.getString("user_location", "Toronto, ON");
+        currentLocationText.setText(savedLocation);
+        
+        // Load preferences from SharedPreferences
+        boolean isDarkMode = sharedPreferences.getBoolean("dark_mode", false);
+        boolean notificationsEnabled = sharedPreferences.getBoolean("notifications_enabled", true);
+        
+        darkModeSwitch.setChecked(isDarkMode);
+        notificationSwitch.setChecked(notificationsEnabled);
     }
     
     private void openProfileSettings() {
@@ -111,6 +132,13 @@ public class SettingsFragment extends Fragment {
     }
     
     private void applyTheme(boolean isDarkMode) {
+        // Save theme preference
+        android.content.SharedPreferences sharedPreferences = 
+            getContext().getSharedPreferences("RoomFinderAIPrefs", getContext().MODE_PRIVATE);
+        android.content.SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean("dark_mode", isDarkMode);
+        editor.apply();
+        
         if (isDarkMode) {
             // Apply dark theme
             getActivity().setTheme(R.style.MarketplaceTheme_Dark);
@@ -120,7 +148,6 @@ public class SettingsFragment extends Fragment {
             getActivity().setTheme(R.style.MarketplaceTheme);
             Toast.makeText(getContext(), "Light mode enabled", Toast.LENGTH_SHORT).show();
         }
-        // Save preference
         // getActivity().recreate(); // Uncomment to restart activity with new theme
     }
     
@@ -130,8 +157,17 @@ public class SettingsFragment extends Fragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Select Location");
         builder.setItems(locations, (dialog, which) -> {
-            currentLocationText.setText(locations[which]);
-            Toast.makeText(getContext(), "Location changed to " + locations[which], Toast.LENGTH_SHORT).show();
+            String selectedLocation = locations[which];
+            currentLocationText.setText(selectedLocation);
+            
+            // Save location preference
+            android.content.SharedPreferences sharedPreferences = 
+                getContext().getSharedPreferences("RoomFinderAIPrefs", getContext().MODE_PRIVATE);
+            android.content.SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString("user_location", selectedLocation);
+            editor.apply();
+            
+            Toast.makeText(getContext(), "Location changed to " + selectedLocation, Toast.LENGTH_SHORT).show();
         });
         builder.show();
     }
@@ -142,6 +178,12 @@ public class SettingsFragment extends Fragment {
     
     private void saveNotificationPreference(boolean enabled) {
         // Save to SharedPreferences
+        android.content.SharedPreferences sharedPreferences = 
+            getContext().getSharedPreferences("RoomFinderAIPrefs", getContext().MODE_PRIVATE);
+        android.content.SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean("notifications_enabled", enabled);
+        editor.apply();
+        
         String message = enabled ? "Notifications enabled" : "Notifications disabled";
         Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
     }
@@ -187,11 +229,29 @@ public class SettingsFragment extends Fragment {
         builder.setTitle("Logout");
         builder.setMessage("Are you sure you want to logout?");
         builder.setPositiveButton("Logout", (dialog, which) -> {
-            // Perform logout
-            Toast.makeText(getContext(), "Logged out successfully", Toast.LENGTH_SHORT).show();
-            // Navigate to login screen
+            performLogout();
         });
         builder.setNegativeButton("Cancel", null);
         builder.show();
+    }
+    
+    private void performLogout() {
+        // Clear SharedPreferences
+        android.content.SharedPreferences sharedPreferences = 
+            getContext().getSharedPreferences("RoomFinderAIPrefs", getContext().MODE_PRIVATE);
+        android.content.SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear();
+        editor.apply();
+        
+        // Clear API client auth token
+        com.roomfinderai.app.api.ApiClient.getInstance().setAuthToken(null);
+        
+        Toast.makeText(getContext(), "Logged out successfully", Toast.LENGTH_SHORT).show();
+        
+        // Navigate to login screen
+        android.content.Intent intent = new android.content.Intent(getContext(), com.roomfinderai.app.LoginActivity.class);
+        intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        getActivity().finish();
     }
 }
