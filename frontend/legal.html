@@ -52,6 +52,588 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
+        /* Enhanced Visual Improvements */
+        .hero-pattern {
+            background-image: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                             radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        }
+
+        .section-divider {
+            background: linear-gradient(90deg, transparent 0%, rgba(102, 126, 234, 0.3) 50%, transparent 100%);
+            height: 1px;
+            margin: 2rem 0;
+        }
+
+        .enhanced-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .enhanced-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+            border-color: rgba(102, 126, 234, 0.2);
+        }
+
+        .icon-container {
+            background: linear-gradient(145deg, var(--icon-bg-color, #f3f4f6), var(--icon-bg-light, #ffffff));
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .enhanced-card:hover .icon-container {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .progress-indicator {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 3px;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-indicator::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .quick-tool-card {
+            background: linear-gradient(145deg, #1f2937 0%, #111827 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .quick-tool-card:hover {
+            transform: translateY(-6px);
+            background: linear-gradient(145deg, #374151 0%, #1f2937 100%);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .enhanced-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .enhanced-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .enhanced-button:hover::before {
+            left: 100%;
+        }
+
+        .enhanced-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Smart Search Autocomplete Styles */
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0 0 1rem 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .suggestion-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .suggestion-item:hover {
+            background: #f8fafc;
+            color: #667eea;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-icon {
+            width: 20px;
+            height: 20px;
+            opacity: 0.6;
+        }
+
+        .suggestion-text {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .suggestion-category {
+            font-size: 0.75rem;
+            color: #6b7280;
+            background: #f3f4f6;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+        }
+
+        /* Search Container Enhancements */
+        .search-container {
+            position: relative;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+        }
+
+        .search-clear-btn {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 1.25rem;
+            padding: 0.25rem;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .search-clear-btn:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        /* Problem Prioritization Styles */
+        .problem-grid-container {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .problem-card {
+            order: 0;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .problem-card.priority-1 { order: 1; }
+        .problem-card.priority-2 { order: 2; }
+        .problem-card.priority-3 { order: 3; }
+        .problem-card.priority-4 { order: 4; }
+        .problem-card.priority-5 { order: 5; }
+        .problem-card.priority-6 { order: 6; }
+
+        .problem-card.highlighted {
+            transform: scale(1.02);
+            box-shadow: 0 25px 50px rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.3);
+            background: linear-gradient(145deg, #ffffff 0%, #f0f9ff 100%);
+        }
+
+        .problem-card.dimmed {
+            opacity: 0.7;
+            transform: scale(0.98);
+        }
+
+        .relevance-badge {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .problem-card.highlighted .relevance-badge {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Hover Preview Styles */
+        .problem-card {
+            position: relative;
+            overflow: visible;
+        }
+
+        .hover-preview {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 0 0 1rem 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            z-index: 20;
+            padding: 1.5rem;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            visibility: hidden;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .problem-card:hover .hover-preview {
+            opacity: 1;
+            transform: translateY(0);
+            visibility: visible;
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .preview-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .preview-title {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 1.1rem;
+        }
+
+        .preview-steps {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .preview-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .preview-step:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
+        }
+
+        .preview-step-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .preview-step-text {
+            color: #374151;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .preview-footer {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .preview-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .preview-action {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preview-action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Sticky Progress Indicator and Navigation */
+        .progress-nav {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 2rem;
+            padding: 1rem 0.75rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .progress-nav.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .progress-dots {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .progress-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #d1d5db;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .progress-dot.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transform: scale(1.5);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .progress-dot:hover {
+            background: #667eea;
+            transform: scale(1.3);
+        }
+
+        .progress-dot::after {
+            content: attr(data-label);
+            position: absolute;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            pointer-events: none;
+        }
+
+        .progress-dot:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(102, 126, 234, 0.1);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .scroll-progress.visible {
+            opacity: 1;
+        }
+
+        .scroll-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 3rem;
+            height: 3rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Hide progress nav on mobile */
+        @media (max-width: 768px) {
+            .progress-nav {
+                display: none;
+            }
+        }
+
+        /* Problem Card Enhancement Badges */
+        .card-badges {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            right: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .problem-card:hover .card-badges {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .difficulty-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .difficulty-easy { color: #059669; }
+        .difficulty-medium { color: #d97706; }
+        .difficulty-hard { color: #dc2626; }
+
+        .time-badge {
+            background: rgba(102, 126, 234, 0.95);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .success-badge {
+            background: rgba(34, 197, 94, 0.95);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .card-stats {
+            display: flex;
+            gap: 0.5rem;
+        }
+
         /* Navigation Styles */
         .nav-item {
             color: #374151;
@@ -375,7 +957,7 @@
     </header>
 
     <!-- Hero Section -->
-    <section class="pt-32 pb-16 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white relative overflow-hidden">
+    <section id="hero" class="pt-32 pb-16 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white relative overflow-hidden hero-pattern">
         <div class="absolute inset-0 bg-black opacity-20"></div>
         <div class="w-[90%] max-w-6xl mx-auto px-4 relative z-10">
             <div class="text-center mb-12">
@@ -386,11 +968,23 @@
                 
                 <!-- Problem Search -->
                 <div class="max-w-2xl mx-auto mb-8">
-                    <div class="bg-white rounded-2xl p-2 shadow-2xl">
+                    <div class="search-container rounded-2xl p-2 shadow-2xl">
                         <div class="flex flex-col md:flex-row gap-2">
-                            <input type="text" id="problemSearch" placeholder="Describe your problem... (e.g., landlord won't return deposit)" 
-                                   class="flex-1 px-6 py-4 text-gray-800 text-lg rounded-xl border-none focus:outline-none focus:ring-0">
-                            <button onclick="searchProblem()" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-all">
+                            <div class="search-input-wrapper flex-1 relative">
+                                <input type="text" id="problemSearch" placeholder="Describe your problem... (e.g., landlord won't return deposit)" 
+                                       class="w-full px-6 py-4 text-gray-800 text-lg rounded-xl border-none focus:outline-none focus:ring-0"
+                                       autocomplete="off"
+                                       oninput="handleSearchInput(event)"
+                                       onfocus="showSearchSuggestions()"
+                                       onblur="hideSearchSuggestions()">
+                                <button id="searchClearBtn" class="search-clear-btn hidden" onclick="clearSearch()" type="button">
+                                    ×
+                                </button>
+                                <div id="searchSuggestions" class="search-suggestions hidden">
+                                    <!-- Suggestions will be populated by JavaScript -->
+                                </div>
+                            </div>
+                            <button onclick="searchProblem()" class="enhanced-button text-white px-8 py-4 rounded-xl font-semibold">
                                 Get Help Now
                             </button>
                         </div>
@@ -400,21 +994,26 @@
             </div>
         </div>
     </section>
+    
+    <div class="section-divider"></div>
 
     <!-- Common Problems Section -->
-    <section class="py-16 bg-white">
+    <section id="problems" class="py-16 bg-white">
         <div class="w-[90%] max-w-7xl mx-auto px-4">
             <div class="text-center mb-12">
                 <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">What's Your Problem?</h2>
                 <p class="text-xl text-gray-600 max-w-3xl mx-auto">Click on your situation to get instant help and step-by-step guidance.</p>
             </div>
             
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div id="problemGrid" class="problem-grid-container grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Security Deposit Issues -->
-                <div class="problem-card bg-white rounded-2xl p-6 shadow-lg border urgency-high" onclick="solveProblem('security-deposit')">
+                <div class="problem-card enhanced-card bg-white rounded-2xl p-6 shadow-lg border urgency-high relative" onclick="solveProblem('security-deposit')" data-problem-type="security-deposit" data-keywords="deposit,money,return,unfair,deductions">
+                    <div class="relevance-badge">Most Relevant</div>
                     <div class="flex items-start justify-between mb-4">
                         <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                            <span class="text-2xl"></span>
+                            <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                            </svg>
                         </div>
                         <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">URGENT</span>
                     </div>
@@ -426,13 +1025,60 @@
                         </svg>
                         Get $2,000+ back on average
                     </div>
+                    
+                    <!-- Card Enhancement Badges -->
+                    <div class="card-badges">
+                        <div class="difficulty-badge difficulty-medium">
+                            <span>••◦</span> Medium
+                        </div>
+                        <div class="card-stats">
+                            <div class="time-badge">
+                                ⏱️ 20min
+                            </div>
+                            <div class="success-badge">
+                                📈 85%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hover Preview -->
+                    <div class="hover-preview">
+                        <div class="preview-header">
+                            <div class="preview-icon">💰</div>
+                            <div class="preview-title">Get Your Deposit Back</div>
+                        </div>
+                        <ol class="preview-steps">
+                            <li class="preview-step">
+                                <div class="preview-step-number">1</div>
+                                <div class="preview-step-text">Check if it's been more than 30 days since you moved out</div>
+                            </li>
+                            <li class="preview-step">
+                                <div class="preview-step-number">2</div>
+                                <div class="preview-step-text">Review what deductions they're claiming</div>
+                            </li>
+                            <li class="preview-step">
+                                <div class="preview-step-number">3</div>
+                                <div class="preview-step-text">Send a formal demand letter</div>
+                            </li>
+                        </ol>
+                        <div class="preview-footer">
+                            <div class="preview-stats">
+                                <div class="preview-stat">⏱️ ~20 min</div>
+                                <div class="preview-stat">📈 85% success</div>
+                            </div>
+                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('security-deposit');">Start Now</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Repair Issues -->
-                <div class="problem-card bg-white rounded-2xl p-6 shadow-lg border urgency-medium" onclick="solveProblem('repairs')">
+                <div class="problem-card enhanced-card bg-white rounded-2xl p-6 shadow-lg border urgency-medium relative" onclick="solveProblem('repairs')" data-problem-type="repairs" data-keywords="repair,fix,heating,plumbing,water,maintenance">
+                    <div class="relevance-badge">Highly Relevant</div>
                     <div class="flex items-start justify-between mb-4">
                         <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-                            <span class="text-2xl"></span>
+                            <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
+                            </svg>
                         </div>
                         <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-medium">COMMON</span>
                     </div>
@@ -444,13 +1090,45 @@
                         </svg>
                         Force repairs in 14 days
                     </div>
+                    
+                    <!-- Hover Preview -->
+                    <div class="hover-preview">
+                        <div class="preview-header">
+                            <div class="preview-icon">🔧</div>
+                            <div class="preview-title">Force Repairs</div>
+                        </div>
+                        <ol class="preview-steps">
+                            <li class="preview-step">
+                                <div class="preview-step-number">1</div>
+                                <div class="preview-step-text">Document the problem with photos and videos</div>
+                            </li>
+                            <li class="preview-step">
+                                <div class="preview-step-number">2</div>
+                                <div class="preview-step-text">Send written notice to landlord</div>
+                            </li>
+                            <li class="preview-step">
+                                <div class="preview-step-number">3</div>
+                                <div class="preview-step-text">Wait reasonable time (14-30 days)</div>
+                            </li>
+                        </ol>
+                        <div class="preview-footer">
+                            <div class="preview-stats">
+                                <div class="preview-stat">⏱️ ~15 min</div>
+                                <div class="preview-stat">📈 78% success</div>
+                            </div>
+                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('repairs');">Start Now</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Eviction Defense -->
-                <div class="problem-card bg-white rounded-2xl p-6 shadow-lg border urgency-high" onclick="solveProblem('eviction')">
+                <div class="problem-card enhanced-card bg-white rounded-2xl p-6 shadow-lg border urgency-high relative" onclick="solveProblem('eviction')" data-problem-type="eviction" data-keywords="eviction,notice,out,illegal,court">
+                    <div class="relevance-badge">Perfect Match</div>
                     <div class="flex items-start justify-between mb-4">
                         <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                            <span class="text-2xl"></span>
+                            <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M9.243 3.03a1 1 0 01.727 1.213L9.53 6h2.94l.56-2.243a1 1 0 111.94.486L14.53 6H17a1 1 0 110 2h-2.97l-1 4H15a1 1 0 110 2h-2.47l-.56 2.242a1 1 0 11-1.94-.485L10.47 14H7.53l-.56 2.242a1 1 0 11-1.94-.485L5.47 14H3a1 1 0 110-2h2.97l1-4H5a1 1 0 110-2h2.47l.56-2.243a1 1 0 011.213-.727zM9.03 8l-1 4h2.94l1-4H9.03z" clip-rule="evenodd"></path>
+                            </svg>
                         </div>
                         <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">URGENT</span>
                     </div>
@@ -462,13 +1140,46 @@
                         </svg>
                         Stop illegal evictions
                     </div>
+                    
+                    <!-- Hover Preview -->
+                    <div class="hover-preview">
+                        <div class="preview-header">
+                            <div class="preview-icon">⚖️</div>
+                            <div class="preview-title">Fight Eviction - URGENT</div>
+                        </div>
+                        <ol class="preview-steps">
+                            <li class="preview-step">
+                                <div class="preview-step-number">1</div>
+                                <div class="preview-step-text">Check if eviction notice is legally valid</div>
+                            </li>
+                            <li class="preview-step">
+                                <div class="preview-step-number">2</div>
+                                <div class="preview-step-text">File answer with court within deadline</div>
+                            </li>
+                            <li class="preview-step">
+                                <div class="preview-step-number">3</div>
+                                <div class="preview-step-text">Gather evidence of improper procedures</div>
+                            </li>
+                        </ol>
+                        <div class="preview-footer">
+                            <div class="preview-stats">
+                                <div class="preview-stat">⏱️ ~45 min</div>
+                                <div class="preview-stat">📈 65% success</div>
+                            </div>
+                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('eviction');">Start Now</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Rent Increase -->
-                <div class="problem-card bg-white rounded-2xl p-6 shadow-lg border urgency-medium" onclick="solveProblem('rent-increase')">
+                <div class="problem-card enhanced-card bg-white rounded-2xl p-6 shadow-lg border urgency-medium relative" onclick="solveProblem('rent-increase')" data-problem-type="rent-increase" data-keywords="rent,increase,raise,high,afford">
+                    <div class="relevance-badge">Very Relevant</div>
                     <div class="flex items-start justify-between mb-4">
                         <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                            <span class="text-2xl"></span>
+                            <svg class="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"></path>
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"></path>
+                            </svg>
                         </div>
                         <span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full font-medium">TIME-SENSITIVE</span>
                     </div>
@@ -480,13 +1191,45 @@
                         </svg>
                         Challenge illegal increases
                     </div>
+                    
+                    <!-- Hover Preview -->
+                    <div class="hover-preview">
+                        <div class="preview-header">
+                            <div class="preview-icon">📈</div>
+                            <div class="preview-title">Challenge Rent Increase</div>
+                        </div>
+                        <ol class="preview-steps">
+                            <li class="preview-step">
+                                <div class="preview-step-number">1</div>
+                                <div class="preview-step-text">Check if increase follows local rent control laws</div>
+                            </li>
+                            <li class="preview-step">
+                                <div class="preview-step-number">2</div>
+                                <div class="preview-step-text">Verify proper notice period was given</div>
+                            </li>
+                            <li class="preview-step">
+                                <div class="preview-step-number">3</div>
+                                <div class="preview-step-text">File complaint with housing authority</div>
+                            </li>
+                        </ol>
+                        <div class="preview-footer">
+                            <div class="preview-stats">
+                                <div class="preview-stat">⏱️ ~25 min</div>
+                                <div class="preview-stat">📈 72% success</div>
+                            </div>
+                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('rent-increase');">Start Now</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Landlord Harassment -->
-                <div class="problem-card bg-white rounded-2xl p-6 shadow-lg border urgency-high" onclick="solveProblem('harassment')">
+                <div class="problem-card enhanced-card bg-white rounded-2xl p-6 shadow-lg border urgency-high relative" onclick="solveProblem('harassment')" data-problem-type="harassment" data-keywords="harassment,enter,permission,threatening,harass">
+                    <div class="relevance-badge">Good Match</div>
                     <div class="flex items-start justify-between mb-4">
                         <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                            <span class="text-2xl"></span>
+                            <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
                         </div>
                         <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-medium">SERIOUS</span>
                     </div>
@@ -498,13 +1241,45 @@
                         </svg>
                         Stop harassment legally
                     </div>
+                    
+                    <!-- Hover Preview -->
+                    <div class="hover-preview">
+                        <div class="preview-header">
+                            <div class="preview-icon">⚠️</div>
+                            <div class="preview-title">Stop Harassment</div>
+                        </div>
+                        <ol class="preview-steps">
+                            <li class="preview-step">
+                                <div class="preview-step-number">1</div>
+                                <div class="preview-step-text">Document all harassment incidents with dates</div>
+                            </li>
+                            <li class="preview-step">
+                                <div class="preview-step-number">2</div>
+                                <div class="preview-step-text">Send cease and desist letter</div>
+                            </li>
+                            <li class="preview-step">
+                                <div class="preview-step-number">3</div>
+                                <div class="preview-step-text">File restraining order if needed</div>
+                            </li>
+                        </ol>
+                        <div class="preview-footer">
+                            <div class="preview-stats">
+                                <div class="preview-stat">⏱️ ~30 min</div>
+                                <div class="preview-stat">📈 82% success</div>
+                            </div>
+                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('harassment');">Start Now</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Lease Issues -->
-                <div class="problem-card bg-white rounded-2xl p-6 shadow-lg border urgency-low" onclick="solveProblem('lease-issues')">
+                <div class="problem-card enhanced-card bg-white rounded-2xl p-6 shadow-lg border urgency-low relative" onclick="solveProblem('lease-issues')" data-problem-type="lease-issues" data-keywords="lease,break,early,unfair,terms">
+                    <div class="relevance-badge">Related</div>
                     <div class="flex items-start justify-between mb-4">
                         <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                            <span class="text-2xl"></span>
+                            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm8 8v2a1 1 0 01-1 1H8a1 1 0 01-1-1v-2h8z" clip-rule="evenodd"></path>
+                            </svg>
                         </div>
                         <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">PLANNING</span>
                     </div>
@@ -516,13 +1291,44 @@
                         </svg>
                         Get out of bad leases
                     </div>
+                    
+                    <!-- Hover Preview -->
+                    <div class="hover-preview">
+                        <div class="preview-header">
+                            <div class="preview-icon">📄</div>
+                            <div class="preview-title">Break Lease Legally</div>
+                        </div>
+                        <ol class="preview-steps">
+                            <li class="preview-step">
+                                <div class="preview-step-number">1</div>
+                                <div class="preview-step-text">Review lease terms for early termination clauses</div>
+                            </li>
+                            <li class="preview-step">
+                                <div class="preview-step-number">2</div>
+                                <div class="preview-step-text">Check for legal reasons to break lease</div>
+                            </li>
+                            <li class="preview-step">
+                                <div class="preview-step-number">3</div>
+                                <div class="preview-step-text">Negotiate with landlord or use legal grounds</div>
+                            </li>
+                        </ol>
+                        <div class="preview-footer">
+                            <div class="preview-stats">
+                                <div class="preview-stat">⏱️ ~35 min</div>
+                                <div class="preview-stat">📈 68% success</div>
+                            </div>
+                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('lease-issues');">Start Now</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
+    <div class="section-divider"></div>
+
     <!-- How It Works Section -->
-    <section class="py-16 bg-gray-50">
+    <section id="howItWorks" class="py-16 bg-gray-50">
         <div class="w-[90%] max-w-6xl mx-auto px-4">
             <div class="text-center mb-12">
                 <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">How We Help (In 3 Simple Steps)</h2>
@@ -549,8 +1355,10 @@
         </div>
     </section>
 
+    <div class="section-divider"></div>
+
     <!-- Quick Tools Section -->
-    <section class="py-16 bg-gray-900 text-white">
+    <section id="quickTools" class="py-16 bg-gray-900 text-white">
         <div class="w-[90%] max-w-7xl mx-auto px-4">
             <div class="text-center mb-12">
                 <h2 class="text-3xl md:text-4xl font-bold mb-4">Need Something Specific?</h2>
@@ -558,9 +1366,11 @@
             </div>
             
             <div class="grid md:grid-cols-3 gap-8">
-                <div class="bg-gray-800 p-8 rounded-2xl text-center hover:bg-gray-700 transition-all cursor-pointer" onclick="quickTool('documents')">
+                <div class="quick-tool-card bg-gray-800 p-8 rounded-2xl text-center hover:bg-gray-700 transition-all cursor-pointer" onclick="quickTool('documents')">
                     <div class="w-16 h-16 bg-purple-600 rounded-xl flex items-center justify-center mx-auto mb-6">
-                        <span class="text-2xl"></span>
+                        <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm8 8v2a1 1 0 01-1 1H8a1 1 0 01-1-1v-2h8z" clip-rule="evenodd"></path>
+                        </svg>
                     </div>
                     <h3 class="text-xl font-bold mb-4">Legal Documents</h3>
                     <p class="text-gray-300 mb-6">Get demand letters, complaints, and legal forms instantly</p>
@@ -569,9 +1379,11 @@
                     </button>
                 </div>
                 
-                <div class="bg-gray-800 p-8 rounded-2xl text-center hover:bg-gray-700 transition-all cursor-pointer" onclick="quickTool('rights')">
+                <div class="quick-tool-card bg-gray-800 p-8 rounded-2xl text-center hover:bg-gray-700 transition-all cursor-pointer" onclick="quickTool('rights')">
                     <div class="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-6">
-                        <span class="text-2xl"></span>
+                        <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" clip-rule="evenodd"></path>
+                        </svg>
                     </div>
                     <h3 class="text-xl font-bold mb-4">Know Your Rights</h3>
                     <p class="text-gray-300 mb-6">Learn what you're entitled to as a tenant in your state</p>
@@ -580,9 +1392,11 @@
                     </button>
                 </div>
                 
-                <div class="bg-gray-800 p-8 rounded-2xl text-center hover:bg-gray-700 transition-all cursor-pointer" onclick="quickTool('lawyer')">
+                <div class="quick-tool-card bg-gray-800 p-8 rounded-2xl text-center hover:bg-gray-700 transition-all cursor-pointer" onclick="quickTool('lawyer')">
                     <div class="w-16 h-16 bg-green-600 rounded-xl flex items-center justify-center mx-auto mb-6">
-                        <span class="text-2xl"></span>
+                        <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                        </svg>
                     </div>
                     <h3 class="text-xl font-bold mb-4">Find a Lawyer</h3>
                     <p class="text-gray-300 mb-6">Connect with tenant rights attorneys in your area</p>
@@ -593,6 +1407,8 @@
             </div>
         </div>
     </section>
+
+    <div class="section-divider"></div>
 
     <!-- Problem Solver Modal -->
     <div id="problemModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -612,6 +1428,197 @@
     </div>
 
     <script>
+        // Smart Search Data
+        const searchSuggestions = [
+            { text: "My landlord won't return my security deposit", category: "Deposit", type: "security-deposit", icon: "💰" },
+            { text: "Landlord keeping deposit unfairly", category: "Deposit", type: "security-deposit", icon: "💰" },
+            { text: "Security deposit deductions seem wrong", category: "Deposit", type: "security-deposit", icon: "💰" },
+            { text: "Landlord won't fix broken heating", category: "Repairs", type: "repairs", icon: "🔧" },
+            { text: "No hot water for weeks", category: "Repairs", type: "repairs", icon: "🔧" },
+            { text: "Plumbing issues landlord ignoring", category: "Repairs", type: "repairs", icon: "🔧" },
+            { text: "I got an eviction notice", category: "Eviction", type: "eviction", icon: "⚖️" },
+            { text: "Landlord wants me out illegally", category: "Eviction", type: "eviction", icon: "⚖️" },
+            { text: "Facing eviction for no reason", category: "Eviction", type: "eviction", icon: "⚖️" },
+            { text: "Rent increase too high", category: "Rent", type: "rent-increase", icon: "📈" },
+            { text: "Landlord raised rent illegally", category: "Rent", type: "rent-increase", icon: "📈" },
+            { text: "Can't afford new rent amount", category: "Rent", type: "rent-increase", icon: "📈" },
+            { text: "Landlord enters without permission", category: "Harassment", type: "harassment", icon: "⚠️" },
+            { text: "Being harassed by landlord", category: "Harassment", type: "harassment", icon: "⚠️" },
+            { text: "Landlord threatening me", category: "Harassment", type: "harassment", icon: "⚠️" },
+            { text: "Need to break lease early", category: "Lease", type: "lease-issues", icon: "📄" },
+            { text: "Lease terms seem unfair", category: "Lease", type: "lease-issues", icon: "📄" },
+            { text: "Want out of bad lease", category: "Lease", type: "lease-issues", icon: "📄" }
+        ];
+
+        let searchTimeout;
+        let suggestionsVisible = false;
+
+        // Problem Prioritization System
+        function prioritizeProblems(query) {
+            const problemCards = document.querySelectorAll('.problem-card');
+            const keywords = query.toLowerCase().split(' ');
+            
+            // Calculate relevance scores
+            const cardScores = Array.from(problemCards).map(card => {
+                const cardKeywords = card.dataset.keywords.toLowerCase();
+                const problemType = card.dataset.problemType;
+                
+                let score = 0;
+                let matchedKeywords = 0;
+                
+                keywords.forEach(keyword => {
+                    if (cardKeywords.includes(keyword)) {
+                        score += keyword.length * 2; // Longer keywords get higher scores
+                        matchedKeywords++;
+                    }
+                });
+                
+                // Boost score based on urgency
+                if (card.classList.contains('urgency-high')) score += 10;
+                else if (card.classList.contains('urgency-medium')) score += 5;
+                
+                return {
+                    card,
+                    score,
+                    matchedKeywords,
+                    problemType
+                };
+            });
+            
+            // Sort by score (highest first)
+            cardScores.sort((a, b) => b.score - a.score);
+            
+            // Apply visual changes and reordering
+            cardScores.forEach((item, index) => {
+                const { card, score, matchedKeywords } = item;
+                
+                // Remove existing priority classes
+                card.classList.remove('priority-1', 'priority-2', 'priority-3', 'priority-4', 'priority-5', 'priority-6');
+                card.classList.remove('highlighted', 'dimmed');
+                
+                // Apply new priority order
+                card.classList.add(`priority-${index + 1}`);
+                
+                // Update relevance badge text and visibility
+                const badge = card.querySelector('.relevance-badge');
+                if (score > 15) {
+                    badge.textContent = 'Perfect Match';
+                    card.classList.add('highlighted');
+                } else if (score > 10) {
+                    badge.textContent = 'Highly Relevant';
+                    card.classList.add('highlighted');
+                } else if (score > 5) {
+                    badge.textContent = 'Very Relevant';
+                } else if (score > 0) {
+                    badge.textContent = 'Related';
+                } else {
+                    badge.textContent = 'May Help';
+                    card.classList.add('dimmed');
+                }
+            });
+        }
+        
+        function resetProblemPriority() {
+            const problemCards = document.querySelectorAll('.problem-card');
+            problemCards.forEach(card => {
+                card.classList.remove('priority-1', 'priority-2', 'priority-3', 'priority-4', 'priority-5', 'priority-6');
+                card.classList.remove('highlighted', 'dimmed');
+                
+                // Reset to default relevance badges
+                const badge = card.querySelector('.relevance-badge');
+                const problemType = card.dataset.problemType;
+                
+                switch(problemType) {
+                    case 'security-deposit':
+                    case 'eviction':
+                    case 'harassment':
+                        badge.textContent = 'High Priority';
+                        break;
+                    case 'repairs':
+                    case 'rent-increase':
+                        badge.textContent = 'Medium Priority';
+                        break;
+                    default:
+                        badge.textContent = 'Low Priority';
+                }
+            });
+        }
+
+        // Smart Search Functions
+        function handleSearchInput(event) {
+            const query = event.target.value.trim();
+            const clearBtn = document.getElementById('searchClearBtn');
+            
+            // Show/hide clear button
+            if (query.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+                resetProblemPriority();
+            }
+
+            // Debounce search suggestions and problem prioritization
+            clearTimeout(searchTimeout);
+            if (query.length > 1) {
+                searchTimeout = setTimeout(() => {
+                    updateSearchSuggestions(query);
+                    prioritizeProblems(query);
+                }, 150);
+            } else {
+                hideSearchSuggestions();
+                resetProblemPriority();
+            }
+        }
+
+        function updateSearchSuggestions(query) {
+            const suggestionContainer = document.getElementById('searchSuggestions');
+            const filtered = searchSuggestions.filter(suggestion => 
+                suggestion.text.toLowerCase().includes(query.toLowerCase()) ||
+                suggestion.category.toLowerCase().includes(query.toLowerCase())
+            ).slice(0, 8); // Limit to 8 suggestions
+
+            if (filtered.length > 0) {
+                suggestionContainer.innerHTML = filtered.map(suggestion => `
+                    <div class="suggestion-item" onclick="selectSuggestion('${suggestion.text}', '${suggestion.type}')">
+                        <span class="suggestion-icon">${suggestion.icon}</span>
+                        <span class="suggestion-text">${suggestion.text}</span>
+                        <span class="suggestion-category">${suggestion.category}</span>
+                    </div>
+                `).join('');
+                suggestionContainer.classList.remove('hidden');
+                suggestionsVisible = true;
+            } else {
+                hideSearchSuggestions();
+            }
+        }
+
+        function selectSuggestion(text, type) {
+            document.getElementById('problemSearch').value = text;
+            hideSearchSuggestions();
+            solveProblem(type);
+        }
+
+        function showSearchSuggestions() {
+            const query = document.getElementById('problemSearch').value.trim();
+            if (query.length > 1) {
+                updateSearchSuggestions(query);
+            }
+        }
+
+        function hideSearchSuggestions() {
+            setTimeout(() => {
+                document.getElementById('searchSuggestions').classList.add('hidden');
+                suggestionsVisible = false;
+            }, 200); // Delay to allow click events
+        }
+
+        function clearSearch() {
+            document.getElementById('problemSearch').value = '';
+            document.getElementById('searchClearBtn').classList.add('hidden');
+            hideSearchSuggestions();
+            document.getElementById('problemSearch').focus();
+        }
+
         // Problem solver functions
         function searchProblem() {
             const query = document.getElementById('problemSearch').value.trim();
@@ -623,6 +1630,9 @@
             // Analyze the problem and redirect to appropriate solution
             const problemType = analyzeProblem(query);
             solveProblem(problemType);
+            
+            // Hide suggestions after search
+            hideSearchSuggestions();
         }
         
         function analyzeProblem(query) {
@@ -857,10 +1867,105 @@
             }
         });
         
+        // Progress Navigation Functions
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                const offsetTop = section.offsetTop - 100; // Account for fixed header
+                window.scrollTo({
+                    top: offsetTop,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        function updateScrollProgress() {
+            const scrollProgress = document.getElementById('scrollProgress');
+            const scrollProgressBar = document.getElementById('scrollProgressBar');
+            const progressNav = document.getElementById('progressNav');
+            const backToTop = document.getElementById('backToTop');
+            
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrollPercent = (scrollTop / docHeight) * 100;
+            
+            // Update progress bar
+            scrollProgressBar.style.width = scrollPercent + '%';
+            
+            // Show/hide progress elements based on scroll position
+            if (scrollTop > 300) {
+                scrollProgress.classList.add('visible');
+                progressNav.classList.add('visible');
+                backToTop.classList.add('visible');
+            } else {
+                scrollProgress.classList.remove('visible');
+                progressNav.classList.remove('visible');
+                backToTop.classList.remove('visible');
+            }
+            
+            // Update active navigation dot
+            const sections = ['hero', 'problems', 'howItWorks', 'quickTools'];
+            const dots = document.querySelectorAll('.progress-dot');
+            
+            let activeSection = 0;
+            sections.forEach((sectionId, index) => {
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    const sectionTop = section.offsetTop - 200;
+                    if (scrollTop >= sectionTop) {
+                        activeSection = index;
+                    }
+                }
+            });
+            
+            dots.forEach((dot, index) => {
+                if (index === activeSection) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        }
+
+        // Scroll event listener
+        window.addEventListener('scroll', updateScrollProgress);
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateScrollProgress();
+        });
+
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {
             window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
         }
     </script>
+    <!-- Progress Navigation -->
+    <div id="progressNav" class="progress-nav">
+        <div class="progress-dots">
+            <div class="progress-dot" data-label="Hero Section" onclick="scrollToSection('hero')"></div>
+            <div class="progress-dot" data-label="Problems" onclick="scrollToSection('problems')"></div>
+            <div class="progress-dot" data-label="How It Works" onclick="scrollToSection('howItWorks')"></div>
+            <div class="progress-dot" data-label="Quick Tools" onclick="scrollToSection('quickTools')"></div>
+        </div>
+    </div>
+
+    <!-- Scroll Progress Bar -->
+    <div id="scrollProgress" class="scroll-progress">
+        <div id="scrollProgressBar" class="scroll-progress-bar"></div>
+    </div>
+
+    <!-- Back to Top Button -->
+    <button id="backToTop" class="back-to-top" onclick="scrollToTop()">
+        ↑
+    </button>
+
 </body>
 </html>
