@@ -1299,15 +1299,6 @@ app.post('/api/verify-email', async (req, res) => {
     }
 });
 
-// API: User registration (Deprecated - use /api/send-verification + /api/verify-email instead)
-app.post('/api/register', async (req, res) => {
-    // Redirect to new email verification flow
-    res.status(400).json({ 
-        error: 'Direct registration is no longer supported. Please use the email verification flow.',
-        redirect: '/api/send-verification'
-    });
-});
-
 // API: User login
 app.post('/api/login', async (req, res) => {
     try {
@@ -1326,7 +1317,16 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        res.json({ message: 'Login successful', userId: user.id });
+        res.json({ 
+            message: 'Login successful', 
+            access_token: `token_${user.id}`,
+            userId: user.id,
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email
+            }
+        });
     } catch (error) {
         console.error('Error in /api/login:', error.message);
         res.status(500).json({ error: 'Failed to login' });
@@ -1334,7 +1334,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // API: Google OAuth Sign-In
-app.post('/api/auth/google', async (req, res) => {
+app.post('/api/auth/google-signin', async (req, res) => {
     try {
         const { idToken } = req.body;
         
@@ -1409,7 +1409,8 @@ app.post('/api/auth/google', async (req, res) => {
         }
 
         res.json({ 
-            message: 'Google Sign-In successful', 
+            message: 'Google Sign-In successful',
+            access_token: `token_${existingUser.id}`,
             user: {
                 firstName: existingUser.firstName,
                 lastName: existingUser.lastName,
@@ -1424,6 +1425,110 @@ app.post('/api/auth/google', async (req, res) => {
     } catch (error) {
         console.error('Google OAuth error:', error);
         res.status(500).json({ error: 'Google Sign-In failed' });
+    }
+});
+
+// API: Android app registration - sends verification code
+app.post('/api/register', async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: 'Name, email, and password are required' });
+        }
+        
+        // Parse first and last name
+        const nameParts = name.trim().split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        // Use the existing send-verification logic
+        const verificationReq = {
+            body: { firstName, lastName, email, password }
+        };
+        
+        const verificationRes = {
+            status: (code) => ({
+                json: (data) => {
+                    if (code >= 400) {
+                        res.status(code).json(data);
+                    } else {
+                        // For Android, we return a different response
+                        res.json({
+                            message: 'Verification code sent to your email',
+                            requiresVerification: true,
+                            email: email
+                        });
+                    }
+                }
+            }),
+            json: (data) => {
+                res.json({
+                    message: 'Verification code sent to your email',
+                    requiresVerification: true,
+                    email: email
+                });
+            }
+        };
+        
+        // Call the existing send-verification handler
+        await app._router.stack.find(r => r.route && r.route.path === '/api/send-verification').route.stack[0].handle(verificationReq, verificationRes);
+        
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({ error: 'Failed to process registration' });
+    }
+});
+
+// API: Android app verify code
+app.post('/api/auth/verify-code', async (req, res) => {
+    try {
+        const { email, code } = req.body;
+        
+        // Use the existing verify-email logic
+        const verifyReq = { body: { email, code } };
+        let verifySuccess = false;
+        let userId = null;
+        
+        const verifyRes = {
+            status: (statusCode) => ({
+                json: (data) => {
+                    if (statusCode >= 400) {
+                        res.status(statusCode).json(data);
+                    } else {
+                        verifySuccess = true;
+                        userId = data.user?.id;
+                    }
+                }
+            }),
+            json: (data) => {
+                verifySuccess = true;
+                userId = data.user?.id;
+            }
+        };
+        
+        // Call the existing verify-email handler
+        await app._router.stack.find(r => r.route && r.route.path === '/api/verify-email').route.stack[0].handle(verifyReq, verifyRes);
+        
+        if (verifySuccess && userId) {
+            // Get the newly created user
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                res.json({
+                    message: 'Account verified successfully',
+                    access_token: `token_${user.id}`,
+                    user: {
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        email: user.email
+                    }
+                });
+            }
+        }
+        
+    } catch (error) {
+        console.error('Verification error:', error);
+        res.status(500).json({ error: 'Failed to verify code' });
     }
 });
 
