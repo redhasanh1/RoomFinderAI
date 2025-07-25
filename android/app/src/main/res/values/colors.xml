@@ -66,4 +66,9 @@
     <color name="search_background">@color/glass_white</color>
     <color name="search_hint">@color/text_secondary</color>
     <color name="search_text">@color/text_primary</color>
+    
+    <!-- Additional Colors for Login -->
+    <color name="primary">@color/purple_primary</color>
+    <color name="background">@color/background_primary</color>
+    <color name="divider">#e5e7eb</color>
 </resources>
