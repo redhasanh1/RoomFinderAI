@@ -50,6 +50,7 @@
 		A01234567890123456789050 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789049 /* Constants.swift */; };
 		A01234567890123456789052 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789051 /* Extensions.swift */; };
 		A01234567890123456789080 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A01234567890123456789079 /* Supabase */; };
+		A14EF79FBBC998E0261200AB /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E06D80E6CD6ADBF387FE9CB2 /* KeychainManager.swift */; };
 		A4CFE945359F885F4431C048 /* SubleaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1F874F608B396521435D67 /* SubleaseView.swift */; };
 		A78BF66C018CCD2A69FE6A12 /* PaymentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3437590DE2FD25CA29B11E90 /* PaymentView.swift */; };
 		B0CEB2518D02003DC8418A7E /* MortgageCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C5A7F5591D4DA4C357B1B4 /* MortgageCalculatorView.swift */; };
@@ -109,6 +110,7 @@
 		C95564652464DBA2B75243EA /* OfflineStatusView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OfflineStatusView.swift; path = ../Source/RoomFinderAI/Views/OfflineStatusView.swift; sourceTree = "<group>"; };
 		CB1533008041E96B77347363 /* NetworkInterceptorService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = NetworkInterceptorService.swift; path = ../Source/RoomFinderAI/Services/NetworkInterceptorService.swift; sourceTree = "<group>"; };
 		CE0A68A0589B1F08E6302669 /* MortgageCalculatorService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MortgageCalculatorService.swift; path = ../Source/RoomFinderAI/Services/MortgageCalculatorService.swift; sourceTree = "<group>"; };
+		E06D80E6CD6ADBF387FE9CB2 /* KeychainManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = KeychainManager.swift; path = ../Source/RoomFinderAI/Utils/KeychainManager.swift; sourceTree = "<group>"; };
 		F2A5B6A5CE41FF03A15654FB /* ImageLoadingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ImageLoadingService.swift; path = ../Source/RoomFinderAI/Services/ImageLoadingService.swift; sourceTree = "<group>"; };
 		F846A55562B2F4A62D2449C1 /* StripeService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = StripeService.swift; path = ../Source/RoomFinderAI/Services/StripeService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -136,6 +138,14 @@
 			name = "Recovered References";
 			sourceTree = "<group>";
 		};
+		79F6B6F12B546EBCC970D3EA /* RoomFinderAI */ = {
+			isa = PBXGroup;
+			children = (
+				B7418EA17E3F9049AF9548AB /* Utils */,
+			);
+			name = RoomFinderAI;
+			sourceTree = "<group>";
+		};
 		A01234567890123456789055 = {
 			isa = PBXGroup;
 			children = (
@@ -155,6 +165,7 @@
 				A01234567890123456789060 /* Models */,
 				A01234567890123456789061 /* Utils */,
 				A01234567890123456789062 /* Resources */,
+				CE0B223F8CE3E22BC88F8A5B /* Source */,
 			);
 			path = RoomFinderAI;
 			sourceTree = "<group>";
@@ -233,6 +244,7 @@
 				A01234567890123456789049 /* Constants.swift */,
 				A01234567890123456789051 /* Extensions.swift */,
 				AE28299C5DC26266857D0C05 /* ErrorHandler.swift */,
+				E06D80E6CD6ADBF387FE9CB2 /* KeychainManager.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -244,6 +256,21 @@
 				A01234567890123456789053 /* Info.plist */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		B7418EA17E3F9049AF9548AB /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Utils;
+			sourceTree = "<group>";
+		};
+		CE0B223F8CE3E22BC88F8A5B /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				79F6B6F12B546EBCC970D3EA /* RoomFinderAI */,
+			);
+			name = Source;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -369,6 +396,7 @@
 				81AEB01802DCBC50B4B30A85 /* CDUser.swift in Sources */,
 				1B95453E99AF3E94EF234011 /* CDMessage.swift in Sources */,
 				80ACF44A0B30C1BEBAD4D245 /* CDChat.swift in Sources */,
+				A14EF79FBBC998E0261200AB /* KeychainManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
