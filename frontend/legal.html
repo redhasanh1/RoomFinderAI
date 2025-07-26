@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Get Legal Help - RoomFinderAI</title>
+    <title>Housing Law Consultation Services - RoomFinderAI</title>
     
     <!-- UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
     <script src="universal-auth-protection.js"></script>
@@ -1102,6 +1102,79 @@
         .notification-btn.secondary:hover {
             background: #e5e7eb;
         }
+
+        /* Enhanced Professional Legal Styling */
+        .legal-practice-area {
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            position: relative;
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        }
+
+        .legal-practice-area:hover {
+            border-color: #667eea;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .case-priority-badge {
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+        }
+
+        .legal-consultation-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .legal-consultation-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .legal-consultation-btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .legal-consultation-btn:hover:before {
+            left: 100%;
+        }
+
+        .professional-disclaimer {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #667eea;
+        }
+
+        .legal-process-step {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .attorney-badge {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+        }
     </style>
     
     <!-- SVG Icon Definitions -->
@@ -1298,9 +1371,9 @@
         <div class="absolute inset-0 bg-black opacity-20"></div>
         <div class="w-[90%] max-w-6xl mx-auto px-4 relative z-10">
             <div class="text-center mb-12">
-                <h1 class="text-4xl md:text-6xl font-bold mb-6">Having Housing Problems?</h1>
+                <h1 class="text-4xl md:text-6xl font-bold mb-6">Housing Law Consultation Services</h1>
                 <p class="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto mb-8">
-                    Get instant help with your rental issues. Legal expertise not required - we will guide you through everything step by step.
+                    Professional legal guidance for residential housing matters. Comprehensive consultation services with experienced legal professionals.
                 </p>
                 
                 <!-- Problem Search -->
@@ -1327,7 +1400,7 @@
                                 </div>
                             </div>
                             <button onclick="searchProblem()" class="enhanced-button text-white px-8 py-4 rounded-xl font-semibold">
-                                Get Help Now
+                                Request Consultation
                             </button>
                         </div>
                     </div>
@@ -1343,8 +1416,8 @@
     <section id="problems" class="py-16 bg-white">
         <div class="w-[90%] max-w-7xl mx-auto px-4">
             <div class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">What is Your Problem?</h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Click on your situation to get instant help and step-by-step guidance.</p>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Legal Practice Areas</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Select your legal matter to receive immediate consultation and comprehensive legal guidance.</p>
             </div>
             
             <div id="problemGrid" class="problem-grid-container grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1359,7 +1432,7 @@
                         </div>
                         <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">URGENT</span>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Security Deposit Problems</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Security Deposit Recovery</h3>
                     <p class="text-gray-600 mb-4">"My landlord will not return my deposit" or "They are keeping money unfairly"</p>
                     <div class="flex items-center text-green-600 text-sm font-medium">
                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -1425,7 +1498,7 @@
                                 <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-gray-500'><use href='#icon-clock'></use></svg>~20 min</div>
                                 <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-green-500'><use href='#icon-chart'></use></svg>85% success</div>
                             </div>
-                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('security-deposit');">Start Now</button>
+                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('security-deposit');">Begin Assessment</button>
                         </div>
                     </div>
                 </div>
@@ -1441,7 +1514,7 @@
                         </div>
                         <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-medium">COMMON</span>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Repair & Maintenance</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Habitability & Repair Law</h3>
                     <p class="text-gray-600 mb-4">"Landlord will not fix heating, plumbing, or other essential repairs"</p>
                     <div class="flex items-center text-green-600 text-sm font-medium">
                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -1479,7 +1552,7 @@
                                 <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-gray-500'><use href='#icon-clock'></use></svg>~15 min</div>
                                 <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-green-500'><use href='#icon-chart'></use></svg>78% success</div>
                             </div>
-                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('repairs');">Start Now</button>
+                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('repairs');">Begin Assessment</button>
                         </div>
                     </div>
                 </div>
@@ -1495,7 +1568,7 @@
                         </div>
                         <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">URGENT</span>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Eviction Notice Received</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Eviction Defense Services</h3>
                     <p class="text-gray-600 mb-4">"I got an eviction notice" or "Landlord wants me out"</p>
                     <div class="flex items-center text-green-600 text-sm font-medium">
                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -1534,7 +1607,7 @@
                                 <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-gray-500'><use href='#icon-clock'></use></svg>~45 min</div>
                                 <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-green-500'><use href='#icon-chart'></use></svg>65% success</div>
                             </div>
-                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('eviction');">Start Now</button>
+                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('eviction');">Begin Assessment</button>
                         </div>
                     </div>
                 </div>
@@ -1551,7 +1624,7 @@
                         </div>
                         <span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full font-medium">TIME-SENSITIVE</span>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Unfair Rent Increase</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Rent Control & Increase Law</h3>
                     <p class="text-gray-600 mb-4">"Landlord raised my rent too much" or "Got rent increase notice"</p>
                     <div class="flex items-center text-green-600 text-sm font-medium">
                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -1589,7 +1662,7 @@
                                 <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-gray-500'><use href='#icon-clock'></use></svg>~25 min</div>
                                 <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-green-500'><use href='#icon-chart'></use></svg>72% success</div>
                             </div>
-                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('rent-increase');">Start Now</button>
+                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('rent-increase');">Begin Assessment</button>
                         </div>
                     </div>
                 </div>
@@ -1605,7 +1678,7 @@
                         </div>
                         <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-medium">SERIOUS</span>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Landlord Harassment</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Tenant Rights Protection</h3>
                     <p class="text-gray-600 mb-4">"Landlord enters without permission" or "Being harassed/threatened"</p>
                     <div class="flex items-center text-green-600 text-sm font-medium">
                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -1645,7 +1718,7 @@
                                 <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-gray-500'><use href='#icon-clock'></use></svg>~30 min</div>
                                 <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-green-500'><use href='#icon-chart'></use></svg>82% success</div>
                             </div>
-                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('harassment');">Start Now</button>
+                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('harassment');">Begin Assessment</button>
                         </div>
                     </div>
                 </div>
@@ -1661,7 +1734,7 @@
                         </div>
                         <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">PLANNING</span>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Lease Problems</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Lease Termination Law</h3>
                     <p class="text-gray-600 mb-4">"Need to break lease early" or "Lease terms seem unfair"</p>
                     <div class="flex items-center text-green-600 text-sm font-medium">
                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -1702,7 +1775,7 @@
                                 <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-gray-500'><use href='#icon-clock'></use></svg>~35 min</div>
                                 <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-green-500'><use href='#icon-chart'></use></svg>68% success</div>
                             </div>
-                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('lease-issues');">Start Now</button>
+                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('lease-issues');">Begin Assessment</button>
                         </div>
                     </div>
                 </div>
@@ -1716,25 +1789,25 @@
     <section id="howItWorks" class="py-16 bg-gray-50">
         <div class="w-[90%] max-w-6xl mx-auto px-4">
             <div class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">How We Help (In 3 Simple Steps)</h2>
-                <p class="text-xl text-gray-600">Legal expertise not required. We make it accessible.</p>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Legal Process Overview</h2>
+                <p class="text-xl text-gray-600">Comprehensive legal consultation process designed for optimal case resolution.</p>
             </div>
             
             <div class="grid md:grid-cols-3 gap-8">
                 <div class="text-center">
                     <div class="step-indicator w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-xl">1</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Tell Us Your Problem</h3>
-                    <p class="text-gray-600">Describe what is happening in clear, accessible language. Technical legal terminology not required.</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Initial Case Review</h3>
+                    <p class="text-gray-600">Comprehensive case assessment and legal matter evaluation by qualified professionals.</p>
                 </div>
                 <div class="text-center">
                     <div class="step-indicator w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-xl">2</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Get Your Action Plan</h3>
-                    <p class="text-gray-600">Receive step-by-step guidance, documents, and templates tailored to your situation.</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Legal Strategy Development</h3>
+                    <p class="text-gray-600">Customized legal strategy formulation with comprehensive documentation and procedural guidance.</p>
                 </div>
                 <div class="text-center">
                     <div class="step-indicator w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-xl">3</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Solve Your Problem</h3>
-                    <p class="text-gray-600">Follow our guidance to resolve your issue or connect with a lawyer if needed.</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Case Resolution</h3>
+                    <p class="text-gray-600">Implementation of legal strategy with professional oversight and expert consultation as required.</p>
                 </div>
             </div>
         </div>
@@ -2641,6 +2714,45 @@
             </div>
         </div>
     </div>
+
+    <!-- Professional Legal Disclaimers -->
+    <section class="bg-gray-50 py-12 border-t">
+        <div class="w-[90%] max-w-6xl mx-auto px-4">
+            <div class="text-center mb-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Legal Disclaimers & Important Notices</h3>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-8 text-sm text-gray-600">
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h4 class="font-semibold text-gray-900 mb-3">Attorney-Client Relationship</h4>
+                    <p class="mb-3">The information provided through this platform does not establish an attorney-client relationship. Consultation services are provided for informational purposes and preliminary case assessment only.</p>
+                    <p>For formal legal representation, a separate engagement agreement must be executed in accordance with applicable state bar regulations.</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h4 class="font-semibold text-gray-900 mb-3">Professional Legal Advice</h4>
+                    <p class="mb-3">This platform provides general legal information and consultation services. All legal strategies and documentation are developed in accordance with applicable federal, state, and local housing laws.</p>
+                    <p>Individual results may vary based on specific case circumstances and jurisdictional requirements.</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h4 class="font-semibold text-gray-900 mb-3">Jurisdictional Compliance</h4>
+                    <p class="mb-3">Legal consultation services are provided in compliance with state bar admission requirements and applicable rules of professional conduct. Services may vary by jurisdiction.</p>
+                    <p>Users are advised to verify local housing law requirements and procedural deadlines in their specific jurisdiction.</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h4 class="font-semibold text-gray-900 mb-3">Privacy & Confidentiality</h4>
+                    <p class="mb-3">All case consultations are conducted with strict adherence to attorney-client privilege and professional confidentiality standards as required by applicable rules of professional conduct.</p>
+                    <p>Client information is protected in accordance with state and federal privacy regulations.</p>
+                </div>
+            </div>
+            
+            <div class="mt-8 text-center">
+                <p class="text-xs text-gray-500">© 2024 RoomFinderAI Legal Services. All rights reserved. Licensed legal professionals providing consultation services in accordance with applicable state bar regulations.</p>
+            </div>
+        </div>
+    </section>
 
 </body>
 </html>
