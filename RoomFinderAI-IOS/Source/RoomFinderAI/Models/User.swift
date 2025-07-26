@@ -21,12 +21,14 @@ struct User: Identifiable, Codable, Equatable {
         return profileImage
     }
     
+    // Simple verification status for demo
     var verificationStatus: VerificationStatus {
-        return .pending
+        return .verified // Always verified for demo
     }
     
+    // Simple subscription status for demo
     var subscriptionStatus: SubscriptionStatus {
-        return .free
+        return .free // Always free for demo
     }
     
     enum CodingKeys: String, CodingKey {
@@ -39,114 +41,51 @@ struct User: Identifiable, Codable, Equatable {
     }
 }
 
-struct UserPreferences: Codable, Equatable {
-    let maxBudget: Double?
-    let preferredLocations: [String]
-    let bedroomCount: Int?
-    let bathroomCount: Int?
-    let petFriendly: Bool
-    let smokingAllowed: Bool
-    let notifications: NotificationPreferences
-    
-    enum CodingKeys: String, CodingKey {
-        case maxBudget = "max_budget"
-        case preferredLocations = "preferred_locations"
-        case bedroomCount = "bedroom_count"
-        case bathroomCount = "bathroom_count"
-        case petFriendly = "pet_friendly"
-        case smokingAllowed = "smoking_allowed"
-        case notifications
-    }
-}
-
-struct NotificationPreferences: Codable, Equatable {
-    let emailNotifications: Bool
-    let pushNotifications: Bool
-    let smsNotifications: Bool
-    let newListings: Bool
-    let messageAlerts: Bool
-    let priceAlerts: Bool
-    
-    enum CodingKeys: String, CodingKey {
-        case emailNotifications = "email_notifications"
-        case pushNotifications = "push_notifications"
-        case smsNotifications = "sms_notifications"
-        case newListings = "new_listings"
-        case messageAlerts = "message_alerts"
-        case priceAlerts = "price_alerts"
-    }
-}
-
-enum VerificationStatus: String, Codable, CaseIterable {
-    case pending = "pending"
-    case verified = "verified"
-    case rejected = "rejected"
+// Simple verification status enum
+enum VerificationStatus {
+    case verified
+    case unverified
+    case pending
     
     var displayName: String {
         switch self {
-        case .pending: return "Pending"
-        case .verified: return "Verified"
-        case .rejected: return "Rejected"
+        case .verified:
+            return "Verified"
+        case .unverified:
+            return "Unverified"
+        case .pending:
+            return "Pending"
         }
     }
 }
 
-enum SubscriptionStatus: String, Codable, CaseIterable {
-    case free = "free"
-    case basic = "basic"
-    case premium = "premium"
-    case enterprise = "enterprise"
+enum SubscriptionStatus {
+    case free
+    case premium
+    case pro
     
     var displayName: String {
         switch self {
-        case .free: return "Free"
-        case .basic: return "Basic"
-        case .premium: return "Premium"
-        case .enterprise: return "Enterprise"
+        case .free:
+            return "Free"
+        case .premium:
+            return "Premium"
+        case .pro:
+            return "Pro"
         }
     }
 }
 
-struct UserSession: Codable, Equatable {
-    let accessToken: String
-    let refreshToken: String
-    let expiresAt: Date
-    let user: User
-    
-    enum CodingKeys: String, CodingKey {
-        case accessToken = "access_token"
-        case refreshToken = "refresh_token"
-        case expiresAt = "expires_at"
-        case user
-    }
-}
+// Simplified models for basic auth
 
-struct AuthRequest: Codable, Equatable {
+struct SimpleAuthRequest: Codable, Equatable {
     let email: String
     let password: String
 }
 
-struct SignUpRequest: Codable, Equatable {
+struct SimpleSignUpRequest: Codable, Equatable {
     let email: String
     let password: String
-    let name: String?
-    let phone: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case email, password, name, phone
-    }
-}
-
-struct ForgotPasswordRequest: Codable, Equatable {
-    let email: String
-}
-
-struct ResetPasswordRequest: Codable, Equatable {
-    let token: String
-    let newPassword: String
-    
-    enum CodingKeys: String, CodingKey {
-        case token
-        case newPassword = "new_password"
-    }
+    let firstName: String?
+    let lastName: String?
 }

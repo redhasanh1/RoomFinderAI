@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ListingsView: View {
-    @EnvironmentObject var listingsViewModel: ListingsViewModel
+    @EnvironmentObject var listingsViewModel: SimpleListingsViewModel
     @State private var showingFilters = false
     @State private var selectedListing: Listing?
     @State private var showingPropertyDetail = false
@@ -127,11 +127,46 @@ struct ListingsView: View {
                     Spacer()
                 } else if listingsViewModel.listings.isEmpty {
                     Spacer()
-                    EmptyStateView(
-                        title: "No listings found",
-                        subtitle: "Try adjusting your search criteria or location",
-                        icon: "magnifyingglass"
-                    )
+                    VStack(spacing: 16) {
+                        // Debug Information - Simplified
+                        DebugInfoView(viewModel: listingsViewModel)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                        .padding(.horizontal)
+                        
+                        VStack(spacing: 12) {
+                            EmptyStateView(
+                                icon: "magnifyingglass",
+                                title: "No listings found",
+                                subtitle: "Debug info above shows connection details",
+                                actionTitle: "Retry",
+                                action: {
+                                    listingsViewModel.refreshListings()
+                                }
+                            )
+                            
+                            // Create Sample Data Button (only show if count is 0)
+                            if listingsViewModel.listingsCount == 0 {
+                                Button(action: {
+                                    listingsViewModel.createSampleData()
+                                }) {
+                                    HStack {
+                                        Image(systemName: "plus.circle.fill")
+                                        Text("Create Sample Data")
+                                    }
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 10)
+                                    .background(Color.green)
+                                    .cornerRadius(20)
+                                }
+                                .disabled(listingsViewModel.isLoading)
+                            }
+                        }
+                    }
                     Spacer()
                 } else {
                     ScrollView {
@@ -279,32 +314,11 @@ struct ListingCard: View {
     }
 }
 
-struct FilterChip: View {
-    let text: String
-    let onRemove: () -> Void
-    
-    var body: some View {
-        HStack(spacing: 4) {
-            Text(text)
-                .font(.caption)
-                .foregroundColor(.primaryBlue)
-            
-            Button(action: onRemove) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.caption)
-                    .foregroundColor(.primaryBlue)
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.primaryBlue.opacity(0.1))
-        .cornerRadius(12)
-    }
-}
+// FilterChip moved to SharedComponents.swift
 
 struct FiltersView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var listingsViewModel: ListingsViewModel
+    @EnvironmentObject var listingsViewModel: SimpleListingsViewModel
     @State private var tempLocation = ""
     @State private var tempMinPrice: Double = 0
     @State private var tempMaxPrice: Double = 5000
@@ -519,32 +533,9 @@ struct RangeSlider: View {
     }
 }
 
-struct EmptyStateView: View {
-    let title: String
-    let subtitle: String
-    let icon: String
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 48))
-                .foregroundColor(.secondary)
-            
-            Text(title)
-                .font(.title3)
-                .fontWeight(.semibold)
-                .foregroundColor(.primary)
-            
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding()
-    }
-}
+// EmptyStateView moved to SharedComponents.swift
 
 #Preview {
     ListingsView()
-        .environmentObject(ListingsViewModel())
+        .environmentObject(SimpleListingsViewModel())
 }

@@ -5,22 +5,28 @@ import SwiftUI
 struct StatCard: View {
     let title: String
     let value: String
+    let icon: String
     
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(.primaryBlue)
+            
             Text(value)
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(.primaryBlue)
+                .foregroundColor(.primary)
             
             Text(title)
                 .font(.caption)
                 .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
         }
+        .padding()
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
         .background(Color(.systemGray6))
-        .cornerRadius(8)
+        .cornerRadius(12)
     }
 }
 
@@ -100,10 +106,135 @@ struct EmptyStateView: View {
     }
 }
 
+// MARK: - Dashboard Components
+
+struct QuickActionCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: icon)
+                        .font(.title2)
+                        .foregroundColor(color)
+                    Spacer()
+                }
+                
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+struct SectionHeader: View {
+    let title: String
+    
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.title3)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+            Spacer()
+        }
+        .padding(.horizontal)
+    }
+}
+
+struct PremiumFeatureCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let color: Color
+    let isPremium: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: icon)
+                        .font(.title2)
+                        .foregroundColor(color)
+                    
+                    if isPremium {
+                        Spacer()
+                        Image(systemName: "crown.fill")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                }
+                
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(isPremium ? Color.orange.opacity(0.1) : Color(.systemGray6))
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isPremium ? Color.orange.opacity(0.3) : Color.clear, lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Filter Components
+
+struct FilterChip: View {
+    let text: String
+    let onRemove: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(text)
+                .font(.caption)
+                .foregroundColor(.white)
+            
+            Button(action: onRemove) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 8))
+                    .foregroundColor(.white)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.primaryBlue)
+        .cornerRadius(12)
+    }
+}
+
 // MARK: - Network Error Component
 
 struct NetworkErrorView: View {
-    let error: NetworkError
+    let message: String
     let retryAction: () -> Void
     
     var body: some View {
@@ -116,7 +247,7 @@ struct NetworkErrorView: View {
                 .font(.title3)
                 .fontWeight(.semibold)
             
-            Text(error.localizedDescription)
+            Text(message)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)

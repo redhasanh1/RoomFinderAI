@@ -2,14 +2,14 @@ import SwiftUI
 
 struct SignUpView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var authViewModel: SimpleAuthViewModel
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
-    @State private var name = ""
+    @State private var firstName = ""
+    @State private var lastName = ""
     @State private var showPassword = false
     @State private var showConfirmPassword = false
-    @State private var agreeToTerms = false
     
     var body: some View {
         NavigationView {
@@ -34,9 +34,9 @@ struct SignUpView: View {
                     
                     // Sign Up Form
                     VStack(spacing: 16) {
-                        // Name Field
+                        // First Name Field
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Full Name")
+                            Text("First Name")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                                 .foregroundColor(.primary)
@@ -45,18 +45,14 @@ struct SignUpView: View {
                                 Image(systemName: "person")
                                     .foregroundColor(.secondary)
                                 
-                                TextField("Enter your full name", text: $name)
+                                TextField("Enter your first name", text: $firstName)
                                     .textFieldStyle(PlainTextFieldStyle())
-                                    .textContentType(.name)
+                                    .textContentType(.givenName)
                                     .autocapitalization(.words)
                             }
                             .padding()
                             .background(Color(.systemGray6))
                             .cornerRadius(12)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(name.isEmpty ? Color.clear : (name.count >= 2 ? Color.green : Color.red), lineWidth: 1)
-                            )
                         }
                         
                         // Email Field
@@ -175,47 +171,11 @@ struct SignUpView: View {
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(confirmPassword.isEmpty ? Color.clear : (authViewModel.validatePasswordConfirmation(password, confirmPassword) ? Color.green : Color.red), lineWidth: 1)
+                                    .stroke(confirmPassword.isEmpty ? Color.clear : (password == confirmPassword ? Color.green : Color.red), lineWidth: 1)
                             )
                         }
                         
-                        // Terms and Conditions
-                        HStack(alignment: .top, spacing: 12) {
-                            Button(action: {
-                                agreeToTerms.toggle()
-                            }) {
-                                Image(systemName: agreeToTerms ? "checkmark.square.fill" : "square")
-                                    .foregroundColor(agreeToTerms ? .primaryBlue : .secondary)
-                                    .font(.title3)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("I agree to the")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                
-                                HStack(spacing: 4) {
-                                    Button("Terms of Service") {
-                                        // Open Terms of Service
-                                    }
-                                    .font(.caption)
-                                    .foregroundColor(.primaryBlue)
-                                    
-                                    Text("and")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    
-                                    Button("Privacy Policy") {
-                                        // Open Privacy Policy
-                                    }
-                                    .font(.caption)
-                                    .foregroundColor(.primaryBlue)
-                                }
-                            }
-                            
-                            Spacer()
-                        }
-                        .padding(.horizontal, 4)
+                        // Simplified - no terms checkbox for demo app
                     }
                     .padding(.horizontal)
                     
@@ -229,9 +189,7 @@ struct SignUpView: View {
                     
                     // Sign Up Button
                     Button(action: {
-                        Task {
-                            await authViewModel.signUp(email: email, password: password, name: name)
-                        }
+                        authViewModel.signUp(email: email, password: password, firstName: firstName, lastName: lastName)
                     }) {
                         HStack {
                             if authViewModel.isLoading {
@@ -309,11 +267,11 @@ struct SignUpView: View {
     }
     
     private var isFormValid: Bool {
-        return !name.isEmpty &&
-               name.count >= 2 &&
+        return !firstName.isEmpty &&
+               firstName.count >= 2 &&
                authViewModel.validateEmail(email) &&
-               authViewModel.validatePasswordConfirmation(password, confirmPassword) &&
-               agreeToTerms
+               authViewModel.validatePassword(password) &&
+               password == confirmPassword
     }
 }
 
@@ -338,5 +296,5 @@ struct PasswordRequirement: View {
 
 #Preview {
     SignUpView()
-        .environmentObject(AuthViewModel())
+        .environmentObject(SimpleAuthViewModel())
 }
