@@ -72,9 +72,23 @@ class ListingsViewModel: ObservableObject {
     
     func loadInitialData() {
         Task {
+            // Test connection first with detailed diagnostics
+            print("🚀 Starting initial data load...")
+            
+            do {
+                let connectionSuccess = try await supabaseService.testConnection()
+                print("🔗 Connection test result: \(connectionSuccess ? "SUCCESS" : "FAILED")")
+            } catch {
+                print("⚠️ Connection test failed: \(error.localizedDescription)")
+                print("💡 Continuing with data load - may work despite connection test failure")
+            }
+            
+            print("📊 Loading listings data...")
             await loadListings()
             await loadFeaturedListings()
             await loadFavoriteListings()
+            
+            print("🏁 Initial data load completed")
         }
     }
     
@@ -139,8 +153,11 @@ class ListingsViewModel: ObservableObject {
         }
         
         do {
-            // For now, fetch all listings to test the API connection
-            let fetchedListings = try await supabaseService.fetchAllListings()
+            // Use the enhanced method with automatic anonymous access fallback
+            let fetchedListings = try await supabaseService.fetchListingsWithAnonymousAccess(
+                page: currentPage - 1, // Convert to 0-based page index like web
+                limit: itemsPerPage
+            )
             
             if append {
                 listings.append(contentsOf: fetchedListings)
@@ -148,14 +165,19 @@ class ListingsViewModel: ObservableObject {
                 listings = fetchedListings
             }
             
-            // Calculate pagination info
-            let totalItems = fetchedListings.count
-            totalPages = (totalItems + itemsPerPage - 1) / itemsPerPage
-            hasNextPage = currentPage < totalPages
+            // Update pagination info based on returned results
+            hasNextPage = fetchedListings.count == itemsPerPage // More pages available if we got a full page
             hasPreviousPage = currentPage > 1
             
+            // For total pages, we'll estimate based on current results (this could be improved with a count query)
+            if fetchedListings.count < itemsPerPage {
+                totalPages = currentPage // This is the last page
+            } else {
+                totalPages = currentPage + 1 // At least one more page exists
+            }
+            
             isLoading = false
-            print("✅ Successfully loaded \(fetchedListings.count) listings")
+            print("✅ Successfully loaded \(fetchedListings.count) listings for page \(currentPage)")
         } catch {
             errorMessage = error.localizedDescription
             isLoading = false
@@ -166,9 +188,12 @@ class ListingsViewModel: ObservableObject {
     @MainActor
     private func loadFeaturedListings() async {
         do {
-            // For now, just use the first 10 listings as featured
-            let allListings = try await supabaseService.fetchAllListings()
-            featuredListings = Array(allListings.prefix(10))
+            // Use the enhanced method with anonymous access for featured listings
+            let featuredListings = try await supabaseService.fetchListingsWithAnonymousAccess(
+                page: 0, // First page
+                limit: 10 // Only get 10 featured listings
+            )
+            self.featuredListings = featuredListings
             print("✅ Successfully loaded \(featuredListings.count) featured listings")
         } catch {
             print("❌ Error loading featured listings: \(error)")
@@ -252,6 +277,14 @@ class ListingsViewModel: ObservableObject {
     
     var hasError: Bool {
         return errorMessage != nil
+    }
+    
+    // MARK: - Debugging and Diagnostics
+    
+    func runSupabaseDiagnostics() {
+        Task {
+            await supabaseService.runDiagnosticTest()
+        }
     }
     
     // MARK: - Location Services

@@ -1,11 +1,8 @@
 import SwiftUI
-<<<<<<< HEAD:RoomFinderAI-IOS/Source/RoomFinderAI/Views/SubleaseView.swift
 // StatCard is now in SharedComponents
-=======
->>>>>>> 4ebf3a8 (Add comprehensive iOS native app with enhanced features and services):ios-native/RoomFinderAI/Views/SubleaseView.swift
 
 struct SubleaseView: View {
-    @EnvironmentObject var listingsViewModel: ListingsViewModel
+    @EnvironmentObject var listingsViewModel: SimpleListingsViewModel
     @State private var selectedTimeframe: SubleaseTimeframe = .summer
     @State private var showingCreateSublease = false
     @State private var showingFilters = false
@@ -61,9 +58,9 @@ struct SubleaseView: View {
                     
                     // Quick stats
                     HStack {
-                        StatCard(title: "Available", value: "\(subleaseListings.count)")
-                        StatCard(title: "Avg Price", value: "$\(averageSubleasePrice)")
-                        StatCard(title: "Success Rate", value: "87%")
+                        StatCard(title: "Available", value: "\(subleaseListings.count)", icon: "house.fill")
+                        StatCard(title: "Avg Price", value: "$\(averageSubleasePrice)", icon: "dollarsign.circle")
+                        StatCard(title: "Success Rate", value: "87%", icon: "checkmark.circle")
                     }
                 }
                 .padding()
@@ -270,31 +267,7 @@ struct SubleaseCard: View {
     }
 }
 
-<<<<<<< HEAD:RoomFinderAI-IOS/Source/RoomFinderAI/Views/SubleaseView.swift
 // StatCard moved to shared component
-=======
-struct StatCard: View {
-    let title: String
-    let value: String
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.primaryBlue)
-            
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(Color(.systemGray6))
-        .cornerRadius(8)
-    }
-}
->>>>>>> 4ebf3a8 (Add comprehensive iOS native app with enhanced features and services):ios-native/RoomFinderAI/Views/SubleaseView.swift
 
 struct EmptySubleaseView: View {
     var body: some View {
@@ -651,5 +624,5 @@ enum SubleaseType: String, CaseIterable {
 
 #Preview {
     SubleaseView()
-        .environmentObject(ListingsViewModel())
+        .environmentObject(SimpleListingsViewModel())
 }

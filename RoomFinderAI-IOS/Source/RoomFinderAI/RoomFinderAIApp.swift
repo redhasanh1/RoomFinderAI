@@ -2,16 +2,14 @@
 
 @main
 struct RoomFinderAIApp: App {
-    @StateObject private var authViewModel = AuthViewModel()
-    @StateObject private var listingsViewModel = ListingsViewModel()
-    @StateObject private var chatViewModel = ChatViewModel()
+    @StateObject private var authViewModel = SimpleAuthViewModel()
+    @StateObject private var listingsViewModel = SimpleListingsViewModel()
     
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(authViewModel)
                 .environmentObject(listingsViewModel)
-                .environmentObject(chatViewModel)
                 .onAppear {
                     authViewModel.checkAuthStatus()
                 }

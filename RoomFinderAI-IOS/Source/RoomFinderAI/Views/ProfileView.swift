@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ProfileView: View {
-    @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var authViewModel: SimpleAuthViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var showingEditProfile = false
     @State private var showingSettings = false
@@ -148,9 +148,7 @@ struct ProfileView: View {
                     // Sign Out Button (only for authenticated users)
                     if authViewModel.isAuthenticated {
                         Button(action: {
-                            Task {
-                                await authViewModel.signOut()
-                            }
+                            authViewModel.signOut()
                         }) {
                             HStack {
                                 if authViewModel.isLoading {
@@ -260,7 +258,7 @@ struct ProfileMenuItem: View {
 
 struct EditProfileView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var authViewModel: SimpleAuthViewModel
     @State private var name = ""
     @State private var phone = ""
     @State private var location = ""
@@ -383,5 +381,5 @@ struct SettingsView: View {
 
 #Preview {
     ProfileView()
-        .environmentObject(AuthViewModel())
+        .environmentObject(SimpleAuthViewModel())
 }
