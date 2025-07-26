@@ -64,9 +64,6 @@ public class LoginActivity extends AppCompatActivity {
         configureGoogleSignIn();
         setupClickListeners();
         
-        // Clear any cached Google Sign-In data that might be corrupted
-        clearGoogleSignInCache();
-        
         // Initialize API service
         apiService = ApiClient.getInstance().getApiService();
     }
@@ -86,20 +83,18 @@ public class LoginActivity extends AppCompatActivity {
     }
     
     private void configureGoogleSignIn() {
-        try {
-            // Try without requestIdToken first - simpler approach
-            GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                    .requestEmail()
-                    .requestProfile()
-                    .build();
-            
-            googleSignInClient = GoogleSignIn.getClient(this, gso);
-            Log.d(TAG, "Google Sign-In configured without ID token requirement");
-            
-        } catch (Exception e) {
-            Log.e(TAG, "Error configuring Google Sign-In: " + e.getMessage(), e);
-            showError("Google Sign-In configuration failed");
+        // Configure Google Sign-In
+        String webClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID;
+        if (webClientId == null || webClientId.isEmpty()) {
+            webClientId = getString(R.string.web_client_id);
         }
+        
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(webClientId)
+                .requestEmail()
+                .build();
+        
+        googleSignInClient = GoogleSignIn.getClient(this, gso);
     }
     
     private void setupClickListeners() {
@@ -189,23 +184,16 @@ public class LoginActivity extends AppCompatActivity {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
             
+            // Get ID token
+            String idToken = account.getIdToken();
             String email = account.getEmail();
-            String displayName = account.getDisplayName();
-            
-            Log.d(TAG, "Google Sign-In successful - Email: " + email + ", Name: " + displayName);
-            
-            if (email == null || email.isEmpty()) {
-                showError("Failed to get email from Google account");
-                return;
-            }
             
             showLoading(true);
             
-            // Send email and profile info to backend
+            // Send ID token to backend for verification
             JsonObject googleSignInRequest = new JsonObject();
+            googleSignInRequest.addProperty("id_token", idToken);
             googleSignInRequest.addProperty("email", email);
-            googleSignInRequest.addProperty("name", displayName);
-            googleSignInRequest.addProperty("provider", "google");
             
             apiService.googleSignIn(googleSignInRequest).enqueue(new Callback<JsonObject>() {
                 @Override
@@ -236,17 +224,8 @@ public class LoginActivity extends AppCompatActivity {
             });
             
         } catch (ApiException e) {
-            Log.w(TAG, "Google sign in failed with error code: " + e.getStatusCode(), e);
-            
-            String errorMessage;
-            switch (e.getStatusCode()) {
-                case 10:
-                    errorMessage = "Google Sign-In configuration error";
-                    break;
-                default:
-                    errorMessage = "Google sign-in failed: " + e.getStatusCode();
-            }
-            showError(errorMessage);
+            Log.w(TAG, "Google sign in failed", e);
+            showError("Google sign-in failed: " + e.getStatusCode());
         }
     }
     
@@ -299,17 +278,6 @@ public class LoginActivity extends AppCompatActivity {
         return accessToken != null && !accessToken.isEmpty();
     }
     
-    private void clearGoogleSignInCache() {
-        try {
-            if (googleSignInClient != null) {
-                googleSignInClient.signOut();
-                Log.d(TAG, "Cleared Google Sign-In cache");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error clearing Google Sign-In cache: " + e.getMessage());
-        }
-    }
-
     private void navigateToMainActivity() {
         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
