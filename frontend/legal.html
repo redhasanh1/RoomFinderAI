@@ -1004,6 +1004,104 @@
         #nextButton:hover {
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
         }
+
+        /* Professional Notification Modal */
+        .notification-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .notification-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .notification-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            margin: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification-modal.active .notification-content {
+            transform: translateY(0);
+        }
+
+        .notification-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .notification-icon {
+            width: 24px;
+            height: 24px;
+            color: #667eea;
+        }
+
+        .notification-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .notification-message {
+            color: #6b7280;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+        }
+
+        .notification-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .notification-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .notification-btn.primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .notification-btn.primary:hover {
+            background: #5a67d8;
+        }
+
+        .notification-btn.secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .notification-btn.secondary:hover {
+            background: #e5e7eb;
+        }
     </style>
     
     <!-- SVG Icon Definitions -->
@@ -1089,7 +1187,7 @@
                 <!-- Browse Dropdown -->
                 <div class="dropdown">
                     <button class="nav-item dropdown-trigger">
-                        Browse <span class="dropdown-arrow">▼</span>
+                        Browse <span class="dropdown-arrow"><svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></span>
                     </button>
                     <div class="dropdown-menu">
                         <a href="listings.html" class="dropdown-item">Browse Listings</a>
@@ -1101,7 +1199,7 @@
                 <!-- Tools Dropdown -->
                 <div class="dropdown">
                     <button class="nav-item dropdown-trigger">
-                        Tools <span class="dropdown-arrow">▼</span>
+                        Tools <span class="dropdown-arrow"><svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></span>
                     </button>
                     <div class="dropdown-menu">
                         <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
@@ -1114,7 +1212,7 @@
                 <!-- About Dropdown -->
                 <div class="dropdown">
                     <button class="nav-item dropdown-trigger">
-                        About <span class="dropdown-arrow">▼</span>
+                        About <span class="dropdown-arrow"><svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></span>
                     </button>
                     <div class="dropdown-menu">
                         <a href="index.html#about" class="dropdown-item">About Us</a>
@@ -1138,7 +1236,11 @@
             <div class="mobile-menu-content">
                 <div class="mobile-menu-header">
                     <div class="text-lg font-bold gradient-text">RoomFinderAI</div>
-                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
+                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
                 </div>
                 
                 <div class="mobile-menu-items">
@@ -1147,7 +1249,7 @@
                     <!-- Browse Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
-                            Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
+                            Browse <span class="mobile-arrow" id="browse-arrow"><svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></span>
                         </button>
                         <div class="mobile-section-content" id="browse-section">
                             <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
@@ -1159,7 +1261,7 @@
                     <!-- Tools Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('tools')">
-                            Tools <span class="mobile-arrow" id="tools-arrow">▼</span>
+                            Tools <span class="mobile-arrow" id="tools-arrow"><svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></span>
                         </button>
                         <div class="mobile-section-content" id="tools-section">
                             <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
@@ -1172,7 +1274,7 @@
                     <!-- About Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('about')">
-                            About <span class="mobile-arrow" id="about-arrow">▼</span>
+                            About <span class="mobile-arrow" id="about-arrow"><svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></span>
                         </button>
                         <div class="mobile-section-content" id="about-section">
                             <a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
@@ -1198,7 +1300,7 @@
             <div class="text-center mb-12">
                 <h1 class="text-4xl md:text-6xl font-bold mb-6">Having Housing Problems?</h1>
                 <p class="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto mb-8">
-                    Get instant help with your rental issues. No legal experience needed - we'll guide you through everything step by step.
+                    Get instant help with your rental issues. Legal expertise not required - we will guide you through everything step by step.
                 </p>
                 
                 <!-- Problem Search -->
@@ -1206,14 +1308,16 @@
                     <div class="search-container rounded-2xl p-2 shadow-2xl">
                         <div class="flex flex-col md:flex-row gap-2">
                             <div class="search-input-wrapper flex-1 relative">
-                                <input type="text" id="problemSearch" placeholder="Describe your problem... (e.g., landlord won't return deposit)" 
+                                <input type="text" id="problemSearch" placeholder="Describe your problem... (e.g., landlord will not return deposit)" 
                                        class="w-full px-6 py-4 text-gray-800 text-lg rounded-xl border-none focus:outline-none focus:ring-0"
                                        autocomplete="off"
                                        oninput="handleSearchInput(event)"
                                        onfocus="showSearchSuggestions()"
                                        onblur="hideSearchSuggestions()">
                                 <button id="searchClearBtn" class="search-clear-btn hidden" onclick="clearSearch()" type="button">
-                                    ×
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
                                 </button>
                                 <div id="searchSuggestions" class="search-suggestions hidden">
                                     <!-- Suggestions will be populated by JavaScript -->
@@ -1239,7 +1343,7 @@
     <section id="problems" class="py-16 bg-white">
         <div class="w-[90%] max-w-7xl mx-auto px-4">
             <div class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">What's Your Problem?</h2>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">What is Your Problem?</h2>
                 <p class="text-xl text-gray-600 max-w-3xl mx-auto">Click on your situation to get instant help and step-by-step guidance.</p>
             </div>
             
@@ -1256,7 +1360,7 @@
                         <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">URGENT</span>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Security Deposit Problems</h3>
-                    <p class="text-gray-600 mb-4">"My landlord won't return my deposit" or "They're keeping money unfairly"</p>
+                    <p class="text-gray-600 mb-4">"My landlord will not return my deposit" or "They are keeping money unfairly"</p>
                     <div class="flex items-center text-green-600 text-sm font-medium">
                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
@@ -1267,7 +1371,11 @@
                     <!-- Card Enhancement Badges -->
                     <div class="card-badges">
                         <div class="difficulty-badge difficulty-medium">
-                            <span>••◦</span> Medium
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" class="inline mr-1">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clip-rule="evenodd"></path>
+                                <circle cx="10" cy="10" r="3" fill="currentColor"></circle>
+                            </svg>
+                            Medium
                         </div>
                         <div class="card-stats">
                             <div class="time-badge">
@@ -1301,11 +1409,11 @@
                         <ol class="preview-steps">
                             <li class="preview-step">
                                 <div class="preview-step-number">1</div>
-                                <div class="preview-step-text">Check if it's been more than 30 days since you moved out</div>
+                                <div class="preview-step-text">Check if it has been more than 30 days since you moved out</div>
                             </li>
                             <li class="preview-step">
                                 <div class="preview-step-number">2</div>
-                                <div class="preview-step-text">Review what deductions they're claiming</div>
+                                <div class="preview-step-text">Review what deductions they are claiming</div>
                             </li>
                             <li class="preview-step">
                                 <div class="preview-step-number">3</div>
@@ -1334,7 +1442,7 @@
                         <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-medium">COMMON</span>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Repair & Maintenance</h3>
-                    <p class="text-gray-600 mb-4">"Landlord won't fix heating, plumbing, or other essential repairs"</p>
+                    <p class="text-gray-600 mb-4">"Landlord will not fix heating, plumbing, or other essential repairs"</p>
                     <div class="flex items-center text-green-600 text-sm font-medium">
                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
@@ -1609,14 +1717,14 @@
         <div class="w-[90%] max-w-6xl mx-auto px-4">
             <div class="text-center mb-12">
                 <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">How We Help (In 3 Simple Steps)</h2>
-                <p class="text-xl text-gray-600">No legal experience needed. We make it simple.</p>
+                <p class="text-xl text-gray-600">Legal expertise not required. We make it accessible.</p>
             </div>
             
             <div class="grid md:grid-cols-3 gap-8">
                 <div class="text-center">
                     <div class="step-indicator w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-xl">1</div>
                     <h3 class="text-xl font-bold text-gray-900 mb-4">Tell Us Your Problem</h3>
-                    <p class="text-gray-600">Describe what's happening in plain English. No legal jargon needed.</p>
+                    <p class="text-gray-600">Describe what is happening in clear, accessible language. Technical legal terminology not required.</p>
                 </div>
                 <div class="text-center">
                     <div class="step-indicator w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-xl">2</div>
@@ -1703,10 +1811,10 @@
     <script>
         // Smart Search Data
         const searchSuggestions = [
-            { text: "My landlord won't return my security deposit", category: "Deposit", type: "security-deposit", icon: "<svg width='16' height='16' class='text-yellow-600'><use href='#icon-money'></use></svg>" },
+            { text: "My landlord will not return my security deposit", category: "Deposit", type: "security-deposit", icon: "<svg width='16' height='16' class='text-yellow-600'><use href='#icon-money'></use></svg>" },
             { text: "Landlord keeping deposit unfairly", category: "Deposit", type: "security-deposit", icon: "<svg width='16' height='16' class='text-yellow-600'><use href='#icon-money'></use></svg>" },
             { text: "Security deposit deductions seem wrong", category: "Deposit", type: "security-deposit", icon: "<svg width='16' height='16' class='text-yellow-600'><use href='#icon-money'></use></svg>" },
-            { text: "Landlord won't fix broken heating", category: "Repairs", type: "repairs", icon: "<svg width='16' height='16' class='text-blue-600'><use href='#icon-tool'></use></svg>" },
+            { text: "Landlord will not fix broken heating", category: "Repairs", type: "repairs", icon: "<svg width='16' height='16' class='text-blue-600'><use href='#icon-tool'></use></svg>" },
             { text: "No hot water for weeks", category: "Repairs", type: "repairs", icon: "<svg width='16' height='16' class='text-blue-600'><use href='#icon-tool'></use></svg>" },
             { text: "Plumbing issues landlord ignoring", category: "Repairs", type: "repairs", icon: "<svg width='16' height='16' class='text-blue-600'><use href='#icon-tool'></use></svg>" },
             { text: "I got an eviction notice", category: "Eviction", type: "eviction", icon: "<svg width='16' height='16' class='text-purple-600'><use href='#icon-scale'></use></svg>" },
@@ -1714,7 +1822,7 @@
             { text: "Facing eviction for no reason", category: "Eviction", type: "eviction", icon: "<svg width='16' height='16' class='text-purple-600'><use href='#icon-scale'></use></svg>" },
             { text: "Rent increase too high", category: "Rent", type: "rent-increase", icon: "<svg width='16' height='16' class='text-red-600'><use href='#icon-chart'></use></svg>" },
             { text: "Landlord raised rent illegally", category: "Rent", type: "rent-increase", icon: "<svg width='16' height='16' class='text-red-600'><use href='#icon-chart'></use></svg>" },
-            { text: "Can't afford new rent amount", category: "Rent", type: "rent-increase", icon: "<svg width='16' height='16' class='text-red-600'><use href='#icon-chart'></use></svg>" },
+            { text: "Cannot afford new rent amount", category: "Rent", type: "rent-increase", icon: "<svg width='16' height='16' class='text-red-600'><use href='#icon-chart'></use></svg>" },
             { text: "Landlord enters without permission", category: "Harassment", type: "harassment", icon: "<svg width='16' height='16' class='text-orange-600'><use href='#icon-warning'></use></svg>" },
             { text: "Being harassed by landlord", category: "Harassment", type: "harassment", icon: "<svg width='16' height='16' class='text-orange-600'><use href='#icon-warning'></use></svg>" },
             { text: "Landlord threatening me", category: "Harassment", type: "harassment", icon: "<svg width='16' height='16' class='text-orange-600'><use href='#icon-warning'></use></svg>" },
@@ -1915,6 +2023,38 @@
             feedback.classList.add('hidden');
         }
 
+        // Professional notification system
+        function showNotification(title, message, type = 'info') {
+            const modal = document.getElementById('notificationModal');
+            const titleElement = document.getElementById('notificationTitle');
+            const messageElement = document.getElementById('notificationMessage');
+            
+            titleElement.textContent = title;
+            messageElement.textContent = message;
+            
+            modal.classList.add('active');
+            
+            // Auto-close after 5 seconds for non-critical notifications
+            if (type !== 'error') {
+                setTimeout(() => {
+                    closeNotification();
+                }, 5000);
+            }
+        }
+
+        function closeNotification() {
+            const modal = document.getElementById('notificationModal');
+            modal.classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('notificationModal');
+            if (event.target === modal) {
+                closeNotification();
+            }
+        });
+
         function updateSearchSuggestions(query) {
             const suggestionContainer = document.getElementById('searchSuggestions');
             const filtered = searchSuggestions.filter(suggestion => 
@@ -1968,7 +2108,7 @@
         function searchProblem() {
             const query = document.getElementById('problemSearch').value.trim();
             if (!query) {
-                alert('Please describe your problem to get help');
+                showNotification('Search Required', 'Please describe your problem to receive appropriate legal assistance.');
                 return;
             }
             
@@ -2011,9 +2151,9 @@
                             <div class="bg-green-50 p-6 rounded-xl border border-green-200">
                                 <h3 class="font-bold text-green-800 mb-3">Your Action Plan</h3>
                                 <ol class="list-decimal list-inside space-y-2 text-green-700">
-                                    <li>Check if it's been more than 30 days since you moved out</li>
-                                    <li>Review what deductions they're claiming</li>
-                                    <li>Send a formal demand letter (we'll create it for you)</li>
+                                    <li>Check if it has been more than 30 days since you moved out</li>
+                                    <li>Review what deductions they are claiming</li>
+                                    <li>Send a formal demand letter (we will create it for you)</li>
                                     <li>File in small claims court if needed</li>
                                 </ol>
                             </div>
@@ -2052,7 +2192,7 @@
                                 <h3 class="font-bold text-green-800 mb-3">Your Action Plan</h3>
                                 <ol class="list-decimal list-inside space-y-2 text-green-700">
                                     <li>Document the problem with photos and videos</li>
-                                    <li>Send written notice to landlord (we'll create it)</li>
+                                    <li>Send written notice to landlord (we will create it)</li>
                                     <li>Wait reasonable time for repair (usually 14-30 days)</li>
                                     <li>Use repair and deduct or withhold rent if legal in your state</li>
                                 </ol>
@@ -2075,7 +2215,7 @@
                         <div class="space-y-6">
                             <div class="bg-red-50 p-6 rounded-xl border border-red-200">
                                 <h3 class="font-bold text-red-800 mb-3">URGENT - Time Sensitive</h3>
-                                <p class="text-red-700">You typically have only 5-10 days to respond to an eviction. Don't wait - act now!</p>
+                                <p class="text-red-700">You typically have only 5-10 days to respond to an eviction. Do not wait - act now!</p>
                             </div>
                             
                             <div class="bg-green-50 p-6 rounded-xl border border-green-200">
@@ -2131,15 +2271,15 @@
         
         
         function createDocument(type) {
-            alert('Document creation for ' + type + ' coming soon!');
+            showNotification('Feature Development', 'Document creation for ' + type + ' will be available shortly.');
         }
         
         function checkRights(area) {
-            alert('Rights information for ' + area + ' coming soon!');
+            showNotification('Feature Development', 'Rights information for ' + area + ' will be available shortly.');
         }
         
         function findLawyer(urgency) {
-            alert('Lawyer finder for ' + urgency + ' cases coming soon!');
+            showNotification('Feature Development', 'Lawyer finder for ' + urgency + ' cases will be available shortly.');
         }
 
         // Navigation Functions
@@ -2380,7 +2520,7 @@
                 nextButton.textContent = 'Take Action';
                 nextButton.onclick = function() {
                     // Implementation for taking action
-                    alert('Ready to take action! Implementation coming soon.');
+                    showNotification('Action Ready', 'Implementation for this action will be available shortly.');
                 };
             } else {
                 nextButton.textContent = 'Continue';
@@ -2411,7 +2551,7 @@
                 'security-deposit': document.querySelector('#modalContent').innerHTML,
                 // Add other problem types as needed
             };
-            return solutions[problemType] || 'Content coming soon';
+            return solutions[problemType] || 'Content will be available shortly';
         }
         
         function generateActionContent(problemType) {
@@ -2437,7 +2577,7 @@
             return `<div class="space-y-6">
                 <h3 class="text-xl font-semibold text-gray-900 mb-4">Follow-Up Steps</h3>
                 <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p class="text-green-800">Great job taking action! Here's what to do next to ensure the best outcome.</p>
+                    <p class="text-green-800">Excellent progress on your case. Here is what to do next to ensure the best outcome.</p>
                 </div>
                 <div class="space-y-4">
                     <div class="flex items-start gap-3">
@@ -2483,6 +2623,24 @@
     <button id="backToTop" class="back-to-top" onclick="scrollToTop()">
         <svg width='20' height='20' class='text-white'><use href='#icon-chevron-up'></use></svg>
     </button>
+
+    <!-- Professional Notification Modal -->
+    <div id="notificationModal" class="notification-modal">
+        <div class="notification-content">
+            <div class="notification-header">
+                <svg class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h3 id="notificationTitle" class="notification-title">Information</h3>
+            </div>
+            <div id="notificationMessage" class="notification-message">
+                This is a notification message.
+            </div>
+            <div class="notification-actions">
+                <button class="notification-btn primary" onclick="closeNotification()">Understood</button>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>
