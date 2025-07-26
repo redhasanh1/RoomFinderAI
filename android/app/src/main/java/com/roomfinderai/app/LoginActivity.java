@@ -86,17 +86,20 @@ public class LoginActivity extends AppCompatActivity {
     }
     
     private void configureGoogleSignIn() {
-        // Configure Google Sign-In - force use strings.xml client ID
-        String webClientId = getString(R.string.web_client_id);
-        
-        Log.d(TAG, "Using client ID from strings.xml: " + webClientId);
-        
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(webClientId)
-                .requestEmail()
-                .build();
-        
-        googleSignInClient = GoogleSignIn.getClient(this, gso);
+        try {
+            // Try without requestIdToken first - simpler approach
+            GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestEmail()
+                    .requestProfile()
+                    .build();
+            
+            googleSignInClient = GoogleSignIn.getClient(this, gso);
+            Log.d(TAG, "Google Sign-In configured without ID token requirement");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error configuring Google Sign-In: " + e.getMessage(), e);
+            showError("Google Sign-In configuration failed");
+        }
     }
     
     private void setupClickListeners() {
@@ -186,16 +189,23 @@ public class LoginActivity extends AppCompatActivity {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
             
-            // Get ID token
-            String idToken = account.getIdToken();
             String email = account.getEmail();
+            String displayName = account.getDisplayName();
+            
+            Log.d(TAG, "Google Sign-In successful - Email: " + email + ", Name: " + displayName);
+            
+            if (email == null || email.isEmpty()) {
+                showError("Failed to get email from Google account");
+                return;
+            }
             
             showLoading(true);
             
-            // Send ID token to backend for verification
+            // Send email and profile info to backend
             JsonObject googleSignInRequest = new JsonObject();
-            googleSignInRequest.addProperty("id_token", idToken);
             googleSignInRequest.addProperty("email", email);
+            googleSignInRequest.addProperty("name", displayName);
+            googleSignInRequest.addProperty("provider", "google");
             
             apiService.googleSignIn(googleSignInRequest).enqueue(new Callback<JsonObject>() {
                 @Override
@@ -226,8 +236,17 @@ public class LoginActivity extends AppCompatActivity {
             });
             
         } catch (ApiException e) {
-            Log.w(TAG, "Google sign in failed", e);
-            showError("Google sign-in failed: " + e.getStatusCode());
+            Log.w(TAG, "Google sign in failed with error code: " + e.getStatusCode(), e);
+            
+            String errorMessage;
+            switch (e.getStatusCode()) {
+                case 10:
+                    errorMessage = "Google Sign-In configuration error";
+                    break;
+                default:
+                    errorMessage = "Google sign-in failed: " + e.getStatusCode();
+            }
+            showError(errorMessage);
         }
     }
     
