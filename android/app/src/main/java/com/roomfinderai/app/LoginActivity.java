@@ -64,6 +64,9 @@ public class LoginActivity extends AppCompatActivity {
         configureGoogleSignIn();
         setupClickListeners();
         
+        // Clear any cached Google Sign-In data that might be corrupted
+        clearGoogleSignInCache();
+        
         // Initialize API service
         apiService = ApiClient.getInstance().getApiService();
     }
@@ -83,11 +86,10 @@ public class LoginActivity extends AppCompatActivity {
     }
     
     private void configureGoogleSignIn() {
-        // Configure Google Sign-In
-        String webClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID;
-        if (webClientId == null || webClientId.isEmpty()) {
-            webClientId = getString(R.string.web_client_id);
-        }
+        // Configure Google Sign-In - force use strings.xml client ID
+        String webClientId = getString(R.string.web_client_id);
+        
+        Log.d(TAG, "Using client ID from strings.xml: " + webClientId);
         
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(webClientId)
@@ -278,6 +280,17 @@ public class LoginActivity extends AppCompatActivity {
         return accessToken != null && !accessToken.isEmpty();
     }
     
+    private void clearGoogleSignInCache() {
+        try {
+            if (googleSignInClient != null) {
+                googleSignInClient.signOut();
+                Log.d(TAG, "Cleared Google Sign-In cache");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error clearing Google Sign-In cache: " + e.getMessage());
+        }
+    }
+
     private void navigateToMainActivity() {
         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
