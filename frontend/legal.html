@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Housing Law Consultation Services - RoomFinderAI</title>
+    <title>Get Help Fast - RoomFinderAI</title>
     
     <!-- UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
     <script src="universal-auth-protection.js"></script>
@@ -16,1864 +16,333 @@
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
         
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .chat-container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            max-width: 800px;
+            margin: 2rem auto;
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .problem-card {
-            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 2rem;
             cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
         
         .problem-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
-        
-        .urgency-high {
-            border-left: 4px solid #ef4444;
-        }
-        
-        .urgency-medium {
-            border-left: 4px solid #f59e0b;
-        }
-        
-        .urgency-low {
-            border-left: 4px solid #10b981;
-        }
-        
-        .step-indicator {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        /* Enhanced Visual Improvements */
-        .hero-pattern {
-            background-image: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                             radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 0%, transparent 50%);
-        }
-
-        .section-divider {
-            background: linear-gradient(90deg, transparent 0%, rgba(102, 126, 234, 0.3) 50%, transparent 100%);
-            height: 1px;
-            margin: 2rem 0;
-        }
-
-        .enhanced-card {
-            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-            border: 1px solid rgba(102, 126, 234, 0.1);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .enhanced-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
-            border-color: rgba(102, 126, 234, 0.2);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
         }
-
-        .icon-container {
-            background: linear-gradient(145deg, var(--icon-bg-color, #f3f4f6), var(--icon-bg-light, #ffffff));
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .enhanced-card:hover .icon-container {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .progress-indicator {
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            height: 3px;
-            border-radius: 2px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .progress-indicator::after {
+        
+        .problem-card::before {
             content: '';
             position: absolute;
             top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            animation: shimmer 2s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-
-        .quick-tool-card {
-            background: linear-gradient(145deg, #1f2937 0%, #111827 100%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .quick-tool-card:hover {
-            transform: translateY(-6px);
-            background: linear-gradient(145deg, #374151 0%, #1f2937 100%);
-            border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .search-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .enhanced-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .enhanced-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .enhanced-button:hover::before {
-            left: 100%;
-        }
-
-        .enhanced-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
-        }
-
-        /* Smart Search Autocomplete Styles */
-        .search-suggestions {
-            position: absolute;
-            top: 100%;
             left: 0;
             right: 0;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 0 0 1rem 1rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-            max-height: 350px;
-            overflow-y: auto;
-            backdrop-filter: blur(10px);
-        }
-
-        .suggestions-header {
-            padding: 0.75rem 1rem 0.5rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #6b7280;
-            background: #f9fafb;
-            border-bottom: 1px solid #e5e7eb;
-            letter-spacing: 0.05em;
-        }
-
-        .suggestion-item {
-            padding: 1rem;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-bottom: 1px solid #f3f4f6;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            position: relative;
-            background: linear-gradient(135deg, transparent 0%, rgba(102, 126, 234, 0.02) 100%);
-        }
-
-        .suggestion-item:hover {
-            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
-            color: #667eea;
-            transform: translateX(4px);
-            border-left: 3px solid #667eea;
-            padding-left: 0.75rem;
-        }
-
-        .suggestion-item:last-child {
-            border-bottom: none;
-            border-radius: 0 0 1rem 1rem;
-        }
-
-        .suggestion-item.priority-high {
-            border-left: 3px solid #ef4444;
-            background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
-        }
-
-        .suggestion-item.priority-medium {
-            border-left: 3px solid #f59e0b;
-            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
-        }
-
-        .suggestion-item.priority-low {
-            border-left: 3px solid #10b981;
-            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
-        }
-
-        .suggestion-icon {
-            width: 20px;
-            height: 20px;
-            opacity: 0.8;
-            transition: all 0.3s ease;
-        }
-
-        .suggestion-item:hover .suggestion-icon {
-            opacity: 1;
-            transform: scale(1.1);
-        }
-
-        .suggestion-text {
-            flex: 1;
-            font-weight: 500;
-        }
-
-        .suggestion-category {
-            font-size: 0.75rem;
-            color: #6b7280;
-            background: #f3f4f6;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.375rem;
-        }
-
-        /* Search Container Enhancements */
-        .search-container {
-            position: relative;
-        }
-
-        .search-input-wrapper {
-            position: relative;
-        }
-
-        /* Enhanced Search States */
-        .search-input-loading {
-            background-image: linear-gradient(90deg, transparent 0%, rgba(102, 126, 234, 0.1) 50%, transparent 100%);
-            background-size: 200% 100%;
-            animation: searchLoading 1.5s infinite;
-        }
-
-        @keyframes searchLoading {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
-
-        .search-feedback {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border-radius: 0 0 12px 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            padding: 0.75rem 1rem;
-            margin-top: 4px;
-            z-index: 20;
-            font-size: 0.875rem;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .search-feedback.searching {
-            color: #667eea;
-            background: linear-gradient(90deg, #f8fafc 0%, #e0e7ff 50%, #f8fafc 100%);
-            background-size: 200% 100%;
-            animation: searchPulse 1.5s infinite;
-        }
-
-        .search-feedback.no-results {
-            color: #ef4444;
-            background: #fef2f2;
-            border-left: 3px solid #ef4444;
-        }
-
-        .search-feedback.results-found {
-            color: #059669;
-            background: #f0fdf4;
-            border-left: 3px solid #059669;
-        }
-
-        @keyframes searchPulse {
-            0%, 100% { background-position: 0% 0; }
-            50% { background-position: 100% 0; }
-        }
-
-        .search-stats {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.75rem;
-            color: #6b7280;
-            margin-top: 0.5rem;
-        }
-
-        .search-time {
-            background: #f3f4f6;
-            padding: 0.125rem 0.375rem;
-            border-radius: 0.25rem;
-        }
-
-        .search-clear-btn {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #9ca3af;
-            cursor: pointer;
-            font-size: 1.25rem;
-            padding: 0.25rem;
-            border-radius: 50%;
-            transition: all 0.2s ease;
-        }
-
-        .search-clear-btn:hover {
-            background: #f3f4f6;
-            color: #374151;
-        }
-
-        /* Problem Prioritization Styles */
-        .problem-grid-container {
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .problem-card {
-            order: 0;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .problem-card.priority-1 { order: 1; }
-        .problem-card.priority-2 { order: 2; }
-        .problem-card.priority-3 { order: 3; }
-        .problem-card.priority-4 { order: 4; }
-        .problem-card.priority-5 { order: 5; }
-        .problem-card.priority-6 { order: 6; }
-
-        .problem-card.highlighted {
-            transform: scale(1.02);
-            box-shadow: 0 25px 50px rgba(102, 126, 234, 0.2);
-            border-color: rgba(102, 126, 234, 0.3);
-            background: linear-gradient(145deg, #ffffff 0%, #f0f9ff 100%);
-        }
-
-        .problem-card.dimmed {
-            opacity: 0.7;
-            transform: scale(0.98);
-        }
-
-        .relevance-badge {
-            position: absolute;
-            top: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-            opacity: 0;
-            transition: all 0.3s ease;
-        }
-
-        .problem-card.highlighted .relevance-badge {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* Hover Preview Styles */
-        .problem-card {
-            position: relative;
-            overflow: visible;
-        }
-
-        .hover-preview {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid rgba(102, 126, 234, 0.2);
-            border-radius: 0 0 1rem 1rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            z-index: 20;
-            padding: 1.5rem;
-            opacity: 0;
-            transform: translateY(-10px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            visibility: hidden;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .problem-card:hover .hover-preview {
-            opacity: 1;
-            transform: translateY(0);
-            visibility: visible;
-        }
-
-        .preview-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .preview-icon {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1rem;
-        }
-
-        .preview-title {
-            font-weight: 600;
-            color: #1f2937;
-            font-size: 1.1rem;
-        }
-
-        .preview-steps {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .preview-step {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-            padding: 0.75rem;
-            background: #f8fafc;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-        }
-
-        .preview-step:hover {
-            background: #f1f5f9;
-            transform: translateX(4px);
-        }
-
-        .preview-step-number {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.875rem;
-            font-weight: 600;
-            flex-shrink: 0;
-        }
-
-        .preview-step-text {
-            color: #374151;
-            font-size: 0.9rem;
-            line-height: 1.4;
-        }
-
-        .preview-footer {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .preview-stats {
-            display: flex;
-            gap: 1rem;
-            font-size: 0.8rem;
-            color: #6b7280;
-        }
-
-        .preview-stat {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .preview-action {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .preview-action:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-
-        /* Sticky Progress Indicator and Navigation */
-        .progress-nav {
-            position: fixed;
-            right: 2rem;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 100;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(102, 126, 234, 0.2);
-            border-radius: 2rem;
-            padding: 1rem 0.75rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .progress-nav.visible {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .progress-dots {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .progress-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #d1d5db;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .progress-dot.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transform: scale(1.5);
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .progress-dot:hover {
-            background: #667eea;
-            transform: scale(1.3);
-        }
-
-        .progress-dot::after {
-            content: attr(data-label);
-            position: absolute;
-            right: 2rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.2s ease;
-            pointer-events: none;
-        }
-
-        .progress-dot:hover::after {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .scroll-progress {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: rgba(102, 126, 234, 0.1);
-            z-index: 1000;
+            height: 6px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
             opacity: 0;
             transition: opacity 0.3s ease;
         }
-
-        .scroll-progress.visible {
+        
+        .problem-card:hover::before {
             opacity: 1;
         }
-
-        .scroll-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            width: 0%;
-            transition: width 0.1s ease;
-        }
-
-        .back-to-top {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            width: 3rem;
-            height: 3rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(20px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 100;
-        }
-
-        .back-to-top.visible {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .back-to-top:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
-        }
-
-        /* Hide progress nav on mobile */
-        @media (max-width: 768px) {
-            .progress-nav {
-                display: none;
-            }
-        }
-
-        /* Problem Card Enhancement Badges */
-        .card-badges {
-            position: absolute;
-            bottom: 1rem;
-            left: 1rem;
-            right: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 0.5rem;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .problem-card:hover .card-badges {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .difficulty-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .difficulty-easy { color: #059669; }
-        .difficulty-medium { color: #d97706; }
-        .difficulty-hard { color: #dc2626; }
-
-        .time-badge {
-            background: rgba(102, 126, 234, 0.95);
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .success-badge {
-            background: rgba(34, 197, 94, 0.95);
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .card-stats {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        /* Navigation Styles */
-        .nav-item {
-            color: #374151;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            cursor: pointer;
-        }
         
-        .nav-item:hover {
-            color: #667eea;
-            background-color: rgba(102, 126, 234, 0.05);
-        }
-        
-        /* Dropdown Styles */
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .dropdown-trigger {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .dropdown-arrow {
-            font-size: 0.7rem;
-            transition: transform 0.2s ease;
-        }
-        
-        .dropdown:hover .dropdown-arrow {
-            transform: rotate(180deg);
-        }
-        
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            padding: 0.5rem 0;
-            min-width: 12rem;
-            z-index: 50;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s ease;
-        }
-        
-        .dropdown:hover .dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-        
-        .dropdown-item {
-            display: block;
-            padding: 0.75rem 1rem;
-            color: #374151;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            font-size: 0.9rem;
-        }
-        
-        .dropdown-item:hover {
-            background-color: #f8fafc;
-            color: #667eea;
-        }
-
-        /* Mobile Menu Styles */
-        .mobile-menu-btn {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            width: 24px;
-            height: 20px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0;
-        }
-        
-        .hamburger-line {
-            width: 100%;
-            height: 2px;
-            background-color: #374151;
-            transition: all 0.3s ease;
-        }
-        
-        .mobile-menu {
-            position: fixed;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-            transition: left 0.3s ease;
-        }
-        
-        .mobile-menu.active {
-            left: 0;
-        }
-        
-        .mobile-menu-content {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 280px;
-            height: 100%;
-            background: white;
-            overflow-y: auto;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-        }
-        
-        .mobile-menu.active .mobile-menu-content {
-            transform: translateX(0);
-        }
-        
-        .mobile-menu-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .mobile-menu-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #374151;
-        }
-        
-        .mobile-menu-items {
-            padding: 1rem 0;
-        }
-        
-        .mobile-menu-item {
-            display: block;
-            padding: 0.75rem 1rem;
-            color: #374151;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .mobile-menu-item:hover {
-            background-color: #f8fafc;
-            color: #667eea;
-        }
-        
-        .mobile-section {
-            border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .mobile-section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: none;
-            border: none;
-            text-align: left;
-            color: #374151;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        
-        .mobile-section-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-        
-        .mobile-section-content.expanded {
-            max-height: 200px;
-        }
-        
-        .mobile-arrow {
-            transition: transform 0.3s ease;
-        }
-        
-        .mobile-arrow.rotated {
-            transform: rotate(180deg);
-        }
-        
-        /* Modal Progress Steps */
-        .progress-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            position: relative;
-        }
-        
-        .step-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #e5e7eb;
-            color: #6b7280;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 0.875rem;
-            transition: all 0.3s ease;
-        }
-        
-        .progress-step.active .step-circle {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-        
-        .progress-step.completed .step-circle {
-            background: #10b981;
-            color: white;
-        }
-        
-        .step-label {
-            font-size: 0.75rem;
-            color: #6b7280;
-            font-weight: 500;
-            text-align: center;
-        }
-        
-        .progress-step.active .step-label {
-            color: #667eea;
-            font-weight: 600;
-        }
-        
-        .progress-line {
-            width: 60px;
-            height: 2px;
-            background: #e5e7eb;
-            position: relative;
-            margin: 0 1rem;
-        }
-        
-        .progress-line.completed {
-            background: #10b981;
-        }
-        
-        /* Modal Navigation Enhancements */
-        #modalNavigation button {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        #modalNavigation button:hover {
-            transform: translateY(-1px);
-        }
-        
-        #nextButton:hover {
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        /* Professional Notification Modal */
-        .notification-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .notification-modal.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .notification-content {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            max-width: 400px;
-            width: 90%;
-            margin: 1rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            transform: translateY(20px);
-            transition: transform 0.3s ease;
-        }
-
-        .notification-modal.active .notification-content {
-            transform: translateY(0);
-        }
-
-        .notification-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
+        .problem-icon {
+            font-size: 3rem;
             margin-bottom: 1rem;
+            display: block;
         }
-
-        .notification-icon {
-            width: 24px;
-            height: 24px;
-            color: #667eea;
+        
+        .progress-bar {
+            background: #e2e8f0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
         }
-
-        .notification-title {
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.8s ease;
+        }
+        
+        .chat-message {
+            background: #f8fafc;
+            border-radius: 18px;
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-left: 4px solid #667eea;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .success-badge {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .urgency-urgent {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+        }
+        
+        .urgency-important {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        }
+        
+        .urgency-normal {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        }
+        
+        .big-button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 1.25rem 2rem;
             font-size: 1.125rem;
             font-weight: 600;
-            color: #1f2937;
-            margin: 0;
-        }
-
-        .notification-message {
-            color: #6b7280;
-            line-height: 1.5;
-            margin-bottom: 1.5rem;
-        }
-
-        .notification-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-        }
-
-        .notification-btn {
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            border: none;
-            font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .notification-btn.primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .notification-btn.primary:hover {
-            background: #5a67d8;
-        }
-
-        .notification-btn.secondary {
-            background: #f3f4f6;
-            color: #374151;
-        }
-
-        .notification-btn.secondary:hover {
-            background: #e5e7eb;
-        }
-
-        /* Enhanced Professional Legal Styling */
-        .legal-practice-area {
-            border: 1px solid #e5e7eb;
             transition: all 0.3s ease;
-            position: relative;
-            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-        }
-
-        .legal-practice-area:hover {
-            border-color: #667eea;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
-            transform: translateY(-2px);
-        }
-
-        .case-priority-badge {
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-        }
-
-        .legal-consultation-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            color: white;
-            font-weight: 600;
-            letter-spacing: 0.025em;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .legal-consultation-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .legal-consultation-btn:before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
             width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
+            margin-top: 1rem;
         }
-
-        .legal-consultation-btn:hover:before {
-            left: 100%;
+        
+        .big-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.3);
         }
-
-        .professional-disclaimer {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            border-left: 4px solid #667eea;
+        
+        .step-hidden {
+            display: none;
         }
-
-        .legal-process-step {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #6b7280;
+            font-style: italic;
         }
-
-        .attorney-badge {
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            color: white;
-            font-size: 0.75rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            letter-spacing: 0.025em;
+        
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #6b7280;
+            border-radius: 50%;
+            animation: typingDot 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typingDot {
+            0%, 60%, 100% { transform: scale(1); opacity: 0.5; }
+            30% { transform: scale(1.2); opacity: 1; }
+        }
+        
+        .mobile-optimized {
+            padding: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .chat-container {
+                margin: 1rem;
+                border-radius: 16px;
+            }
+            
+            .problem-card {
+                padding: 1.5rem;
+                text-align: center;
+            }
+            
+            .problem-icon {
+                font-size: 2.5rem;
+            }
         }
     </style>
-    
-    <!-- SVG Icon Definitions -->
-    <svg style="display: none;" aria-hidden="true">
-        <defs>
-            <!-- Money/Dollar Icon for Security Deposit -->
-            <symbol id="icon-money" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v12"/>
-                <path d="M15 9a3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 3 3 3 3 3s3 0 3 3a3 3 0 0 1-3 3 3 3 0 0 1-3-3"/>
-            </symbol>
-            
-            <!-- Tool/Wrench Icon for Repairs -->
-            <symbol id="icon-tool" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-            </symbol>
-            
-            <!-- Scale/Justice Icon for Legal Issues -->
-            <symbol id="icon-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 3v18"/>
-                <path d="M8 21l8-8L8 5l8 8"/>
-                <path d="M8 7h8"/>
-                <path d="M7 3 5 7l2 4 2-4-2-4z"/>
-                <path d="M17 3l2 4-2 4-2-4 2-4z"/>
-            </symbol>
-            
-            <!-- Chart/Graph Icon for Rent & Success Rate -->
-            <symbol id="icon-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
-            </symbol>
-            
-            <!-- Warning Triangle for Harassment -->
-            <symbol id="icon-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                <line x1="12" y1="9" x2="12" y2="13"/>
-                <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </symbol>
-            
-            <!-- Document Icon for Lease Issues -->
-            <symbol id="icon-document" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14,2 14,8 20,8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10,9 9,9 8,9"/>
-            </symbol>
-            
-            <!-- Clock Icon for Time Estimates -->
-            <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12,6 12,12 16,14"/>
-            </symbol>
-            
-            <!-- Chevron Up for Back to Top -->
-            <symbol id="icon-chevron-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="18,15 12,9 6,15"/>
-            </symbol>
-        </defs>
-    </svg>
-    
 </head>
-<body class="bg-gray-50">
-    <!-- Header -->
-    <header class="fixed top-0 w-full bg-white/95 backdrop-blur-md shadow-sm z-50">
-        <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
-            <!-- Mobile Layout -->
-            <div class="flex items-center justify-between w-full md:w-auto">
-                <div class="text-xl md:text-2xl font-bold gradient-text">RoomFinderAI</div>
-                
-                <!-- Mobile Menu Button -->
-                <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
-                    <span class="hamburger-line"></span>
-                    <span class="hamburger-line"></span>
-                    <span class="hamburger-line"></span>
-                </button>
-            </div>
-            
-            <!-- Desktop Navigation -->
-            <div class="desktop-nav hidden md:flex items-center space-x-8">
-                <!-- Home - Standalone -->
-                <a href="index.html" class="nav-item">Home</a>
-                
-                <!-- Browse Dropdown -->
-                <div class="dropdown">
-                    <button class="nav-item dropdown-trigger">
-                        Browse <span class="dropdown-arrow"><svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></span>
-                    </button>
-                    <div class="dropdown-menu">
-                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
-                        <a href="sublease.html" class="dropdown-item">Sublease Property</a>
-                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
-                    </div>
+<body>
+    <!-- Navigation (simplified) -->
+    <nav class="bg-white/10 backdrop-blur-md border-b border-white/20">
+        <div class="max-w-6xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="index.html" class="text-white font-bold text-xl">RoomFinderAI</a>
                 </div>
-                
-                <!-- Tools Dropdown -->
-                <div class="dropdown">
-                    <button class="nav-item dropdown-trigger">
-                        Tools <span class="dropdown-arrow"><svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></span>
-                    </button>
-                    <div class="dropdown-menu">
-                        <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
-                        <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
-                        <a href="legal.html" class="dropdown-item" style="color: #667eea; font-weight: 600;">Legal Help</a>
-                        <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
-                    </div>
-                </div>
-                
-                <!-- About Dropdown -->
-                <div class="dropdown">
-                    <button class="nav-item dropdown-trigger">
-                        About <span class="dropdown-arrow"><svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></span>
-                    </button>
-                    <div class="dropdown-menu">
-                        <a href="index.html#about" class="dropdown-item">About Us</a>
-                        <a href="index.html#contact" class="dropdown-item">Contact</a>
-                        <a href="support.html" class="dropdown-item">Support</a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Desktop Auth -->
-            <div class="desktop-auth hidden md:flex items-center space-x-4">
-                <div id="authSection">
-                    <!-- Will be populated by universal-auth-manager.js -->
-                </div>
-            </div>
-        </nav>
-        
-        <!-- Mobile Navigation Menu -->
-        <div class="mobile-menu" id="mobile-menu">
-            <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
-            <div class="mobile-menu-content">
-                <div class="mobile-menu-header">
-                    <div class="text-lg font-bold gradient-text">RoomFinderAI</div>
-                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">
-                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                <div class="mobile-menu-items">
-                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">Home</a>
-                    
-                    <!-- Browse Section -->
-                    <div class="mobile-section">
-                        <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
-                            Browse <span class="mobile-arrow" id="browse-arrow"><svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></span>
-                        </button>
-                        <div class="mobile-section-content" id="browse-section">
-                            <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
-                            <a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
-                            <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
-                        </div>
-                    </div>
-                    
-                    <!-- Tools Section -->
-                    <div class="mobile-section">
-                        <button class="mobile-section-header" onclick="toggleMobileSection('tools')">
-                            Tools <span class="mobile-arrow" id="tools-arrow"><svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></span>
-                        </button>
-                        <div class="mobile-section-content" id="tools-section">
-                            <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
-                            <a href="pricing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing Plans</a>
-                            <a href="legal.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="color: #667eea; font-weight: 600;">Legal Help</a>
-                            <a href="mortgage.html" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
-                        </div>
-                    </div>
-                    
-                    <!-- About Section -->
-                    <div class="mobile-section">
-                        <button class="mobile-section-header" onclick="toggleMobileSection('about')">
-                            About <span class="mobile-arrow" id="about-arrow"><svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></span>
-                        </button>
-                        <div class="mobile-section-content" id="about-section">
-                            <a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
-                            <a href="index.html#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
-                            <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
-                        </div>
-                    </div>
-                    
-                    <!-- Auth Section -->
-                    <div class="mobile-section">
-                        <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()">Profile</a>
-                        <a href="login.html" class="mobile-menu-item" onclick="closeMobileMenu()">Login/Register</a>
-                    </div>
+                <div class="text-white/80 text-sm">
+                    Get help in under 2 minutes
                 </div>
             </div>
         </div>
-    </header>
+    </nav>
 
-    <!-- Hero Section -->
-    <section id="hero" class="pt-32 pb-16 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white relative overflow-hidden hero-pattern">
-        <div class="absolute inset-0 bg-black opacity-20"></div>
-        <div class="w-[90%] max-w-6xl mx-auto px-4 relative z-10">
-            <div class="text-center mb-12">
-                <h1 class="text-4xl md:text-6xl font-bold mb-6">Housing Law Consultation Services</h1>
-                <p class="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto mb-8">
-                    Professional legal guidance for residential housing matters. Comprehensive consultation services with experienced legal professionals.
-                </p>
-                
-                <!-- Problem Search -->
-                <div class="max-w-2xl mx-auto mb-8">
-                    <div class="search-container rounded-2xl p-2 shadow-2xl">
-                        <div class="flex flex-col md:flex-row gap-2">
-                            <div class="search-input-wrapper flex-1 relative">
-                                <input type="text" id="problemSearch" placeholder="Describe your problem... (e.g., landlord will not return deposit)" 
-                                       class="w-full px-6 py-4 text-gray-800 text-lg rounded-xl border-none focus:outline-none focus:ring-0"
-                                       autocomplete="off"
-                                       oninput="handleSearchInput(event)"
-                                       onfocus="showSearchSuggestions()"
-                                       onblur="hideSearchSuggestions()">
-                                <button id="searchClearBtn" class="search-clear-btn hidden" onclick="clearSearch()" type="button">
-                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </button>
-                                <div id="searchSuggestions" class="search-suggestions hidden">
-                                    <!-- Suggestions will be populated by JavaScript -->
-                                </div>
-                                <div id="searchFeedback" class="search-feedback hidden">
-                                    <!-- Search feedback will be populated by JavaScript -->
-                                </div>
-                            </div>
-                            <button onclick="searchProblem()" class="enhanced-button text-white px-8 py-4 rounded-xl font-semibold">
-                                Request Consultation
-                            </button>
+    <!-- Main Chat Interface -->
+    <div class="min-h-screen py-8 mobile-optimized">
+        <div class="chat-container">
+            <!-- Step 1: Welcome & Problem Selection -->
+            <div id="step1" class="step">
+                <div class="p-8">
+                    <!-- Progress -->
+                    <div class="mb-6">
+                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                            <span>Step 1 of 3</span>
+                            <span>2 minutes left</span>
                         </div>
-                    </div>
-                </div>
-                
-            </div>
-        </div>
-    </section>
-    
-    <div class="section-divider"></div>
-
-    <!-- Common Problems Section -->
-    <section id="problems" class="py-16 bg-white">
-        <div class="w-[90%] max-w-7xl mx-auto px-4">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Legal Practice Areas</h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Select your legal matter to receive immediate consultation and comprehensive legal guidance.</p>
-            </div>
-            
-            <div id="problemGrid" class="problem-grid-container grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Security Deposit Issues -->
-                <div class="problem-card enhanced-card bg-white rounded-2xl p-6 shadow-lg border urgency-high relative" onclick="solveProblem('security-deposit')" data-problem-type="security-deposit" data-keywords="deposit,money,return,unfair,deductions">
-                    <div class="relevance-badge">Most Relevant</div>
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">URGENT</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Security Deposit Recovery</h3>
-                    <p class="text-gray-600 mb-4">"My landlord will not return my deposit" or "They are keeping money unfairly"</p>
-                    <div class="flex items-center text-green-600 text-sm font-medium">
-                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        Get $2,000+ back on average
-                    </div>
-                    
-                    <!-- Card Enhancement Badges -->
-                    <div class="card-badges">
-                        <div class="difficulty-badge difficulty-medium">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" class="inline mr-1">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clip-rule="evenodd"></path>
-                                <circle cx="10" cy="10" r="3" fill="currentColor"></circle>
-                            </svg>
-                            Medium
-                        </div>
-                        <div class="card-stats">
-                            <div class="time-badge">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
-                                    <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                                20min
-                            </div>
-                            <div class="success-badge">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M3 12l2 2 4-4m5 0l2 2 4-4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                85%
-                            </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 33%"></div>
                         </div>
                     </div>
                     
-                    <!-- Hover Preview -->
-                    <div class="hover-preview">
-                        <div class="preview-header">
-                            <div class="preview-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7l2-7z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                                    <circle cx="12" cy="12" r="5" fill="currentColor"/>
-                                    <text x="12" y="16" text-anchor="middle" fill="white" font-size="8" font-weight="bold">$</text>
-                                </svg>
-                            </div>
-                            <div class="preview-title">Get Your Deposit Back</div>
-                        </div>
-                        <ol class="preview-steps">
-                            <li class="preview-step">
-                                <div class="preview-step-number">1</div>
-                                <div class="preview-step-text">Check if it has been more than 30 days since you moved out</div>
-                            </li>
-                            <li class="preview-step">
-                                <div class="preview-step-number">2</div>
-                                <div class="preview-step-text">Review what deductions they are claiming</div>
-                            </li>
-                            <li class="preview-step">
-                                <div class="preview-step-number">3</div>
-                                <div class="preview-step-text">Send a formal demand letter</div>
-                            </li>
-                        </ol>
-                        <div class="preview-footer">
-                            <div class="preview-stats">
-                                <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-gray-500'><use href='#icon-clock'></use></svg>~20 min</div>
-                                <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-green-500'><use href='#icon-chart'></use></svg>85% success</div>
-                            </div>
-                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('security-deposit');">Begin Assessment</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Repair Issues -->
-                <div class="problem-card enhanced-card bg-white rounded-2xl p-6 shadow-lg border urgency-medium relative" onclick="solveProblem('repairs')" data-problem-type="repairs" data-keywords="repair,fix,heating,plumbing,water,maintenance">
-                    <div class="relevance-badge">Highly Relevant</div>
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-medium">COMMON</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Habitability & Repair Law</h3>
-                    <p class="text-gray-600 mb-4">"Landlord will not fix heating, plumbing, or other essential repairs"</p>
-                    <div class="flex items-center text-green-600 text-sm font-medium">
-                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        Force repairs in 14 days
+                    <!-- Welcome Message -->
+                    <div class="chat-message">
+                        <h1 class="text-2xl font-bold text-gray-900 mb-2">Hey! What's going on? 👋</h1>
+                        <p class="text-gray-600">We're here to help you figure out your housing situation. Just pick what's happening and we'll get you sorted out quickly.</p>
                     </div>
                     
-                    <!-- Hover Preview -->
-                    <div class="hover-preview">
-                        <div class="preview-header">
-                            <div class="preview-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" fill="none" stroke="currentColor" stroke-width="2"/>
-                                </svg>
-                            </div>
-                            <div class="preview-title">Force Repairs</div>
+                    <!-- Problem Cards -->
+                    <div class="grid md:grid-cols-2 gap-4 mt-6">
+                        <div class="problem-card" onclick="selectProblem('deposit', 'urgent')">
+                            <div class="problem-icon">💰</div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-2">They kept my deposit</h3>
+                            <p class="text-gray-600 text-sm">Landlord won't give back your security deposit</p>
+                            <div class="success-badge mt-3">Avg recovery: $2,100</div>
                         </div>
-                        <ol class="preview-steps">
-                            <li class="preview-step">
-                                <div class="preview-step-number">1</div>
-                                <div class="preview-step-text">Document the problem with photos and videos</div>
-                            </li>
-                            <li class="preview-step">
-                                <div class="preview-step-number">2</div>
-                                <div class="preview-step-text">Send written notice to landlord</div>
-                            </li>
-                            <li class="preview-step">
-                                <div class="preview-step-number">3</div>
-                                <div class="preview-step-text">Wait reasonable time (14-30 days)</div>
-                            </li>
-                        </ol>
-                        <div class="preview-footer">
-                            <div class="preview-stats">
-                                <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-gray-500'><use href='#icon-clock'></use></svg>~15 min</div>
-                                <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-green-500'><use href='#icon-chart'></use></svg>78% success</div>
-                            </div>
-                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('repairs');">Begin Assessment</button>
+                        
+                        <div class="problem-card" onclick="selectProblem('repairs', 'important')">
+                            <div class="problem-icon">🏠</div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-2">Stuff's broken & they won't fix it</h3>
+                            <p class="text-gray-600 text-sm">No heat, broken plumbing, or other repairs needed</p>
+                            <div class="success-badge mt-3">Fixed in 2-3 weeks</div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Eviction Defense -->
-                <div class="problem-card enhanced-card bg-white rounded-2xl p-6 shadow-lg border urgency-high relative" onclick="solveProblem('eviction')" data-problem-type="eviction" data-keywords="eviction,notice,out,illegal,court">
-                    <div class="relevance-badge">Perfect Match</div>
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M9.243 3.03a1 1 0 01.727 1.213L9.53 6h2.94l.56-2.243a1 1 0 111.94.486L14.53 6H17a1 1 0 110 2h-2.97l-1 4H15a1 1 0 110 2h-2.47l-.56 2.242a1 1 0 11-1.94-.485L10.47 14H7.53l-.56 2.242a1 1 0 11-1.94-.485L5.47 14H3a1 1 0 110-2h2.97l1-4H5a1 1 0 110-2h2.47l.56-2.243a1 1 0 011.213-.727zM9.03 8l-1 4h2.94l1-4H9.03z" clip-rule="evenodd"></path>
-                            </svg>
+                        
+                        <div class="problem-card" onclick="selectProblem('eviction', 'urgent')">
+                            <div class="problem-icon">📋</div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-2">Got kicked out / eviction notice</h3>
+                            <p class="text-gray-600 text-sm">Received eviction papers or being forced to leave</p>
+                            <div class="success-badge mt-3">Act fast - time sensitive!</div>
                         </div>
-                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">URGENT</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Eviction Defense Services</h3>
-                    <p class="text-gray-600 mb-4">"I got an eviction notice" or "Landlord wants me out"</p>
-                    <div class="flex items-center text-green-600 text-sm font-medium">
-                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        Stop illegal evictions
-                    </div>
-                    
-                    <!-- Hover Preview -->
-                    <div class="hover-preview">
-                        <div class="preview-header">
-                            <div class="preview-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2l-2 7h-7l10 5-2 6 10-5h-7l-2-7z" fill="none" stroke="currentColor" stroke-width="2"/>
-                                    <circle cx="12" cy="18" r="3" fill="currentColor"/>
-                                </svg>
-                            </div>
-                            <div class="preview-title">Fight Eviction - URGENT</div>
+                        
+                        <div class="problem-card" onclick="selectProblem('rent', 'important')">
+                            <div class="problem-icon">💸</div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-2">Rent went up way too much</h3>
+                            <p class="text-gray-600 text-sm">Huge rent increase that seems unfair or illegal</p>
+                            <div class="success-badge mt-3">Often reversible</div>
                         </div>
-                        <ol class="preview-steps">
-                            <li class="preview-step">
-                                <div class="preview-step-number">1</div>
-                                <div class="preview-step-text">Check if eviction notice is legally valid</div>
-                            </li>
-                            <li class="preview-step">
-                                <div class="preview-step-number">2</div>
-                                <div class="preview-step-text">File answer with court within deadline</div>
-                            </li>
-                            <li class="preview-step">
-                                <div class="preview-step-number">3</div>
-                                <div class="preview-step-text">Gather evidence of improper procedures</div>
-                            </li>
-                        </ol>
-                        <div class="preview-footer">
-                            <div class="preview-stats">
-                                <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-gray-500'><use href='#icon-clock'></use></svg>~45 min</div>
-                                <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-green-500'><use href='#icon-chart'></use></svg>65% success</div>
-                            </div>
-                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('eviction');">Begin Assessment</button>
+                        
+                        <div class="problem-card" onclick="selectProblem('harassment', 'important')">
+                            <div class="problem-icon">😠</div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-2">Landlord won't leave me alone</h3>
+                            <p class="text-gray-600 text-sm">Entering without permission, harassment, threats</p>
+                            <div class="success-badge mt-3">We can stop this</div>
+                        </div>
+                        
+                        <div class="problem-card" onclick="selectProblem('lease', 'normal')">
+                            <div class="problem-icon">📄</div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-2">Need to break my lease early</h3>
+                            <p class="text-gray-600 text-sm">Want out of lease before it ends</p>
+                            <div class="success-badge mt-3">Options available</div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Rent Increase -->
-                <div class="problem-card enhanced-card bg-white rounded-2xl p-6 shadow-lg border urgency-medium relative" onclick="solveProblem('rent-increase')" data-problem-type="rent-increase" data-keywords="rent,increase,raise,high,afford">
-                    <div class="relevance-badge">Very Relevant</div>
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"></path>
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full font-medium">TIME-SENSITIVE</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Rent Control & Increase Law</h3>
-                    <p class="text-gray-600 mb-4">"Landlord raised my rent too much" or "Got rent increase notice"</p>
-                    <div class="flex items-center text-green-600 text-sm font-medium">
-                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        Challenge illegal increases
-                    </div>
-                    
-                    <!-- Hover Preview -->
-                    <div class="hover-preview">
-                        <div class="preview-header">
-                            <div class="preview-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M3 13h2v8H3zm4-8h2v16H7zm4-3h2v18h-2zm4 5h2v13h-2zm4-2h2v15h-2z" fill="currentColor"/>
-                                </svg>
-                            </div>
-                            <div class="preview-title">Challenge Rent Increase</div>
-                        </div>
-                        <ol class="preview-steps">
-                            <li class="preview-step">
-                                <div class="preview-step-number">1</div>
-                                <div class="preview-step-text">Check if increase follows local rent control laws</div>
-                            </li>
-                            <li class="preview-step">
-                                <div class="preview-step-number">2</div>
-                                <div class="preview-step-text">Verify proper notice period was given</div>
-                            </li>
-                            <li class="preview-step">
-                                <div class="preview-step-number">3</div>
-                                <div class="preview-step-text">File complaint with housing authority</div>
-                            </li>
-                        </ol>
-                        <div class="preview-footer">
-                            <div class="preview-stats">
-                                <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-gray-500'><use href='#icon-clock'></use></svg>~25 min</div>
-                                <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-green-500'><use href='#icon-chart'></use></svg>72% success</div>
-                            </div>
-                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('rent-increase');">Begin Assessment</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Landlord Harassment -->
-                <div class="problem-card enhanced-card bg-white rounded-2xl p-6 shadow-lg border urgency-high relative" onclick="solveProblem('harassment')" data-problem-type="harassment" data-keywords="harassment,enter,permission,threatening,harass">
-                    <div class="relevance-badge">Good Match</div>
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-medium">SERIOUS</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Tenant Rights Protection</h3>
-                    <p class="text-gray-600 mb-4">"Landlord enters without permission" or "Being harassed/threatened"</p>
-                    <div class="flex items-center text-green-600 text-sm font-medium">
-                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        Stop harassment legally
-                    </div>
-                    
-                    <!-- Hover Preview -->
-                    <div class="hover-preview">
-                        <div class="preview-header">
-                            <div class="preview-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2L2 20h20L12 2zm0 6l1.53 5.39L9 17h6l-3-9z" fill="none" stroke="currentColor" stroke-width="2"/>
-                                    <circle cx="12" cy="17" r="1" fill="currentColor"/>
-                                    <path d="M12 9v4" stroke="currentColor" stroke-width="2"/>
-                                </svg>
-                            </div>
-                            <div class="preview-title">Stop Harassment</div>
-                        </div>
-                        <ol class="preview-steps">
-                            <li class="preview-step">
-                                <div class="preview-step-number">1</div>
-                                <div class="preview-step-text">Document all harassment incidents with dates</div>
-                            </li>
-                            <li class="preview-step">
-                                <div class="preview-step-number">2</div>
-                                <div class="preview-step-text">Send cease and desist letter</div>
-                            </li>
-                            <li class="preview-step">
-                                <div class="preview-step-number">3</div>
-                                <div class="preview-step-text">File restraining order if needed</div>
-                            </li>
-                        </ol>
-                        <div class="preview-footer">
-                            <div class="preview-stats">
-                                <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-gray-500'><use href='#icon-clock'></use></svg>~30 min</div>
-                                <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-green-500'><use href='#icon-chart'></use></svg>82% success</div>
-                            </div>
-                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('harassment');">Begin Assessment</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Lease Issues -->
-                <div class="problem-card enhanced-card bg-white rounded-2xl p-6 shadow-lg border urgency-low relative" onclick="solveProblem('lease-issues')" data-problem-type="lease-issues" data-keywords="lease,break,early,unfair,terms">
-                    <div class="relevance-badge">Related</div>
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm8 8v2a1 1 0 01-1 1H8a1 1 0 01-1-1v-2h8z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">PLANNING</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Lease Termination Law</h3>
-                    <p class="text-gray-600 mb-4">"Need to break lease early" or "Lease terms seem unfair"</p>
-                    <div class="flex items-center text-green-600 text-sm font-medium">
-                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        Get out of bad leases
-                    </div>
-                    
-                    <!-- Hover Preview -->
-                    <div class="hover-preview">
-                        <div class="preview-header">
-                            <div class="preview-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2"/>
-                                    <polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" stroke-width="2"/>
-                                    <line x1="8" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="2"/>
-                                    <line x1="8" y1="17" x2="12" y2="17" stroke="currentColor" stroke-width="2"/>
-                                </svg>
-                            </div>
-                            <div class="preview-title">Break Lease Legally</div>
-                        </div>
-                        <ol class="preview-steps">
-                            <li class="preview-step">
-                                <div class="preview-step-number">1</div>
-                                <div class="preview-step-text">Review lease terms for early termination clauses</div>
-                            </li>
-                            <li class="preview-step">
-                                <div class="preview-step-number">2</div>
-                                <div class="preview-step-text">Check for legal reasons to break lease</div>
-                            </li>
-                            <li class="preview-step">
-                                <div class="preview-step-number">3</div>
-                                <div class="preview-step-text">Negotiate with landlord or use legal grounds</div>
-                            </li>
-                        </ol>
-                        <div class="preview-footer">
-                            <div class="preview-stats">
-                                <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-gray-500'><use href='#icon-clock'></use></svg>~35 min</div>
-                                <div class="preview-stat"><svg width='14' height='14' class='inline mr-1 text-green-500'><use href='#icon-chart'></use></svg>68% success</div>
-                            </div>
-                            <button class="preview-action" onclick="event.stopPropagation(); solveProblem('lease-issues');">Begin Assessment</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <div class="section-divider"></div>
-
-    <!-- How It Works Section -->
-    <section id="howItWorks" class="py-16 bg-gray-50">
-        <div class="w-[90%] max-w-6xl mx-auto px-4">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Legal Process Overview</h2>
-                <p class="text-xl text-gray-600">Comprehensive legal consultation process designed for optimal case resolution.</p>
             </div>
             
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="text-center">
-                    <div class="step-indicator w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-xl">1</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Initial Case Review</h3>
-                    <p class="text-gray-600">Comprehensive case assessment and legal matter evaluation by qualified professionals.</p>
-                </div>
-                <div class="text-center">
-                    <div class="step-indicator w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-xl">2</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Legal Strategy Development</h3>
-                    <p class="text-gray-600">Customized legal strategy formulation with comprehensive documentation and procedural guidance.</p>
-                </div>
-                <div class="text-center">
-                    <div class="step-indicator w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-xl">3</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Case Resolution</h3>
-                    <p class="text-gray-600">Implementation of legal strategy with professional oversight and expert consultation as required.</p>
+            <!-- Step 2: Tell Us More -->
+            <div id="step2" class="step step-hidden">
+                <div class="p-8">
+                    <!-- Progress -->
+                    <div class="mb-6">
+                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                            <span>Step 2 of 3</span>
+                            <span>1 minute left</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 66%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-message">
+                        <h2 class="text-xl font-bold text-gray-900 mb-2">Tell us a bit more</h2>
+                        <p class="text-gray-600" id="followUpQuestion">Loading your personalized questions...</p>
+                    </div>
+                    
+                    <div id="questionArea" class="mt-6">
+                        <!-- Dynamic questions will appear here -->
+                    </div>
+                    
+                    <button class="big-button" onclick="nextStep()" id="continueBtn" disabled>
+                        Continue →
+                    </button>
                 </div>
             </div>
-        </div>
-    </section>
-
-
-    <!-- Problem Solver Modal -->
-    <div id="problemModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-4xl w-full max-h-screen overflow-y-auto">
-            <div class="p-8">
-                <!-- Breadcrumb Navigation -->
-                <nav id="modalBreadcrumb" class="flex items-center space-x-2 text-sm mb-6 pb-4 border-b border-gray-200">
-                    <span class="text-purple-600 font-medium cursor-pointer hover:text-purple-800" onclick="goToBreadcrumbStep('home')">Legal Help</span>
-                    <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span id="breadcrumbCurrent" class="text-gray-600">Problem Overview</span>
-                </nav>
-                
-                <!-- Progress Indicator -->
-                <div id="modalProgress" class="flex items-center justify-between mb-8">
-                    <div class="flex items-center space-x-4">
-                        <div class="progress-step active" data-step="1">
-                            <div class="step-circle">1</div>
-                            <span class="step-label">Understand</span>
+            
+            <!-- Step 3: Your Action Plan -->
+            <div id="step3" class="step step-hidden">
+                <div class="p-8">
+                    <!-- Progress -->
+                    <div class="mb-6">
+                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                            <span>Step 3 of 3</span>
+                            <span>Done! 🎉</span>
                         </div>
-                        <div class="progress-line"></div>
-                        <div class="progress-step" data-step="2">
-                            <div class="step-circle">2</div>
-                            <span class="step-label">Take Action</span>
-                        </div>
-                        <div class="progress-line"></div>
-                        <div class="progress-step" data-step="3">
-                            <div class="step-circle">3</div>
-                            <span class="step-label">Follow Up</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 100%"></div>
                         </div>
                     </div>
-                    <div class="text-sm text-gray-500">
-                        <span id="currentStepText">Step 1 of 3</span>
+                    
+                    <div class="chat-message">
+                        <h2 class="text-xl font-bold text-gray-900 mb-2">Here's your action plan! 🚀</h2>
+                        <p class="text-gray-600">We've created a step-by-step plan just for you. You've got this!</p>
                     </div>
-                </div>
-                
-                <div class="flex justify-between items-start mb-6">
-                    <h2 id="modalTitle" class="text-2xl font-bold text-gray-900"></h2>
-                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                <div id="modalContent"></div>
-                
-                <!-- Navigation Buttons -->
-                <div id="modalNavigation" class="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
-                    <button id="backButton" class="hidden flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 transition-all" onclick="goBackStep()">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                        </svg>
-                        Back
-                    </button>
-                    <div class="flex items-center space-x-3">
-                        <button id="startOverButton" class="px-4 py-2 text-purple-600 hover:text-purple-800 transition-all" onclick="startOver()">
-                            Start Over
-                        </button>
-                        <button id="nextButton" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all" onclick="goNextStep()">
-                            Continue
+                    
+                    <div id="actionPlan" class="mt-6">
+                        <!-- Dynamic action plan will appear here -->
+                    </div>
+                    
+                    <div class="flex gap-3 mt-6">
+                        <button class="big-button" onclick="getStarted()">
+                            Get Started Now!
                         </button>
                     </div>
                 </div>
@@ -1882,877 +351,264 @@
     </div>
 
     <script>
-        // Smart Search Data
-        const searchSuggestions = [
-            { text: "My landlord will not return my security deposit", category: "Deposit", type: "security-deposit", icon: "<svg width='16' height='16' class='text-yellow-600'><use href='#icon-money'></use></svg>" },
-            { text: "Landlord keeping deposit unfairly", category: "Deposit", type: "security-deposit", icon: "<svg width='16' height='16' class='text-yellow-600'><use href='#icon-money'></use></svg>" },
-            { text: "Security deposit deductions seem wrong", category: "Deposit", type: "security-deposit", icon: "<svg width='16' height='16' class='text-yellow-600'><use href='#icon-money'></use></svg>" },
-            { text: "Landlord will not fix broken heating", category: "Repairs", type: "repairs", icon: "<svg width='16' height='16' class='text-blue-600'><use href='#icon-tool'></use></svg>" },
-            { text: "No hot water for weeks", category: "Repairs", type: "repairs", icon: "<svg width='16' height='16' class='text-blue-600'><use href='#icon-tool'></use></svg>" },
-            { text: "Plumbing issues landlord ignoring", category: "Repairs", type: "repairs", icon: "<svg width='16' height='16' class='text-blue-600'><use href='#icon-tool'></use></svg>" },
-            { text: "I got an eviction notice", category: "Eviction", type: "eviction", icon: "<svg width='16' height='16' class='text-purple-600'><use href='#icon-scale'></use></svg>" },
-            { text: "Landlord wants me out illegally", category: "Eviction", type: "eviction", icon: "<svg width='16' height='16' class='text-purple-600'><use href='#icon-scale'></use></svg>" },
-            { text: "Facing eviction for no reason", category: "Eviction", type: "eviction", icon: "<svg width='16' height='16' class='text-purple-600'><use href='#icon-scale'></use></svg>" },
-            { text: "Rent increase too high", category: "Rent", type: "rent-increase", icon: "<svg width='16' height='16' class='text-red-600'><use href='#icon-chart'></use></svg>" },
-            { text: "Landlord raised rent illegally", category: "Rent", type: "rent-increase", icon: "<svg width='16' height='16' class='text-red-600'><use href='#icon-chart'></use></svg>" },
-            { text: "Cannot afford new rent amount", category: "Rent", type: "rent-increase", icon: "<svg width='16' height='16' class='text-red-600'><use href='#icon-chart'></use></svg>" },
-            { text: "Landlord enters without permission", category: "Harassment", type: "harassment", icon: "<svg width='16' height='16' class='text-orange-600'><use href='#icon-warning'></use></svg>" },
-            { text: "Being harassed by landlord", category: "Harassment", type: "harassment", icon: "<svg width='16' height='16' class='text-orange-600'><use href='#icon-warning'></use></svg>" },
-            { text: "Landlord threatening me", category: "Harassment", type: "harassment", icon: "<svg width='16' height='16' class='text-orange-600'><use href='#icon-warning'></use></svg>" },
-            { text: "Need to break lease early", category: "Lease", type: "lease-issues", icon: "<svg width='16' height='16' class='text-gray-600'><use href='#icon-document'></use></svg>" },
-            { text: "Lease terms seem unfair", category: "Lease", type: "lease-issues", icon: "<svg width='16' height='16' class='text-gray-600'><use href='#icon-document'></use></svg>" },
-            { text: "Want out of bad lease", category: "Lease", type: "lease-issues", icon: "<svg width='16' height='16' class='text-gray-600'><use href='#icon-document'></use></svg>" }
-        ];
-
-        let searchTimeout;
-        let suggestionsVisible = false;
-
-        // Problem Prioritization System
-        function prioritizeProblems(query) {
-            const problemCards = document.querySelectorAll('.problem-card');
-            const keywords = query.toLowerCase().split(' ');
-            
-            // Calculate relevance scores
-            const cardScores = Array.from(problemCards).map(card => {
-                const cardKeywords = card.dataset.keywords.toLowerCase();
-                const problemType = card.dataset.problemType;
-                
-                let score = 0;
-                let matchedKeywords = 0;
-                
-                keywords.forEach(keyword => {
-                    if (cardKeywords.includes(keyword)) {
-                        score += keyword.length * 2; // Longer keywords get higher scores
-                        matchedKeywords++;
-                    }
-                });
-                
-                // Boost score based on urgency
-                if (card.classList.contains('urgency-high')) score += 10;
-                else if (card.classList.contains('urgency-medium')) score += 5;
-                
-                return {
-                    card,
-                    score,
-                    matchedKeywords,
-                    problemType
-                };
-            });
-            
-            // Sort by score (highest first)
-            cardScores.sort((a, b) => b.score - a.score);
-            
-            // Apply visual changes and reordering
-            cardScores.forEach((item, index) => {
-                const { card, score, matchedKeywords } = item;
-                
-                // Remove existing priority classes
-                card.classList.remove('priority-1', 'priority-2', 'priority-3', 'priority-4', 'priority-5', 'priority-6');
-                card.classList.remove('highlighted', 'dimmed');
-                
-                // Apply new priority order
-                card.classList.add(`priority-${index + 1}`);
-                
-                // Update relevance badge text and visibility
-                const badge = card.querySelector('.relevance-badge');
-                if (score > 15) {
-                    badge.textContent = 'Perfect Match';
-                    card.classList.add('highlighted');
-                } else if (score > 10) {
-                    badge.textContent = 'Highly Relevant';
-                    card.classList.add('highlighted');
-                } else if (score > 5) {
-                    badge.textContent = 'Very Relevant';
-                } else if (score > 0) {
-                    badge.textContent = 'Related';
-                } else {
-                    badge.textContent = 'May Help';
-                    card.classList.add('dimmed');
-                }
-            });
-        }
+        let currentStep = 1;
+        let selectedProblem = null;
+        let urgencyLevel = null;
+        let userAnswers = {};
         
-        function resetProblemPriority() {
-            const problemCards = document.querySelectorAll('.problem-card');
-            problemCards.forEach(card => {
-                card.classList.remove('priority-1', 'priority-2', 'priority-3', 'priority-4', 'priority-5', 'priority-6');
-                card.classList.remove('highlighted', 'dimmed');
-                
-                // Reset to default relevance badges
-                const badge = card.querySelector('.relevance-badge');
-                const problemType = card.dataset.problemType;
-                
-                switch(problemType) {
-                    case 'security-deposit':
-                    case 'eviction':
-                    case 'harassment':
-                        badge.textContent = 'High Priority';
-                        break;
-                    case 'repairs':
-                    case 'rent-increase':
-                        badge.textContent = 'Medium Priority';
-                        break;
-                    default:
-                        badge.textContent = 'Low Priority';
-                }
-            });
-        }
-
-        // Smart Search Functions
-        function handleSearchInput(event) {
-            const query = event.target.value.trim();
-            const clearBtn = document.getElementById('searchClearBtn');
-            const searchFeedback = document.getElementById('searchFeedback');
-            const searchInput = document.getElementById('problemSearch');
+        function selectProblem(problemType, urgency) {
+            selectedProblem = problemType;
+            urgencyLevel = urgency;
             
-            // Show/hide clear button
-            if (query.length > 0) {
-                clearBtn.classList.remove('hidden');
-            } else {
-                clearBtn.classList.add('hidden');
-                resetProblemPriority();
-                hideSearchFeedback();
-            }
-
-            // Show searching state for longer queries
-            if (query.length > 2) {
-                showSearchFeedback('Searching for solutions...', 'searching');
-                searchInput.classList.add('search-input-loading');
-            }
-
-            // Debounce search suggestions and problem prioritization
-            clearTimeout(searchTimeout);
-            if (query.length > 1) {
-                searchTimeout = setTimeout(() => {
-                    const startTime = performance.now();
-                    updateSearchSuggestions(query);
-                    prioritizeProblems(query);
-                    const endTime = performance.now();
-                    
-                    // Show results feedback
-                    const filtered = searchSuggestions.filter(suggestion => 
-                        suggestion.text.toLowerCase().includes(query.toLowerCase()) ||
-                        suggestion.category.toLowerCase().includes(query.toLowerCase())
-                    );
-                    
-                    searchInput.classList.remove('search-input-loading');
-                    
-                    if (filtered.length > 0) {
-                        showSearchFeedback(
-                            `Found ${filtered.length} matching solution${filtered.length > 1 ? 's' : ''}`,
-                            'results-found',
-                            endTime - startTime
-                        );
-                    } else if (query.length > 2) {
-                        showSearchFeedback(
-                            'No exact matches found. Try describing your problem differently or browse common issues below.',
-                            'no-results'
-                        );
-                    }
-                }, 150);
-            } else {
-                hideSearchSuggestions();
-                resetProblemPriority();
-                hideSearchFeedback();
-                searchInput.classList.remove('search-input-loading');
-            }
-        }
-
-        function showSearchFeedback(message, type, searchTime = null) {
-            const feedback = document.getElementById('searchFeedback');
-            let content = `<div class="flex items-center gap-2">`;
+            // Show typing indicator
+            showTypingIndicator();
             
-            if (type === 'searching') {
-                content += `<svg width="16" height="16" class="animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-opacity="0.25"></circle>
-                    <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" stroke-opacity="0.75"></path>
-                </svg>`;
-            } else if (type === 'results-found') {
-                content += `<svg width="16" height="16" class="text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                </svg>`;
-            } else if (type === 'no-results') {
-                content += `<svg width="16" height="16" class="text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                </svg>`;
-            }
-            
-            content += `<span>${message}</span></div>`;
-            
-            if (searchTime && type === 'results-found') {
-                content += `<div class="search-stats">
-                    <span class="search-time">${Math.round(searchTime)}ms</span>
-                    <span>• Click suggestions or browse cards below</span>
-                </div>`;
-            }
-            
-            feedback.innerHTML = content;
-            feedback.className = `search-feedback ${type}`;
-            feedback.classList.remove('hidden');
-        }
-
-        function hideSearchFeedback() {
-            const feedback = document.getElementById('searchFeedback');
-            feedback.classList.add('hidden');
-        }
-
-        // Professional notification system
-        function showNotification(title, message, type = 'info') {
-            const modal = document.getElementById('notificationModal');
-            const titleElement = document.getElementById('notificationTitle');
-            const messageElement = document.getElementById('notificationMessage');
-            
-            titleElement.textContent = title;
-            messageElement.textContent = message;
-            
-            modal.classList.add('active');
-            
-            // Auto-close after 5 seconds for non-critical notifications
-            if (type !== 'error') {
-                setTimeout(() => {
-                    closeNotification();
-                }, 5000);
-            }
-        }
-
-        function closeNotification() {
-            const modal = document.getElementById('notificationModal');
-            modal.classList.remove('active');
-        }
-
-        // Close modal when clicking outside
-        document.addEventListener('click', function(event) {
-            const modal = document.getElementById('notificationModal');
-            if (event.target === modal) {
-                closeNotification();
-            }
-        });
-
-        function updateSearchSuggestions(query) {
-            const suggestionContainer = document.getElementById('searchSuggestions');
-            const filtered = searchSuggestions.filter(suggestion => 
-                suggestion.text.toLowerCase().includes(query.toLowerCase()) ||
-                suggestion.category.toLowerCase().includes(query.toLowerCase())
-            ).slice(0, 8); // Limit to 8 suggestions
-
-            if (filtered.length > 0) {
-                suggestionContainer.innerHTML = filtered.map(suggestion => `
-                    <div class="suggestion-item" onclick="selectSuggestion('${suggestion.text}', '${suggestion.type}')">
-                        <span class="suggestion-icon">${suggestion.icon}</span>
-                        <span class="suggestion-text">${suggestion.text}</span>
-                        <span class="suggestion-category">${suggestion.category}</span>
-                    </div>
-                `).join('');
-                suggestionContainer.classList.remove('hidden');
-                suggestionsVisible = true;
-            } else {
-                hideSearchSuggestions();
-            }
-        }
-
-        function selectSuggestion(text, type) {
-            document.getElementById('problemSearch').value = text;
-            hideSearchSuggestions();
-            solveProblem(type);
-        }
-
-        function showSearchSuggestions() {
-            const query = document.getElementById('problemSearch').value.trim();
-            if (query.length > 1) {
-                updateSearchSuggestions(query);
-            }
-        }
-
-        function hideSearchSuggestions() {
             setTimeout(() => {
-                document.getElementById('searchSuggestions').classList.add('hidden');
-                suggestionsVisible = false;
-            }, 200); // Delay to allow click events
-        }
-
-        function clearSearch() {
-            document.getElementById('problemSearch').value = '';
-            document.getElementById('searchClearBtn').classList.add('hidden');
-            hideSearchSuggestions();
-            document.getElementById('problemSearch').focus();
-        }
-
-        // Problem solver functions
-        function searchProblem() {
-            const query = document.getElementById('problemSearch').value.trim();
-            if (!query) {
-                showNotification('Search Required', 'Please describe your problem to receive appropriate legal assistance.');
-                return;
-            }
-            
-            // Analyze the problem and redirect to appropriate solution
-            const problemType = analyzeProblem(query);
-            solveProblem(problemType);
-            
-            // Hide suggestions after search
-            hideSearchSuggestions();
+                nextStep();
+            }, 1000);
         }
         
-        function analyzeProblem(query) {
-            const keywords = query.toLowerCase();
-            
-            if (keywords.includes('deposit') || keywords.includes('money back')) {
-                return 'security-deposit';
-            } else if (keywords.includes('evict') || keywords.includes('notice') || keywords.includes('out')) {
-                return 'eviction';
-            } else if (keywords.includes('repair') || keywords.includes('fix') || keywords.includes('heat') || keywords.includes('water')) {
-                return 'repairs';
-            } else if (keywords.includes('rent') && (keywords.includes('increase') || keywords.includes('raise'))) {
-                return 'rent-increase';
-            } else if (keywords.includes('harass') || keywords.includes('enter') || keywords.includes('threat')) {
-                return 'harassment';
-            } else {
-                return 'general';
+        function showTypingIndicator() {
+            const step1 = document.getElementById('step1');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-message typing-indicator';
+            typingDiv.innerHTML = `
+                <span>Getting your personalized questions ready</span>
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            step1.querySelector('.p-8').appendChild(typingDiv);
+        }
+        
+        function nextStep() {
+            if (currentStep === 1) {
+                document.getElementById('step1').classList.add('step-hidden');
+                document.getElementById('step2').classList.remove('step-hidden');
+                loadQuestions();
+                currentStep = 2;
+            } else if (currentStep === 2) {
+                document.getElementById('step2').classList.add('step-hidden');
+                document.getElementById('step3').classList.remove('step-hidden');
+                generateActionPlan();
+                currentStep = 3;
             }
         }
         
-        function solveProblem(problemType) {
-            const modal = document.getElementById('problemModal');
-            const title = document.getElementById('modalTitle');
-            const content = document.getElementById('modalContent');
-            
-            const solutions = {
-                'security-deposit': {
-                    title: 'Get Your Security Deposit Back',
-                    content: `
-                        <div class="space-y-6">
-                            <div class="bg-green-50 p-6 rounded-xl border border-green-200">
-                                <h3 class="font-bold text-green-800 mb-3">Your Action Plan</h3>
-                                <ol class="list-decimal list-inside space-y-2 text-green-700">
-                                    <li>Check if it has been more than 30 days since you moved out</li>
-                                    <li>Review what deductions they are claiming</li>
-                                    <li>Send a formal demand letter (we will create it for you)</li>
-                                    <li>File in small claims court if needed</li>
-                                </ol>
-                            </div>
-                            
-                            <div class="bg-blue-50 p-6 rounded-xl border border-blue-200">
-                                <h3 class="font-bold text-blue-800 mb-3">Did You Know?</h3>
-                                <p class="text-blue-700">In most states, landlords who wrongfully withhold deposits must pay 2-3x the amount in damages. You could get more than your original deposit!</p>
-                            </div>
-                            
-                            <div class="grid md:grid-cols-2 gap-4">
-                                <button onclick="createDocument('demand-letter')" class="bg-purple-600 text-white px-6 py-4 rounded-xl font-semibold hover:bg-purple-700 transition-all">
-                                    Create Demand Letter
-                                </button>
-                                <button onclick="checkRights('security-deposit')" class="bg-blue-600 text-white px-6 py-4 rounded-xl font-semibold hover:bg-blue-700 transition-all">
-                                    Check Your Rights
-                                </button>
-                            </div>
-                            
-                            <div class="bg-yellow-50 p-6 rounded-xl border border-yellow-200">
-                                <h3 class="font-bold text-yellow-800 mb-3">Time Limits</h3>
-                                <p class="text-yellow-700">Most states require landlords to return deposits within 14-30 days. After this period, you have stronger legal grounds.</p>
-                            </div>
-                        </div>
-                    `
+        function loadQuestions() {
+            const questions = {
+                deposit: {
+                    question: "When did you move out and how much was your deposit?",
+                    inputs: [
+                        { type: "text", placeholder: "Move out date (e.g., 2 months ago)", id: "moveOutDate" },
+                        { type: "number", placeholder: "Deposit amount ($)", id: "depositAmount" },
+                        { type: "select", options: ["Still waiting", "Got some back", "Got nothing back"], id: "depositStatus" }
+                    ]
                 },
-                'repairs': {
-                    title: 'Force Your Landlord to Make Repairs',
-                    content: `
-                        <div class="space-y-6">
-                            <div class="bg-red-50 p-6 rounded-xl border border-red-200">
-                                <h3 class="font-bold text-red-800 mb-3">Safety First</h3>
-                                <p class="text-red-700">If you have no heat, water, or electricity, this is an emergency. Document everything and contact local housing authorities immediately.</p>
-                            </div>
-                            
-                            <div class="bg-green-50 p-6 rounded-xl border border-green-200">
-                                <h3 class="font-bold text-green-800 mb-3">Your Action Plan</h3>
-                                <ol class="list-decimal list-inside space-y-2 text-green-700">
-                                    <li>Document the problem with photos and videos</li>
-                                    <li>Send written notice to landlord (we will create it)</li>
-                                    <li>Wait reasonable time for repair (usually 14-30 days)</li>
-                                    <li>Use repair and deduct or withhold rent if legal in your state</li>
-                                </ol>
-                            </div>
-                            
-                            <div class="grid md:grid-cols-2 gap-4">
-                                <button onclick="createDocument('repair-demand')" class="bg-orange-600 text-white px-6 py-4 rounded-xl font-semibold hover:bg-orange-700 transition-all">
-                                    Create Repair Demand
-                                </button>
-                                <button onclick="checkRights('repairs')" class="bg-blue-600 text-white px-6 py-4 rounded-xl font-semibold hover:bg-blue-700 transition-all">
-                                    Know Your Rights
-                                </button>
-                            </div>
-                        </div>
-                    `
+                repairs: {
+                    question: "What's broken and how long has it been like this?",
+                    inputs: [
+                        { type: "textarea", placeholder: "Describe what's broken (heating, plumbing, etc.)", id: "repairIssue" },
+                        { type: "select", options: ["Less than a week", "1-2 weeks", "1 month", "2+ months"], id: "duration" },
+                        { type: "select", options: ["Yes, multiple times", "Yes, once", "No"], id: "notifiedLandlord" }
+                    ]
                 },
-                'eviction': {
-                    title: 'Fight Your Eviction',
-                    content: `
-                        <div class="space-y-6">
-                            <div class="bg-red-50 p-6 rounded-xl border border-red-200">
-                                <h3 class="font-bold text-red-800 mb-3">URGENT - Time Sensitive</h3>
-                                <p class="text-red-700">You typically have only 5-10 days to respond to an eviction. Do not wait - act now!</p>
-                            </div>
-                            
-                            <div class="bg-green-50 p-6 rounded-xl border border-green-200">
-                                <h3 class="font-bold text-green-800 mb-3">Immediate Actions</h3>
-                                <ol class="list-decimal list-inside space-y-2 text-green-700">
-                                    <li>Check if the eviction notice is legally valid</li>
-                                    <li>File an answer with the court within deadline</li>
-                                    <li>Gather evidence of improper notice or procedures</li>
-                                    <li>Consider negotiating with landlord</li>
-                                </ol>
-                            </div>
-                            
-                            <div class="bg-blue-50 p-6 rounded-xl border border-blue-200">
-                                <h3 class="font-bold text-blue-800 mb-3">Common Defenses</h3>
-                                <ul class="list-disc list-inside space-y-1 text-blue-700">
-                                    <li>Improper notice (wrong form, timing, or service)</li>
-                                    <li>Retaliatory eviction (after complaints about repairs)</li>
-                                    <li>Discrimination based on protected class</li>
-                                    <li>Landlord's failure to maintain habitability</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="grid md:grid-cols-2 gap-4">
-                                <button onclick="findLawyer('eviction')" class="bg-red-600 text-white px-6 py-4 rounded-xl font-semibold hover:bg-red-700 transition-all">
-                                    Find Emergency Lawyer
-                                </button>
-                                <button onclick="createDocument('eviction-response')" class="bg-purple-600 text-white px-6 py-4 rounded-xl font-semibold hover:bg-purple-700 transition-all">
-                                    File Court Response
-                                </button>
-                            </div>
+                eviction: {
+                    question: "When did you get the notice and what's the reason?",
+                    inputs: [
+                        { type: "select", options: ["Today", "This week", "1-2 weeks ago", "More than 2 weeks"], id: "noticeDate" },
+                        { type: "select", options: ["Non-payment of rent", "Lease violation", "No reason given", "Other"], id: "evictionReason" },
+                        { type: "select", options: ["Yes", "No", "Not sure"], id: "canAffordRent" }
+                    ]
+                },
+                rent: {
+                    question: "How much did your rent go up and when?",
+                    inputs: [
+                        { type: "number", placeholder: "Old rent amount ($)", id: "oldRent" },
+                        { type: "number", placeholder: "New rent amount ($)", id: "newRent" },
+                        { type: "select", options: ["This month", "Next month", "In 2-3 months"], id: "increaseDate" }
+                    ]
+                },
+                harassment: {
+                    question: "What's your landlord doing that's bothering you?",
+                    inputs: [
+                        { type: "checkbox", options: ["Entering without permission", "Threatening eviction", "Verbal threats", "Other harassment"], id: "harassmentType" },
+                        { type: "select", options: ["Daily", "Weekly", "Few times a month", "Occasionally"], id: "frequency" },
+                        { type: "textarea", placeholder: "Any specific incidents you want to mention?", id: "incidents" }
+                    ]
+                },
+                lease: {
+                    question: "Why do you need to break your lease?",
+                    inputs: [
+                        { type: "select", options: ["Job relocation", "Family emergency", "Unsafe conditions", "Financial hardship", "Other"], id: "reason" },
+                        { type: "text", placeholder: "How much time is left on lease?", id: "timeLeft" },
+                        { type: "select", options: ["Already talked to them", "Planning to talk to them", "Don't want to talk to them"], id: "landlordContact" }
+                    ]
+                }
+            };
+            
+            const problemData = questions[selectedProblem];
+            document.getElementById('followUpQuestion').textContent = problemData.question;
+            
+            const questionArea = document.getElementById('questionArea');
+            questionArea.innerHTML = '';
+            
+            problemData.inputs.forEach(input => {
+                const div = document.createElement('div');
+                div.className = 'mb-4';
+                
+                if (input.type === 'textarea') {
+                    div.innerHTML = `
+                        <textarea id="${input.id}" placeholder="${input.placeholder}" 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                rows="3" oninput="checkAnswers()"></textarea>
+                    `;
+                } else if (input.type === 'select') {
+                    div.innerHTML = `
+                        <select id="${input.id}" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" onchange="checkAnswers()">
+                            <option value="">Choose an option...</option>
+                            ${input.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                        </select>
+                    `;
+                } else if (input.type === 'checkbox') {
+                    div.innerHTML = `
+                        <div class="space-y-2">
+                            ${input.options.map(opt => `
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" value="${opt}" name="${input.id}" onchange="checkAnswers()" class="rounded">
+                                    <span>${opt}</span>
+                                </label>
+                            `).join('')}
                         </div>
-                    `
-                }
-            };
-            
-            const solution = solutions[problemType] || {
-                title: 'General Legal Help',
-                content: '<p>Let us help you with your legal issue. Please describe your problem in more detail.</p>'
-            };
-            
-            title.textContent = solution.title;
-            content.innerHTML = solution.content;
-            modal.classList.remove('hidden');
-        }
-        
-        function showEmergencyHelp() {
-            solveProblem('eviction');
-        }
-        
-        function closeModal() {
-            document.getElementById('problemModal').classList.add('hidden');
-        }
-        
-        
-        function createDocument(type) {
-            showNotification('Feature Development', 'Document creation for ' + type + ' will be available shortly.');
-        }
-        
-        function checkRights(area) {
-            showNotification('Feature Development', 'Rights information for ' + area + ' will be available shortly.');
-        }
-        
-        function findLawyer(urgency) {
-            showNotification('Feature Development', 'Lawyer finder for ' + urgency + ' cases will be available shortly.');
-        }
-
-        // Navigation Functions
-        function toggleMobileMenu() {
-            const mobileMenu = document.getElementById('mobile-menu');
-            if (mobileMenu.classList.contains('active')) {
-                closeMobileMenu();
-            } else {
-                openMobileMenu();
-            }
-        }
-        
-        function openMobileMenu() {
-            const mobileMenu = document.getElementById('mobile-menu');
-            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
-            
-            mobileMenu.classList.add('active');
-            hamburgerBtn.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-        
-        function closeMobileMenu() {
-            const mobileMenu = document.getElementById('mobile-menu');
-            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
-            
-            if (mobileMenu) mobileMenu.classList.remove('active');
-            if (hamburgerBtn) hamburgerBtn.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-        
-        function toggleMobileSection(sectionId) {
-            const section = document.getElementById(sectionId + '-section');
-            const arrow = document.getElementById(sectionId + '-arrow');
-            
-            if (section.classList.contains('expanded')) {
-                section.classList.remove('expanded');
-                arrow.classList.remove('rotated');
-            } else {
-                // Close all other sections first
-                document.querySelectorAll('.mobile-section-content').forEach(s => s.classList.remove('expanded'));
-                document.querySelectorAll('.mobile-arrow').forEach(a => a.classList.remove('rotated'));
-                
-                // Open current section
-                section.classList.add('expanded');
-                arrow.classList.add('rotated');
-            }
-        }
-        
-        // Close modal when clicking outside
-        document.addEventListener('click', function(event) {
-            const modal = document.getElementById('problemModal');
-            if (event.target === modal) {
-                closeModal();
-            }
-        });
-        
-        // Progress Navigation Functions
-        function scrollToSection(sectionId) {
-            const section = document.getElementById(sectionId);
-            if (section) {
-                const offsetTop = section.offsetTop - 100; // Account for fixed header
-                window.scrollTo({
-                    top: offsetTop,
-                    behavior: 'smooth'
-                });
-            }
-        }
-
-        function scrollToTop() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
-
-        function updateScrollProgress() {
-            const scrollProgress = document.getElementById('scrollProgress');
-            const scrollProgressBar = document.getElementById('scrollProgressBar');
-            const progressNav = document.getElementById('progressNav');
-            const backToTop = document.getElementById('backToTop');
-            
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-            const scrollPercent = (scrollTop / docHeight) * 100;
-            
-            // Update progress bar
-            scrollProgressBar.style.width = scrollPercent + '%';
-            
-            // Show/hide progress elements based on scroll position
-            if (scrollTop > 300) {
-                scrollProgress.classList.add('visible');
-                progressNav.classList.add('visible');
-                backToTop.classList.add('visible');
-            } else {
-                scrollProgress.classList.remove('visible');
-                progressNav.classList.remove('visible');
-                backToTop.classList.remove('visible');
-            }
-            
-            // Update active navigation dot
-            const sections = ['hero', 'problems', 'howItWorks'];
-            const dots = document.querySelectorAll('.progress-dot');
-            
-            let activeSection = 0;
-            sections.forEach((sectionId, index) => {
-                const section = document.getElementById(sectionId);
-                if (section) {
-                    const sectionTop = section.offsetTop - 200;
-                    if (scrollTop >= sectionTop) {
-                        activeSection = index;
-                    }
-                }
-            });
-            
-            dots.forEach((dot, index) => {
-                if (index === activeSection) {
-                    dot.classList.add('active');
+                    `;
                 } else {
-                    dot.classList.remove('active');
+                    div.innerHTML = `
+                        <input type="${input.type}" id="${input.id}" placeholder="${input.placeholder}" 
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                               oninput="checkAnswers()">
+                    `;
                 }
-            });
-        }
-
-        // Scroll event listener
-        window.addEventListener('scroll', updateScrollProgress);
-        
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            updateScrollProgress();
-        });
-
-        // Initialize Universal Authentication Manager
-        if (typeof window.UniversalAuth !== 'undefined') {
-            window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
-        }
-        
-        // Modal Navigation and Journey Management
-        let currentModalStep = 1;
-        let modalJourney = {
-            currentProblem: null,
-            steps: ['understand', 'action', 'followup'],
-            stepContent: {}
-        };
-        
-        function goToBreadcrumbStep(step) {
-            if (step === 'home') {
-                closeModal();
-                // Scroll to top
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        }
-        
-        function goBackStep() {
-            if (currentModalStep > 1) {
-                currentModalStep--;
-                updateModalProgress();
-                loadStepContent();
-                updateNavigationButtons();
-            }
-        }
-        
-        function goNextStep() {
-            if (currentModalStep < 3) {
-                currentModalStep++;
-                updateModalProgress();
-                loadStepContent();
-                updateNavigationButtons();
-            }
-        }
-        
-        function startOver() {
-            currentModalStep = 1;
-            updateModalProgress();
-            loadStepContent();
-            updateNavigationButtons();
-        }
-        
-        function updateModalProgress() {
-            // Update progress steps
-            const steps = document.querySelectorAll('.progress-step');
-            const lines = document.querySelectorAll('.progress-line');
-            
-            steps.forEach((step, index) => {
-                const stepNumber = index + 1;
-                step.classList.remove('active', 'completed');
                 
-                if (stepNumber === currentModalStep) {
-                    step.classList.add('active');
-                } else if (stepNumber < currentModalStep) {
-                    step.classList.add('completed');
+                questionArea.appendChild(div);
+            });
+        }
+        
+        function checkAnswers() {
+            const inputs = document.querySelectorAll('#questionArea input, #questionArea select, #questionArea textarea');
+            let hasAnswers = false;
+            
+            inputs.forEach(input => {
+                if (input.type === 'checkbox') {
+                    const checkboxes = document.querySelectorAll(`input[name="${input.name}"]`);
+                    const checked = Array.from(checkboxes).some(cb => cb.checked);
+                    if (checked) hasAnswers = true;
+                } else if (input.value.trim()) {
+                    hasAnswers = true;
                 }
             });
             
-            // Update progress lines
-            lines.forEach((line, index) => {
-                if (index + 1 < currentModalStep) {
-                    line.classList.add('completed');
-                } else {
-                    line.classList.remove('completed');
+            document.getElementById('continueBtn').disabled = !hasAnswers;
+        }
+        
+        function generateActionPlan() {
+            const plans = {
+                deposit: {
+                    urgency: "urgent",
+                    timeline: "2-4 weeks",
+                    steps: [
+                        { icon: "📝", title: "Send demand letter", desc: "We'll create a professional letter demanding your deposit back", time: "Today" },
+                        { icon: "⏰", title: "Wait for response", desc: "Give them 14 days to respond (required by law)", time: "Next 2 weeks" },
+                        { icon: "⚖️", title: "File in court if needed", desc: "Small claims court - we'll help with paperwork", time: "Week 3-4" }
+                    ],
+                    successRate: "89%",
+                    avgRecovery: "$2,100"
+                },
+                repairs: {
+                    urgency: "important", 
+                    timeline: "1-3 weeks",
+                    steps: [
+                        { icon: "📸", title: "Document everything", desc: "Take photos/videos of all problems", time: "Today" },
+                        { icon: "📧", title: "Written notice to landlord", desc: "Official repair request with deadlines", time: "Tomorrow" },
+                        { icon: "🔧", title: "Know your options", desc: "Rent withholding or repair & deduct if they don't act", time: "Week 2-3" }
+                    ],
+                    successRate: "92%",
+                    avgRecovery: "Repairs completed"
+                },
+                eviction: {
+                    urgency: "urgent",
+                    timeline: "5-10 days",
+                    steps: [
+                        { icon: "🚨", title: "Act immediately", desc: "You typically have 5-10 days to respond", time: "RIGHT NOW" },
+                        { icon: "📋", title: "File response", desc: "Contest the eviction in court", time: "Within 5 days" },
+                        { icon: "💬", title: "Negotiate or fight", desc: "Work out payment plan or challenge the eviction", time: "Next week" }
+                    ],
+                    successRate: "73%",
+                    avgRecovery: "Eviction stopped"
+                },
+                rent: {
+                    urgency: "important",
+                    timeline: "2-3 weeks", 
+                    steps: [
+                        { icon: "📊", title: "Check if it's legal", desc: "Research local rent control laws", time: "Today" },
+                        { icon: "📝", title: "Challenge if illegal", desc: "File complaint with housing authority", time: "This week" },
+                        { icon: "💰", title: "Get money back", desc: "You might be owed overpaid rent", time: "Week 2-3" }
+                    ],
+                    successRate: "67%",
+                    avgRecovery: "$800 refund"
+                },
+                harassment: {
+                    urgency: "important",
+                    timeline: "1-2 weeks",
+                    steps: [
+                        { icon: "📝", title: "Document incidents", desc: "Keep detailed records of harassment", time: "Ongoing" },
+                        { icon: "⚠️", title: "Send cease & desist", desc: "Official warning to stop harassment", time: "This week" },
+                        { icon: "🛡️", title: "File complaint", desc: "Report to housing authority if it continues", time: "Week 2" }
+                    ],
+                    successRate: "85%",
+                    avgRecovery: "Harassment stopped"
+                },
+                lease: {
+                    urgency: "normal",
+                    timeline: "2-4 weeks",
+                    steps: [
+                        { icon: "📄", title: "Review your lease", desc: "Look for early termination clauses", time: "Today" },
+                        { icon: "💬", title: "Talk to landlord", desc: "Negotiate early exit or subletting", time: "This week" },
+                        { icon: "🏃", title: "Legal exit strategies", desc: "Use legal protections if available", time: "Week 2-4" }
+                    ],
+                    successRate: "78%",
+                    avgRecovery: "Clean exit"
                 }
-            });
-            
-            // Update step text
-            document.getElementById('currentStepText').textContent = `Step ${currentModalStep} of 3`;
-            
-            // Update breadcrumb current
-            const stepNames = ['Problem Overview', 'Solution Steps', 'Next Actions'];
-            document.getElementById('breadcrumbCurrent').textContent = stepNames[currentModalStep - 1];
-        }
-        
-        function loadStepContent() {
-            const content = document.getElementById('modalContent');
-            const problemType = modalJourney.currentProblem;
-            
-            if (!problemType || !modalJourney.stepContent[problemType]) return;
-            
-            const stepData = modalJourney.stepContent[problemType];
-            const stepContent = stepData[modalJourney.steps[currentModalStep - 1]];
-            
-            if (stepContent) {
-                content.innerHTML = stepContent;
-            }
-        }
-        
-        function updateNavigationButtons() {
-            const backButton = document.getElementById('backButton');
-            const nextButton = document.getElementById('nextButton');
-            
-            // Show/hide back button
-            if (currentModalStep === 1) {
-                backButton.classList.add('hidden');
-            } else {
-                backButton.classList.remove('hidden');
-            }
-            
-            // Update next button text
-            if (currentModalStep === 3) {
-                nextButton.textContent = 'Take Action';
-                nextButton.onclick = function() {
-                    // Implementation for taking action
-                    showNotification('Action Ready', 'Implementation for this action will be available shortly.');
-                };
-            } else {
-                nextButton.textContent = 'Continue';
-                nextButton.onclick = goNextStep;
-            }
-        }
-        
-        // Enhanced solveProblem function to support journey
-        function initializeModalJourney(problemType) {
-            modalJourney.currentProblem = problemType;
-            currentModalStep = 1;
-            
-            // Initialize step content for the problem
-            modalJourney.stepContent[problemType] = {
-                understand: generateUnderstandContent(problemType),
-                action: generateActionContent(problemType),
-                followup: generateFollowupContent(problemType)
             };
             
-            updateModalProgress();
-            loadStepContent();
-            updateNavigationButtons();
-        }
-        
-        function generateUnderstandContent(problemType) {
-            // Return the existing solution content for step 1
-            const solutions = {
-                'security-deposit': document.querySelector('#modalContent').innerHTML,
-                // Add other problem types as needed
-            };
-            return solutions[problemType] || 'Content will be available shortly';
-        }
-        
-        function generateActionContent(problemType) {
-            return `<div class="space-y-6">
-                <h3 class="text-xl font-semibold text-gray-900 mb-4">Ready to Take Action</h3>
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p class="text-blue-800">Now that you understand your situation, let's create the documents and take specific steps to resolve your ${problemType.replace('-', ' ')} issue.</p>
+            const plan = plans[selectedProblem];
+            const actionPlan = document.getElementById('actionPlan');
+            
+            actionPlan.innerHTML = `
+                <div class="mb-6 p-4 rounded-lg urgency-${plan.urgency}">
+                    <div class="text-white font-bold mb-2">Success Rate: ${plan.successRate} | Timeline: ${plan.timeline}</div>
+                    <div class="text-white/90">${plan.avgRecovery}</div>
                 </div>
-                <div class="grid gap-4">
-                    <button class="w-full text-left p-4 border border-gray-200 rounded-lg hover:border-purple-300 transition-all">
-                        <div class="font-medium text-gray-900">Generate Demand Letter</div>
-                        <div class="text-sm text-gray-600">Create a professional legal document</div>
-                    </button>
-                    <button class="w-full text-left p-4 border border-gray-200 rounded-lg hover:border-purple-300 transition-all">
-                        <div class="font-medium text-gray-900">Get Form Templates</div>
-                        <div class="text-sm text-gray-600">Download required legal forms</div>
-                    </button>
-                </div>
-            </div>`;
-        }
-        
-        function generateFollowupContent(problemType) {
-            return `<div class="space-y-6">
-                <h3 class="text-xl font-semibold text-gray-900 mb-4">Follow-Up Steps</h3>
-                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p class="text-green-800">Excellent progress on your case. Here is what to do next to ensure the best outcome.</p>
-                </div>
+                
                 <div class="space-y-4">
-                    <div class="flex items-start gap-3">
-                        <div class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">1</div>
-                        <div>
-                            <div class="font-medium text-gray-900">Track Your Progress</div>
-                            <div class="text-sm text-gray-600">Keep records of all communications and responses</div>
+                    ${plan.steps.map((step, index) => `
+                        <div class="flex items-start space-x-4 p-4 border border-gray-200 rounded-lg">
+                            <div class="text-2xl">${step.icon}</div>
+                            <div class="flex-1">
+                                <h3 class="font-bold text-gray-900">${step.title}</h3>
+                                <p class="text-gray-600 text-sm">${step.desc}</p>
+                                <div class="text-xs text-blue-600 font-medium mt-1">${step.time}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="flex items-start gap-3">
-                        <div class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">2</div>
-                        <div>
-                            <div class="font-medium text-gray-900">Set Deadlines</div>
-                            <div class="text-sm text-gray-600">Give reasonable time for response (typically 10-30 days)</div>
-                        </div>
-                    </div>
-                    <div class="flex items-start gap-3">
-                        <div class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">3</div>
-                        <div>
-                            <div class="font-medium text-gray-900">Know Next Steps</div>
-                            <div class="text-sm text-gray-600">Be prepared for escalation if needed</div>
-                        </div>
-                    </div>
+                    `).join('')}
                 </div>
-            </div>`;
+            `;
+        }
+        
+        function getStarted() {
+            alert("Let's get started! We'll help you with each step.");
         }
     </script>
-    <!-- Progress Navigation -->
-    <div id="progressNav" class="progress-nav">
-        <div class="progress-dots">
-            <div class="progress-dot" data-label="Hero Section" onclick="scrollToSection('hero')"></div>
-            <div class="progress-dot" data-label="Problems" onclick="scrollToSection('problems')"></div>
-            <div class="progress-dot" data-label="How It Works" onclick="scrollToSection('howItWorks')"></div>
-        </div>
-    </div>
-
-    <!-- Scroll Progress Bar -->
-    <div id="scrollProgress" class="scroll-progress">
-        <div id="scrollProgressBar" class="scroll-progress-bar"></div>
-    </div>
-
-    <!-- Back to Top Button -->
-    <button id="backToTop" class="back-to-top" onclick="scrollToTop()">
-        <svg width='20' height='20' class='text-white'><use href='#icon-chevron-up'></use></svg>
-    </button>
-
-    <!-- Professional Notification Modal -->
-    <div id="notificationModal" class="notification-modal">
-        <div class="notification-content">
-            <div class="notification-header">
-                <svg class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <h3 id="notificationTitle" class="notification-title">Information</h3>
-            </div>
-            <div id="notificationMessage" class="notification-message">
-                This is a notification message.
-            </div>
-            <div class="notification-actions">
-                <button class="notification-btn primary" onclick="closeNotification()">Understood</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Professional Legal Disclaimers -->
-    <section class="bg-gray-50 py-12 border-t">
-        <div class="w-[90%] max-w-6xl mx-auto px-4">
-            <div class="text-center mb-8">
-                <h3 class="text-xl font-bold text-gray-900 mb-4">Legal Disclaimers & Important Notices</h3>
-            </div>
-            
-            <div class="grid md:grid-cols-2 gap-8 text-sm text-gray-600">
-                <div class="bg-white p-6 rounded-lg shadow-sm">
-                    <h4 class="font-semibold text-gray-900 mb-3">Attorney-Client Relationship</h4>
-                    <p class="mb-3">The information provided through this platform does not establish an attorney-client relationship. Consultation services are provided for informational purposes and preliminary case assessment only.</p>
-                    <p>For formal legal representation, a separate engagement agreement must be executed in accordance with applicable state bar regulations.</p>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm">
-                    <h4 class="font-semibold text-gray-900 mb-3">Professional Legal Advice</h4>
-                    <p class="mb-3">This platform provides general legal information and consultation services. All legal strategies and documentation are developed in accordance with applicable federal, state, and local housing laws.</p>
-                    <p>Individual results may vary based on specific case circumstances and jurisdictional requirements.</p>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm">
-                    <h4 class="font-semibold text-gray-900 mb-3">Jurisdictional Compliance</h4>
-                    <p class="mb-3">Legal consultation services are provided in compliance with state bar admission requirements and applicable rules of professional conduct. Services may vary by jurisdiction.</p>
-                    <p>Users are advised to verify local housing law requirements and procedural deadlines in their specific jurisdiction.</p>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm">
-                    <h4 class="font-semibold text-gray-900 mb-3">Privacy & Confidentiality</h4>
-                    <p class="mb-3">All case consultations are conducted with strict adherence to attorney-client privilege and professional confidentiality standards as required by applicable rules of professional conduct.</p>
-                    <p>Client information is protected in accordance with state and federal privacy regulations.</p>
-                </div>
-            </div>
-            
-            <div class="mt-8 text-center">
-                <p class="text-xs text-gray-500">© 2024 RoomFinderAI Legal Services. All rights reserved. Licensed legal professionals providing consultation services in accordance with applicable state bar regulations.</p>
-            </div>
-        </div>
-    </section>
-
 </body>
 </html>
