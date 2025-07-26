@@ -4,8 +4,7 @@ import MapKit
 struct PropertyDetailView: View {
     let listing: Listing
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var listingsViewModel: ListingsViewModel
-    @EnvironmentObject var chatViewModel: ChatViewModel
+    @EnvironmentObject var listingsViewModel: SimpleListingsViewModel
     @State private var showingContactSheet = false
     @State private var showingImageViewer = false
     @State private var selectedImageIndex = 0
@@ -275,7 +274,7 @@ struct PolicyItem: View {
 struct ContactSheet: View {
     let listing: Listing
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var chatViewModel: ChatViewModel
+    // Chat functionality removed for simplified app
     @State private var message = ""
     
     var body: some View {
@@ -343,8 +342,7 @@ struct ContactSheet: View {
                 
                 // Send Button
                 Button(action: {
-                    // Create new chat or send message
-                    chatViewModel.createNewChat(with: [listing.userEmail], listingId: listing.id)
+                    // Contact landlord - Coming soon
                     dismiss()
                 }) {
                     Text("Send Message")
@@ -452,11 +450,13 @@ struct ImageViewer: View {
 struct AINegotiatorSheet: View {
     let listing: Listing
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var aiService = AIService.shared
     @State private var initialOffer = ""
-    @State private var negotiationResult: AIResponse?
     @State private var isNegotiating = false
     @State private var userEmail = "user@example.com" // In real app, get from auth
+    @State private var negotiationResult: NegotiationResult?
+    
+    // Simple AI service for demo
+    private let aiService = SimpleAIService()
     
     var body: some View {
         NavigationView {
@@ -590,7 +590,7 @@ struct AINegotiatorSheet: View {
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
-                            Text(result.negotiationStrategy)
+                            Text(result.analysis)
                                 .font(.body)
                                 .foregroundColor(.secondary)
                         }
@@ -641,23 +641,32 @@ struct AINegotiatorSheet: View {
     }
 }
 
-struct ResultRow: View {
-    let title: String
-    let value: String
-    
-    var body: some View {
-        HStack {
-            Text(title)
-                .font(.subheadline)
-                .fontWeight(.medium)
-            
-            Spacer()
-            
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.bold)
-                .foregroundColor(.primaryBlue)
-        }
+
+// Simple models for AI negotiation demo
+struct NegotiationResult {
+    let recommendedPrice: Int
+    let successProbability: Int
+    let marketComparison: String
+    let analysis: String
+}
+
+// Simple AI service for demo
+class SimpleAIService {
+    func startNegotiation(listing: Listing, initialOffer: Double, userEmail: String) async throws -> NegotiationResult {
+        // Simulate AI processing
+        try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+        
+        // Generate mock negotiation result
+        let difference = Double(listing.price) - initialOffer
+        let recommendedPrice = Int(initialOffer + (difference / 2)) // Split the difference
+        let successProbability = Int(difference) < 200 ? 85 : Int(difference) < 500 ? 65 : 45
+        
+        return NegotiationResult(
+            recommendedPrice: recommendedPrice,
+            successProbability: successProbability,
+            marketComparison: recommendedPrice < listing.price ? "Below market average" : "At market rate",
+            analysis: "Based on similar properties in the area, a counter-offer of $\\(recommendedPrice) has a \\(successProbability)% chance of acceptance."
+        )
     }
 }
 
@@ -715,6 +724,5 @@ struct ResultRow: View {
         favoriteCount: 0,
         isFavorited: false
     ))
-    .environmentObject(ListingsViewModel())
-    .environmentObject(ChatViewModel())
+    .environmentObject(SimpleListingsViewModel())
 }*/

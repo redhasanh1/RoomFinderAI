@@ -20,6 +20,17 @@ enum PropertyType: String, CaseIterable, Codable {
         case .room: return "Room"
         }
     }
+    
+    var icon: String {
+        switch self {
+        case .apartment: return "building.2"
+        case .house: return "house"
+        case .condo: return "building"
+        case .studio: return "bed.double"
+        case .townhouse: return "house.lodge"
+        case .room: return "door.left.hand.open"
+        }
+    }
 }
 
 enum SortOption: String, CaseIterable {
@@ -167,15 +178,5 @@ struct ListingSearchRequest: Codable {
     }
 }
 
-struct ListingResponse: Codable {
-    let listings: [Listing]
-    let totalCount: Int
-    let page: Int
-    let limit: Int
-    let hasMore: Bool
-    
-    enum CodingKeys: String, CodingKey {
-        case listings, totalCount, page, limit, hasMore
-    }
-}
+// Note: ListingResponse moved to SupabaseListingsService.swift to avoid conflicts
 
