@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var authViewModel: SimpleAuthViewModel
     @State private var selectedTab = 0
     
     var body: some View {
@@ -22,19 +22,12 @@ struct ContentView: View {
                     }
                     .tag(1)
                 
-                ChatView()
-                    .tabItem {
-                        Image(systemName: "message.fill")
-                        Text("Messages")
-                    }
-                    .tag(2)
-                
                 ProfileView()
                     .tabItem {
                         Image(systemName: "person.fill")
                         Text("Profile")
                     }
-                    .tag(3)
+                    .tag(2)
             }
             .accentColor(.blue)
         }
@@ -44,7 +37,6 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .environmentObject(AuthViewModel())
-        .environmentObject(ListingsViewModel())
-        .environmentObject(ChatViewModel())
+        .environmentObject(SimpleAuthViewModel())
+        .environmentObject(SimpleListingsViewModel())
 }
