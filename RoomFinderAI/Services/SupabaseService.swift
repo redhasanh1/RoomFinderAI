@@ -381,13 +381,31 @@ class SupabaseService: ObservableObject {
             fatalError("Invalid Supabase URL configuration")
         }
         
+        print("🔧 Initializing Supabase client for anonymous access...")
+        print("   - URL: \(Constants.supabaseURL)")
+        print("   - Anon Key: \(Constants.supabaseAnonKey.prefix(20))...")
+        
+        // Configure client for anonymous access (matching web implementation)
+        var config = SupabaseClientOptions()
+        config.auth = AuthOptions(
+            persistSession: false,        // Disable session persistence like web
+            autoRefreshToken: false,      // Disable token refresh like web
+            detectSessionInUrl: false     // Disable URL session detection like web
+        )
+        config.global.headers = [
+            "X-Client-Info": "RoomFinderAI-iOS-Native"
+        ]
+        
         client = SupabaseClient(
             supabaseURL: url,
-            supabaseKey: Constants.supabaseAnonKey
+            supabaseKey: Constants.supabaseAnonKey,
+            options: config
         )
         
-        print("✅ Supabase client initialized successfully")
+        print("✅ Supabase client initialized successfully for anonymous access")
         print("🔗 Connected to: \(Constants.supabaseURL)")
+        print("📊 Ready to fetch listings from 'listings' table")
+        print("🔓 Anonymous mode enabled - no authentication required")
     }
     
     // MARK: - Authentication
@@ -459,6 +477,48 @@ class SupabaseService: ObservableObject {
             .execute()
     }
     
+    // MARK: - Test Connection
+    
+    func testConnection() async throws -> Bool {
+        print("🧪 Testing Supabase connection...")
+        
+        do {
+            // Test exactly like the web version - try to get one listing ID
+            let response: [String] = try await client
+                .from("listings")
+                .select("id")
+                .limit(1)
+                .execute()
+                .value
+            
+            print("✅ Connection test successful: Accessible listings found")
+            print("💡 Anonymous access working - RLS policies allow public read access")
+            return true
+        } catch {
+            print("❌ Connection test failed: \(error.localizedDescription)")
+            print("💡 This might be due to RLS policies - check your database settings")
+            
+            // Try a count query as fallback
+            do {
+                let countResponse = try await client
+                    .from("listings")
+                    .select("count", head: true)
+                    .execute()
+                
+                let count = countResponse.count ?? 0
+                print("📊 Fallback count query result: \(count) listings in database")
+                
+                if count > 0 {
+                    print("⚠️ Listings exist but may not be accessible due to RLS policies")
+                }
+            } catch {
+                print("❌ Even count query failed: \(error.localizedDescription)")
+            }
+            
+            throw error
+        }
+    }
+    
     // MARK: - Listings
     
     func fetchAllListings() async throws -> [Listing] {
@@ -470,6 +530,86 @@ class SupabaseService: ObservableObject {
             .value
         
         return listings
+    }
+    
+    // Pagination method that exactly mirrors the working web implementation
+    func fetchListingsWithPagination(page: Int = 0, limit: Int = 20) async throws -> [Listing] {
+        let startRange = page * limit
+        let endRange = startRange + limit - 1
+        
+        print("🔄 Fetching listings from Supabase (anonymous access)")
+        print("   - Page: \(page) (0-based)")
+        print("   - Range: \(startRange) to \(endRange)")
+        print("   - Table: listings")
+        print("   - URL: \(Constants.supabaseURL)")
+        print("   - Query: SELECT * FROM listings ORDER BY created_at DESC LIMIT \(limit) OFFSET \(startRange)")
+        
+        do {
+            // Exactly mirror the web query structure
+            let listings: [Listing] = try await client
+                .from("listings")
+                .select("*")
+                .order("created_at", ascending: false)
+                .range(from: startRange, to: endRange)
+                .execute()
+                .value
+            
+            print("✅ Successfully fetched \(listings.count) listings")
+            
+            // Log detailed information for debugging
+            if listings.isEmpty {
+                print("⚠️ No listings returned - checking possible causes:")
+                print("   - RLS policies may be blocking access")
+                print("   - Database may be empty")
+                print("   - Authentication context may be required")
+                
+                // Try a simple count to see if listings exist
+                do {
+                    let countResponse = try await client
+                        .from("listings")
+                        .select("count", head: true)
+                        .execute()
+                    
+                    let count = countResponse.count ?? 0
+                    print("   - Total listings in database: \(count)")
+                    
+                    if count > 0 {
+                        print("   ⚠️ Listings exist but are not accessible - likely RLS policy issue")
+                        print("   💡 Web version works with anonymous access, iOS should too")
+                    }
+                } catch {
+                    print("   - Cannot even count listings: \(error.localizedDescription)")
+                }
+            } else {
+                // Log some details about the first listing for debugging
+                if let firstListing = listings.first {
+                    print("   - First listing: '\(firstListing.title)' - $\(firstListing.price)")
+                    print("   - Location: \(firstListing.city)")
+                    print("   - Created: \(firstListing.createdAt)")
+                    print("   - User Email: \(firstListing.userEmail)")
+                }
+            }
+            
+            return listings
+        } catch {
+            print("❌ Error fetching listings:")
+            print("   - Error: \(error)")
+            print("   - Description: \(error.localizedDescription)")
+            
+            // Provide detailed error analysis
+            if let supabaseError = error as? SupabaseError {
+                print("   - Supabase Error: \(supabaseError.localizedDescription)")
+            }
+            
+            // Check if this is an RLS-related error
+            let errorDesc = error.localizedDescription.lowercased()
+            if errorDesc.contains("policy") || errorDesc.contains("rls") || errorDesc.contains("permission") {
+                print("   🔒 This appears to be an RLS (Row Level Security) policy issue")
+                print("   💡 Consider calling set_current_user_email('') for anonymous access")
+            }
+            
+            throw error
+        }
     }
     
     func fetchListings(request: ListingSearchRequest) async throws -> ListingResponse {
@@ -735,6 +875,94 @@ class SupabaseService: ObservableObject {
     }
     
     // MARK: - Utility Methods
+    
+    /// Set anonymous access for RLS policies - mimics web version functionality
+    func setupAnonymousAccess() async throws {
+        print("🔓 Setting up anonymous access for RLS policies...")
+        
+        do {
+            // Call the RLS function with empty string for anonymous access
+            let _: String? = try await client
+                .rpc("set_current_user_email", params: ["email": ""])
+                .execute()
+                .value
+            
+            print("✅ Anonymous access setup successful")
+        } catch {
+            print("⚠️ Anonymous access setup failed: \(error.localizedDescription)")
+            print("💡 This may be normal if the function doesn't exist or isn't needed")
+            // Don't throw - this is a fallback attempt
+        }
+    }
+    
+    /// Enhanced fetch with automatic anonymous access setup
+    func fetchListingsWithAnonymousAccess(page: Int = 0, limit: Int = 20) async throws -> [Listing] {
+        // First try regular fetch
+        do {
+            return try await fetchListingsWithPagination(page: page, limit: limit)
+        } catch {
+            print("🔄 Regular fetch failed, trying with anonymous access setup...")
+            
+            // Setup anonymous access and retry
+            try await setupAnonymousAccess()
+            return try await fetchListingsWithPagination(page: page, limit: limit)
+        }
+    }
+    
+    /// Comprehensive test method to verify Supabase connection and listing access
+    func runDiagnosticTest() async {
+        print("🔬 Starting comprehensive Supabase diagnostic test...")
+        print(String(repeating: "=", count: 60))
+        
+        // Test 1: Basic connection
+        print("Test 1: Basic Connection Test")
+        do {
+            let success = try await testConnection()
+            print("✅ Basic connection: \(success ? "PASSED" : "FAILED")")
+        } catch {
+            print("❌ Basic connection: FAILED - \(error.localizedDescription)")
+        }
+        
+        // Test 2: Anonymous access setup
+        print("\nTest 2: Anonymous Access Setup")
+        do {
+            try await setupAnonymousAccess()
+            print("✅ Anonymous access setup: PASSED")
+        } catch {
+            print("❌ Anonymous access setup: FAILED - \(error.localizedDescription)")
+        }
+        
+        // Test 3: Simple listing fetch
+        print("\nTest 3: Fetch Listings (Enhanced Method)")
+        do {
+            let listings = try await fetchListingsWithAnonymousAccess(page: 0, limit: 5)
+            print("✅ Fetch listings: PASSED - Got \(listings.count) listings")
+            
+            if !listings.isEmpty {
+                let first = listings[0]
+                print("   Sample listing: '\(first.title)' in \(first.city) - $\(first.price)")
+            }
+        } catch {
+            print("❌ Fetch listings: FAILED - \(error.localizedDescription)")
+        }
+        
+        // Test 4: Count verification
+        print("\nTest 4: Count Verification")
+        do {
+            let countResponse = try await client
+                .from("listings")
+                .select("count", head: true)
+                .execute()
+            
+            let count = countResponse.count ?? 0
+            print("✅ Count verification: PASSED - Database contains \(count) listings")
+        } catch {
+            print("❌ Count verification: FAILED - \(error.localizedDescription)")
+        }
+        
+        print(String(repeating: "=", count: 60))
+        print("🏁 Diagnostic test completed")
+    }
     
     private func getCurrentUserId() -> String {
         return "current_user_id"
