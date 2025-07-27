@@ -98,12 +98,19 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
         
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(webClientId)
-                .requestEmail()
-                .build();
-        
-        googleSignInClient = GoogleSignIn.getClient(this, gso);
+        try {
+            GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestIdToken(webClientId)
+                    .requestEmail()
+                    .requestProfile()
+                    .build();
+            
+            googleSignInClient = GoogleSignIn.getClient(this, gso);
+            Log.d(TAG, "Google Sign-In client configured successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to configure Google Sign-In client", e);
+            showError("Google Sign-In setup failed. Please check configuration.");
+        }
     }
     
     private void testGoogleSignInConfiguration() {
