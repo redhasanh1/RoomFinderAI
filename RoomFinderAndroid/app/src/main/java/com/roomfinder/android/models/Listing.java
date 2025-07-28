@@ -16,35 +16,61 @@ public class Listing {
     @SerializedName("price")
     private double price;
     
-    @SerializedName("location")
-    private String location;
-    
     @SerializedName("bedrooms")
     private int bedrooms;
     
     @SerializedName("bathrooms")
     private int bathrooms;
     
-    @SerializedName("images")
-    private List<String> images;
+    @SerializedName("city")
+    private String city;
     
-    @SerializedName("available")
-    private boolean available;
+    @SerializedName("street")
+    private String street;
+    
+    @SerializedName("postalCode")
+    private String postalCode;
+    
+    @SerializedName("house_type")
+    private String houseType;
+    
+    @SerializedName("utilities")
+    private String utilities;
+    
+    @SerializedName("media")
+    private List<MediaFile> media;
     
     @SerializedName("created_at")
     private String createdAt;
-    
-    @SerializedName("user_id")
-    private String userId;
-    
-    @SerializedName("user_name")
-    private String userName;
     
     @SerializedName("user_email")
     private String userEmail;
     
     // Local field for favorites
     private boolean isFavorite;
+    
+    // Constructors
+    public Listing() {}
+    
+    public Listing(String id, String title, String description, double price, int bedrooms, 
+                   int bathrooms, String city, String street, String postalCode, 
+                   String houseType, String utilities, List<MediaFile> media, 
+                   String createdAt, String userEmail) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.price = price;
+        this.bedrooms = bedrooms;
+        this.bathrooms = bathrooms;
+        this.city = city;
+        this.street = street;
+        this.postalCode = postalCode;
+        this.houseType = houseType;
+        this.utilities = utilities;
+        this.media = media;
+        this.createdAt = createdAt;
+        this.userEmail = userEmail;
+    }
     
     // Getters and Setters
     public String getId() {
@@ -79,14 +105,6 @@ public class Listing {
         this.price = price;
     }
     
-    public String getLocation() {
-        return location;
-    }
-    
-    public void setLocation(String location) {
-        this.location = location;
-    }
-    
     public int getBedrooms() {
         return bedrooms;
     }
@@ -103,20 +121,52 @@ public class Listing {
         this.bathrooms = bathrooms;
     }
     
-    public List<String> getImages() {
-        return images;
+    public String getCity() {
+        return city;
     }
     
-    public void setImages(List<String> images) {
-        this.images = images;
+    public void setCity(String city) {
+        this.city = city;
     }
     
-    public boolean isAvailable() {
-        return available;
+    public String getStreet() {
+        return street;
     }
     
-    public void setAvailable(boolean available) {
-        this.available = available;
+    public void setStreet(String street) {
+        this.street = street;
+    }
+    
+    public String getPostalCode() {
+        return postalCode;
+    }
+    
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
+    }
+    
+    public String getHouseType() {
+        return houseType;
+    }
+    
+    public void setHouseType(String houseType) {
+        this.houseType = houseType;
+    }
+    
+    public String getUtilities() {
+        return utilities;
+    }
+    
+    public void setUtilities(String utilities) {
+        this.utilities = utilities;
+    }
+    
+    public List<MediaFile> getMedia() {
+        return media;
+    }
+    
+    public void setMedia(List<MediaFile> media) {
+        this.media = media;
     }
     
     public String getCreatedAt() {
@@ -125,22 +175,6 @@ public class Listing {
     
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
-    }
-    
-    public String getUserId() {
-        return userId;
-    }
-    
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-    
-    public String getUserName() {
-        return userName;
-    }
-    
-    public void setUserName(String userName) {
-        this.userName = userName;
     }
     
     public String getUserEmail() {
@@ -159,10 +193,80 @@ public class Listing {
         isFavorite = favorite;
     }
     
-    public String getFirstImage() {
-        if (images != null && !images.isEmpty()) {
-            return images.get(0);
+    // Helper methods
+    public String getLocation() {
+        if (street != null && city != null && postalCode != null) {
+            return street + ", " + city + ", " + postalCode;
+        } else if (city != null) {
+            return city;
+        }
+        return "Location not available";
+    }
+    
+    public String getFirstImageUrl() {
+        if (media != null && !media.isEmpty()) {
+            for (MediaFile file : media) {
+                if (file.getType() != null && file.getType().startsWith("image/")) {
+                    return file.getUrl();
+                }
+            }
         }
         return null;
+    }
+    
+    public boolean hasImages() {
+        if (media == null || media.isEmpty()) {
+            return false;
+        }
+        for (MediaFile file : media) {
+            if (file.getType() != null && file.getType().startsWith("image/")) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Inner class for media files
+    public static class MediaFile {
+        @SerializedName("url")
+        private String url;
+        
+        @SerializedName("type")
+        private String type;
+        
+        @SerializedName("name")
+        private String name;
+        
+        public MediaFile() {}
+        
+        public MediaFile(String url, String type, String name) {
+            this.url = url;
+            this.type = type;
+            this.name = name;
+        }
+        
+        public String getUrl() {
+            return url;
+        }
+        
+        public void setUrl(String url) {
+            this.url = url;
+        }
+        
+        public String getType() {
+            return type;
+        }
+        
+        public void setType(String type) {
+            this.type = type;
+        }
+        
+        public String getName() {
+            return name;
+        }
+        
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 }

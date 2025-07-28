@@ -1,6 +1,7 @@
 package com.roomfinder.android.fragments;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,22 +13,18 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.roomfinder.android.adapters.ListingsAdapter;
 import com.roomfinder.android.databinding.FragmentHomeBinding;
-import com.roomfinder.android.models.ApiResponse;
 import com.roomfinder.android.models.Listing;
-import com.roomfinder.android.network.ApiClient;
-import com.roomfinder.android.network.ApiService;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import com.roomfinder.android.network.SupabaseService;
 import java.util.ArrayList;
 import java.util.List;
 
 public class HomeFragment extends Fragment implements ListingsAdapter.OnListingClickListener {
     
+    private static final String TAG = "HomeFragment";
     private FragmentHomeBinding binding;
     private ListingsAdapter adapter;
     private List<Listing> listings = new ArrayList<>();
-    private ApiService apiService;
+    private SupabaseService supabaseService;
     
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -39,7 +36,7 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
-        apiService = ApiClient.getInstance().getApiService();
+        supabaseService = SupabaseService.getInstance();
         setupRecyclerView();
         setupSwipeRefresh();
         loadListings();
@@ -58,34 +55,34 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     private void loadListings() {
         binding.progressBar.setVisibility(View.VISIBLE);
         binding.errorLayout.setVisibility(View.GONE);
+        binding.emptyLayout.setVisibility(View.GONE);
         
-        apiService.getListings().enqueue(new Callback<ApiResponse<List<Listing>>>() {
+        Log.d(TAG, "Loading listings from Supabase...");
+        
+        supabaseService.getAllListings(new SupabaseService.ListingsCallback() {
             @Override
-            public void onResponse(Call<ApiResponse<List<Listing>>> call, Response<ApiResponse<List<Listing>>> response) {
+            public void onSuccess(List<Listing> newListings) {
                 binding.progressBar.setVisibility(View.GONE);
                 binding.swipeRefresh.setRefreshing(false);
                 
-                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-                    listings.clear();
-                    List<Listing> newListings = response.body().getData();
-                    if (newListings != null) {
-                        listings.addAll(newListings);
-                    }
-                    adapter.notifyDataSetChanged();
-                    
-                    if (listings.isEmpty()) {
-                        showEmptyState();
-                    }
-                } else {
-                    showError("Failed to load listings");
+                Log.d(TAG, "Successfully loaded " + newListings.size() + " listings");
+                
+                listings.clear();
+                listings.addAll(newListings);
+                adapter.notifyDataSetChanged();
+                
+                if (listings.isEmpty()) {
+                    showEmptyState();
                 }
             }
             
             @Override
-            public void onFailure(Call<ApiResponse<List<Listing>>> call, Throwable t) {
+            public void onError(String error) {
                 binding.progressBar.setVisibility(View.GONE);
                 binding.swipeRefresh.setRefreshing(false);
-                showError("Network error: " + t.getMessage());
+                
+                Log.e(TAG, "Error loading listings: " + error);
+                showError("Error loading listings: " + error);
             }
         });
     }

@@ -1,16 +1,19 @@
 package com.roomfinder.android.activities;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import android.content.Context;
+import com.roomfinder.android.auth.SupabaseAuthService;
 import com.roomfinder.android.databinding.ActivityLoginBinding;
+import com.roomfinder.android.models.User;
 
 public class LoginActivity extends AppCompatActivity {
     
+    private static final String TAG = "LoginActivity";
     private ActivityLoginBinding binding;
-    private SharedPreferences prefs;
+    private SupabaseAuthService authService;
     private boolean showSignup = false;
     
     @Override
@@ -20,7 +23,7 @@ public class LoginActivity extends AppCompatActivity {
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         
-        prefs = getSharedPreferences("roomfinder_prefs", Context.MODE_PRIVATE);
+        authService = SupabaseAuthService.getInstance(this);
         showSignup = getIntent().getBooleanExtra("show_signup", false);
         
         setupViews();
@@ -57,48 +60,88 @@ public class LoginActivity extends AppCompatActivity {
     
     private void showLoginForm() {
         binding.titleText.setText("Welcome Back!");
-        binding.nameLayout.setVisibility(android.view.View.GONE);
-        binding.confirmPasswordLayout.setVisibility(android.view.View.GONE);
+        binding.nameLayout.setVisibility(View.GONE);
+        binding.confirmPasswordLayout.setVisibility(View.GONE);
         binding.actionButton.setText("Login");
         binding.toggleButton.setText("Don't have an account? Sign Up");
     }
     
     private void showSignupForm() {
         binding.titleText.setText("Create Account");
-        binding.nameLayout.setVisibility(android.view.View.VISIBLE);
-        binding.confirmPasswordLayout.setVisibility(android.view.View.VISIBLE);
+        binding.nameLayout.setVisibility(View.VISIBLE);
+        binding.confirmPasswordLayout.setVisibility(View.VISIBLE);
         binding.actionButton.setText("Sign Up");
         binding.toggleButton.setText("Already have an account? Login");
     }
     
     private void performLogin() {
-        String email = binding.emailInput.getText().toString();
+        String email = binding.emailInput.getText().toString().trim();
         String password = binding.passwordInput.getText().toString();
         
+        // Validation
         if (email.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
             return;
         }
         
-        // Simple mock login - in real app this would call API
-        prefs.edit()
-            .putString("user_email", email)
-            .putString("user_name", email.split("@")[0])
-            .putString("auth_token", "mock_token_123")
-            .apply();
+        if (!isValidEmail(email)) {
+            Toast.makeText(this, "Please enter a valid email address", Toast.LENGTH_SHORT).show();
+            return;
+        }
         
-        Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show();
-        finish();
+        // Show loading state
+        setLoadingState(true, "Signing in...");
+        
+        // Perform login with Supabase
+        authService.signIn(email, password, new SupabaseAuthService.AuthCallback() {
+            @Override
+            public void onSuccess(User user) {
+                Log.d(TAG, "Login successful for user: " + user.getEmail());
+                setLoadingState(false, null);
+                
+                Toast.makeText(LoginActivity.this, "Welcome back, " + user.getFirstName() + "!", 
+                    Toast.LENGTH_SHORT).show();
+                
+                // Return success result
+                setResult(RESULT_OK);
+                finish();
+            }
+            
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Login failed: " + error);
+                setLoadingState(false, null);
+                
+                Toast.makeText(LoginActivity.this, "Login failed: " + error, 
+                    Toast.LENGTH_LONG).show();
+            }
+        });
     }
     
     private void performSignup() {
-        String name = binding.nameInput.getText().toString();
-        String email = binding.emailInput.getText().toString();
+        String name = binding.nameInput.getText().toString().trim();
+        String email = binding.emailInput.getText().toString().trim();
         String password = binding.passwordInput.getText().toString();
         String confirmPassword = binding.confirmPasswordInput.getText().toString();
         
+        // Validation
         if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (!isValidEmail(email)) {
+            Toast.makeText(this, "Please enter a valid email address", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (password.length() < 8) {
+            Toast.makeText(this, "Password must be at least 8 characters long", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (!isValidPassword(password)) {
+            Toast.makeText(this, "Password must contain uppercase, lowercase, and numeric characters", Toast.LENGTH_LONG).show();
             return;
         }
         
@@ -107,14 +150,100 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
         
-        // Simple mock signup - in real app this would call API
-        prefs.edit()
-            .putString("user_email", email)
-            .putString("user_name", name)
-            .putString("auth_token", "mock_token_123")
-            .apply();
+        // Parse name (assuming format "First Last" or just "First")
+        String[] nameParts = name.split(" ", 2);
+        String firstName = nameParts[0];
+        String lastName = nameParts.length > 1 ? nameParts[1] : "";
         
-        Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show();
-        finish();
+        // Show loading state
+        setLoadingState(true, "Creating account...");
+        
+        // Perform signup with Supabase
+        authService.signUp(email, password, firstName, lastName, new SupabaseAuthService.AuthCallback() {
+            @Override
+            public void onSuccess(User user) {
+                Log.d(TAG, "Signup successful for user: " + user.getEmail());
+                setLoadingState(false, null);
+                
+                // Check if email verification is needed
+                String message;
+                if (user.isEmailVerified()) {
+                    message = "Account created successfully! Welcome, " + user.getFirstName() + "!";
+                } else {
+                    message = "Account created! Please check your email to verify your account, " + user.getFirstName() + ".";
+                }
+                
+                Toast.makeText(LoginActivity.this, message, Toast.LENGTH_LONG).show();
+                
+                // Return success result
+                setResult(RESULT_OK);
+                finish();
+            }
+            
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Signup failed: " + error);
+                setLoadingState(false, null);
+                
+                Toast.makeText(LoginActivity.this, "Signup failed: " + error, 
+                    Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+    
+    private void setLoadingState(boolean loading, String message) {
+        binding.actionButton.setEnabled(!loading);
+        binding.toggleButton.setEnabled(!loading);
+        binding.skipButton.setEnabled(!loading);
+        
+        // Disable input fields during loading
+        binding.emailInput.setEnabled(!loading);
+        binding.passwordInput.setEnabled(!loading);
+        binding.nameInput.setEnabled(!loading);
+        binding.confirmPasswordInput.setEnabled(!loading);
+        
+        if (loading) {
+            binding.actionButton.setText(message != null ? message : "Loading...");
+        } else {
+            if (showSignup) {
+                binding.actionButton.setText("Sign Up");
+            } else {
+                binding.actionButton.setText("Login");
+            }
+        }
+    }
+    
+    private boolean isValidEmail(String email) {
+        return email != null && email.contains("@") && email.contains(".") && email.length() > 5;
+    }
+    
+    private boolean isValidPassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
+        
+        boolean hasUpper = false;
+        boolean hasLower = false;
+        boolean hasDigit = false;
+        
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                hasUpper = true;
+            } else if (Character.isLowerCase(c)) {
+                hasLower = true;
+            } else if (Character.isDigit(c)) {
+                hasDigit = true;
+            }
+        }
+        
+        return hasUpper && hasLower && hasDigit;
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (binding != null) {
+            binding = null;
+        }
     }
 }

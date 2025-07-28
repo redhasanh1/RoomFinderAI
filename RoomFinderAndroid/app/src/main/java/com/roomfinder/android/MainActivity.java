@@ -1,15 +1,20 @@
 package com.roomfinder.android;
 
 import android.os.Bundle;
+import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.roomfinder.android.auth.SupabaseAuthService;
 import com.roomfinder.android.databinding.ActivityMainBinding;
 import com.roomfinder.android.fragments.*;
+import com.roomfinder.android.models.User;
 
 public class MainActivity extends AppCompatActivity {
     
+    private static final String TAG = "MainActivity";
     private ActivityMainBinding binding;
+    private SupabaseAuthService authService;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -17,6 +22,9 @@ public class MainActivity extends AppCompatActivity {
         
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        
+        // Initialize authentication service for session restoration
+        initializeAuth();
         
         setupBottomNavigation();
         
@@ -56,5 +64,17 @@ public class MainActivity extends AppCompatActivity {
                 .beginTransaction()
                 .replace(R.id.fragmentContainer, fragment)
                 .commit();
+    }
+    
+    private void initializeAuth() {
+        // Initialize auth service (this will automatically restore session if available)
+        authService = SupabaseAuthService.getInstance(this);
+        
+        User currentUser = authService.getCurrentUser();
+        if (currentUser != null) {
+            Log.d(TAG, "Session restored for user: " + currentUser.getEmail());
+        } else {
+            Log.d(TAG, "No active session found");
+        }
     }
 }
