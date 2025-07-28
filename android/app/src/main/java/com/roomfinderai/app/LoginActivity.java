@@ -62,6 +62,7 @@ public class LoginActivity extends AppCompatActivity {
         
         initializeViews();
         configureGoogleSignIn();
+        testGoogleSignInConfiguration();
         setupClickListeners();
         
         // Initialize API service
@@ -89,12 +90,41 @@ public class LoginActivity extends AppCompatActivity {
             webClientId = getString(R.string.web_client_id);
         }
         
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(webClientId)
-                .requestEmail()
-                .build();
+        Log.d(TAG, "Configuring Google Sign-In with client ID: " + (webClientId != null ? webClientId.substring(0, Math.min(20, webClientId.length())) + "..." : "null"));
         
-        googleSignInClient = GoogleSignIn.getClient(this, gso);
+        if (webClientId == null || webClientId.isEmpty()) {
+            Log.e(TAG, "Google Sign-In client ID is missing or empty");
+            showError("Google Sign-In configuration error. Please contact support.");
+            return;
+        }
+        
+        try {
+            GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestIdToken(webClientId)
+                    .requestEmail()
+                    .requestProfile()
+                    .build();
+            
+            googleSignInClient = GoogleSignIn.getClient(this, gso);
+            Log.d(TAG, "Google Sign-In client configured successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to configure Google Sign-In client", e);
+            showError("Google Sign-In setup failed. Please check configuration.");
+        }
+    }
+    
+    private void testGoogleSignInConfiguration() {
+        // Test if we can get the last signed-in account (this helps verify configuration)
+        GoogleSignInAccount lastSignedInAccount = GoogleSignIn.getLastSignedInAccount(this);
+        if (lastSignedInAccount != null) {
+            Log.d(TAG, "Found existing Google account: " + lastSignedInAccount.getEmail());
+        } else {
+            Log.d(TAG, "No existing Google account found");
+        }
+        
+        // Log configuration details for debugging
+        Log.d(TAG, "Google Sign-In client configured successfully");
+        Log.d(TAG, "Package name: " + getPackageName());
     }
     
     private void setupClickListeners() {
@@ -166,8 +196,18 @@ public class LoginActivity extends AppCompatActivity {
     }
     
     private void performGoogleSignIn() {
-        Intent signInIntent = googleSignInClient.getSignInIntent();
-        startActivityForResult(signInIntent, RC_SIGN_IN);
+        if (googleSignInClient == null) {
+            Log.e(TAG, "GoogleSignInClient is null - configuration failed");
+            showError("Google Sign-In is not properly configured. Please contact support.");
+            return;
+        }
+        
+        // Sign out first to force account selection
+        googleSignInClient.signOut().addOnCompleteListener(this, task -> {
+            Log.d(TAG, "Signed out from previous Google account, starting fresh sign-in");
+            Intent signInIntent = googleSignInClient.getSignInIntent();
+            startActivityForResult(signInIntent, RC_SIGN_IN);
+        });
     }
     
     @Override
@@ -187,6 +227,15 @@ public class LoginActivity extends AppCompatActivity {
             // Get ID token
             String idToken = account.getIdToken();
             String email = account.getEmail();
+            
+            Log.d(TAG, "Google Sign-In successful for email: " + email);
+            Log.d(TAG, "ID Token received: " + (idToken != null ? "Yes" : "No"));
+            
+            if (idToken == null) {
+                Log.e(TAG, "ID Token is null - check OAuth client configuration");
+                showError("Google Sign-In configuration error. Please check client ID setup.");
+                return;
+            }
             
             showLoading(true);
             
@@ -212,20 +261,41 @@ public class LoginActivity extends AppCompatActivity {
                             showError("Invalid response from server");
                         }
                     } else {
-                        showError("Google sign-in failed");
+                        Log.e(TAG, "Backend authentication failed: " + response.code());
+                        showError("Google sign-in failed: Server error " + response.code());
                     }
                 }
                 
                 @Override
                 public void onFailure(Call<JsonObject> call, Throwable t) {
                     showLoading(false);
+                    Log.e(TAG, "Network error during Google Sign-In", t);
                     showError("Network error: " + t.getMessage());
                 }
             });
             
         } catch (ApiException e) {
             Log.w(TAG, "Google sign in failed", e);
-            showError("Google sign-in failed: " + e.getStatusCode());
+            
+            // Provide more specific error messages based on status code
+            String errorMessage;
+            switch (e.getStatusCode()) {
+                case 10:
+                    errorMessage = "Google Sign-In configuration error. The app's SHA-1 certificate fingerprint may not be configured correctly in the Google Console.";
+                    break;
+                case 12500:
+                    errorMessage = "Google Sign-In is currently unavailable. Please try again later.";
+                    break;
+                case 7:
+                    errorMessage = "Network connection error. Please check your internet connection.";
+                    break;
+                default:
+                    errorMessage = "Google sign-in failed with error code: " + e.getStatusCode();
+                    break;
+            }
+            
+            Log.e(TAG, "Google Sign-In error: " + errorMessage);
+            showError(errorMessage);
         }
     }
     
