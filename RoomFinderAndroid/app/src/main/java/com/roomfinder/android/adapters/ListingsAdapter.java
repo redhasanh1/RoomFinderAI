@@ -56,7 +56,7 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
         
         void bind(Listing listing, int position) {
             // Load image
-            String imageUrl = listing.getFirstImage();
+            String imageUrl = listing.getFirstImageUrl();
             if (imageUrl != null && !imageUrl.isEmpty()) {
                 Glide.with(binding.listingImage.getContext())
                     .load(imageUrl)
@@ -72,20 +72,22 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
             binding.titleText.setText(listing.getTitle());
             binding.locationText.setText(listing.getLocation());
             binding.priceText.setText(String.format(Locale.US, "$%.0f/mo", listing.getPrice()));
-            binding.bedBathText.setText(String.format(Locale.US, "%d bed • %d bath", 
-                listing.getBedrooms(), listing.getBathrooms()));
+            
+            // Update to include house type and utilities if available
+            String detailsText = String.format(Locale.US, "%d bed • %d bath", 
+                listing.getBedrooms(), listing.getBathrooms());
+            if (listing.getHouseType() != null && !listing.getHouseType().isEmpty()) {
+                detailsText += " • " + listing.getHouseType();
+            }
+            binding.bedBathText.setText(detailsText);
             
             // Set favorite icon
             binding.favoriteButton.setImageResource(
                 listing.isFavorite() ? R.drawable.ic_favorite_filled : R.drawable.ic_favorite_border
             );
             
-            // Set availability badge
-            if (listing.isAvailable()) {
-                binding.availableBadge.setVisibility(View.VISIBLE);
-            } else {
-                binding.availableBadge.setVisibility(View.GONE);
-            }
+            // Hide availability badge since we don't have that field in the database
+            binding.availableBadge.setVisibility(View.GONE);
             
             // Click listeners
             binding.getRoot().setOnClickListener(v -> {

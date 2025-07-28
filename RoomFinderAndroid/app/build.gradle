@@ -58,6 +58,15 @@ dependencies {
     // Gson
     implementation 'com.google.code.gson:gson:2.10.1'
     
+    // Supabase Android SDK
+    implementation 'io.github.jan-tennert.supabase:postgrest-kt:2.6.0'
+    implementation 'io.github.jan-tennert.supabase:gotrue-kt:2.6.0'
+    implementation 'io.github.jan-tennert.supabase:realtime-kt:2.6.0'
+    implementation 'io.github.jan-tennert.supabase:storage-kt:2.6.0'
+    implementation 'io.ktor:ktor-client-android:2.3.7'
+    implementation 'io.ktor:ktor-client-core:2.3.7'
+    implementation 'io.ktor:ktor-utils:2.3.7'
+    
     // Testing
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
