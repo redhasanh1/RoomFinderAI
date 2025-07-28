@@ -1,0 +1,61 @@
+<resources>
+    <string name="app_name">RoomFinder</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_post">Post</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_profile">Profile</string>
+    
+    <!-- Common -->
+    <string name="loading">Loading...</string>
+    <string name="error_loading">Error loading data</string>
+    <string name="retry">Retry</string>
+    <string name="no_results">No results found</string>
+    <string name="search_hint">Search by location...</string>
+    
+    <!-- Listings -->
+    <string name="listings_title">Available Properties</string>
+    <string name="price_format">$%s/month</string>
+    <string name="bed_bath_format" formatted="false">%d bed • %d bath</string>
+    <string name="available_now">Available Now</string>
+    <string name="contact_landlord">Contact Landlord</string>
+    
+    <!-- Post Listing -->
+    <string name="post_listing_title">Post New Listing</string>
+    <string name="title_hint">Property Title</string>
+    <string name="description_hint">Description</string>
+    <string name="price_hint">Monthly Rent ($)</string>
+    <string name="location_hint">Location</string>
+    <string name="bedrooms_hint">Bedrooms</string>
+    <string name="bathrooms_hint">Bathrooms</string>
+    <string name="add_photos">Add Photos</string>
+    <string name="post_listing">Post Listing</string>
+    
+    <!-- Favorites -->
+    <string name="favorites_title">Saved Properties</string>
+    <string name="no_favorites">No saved properties yet</string>
+    
+    <!-- Profile -->
+    <string name="profile_title">Profile</string>
+    <string name="login">Login</string>
+    <string name="signup">Sign Up</string>
+    <string name="logout">Logout</string>
+    <string name="guest_user">Guest User</string>
+    <string name="login_to_continue">Login to access all features</string>
+    
+    <!-- Chat -->
+    <string name="chat_title">Messages</string>
+    <string name="type_message">Type a message...</string>
+    <string name="send">Send</string>
+    
+    <!-- Auth -->
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="name_hint">Full Name</string>
+    <string name="confirm_password_hint">Confirm Password</string>
+    <string name="already_have_account">Already have an account? Login</string>
+    <string name="dont_have_account">Don\'t have an account? Sign Up</string>
+    <string name="skip_login">Skip for now</string>
+</resources>
