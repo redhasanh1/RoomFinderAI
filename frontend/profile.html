@@ -740,7 +740,44 @@
                 return;
             }
             
-            profileUpload.addEventListener('change', (e) => {
+            // Function to compress image
+            function compressImage(dataUrl, maxWidth, maxHeight, quality) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        // Calculate new dimensions
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height = Math.round((height * maxWidth) / width);
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width = Math.round((width * maxHeight) / height);
+                                height = maxHeight;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Convert to compressed format
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve(compressedDataUrl);
+                    };
+                    img.onerror = reject;
+                    img.src = dataUrl;
+                });
+            }
+
+            profileUpload.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (!file) {
                     console.log('No file selected');
@@ -764,10 +801,20 @@
                 }
 
                 const reader = new FileReader();
-                reader.onload = (event) => {
+                reader.onload = async (event) => {
                     try {
-                        const imageDataUrl = event.target.result;
-                        console.log('Image loaded successfully, data URL length:', imageDataUrl.length);
+                        let imageDataUrl = event.target.result;
+                        console.log('Image loaded successfully, original data URL length:', imageDataUrl.length);
+
+                        // Compress image to reduce size (max 200x200, 0.7 quality)
+                        try {
+                            imageDataUrl = await compressImage(imageDataUrl, 200, 200, 0.7);
+                            console.log('Image compressed, new data URL length:', imageDataUrl.length);
+                        } catch (compressionError) {
+                            console.error('Error compressing image:', compressionError);
+                            alert('Error processing image. Please try a smaller image.');
+                            return;
+                        }
 
                         // Update currentUser in localStorage
                         currentUser.profileImage = imageDataUrl;
@@ -779,8 +826,25 @@
                         // Store profile image separately for persistence
                         const profileImageKey = `profileImage_${currentUser.email}`;
                         const backupKey = `profileImageBackup_${currentUser.email}`;
-                        localStorage.setItem(profileImageKey, imageDataUrl);
-                        localStorage.setItem(backupKey, imageDataUrl);
+                        
+                        try {
+                            localStorage.setItem(profileImageKey, imageDataUrl);
+                            localStorage.setItem(backupKey, imageDataUrl);
+                        } catch (e) {
+                            console.warn('Could not store profile image in separate keys due to quota:', e);
+                            // Clear old profile images to make space
+                            for (let key of Object.keys(localStorage)) {
+                                if (key.startsWith('profileImage_') || key.startsWith('profileImageBackup_')) {
+                                    localStorage.removeItem(key);
+                                }
+                            }
+                            // Try again
+                            try {
+                                localStorage.setItem(profileImageKey, imageDataUrl);
+                            } catch (e2) {
+                                console.error('Still cannot store profile image:', e2);
+                            }
+                        }
 
                         // Update profile image in Supabase if available
                         if (window.supabase && currentUser.id) {
