@@ -2311,34 +2311,37 @@
             }, 3500);
         }
         
-        // Auth section update
+        // Initialize Universal Authentication Manager
         document.addEventListener('DOMContentLoaded', function() {
-            const authSection = document.getElementById('authSection');
+            // Initialize UniversalAuth which will handle the authSection automatically
+            if (typeof window.UniversalAuth !== 'undefined') {
+                window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+            }
+            
+            // Also update mobile auth section
             const mobileAuthSection = document.getElementById('mobileAuthSection');
-            const user = localStorage.getItem('user'); // Simplified check
-
-            if (user) {
-                const userData = JSON.parse(user);
-                const userName = userData.email.split('@')[0];
-                
-                // Desktop
-                authSection.innerHTML = `
-                    <div class="flex items-center space-x-4">
-                        <a href="profile.html" class="font-medium text-gray-600 hover:text-blue-600">Welcome, ${userName}</a>
-                        <button onclick="logout()" class="auth-link">Logout</button>
-                    </div>
-                `;
-                
-                // Mobile
-                mobileAuthSection.innerHTML = `
-                    <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()">👤 Welcome, ${userName}</a>
-                    <a href="#" onclick="logout()" class="mobile-menu-item auth-item">Logout</a>
-                `;
+            const currentUser = localStorage.getItem('currentUser');
+            
+            if (currentUser && currentUser !== 'null' && currentUser !== 'undefined') {
+                try {
+                    const userData = JSON.parse(currentUser);
+                    const userName = userData.firstName || userData.email.split('@')[0];
+                    
+                    // Mobile
+                    if (mobileAuthSection) {
+                        mobileAuthSection.innerHTML = `
+                            <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()">👤 Welcome, ${userName}</a>
+                            <a href="#" onclick="logout()" class="mobile-menu-item auth-item">Logout</a>
+                        `;
+                    }
+                } catch (e) {
+                    console.error('Error parsing current user:', e);
+                }
             }
         });
 
         function logout() {
-            localStorage.removeItem('user');
+            localStorage.removeItem('currentUser');
             window.location.href = 'login.html';
         }
 
