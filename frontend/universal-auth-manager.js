@@ -251,7 +251,8 @@ window.UniversalAuth = {
     isAuthenticated: isUserAuthenticated,
     getCurrentUser: getCurrentUser,
     refresh: refreshAuthState,
-    logout: handleLogout
+    logout: handleLogout,
+    DEFAULT_PROFILE_IMAGE: DEFAULT_PROFILE_IMAGE
 };
 
 console.log('✅ UNIVERSAL AUTHENTICATION MANAGER READY');

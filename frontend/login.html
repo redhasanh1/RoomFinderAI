@@ -334,6 +334,21 @@
     <script>
         // Form handling - no Turnstile needed here as it's handled in the modal
         
+        // Get default profile image from UniversalAuth or use fallback
+        function getDefaultProfileImage() {
+            if (window.UniversalAuth && window.UniversalAuth.DEFAULT_PROFILE_IMAGE) {
+                return window.UniversalAuth.DEFAULT_PROFILE_IMAGE;
+            }
+            // Fallback SVG if UniversalAuth isn't loaded yet
+            return 'data:image/svg+xml;base64,' + btoa(`
+                <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+                    <rect width="100" height="100" rx="50" fill="#E5E7EB"/>
+                    <path d="M50 45C56.075 45 61 40.075 61 34C61 27.925 56.075 23 50 23C43.925 23 39 27.925 39 34C39 40.075 43.925 45 50 45Z" fill="#9CA3AF"/>
+                    <path d="M30 77C30 77 30 66.103 30 62C30 55.373 36.268 50 44 50H56C63.732 50 70 55.373 70 62C70 66.103 70 77 70 77" fill="#9CA3AF"/>
+                </svg>
+            `.trim());
+        }
+        
         // Initialize form handling
         const form = document.getElementById('authForm');
         const formTitle = document.getElementById('formTitle');
@@ -484,7 +499,7 @@
                                     firstName: 'User',
                                     lastName: 'Name',
                                     email: email,
-                                    profileImage: 'https://via.placeholder.com/40',
+                                    profileImage: getDefaultProfileImage(),
                                     aiChats: [],
                                     listings: [],
                                     emailVerified: true
@@ -594,7 +609,7 @@
                         firstName: pendingUserData.firstName,
                         lastName: pendingUserData.lastName,
                         email: pendingUserData.email,
-                        profileImage: 'https://via.placeholder.com/40',
+                        profileImage: getDefaultProfileImage(),
                         aiChats: [],
                         listings: [],
                         emailVerified: true
