@@ -1041,11 +1041,15 @@ async function sendVerificationEmail(email, code, firstName) {
 async function sendPasswordResetEmail(email, code, firstName) {
     try {
         console.log('📧 Sending password reset email to:', email);
-        console.log('📧 Using API key:', config.BREVO_API_KEY ? 'Present (length: ' + config.BREVO_API_KEY.length + ')' : 'Missing');
+        console.log('📧 API key check:');
+        console.log('  - From environment:', process.env.BREVO_API_KEY ? `Present (${process.env.BREVO_API_KEY.substring(0, 10)}...)` : 'Missing');
+        console.log('  - From config:', config.BREVO_API_KEY ? `Present (${config.BREVO_API_KEY.substring(0, 10)}...)` : 'Missing');
         
         // Check if API key is available
         if (!config.BREVO_API_KEY) {
             console.error('❌ BREVO_API_KEY not configured');
+            console.error('  - process.env.BREVO_API_KEY:', process.env.BREVO_API_KEY ? 'Present' : 'Missing');
+            console.error('  - config.BREVO_API_KEY:', config.BREVO_API_KEY ? 'Present' : 'Missing');
             return { success: false, error: 'Email service not configured' };
         }
         
@@ -1654,12 +1658,6 @@ app.post('/api/send-reset-code', async (req, res) => {
                 message: 'If an account exists with this email, a reset code will be sent.',
                 sessionId: uuidv4()
             });
-        }
-
-        // Check if Brevo API key is available
-        if (!config.BREVO_API_KEY) {
-            console.log('❌ BREVO_API_KEY not found in config');
-            return res.status(500).json({ error: 'Email service not configured' });
         }
 
         // Generate reset code
