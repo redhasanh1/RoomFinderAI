@@ -900,15 +900,17 @@
             min-width: fit-content;
             display: inline-block;
             position: relative;
+            height: 1.2em; /* Fixed height to prevent jumping */
         }
         
         .typing-cursor {
             display: inline-block;
-            background-color: rgba(255,255,255,0.75);
+            background-color: rgba(255,255,255,0.9);
             width: 3px;
             height: 1em;
             margin-left: 2px;
             animation: blink-caret 1s step-end infinite;
+            vertical-align: middle;
         }
         
         @keyframes blink-caret {
@@ -1472,7 +1474,9 @@
                     <div class="mb-8">
                         <h1 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight font-display text-center">
                             <span class="block">Find Your Perfect</span>
-                            <span class="block typing-animation" id="typing-text" style="min-width: fit-content;"></span>
+                            <span class="block typing-animation" style="min-width: fit-content;">
+                                <span id="typing-text"></span><span class="typing-cursor"></span>
+                            </span>
                         </h1>
                     </div>
                     <p class="text-lg sm:text-xl mb-8 text-white/90 leading-relaxed max-w-2xl">
