@@ -40,6 +40,54 @@ function getCurrentUser() {
 }
 
 /**
+ * Get stored profile image with fallback
+ */
+function getStoredProfileImage(email) {
+    try {
+        // Check multiple storage locations for profile image
+        const profileImageKey = `profileImage_${email}`;
+        const storedImage = localStorage.getItem(profileImageKey);
+        
+        if (storedImage && storedImage !== 'null' && storedImage !== 'undefined') {
+            return storedImage;
+        }
+        
+        // Check backup storage
+        const backupKey = `profileImageBackup_${email}`;
+        const backupImage = localStorage.getItem(backupKey);
+        
+        if (backupImage && backupImage !== 'null' && backupImage !== 'undefined') {
+            return backupImage;
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Error retrieving stored profile image:', error);
+        return null;
+    }
+}
+
+/**
+ * Store profile image in multiple locations for persistence
+ */
+function storeProfileImage(email, imageData) {
+    try {
+        const profileImageKey = `profileImage_${email}`;
+        const backupKey = `profileImageBackup_${email}`;
+        
+        // Store in primary location
+        localStorage.setItem(profileImageKey, imageData);
+        
+        // Store backup
+        localStorage.setItem(backupKey, imageData);
+        
+        console.log('✅ Profile image stored successfully');
+    } catch (error) {
+        console.error('Error storing profile image:', error);
+    }
+}
+
+/**
  * Update auth section with appropriate content
  */
 function updateAuthSection() {
@@ -52,6 +100,14 @@ function updateAuthSection() {
     const currentUser = getCurrentUser();
     
     if (isUserAuthenticated() && currentUser) {
+        // Try to retrieve stored profile image first
+        let profileImage = getStoredProfileImage(currentUser.email);
+        
+        // If no stored image, check current user object
+        if (!profileImage) {
+            profileImage = currentUser.profileImage;
+        }
+        
         // Force update to new default profile icon if user has old placeholder images
         const oldPlaceholderPatterns = [
             'https://via.placeholder.com/',
@@ -60,30 +116,38 @@ function updateAuthSection() {
             'PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA'
         ];
         
-        const needsUpdate = !currentUser.profileImage || 
-            oldPlaceholderPatterns.some(pattern => currentUser.profileImage.includes(pattern));
+        const needsUpdate = !profileImage || 
+            oldPlaceholderPatterns.some(pattern => profileImage.includes(pattern));
         
         if (needsUpdate) {
-            currentUser.profileImage = DEFAULT_PROFILE_IMAGE;
+            profileImage = DEFAULT_PROFILE_IMAGE;
+        }
+        
+        // Update currentUser with the correct image
+        if (currentUser.profileImage !== profileImage) {
+            currentUser.profileImage = profileImage;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             
             // Also update users array
             try {
                 let users = JSON.parse(localStorage.getItem('users')) || [];
-                users = users.map(u => u && u.email === currentUser.email ? currentUser : u);
+                users = users.map(u => u && u.email === currentUser.email ? { ...u, profileImage: profileImage } : u);
                 localStorage.setItem('users', JSON.stringify(users));
-                console.log('✅ Profile image migrated from old placeholder to face icon');
+                console.log('✅ Profile image synchronized');
             } catch (e) {
                 console.error('Error updating users array:', e);
+            }
+            
+            // Store profile image separately for persistence
+            if (profileImage !== DEFAULT_PROFILE_IMAGE && !needsUpdate) {
+                storeProfileImage(currentUser.email, profileImage);
             }
         }
         
         // User is logged in - show profile
-        const profileImage = currentUser.profileImage || DEFAULT_PROFILE_IMAGE;
-        
         authSection.innerHTML = `
             <a href="profile.html" class="profile-link">
-                <img id="profileLogo" src="${profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo hover:ring-2 hover:ring-blue-500 transition-all duration-200">
+                <img id="profileLogo" src="${profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo hover:ring-2 hover:ring-blue-500 transition-all duration-200" onerror="this.src='${DEFAULT_PROFILE_IMAGE}'">
             </a>
         `;
         
@@ -252,6 +316,8 @@ window.UniversalAuth = {
     getCurrentUser: getCurrentUser,
     refresh: refreshAuthState,
     logout: handleLogout,
+    storeProfileImage: storeProfileImage,
+    getStoredProfileImage: getStoredProfileImage,
     DEFAULT_PROFILE_IMAGE: DEFAULT_PROFILE_IMAGE
 };
 

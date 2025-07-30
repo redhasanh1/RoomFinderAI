@@ -703,15 +703,23 @@
                 return;
             }
 
+            // Get stored profile image with fallback
+            const profileImageKey = `profileImage_${currentUser.email}`;
+            const backupKey = `profileImageBackup_${currentUser.email}`;
+            let profileImageUrl = localStorage.getItem(profileImageKey) || 
+                                  localStorage.getItem(backupKey) || 
+                                  currentUser.profileImage || 
+                                  'https://via.placeholder.com/100';
+            
             // Update profile info
             const profileLogo = document.getElementById('profileLogo');
             if (profileLogo) {
-                profileLogo.src = currentUser.profileImage || 'https://via.placeholder.com/40';
+                profileLogo.src = profileImageUrl;
             }
             
             const profileImageEl = document.getElementById('profileImage');
             if (profileImageEl) {
-                profileImageEl.src = currentUser.profileImage || 'https://via.placeholder.com/100';
+                profileImageEl.src = profileImageUrl;
             }
             
             const userNameEl = document.getElementById('userName');
@@ -767,6 +775,12 @@
                         users = users.map(u => u.email === currentUser.email ? currentUser : u);
                         localStorage.setItem('users', JSON.stringify(users));
                         localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        
+                        // Store profile image separately for persistence
+                        const profileImageKey = `profileImage_${currentUser.email}`;
+                        const backupKey = `profileImageBackup_${currentUser.email}`;
+                        localStorage.setItem(profileImageKey, imageDataUrl);
+                        localStorage.setItem(backupKey, imageDataUrl);
 
                         // Update profile image in Supabase if available
                         if (window.supabase && currentUser.id) {
