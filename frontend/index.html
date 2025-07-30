@@ -11,32 +11,6 @@
     <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
     <script src="universal-auth-manager.js"></script>
     
-    <!-- 📱 iOS WebView Support -->
-    <script type="module">
-        import { Capacitor } from '@capacitor/core';
-        
-        // Only load iOS support on native platforms
-        if (Capacitor.isNativePlatform()) {
-            console.log('🍎 Loading iOS support...');
-            
-            // Load network interceptor
-            import('./capacitor-fetch-interceptor.js').then(() => {
-                console.log('✅ iOS network interceptor loaded');
-            }).catch(error => {
-                console.error('❌ Failed to load iOS network interceptor:', error);
-            });
-            
-            // Load anonymous Supabase config
-            import('./supabase-anon-config.js').then(() => {
-                console.log('✅ iOS Supabase config loaded');
-            }).catch(error => {
-                console.error('❌ Failed to load iOS Supabase config:', error);
-            });
-        } else {
-            console.log('🌐 Running on web - iOS support not needed');
-        }
-    </script>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1413,7 +1387,7 @@
             <!-- Desktop Auth -->
             <div class="desktop-auth hidden md:block">
                 <div id="authSection">
-                    <a href="login.html" class="auth-link">Login/Register</a>
+                    <!-- Auth content will be populated by universal-auth-manager.js -->
                 </div>
             </div>
         </nav>
@@ -1469,7 +1443,7 @@
                     
                     <!-- Mobile Auth -->
                     <div id="mobileAuthSection">
-                        <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
+                        <!-- Mobile auth content will be populated by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -2327,7 +2301,7 @@
                     const userData = JSON.parse(currentUser);
                     const userName = userData.firstName || userData.email.split('@')[0];
                     
-                    // Mobile
+                    // Mobile - logged in
                     if (mobileAuthSection) {
                         mobileAuthSection.innerHTML = `
                             <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()">👤 Welcome, ${userName}</a>
@@ -2336,6 +2310,19 @@
                     }
                 } catch (e) {
                     console.error('Error parsing current user:', e);
+                    // If error, show login link
+                    if (mobileAuthSection) {
+                        mobileAuthSection.innerHTML = `
+                            <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
+                        `;
+                    }
+                }
+            } else {
+                // Not logged in - show login link
+                if (mobileAuthSection) {
+                    mobileAuthSection.innerHTML = `
+                        <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
+                    `;
                 }
             }
         });
