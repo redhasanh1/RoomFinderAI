@@ -2,12 +2,7 @@ import SwiftUI
 
 struct SignUpView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var authViewModel: SimpleAuthViewModel
-    @State private var email = ""
-    @State private var password = ""
-    @State private var confirmPassword = ""
-    @State private var firstName = ""
-    @State private var lastName = ""
+    let authViewModel: AuthViewModel
     @State private var showPassword = false
     @State private var showConfirmPassword = false
     
@@ -45,9 +40,30 @@ struct SignUpView: View {
                                 Image(systemName: "person")
                                     .foregroundColor(.secondary)
                                 
-                                TextField("Enter your first name", text: $firstName)
+                                TextField("Enter your first name", text: $authViewModel.firstName)
                                     .textFieldStyle(PlainTextFieldStyle())
                                     .textContentType(.givenName)
+                                    .autocapitalization(.words)
+                            }
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                        }
+                        
+                        // Last Name Field
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Last Name")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                            
+                            HStack {
+                                Image(systemName: "person")
+                                    .foregroundColor(.secondary)
+                                
+                                TextField("Enter your last name", text: $authViewModel.lastName)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                                    .textContentType(.familyName)
                                     .autocapitalization(.words)
                             }
                             .padding()
@@ -66,7 +82,7 @@ struct SignUpView: View {
                                 Image(systemName: "envelope")
                                     .foregroundColor(.secondary)
                                 
-                                TextField("Enter your email", text: $email)
+                                TextField("Enter your email", text: $authViewModel.email)
                                     .textFieldStyle(PlainTextFieldStyle())
                                     .keyboardType(.emailAddress)
                                     .textContentType(.emailAddress)
@@ -76,10 +92,6 @@ struct SignUpView: View {
                             .padding()
                             .background(Color(.systemGray6))
                             .cornerRadius(12)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(email.isEmpty ? Color.clear : (authViewModel.validateEmail(email) ? Color.green : Color.red), lineWidth: 1)
-                            )
                         }
                         
                         // Password Field
@@ -94,11 +106,11 @@ struct SignUpView: View {
                                     .foregroundColor(.secondary)
                                 
                                 if showPassword {
-                                    TextField("Enter your password", text: $password)
+                                    TextField("Enter your password", text: $authViewModel.password)
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .textContentType(.newPassword)
                                 } else {
-                                    SecureField("Enter your password", text: $password)
+                                    SecureField("Enter your password", text: $authViewModel.password)
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .textContentType(.newPassword)
                                 }
@@ -113,25 +125,13 @@ struct SignUpView: View {
                             .padding()
                             .background(Color(.systemGray6))
                             .cornerRadius(12)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(password.isEmpty ? Color.clear : (authViewModel.validatePassword(password) ? Color.green : Color.red), lineWidth: 1)
-                            )
                             
                             // Password Requirements
-                            if !password.isEmpty {
+                            if !authViewModel.password.isEmpty {
                                 VStack(alignment: .leading, spacing: 4) {
                                     PasswordRequirement(
-                                        text: "At least 8 characters",
-                                        isValid: password.count >= 8
-                                    )
-                                    PasswordRequirement(
-                                        text: "Contains uppercase and lowercase letters",
-                                        isValid: password.contains(where: { $0.isUppercase }) && password.contains(where: { $0.isLowercase })
-                                    )
-                                    PasswordRequirement(
-                                        text: "Contains a number",
-                                        isValid: password.contains(where: { $0.isNumber })
+                                        text: "At least 6 characters",
+                                        isValid: authViewModel.password.count >= 6
                                     )
                                 }
                                 .padding(.leading, 8)
@@ -150,11 +150,11 @@ struct SignUpView: View {
                                     .foregroundColor(.secondary)
                                 
                                 if showConfirmPassword {
-                                    TextField("Confirm your password", text: $confirmPassword)
+                                    TextField("Confirm your password", text: $authViewModel.confirmPassword)
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .textContentType(.newPassword)
                                 } else {
-                                    SecureField("Confirm your password", text: $confirmPassword)
+                                    SecureField("Confirm your password", text: $authViewModel.confirmPassword)
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .textContentType(.newPassword)
                                 }
@@ -171,17 +171,15 @@ struct SignUpView: View {
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(confirmPassword.isEmpty ? Color.clear : (password == confirmPassword ? Color.green : Color.red), lineWidth: 1)
+                                    .stroke(authViewModel.confirmPassword.isEmpty ? Color.clear : (authViewModel.password == authViewModel.confirmPassword ? Color.green : Color.red), lineWidth: 1)
                             )
                         }
-                        
-                        // Simplified - no terms checkbox for demo app
                     }
                     .padding(.horizontal)
                     
                     // Error Message
-                    if authViewModel.hasError {
-                        Text(authViewModel.errorMessage ?? "An error occurred")
+                    if authViewModel.showError {
+                        Text(authViewModel.errorMessage)
                             .font(.caption)
                             .foregroundColor(.red)
                             .padding(.horizontal)
@@ -189,7 +187,12 @@ struct SignUpView: View {
                     
                     // Sign Up Button
                     Button(action: {
-                        authViewModel.signUp(email: email, password: password, firstName: firstName, lastName: lastName)
+                        Task {
+                            await authViewModel.signUp()
+                            if authViewModel.isAuthenticated {
+                                dismiss()
+                            }
+                        }
                     }) {
                         HStack {
                             if authViewModel.isLoading {
@@ -218,26 +221,6 @@ struct SignUpView: View {
                     .opacity(isFormValid && !authViewModel.isLoading ? 1.0 : 0.6)
                     .padding(.horizontal)
                     
-                    // Sign in with Apple
-                    Button(action: {
-                        // Implement Sign in with Apple
-                    }) {
-                        HStack {
-                            Image(systemName: "applelogo")
-                                .font(.headline)
-                            
-                            Text("Sign up with Apple")
-                                .font(.headline)
-                                .fontWeight(.medium)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.black)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                    }
-                    .padding(.horizontal)
-                    
                     // Sign In Link
                     HStack {
                         Text("Already have an account?")
@@ -260,6 +243,13 @@ struct SignUpView: View {
                     dismiss()
                 }
             )
+            .alert("Sign Up", isPresented: $authViewModel.showError) {
+                Button("OK", role: .cancel) {
+                    authViewModel.showError = false
+                }
+            } message: {
+                Text(authViewModel.errorMessage)
+            }
             .onTapGesture {
                 hideKeyboard()
             }
@@ -267,11 +257,11 @@ struct SignUpView: View {
     }
     
     private var isFormValid: Bool {
-        return !firstName.isEmpty &&
-               firstName.count >= 2 &&
-               authViewModel.validateEmail(email) &&
-               authViewModel.validatePassword(password) &&
-               password == confirmPassword
+        return !authViewModel.firstName.isEmpty &&
+               !authViewModel.lastName.isEmpty &&
+               !authViewModel.email.isEmpty &&
+               authViewModel.password.count >= 6 &&
+               authViewModel.password == authViewModel.confirmPassword
     }
 }
 
@@ -295,6 +285,5 @@ struct PasswordRequirement: View {
 }
 
 #Preview {
-    SignUpView()
-        .environmentObject(SimpleAuthViewModel())
+    SignUpView(authViewModel: AuthViewModel())
 }

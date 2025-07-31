@@ -129,7 +129,21 @@ struct ListingsView: View {
                     Spacer()
                     VStack(spacing: 16) {
                         // Debug Information - Simplified
-                        DebugInfoView(viewModel: listingsViewModel)
+                        VStack(spacing: 8) {
+                            Text("Debug Info")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            
+                            Text("Listings Count: \(listingsViewModel.listingsCount)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            if listingsViewModel.hasError {
+                                Text("Error: \(listingsViewModel.errorMessage ?? "Unknown")")
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+                        }
                         .padding()
                         .background(Color(.systemGray6))
                         .cornerRadius(12)
