@@ -1146,6 +1146,105 @@ async function sendPasswordResetEmail(email, code, firstName) {
     }
 }
 
+// Function to send contact form email
+async function sendContactEmail(firstName, email, message) {
+    try {
+        console.log('📧 Sending contact form email from:', email);
+        
+        // Check if API key is available
+        if (!config.BREVO_API_KEY) {
+            console.error('❌ BREVO_API_KEY not configured');
+            return { success: false, error: 'Email service not configured' };
+        }
+        
+        const emailData = {
+            sender: {
+                name: "RoomFinderAI Contact Form",
+                email: "wilmahenning01@gmail.com"
+            },
+            to: [{
+                email: "roomfinderai@gmail.com",
+                name: "RoomFinderAI Support"
+            }],
+            subject: `New Contact Form Message from ${firstName}`,
+            htmlContent: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                    <title>Contact Form Message</title>
+                </head>
+                <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                    <div style="max-width: 600px; margin: 0 auto; background: #ffffff;">
+                        <!-- Header -->
+                        <div style="background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
+                                Contact Form Message
+                            </h1>
+                            <p style="margin: 10px 0 0 0; color: #E5E7EB; font-size: 16px;">
+                                New inquiry from RoomFinderAI website
+                            </p>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div style="padding: 40px 30px;">
+                            <div style="background: #F8FAFC; padding: 20px; border-radius: 8px; border-left: 4px solid #3B82F6; margin-bottom: 20px;">
+                                <h2 style="margin: 0 0 15px 0; color: #1F2937; font-size: 18px;">Contact Details</h2>
+                                <p style="margin: 0 0 10px 0; color: #374151;"><strong>Name:</strong> ${firstName}</p>
+                                <p style="margin: 0; color: #374151;"><strong>Email:</strong> ${email}</p>
+                            </div>
+                            
+                            <div style="margin-bottom: 30px;">
+                                <h2 style="margin: 0 0 15px 0; color: #1F2937; font-size: 18px;">Message</h2>
+                                <div style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px;">
+                                    <p style="margin: 0; color: #374151; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+                                </div>
+                            </div>
+                            
+                            <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 15px;">
+                                <p style="margin: 0; color: #92400E; font-size: 14px;">
+                                    <strong>Action Required:</strong> Please respond to this inquiry within 24 hours for best customer service.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div style="background: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <p style="margin: 0; color: #64748b; font-size: 14px;">
+                                © 2025 RoomFinderAI. All rights reserved.
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `
+        };
+
+        console.log('📧 Sending contact form request to Brevo API...');
+        const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+            headers: {
+                'accept': 'application/json',
+                'api-key': config.BREVO_API_KEY,
+                'content-type': 'application/json'
+            },
+            timeout: 30000 // 30 second timeout
+        });
+
+        console.log('✅ Contact form email sent successfully');
+        console.log('📧 Brevo response status:', response.status);
+        return { success: true, data: response.data };
+    } catch (error) {
+        console.error('❌ Error sending contact form email:');
+        console.error('  - Error message:', error.message);
+        console.error('  - Response status:', error.response?.status);
+        console.error('  - Response data:', error.response?.data);
+        
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Unknown error';
+        return { success: false, error: errorMessage, details: error.response?.data };
+    }
+}
+
 // API: Send verification email
 app.post('/api/send-verification', async (req, res) => {
     try {
@@ -1804,6 +1903,45 @@ app.post('/api/reset-password', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/reset-password:', error.message);
         res.status(500).json({ error: 'Failed to reset password' });
+    }
+});
+
+// API: Contact form submission
+app.post('/api/contact', async (req, res) => {
+    try {
+        console.log('📧 Received contact form submission:', req.body);
+        const { firstName, email, message } = req.body;
+
+        // Validate required fields
+        if (!firstName || !email || !message) {
+            return res.status(400).json({ error: 'First name, email, and message are required' });
+        }
+
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ error: 'Please provide a valid email address' });
+        }
+
+        // Send contact email
+        const emailResult = await sendContactEmail(firstName, email, message);
+        
+        if (emailResult.success) {
+            console.log('✅ Contact form email sent successfully');
+            res.json({ 
+                message: 'Message sent successfully! We will get back to you soon.',
+                success: true
+            });
+        } else {
+            console.log('❌ Failed to send contact form email:', emailResult.error);
+            res.status(500).json({ 
+                error: 'Failed to send message. Please try again later.',
+                details: emailResult.error
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error in /api/contact:', error.message);
+        res.status(500).json({ error: 'Server error occurred while sending message' });
     }
 });
 

@@ -2292,6 +2292,113 @@
                 aiResponse2El.innerHTML = `<p>✅ Success! Found a 2-bedroom apartment in Toronto for $1450/month (15% below market average). It includes utilities and is available immediately.</p><button class="mt-2 px-4 py-2 bg-white text-blue-600 rounded-lg text-sm font-semibold">View Deal</button>`;
             }, 3500);
         }
+
+        // Contact form handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const contactForm = document.querySelector('#contact form');
+            
+            if (contactForm) {
+                contactForm.addEventListener('submit', async function(e) {
+                    e.preventDefault(); // Prevent default form submission
+                    
+                    const formData = new FormData(contactForm);
+                    const firstName = formData.get('first-name');
+                    const email = formData.get('email');  
+                    const message = formData.get('message');
+                    
+                    // Get or create message container
+                    let messageContainer = document.getElementById('contactMessage');
+                    if (!messageContainer) {
+                        messageContainer = document.createElement('div');
+                        messageContainer.id = 'contactMessage';
+                        messageContainer.className = 'mt-4 p-4 rounded-md';
+                        contactForm.appendChild(messageContainer);
+                    }
+                    
+                    // Show loading state
+                    const submitButton = contactForm.querySelector('button[type="submit"]');
+                    const originalButtonText = submitButton.innerHTML;
+                    submitButton.innerHTML = 'Sending...';
+                    submitButton.disabled = true;
+                    
+                    try {
+                        const response = await fetch('/api/contact', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                firstName: firstName,
+                                email: email,
+                                message: message
+                            })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (response.ok && result.success) {
+                            // Success message
+                            messageContainer.className = 'mt-4 p-4 rounded-md bg-green-50 border border-green-200';
+                            messageContainer.innerHTML = `
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-green-800">
+                                            ${result.message || 'Message sent successfully! We will get back to you soon.'}
+                                        </p>
+                                    </div>
+                                </div>
+                            `;
+                            // Clear form
+                            contactForm.reset();
+                        } else {
+                            // Error message
+                            messageContainer.className = 'mt-4 p-4 rounded-md bg-red-50 border border-red-200';
+                            messageContainer.innerHTML = `
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-red-800">
+                                            ${result.error || 'Failed to send message. Please try again later.'}
+                                        </p>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    } catch (error) {
+                        console.error('Contact form error:', error);
+                        // Network error message
+                        messageContainer.className = 'mt-4 p-4 rounded-md bg-red-50 border border-red-200';
+                        messageContainer.innerHTML = `
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-red-800">
+                                        Network error. Please check your connection and try again.
+                                    </p>
+                                </div>
+                            </div>
+                        `;
+                    } finally {
+                        // Restore button
+                        submitButton.innerHTML = originalButtonText;
+                        submitButton.disabled = false;
+                    }
+                });
+            }
+        });
         
         // Initialize Universal Authentication Manager
         document.addEventListener('DOMContentLoaded', function() {
