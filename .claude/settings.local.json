@@ -21,7 +21,14 @@
       "Bash(swift --version)",
       "Bash(rg:*)",
       "Bash(xcrun simctl spawn:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(open:*)",
+      "Bash(cp:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
