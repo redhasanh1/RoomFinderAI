@@ -1,9 +1,7 @@
 import SwiftUI
 
 struct LoginView: View {
-    @EnvironmentObject var authViewModel: SimpleAuthViewModel
-    @State private var email = ""
-    @State private var password = ""
+    @StateObject private var authViewModel = AuthViewModel()
     @State private var showingSignUp = false
     @State private var showPassword = false
     
@@ -41,7 +39,7 @@ struct LoginView: View {
                             Image(systemName: "envelope")
                                 .foregroundColor(.secondary)
                             
-                            TextField("Enter your email", text: $email)
+                            TextField("Enter your email", text: $authViewModel.email)
                                 .textFieldStyle(PlainTextFieldStyle())
                                 .keyboardType(.emailAddress)
                                 .textContentType(.emailAddress)
@@ -51,10 +49,6 @@ struct LoginView: View {
                         .padding()
                         .background(Color(.systemGray6))
                         .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(email.isEmpty ? Color.clear : (authViewModel.validateEmail(email) ? Color.green : Color.red), lineWidth: 1)
-                        )
                     }
                     
                     // Password Field
@@ -69,11 +63,11 @@ struct LoginView: View {
                                 .foregroundColor(.secondary)
                             
                             if showPassword {
-                                TextField("Enter your password", text: $password)
+                                TextField("Enter your password", text: $authViewModel.password)
                                     .textFieldStyle(PlainTextFieldStyle())
                                     .textContentType(.password)
                             } else {
-                                SecureField("Enter your password", text: $password)
+                                SecureField("Enter your password", text: $authViewModel.password)
                                     .textFieldStyle(PlainTextFieldStyle())
                                     .textContentType(.password)
                             }
@@ -88,27 +82,36 @@ struct LoginView: View {
                         .padding()
                         .background(Color(.systemGray6))
                         .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(password.isEmpty ? Color.clear : (authViewModel.validatePassword(password) ? Color.green : Color.red), lineWidth: 1)
-                        )
                     }
                     
-                    // Simplified - no forgot password for demo app
+                    // Forgot Password Link
+                    HStack {
+                        Spacer()
+                        Button("Forgot Password?") {
+                            Task {
+                                await authViewModel.resetPassword()
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundColor(.primaryBlue)
+                    }
                 }
                 .padding(.horizontal)
                 
                 // Error Message
-                if authViewModel.hasError {
-                    Text(authViewModel.errorMessage ?? "An error occurred")
+                if authViewModel.showError {
+                    Text(authViewModel.errorMessage)
                         .font(.caption)
-                        .foregroundColor(.red)
+                        .foregroundColor(authViewModel.errorMessage.contains("sent") ? .green : .red)
                         .padding(.horizontal)
+                        .transition(.opacity)
                 }
                 
                 // Login Button
                 Button(action: {
-                    authViewModel.signIn(email: email, password: password)
+                    Task {
+                        await authViewModel.signIn()
+                    }
                 }) {
                     HStack {
                         if authViewModel.isLoading {
@@ -133,11 +136,42 @@ struct LoginView: View {
                     .foregroundColor(.white)
                     .cornerRadius(12)
                 }
-                .disabled(!isFormValid || authViewModel.isLoading)
-                .opacity(isFormValid && !authViewModel.isLoading ? 1.0 : 0.6)
+                .disabled(authViewModel.email.isEmpty || authViewModel.password.isEmpty || authViewModel.isLoading)
+                .opacity(authViewModel.email.isEmpty || authViewModel.password.isEmpty || authViewModel.isLoading ? 0.6 : 1.0)
                 .padding(.horizontal)
                 
-                // Simplified - no social login for demo app
+                // Or Divider
+                HStack {
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(Color(.systemGray5))
+                    
+                    Text("OR")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                    
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(Color(.systemGray5))
+                }
+                .padding(.horizontal)
+                
+                // Guest Mode Button
+                Button(action: {
+                    // Continue as guest - no authentication needed
+                    authViewModel.isAuthenticated = false
+                }) {
+                    Text("Continue as Guest")
+                        .font(.headline)
+                        .fontWeight(.medium)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .foregroundColor(.primary)
+                        .cornerRadius(12)
+                }
+                .padding(.horizontal)
                 
                 Spacer()
                 
@@ -159,19 +193,23 @@ struct LoginView: View {
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showingSignUp) {
-            SignUpView()
+            SignUpView(authViewModel: authViewModel)
+        }
+        .alert("Authentication", isPresented: $authViewModel.showError) {
+            Button("OK", role: .cancel) {
+                authViewModel.showError = false
+            }
+        } message: {
+            Text(authViewModel.errorMessage)
         }
         .onTapGesture {
             hideKeyboard()
         }
     }
-    
-    private var isFormValid: Bool {
-        return authViewModel.validateEmail(email) && authViewModel.validatePassword(password)
-    }
 }
+
+// Note: hideKeyboard() extension is defined in Extensions.swift
 
 #Preview {
     LoginView()
-        .environmentObject(SimpleAuthViewModel())
 }
