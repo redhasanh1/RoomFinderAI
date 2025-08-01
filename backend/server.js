@@ -1160,12 +1160,16 @@ async function sendContactEmail(firstName, email, message) {
         const emailData = {
             sender: {
                 name: "RoomFinderAI Contact Form",
-                email: "wilmahenning01@gmail.com"
+                email: "roomfinderai@gmail.com"
             },
             to: [{
                 email: "roomfinderai@gmail.com",
                 name: "RoomFinderAI Support"
             }],
+            replyTo: {
+                email: email,
+                name: firstName
+            },
             subject: `New Contact Form Message from ${firstName}`,
             htmlContent: `
                 <!DOCTYPE html>
