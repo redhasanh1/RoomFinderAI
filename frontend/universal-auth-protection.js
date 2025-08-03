@@ -144,6 +144,8 @@ window.signOut = function() {
 };
 
 // 🛡️ PROTECT AGAINST DOM MANIPULATION
+// Temporarily disabled - this was blocking legitimate scripts
+/*
 const observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
         if (mutation.type === 'childList') {
@@ -165,6 +167,7 @@ observer.observe(document.documentElement, {
     childList: true,
     subtree: true
 });
+*/
 
 // 🔄 CONTINUOUS MONITORING SYSTEM
 setInterval(() => {
