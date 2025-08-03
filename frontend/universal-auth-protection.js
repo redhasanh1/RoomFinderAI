@@ -26,25 +26,29 @@ window.ORIGINAL_LOCATION_HREF = ORIGINAL_LOCATION_HREF;
 window.ORIGINAL_REMOVE_ITEM = ORIGINAL_REMOVE_ITEM;
 
 // 🚫 BLOCK ALL REDIRECTS TO LOGIN PAGES (unless legitimate logout)
-Object.defineProperty(window.location, 'href', {
-    set: function(url) {
-        if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
-            // Check if this is a legitimate logout request
-            if (sessionStorage.getItem('legitimateLogout') === 'true') {
-                console.log('✅ Allowing legitimate logout redirect');
-                sessionStorage.removeItem('legitimateLogout');
-                return ORIGINAL_LOCATION_HREF.set.call(this, url);
+try {
+    Object.defineProperty(window.location, 'href', {
+        set: function(url) {
+            if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
+                // Check if this is a legitimate logout request
+                if (sessionStorage.getItem('legitimateLogout') === 'true') {
+                    console.log('✅ Allowing legitimate logout redirect');
+                    sessionStorage.removeItem('legitimateLogout');
+                    return ORIGINAL_LOCATION_HREF.set.call(this, url);
+                }
+                console.error('🚫 BLOCKED location.href redirect to login:', url);
+                console.trace('Stack trace for blocked redirect:');
+                return; // Block the redirect
             }
-            console.error('🚫 BLOCKED location.href redirect to login:', url);
-            console.trace('Stack trace for blocked redirect:');
-            return; // Block the redirect
+            return ORIGINAL_LOCATION_HREF.set.call(this, url);
+        },
+        get: function() {
+            return ORIGINAL_LOCATION_HREF.get.call(this);
         }
-        return ORIGINAL_LOCATION_HREF.set.call(this, url);
-    },
-    get: function() {
-        return ORIGINAL_LOCATION_HREF.get.call(this);
-    }
-});
+    });
+} catch (e) {
+    console.warn('⚠️ Cannot override location.href (browser security restriction)');
+}
 
 window.location.assign = function(url) {
     if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
