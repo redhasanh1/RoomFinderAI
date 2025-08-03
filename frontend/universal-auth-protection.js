@@ -11,7 +11,7 @@
  * Usage: Include this script in EVERY HTML page before any other scripts
  */
 
-console.log('🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM INITIALIZING...');
+console.log('🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM INITIALIZING... v2.0.1');
 
 // Store original functions before they can be overridden
 const ORIGINAL_LOCATION_HREF = Object.getOwnPropertyDescriptor(window.location, 'href');
@@ -144,30 +144,7 @@ window.signOut = function() {
 };
 
 // 🛡️ PROTECT AGAINST DOM MANIPULATION
-// Temporarily disabled - this was blocking legitimate scripts
-/*
-const observer = new MutationObserver(function(mutations) {
-    mutations.forEach(function(mutation) {
-        if (mutation.type === 'childList') {
-            mutation.addedNodes.forEach(function(node) {
-                if (node.nodeType === 1 && node.tagName === 'SCRIPT') {
-                    const scriptContent = node.textContent || node.innerHTML;
-                    if (scriptContent.includes('window.location') && scriptContent.includes('login')) {
-                        console.error('🚫 BLOCKED malicious script injection attempting login redirect');
-                        node.remove();
-                    }
-                }
-            });
-        }
-    });
-});
-
-// Start observing DOM changes
-observer.observe(document.documentElement, {
-    childList: true,
-    subtree: true
-});
-*/
+// REMOVED - this was blocking legitimate scripts and causing issues
 
 // 🔄 CONTINUOUS MONITORING SYSTEM
 setInterval(() => {
