@@ -140,7 +140,7 @@ public class SupabaseClient {
     /**
      * Filter listings by criteria
      */
-    public List<Listing> filterListings(Integer minPrice, Integer maxPrice, Integer bedrooms, String propertyType) {
+    public List<Listing> filterListings(Integer minPrice, Integer maxPrice, Integer bedrooms, String propertyType, String location) {
         try {
             StringBuilder urlBuilder = new StringBuilder(baseUrl + "listings?select=*");
             
@@ -158,6 +158,10 @@ public class SupabaseClient {
             }
             if (propertyType != null && !propertyType.isEmpty()) {
                 filters.add("house_type.ilike." + java.net.URLEncoder.encode("%" + propertyType + "%", "UTF-8"));
+            }
+            if (location != null && !location.trim().isEmpty()) {
+                String encodedLocation = java.net.URLEncoder.encode("%" + location.toLowerCase() + "%", "UTF-8");
+                filters.add("or=(city.ilike." + encodedLocation + ",street.ilike." + encodedLocation + ")");
             }
             
             if (!filters.isEmpty()) {

@@ -5,6 +5,7 @@
     <string name="nav_home">Home</string>
     <string name="nav_search">Search</string>
     <string name="nav_post">Post</string>
+    <string name="nav_chat">Chat</string>
     <string name="nav_favorites">Favorites</string>
     <string name="nav_profile">Profile</string>
     
@@ -47,8 +48,14 @@
     
     <!-- Chat -->
     <string name="chat_title">Messages</string>
+    <string name="ai_negotiator_chat">AI Negotiator Chat</string>
+    <string name="normal_chat">Chat with Listing People</string>
+    <string name="ai_negotiator_description">Get help negotiating rent and property deals</string>
+    <string name="normal_chat_description">Connect directly with property owners and renters</string>
     <string name="type_message">Type a message...</string>
     <string name="send">Send</string>
+    <string name="ai_chat_title">AI Negotiator</string>
+    <string name="normal_chat_title">Property Messages</string>
     
     <!-- Auth -->
     <string name="email_hint">Email</string>

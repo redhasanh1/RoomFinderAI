@@ -45,8 +45,8 @@ public class MainActivity extends AppCompatActivity {
                 fragment = new SearchFragment();
             } else if (itemId == R.id.navigation_post) {
                 fragment = new PostFragment();
-            } else if (itemId == R.id.navigation_favorites) {
-                fragment = new FavoritesFragment();
+            } else if (itemId == R.id.navigation_chat) {
+                fragment = new ChatFragment();
             } else if (itemId == R.id.navigation_profile) {
                 fragment = new ProfileFragment();
             }
