@@ -100,13 +100,13 @@ public class SupabaseService {
      * Filter listings asynchronously
      */
     public void filterListings(Integer minPrice, Integer maxPrice, Integer bedrooms, 
-                             String propertyType, ListingsCallback callback) {
+                             String propertyType, String location, ListingsCallback callback) {
         executorService.execute(() -> {
             try {
                 Log.d(TAG, "Filtering listings with criteria - Price: " + minPrice + "-" + maxPrice + 
-                          ", Bedrooms: " + bedrooms + ", Type: " + propertyType);
+                          ", Bedrooms: " + bedrooms + ", Type: " + propertyType + ", Location: " + location);
                           
-                List<Listing> listings = supabaseClient.filterListings(minPrice, maxPrice, bedrooms, propertyType);
+                List<Listing> listings = supabaseClient.filterListings(minPrice, maxPrice, bedrooms, propertyType, location);
                 
                 android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
                 mainHandler.post(() -> {
