@@ -1,14 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary Colors -->
-    <color name="purple_primary">#6366F1</color>
-    <color name="purple_secondary">#818CF8</color>
+    <!-- Primary Colors (Website Match) -->
+    <color name="purple_primary">#667eea</color>
+    <color name="purple_secondary">#764ba2</color>
     <color name="purple_light">#C7D2FE</color>
     <color name="purple_dark">#4F46E5</color>
+    
+    <!-- Gradient Colors (From Website) -->
+    <color name="gradient_start_primary">#667eea</color>
+    <color name="gradient_end_primary">#764ba2</color>
+    <color name="gradient_start_secondary">#f093fb</color>
+    <color name="gradient_end_secondary">#f5576c</color>
+    <color name="gradient_start_accent">#4facfe</color>
+    <color name="gradient_end_accent">#00f2fe</color>
+    
+    <!-- Glass Morphism Colors -->
+    <color name="glass_background">#40FFFFFF</color>
+    <color name="glass_border">#2DFFFFFF</color>
+    <color name="glass_overlay">#1AFFFFFF</color>
     
     <!-- Accent Colors -->
     <color name="pink_accent">#EC4899</color>
     <color name="blue_accent">#3B82F6</color>
+    <color name="cyan_accent">#00f2fe</color>
     
     <!-- Neutral Colors -->
     <color name="white">#FFFFFF</color>
@@ -39,6 +53,10 @@
     <color name="text_primary">#1F2937</color>
     <color name="text_secondary">#6B7280</color>
     <color name="text_disabled">#9CA3AF</color>
+    
+    <!-- Heart Colors -->
+    <color name="heart_red_dim">#CC5555</color>
+    <color name="heart_red_bright">#FF0000</color>
     
     <!-- Transparent -->
     <color name="transparent">#00000000</color>

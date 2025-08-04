@@ -60,12 +60,12 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
             if (imageUrl != null && !imageUrl.isEmpty()) {
                 Glide.with(binding.listingImage.getContext())
                     .load(imageUrl)
-                    .placeholder(R.drawable.placeholder_image)
-                    .error(R.drawable.placeholder_image)
+                    .placeholder(R.drawable.property_placeholder)
+                    .error(R.drawable.property_placeholder)
                     .centerCrop()
                     .into(binding.listingImage);
             } else {
-                binding.listingImage.setImageResource(R.drawable.placeholder_image);
+                binding.listingImage.setImageResource(R.drawable.property_placeholder);
             }
             
             // Set text data
@@ -81,13 +81,21 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
             }
             binding.bedBathText.setText(detailsText);
             
-            // Set favorite icon
-            binding.favoriteButton.setImageResource(
-                listing.isFavorite() ? R.drawable.ic_favorite_filled : R.drawable.ic_favorite_border
-            );
+            // Set favorite state (selected state will trigger the selector)
+            binding.favoriteButton.setSelected(listing.isFavorite());
             
-            // Hide availability badge since we don't have that field in the database
-            binding.availableBadge.setVisibility(View.GONE);
+            // Set availability status
+            binding.availableStatus.setText("Available Now");
+            
+            // Set property type badge
+            String propertyType = listing.getHouseType();
+            if (propertyType != null && !propertyType.isEmpty()) {
+                binding.propertyTypeBadge.setText(propertyType);
+                binding.propertyTypeBadge.setVisibility(View.VISIBLE);
+            } else {
+                binding.propertyTypeBadge.setText("Property");
+                binding.propertyTypeBadge.setVisibility(View.VISIBLE);
+            }
             
             // Click listeners
             binding.getRoot().setOnClickListener(v -> {

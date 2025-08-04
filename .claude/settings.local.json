@@ -28,7 +28,9 @@
       "Bash(cp:*)",
       "Bash(ls:*)",
       "Bash(mkdir:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git stash show:*)",
+      "Bash(./gradlew:*)"
     ],
     "deny": []
   }
