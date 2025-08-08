@@ -30,7 +30,9 @@
       "Bash(mkdir:*)",
       "Bash(git add:*)",
       "Bash(git stash show:*)",
-      "Bash(./gradlew:*)"
+      "Bash(./gradlew:*)",
+      "Bash(git pull:*)",
+      "Bash(git rebase:*)"
     ],
     "deny": []
   }
