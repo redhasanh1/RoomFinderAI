@@ -3,22 +3,13 @@ import CoreLocation
 
 // MARK: - Supporting Types
 enum PropertyType: String, CaseIterable, Codable {
-    case apartment = "apartment"
-    case house = "house"
-    case condo = "condo"
-    case studio = "studio"
-    case townhouse = "townhouse"
-    case room = "room"
+    case apartment = "Apartment"
+    case house = "House"
+    case condo = "Condo"
+    case townhouse = "Townhouse"
     
     var displayName: String {
-        switch self {
-        case .apartment: return "Apartment"
-        case .house: return "House"
-        case .condo: return "Condo"
-        case .studio: return "Studio"
-        case .townhouse: return "Townhouse"
-        case .room: return "Room"
-        }
+        return self.rawValue
     }
     
     var icon: String {
@@ -26,9 +17,7 @@ enum PropertyType: String, CaseIterable, Codable {
         case .apartment: return "building.2"
         case .house: return "house"
         case .condo: return "building"
-        case .studio: return "bed.double"
         case .townhouse: return "house.lodge"
-        case .room: return "door.left.hand.open"
         }
     }
 }

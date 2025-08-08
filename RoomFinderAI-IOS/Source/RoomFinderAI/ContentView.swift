@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var authService = AuthenticationService.shared
+    @StateObject private var authService = SimpleAuthViewModel()
     @State private var selectedTab = 0
     @State private var showingLogin = false
     

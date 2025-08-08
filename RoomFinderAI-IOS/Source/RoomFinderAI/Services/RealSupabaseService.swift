@@ -597,7 +597,128 @@ class RealSupabaseService {
         }
     }
     
+    // MARK: - Database Setup Functions
+    
+    func enablePublicReadAccess() async throws {
+        print("🔐 DEBUG: Setting up public read access for listings...")
+        
+        do {
+            // This function would be run once to enable public read access
+            let _ = try await client.rpc("enable_public_listings_read").execute()
+            print("✅ DEBUG: Public read access enabled")
+        } catch {
+            print("❌ DEBUG: Failed to enable public read access: \(error)")
+            throw error
+        }
+    }
+    
     // MARK: - Simplified Query Methods
+    
+    func fetchListingsWithFilters(
+        searchQuery: String? = nil,
+        city: String? = nil,
+        minPrice: Int? = nil,
+        maxPrice: Int? = nil,
+        houseType: String? = nil,
+        bedrooms: Int? = nil,
+        sortBy: String = "created_at",
+        ascending: Bool = false,
+        offset: Int = 0,
+        limit: Int = 20
+    ) async throws -> [Listing] {
+        print("🔄 DEBUG: Fetching listings with filters...")
+        print("   - City: \(city ?? "Any")")
+        print("   - Price: $\(minPrice ?? 0) - $\(maxPrice ?? 9999)")
+        print("   - Type: \(houseType ?? "Any")")
+        print("   - Bedrooms: \(bedrooms ?? 0)+")
+        
+        do {
+            var query = client.from("listings").select("*")
+            
+            // Apply filters
+            if let city = city, !city.isEmpty {
+                query = query.ilike("city", pattern: "%\(city)%")
+            }
+            
+            if let minPrice = minPrice {
+                query = query.gte("price", value: minPrice)
+            }
+            
+            if let maxPrice = maxPrice {
+                query = query.lte("price", value: maxPrice)
+            }
+            
+            if let houseType = houseType, !houseType.isEmpty {
+                query = query.eq("house_type", value: houseType)
+            }
+            
+            if let bedrooms = bedrooms {
+                query = query.gte("bedrooms", value: bedrooms)
+            }
+            
+            if let searchQuery = searchQuery, !searchQuery.isEmpty {
+                // Search in title and description
+                query = query.or("title.ilike.%\(searchQuery)%,description.ilike.%\(searchQuery)%")
+            }
+            
+            // Apply sorting and pagination
+            let response = try await query
+                .order(sortBy, ascending: ascending)
+                .range(from: offset, to: offset + limit - 1)
+                .execute()
+            
+            print("📄 DEBUG: Filtered response - \(response.data.count) bytes")
+            
+            // Use the same date parsing logic
+            let decoder = JSONDecoder()
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
+            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+            dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+            
+            decoder.dateDecodingStrategy = .custom { decoder in
+                let container = try decoder.singleValueContainer()
+                let dateString = try container.decode(String.self)
+                
+                let formats = [
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSSSZ",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSSZ",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSZ",
+                    "yyyy-MM-dd'T'HH:mm:ss.SZ",
+                    "yyyy-MM-dd'T'HH:mm:ssZ",
+                    "yyyy-MM-dd'T'HH:mm:ss"
+                ]
+                
+                for format in formats {
+                    dateFormatter.dateFormat = format
+                    if let date = dateFormatter.date(from: dateString) {
+                        return date
+                    }
+                }
+                
+                if let date = ISO8601DateFormatter().date(from: dateString) {
+                    return date
+                }
+                
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date string \(dateString)")
+            }
+            
+            do {
+                let listings = try decoder.decode([Listing].self, from: response.data)
+                print("✅ DEBUG: Filtered query returned \(listings.count) listings")
+                return listings
+            } catch {
+                print("❌ DEBUG: Parsing failed, trying custom parser")
+                return try parseWithCustomDates(data: response.data)
+            }
+            
+        } catch {
+            print("❌ DEBUG: Filtered query failed: \(error)")
+            throw error
+        }
+    }
     
     func fetchListingsSimple() async throws -> [Listing] {
         print("🔄 DEBUG: Using simplified query approach...")
@@ -629,17 +750,52 @@ class RealSupabaseService {
             
             // Try simple JSON parsing first
             let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
+            // Use custom date decoding strategy for PostgreSQL timestamps
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
+            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+            dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+            
+            decoder.dateDecodingStrategy = .custom { decoder in
+                let container = try decoder.singleValueContainer()
+                let dateString = try container.decode(String.self)
+                
+                // Try different date formats
+                let formats = [
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSSSZ",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSSZ",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSZ",
+                    "yyyy-MM-dd'T'HH:mm:ss.SZ",
+                    "yyyy-MM-dd'T'HH:mm:ssZ",
+                    "yyyy-MM-dd'T'HH:mm:ss"
+                ]
+                
+                for format in formats {
+                    dateFormatter.dateFormat = format
+                    if let date = dateFormatter.date(from: dateString) {
+                        return date
+                    }
+                }
+                
+                // If all else fails, try ISO8601
+                if let date = ISO8601DateFormatter().date(from: dateString) {
+                    return date
+                }
+                
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date string \(dateString)")
+            }
             
             do {
                 let listings = try decoder.decode([Listing].self, from: response.data)
-                print("✅ DEBUG: ISO8601 parsing successful - \(listings.count) listings")
+                print("✅ DEBUG: Parsing successful - \(listings.count) listings")
                 if let first = listings.first {
                     print("📍 DEBUG: First listing - \(first.title) at \(first.city)")
                 }
                 return listings
             } catch {
-                print("❌ DEBUG: ISO8601 parsing failed: \(error)")
+                print("❌ DEBUG: Parsing failed: \(error)")
                 print("🔄 DEBUG: Trying custom date parsing...")
                 return try parseWithCustomDates(data: response.data)
             }
