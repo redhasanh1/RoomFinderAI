@@ -7,6 +7,26 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 
+// Load environment variables from .env file in development
+require('dotenv').config();
+
+// Service availability tracking
+const serviceStatus = {
+    supabase: false,
+    stripe: false,
+    openai: false,
+    brevo: false,
+    azure: {
+        documentIntelligence: false,
+        face: false
+    },
+    google: false
+};
+
+// Demo mode flag
+const DEMO_MODE = process.env.ENABLE_DEMO_MODE === 'true' || false;
+const ANONYMOUS_BROWSING = process.env.ENABLE_ANONYMOUS_BROWSING === 'true' || true;
+
 // Load config with error handling
 // Load configuration with environment variables taking priority
 let config = {};
@@ -176,11 +196,15 @@ console.log('- AZURE_FACE_ENDPOINT:', process.env.AZURE_FACE_ENDPOINT || 'MISSIN
 // Initialize Stripe with error handling
 let stripe;
 try {
-    if (config.STRIPE_SECRET_KEY) {
+    if (config.STRIPE_SECRET_KEY && config.STRIPE_SECRET_KEY !== 'your_stripe_secret_key') {
         stripe = require('stripe')(config.STRIPE_SECRET_KEY);
+        serviceStatus.stripe = true;
         console.log('✅ Stripe initialized');
     } else {
-        console.log('⚠️ Stripe not initialized - missing STRIPE_SECRET_KEY');
+        console.log('⚠️ Stripe not initialized - missing or default STRIPE_SECRET_KEY');
+        if (DEMO_MODE) {
+            console.log('📝 Demo mode enabled - Stripe features will use mock data');
+        }
     }
 } catch (error) {
     console.log('❌ Stripe initialization failed:', error.message);
@@ -189,11 +213,17 @@ try {
 // Initialize Supabase client with error handling
 let supabase;
 try {
-    if (config.SUPABASE_URL && config.SUPABASE_ANON_KEY) {
+    if (config.SUPABASE_URL && config.SUPABASE_ANON_KEY && 
+        !config.SUPABASE_URL.includes('your-project') && 
+        !config.SUPABASE_ANON_KEY.includes('your-supabase')) {
         supabase = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+        serviceStatus.supabase = true;
         console.log('✅ Supabase initialized');
     } else {
-        console.log('⚠️ Supabase not initialized - missing URL or ANON_KEY');
+        console.log('⚠️ Supabase not initialized - missing or default credentials');
+        if (DEMO_MODE) {
+            console.log('📝 Demo mode enabled - Database features will use mock data');
+        }
     }
 } catch (error) {
     console.log('❌ Supabase initialization failed:', error.message);
@@ -5097,7 +5127,35 @@ app.get('/api/turnstile-key', (req, res) => {
 
 // Health check route for Railway monitoring - MUST BE BEFORE /:page
 app.get('/health', (req, res) => {
-    res.status(200).send('✅ RoomFinderAI server is running');
+    const health = {
+        status: 'running',
+        timestamp: new Date().toISOString(),
+        services: serviceStatus,
+        mode: {
+            demo: DEMO_MODE,
+            anonymousBrowsing: ANONYMOUS_BROWSING,
+            environment: process.env.NODE_ENV || 'development'
+        },
+        uptime: process.uptime()
+    };
+    res.status(200).json(health);
+});
+
+// Service status endpoint for frontend
+app.get('/api/service-status', (req, res) => {
+    res.json({
+        services: serviceStatus,
+        features: {
+            ai: serviceStatus.openai || DEMO_MODE,
+            payments: serviceStatus.stripe || DEMO_MODE,
+            database: serviceStatus.supabase || DEMO_MODE,
+            email: serviceStatus.brevo || DEMO_MODE,
+            maps: serviceStatus.google || true, // OpenStreetMap fallback
+            idVerification: serviceStatus.azure.documentIntelligence || DEMO_MODE,
+            anonymousBrowsing: ANONYMOUS_BROWSING,
+            demoMode: DEMO_MODE
+        }
+    });
 });
 
 // Serve main website at root
@@ -5166,6 +5224,15 @@ console.log('- AZURE_FACE_KEY:', !!process.env.AZURE_FACE_KEY);
 async function initializeStorage() {
     try {
         console.log('📦 Initializing storage buckets...');
+        
+        // Check if Supabase is initialized
+        if (!supabase) {
+            console.log('⚠️ Skipping storage initialization - Supabase not available');
+            if (DEMO_MODE) {
+                console.log('📝 Demo mode - Storage features will use mock functionality');
+            }
+            return;
+        }
         
         const { data: buckets, error: listError } = await supabase.storage.listBuckets();
         
