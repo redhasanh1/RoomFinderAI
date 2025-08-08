@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 
 class SimpleListingsViewModel: ObservableObject {
     @Published var listings: [Listing] = []
@@ -27,18 +28,36 @@ class SimpleListingsViewModel: ObservableObject {
     @Published var smokingAllowed = false
     @Published var sortBy: SortOption = .date
     
+    // Real-time connection status
+    @Published var realtimeConnectionStatus: String = "Disconnected"
+    @Published var realtimeConnectionError: String?
+    @Published var realtimeRetryCount: Int = 0
+    @Published var isRealtimeRetrying: Bool = false
+    @Published var lastUpdateTime: Date?
+    @Published var realtimeEnabled = true
+    
     // Pagination
     @Published var hasNextPage = false
     private var currentOffset = 0
     private let pageSize = 20
     
-    private let supabaseService = RealSupabaseService()
+    let supabaseService = RealSupabaseService()
     private let mockDataService = MockDataService.shared // Fallback for development
     private var favoriteListingIds: Set<String> = []
     
+    // Combine subscriptions for real-time updates
+    private var cancellables = Set<AnyCancellable>()
+    
     init() {
-        print("📱 SimpleListingsViewModel initialized")
+        print("📱 SimpleListingsViewModel initialized with real-time support")
+        setupRealtimeSubscriptions()
         loadInitialData()
+    }
+    
+    deinit {
+        // Clean up subscriptions
+        supabaseService.disconnectRealtime()
+        cancellables.forEach { $0.cancel() }
     }
     
     func loadInitialData() {
@@ -95,6 +114,195 @@ class SimpleListingsViewModel: ObservableObject {
             
             await loadListings(reset: true)
         }
+    }
+    
+    // MARK: - Real-time Subscriptions Setup
+    
+    /// Set up real-time subscriptions to listen for database changes
+    private func setupRealtimeSubscriptions() {
+        print("📡 Setting up real-time subscriptions...")
+        
+        // Subscribe to connection status changes
+        supabaseService.$connectionStatus
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.realtimeConnectionStatus, on: self)
+            .store(in: &cancellables)
+        
+        // Subscribe to connection error changes
+        supabaseService.$connectionError
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.realtimeConnectionError, on: self)
+            .store(in: &cancellables)
+        
+        // Subscribe to retry count changes
+        supabaseService.$retryCount
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.realtimeRetryCount, on: self)
+            .store(in: &cancellables)
+        
+        // Subscribe to retry status changes
+        supabaseService.$isRetrying
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.isRealtimeRetrying, on: self)
+            .store(in: &cancellables)
+        
+        // Subscribe to real-time listing events
+        supabaseService.realtimeEventsSubject
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] event in
+                self?.handleRealtimeEvent(event)
+            }
+            .store(in: &cancellables)
+        
+        // Start real-time subscription when enabled
+        if realtimeEnabled {
+            enableRealtime()
+        }
+    }
+    
+    /// Enable real-time updates
+    func enableRealtime() {
+        print("🔄 Enabling real-time updates...")
+        realtimeEnabled = true
+        supabaseService.subscribeToListingsRealtime()
+    }
+    
+    /// Disable real-time updates
+    func disableRealtime() {
+        print("🔴 Disabling real-time updates...")
+        realtimeEnabled = false
+        supabaseService.disconnectRealtime()
+    }
+    
+    /// Manually retry real-time connection
+    func retryRealtimeConnection() {
+        print("🔄 Manual real-time connection retry requested")
+        supabaseService.retryConnection()
+    }
+    
+    /// Handle real-time events from the service
+    private func handleRealtimeEvent(_ event: ListingRealtimeEvent) {
+        print("📨 Handling real-time event...")
+        lastUpdateTime = Date()
+        
+        switch event {
+        case .insert(let newListing):
+            handleNewListing(newListing)
+            
+        case .update(let updatedListing):
+            handleUpdatedListing(updatedListing)
+            
+        case .delete(let listingId):
+            handleDeletedListing(listingId)
+        }
+    }
+    
+    /// Handle new listing insertion
+    private func handleNewListing(_ newListing: Listing) {
+        print("➕ Adding new listing: \(newListing.title)")
+        
+        // Check if listing passes current filters
+        if listingMatchesCurrentFilters(newListing) {
+            // Add to beginning of list (newest first)
+            if !listings.contains(where: { $0.id == newListing.id }) {
+                listings.insert(newListing, at: 0)
+                debugInfo = "✅ Added new listing: \(newListing.title)"
+                
+                // Update UI to show new listing indicator
+                showRealtimeNotification("New listing: \(newListing.title)")
+            }
+        }
+    }
+    
+    /// Handle listing update
+    private func handleUpdatedListing(_ updatedListing: Listing) {
+        print("📝 Updating listing: \(updatedListing.title)")
+        
+        if let index = listings.firstIndex(where: { $0.id == updatedListing.id }) {
+            // Check if updated listing still matches filters
+            if listingMatchesCurrentFilters(updatedListing) {
+                listings[index] = updatedListing
+                debugInfo = "✅ Updated listing: \(updatedListing.title)"
+            } else {
+                // Remove if it no longer matches filters
+                listings.remove(at: index)
+                debugInfo = "🔄 Removed listing (no longer matches filters): \(updatedListing.title)"
+            }
+        } else if listingMatchesCurrentFilters(updatedListing) {
+            // Add if it now matches filters and wasn't in list before
+            listings.insert(updatedListing, at: 0)
+            debugInfo = "✅ Added updated listing: \(updatedListing.title)"
+        }
+    }
+    
+    /// Handle listing deletion
+    private func handleDeletedListing(_ listingId: String) {
+        print("🗑️ Removing listing: \(listingId)")
+        
+        if let index = listings.firstIndex(where: { $0.id == listingId }) {
+            let deletedTitle = listings[index].title
+            listings.remove(at: index)
+            debugInfo = "✅ Removed listing: \(deletedTitle)"
+            
+            showRealtimeNotification("Listing removed: \(deletedTitle)")
+        }
+    }
+    
+    /// Check if a listing matches current filters
+    private func listingMatchesCurrentFilters(_ listing: Listing) -> Bool {
+        // Search query filter
+        if !searchQuery.isEmpty {
+            let searchLower = searchQuery.lowercased()
+            let matchesTitle = listing.title.lowercased().contains(searchLower)
+            let matchesDescription = listing.description?.lowercased().contains(searchLower) ?? false
+            if !matchesTitle && !matchesDescription {
+                return false
+            }
+        }
+        
+        // Location filter
+        if !selectedLocation.isEmpty {
+            let locationLower = selectedLocation.lowercased()
+            if !listing.city.lowercased().contains(locationLower) {
+                return false
+            }
+        }
+        
+        // Property type filter
+        if let selectedType = selectedPropertyType {
+            if listing.propertyType != selectedType {
+                return false
+            }
+        }
+        
+        // Bedrooms filter
+        if let minBedrooms = selectedBedrooms {
+            if listing.bedrooms < minBedrooms {
+                return false
+            }
+        }
+        
+        // Price range filter
+        let listingPrice = Double(listing.price)
+        if minPrice > 0 && listingPrice < minPrice {
+            return false
+        }
+        if maxPrice < 5000 && listingPrice > maxPrice {
+            return false
+        }
+        
+        return true
+    }
+    
+    /// Show a temporary notification for real-time events
+    private func showRealtimeNotification(_ message: String) {
+        // This could trigger a toast notification or temporary banner in the UI
+        print("🔔 Real-time notification: \(message)")
+        
+        // Update debug info with timestamp
+        let formatter = DateFormatter()
+        formatter.timeStyle = .medium
+        debugInfo = "🔔 \(formatter.string(from: Date())): \(message)"
     }
     
     func loadListings(reset: Bool = true) {
