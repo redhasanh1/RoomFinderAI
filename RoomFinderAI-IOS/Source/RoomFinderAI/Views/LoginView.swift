@@ -1,9 +1,11 @@
 import SwiftUI
 
 struct LoginView: View {
-    @StateObject private var authViewModel = AuthViewModel()
+    @StateObject private var authViewModel = SimpleAuthViewModel()
     @State private var showingSignUp = false
     @State private var showPassword = false
+    @State private var email = ""
+    @State private var password = ""
     
     var body: some View {
         ScrollView {
@@ -39,7 +41,7 @@ struct LoginView: View {
                             Image(systemName: "envelope")
                                 .foregroundColor(.secondary)
                             
-                            TextField("Enter your email", text: $authViewModel.email)
+                            TextField("Enter your email", text: $email)
                                 .textFieldStyle(PlainTextFieldStyle())
                                 .keyboardType(.emailAddress)
                                 .textContentType(.emailAddress)
@@ -63,11 +65,11 @@ struct LoginView: View {
                                 .foregroundColor(.secondary)
                             
                             if showPassword {
-                                TextField("Enter your password", text: $authViewModel.password)
+                                TextField("Enter your password", text: $password)
                                     .textFieldStyle(PlainTextFieldStyle())
                                     .textContentType(.password)
                             } else {
-                                SecureField("Enter your password", text: $authViewModel.password)
+                                SecureField("Enter your password", text: $password)
                                     .textFieldStyle(PlainTextFieldStyle())
                                     .textContentType(.password)
                             }
@@ -88,9 +90,7 @@ struct LoginView: View {
                     HStack {
                         Spacer()
                         Button("Forgot Password?") {
-                            Task {
-                                await authViewModel.resetPassword()
-                            }
+                            // Reset password functionality not implemented in SimpleAuthViewModel
                         }
                         .font(.caption)
                         .foregroundColor(.primaryBlue)
@@ -99,19 +99,17 @@ struct LoginView: View {
                 .padding(.horizontal)
                 
                 // Error Message
-                if authViewModel.showError {
-                    Text(authViewModel.errorMessage)
+                if authViewModel.hasError {
+                    Text(authViewModel.errorMessage ?? "")
                         .font(.caption)
-                        .foregroundColor(authViewModel.errorMessage.contains("sent") ? .green : .red)
+                        .foregroundColor((authViewModel.errorMessage ?? "").contains("sent") ? .green : .red)
                         .padding(.horizontal)
                         .transition(.opacity)
                 }
                 
                 // Login Button
                 Button(action: {
-                    Task {
-                        await authViewModel.signIn()
-                    }
+                    authViewModel.signIn(email: email, password: password)
                 }) {
                     HStack {
                         if authViewModel.isLoading {
@@ -136,8 +134,8 @@ struct LoginView: View {
                     .foregroundColor(.white)
                     .cornerRadius(12)
                 }
-                .disabled(authViewModel.email.isEmpty || authViewModel.password.isEmpty || authViewModel.isLoading)
-                .opacity(authViewModel.email.isEmpty || authViewModel.password.isEmpty || authViewModel.isLoading ? 0.6 : 1.0)
+                .disabled(email.isEmpty || password.isEmpty || authViewModel.isLoading)
+                .opacity(email.isEmpty || password.isEmpty || authViewModel.isLoading ? 0.6 : 1.0)
                 .padding(.horizontal)
                 
                 // Or Divider
@@ -195,12 +193,12 @@ struct LoginView: View {
         .sheet(isPresented: $showingSignUp) {
             SignUpView(authViewModel: authViewModel)
         }
-        .alert("Authentication", isPresented: $authViewModel.showError) {
+        .alert("Authentication", isPresented: .constant(authViewModel.hasError)) {
             Button("OK", role: .cancel) {
-                authViewModel.showError = false
+                authViewModel.clearError()
             }
         } message: {
-            Text(authViewModel.errorMessage)
+            Text(authViewModel.errorMessage ?? "")
         }
         .onTapGesture {
             hideKeyboard()

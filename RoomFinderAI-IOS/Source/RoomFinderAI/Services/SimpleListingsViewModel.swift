@@ -108,12 +108,28 @@ class SimpleListingsViewModel: ObservableObject {
         
         Task {
             await MainActor.run {
-                self.debugInfo = "🔄 Fetching listings..."
+                self.debugInfo = "🔄 Fetching listings with filters..."
                 self.lastFetchTime = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .medium)
             }
             
             do {
-                let fetchedListings = try await supabaseService.fetchListingsSimple()
+                // Use the new filtered method
+                let minPriceInt = minPrice > 0 ? Int(minPrice) : nil
+                let maxPriceInt = maxPrice < 5000 ? Int(maxPrice) : nil
+                let houseTypeString = selectedPropertyType?.displayName
+                
+                let fetchedListings = try await supabaseService.fetchListingsWithFilters(
+                    searchQuery: searchQuery.isEmpty ? nil : searchQuery,
+                    city: selectedLocation.isEmpty ? nil : selectedLocation,
+                    minPrice: minPriceInt,
+                    maxPrice: maxPriceInt,
+                    houseType: houseTypeString,
+                    bedrooms: selectedBedrooms,
+                    sortBy: sortBy == .price ? "price" : (sortBy == .priceHigh ? "price" : "created_at"),
+                    ascending: sortBy == .price ? true : (sortBy == .priceHigh ? false : false),
+                    offset: currentOffset,
+                    limit: pageSize
+                )
                 
                 await MainActor.run {
                     if reset {
@@ -127,23 +143,32 @@ class SimpleListingsViewModel: ObservableObject {
                     self.isLoading = false
                     
                     // Update debug info
-                    self.debugInfo = "✅ Loaded \(fetchedListings.count) listings"
+                    self.debugInfo = "✅ Loaded \(fetchedListings.count) listings with filters"
                     self.listingsCount = fetchedListings.count
                     
                     if !fetchedListings.isEmpty {
-                        self.debugInfo += "\n📍 First: \(fetchedListings[0].title)"
+                        self.debugInfo += "\n📍 First: \(fetchedListings[0].title) - $\(fetchedListings[0].price)"
+                    }
+                    
+                    // Update favorites status
+                    for i in 0..<self.listings.count {
+                        if self.favoriteListingIds.contains(self.listings[i].id) {
+                            // This would need to be done via a computed property or separate state
+                        }
                     }
                 }
             } catch {
                 await MainActor.run {
-                    self.errorMessage = "Failed to load real listings: \(error.localizedDescription)"
+                    self.errorMessage = "Failed to load listings: \(error.localizedDescription)"
                     self.isLoading = false
                     self.debugInfo = "❌ Fetch failed: \(error.localizedDescription)"
                     
-                    // Show mock data info instead of loading it
-                    self.debugInfo += "\n🔄 Would show mock data as fallback"
-                    // Temporarily disable mock fallback to see real error
-                    // self.listings = self.mockDataService.getSampleListings()
+                    // Show mock data as fallback only if there's no data
+                    if self.listings.isEmpty {
+                        self.debugInfo += "\n🔄 Loading mock data as fallback"
+                        self.listings = self.mockDataService.getSampleListings()
+                        self.listingsCount = self.listings.count
+                    }
                 }
             }
         }
@@ -251,6 +276,30 @@ extension SimpleListingsViewModel {
     // Favorite listings based on local state
     var favoriteListings: [Listing] {
         return listings.filter { favoriteListingIds.contains($0.id) }
+    }
+    
+    // MARK: - Database Setup Functions
+    
+    func enablePublicAccess() {
+        Task {
+            await MainActor.run {
+                self.debugInfo = "🔐 Enabling public access to listings..."
+                self.isLoading = true
+            }
+            
+            do {
+                try await supabaseService.enablePublicReadAccess()
+                await MainActor.run {
+                    self.debugInfo = "✅ Public access enabled! Refreshing listings..."
+                }
+                await loadListings(reset: true)
+            } catch {
+                await MainActor.run {
+                    self.debugInfo = "❌ Failed to enable public access: \(error.localizedDescription)"
+                    self.isLoading = false
+                }
+            }
+        }
     }
     
     // MARK: - Debug Functions

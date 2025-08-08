@@ -160,24 +160,43 @@ struct ListingsView: View {
                                 }
                             )
                             
-                            // Create Sample Data Button (only show if count is 0)
+                            // Action buttons (only show if count is 0)
                             if listingsViewModel.listingsCount == 0 {
-                                Button(action: {
-                                    listingsViewModel.createSampleData()
-                                }) {
-                                    HStack {
-                                        Image(systemName: "plus.circle.fill")
-                                        Text("Create Sample Data")
+                                VStack(spacing: 12) {
+                                    Button(action: {
+                                        listingsViewModel.enablePublicAccess()
+                                    }) {
+                                        HStack {
+                                            Image(systemName: "lock.open.fill")
+                                            Text("Enable Public Access")
+                                        }
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 10)
+                                        .background(Color.blue)
+                                        .cornerRadius(20)
                                     }
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 10)
-                                    .background(Color.green)
-                                    .cornerRadius(20)
+                                    .disabled(listingsViewModel.isLoading)
+                                    
+                                    Button(action: {
+                                        listingsViewModel.createSampleData()
+                                    }) {
+                                        HStack {
+                                            Image(systemName: "plus.circle.fill")
+                                            Text("Create Sample Data")
+                                        }
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 10)
+                                        .background(Color.green)
+                                        .cornerRadius(20)
+                                    }
+                                    .disabled(listingsViewModel.isLoading)
                                 }
-                                .disabled(listingsViewModel.isLoading)
                             }
                         }
                     }
