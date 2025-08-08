@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import Combine
 
 // MARK: - Sample Data Structure
 struct SampleListingData: Codable {
@@ -22,13 +23,41 @@ struct SampleListingData: Codable {
     }
 }
 
-class RealSupabaseService {
+// MARK: - Real-time Event Types
+enum ListingRealtimeEvent {
+    case insert(Listing)
+    case update(Listing)
+    case delete(String) // listing ID
+}
+
+class RealSupabaseService: ObservableObject {
     private let client = SupabaseConfig.client
+    private var realtimeChannel: RealtimeChannelV2?
+    
+    // Publishers for real-time events
+    @Published var connectionStatus: String = "Disconnected"
+    @Published var lastEventTime: Date?
+    @Published var connectionError: String?
+    @Published var retryCount: Int = 0
+    @Published var isRetrying: Bool = false
+    
+    // Subject for real-time listing events
+    let realtimeEventsSubject = PassthroughSubject<ListingRealtimeEvent, Never>()
+    
+    // Connection retry configuration
+    private let maxRetries = 3
+    private let retryDelay: TimeInterval = 5.0
+    private var reconnectionTimer: Timer?
     
     init() {
         print("🔧 RealSupabaseService initialized")
         print("   - URL: \(SupabaseConfig.url)")
         print("   - Key: \(SupabaseConfig.anonKey.prefix(20))...")
+    }
+    
+    deinit {
+        disconnectRealtime()
+        reconnectionTimer?.invalidate()
     }
     
     // MARK: - Connection Testing
@@ -595,6 +624,283 @@ class RealSupabaseService {
         } catch {
             print("❌ DEBUG: All fields test failed: \(error.localizedDescription)")
         }
+    }
+    
+    // MARK: - Real-time Subscription Methods
+    
+    /// Subscribe to real-time listing changes (INSERT, UPDATE, DELETE)
+    func subscribeToListingsRealtime() {
+        print("📡 Setting up real-time listings subscription...")
+        
+        // Disconnect existing subscription if any
+        disconnectRealtime()
+        
+        // Create new channel for listings  
+        realtimeChannel = client.realtimeV2.channel("public:listings")
+        
+        guard let channel = realtimeChannel else {
+            print("❌ Failed to create realtime channel")
+            return
+        }
+        
+        // Subscribe to INSERT events
+        channel.on("postgres_changes", filter: PostgresChangesFilter(
+            event: .insert,
+            schema: "public",
+            table: "listings"
+        )) { [weak self] message in
+            self?.handleRealtimeEvent("INSERT", message: message)
+        }
+        
+        // Subscribe to UPDATE events  
+        channel.on("postgres_changes", filter: PostgresChangesFilter(
+            event: .update,
+            schema: "public", 
+            table: "listings"
+        )) { [weak self] message in
+            self?.handleRealtimeEvent("UPDATE", message: message)
+        }
+        
+        // Subscribe to DELETE events
+        channel.on("postgres_changes", filter: PostgresChangesFilter(
+            event: .delete,
+            schema: "public",
+            table: "listings"
+        )) { [weak self] message in
+            self?.handleRealtimeEvent("DELETE", message: message)
+        }
+        
+        // Subscribe to channel with error handling and retry logic
+        Task {
+            await channel.subscribe { [weak self] status in
+                await MainActor.run {
+                    self?.handleConnectionStatusChange(status)
+                }
+            }
+        }
+    }
+    
+    /// Disconnect from real-time subscription
+    func disconnectRealtime() {
+        guard let channel = realtimeChannel else { return }
+        
+        print("🔴 Disconnecting real-time subscription...")
+        reconnectionTimer?.invalidate()
+        reconnectionTimer = nil
+        
+        Task {
+            await channel.unsubscribe()
+        }
+        realtimeChannel = nil
+        
+        Task { @MainActor in
+            self.connectionStatus = "Disconnected"
+            self.connectionError = nil
+            self.retryCount = 0
+            self.isRetrying = false
+        }
+    }
+    
+    // MARK: - Connection Status and Error Handling
+    
+    /// Handle real-time connection status changes with retry logic
+    private func handleConnectionStatusChange(_ status: RealtimeChannelV2.Status) {
+        switch status {
+        case .subscribed:
+            connectionStatus = "Connected"
+            connectionError = nil
+            retryCount = 0
+            isRetrying = false
+            reconnectionTimer?.invalidate()
+            print("✅ Real-time subscription active")
+            
+        case .closed:
+            connectionStatus = "Disconnected"
+            print("🔴 Real-time subscription closed")
+            attemptReconnectionIfNeeded()
+            
+        case .channelError(let error):
+            connectionStatus = "Error"
+            connectionError = error.localizedDescription
+            print("❌ Real-time subscription error: \(error)")
+            attemptReconnectionIfNeeded()
+            
+        case .timedOut:
+            connectionStatus = "Timed Out"
+            connectionError = "Connection timed out"
+            print("⏰ Real-time subscription timed out")
+            attemptReconnectionIfNeeded()
+            
+        case .joined:
+            connectionStatus = "Connecting"
+            connectionError = nil
+            print("🔄 Real-time subscription joining...")
+            
+        default:
+            connectionStatus = "Unknown"
+            connectionError = "Unknown connection status"
+            print("❓ Real-time subscription status: \(status)")
+        }
+    }
+    
+    /// Attempt to reconnect to real-time subscription with exponential backoff
+    private func attemptReconnectionIfNeeded() {
+        guard retryCount < maxRetries else {
+            print("❌ Max reconnection attempts reached (\(maxRetries))")
+            connectionStatus = "Failed"
+            connectionError = "Connection failed after \(maxRetries) attempts"
+            isRetrying = false
+            return
+        }
+        
+        guard !isRetrying else {
+            print("🔄 Reconnection already in progress...")
+            return
+        }
+        
+        isRetrying = true
+        retryCount += 1
+        
+        let delay = retryDelay * pow(2.0, Double(retryCount - 1)) // Exponential backoff
+        print("🔄 Attempting reconnection in \(delay) seconds (attempt \(retryCount)/\(maxRetries))...")
+        
+        reconnectionTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                self?.performReconnection()
+            }
+        }
+    }
+    
+    /// Perform the actual reconnection
+    private func performReconnection() {
+        print("🔄 Performing real-time reconnection attempt \(retryCount)")
+        
+        // Clean up existing connection
+        if let channel = realtimeChannel {
+            Task {
+                await channel.unsubscribe()
+            }
+        }
+        realtimeChannel = nil
+        
+        // Start fresh subscription
+        subscribeToListingsRealtime()
+    }
+    
+    /// Manually retry connection (called by user action)
+    func retryConnection() {
+        print("🔄 Manual connection retry requested")
+        retryCount = 0
+        isRetrying = false
+        reconnectionTimer?.invalidate()
+        
+        connectionError = nil
+        performReconnection()
+    }
+    
+    /// Handle incoming real-time events and convert to app events
+    private func handleRealtimeEvent(_ eventType: String, message: RealtimeMessageV2) {
+        print("📨 Real-time event received: \(eventType)")
+        
+        Task { @MainActor in
+            self.lastEventTime = Date()
+            
+            do {
+                switch eventType {
+                case "INSERT":
+                    if let newData = message.payload["new"] as? [String: Any] {
+                        if let jsonData = try? JSONSerialization.data(withJSONObject: newData),
+                           let listing = try? parseListingFromJSON(data: jsonData) {
+                            print("📨 New listing: \(listing.title)")
+                            realtimeEventsSubject.send(.insert(listing))
+                        } else {
+                            print("⚠️ Failed to parse INSERT event data")
+                            handleParsingError("Failed to parse new listing data")
+                        }
+                    }
+                    
+                case "UPDATE":
+                    if let newData = message.payload["new"] as? [String: Any] {
+                        if let jsonData = try? JSONSerialization.data(withJSONObject: newData),
+                           let listing = try? parseListingFromJSON(data: jsonData) {
+                            print("📝 Updated listing: \(listing.title)")
+                            realtimeEventsSubject.send(.update(listing))
+                        } else {
+                            print("⚠️ Failed to parse UPDATE event data")
+                            handleParsingError("Failed to parse updated listing data")
+                        }
+                    }
+                    
+                case "DELETE":
+                    if let oldData = message.payload["old"] as? [String: Any],
+                       let listingId = oldData["id"] as? String {
+                        print("🗑️ Deleted listing ID: \(listingId)")
+                        realtimeEventsSubject.send(.delete(listingId))
+                    } else {
+                        print("⚠️ Failed to parse DELETE event data")
+                        handleParsingError("Failed to parse deleted listing ID")
+                    }
+                    
+                default:
+                    print("❓ Unknown event type: \(eventType)")
+                    handleParsingError("Unknown real-time event type: \(eventType)")
+                }
+                
+            } catch {
+                print("❌ Error processing real-time event: \(error)")
+                handleParsingError("Error processing real-time event: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    /// Handle parsing errors for real-time events
+    private func handleParsingError(_ errorMessage: String) {
+        connectionError = errorMessage
+        print("⚠️ Real-time parsing error: \(errorMessage)")
+        
+        // Don't disconnect for parsing errors, just log them
+        // The connection may still be working for other events
+    }
+    
+    /// Parse a single listing from JSON data
+    private func parseListingFromJSON(data: Data) throws -> Listing {
+        let decoder = JSONDecoder()
+        
+        // Use the same date parsing logic as fetchListingsSimple
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            
+            let formats = [
+                "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ",
+                "yyyy-MM-dd'T'HH:mm:ss.SSSSSZ", 
+                "yyyy-MM-dd'T'HH:mm:ss.SSSSZ",
+                "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
+                "yyyy-MM-dd'T'HH:mm:ss.SSZ",
+                "yyyy-MM-dd'T'HH:mm:ss.SZ",
+                "yyyy-MM-dd'T'HH:mm:ssZ",
+                "yyyy-MM-dd'T'HH:mm:ss"
+            ]
+            
+            for format in formats {
+                dateFormatter.dateFormat = format
+                if let date = dateFormatter.date(from: dateString) {
+                    return date
+                }
+            }
+            
+            if let date = ISO8601DateFormatter().date(from: dateString) {
+                return date
+            }
+            
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date string \(dateString)")
+        }
+        
+        return try decoder.decode(Listing.self, from: data)
     }
     
     // MARK: - Database Setup Functions

@@ -5,11 +5,73 @@ struct ListingsView: View {
     @State private var showingFilters = false
     @State private var selectedListing: Listing?
     @State private var showingPropertyDetail = false
+    @State private var showRealtimeNotification = false
+    @State private var realtimeNotificationMessage = ""
+    @State private var realtimeNotificationType: NotificationType = .info
+    
+    enum NotificationType {
+        case success, info, warning, error
+        
+        var color: Color {
+            switch self {
+            case .success: return .green
+            case .info: return .blue
+            case .warning: return .orange
+            case .error: return .red
+            }
+        }
+        
+        var icon: String {
+            switch self {
+            case .success: return "checkmark.circle"
+            case .info: return "info.circle"
+            case .warning: return "exclamationmark.triangle"
+            case .error: return "xmark.circle"
+            }
+        }
+    }
+    
+    // Computed property for real-time status color
+    private var realtimeStatusColor: Color {
+        switch listingsViewModel.realtimeConnectionStatus {
+        case "Connected":
+            return .green
+        case "Connecting":
+            return .orange
+        case "Disconnected":
+            return .gray
+        case "Error", "Timed Out", "Failed":
+            return .red
+        default:
+            return .gray
+        }
+    }
+    
+    // Computed property for real-time status icon
+    private var realtimeStatusIcon: String {
+        if listingsViewModel.isRealtimeRetrying {
+            return "arrow.clockwise"
+        } else if listingsViewModel.realtimeEnabled {
+            switch listingsViewModel.realtimeConnectionStatus {
+            case "Connected":
+                return "wifi"
+            case "Connecting":
+                return "wifi.exclamationmark"
+            case "Error", "Timed Out", "Failed":
+                return "wifi.slash"
+            default:
+                return "wifi.slash"
+            }
+        } else {
+            return "wifi.slash"
+        }
+    }
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Search Header
+            ZStack(alignment: .top) {
+                VStack(spacing: 0) {
+                // Search Header with Real-time Status
                 VStack(spacing: 12) {
                     HStack {
                         HStack {
@@ -18,10 +80,71 @@ struct ListingsView: View {
                             
                             TextField("Search listings...", text: $listingsViewModel.searchQuery)
                                 .textFieldStyle(PlainTextFieldStyle())
+                                .onChange(of: listingsViewModel.searchQuery) { _ in
+                                    // Debounced search - refresh after user stops typing
+                                    listingsViewModel.refreshListings()
+                                }
                         }
                         .padding(12)
                         .background(Color(.systemGray6))
                         .cornerRadius(10)
+                        
+                        // Real-time status indicator with retry functionality
+                        Menu {
+                            Button(action: {
+                                if listingsViewModel.realtimeEnabled {
+                                    listingsViewModel.disableRealtime()
+                                } else {
+                                    listingsViewModel.enableRealtime()
+                                }
+                            }) {
+                                Label(listingsViewModel.realtimeEnabled ? "Disable Real-time" : "Enable Real-time", 
+                                      systemImage: listingsViewModel.realtimeEnabled ? "wifi.slash" : "wifi")
+                            }
+                            
+                            if listingsViewModel.realtimeConnectionStatus == "Error" || 
+                               listingsViewModel.realtimeConnectionStatus == "Failed" ||
+                               listingsViewModel.realtimeConnectionStatus == "Timed Out" {
+                                Button(action: {
+                                    listingsViewModel.retryRealtimeConnection()
+                                }) {
+                                    Label("Retry Connection", systemImage: "arrow.clockwise")
+                                }
+                            }
+                            
+                            if let error = listingsViewModel.realtimeConnectionError {
+                                Text("Error: \(error)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            if listingsViewModel.realtimeRetryCount > 0 {
+                                Text("Retry \(listingsViewModel.realtimeRetryCount)/3")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Circle()
+                                    .fill(realtimeStatusColor)
+                                    .frame(width: 8, height: 8)
+                                
+                                if listingsViewModel.isRealtimeRetrying {
+                                    Image(systemName: realtimeStatusIcon)
+                                        .font(.caption)
+                                        .rotationEffect(.degrees(listingsViewModel.isRealtimeRetrying ? 360 : 0))
+                                        .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: listingsViewModel.isRealtimeRetrying)
+                                } else {
+                                    Image(systemName: realtimeStatusIcon)
+                                        .font(.caption)
+                                }
+                            }
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(8)
+                        }
                         
                         Button(action: {
                             showingFilters = true
@@ -128,15 +251,53 @@ struct ListingsView: View {
                 } else if listingsViewModel.listings.isEmpty {
                     Spacer()
                     VStack(spacing: 16) {
-                        // Debug Information - Simplified
+                        // Debug Information with Real-time Status
                         VStack(spacing: 8) {
                             Text("Debug Info")
                                 .font(.headline)
                                 .foregroundColor(.primary)
                             
-                            Text("Listings Count: \(listingsViewModel.listingsCount)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Listings Count: \(listingsViewModel.listingsCount)")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        HStack {
+                                            Circle()
+                                                .fill(realtimeStatusColor)
+                                                .frame(width: 6, height: 6)
+                                            Text("Real-time: \(listingsViewModel.realtimeConnectionStatus)")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                        
+                                        if let error = listingsViewModel.realtimeConnectionError {
+                                            Text("Error: \(error)")
+                                                .font(.caption2)
+                                                .foregroundColor(.red)
+                                        }
+                                        
+                                        if listingsViewModel.isRealtimeRetrying {
+                                            HStack {
+                                                ProgressView()
+                                                    .scaleEffect(0.8)
+                                                Text("Retrying... (\(listingsViewModel.realtimeRetryCount)/3)")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.orange)
+                                            }
+                                        }
+                                    }
+                                    
+                                    if let lastUpdate = listingsViewModel.lastUpdateTime {
+                                        Text("Last Update: \(formatDate(lastUpdate))")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                Spacer()
+                            }
                             
                             if listingsViewModel.hasError {
                                 Text("Error: \(listingsViewModel.errorMessage ?? "Unknown")")
@@ -263,6 +424,74 @@ struct ListingsView: View {
                 }
             } message: {
                 Text(listingsViewModel.errorMessage ?? "An error occurred")
+            }
+            .onReceive(listingsViewModel.supabaseService.realtimeEventsSubject) { event in
+                // Show notification banner when real-time events occur
+                switch event {
+                case .insert(let listing):
+                    showRealtimeNotificationBanner("New listing: \(listing.title)", type: .success)
+                case .update(let listing):
+                    showRealtimeNotificationBanner("Updated: \(listing.title)", type: .info)
+                case .delete(_):
+                    showRealtimeNotificationBanner("Listing removed", type: .warning)
+                }
+            }
+        }
+                
+                // Enhanced real-time notification banner
+                if showRealtimeNotification {
+                    VStack {
+                        HStack {
+                            Image(systemName: realtimeNotificationType.icon)
+                                .foregroundColor(realtimeNotificationType.color)
+                            Text(realtimeNotificationMessage)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color(.systemBackground))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(realtimeNotificationType.color, lineWidth: 1)
+                        )
+                        .cornerRadius(8)
+                        .shadow(radius: 4)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                        Spacer()
+                    }
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(1)
+                }
+            }
+        }
+    
+    // MARK: - Helper Functions
+    
+    /// Format date for display in UI
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.dateStyle = .none
+        return formatter.string(from: date)
+    }
+    
+    /// Show a temporary notification banner for real-time events
+    private func showRealtimeNotificationBanner(_ message: String, type: NotificationType = .info) {
+        realtimeNotificationMessage = message
+        realtimeNotificationType = type
+        withAnimation(.easeInOut(duration: 0.3)) {
+            showRealtimeNotification = true
+        }
+        
+        // Auto-hide after 3 seconds (longer for errors)
+        let hideDelay: TimeInterval = type == .error ? 5.0 : 3.0
+        DispatchQueue.main.asyncAfter(deadline: .now() + hideDelay) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showRealtimeNotification = false
             }
         }
     }
