@@ -32,7 +32,9 @@
       "Bash(git stash show:*)",
       "Bash(./gradlew:*)",
       "Bash(git pull:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(git reset:*)",
+      "Bash(swift -frontend -typecheck:*)"
     ],
     "deny": []
   }
