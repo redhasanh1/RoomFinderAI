@@ -11,18 +11,27 @@
 
             if (!mapElement) {
                 console.error('Map container not found');
-                if (mapError) mapError.style.display = 'block';
+                if (mapError) {
+                    mapError.style.display = 'block';
+                    mapError.innerHTML = '<div class="text-yellow-600 p-4">Map view is currently unavailable. Listings are shown below.</div>';
+                }
                 return false;
             }
 
             try {
                 // Set default view to Toronto area for better initial positioning
-                map = L.map('map').setView([43.6532, -79.3832], 10);
+                map = L.map('map', {
+                    errorControl: false,
+                    zoomControl: true,
+                    attributionControl: true
+                }).setView([43.6532, -79.3832], 10);
                 
+                // Use OpenStreetMap tiles (no API key required)
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                     maxZoom: 18,
-                    minZoom: 2
+                    minZoom: 2,
+                    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
                 }).addTo(map);
 
                 // Initialize marker cluster group with simpler settings

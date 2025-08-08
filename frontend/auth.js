@@ -19,6 +19,19 @@ async function initializeAuth(supabase, allowAnonymous = false) {
         return false;
     }
 
+    // Check if Supabase is available
+    if (!supabase) {
+        console.warn('Supabase not available - using local storage only');
+        if (authSection) {
+            authSection.innerHTML = `
+                <a href="/profile">
+                    <img id="profileLogo" src="${currentUser.profileImage || defaultProfileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
+                </a>
+            `;
+        }
+        return true;
+    }
+
     // Check if user exists in profiles table
     let { data: profile, error } = await supabase
         .from('profiles')
