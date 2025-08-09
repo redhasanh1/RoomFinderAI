@@ -46,6 +46,58 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
         return listings.size();
     }
     
+    /**
+     * Get appropriate 3D model placeholder image based on property type
+     */
+    private int getPlaceholderForPropertyType(String propertyType) {
+        if (propertyType == null) {
+            return R.drawable.property_placeholder;
+        }
+        
+        String type = propertyType.toLowerCase().trim();
+        switch (type) {
+            case "apartment":
+            case "apt":
+                // Alternate between tower and student housing styles
+                return Math.random() > 0.5 ? R.drawable.apartment_3d_tower : R.drawable.apartment_3d_student;
+            
+            case "house":
+            case "single family":
+            case "single-family":
+                // Cycle through different house styles for variety
+                int[] houseStyles = {
+                    R.drawable.house_3d_modern,
+                    R.drawable.house_3d_traditional,
+                    R.drawable.house_3d_cottage,
+                    R.drawable.house_3d_spring
+                };
+                return houseStyles[Math.abs(type.hashCode()) % houseStyles.length];
+            
+            case "condo":
+            case "condominium":
+                return R.drawable.condo_3d_modern;
+            
+            case "studio":
+            case "bachelor":
+                // Use apartment tower for studios since they're typically in buildings
+                return R.drawable.apartment_3d_tower;
+                
+            default:
+                // For unknown types, cycle through all 3D models for variety
+                int[] allModels = {
+                    R.drawable.house_3d_modern,
+                    R.drawable.house_3d_traditional,
+                    R.drawable.house_3d_cottage,
+                    R.drawable.house_3d_purple,
+                    R.drawable.house_3d_spring,
+                    R.drawable.apartment_3d_tower,
+                    R.drawable.apartment_3d_student,
+                    R.drawable.condo_3d_modern
+                };
+                return allModels[Math.abs(type.hashCode()) % allModels.length];
+        }
+    }
+    
     class ListingViewHolder extends RecyclerView.ViewHolder {
         private final ItemListingCardBinding binding;
         
@@ -55,17 +107,20 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
         }
         
         void bind(Listing listing, int position) {
+            // Get appropriate placeholder based on property type
+            int placeholderRes = getPlaceholderForPropertyType(listing.getHouseType());
+            
             // Load image
             String imageUrl = listing.getFirstImageUrl();
             if (imageUrl != null && !imageUrl.isEmpty()) {
                 Glide.with(binding.listingImage.getContext())
                     .load(imageUrl)
-                    .placeholder(R.drawable.property_placeholder)
-                    .error(R.drawable.property_placeholder)
+                    .placeholder(placeholderRes)
+                    .error(placeholderRes)
                     .centerCrop()
                     .into(binding.listingImage);
             } else {
-                binding.listingImage.setImageResource(R.drawable.property_placeholder);
+                binding.listingImage.setImageResource(placeholderRes);
             }
             
             // Set text data

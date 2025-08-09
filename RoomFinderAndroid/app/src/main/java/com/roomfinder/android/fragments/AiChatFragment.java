@@ -14,6 +14,8 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import com.roomfinder.android.R;
 import com.roomfinder.android.databinding.FragmentAiChatBinding;
+import com.roomfinder.android.adapters.ChatAdapter;
+import com.roomfinder.android.auth.SupabaseAuthService;
 import com.roomfinder.android.models.ChatMessage;
 import com.roomfinder.android.models.Listing;
 import com.roomfinder.android.services.AiNegotiatorService;
@@ -54,7 +56,17 @@ public class AiChatFragment extends Fragment {
     private void initializeServices() {
         aiService = new AiNegotiatorService();
         mainHandler = new Handler(Looper.getMainLooper());
-        Log.d(TAG, "AI Negotiator services initialized");
+        
+        // Check authentication status
+        SupabaseAuthService authService = SupabaseAuthService.getInstance(requireContext());
+        if (!authService.isAuthenticated()) {
+            // This shouldn't happen if navigation is properly protected, but add safety check
+            Log.w(TAG, "User not authenticated, redirecting to login");
+            requireActivity().onBackPressed(); // Go back to previous screen
+            return;
+        }
+        
+        Log.d(TAG, "AI Negotiator services initialized for authenticated user");
     }
     
     private void checkNetworkConnection() {
@@ -110,6 +122,13 @@ public class AiChatFragment extends Fragment {
     }
     
     private void sendMessage(String messageText) {
+        // Check authentication before processing any AI requests
+        SupabaseAuthService authService = SupabaseAuthService.getInstance(requireContext());
+        if (!authService.isAuthenticated()) {
+            addSystemMessage("❌ Authentication required. Please log in to continue using the AI Negotiator.", ChatMessage.MessageType.ERROR);
+            return;
+        }
+        
         if (!NetworkUtils.isNetworkAvailable(requireContext())) {
             Toast.makeText(getContext(), "No internet connection", Toast.LENGTH_SHORT).show();
             return;
