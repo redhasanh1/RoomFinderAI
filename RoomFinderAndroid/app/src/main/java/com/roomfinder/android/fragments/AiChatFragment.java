@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.roomfinder.android.R;
 import com.roomfinder.android.databinding.FragmentAiChatBinding;
 import com.roomfinder.android.adapters.ChatAdapter;
-import com.roomfinder.android.auth.SupabaseAuthService;
+import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.models.ChatMessage;
 import com.roomfinder.android.models.Listing;
 import com.roomfinder.android.services.AiNegotiatorService;
@@ -58,8 +58,8 @@ public class AiChatFragment extends Fragment {
         mainHandler = new Handler(Looper.getMainLooper());
         
         // Check authentication status
-        SupabaseAuthService authService = SupabaseAuthService.getInstance(requireContext());
-        if (!authService.isAuthenticated()) {
+        AuthManager authManager = AuthManager.getInstance(requireContext());
+        if (!authManager.isUserAuthenticated()) {
             // This shouldn't happen if navigation is properly protected, but add safety check
             Log.w(TAG, "User not authenticated, redirecting to login");
             requireActivity().onBackPressed(); // Go back to previous screen
@@ -123,8 +123,8 @@ public class AiChatFragment extends Fragment {
     
     private void sendMessage(String messageText) {
         // Check authentication before processing any AI requests
-        SupabaseAuthService authService = SupabaseAuthService.getInstance(requireContext());
-        if (!authService.isAuthenticated()) {
+        AuthManager authManager = AuthManager.getInstance(requireContext());
+        if (!authManager.isUserAuthenticated()) {
             addSystemMessage("❌ Authentication required. Please log in to continue using the AI Negotiator.", ChatMessage.MessageType.ERROR);
             return;
         }

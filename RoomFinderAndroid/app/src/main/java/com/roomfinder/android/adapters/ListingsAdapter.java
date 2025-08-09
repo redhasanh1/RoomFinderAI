@@ -58,20 +58,14 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
         switch (type) {
             case "apartment":
             case "apt":
-                // Alternate between tower and student housing styles
-                return Math.random() > 0.5 ? R.drawable.apartment_3d_tower : R.drawable.apartment_3d_student;
+                // Always use professional tower style for consistency
+                return R.drawable.apartment_3d_tower;
             
             case "house":
             case "single family":
             case "single-family":
-                // Cycle through different house styles for variety
-                int[] houseStyles = {
-                    R.drawable.house_3d_modern,
-                    R.drawable.house_3d_traditional,
-                    R.drawable.house_3d_cottage,
-                    R.drawable.house_3d_spring
-                };
-                return houseStyles[Math.abs(type.hashCode()) % houseStyles.length];
+                // Always use modern house style for consistency
+                return R.drawable.house_3d_modern;
             
             case "condo":
             case "condominium":
@@ -79,7 +73,7 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
             
             case "studio":
             case "bachelor":
-                // Use apartment tower for studios since they're typically in buildings
+                // Use professional apartment style for studios since they're typically in buildings
                 return R.drawable.apartment_3d_tower;
                 
             default:
@@ -139,8 +133,8 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
             // Set favorite state (selected state will trigger the selector)
             binding.favoriteButton.setSelected(listing.isFavorite());
             
-            // Set availability status
-            binding.availableStatus.setText("Available Now");
+            // Hide availability status
+            binding.availableStatus.setVisibility(View.GONE);
             
             // Set property type badge
             String propertyType = listing.getHouseType();

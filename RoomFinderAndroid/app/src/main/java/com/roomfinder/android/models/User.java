@@ -30,8 +30,18 @@ public class User {
     @SerializedName("emailVerified")
     private boolean emailVerified;
     
+    // Additional fields matching website user structure
+    @SerializedName("aiChats")
+    private java.util.List<Object> aiChats;
+    
+    @SerializedName("listings")
+    private java.util.List<Object> listings;
+    
     // Constructors
-    public User() {}
+    public User() {
+        this.aiChats = new java.util.ArrayList<>();
+        this.listings = new java.util.ArrayList<>();
+    }
     
     public User(String id, String email, String firstName, String lastName, 
                 String profileImage, boolean emailVerified) {
@@ -41,6 +51,8 @@ public class User {
         this.lastName = lastName;
         this.profileImage = profileImage;
         this.emailVerified = emailVerified;
+        this.aiChats = new java.util.ArrayList<>();
+        this.listings = new java.util.ArrayList<>();
         this.createdAt = getCurrentTimestamp();
         this.updatedAt = getCurrentTimestamp();
     }
@@ -116,6 +128,22 @@ public class User {
     
     public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
+    }
+    
+    public java.util.List<Object> getAiChats() {
+        return aiChats != null ? aiChats : new java.util.ArrayList<>();
+    }
+    
+    public void setAiChats(java.util.List<Object> aiChats) {
+        this.aiChats = aiChats;
+    }
+    
+    public java.util.List<Object> getListings() {
+        return listings != null ? listings : new java.util.ArrayList<>();
+    }
+    
+    public void setListings(java.util.List<Object> listings) {
+        this.listings = listings;
     }
     
     // Helper methods

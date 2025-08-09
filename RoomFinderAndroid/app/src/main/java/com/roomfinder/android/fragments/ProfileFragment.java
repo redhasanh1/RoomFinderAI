@@ -13,7 +13,8 @@ import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
 import com.roomfinder.android.R;
 import com.roomfinder.android.activities.LoginActivity;
-import com.roomfinder.android.auth.SupabaseAuthService;
+import com.roomfinder.android.auth.AuthManager;
+import com.roomfinder.android.auth.AuthService;
 import com.roomfinder.android.databinding.FragmentProfileBinding;
 import com.roomfinder.android.models.User;
 
@@ -23,7 +24,7 @@ public class ProfileFragment extends Fragment {
     private static final int LOGIN_REQUEST_CODE = 1001;
     
     private FragmentProfileBinding binding;
-    private SupabaseAuthService authService;
+    private AuthManager authManager;
     private User currentUser;
     
     @Override
@@ -36,13 +37,13 @@ public class ProfileFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
-        authService = SupabaseAuthService.getInstance(requireContext());
+        authManager = AuthManager.getInstance(requireContext());
         checkAuthStatus();
         setupViews();
     }
     
     private void checkAuthStatus() {
-        currentUser = authService.getCurrentUser();
+        currentUser = authManager.getCurrentUser();
         Log.d(TAG, "Current user: " + (currentUser != null ? currentUser.getEmail() : "none"));
     }
     
@@ -144,22 +145,13 @@ public class ProfileFragment extends Fragment {
     }
     
     private void performLogout() {
-        authService.signOut(new SupabaseAuthService.SignOutCallback() {
-            @Override
-            public void onSuccess() {
-                Log.d(TAG, "Logout successful");
-                Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show();
-                
-                // Refresh view
-                currentUser = null;
-                setupViews();
-            }
-            
-            @Override
-            public void onError(String error) {
-                Log.e(TAG, "Logout error: " + error);
-                Toast.makeText(requireContext(), "Logout failed: " + error, Toast.LENGTH_SHORT).show();
-            }
-        });
+        // Use AuthManager logout (simpler than old callback system)
+        authManager.logout();
+        Log.d(TAG, "Logout successful");
+        Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show();
+        
+        // Refresh view
+        currentUser = null;
+        setupViews();
     }
 }
