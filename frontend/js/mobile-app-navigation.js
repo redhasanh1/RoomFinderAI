@@ -63,9 +63,30 @@ class MobileAppNavigation {
                 e.preventDefault();
                 const onclick = item.getAttribute('onclick');
                 if (onclick) {
-                    // Execute the onclick function
+                    // Parse and execute the onclick function safely
                     try {
-                        eval(onclick);
+                        // Common onclick patterns in the app
+                        if (onclick.includes('logout()')) {
+                            if (typeof window.logout === 'function') {
+                                window.logout();
+                            }
+                        } else if (onclick.includes('showSettings()')) {
+                            if (typeof window.showSettings === 'function') {
+                                window.showSettings();
+                            }
+                        } else if (onclick.includes('showProfile()')) {
+                            if (typeof window.showProfile === 'function') {
+                                window.showProfile();
+                            }
+                        } else if (onclick.includes('window.location')) {
+                            // Handle navigation
+                            const match = onclick.match(/window\.location(?:\.href)?\s*=\s*['"]([^'"]+)['"]/);
+                            if (match) {
+                                window.location.href = match[1];
+                            }
+                        } else {
+                            console.warn('Unhandled onclick:', onclick);
+                        }
                     } catch (error) {
                         console.warn('Error executing menu item click:', error);
                     }
