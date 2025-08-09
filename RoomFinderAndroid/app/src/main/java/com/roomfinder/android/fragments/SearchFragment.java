@@ -1,9 +1,12 @@
 package com.roomfinder.android.fragments;
 
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.DecelerateInterpolator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -102,6 +105,9 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
         // Setup search suggestions
         setupSearchSuggestions();
         
+        // Start search button glow animation
+        animateSearchButtonGlow();
+        
         // Clear filters button
         if (binding.clearFiltersButton != null) {
             binding.clearFiltersButton.setOnClickListener(v -> clearFilters());
@@ -148,9 +154,42 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
             return false;
         });
         
-        // Clear search button
+        // Search button (new floating button)
+        if (binding.searchButton != null) {
+            binding.searchButton.setOnClickListener(v -> {
+                animateButtonClick(v);
+                animateSearchButtonRotation();
+                performSearch();
+            });
+        }
+        
+        // Voice search button
+        if (binding.voiceSearchButton != null) {
+            binding.voiceSearchButton.setOnClickListener(v -> {
+                animateButtonClick(v);
+                // TODO: Implement voice search
+                showToast("Voice search coming soon!");
+            });
+        }
+        
+        // Quick filter buttons
+        setupQuickFilters();
+        
+        // Advanced filters toggle
+        if (binding.filtersHeader != null) {
+            binding.filtersHeader.setOnClickListener(v -> {
+                animateButtonClick(v);
+                toggleAdvancedFilters();
+            });
+        }
+        
+        // Sort functionality
+        setupModernSort();
+        
+        // Clear search button (legacy compatibility)
         if (binding.clearSearchButton != null) {
             binding.clearSearchButton.setOnClickListener(v -> {
+                animateButtonClick(v);
                 binding.searchInput.setText("");
                 binding.searchInput.clearFocus();
             });
@@ -167,9 +206,9 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
     }
     
     private void setupEnhancedFilters() {
-        // Toggle filters visibility
-        if (binding.toggleFiltersButton != null) {
-            binding.toggleFiltersButton.setOnClickListener(v -> toggleFilters());
+        // Toggle filters visibility using the clickable header
+        if (binding.filtersHeader != null) {
+            binding.filtersHeader.setOnClickListener(v -> toggleFilters());
         }
         
         // Clear all filters
@@ -194,22 +233,38 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
     }
     
     private void setupSorting() {
-        // Setup sort spinner
-        if (binding.sortSpinner != null) {
-            ArrayAdapter<SortOption> sortAdapter = new ArrayAdapter<>(requireContext(), 
-                android.R.layout.simple_spinner_item, SortOption.values());
-            sortAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            binding.sortSpinner.setAdapter(sortAdapter);
-            
-            binding.sortSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
-                    currentSort = SortOption.values()[position];
-                    sortResults();
-                }
-                
-                @Override
-                public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        // Setup modern chip-based sorting
+        if (binding.sortButton != null) {
+            binding.sortButton.setOnClickListener(v -> toggleSortOptions());
+        }
+        
+        // Setup sort chip listeners
+        if (binding.sortRelevance != null) {
+            binding.sortRelevance.setOnClickListener(v -> {
+                currentSort = SortOption.RELEVANCE;
+                sortResults();
+                toggleSortOptions();
+            });
+        }
+        if (binding.sortPriceLow != null) {
+            binding.sortPriceLow.setOnClickListener(v -> {
+                currentSort = SortOption.PRICE_LOW_HIGH;
+                sortResults();
+                toggleSortOptions();
+            });
+        }
+        if (binding.sortPriceHigh != null) {
+            binding.sortPriceHigh.setOnClickListener(v -> {
+                currentSort = SortOption.PRICE_HIGH_LOW;
+                sortResults();
+                toggleSortOptions();
+            });
+        }
+        if (binding.sortNewest != null) {
+            binding.sortNewest.setOnClickListener(v -> {
+                currentSort = SortOption.NEWEST;
+                sortResults();
+                toggleSortOptions();
             });
         }
     }
@@ -238,22 +293,55 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
     private void showSearchSuggestions() {
         if (binding.searchSuggestionsContainer != null) {
             binding.searchSuggestionsContainer.setVisibility(View.VISIBLE);
+            binding.searchSuggestionsContainer.setAlpha(0f);
+            binding.searchSuggestionsContainer.animate()
+                .alpha(1f)
+                .setDuration(200)
+                .start();
         }
     }
     
     private void hideSearchSuggestions() {
         if (binding.searchSuggestionsContainer != null) {
-            binding.searchSuggestionsContainer.setVisibility(View.GONE);
+            binding.searchSuggestionsContainer.animate()
+                .alpha(0f)
+                .setDuration(150)
+                .withEndAction(() -> binding.searchSuggestionsContainer.setVisibility(View.GONE))
+                .start();
         }
     }
     
     private void toggleFilters() {
         filtersVisible = !filtersVisible;
+        
         if (binding.filtersScrollView != null) {
-            binding.filtersScrollView.setVisibility(filtersVisible ? View.VISIBLE : View.GONE);
+            if (filtersVisible) {
+                binding.filtersScrollView.setVisibility(View.VISIBLE);
+                binding.filtersScrollView.setAlpha(0f);
+                binding.filtersScrollView.animate()
+                    .alpha(1f)
+                    .setDuration(300)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
+            } else {
+                binding.filtersScrollView.animate()
+                    .alpha(0f)
+                    .setDuration(200)
+                    .withEndAction(() -> binding.filtersScrollView.setVisibility(View.GONE))
+                    .start();
+            }
         }
-        if (binding.toggleFiltersButton != null) {
-            binding.toggleFiltersButton.setText(filtersVisible ? "Hide Filters" : "Show Filters");
+        
+        // Update expand icon rotation
+        if (binding.filterExpandIcon != null) {
+            ObjectAnimator rotateAnimator = ObjectAnimator.ofFloat(
+                binding.filterExpandIcon, 
+                "rotation", 
+                filtersVisible ? 0f : 90f
+            );
+            rotateAnimator.setDuration(300);
+            rotateAnimator.setInterpolator(new DecelerateInterpolator());
+            rotateAnimator.start();
         }
     }
     
@@ -278,12 +366,13 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
             activeFilters.addAll(selectedPropertyTypes);
         }
         
-        if (binding.activeFiltersContainer != null && binding.activeFiltersText != null) {
+        if (binding.activeFiltersContainer != null) {
             if (activeFilters.isEmpty()) {
                 binding.activeFiltersContainer.setVisibility(View.GONE);
             } else {
                 binding.activeFiltersContainer.setVisibility(View.VISIBLE);
-                binding.activeFiltersText.setText(String.join(", ", activeFilters));
+                // Active filters are now shown via chips in activeFiltersChips container
+                updateActiveFiltersChips(activeFilters);
             }
         }
     }
@@ -540,5 +629,225 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
     public void onFavoriteClick(Listing listing, int position) {
         listing.setFavorite(!listing.isFavorite());
         adapter.notifyItemChanged(position);
+    }
+    
+    private void animateButtonClick(View button) {
+        button.animate()
+            .scaleX(0.95f)
+            .scaleY(0.95f)
+            .setDuration(100)
+            .withEndAction(() -> 
+                button.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(100)
+                    .start()
+            )
+            .start();
+    }
+    
+    private void animateSearchButtonGlow() {
+        if (binding.searchButton != null) {
+            ValueAnimator glowAnimator = ValueAnimator.ofFloat(0.8f, 1f, 0.8f);
+            glowAnimator.setDuration(2000);
+            glowAnimator.setRepeatCount(ValueAnimator.INFINITE);
+            glowAnimator.addUpdateListener(animation -> {
+                float alpha = (Float) animation.getAnimatedValue();
+                binding.searchButton.setAlpha(alpha);
+            });
+            glowAnimator.start();
+        }
+    }
+    
+    private void animateSearchButtonRotation() {
+        if (binding.searchButton != null) {
+            ObjectAnimator rotationAnimator = ObjectAnimator.ofFloat(binding.searchButton, "rotation", 0f, 360f);
+            rotationAnimator.setDuration(500);
+            rotationAnimator.setInterpolator(new DecelerateInterpolator());
+            rotationAnimator.start();
+        }
+    }
+    
+    private void setupQuickFilters() {
+        // Quick filter click handlers
+        if (binding.quickFilterPrice != null) {
+            binding.quickFilterPrice.setOnClickListener(v -> {
+                animateButtonClick(v);
+                // TODO: Show price filter dialog
+                showToast("Price filter coming soon!");
+            });
+        }
+        
+        if (binding.quickFilterLocation != null) {
+            binding.quickFilterLocation.setOnClickListener(v -> {
+                animateButtonClick(v);
+                // TODO: Show location filter dialog
+                showToast("Location filter coming soon!");
+            });
+        }
+        
+        if (binding.quickFilterType != null) {
+            binding.quickFilterType.setOnClickListener(v -> {
+                animateButtonClick(v);
+                // TODO: Show type filter dialog
+                showToast("Property type filter coming soon!");
+            });
+        }
+        
+        if (binding.quickFilterBeds != null) {
+            binding.quickFilterBeds.setOnClickListener(v -> {
+                animateButtonClick(v);
+                // TODO: Show bedrooms filter dialog
+                showToast("Bedrooms filter coming soon!");
+            });
+        }
+        
+        if (binding.quickFilterMore != null) {
+            binding.quickFilterMore.setOnClickListener(v -> {
+                animateButtonClick(v);
+                toggleAdvancedFilters();
+            });
+        }
+    }
+    
+    private void setupModernSort() {
+        if (binding.sortButton != null) {
+            binding.sortButton.setOnClickListener(v -> {
+                animateButtonClick(v);
+                toggleSortOptions();
+            });
+        }
+        
+        // Sort chip selections
+        if (binding.sortChipGroup != null) {
+            binding.sortChipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
+                if (!checkedIds.isEmpty()) {
+                    // Handle sort selection
+                    applySortOption(checkedIds.get(0));
+                }
+            });
+        }
+    }
+    
+    private void toggleAdvancedFilters() {
+        filtersVisible = !filtersVisible;
+        
+        if (binding.filtersScrollView != null) {
+            if (filtersVisible) {
+                binding.filtersScrollView.setVisibility(View.VISIBLE);
+                binding.filtersScrollView.setAlpha(0f);
+                binding.filtersScrollView.animate()
+                    .alpha(1f)
+                    .setDuration(300)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
+            } else {
+                binding.filtersScrollView.animate()
+                    .alpha(0f)
+                    .setDuration(200)
+                    .withEndAction(() -> binding.filtersScrollView.setVisibility(View.GONE))
+                    .start();
+            }
+        }
+        
+        // Update expand icon rotation
+        if (binding.filterExpandIcon != null) {
+            ObjectAnimator rotateAnimator = ObjectAnimator.ofFloat(
+                binding.filterExpandIcon, 
+                "rotation", 
+                filtersVisible ? 90f : 0f
+            );
+            rotateAnimator.setDuration(300);
+            rotateAnimator.setInterpolator(new DecelerateInterpolator());
+            rotateAnimator.start();
+        }
+    }
+    
+    private void toggleSortOptions() {
+        boolean isVisible = binding.sortOptionsContainer.getVisibility() == View.VISIBLE;
+        
+        if (!isVisible) {
+            binding.sortOptionsContainer.setVisibility(View.VISIBLE);
+            binding.sortOptionsContainer.setAlpha(0f);
+            binding.sortOptionsContainer.animate()
+                .alpha(1f)
+                .setDuration(200)
+                .start();
+        } else {
+            binding.sortOptionsContainer.animate()
+                .alpha(0f)
+                .setDuration(150)
+                .withEndAction(() -> binding.sortOptionsContainer.setVisibility(View.GONE))
+                .start();
+        }
+    }
+    
+    private void applySortOption(int chipId) {
+        // Map chip IDs to sort options
+        SortOption newSort = currentSort; // default
+        
+        if (chipId == binding.sortRelevance.getId()) {
+            newSort = SortOption.RELEVANCE;
+        } else if (chipId == binding.sortPriceLow.getId()) {
+            newSort = SortOption.PRICE_LOW_HIGH;
+        } else if (chipId == binding.sortPriceHigh.getId()) {
+            newSort = SortOption.PRICE_HIGH_LOW;
+        } else if (chipId == binding.sortNewest.getId()) {
+            newSort = SortOption.NEWEST;
+        }
+        
+        if (newSort != currentSort) {
+            currentSort = newSort;
+            sortResults();
+        }
+        
+        // Hide sort options after selection
+        toggleSortOptions();
+    }
+    
+    private void showToast(String message) {
+        if (getContext() != null) {
+            android.widget.Toast.makeText(getContext(), message, android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void updateActiveFiltersChips(List<String> activeFilters) {
+        if (binding.activeFiltersChips != null) {
+            // Clear existing chips
+            binding.activeFiltersChips.removeAllViews();
+            
+            // Add chip for each active filter
+            for (String filter : activeFilters) {
+                Chip chip = new Chip(requireContext());
+                chip.setText(filter);
+                chip.setCloseIconVisible(true);
+                chip.setOnCloseIconClickListener(v -> {
+                    // Remove this filter when close icon is clicked
+                    removeActiveFilter(filter);
+                });
+                binding.activeFiltersChips.addView(chip);
+            }
+        }
+    }
+    
+    private void removeActiveFilter(String filter) {
+        // Remove from property types if it matches
+        selectedPropertyTypes.removeIf(type -> type.toLowerCase().contains(filter.toLowerCase()));
+        
+        // Reset other filters if they match
+        if (filter.toLowerCase().contains("price") || filter.contains("$")) {
+            minPrice = null;
+            maxPrice = null;
+        }
+        if (filter.toLowerCase().contains("bed")) {
+            selectedBedrooms = null;
+        }
+        if (filter.toLowerCase().contains("location")) {
+            selectedLocation = null;
+        }
+        
+        // Update display and perform new search
+        updateActiveFiltersDisplay();
+        performSearch();
     }
 }
