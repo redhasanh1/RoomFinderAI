@@ -523,8 +523,8 @@
     </style>
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen">
-    <!-- Header -->
-    <header class="fixed top-0 w-full premium-header z-50">
+    <!-- Premium Header -->
+    <header id="header" class="fixed top-0 w-full premium-header z-50">
         <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
             <!-- Mobile Layout -->
             <div class="flex items-center justify-between w-full md:w-auto">
@@ -584,7 +584,10 @@
             <!-- Desktop Auth -->
             <div class="desktop-auth hidden md:block">
                 <div id="authSection">
-                    <a href="login.html" class="auth-link">Login/Register</a>
+                    <!-- Default content before JS loads -->
+                    <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                        Login/Register
+                    </a>
                 </div>
             </div>
         </nav>
@@ -594,7 +597,7 @@
             <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
             <div class="mobile-menu-content">
                 <div class="mobile-menu-header">
-                    <div class="font-bold brand-logo">RoomFinderAI</div>
+                    <div class="text-lg font-bold gradient-text">RoomFinderAI</div>
                     <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
                 </div>
                 
@@ -638,9 +641,10 @@
                         </div>
                     </div>
                     
-                    <!-- Auth Section -->
-                    <div class="mobile-section">
-                        <a href="login.html" class="mobile-menu-item" onclick="closeMobileMenu()">🔐 Login/Register</a>
+                    <!-- Mobile Auth -->
+                    <div id="mobileAuthSection">
+                        <!-- Default content before JS loads -->
+                        <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
                     </div>
                 </div>
             </div>
