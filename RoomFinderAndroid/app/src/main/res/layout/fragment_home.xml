@@ -35,7 +35,7 @@
                         android:layout_width="100dp"
                         android:layout_height="100dp"
                         android:layout_marginEnd="20dp"
-                        android:src="@drawable/house_model_hero"
+                        android:src="@drawable/house_3d_modern"
                         android:scaleType="fitCenter"
                         android:alpha="0.9" />
 
@@ -257,7 +257,7 @@
             <ImageView
                 android:layout_width="120dp"
                 android:layout_height="120dp"
-                android:src="@drawable/house_model_hero"
+                android:src="@drawable/house_3d_modern"
                 android:alpha="0.5" />
 
             <TextView

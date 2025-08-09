@@ -1,14 +1,19 @@
 package com.roomfinder.android.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.roomfinder.android.R;
+import com.roomfinder.android.activities.LoginActivity;
+import com.roomfinder.android.auth.SupabaseAuthService;
 import com.roomfinder.android.databinding.FragmentChatBinding;
 
 public class ChatFragment extends Fragment {
@@ -43,12 +48,36 @@ public class ChatFragment extends Fragment {
     }
     
     private void navigateToAiChat() {
-        AiChatFragment aiChatFragment = new AiChatFragment();
-        getParentFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragmentContainer, aiChatFragment)
-                .addToBackStack(null)
-                .commit();
+        SupabaseAuthService authService = SupabaseAuthService.getInstance(requireContext());
+        
+        if (authService.isAuthenticated()) {
+            // User is logged in, proceed to AI Chat
+            AiChatFragment aiChatFragment = new AiChatFragment();
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, aiChatFragment)
+                    .addToBackStack(null)
+                    .commit();
+        } else {
+            // User is not logged in, show login requirement dialog
+            showLoginRequiredDialog();
+        }
+    }
+    
+    private void showLoginRequiredDialog() {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Login Required")
+                .setMessage("You need to sign in to access the AI Negotiator. The AI assistant helps you find and negotiate rental properties.")
+                .setPositiveButton("Sign In", (dialog, which) -> {
+                    // Navigate to login activity
+                    Intent loginIntent = new Intent(requireContext(), LoginActivity.class);
+                    startActivity(loginIntent);
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                    dialog.dismiss();
+                })
+                .setIcon(R.drawable.ic_bot)
+                .show();
     }
     
     private void navigateToNormalChat() {

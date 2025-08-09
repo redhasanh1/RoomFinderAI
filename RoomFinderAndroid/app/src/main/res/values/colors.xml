@@ -58,6 +58,15 @@
     <color name="heart_red_dim">#CC5555</color>
     <color name="heart_red_bright">#FF0000</color>
     
+    <!-- AI Chat Colors -->
+    <color name="ai_chat_primary">#2196F3</color>
+    <color name="ai_chat_secondary">#1976D2</color>
+    
+    <!-- Material 3 Colors -->
+    <color name="primary">@color/purple_primary</color>
+    <color name="outline">#E0E0E0</color>
+    <color name="outline_variant">#F0F0F0</color>
+    
     <!-- Transparent -->
     <color name="transparent">#00000000</color>
     <color name="black_overlay">#66000000</color>
