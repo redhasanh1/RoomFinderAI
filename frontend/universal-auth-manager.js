@@ -97,6 +97,16 @@ function updateAuthSection() {
         return;
     }
 
+    // Check if we're on the login page and hide auth section
+    const currentPath = window.location.pathname;
+    const isLoginPage = currentPath.endsWith('/login.html') || currentPath.endsWith('login.html') || currentPath === '/login';
+    
+    if (isLoginPage) {
+        authSection.style.display = 'none';
+        console.log('✅ Auth section hidden on login page');
+        return;
+    }
+
     const currentUser = getCurrentUser();
     
     if (isUserAuthenticated() && currentUser) {
