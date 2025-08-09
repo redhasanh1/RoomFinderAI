@@ -6,8 +6,8 @@
     <title>Student Housing Hub - RoomFinderAI</title>
 
     <!-- Scripts and styles -->
-    <script src="universal-auth-protection.js"></script>
-    <script src="universal-auth-manager.js"></script>
+    <script src="universal-auth-protection.js?v=2.0.2"></script>
+    <script src="universal-auth-manager.js?v=2.0.1"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -57,6 +57,21 @@
             background: var(--success-gradient);
         }
         
+        /* Brand Logo */
+        .brand-logo {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            transition: var(--transition-smooth);
+        }
+        
+        .brand-logo:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+
         /* Gradient text */
         .gradient-text {
             background: var(--primary-gradient);
@@ -746,7 +761,7 @@
             <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
             <div class="mobile-menu-content">
                 <div class="mobile-menu-header">
-                    <div class="text-lg font-bold gradient-text">RoomFinderAI</div>
+                    <div class="text-lg font-bold brand-logo">RoomFinderAI</div>
                     <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
                 </div>
                 

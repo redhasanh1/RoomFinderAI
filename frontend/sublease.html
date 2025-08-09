@@ -98,10 +98,10 @@
     </script>
     
     <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
-    <script src="universal-auth-protection.js"></script>
+    <script src="universal-auth-protection.js?v=2.0.2"></script>
     
     <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
-    <script src="universal-auth-manager.js"></script>
+    <script src="universal-auth-manager.js?v=2.0.1"></script>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
@@ -112,9 +112,30 @@
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
         }
         
+        /* CSS Variables */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --transition-smooth: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+        }
+
+        /* Brand Logo */
+        .brand-logo {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            transition: var(--transition-smooth);
+        }
+        
+        .brand-logo:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+
         /* Gradient text */
         .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -506,7 +527,7 @@
         <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
             <!-- Mobile Layout -->
             <div class="flex items-center justify-between w-full md:w-auto">
-                <div class="text-xl md:text-2xl font-bold gradient-text">RoomFinderAI</div>
+                <div class="text-xl md:text-2xl font-bold brand-logo font-display">RoomFinderAI</div>
                 
                 <!-- Mobile Menu Button -->
                 <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
@@ -572,7 +593,7 @@
             <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
             <div class="mobile-menu-content">
                 <div class="mobile-menu-header">
-                    <div class="text-lg font-bold gradient-text">RoomFinderAI</div>
+                    <div class="text-lg font-bold brand-logo">RoomFinderAI</div>
                     <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
                 </div>
                 
