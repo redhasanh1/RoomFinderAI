@@ -318,6 +318,19 @@ app.use(express.static(staticPath, {
     }
 }));
 
+// Serve frontend files specifically (for /js/, /css/, etc.)
+const frontendPath = path.join(__dirname, '..', 'frontend');
+console.log('🌐 Serving frontend files from:', frontendPath);
+app.use(express.static(frontendPath, {
+    setHeaders: (res, path) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        // Set proper MIME type for JS files
+        if (path.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        }
+    }
+}));
+
 // Specifically serve 3D House Models folder with URL encoding support
 const houseModelsPath = path.join(__dirname, '..', '3D House Models');
 console.log('🏠 Serving 3D House Models from:', houseModelsPath);
