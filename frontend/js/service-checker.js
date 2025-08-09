@@ -165,5 +165,5 @@ if (document.readyState === 'loading') {
     window.serviceChecker.init();
 }
 
-// Export for module usage
-export default ServiceChecker;
+// Export for module usage (commented out for script tag usage)
+// export default ServiceChecker;
