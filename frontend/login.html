@@ -151,6 +151,17 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
         }
+
+        /* Hide any extra Google or Apple SDK generated elements */
+        div[id*="google"]:not(#googleSignInBtn),
+        div[class*="google"]:not(.social-btn),
+        div[id*="apple"]:not(#appleSignInBtn),
+        div[class*="apple"]:not(.social-btn),
+        iframe[src*="google"],
+        iframe[src*="apple"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
         
         /* Success animation */
         @keyframes success-pulse {
@@ -733,13 +744,11 @@
             }
             
             try {
+                // Directly trigger the sign-in flow without rendering additional buttons
                 google.accounts.id.prompt((notification) => {
                     if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        // Fallback to manual trigger
-                        google.accounts.id.renderButton(
-                            document.getElementById('googleSignInBtn'),
-                            { theme: 'outline', size: 'large', width: '100%' }
-                        );
+                        // If prompt doesn't work, show message instead of rendering button
+                        alert('Please enable popups and try again, or use email/password login.');
                     }
                 });
             } catch (error) {
