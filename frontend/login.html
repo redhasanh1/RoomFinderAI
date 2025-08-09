@@ -158,9 +158,49 @@
         div[id*="apple"]:not(#appleSignInBtn),
         div[class*="apple"]:not(.social-btn),
         iframe[src*="google"],
-        iframe[src*="apple"] {
+        iframe[src*="apple"],
+        /* Hide any positioned elements that might contain icons */
+        div[style*="position: absolute"],
+        div[style*="position: fixed"],
+        /* Hide any FontAwesome icons outside our buttons */
+        .fa-google:not(.social-btn .fa-google),
+        .fa-apple:not(.social-btn .fa-apple),
+        .fab.fa-google:not(.social-btn .fab.fa-google),
+        .fab.fa-apple:not(.social-btn .fab.fa-apple) {
             display: none !important;
             visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        /* Ensure our social buttons container has no overflow issues */
+        .social-btn {
+            position: relative !important;
+            z-index: 10 !important;
+        }
+
+        /* Hide any elements underneath the social login area */
+        .social-btn + *:not(.social-btn),
+        .social-btn ~ *:not(.social-btn):not(#toggleForm):not(.text-center) {
+            display: none !important;
+        }
+
+        /* Aggressively hide any elements that might appear on hover */
+        *[style*="display: block"]:not(.social-btn):not(.auth-container-grand),
+        *[style*="visibility: visible"]:not(.social-btn):not(.auth-container-grand),
+        *[class*="g_id"]:not(.social-btn),
+        *[id*="g_id"]:not(.social-btn),
+        div[jscontroller]:not(.social-btn),
+        div[jsaction]:not(.social-btn) {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        /* Specifically target common Google/Apple SDK element patterns */
+        [data-callback]:not(.social-btn),
+        [data-client_id]:not(.social-btn),
+        div[role="button"]:not(.social-btn):not(#googleSignInBtn):not(#appleSignInBtn) {
+            display: none !important;
         }
         
         /* Success animation */
@@ -722,10 +762,14 @@
                     client_id: oauthConfig.googleClientId,
                     callback: handleGoogleResponse,
                     auto_select: false,
-                    cancel_on_tap_outside: true
+                    cancel_on_tap_outside: true,
+                    use_fedcm_for_prompt: false
                 });
                 googleInitialized = true;
                 console.log('✅ Google Sign-In initialized');
+                
+                // Prevent any automatic rendering
+                google.accounts.id.disableAutoSelect();
             }
         }
 
