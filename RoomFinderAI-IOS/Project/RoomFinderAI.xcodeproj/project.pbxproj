@@ -31,6 +31,7 @@
 
 /* Begin PBXFileReference section */
 		1574BBFE50B4AAE210BE0EA3 /* SimpleAuthViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SimpleAuthViewModel.swift; path = ../Source/RoomFinderAI/Services/SimpleAuthViewModel.swift; sourceTree = "<group>"; };
+		A01234567890123456789012 /* RoomFinderAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoomFinderAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6C1F874F608B396521435D67 /* SubleaseView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SubleaseView.swift; path = ../Source/RoomFinderAI/Views/SubleaseView.swift; sourceTree = "<group>"; };
 		73490D0B6F586AC9EFB7939D /* MockDataService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MockDataService.swift; path = ../Source/RoomFinderAI/Services/MockDataService.swift; sourceTree = "<group>"; };
 		79D3FBDBA34C4343741F6B78 /* SharedComponents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SharedComponents.swift; path = ../Source/RoomFinderAI/Components/SharedComponents.swift; sourceTree = "<group>"; };
@@ -126,6 +127,7 @@
 		A01234567890123456789057 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				A01234567890123456789012 /* RoomFinderAI.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -223,6 +225,7 @@
 				0D67B50174B5916812DE96D9 /* Supabase */,
 			);
 			productName = RoomFinderAI;
+			productReference = A01234567890123456789012 /* RoomFinderAI.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
