@@ -13,7 +13,7 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.roomfinder.android.R;
 import com.roomfinder.android.activities.LoginActivity;
-import com.roomfinder.android.auth.SupabaseAuthService;
+import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.databinding.FragmentChatBinding;
 
 public class ChatFragment extends Fragment {
@@ -48,9 +48,9 @@ public class ChatFragment extends Fragment {
     }
     
     private void navigateToAiChat() {
-        SupabaseAuthService authService = SupabaseAuthService.getInstance(requireContext());
+        AuthManager authManager = AuthManager.getInstance(requireContext());
         
-        if (authService.isAuthenticated()) {
+        if (authManager.isUserAuthenticated()) {
             // User is logged in, proceed to AI Chat
             AiChatFragment aiChatFragment = new AiChatFragment();
             getParentFragmentManager()

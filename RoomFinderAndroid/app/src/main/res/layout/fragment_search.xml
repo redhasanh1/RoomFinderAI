@@ -6,44 +6,219 @@
     android:layout_height="match_parent"
     android:background="@color/background">
 
-    <!-- Search Bar -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/searchLayout"
+    <!-- Enhanced Search Bar -->
+    <LinearLayout
+        android:id="@+id/searchContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        style="@style/Widget.RoomFinder.TextInputLayout"
+        android:background="@drawable/search_bar_background"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:elevation="4dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/searchButton">
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <com.google.android.material.textfield.TextInputEditText
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_search"
+            android:tint="@color/purple_primary" />
+
+        <EditText
             android:id="@+id/searchInput"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:background="@null"
+            android:hint="Try 'downtown apartments', 'under $1200', '2 bed'..."
+            android:textColorHint="@color/gray_500"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:inputType="text"
+            android:imeOptions="actionSearch" />
+
+        <ImageView
+            android:id="@+id/clearSearchButton"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:tint="@color/gray_500"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/voiceSearchButton"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_settings"
+            android:tint="@color/purple_primary"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
+
+    <!-- Active Filters Summary -->
+    <LinearLayout
+        android:id="@+id/activeFiltersContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/searchContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Active filters:"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/activeFiltersText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/purple_primary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/clearAllFiltersButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Clear All"
+            android:textColor="@color/purple_primary"
+            android:textSize="12sp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp" />
+
+    </LinearLayout>
+
+    <!-- Search Suggestions -->
+    <LinearLayout
+        android:id="@+id/searchSuggestionsContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp"
+        android:visibility="gone"
+        android:background="@color/surface"
+        android:elevation="2dp"
+        app:layout_constraintTop_toBottomOf="@id/activeFiltersContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Popular searches:"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/searchSuggestionsChips"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/search_hint"
-            android:imeOptions="actionSearch"
-            android:inputType="text" />
+            app:chipSpacingHorizontal="8dp">
 
-    </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.chip.Chip
+                android:id="@+id/suggestionDowntown"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Downtown"
+                android:textSize="12sp"
+                android:checkable="false" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/searchButton"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_marginEnd="16dp"
-        android:text="Search"
-        style="@style/Widget.RoomFinder.Button"
-        app:layout_constraintTop_toTopOf="@id/searchLayout"
-        app:layout_constraintBottom_toBottomOf="@id/searchLayout"
-        app:layout_constraintEnd_toEndOf="parent" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/suggestionAffordable"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Under $1000"
+                android:textSize="12sp"
+                android:checkable="false" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/suggestion2Bed"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2 bedroom"
+                android:textSize="12sp"
+                android:checkable="false" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/suggestionPetFriendly"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pet friendly"
+                android:textSize="12sp"
+                android:checkable="false" />
+
+        </com.google.android.material.chip.ChipGroup>
+
+    </LinearLayout>
 
     <!-- Filters Section -->
+    <LinearLayout
+        android:id="@+id/filtersHeader"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:background="@color/surface"
+        app:layout_constraintTop_toBottomOf="@id/searchSuggestionsContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Filters"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/toggleFiltersButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Filters"
+            android:textColor="@color/purple_primary"
+            android:textSize="14sp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="8dp" />
+
+    </LinearLayout>
+
     <ScrollView
         android:id="@+id/filtersScrollView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/searchLayout"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/filtersHeader"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -53,10 +228,57 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Property Type -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Property Type"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/propertyTypeChipGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:singleSelection="false">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/typeApartment"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Apartment"
+                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/typeHouse"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="House"
+                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/typeCondo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Condo"
+                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/typeStudio"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Studio"
+                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+            </com.google.android.material.chip.ChipGroup>
+
             <!-- Price Range -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:text="Price Range"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp"
@@ -74,28 +296,28 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Under $1000"
-                    style="@style/Widget.Material3.Chip.Filter" />
+                    style="@style/Widget.MaterialComponents.Chip.Filter" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/price1000to1500"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="$1000 - $1500"
-                    style="@style/Widget.Material3.Chip.Filter" />
+                    style="@style/Widget.MaterialComponents.Chip.Filter" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/price1500to2000"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="$1500 - $2000"
-                    style="@style/Widget.Material3.Chip.Filter" />
+                    style="@style/Widget.MaterialComponents.Chip.Filter" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/priceOver2000"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Over $2000"
-                    style="@style/Widget.Material3.Chip.Filter" />
+                    style="@style/Widget.MaterialComponents.Chip.Filter" />
 
             </com.google.android.material.chip.ChipGroup>
 
@@ -121,28 +343,28 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="1"
-                    style="@style/Widget.Material3.Chip.Filter" />
+                    style="@style/Widget.MaterialComponents.Chip.Filter" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/bedroom2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="2"
-                    style="@style/Widget.Material3.Chip.Filter" />
+                    style="@style/Widget.MaterialComponents.Chip.Filter" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/bedroom3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="3"
-                    style="@style/Widget.Material3.Chip.Filter" />
+                    style="@style/Widget.MaterialComponents.Chip.Filter" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/bedroom4Plus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="4+"
-                    style="@style/Widget.Material3.Chip.Filter" />
+                    style="@style/Widget.MaterialComponents.Chip.Filter" />
 
             </com.google.android.material.chip.ChipGroup>
 
@@ -158,6 +380,54 @@
 
     </ScrollView>
 
+    <!-- Results Header -->
+    <LinearLayout
+        android:id="@+id/resultsHeader"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:background="@color/background"
+        app:layout_constraintTop_toBottomOf="@id/filtersScrollView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/resultsCountText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="0 properties found"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sort:"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:layout_marginEnd="8dp" />
+
+            <Spinner
+                android:id="@+id/sortSpinner"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:background="@drawable/filter_chip_background"
+                android:paddingHorizontal="12dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
     <!-- Results -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
@@ -165,7 +435,7 @@
         android:layout_height="0dp"
         android:padding="8dp"
         android:clipToPadding="false"
-        app:layout_constraintTop_toBottomOf="@id/filtersScrollView"
+        app:layout_constraintTop_toBottomOf="@id/resultsHeader"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

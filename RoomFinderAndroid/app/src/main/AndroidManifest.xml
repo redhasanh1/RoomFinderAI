@@ -35,6 +35,16 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
             
+        <activity
+            android:name=".activities.VerificationActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+            
+        <activity
+            android:name=".activities.ForgotPasswordActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+            
     </application>
 
 </manifest>

@@ -30,15 +30,6 @@
                     android:padding="24dp"
                     android:gravity="center_vertical">
 
-                    <!-- Hero Image on Left -->
-                    <ImageView
-                        android:layout_width="100dp"
-                        android:layout_height="100dp"
-                        android:layout_marginEnd="20dp"
-                        android:src="@drawable/house_3d_modern"
-                        android:scaleType="fitCenter"
-                        android:alpha="0.9" />
-
                     <!-- Hero Content -->
                     <LinearLayout
                         android:layout_width="0dp"
@@ -68,6 +59,15 @@
 
                     </LinearLayout>
 
+                    <!-- Hero Image on Right -->
+                    <ImageView
+                        android:layout_width="100dp"
+                        android:layout_height="100dp"
+                        android:layout_marginStart="8dp"
+                        android:src="@drawable/house_3d_modern"
+                        android:scaleType="centerCrop"
+                        android:alpha="0.9" />
+
                 </LinearLayout>
 
                 <!-- Search Section -->
@@ -92,7 +92,7 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_search"
-                            android:tint="@color/gray_500" />
+                            android:tint="@color/purple_primary" />
 
                         <EditText
                             android:id="@+id/searchInput"
@@ -101,12 +101,22 @@
                             android:layout_weight="1"
                             android:layout_marginStart="12dp"
                             android:background="@null"
-                            android:hint="Search for properties..."
+                            android:hint="Try 'downtown', '2 bedroom', or 'under $1500'..."
                             android:textColorHint="@color/gray_500"
                             android:textColor="@color/text_primary"
                             android:textSize="16sp"
                             android:inputType="text"
                             android:imeOptions="actionSearch" />
+
+                        <ImageView
+                            android:id="@+id/clearSearchButton"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/ic_menu_close_clear_cancel"
+                            android:tint="@color/gray_500"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:padding="4dp"
+                            android:visibility="gone" />
 
                         <ImageView
                             android:id="@+id/filterButton"
@@ -115,7 +125,71 @@
                             android:src="@drawable/ic_settings"
                             android:tint="@color/gray_500"
                             android:background="?attr/selectableItemBackgroundBorderless"
-                            android:padding="4dp" />
+                            android:padding="4dp"
+                            android:layout_marginStart="8dp" />
+
+                    </LinearLayout>
+
+                    <!-- Popular Searches -->
+                    <LinearLayout
+                        android:id="@+id/popularSearchesLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginTop="12dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Popular searches:"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:layout_marginBottom="8dp" />
+
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/popularSearchChips"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:chipSpacingHorizontal="8dp">
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipDowntown"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Downtown"
+                                android:textSize="12sp"
+                                android:checkable="false" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chip2Bedroom"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="2 bedroom"
+                                android:textSize="12sp"
+                                android:checkable="false" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipUnder1500"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Under $1500"
+                                android:textSize="12sp"
+                                android:checkable="false" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipPetFriendly"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Pet friendly"
+                                android:textSize="12sp"
+                                android:checkable="false" />
+
+                        </com.google.android.material.chip.ChipGroup>
 
                     </LinearLayout>
 
@@ -174,6 +248,54 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="36dp"
                                 android:text="Condo"
+                                android:gravity="center"
+                                android:paddingHorizontal="16dp"
+                                android:background="@drawable/filter_chip_background"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="14sp"
+                                android:layout_marginEnd="8dp" />
+
+                            <TextView
+                                android:id="@+id/chipStudio"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="Studio"
+                                android:gravity="center"
+                                android:paddingHorizontal="16dp"
+                                android:background="@drawable/filter_chip_background"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="14sp"
+                                android:layout_marginEnd="8dp" />
+
+                            <TextView
+                                android:id="@+id/chipUnder1000"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="Under $1000"
+                                android:gravity="center"
+                                android:paddingHorizontal="16dp"
+                                android:background="@drawable/filter_chip_background"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="14sp"
+                                android:layout_marginEnd="8dp" />
+
+                            <TextView
+                                android:id="@+id/chip1000to1500"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="$1000-1500"
+                                android:gravity="center"
+                                android:paddingHorizontal="16dp"
+                                android:background="@drawable/filter_chip_background"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="14sp"
+                                android:layout_marginEnd="8dp" />
+
+                            <TextView
+                                android:id="@+id/chipOver1500"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="Over $1500"
                                 android:gravity="center"
                                 android:paddingHorizontal="16dp"
                                 android:background="@drawable/filter_chip_background"

@@ -19,7 +19,9 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:title="RoomFinder"
-            app:titleTextColor="@color/text_primary" />
+            app:titleTextColor="@color/text_primary"
+            app:logo="@drawable/ic_launcher_simple"
+            app:logoDescription="RoomFinder Logo" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

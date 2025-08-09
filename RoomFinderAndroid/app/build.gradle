@@ -31,6 +31,16 @@ android {
     buildFeatures {
         viewBinding true
     }
+    
+    packagingOptions {
+        pickFirst '**/META-INF/DEPENDENCIES'
+        pickFirst '**/META-INF/LICENSE'
+        pickFirst '**/META-INF/LICENSE.txt'
+        pickFirst '**/META-INF/NOTICE'
+        pickFirst '**/META-INF/NOTICE.txt'
+        pickFirst '**/META-INF/ASL2.0'
+        pickFirst '**/META-INF/LGPL2.1'
+    }
 }
 
 dependencies {
@@ -58,6 +68,10 @@ dependencies {
     
     // Gson
     implementation 'com.google.code.gson:gson:2.10.1'
+    
+    // Email Service - SendGrid
+    implementation 'com.sendgrid:sendgrid-java:4.9.3'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
     
     // Supabase Android SDK
     implementation 'io.github.jan-tennert.supabase:postgrest-kt:2.6.0'

@@ -27,6 +27,7 @@
     <!-- Neutral Colors -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+    <color name="light_gray">#F8F9FA</color>
     <color name="gray_50">#F9FAFB</color>
     <color name="gray_100">#F3F4F6</color>
     <color name="gray_200">#E5E7EB</color>
@@ -46,6 +47,8 @@
     
     <!-- Background Colors -->
     <color name="background">#FAFBFC</color>
+    <color name="background_light">#FFFFFF</color>
+    <color name="background_demo">#F3F4FF</color>
     <color name="surface">#FFFFFF</color>
     <color name="surface_variant">#F8F9FA</color>
     

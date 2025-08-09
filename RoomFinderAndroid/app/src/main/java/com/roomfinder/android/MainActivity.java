@@ -5,7 +5,7 @@ import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.roomfinder.android.auth.SupabaseAuthService;
+import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.databinding.ActivityMainBinding;
 import com.roomfinder.android.fragments.*;
 import com.roomfinder.android.models.User;
@@ -14,7 +14,7 @@ public class MainActivity extends AppCompatActivity {
     
     private static final String TAG = "MainActivity";
     private ActivityMainBinding binding;
-    private SupabaseAuthService authService;
+    private AuthManager authManager;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,10 +67,10 @@ public class MainActivity extends AppCompatActivity {
     }
     
     private void initializeAuth() {
-        // Initialize auth service (this will automatically restore session if available)
-        authService = SupabaseAuthService.getInstance(this);
+        // Initialize auth manager (this will automatically restore session if available)
+        authManager = AuthManager.getInstance(this);
         
-        User currentUser = authService.getCurrentUser();
+        User currentUser = authManager.getCurrentUser();
         if (currentUser != null) {
             Log.d(TAG, "Session restored for user: " + currentUser.getEmail());
         } else {
