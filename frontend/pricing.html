@@ -11,6 +11,26 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --transition-smooth: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+        }
+        
+        .brand-logo {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            font-size: 1.75rem;
+            transition: var(--transition-smooth);
+        }
+        
+        .brand-logo:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
