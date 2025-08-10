@@ -202,11 +202,11 @@
                     <div id="nameFields" class="hidden space-y-4">
                         <div>
                             <label for="firstName" class="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
-                            <input type="text" id="firstName" name="firstName" class="input-grand w-full" placeholder="John">
+                            <input type="text" id="firstName" name="firstName" class="input-grand w-full" placeholder="John" autocomplete="given-name">
                         </div>
                         <div>
                             <label for="lastName" class="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
-                            <input type="text" id="lastName" name="lastName" class="input-grand w-full" placeholder="Doe">
+                            <input type="text" id="lastName" name="lastName" class="input-grand w-full" placeholder="Doe" autocomplete="family-name">
                         </div>
                     </div>
                     
@@ -404,12 +404,27 @@
             nameFields.classList.toggle('hidden', isLogin);
             loginOptions.classList.toggle('hidden', !isLogin);
             
-            // Hide password requirements when switching to login
-            if (isLogin && passwordRequirements) {
+            // Clear any previous errors
+            const existingError = document.querySelector('.error-message');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            // Show/hide password requirements based on mode
+            if (!isLogin && passwordRequirements) {
+                // Show requirements when in registration mode and password field has focus
+                if (document.activeElement === passwordInput) {
+                    passwordRequirements.style.display = 'block';
+                }
+            } else if (passwordRequirements) {
                 passwordRequirements.style.display = 'none';
             }
             
+            // Reset form fields when switching
+            form.reset();
+            
             // Reset button state when switching forms
+            submitButton.disabled = false;
         });
 
         form.addEventListener('submit', async (e) => {
@@ -551,9 +566,12 @@
                         showVerificationSection(email, { firstName, lastName, email, password });
                     } else {
                         if (result.error === 'Email service not configured') {
-                            alert('Registration is currently only available on the live website. Please visit the deployed version to register your account.');
+                            // Production deployment requirement message
+                            alert('Email verification service requires production deployment.\n\nTo complete registration:\n1. Deploy this application to Railway or similar platform\n2. Configure BREVO_API_KEY in environment variables\n3. Registration will then work with real email verification');
+                        } else if (result.error === 'Email already registered') {
+                            alert('This email is already registered. Please sign in or use a different email.');
                         } else {
-                            alert(result.error || 'Failed to send verification email');
+                            alert(result.error || 'Failed to send verification email. Please try again.');
                         }
                     }
                 } catch (error) {
@@ -574,6 +592,10 @@
             document.getElementById('authFormContainer').classList.add('hidden');
             document.getElementById('verificationSection').classList.remove('hidden');
             document.getElementById('verificationEmail').textContent = email;
+            // Auto-focus the verification code input
+            setTimeout(() => {
+                document.getElementById('verificationCode').focus();
+            }, 100);
         }
 
         function hideVerificationSection() {
@@ -661,10 +683,15 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert('Verification code resent successfully!');
+                    alert('Verification code resent successfully! Please check your email.');
                     document.getElementById('verificationCode').value = '';
+                    document.getElementById('verificationCode').focus();
                 } else {
-                    alert(result.error || 'Failed to resend verification code');
+                    if (result.error === 'Email service not configured') {
+                        alert('Email service requires production deployment with BREVO_API_KEY configured.');
+                    } else {
+                        alert(result.error || 'Failed to resend verification code');
+                    }
                 }
             } catch (error) {
                 alert('Failed to resend verification code. Please try again.');
