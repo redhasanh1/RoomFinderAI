@@ -18,8 +18,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     
+    <!-- Google Sign-In SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     
-    
+    <!-- Apple Sign-In SDK -->
+    <script src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
@@ -147,7 +150,6 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
         }
-
         
         /* Success animation */
         @keyframes success-pulse {
@@ -176,6 +178,9 @@
             <a href="index.html" class="text-white hover:text-purple-200 transition-colors">
                 <i class="fas fa-arrow-left mr-2"></i>Back to Home
             </a>
+            <div id="authSection">
+                <!-- Will be populated by universal-auth-manager.js -->
+            </div>
         </div>
     </header>
 
@@ -202,11 +207,11 @@
                     <div id="nameFields" class="hidden space-y-4">
                         <div>
                             <label for="firstName" class="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
-                            <input type="text" id="firstName" name="firstName" class="input-grand w-full" placeholder="John" autocomplete="given-name">
+                            <input type="text" id="firstName" name="firstName" class="input-grand w-full" placeholder="John">
                         </div>
                         <div>
                             <label for="lastName" class="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
-                            <input type="text" id="lastName" name="lastName" class="input-grand w-full" placeholder="Doe" autocomplete="family-name">
+                            <input type="text" id="lastName" name="lastName" class="input-grand w-full" placeholder="Doe">
                         </div>
                     </div>
                     
@@ -262,9 +267,11 @@
                         
                         <div class="mt-6 grid grid-cols-2 gap-4">
                             <button type="button" id="googleSignInBtn" class="social-btn flex items-center justify-center" onclick="handleGoogleSignIn()">
+                                <i class="fab fa-google text-red-500 mr-2"></i>
                                 Google
                             </button>
                             <button type="button" id="appleSignInBtn" class="social-btn flex items-center justify-center" onclick="handleAppleSignIn()">
+                                <i class="fab fa-apple text-gray-800 mr-2"></i>
                                 Apple
                             </button>
                         </div>
@@ -404,27 +411,12 @@
             nameFields.classList.toggle('hidden', isLogin);
             loginOptions.classList.toggle('hidden', !isLogin);
             
-            // Clear any previous errors
-            const existingError = document.querySelector('.error-message');
-            if (existingError) {
-                existingError.remove();
-            }
-            
-            // Show/hide password requirements based on mode
-            if (!isLogin && passwordRequirements) {
-                // Show requirements when in registration mode and password field has focus
-                if (document.activeElement === passwordInput) {
-                    passwordRequirements.style.display = 'block';
-                }
-            } else if (passwordRequirements) {
+            // Hide password requirements when switching to login
+            if (isLogin && passwordRequirements) {
                 passwordRequirements.style.display = 'none';
             }
             
-            // Reset form fields when switching
-            form.reset();
-            
             // Reset button state when switching forms
-            submitButton.disabled = false;
         });
 
         form.addEventListener('submit', async (e) => {
@@ -565,14 +557,7 @@
                     if (response.ok) {
                         showVerificationSection(email, { firstName, lastName, email, password });
                     } else {
-                        if (result.error === 'Email service not configured') {
-                            // Production deployment requirement message
-                            alert('Email verification service requires production deployment.\n\nTo complete registration:\n1. Deploy this application to Railway or similar platform\n2. Configure BREVO_API_KEY in environment variables\n3. Registration will then work with real email verification');
-                        } else if (result.error === 'Email already registered') {
-                            alert('This email is already registered. Please sign in or use a different email.');
-                        } else {
-                            alert(result.error || 'Failed to send verification email. Please try again.');
-                        }
+                        alert(result.error || 'Failed to send verification email');
                     }
                 } catch (error) {
                     console.error('Registration error:', error);
@@ -592,10 +577,6 @@
             document.getElementById('authFormContainer').classList.add('hidden');
             document.getElementById('verificationSection').classList.remove('hidden');
             document.getElementById('verificationEmail').textContent = email;
-            // Auto-focus the verification code input
-            setTimeout(() => {
-                document.getElementById('verificationCode').focus();
-            }, 100);
         }
 
         function hideVerificationSection() {
@@ -683,15 +664,10 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert('Verification code resent successfully! Please check your email.');
+                    alert('Verification code resent successfully!');
                     document.getElementById('verificationCode').value = '';
-                    document.getElementById('verificationCode').focus();
                 } else {
-                    if (result.error === 'Email service not configured') {
-                        alert('Email service requires production deployment with BREVO_API_KEY configured.');
-                    } else {
-                        alert(result.error || 'Failed to resend verification code');
-                    }
+                    alert(result.error || 'Failed to resend verification code');
                 }
             } catch (error) {
                 alert('Failed to resend verification code. Please try again.');
@@ -711,6 +687,7 @@
         }
 
         // OAuth Configuration
+        let googleInitialized = false;
         let oauthConfig = null;
         
         // Load OAuth configuration from backend
@@ -718,7 +695,10 @@
             try {
                 const response = await fetch('/api/config');
                 const config = await response.json();
-                oauthConfig = {};
+                oauthConfig = {
+                    googleClientId: config.GOOGLE_OAUTH_CLIENT_ID,
+                    appleClientId: config.APPLE_CLIENT_ID
+                };
                 console.log('✅ OAuth configuration loaded');
                 return true;
             } catch (error) {
@@ -727,23 +707,158 @@
             }
         }
         
-        // Initialize when the page loads
+        function initializeGoogleSignIn() {
+            if (typeof google !== 'undefined' && !googleInitialized && oauthConfig?.googleClientId) {
+                google.accounts.id.initialize({
+                    client_id: oauthConfig.googleClientId,
+                    callback: handleGoogleResponse,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
+                });
+                googleInitialized = true;
+                console.log('✅ Google Sign-In initialized');
+            }
+        }
+
+        // Initialize OAuth when the page loads
         window.addEventListener('load', async () => {
             await loadOAuthConfig();
+            setTimeout(initializeGoogleSignIn, 1000);
         });
 
-        // Google Sign-In Handler - disabled
+        // Google Sign-In Handler
         async function handleGoogleSignIn() {
-            alert('Google Sign-In is currently unavailable. Please use email/password login.');
+            if (!googleInitialized) {
+                initializeGoogleSignIn();
+                setTimeout(handleGoogleSignIn, 500);
+                return;
+            }
+            
+            try {
+                google.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                        // Fallback to manual trigger
+                        google.accounts.id.renderButton(
+                            document.getElementById('googleSignInBtn'),
+                            { theme: 'outline', size: 'large', width: '100%' }
+                        );
+                    }
+                });
+            } catch (error) {
+                console.error('Google Sign-In error:', error);
+                alert('Google Sign-In is currently unavailable. Please try email/password login.');
+            }
         }
 
-        // Apple Sign-In Handler - disabled
+        // Handle Google Sign-In Response
+        async function handleGoogleResponse(response) {
+            try {
+                console.log('Google ID Token received:', response.credential);
+                
+                // Send token to backend for verification
+                const backendResponse = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        idToken: response.credential
+                    })
+                });
+
+                const result = await backendResponse.json();
+                
+                if (backendResponse.ok) {
+                    // Store user data
+                    localStorage.setItem('currentUser', JSON.stringify(result.user));
+                    
+                    // Update users array
+                    let users = JSON.parse(localStorage.getItem('users') || '[]');
+                    const existingUserIndex = users.findIndex(u => u.email === result.user.email);
+                    if (existingUserIndex >= 0) {
+                        users[existingUserIndex] = result.user;
+                    } else {
+                        users.push(result.user);
+                    }
+                    localStorage.setItem('users', JSON.stringify(users));
+                    
+                    // Redirect to verification modal
+                    window.location.href = 'verification-modal.html?redirect=index.html';
+                } else {
+                    alert(result.error || 'Google Sign-In failed');
+                }
+            } catch (error) {
+                console.error('Google Sign-In processing error:', error);
+                alert('Google Sign-In failed. Please try again.');
+            }
+        }
+
+        // Apple Sign-In Handler
         async function handleAppleSignIn() {
-            alert('Apple Sign-In is currently unavailable. Please use email/password login.');
+            try {
+                if (typeof AppleID === 'undefined') {
+                    alert('Apple Sign-In is currently unavailable. Please try email/password login.');
+                    return;
+                }
+
+                // Initialize Apple ID if not already done
+                if (!window.appleIdInitialized && oauthConfig?.appleClientId) {
+                    AppleID.auth.init({
+                        clientId: oauthConfig.appleClientId,
+                        scope: 'name email',
+                        redirectURI: window.location.origin + '/auth/apple/callback',
+                        state: 'roomfinder_auth',
+                        usePopup: true
+                    });
+                    window.appleIdInitialized = true;
+                }
+
+                const response = await AppleID.auth.signIn();
+                console.log('Apple Sign-In response:', response);
+                
+                // Send authorization code to backend
+                const backendResponse = await fetch('/api/auth/apple', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        authorizationCode: response.authorization.code,
+                        identityToken: response.authorization.id_token,
+                        user: response.user
+                    })
+                });
+
+                const result = await backendResponse.json();
+                
+                if (backendResponse.ok) {
+                    // Store user data
+                    localStorage.setItem('currentUser', JSON.stringify(result.user));
+                    
+                    // Update users array
+                    let users = JSON.parse(localStorage.getItem('users') || '[]');
+                    const existingUserIndex = users.findIndex(u => u.email === result.user.email);
+                    if (existingUserIndex >= 0) {
+                        users[existingUserIndex] = result.user;
+                    } else {
+                        users.push(result.user);
+                    }
+                    localStorage.setItem('users', JSON.stringify(users));
+                    
+                    // Redirect to verification modal
+                    window.location.href = 'verification-modal.html?redirect=index.html';
+                } else {
+                    alert(result.error || 'Apple Sign-In failed');
+                }
+            } catch (error) {
+                console.error('Apple Sign-In error:', error);
+                if (error.error === 'popup_closed_by_user') {
+                    // User cancelled, no need to show error
+                    return;
+                }
+                alert('Apple Sign-In failed. Please try again.');
+            }
         }
-
-
-
     </script>
 </body>
 </html>
