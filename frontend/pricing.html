@@ -610,7 +610,10 @@
             
             <!-- Desktop Auth -->
             <div class="desktop-auth hidden md:block" id="authSection">
-                <!-- Will be populated by universal-auth-manager.js -->
+                <!-- Default content before JS loads -->
+                <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                    Login/Register
+                </a>
             </div>
         </nav>
         
@@ -664,7 +667,7 @@
                     </div>
                     
                     <!-- Mobile Auth -->
-                    <a href="/login" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
+                    <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
                 </div>
             </div>
         </div>
@@ -908,9 +911,9 @@
                 `;
             } else {
                 authSection.innerHTML = `
-                    <div class="flex items-center space-x-4">
-                        <a href="/login" class="auth-link">Login/Register</a>
-                    </div>
+                    <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                        Login/Register
+                    </a>
                 `;
             }
         });
