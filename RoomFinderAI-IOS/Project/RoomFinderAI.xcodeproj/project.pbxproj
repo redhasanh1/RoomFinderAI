@@ -27,6 +27,13 @@
 		D5DBA5CF706C1084FE6D2C40 /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789029 /* SignUpView.swift */; };
 		DCE6FB7466DCFB4DAE183DD9 /* SimpleAuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1574BBFE50B4AAE210BE0EA3 /* SimpleAuthViewModel.swift */; };
 		EA20B2DD7F61B4B2E78FDCAB /* Listing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789043 /* Listing.swift */; };
+		F1234567890123456789001 /* SupabaseClientProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789101 /* SupabaseClientProvider.swift */; };
+		F1234567890123456789002 /* ListingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789102 /* ListingsService.swift */; };
+		F1234567890123456789003 /* ListingsFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789103 /* ListingsFilter.swift */; };
+		F1234567890123456789004 /* ListingsRealtime.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789104 /* ListingsRealtime.swift */; };
+		F1234567890123456789005 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789105 /* AuthService.swift */; };
+		F1234567890123456789006 /* ListingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789106 /* ListingsViewModel.swift */; };
+		F1234567890123456789007 /* NewListingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789107 /* NewListingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,6 +59,13 @@
 		A01234567890123456789053 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = ../Source/RoomFinderAI/Resources/Info.plist; sourceTree = "<group>"; };
 		B9092F683FF134DD8DC2C243 /* RealSupabaseService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RealSupabaseService.swift; path = ../Source/RoomFinderAI/Services/RealSupabaseService.swift; sourceTree = "<group>"; };
 		C5D8C9DC10D12ADFB6BE2EFD /* SimpleListingsViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SimpleListingsViewModel.swift; path = ../Source/RoomFinderAI/Services/SimpleListingsViewModel.swift; sourceTree = "<group>"; };
+		F1234567890123456789101 /* SupabaseClientProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SupabaseClientProvider.swift; path = ../Source/RoomFinderAI/Data/SupabaseClientProvider.swift; sourceTree = "<group>"; };
+		F1234567890123456789102 /* ListingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsService.swift; path = ../Source/RoomFinderAI/Data/ListingsService.swift; sourceTree = "<group>"; };
+		F1234567890123456789103 /* ListingsFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsFilter.swift; path = ../Source/RoomFinderAI/Data/ListingsFilter.swift; sourceTree = "<group>"; };
+		F1234567890123456789104 /* ListingsRealtime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsRealtime.swift; path = ../Source/RoomFinderAI/Data/ListingsRealtime.swift; sourceTree = "<group>"; };
+		F1234567890123456789105 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AuthService.swift; path = ../Source/RoomFinderAI/Data/AuthService.swift; sourceTree = "<group>"; };
+		F1234567890123456789106 /* ListingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsViewModel.swift; path = ../Source/RoomFinderAI/Presentation/ListingsViewModel.swift; sourceTree = "<group>"; };
+		F1234567890123456789107 /* NewListingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NewListingsView.swift; path = ../Source/RoomFinderAI/Presentation/NewListingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -116,6 +130,8 @@
 				A01234567890123456789013 /* ContentView.swift */,
 				A01234567890123456789058 /* Views */,
 				A01234567890123456789059 /* Services */,
+				F1234567890123456789201 /* Data */,
+				F1234567890123456789202 /* Presentation */,
 				A01234567890123456789060 /* Models */,
 				A01234567890123456789061 /* Utils */,
 				A01234567890123456789062 /* Resources */,
@@ -203,6 +219,27 @@
 				79F6B6F12B546EBCC970D3EA /* RoomFinderAI */,
 			);
 			name = Source;
+			sourceTree = "<group>";
+		};
+		F1234567890123456789201 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				F1234567890123456789101 /* SupabaseClientProvider.swift */,
+				F1234567890123456789102 /* ListingsService.swift */,
+				F1234567890123456789103 /* ListingsFilter.swift */,
+				F1234567890123456789104 /* ListingsRealtime.swift */,
+				F1234567890123456789105 /* AuthService.swift */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		F1234567890123456789202 /* Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				F1234567890123456789106 /* ListingsViewModel.swift */,
+				F1234567890123456789107 /* NewListingsView.swift */,
+			);
+			path = Presentation;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -299,6 +336,13 @@
 				35288DC5877070BE28D5FD39 /* SharedComponents.swift in Sources */,
 				8CF38621B3E7C7195F2671E3 /* SupabaseConfig.swift in Sources */,
 				8E716072C88589D2BEB8DAFE /* RealSupabaseService.swift in Sources */,
+				F1234567890123456789001 /* SupabaseClientProvider.swift in Sources */,
+				F1234567890123456789002 /* ListingsService.swift in Sources */,
+				F1234567890123456789003 /* ListingsFilter.swift in Sources */,
+				F1234567890123456789004 /* ListingsRealtime.swift in Sources */,
+				F1234567890123456789005 /* AuthService.swift in Sources */,
+				F1234567890123456789006 /* ListingsViewModel.swift in Sources */,
+				F1234567890123456789007 /* NewListingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
