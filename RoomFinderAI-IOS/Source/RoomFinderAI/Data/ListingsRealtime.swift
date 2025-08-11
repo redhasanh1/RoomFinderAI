@@ -2,7 +2,7 @@ import Foundation
 import Supabase
 
 final class ListingsRealtime {
-    private let client = SupabaseClientProvider.shared
+    private let client = SupabaseConfig.client
     private var channel: RealtimeChannel?
     
     func start(onChange: @escaping (RealtimeChange<Listing>) -> Void) {
