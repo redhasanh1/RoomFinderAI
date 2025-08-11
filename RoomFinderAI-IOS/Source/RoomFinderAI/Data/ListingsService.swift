@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import PostgREST
 
 enum RealtimeChange<T> {
     case insert(T)
@@ -28,7 +29,7 @@ enum ListingsServiceError: LocalizedError {
 }
 
 final class ListingsService: ObservableObject {
-    private let client = SupabaseClientProvider.shared
+    private let client = SupabaseConfig.client
     private let maxRetries = 2
     private let retryDelay: TimeInterval = 1.0
     
@@ -37,34 +38,34 @@ final class ListingsService: ObservableObject {
             let from = page * pageSize
             let to = from + pageSize - 1
             
-            var query = client.database
+            var query = client
                 .from("listings")
                 .select("*")
                 .order("created_at", ascending: false)
                 .range(from: from, to: to)
             
             if let city = filters.city, !city.isEmpty {
-                query = query.ilike("city", "%\(city)%")
+                query = query.eq("city", value: city)
             }
             
             if let maxPrice = filters.maxPrice {
-                query = query.lte("price", maxPrice)
+                query = query.lte("price", value: maxPrice)
             }
             
             if let minPrice = filters.minPrice {
-                query = query.gte("price", minPrice)
+                query = query.gte("price", value: minPrice)
             }
             
             if let houseType = filters.houseType, !houseType.isEmpty {
-                query = query.eq("house_type", houseType)
+                query = query.eq("house_type", value: houseType)
             }
             
             if let bedrooms = filters.bedrooms {
-                query = query.eq("bedrooms", bedrooms)
+                query = query.eq("bedrooms", value: bedrooms)
             }
             
             if let search = filters.search, !search.isEmpty {
-                query = query.ilike("title", "%\(search)%")
+                query = query.eq("title", value: search)
             }
             
             let response: [Listing] = try await query.execute().value
@@ -73,10 +74,10 @@ final class ListingsService: ObservableObject {
     }
     
     func fetchListing(id: UUID) async throws -> Listing? {
-        let response: Listing = try await client.database
+        let response: Listing = try await client
             .from("listings")
             .select("*")
-            .eq("id", id.uuidString)
+            .eq("id", value: id.uuidString)
             .single()
             .execute()
             .value
@@ -85,7 +86,7 @@ final class ListingsService: ObservableObject {
     }
     
     func createListing(_ listing: CreateListingRequest) async throws -> Listing {
-        let response: Listing = try await client.database
+        let response: Listing = try await client
             .from("listings")
             .insert(listing)
             .select()
@@ -97,10 +98,10 @@ final class ListingsService: ObservableObject {
     }
     
     func updateListing(id: UUID, updates: UpdateListingRequest) async throws -> Listing {
-        let response: Listing = try await client.database
+        let response: Listing = try await client
             .from("listings")
             .update(updates)
-            .eq("id", id.uuidString)
+            .eq("id", value: id.uuidString)
             .select()
             .single()
             .execute()
@@ -110,18 +111,18 @@ final class ListingsService: ObservableObject {
     }
     
     func deleteListing(id: UUID) async throws {
-        try await client.database
+        try await client
             .from("listings")
             .delete()
-            .eq("id", id.uuidString)
+            .eq("id", value: id.uuidString)
             .execute()
     }
     
     func getListingsByUser(_ userEmail: String) async throws -> [Listing] {
-        let response: [Listing] = try await client.database
+        let response: [Listing] = try await client
             .from("listings")
             .select("*")
-            .eq("user_email", userEmail)
+            .eq("user_email", value: userEmail)
             .order("created_at", ascending: false)
             .execute()
             .value

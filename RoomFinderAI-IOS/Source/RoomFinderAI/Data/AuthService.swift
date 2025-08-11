@@ -4,7 +4,7 @@ import Security
 
 final class AuthService: ObservableObject {
     @Published var isAuthenticated = false
-    @Published var currentUser: AuthUser?
+    @Published var currentUser: User?
     
     private let client = SupabaseClientProvider.shared
     
