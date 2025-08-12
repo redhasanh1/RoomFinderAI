@@ -4710,15 +4710,23 @@
                 });
         }
 
-        // Favorites functionality
+        // Favorites functionality with localStorage fallback
         async function toggleFavorite(listingId, buttonElement) {
             const currentUser = window.UniversalAuth.getCurrentUser();
+            
+            console.log('🔍 toggleFavorite called:', { listingId, currentUser });
             
             if (!currentUser) {
                 // Show login prompt for anonymous users
                 if (confirm('Please log in to save listings to your favorites. Would you like to go to the login page?')) {
                     window.location.href = '/login';
                 }
+                return;
+            }
+            
+            if (!currentUser.email) {
+                console.error('❌ Current user has no email:', currentUser);
+                alert('User authentication error. Please log in again.');
                 return;
             }
 
@@ -4729,46 +4737,81 @@
                 buttonElement.classList.add('favoriting');
                 setTimeout(() => buttonElement.classList.remove('favoriting'), 600);
                 
-                if (isFavorited) {
-                    // Remove from favorites
-                    const response = await fetch(`/api/favorites/${listingId}?userEmail=${encodeURIComponent(currentUser.email)}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        }
-                    });
+                // Try API first, fallback to localStorage
+                let success = false;
+                
+                try {
+                    if (isFavorited) {
+                        // Remove from favorites
+                        const response = await fetch(`/api/favorites/${listingId}?userEmail=${encodeURIComponent(currentUser.email)}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        });
 
-                    if (response.ok) {
+                        if (response.ok) {
+                            success = true;
+                            console.log('✅ Removed from favorites via API:', listingId);
+                        } else {
+                            throw new Error(`API failed: ${response.status}`);
+                        }
+                    } else {
+                        // Add to favorites
+                        const response = await fetch('/api/favorites', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                userEmail: currentUser.email,
+                                listingId: listingId
+                            })
+                        });
+
+                        if (response.ok) {
+                            success = true;
+                            console.log('✅ Added to favorites via API:', listingId);
+                        } else {
+                            throw new Error(`API failed: ${response.status}`);
+                        }
+                    }
+                } catch (apiError) {
+                    console.log('📱 API unavailable, using localStorage fallback:', apiError.message);
+                    
+                    // Fallback to localStorage
+                    const storageKey = `savedListings_${currentUser.email}`;
+                    let savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
+                    
+                    if (isFavorited) {
+                        // Remove from localStorage
+                        savedListings = savedListings.filter(id => id !== listingId);
+                        localStorage.setItem(storageKey, JSON.stringify(savedListings));
+                        console.log('✅ Removed from favorites via localStorage:', listingId);
+                    } else {
+                        // Add to localStorage
+                        if (!savedListings.includes(listingId)) {
+                            savedListings.push(listingId);
+                            localStorage.setItem(storageKey, JSON.stringify(savedListings));
+                        }
+                        console.log('✅ Added to favorites via localStorage:', listingId);
+                    }
+                    success = true;
+                }
+                
+                // Update UI if successful
+                if (success) {
+                    if (isFavorited) {
                         buttonElement.setAttribute('data-favorited', 'false');
                         buttonElement.setAttribute('title', 'Save to favorites');
-                        console.log('✅ Removed from favorites:', listingId);
                     } else {
-                        throw new Error('Failed to remove from favorites');
-                    }
-                } else {
-                    // Add to favorites
-                    const response = await fetch('/api/favorites', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            userEmail: currentUser.email,
-                            listingId: listingId
-                        })
-                    });
-
-                    if (response.ok) {
                         buttonElement.setAttribute('data-favorited', 'true');
                         buttonElement.setAttribute('title', 'Remove from favorites');
-                        console.log('✅ Added to favorites:', listingId);
-                    } else {
-                        throw new Error('Failed to add to favorites');
                     }
                 }
+                
             } catch (error) {
                 console.error('Error toggling favorite:', error);
-                // Show user-friendly error message
                 alert('Unable to update favorites. Please try again.');
             }
         }
@@ -4781,29 +4824,40 @@
                 return;
             }
 
+            let favoriteIds = new Set();
+
             try {
+                // Try API first
                 const response = await fetch(`/api/favorites?userEmail=${encodeURIComponent(currentUser.email)}`);
                 
                 if (response.ok) {
                     const favorites = await response.json();
-                    const favoriteIds = new Set(favorites.map(fav => fav.listing_id));
-                    
-                    // Update heart button states
-                    document.querySelectorAll('.favorite-btn').forEach(button => {
-                        const listingId = button.getAttribute('data-listing-id');
-                        if (favoriteIds.has(listingId)) {
-                            button.setAttribute('data-favorited', 'true');
-                            button.setAttribute('title', 'Remove from favorites');
-                        }
-                    });
-                    
-                    console.log(`✅ Loaded ${favorites.length} favorite states`);
+                    favoriteIds = new Set(favorites.map(fav => fav.listing_id));
+                    console.log(`✅ Loaded ${favorites.length} favorite states via API`);
                 } else {
-                    console.log('Could not load favorite states');
+                    throw new Error(`API failed: ${response.status}`);
                 }
             } catch (error) {
-                console.error('Error loading favorite states:', error);
+                console.log('📱 API unavailable, loading from localStorage:', error.message);
+                
+                // Fallback to localStorage
+                const storageKey = `savedListings_${currentUser.email}`;
+                const savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
+                favoriteIds = new Set(savedListings);
+                console.log(`✅ Loaded ${savedListings.length} favorite states via localStorage`);
             }
+
+            // Update heart button states
+            document.querySelectorAll('.favorite-btn').forEach(button => {
+                const listingId = button.getAttribute('data-listing-id');
+                if (favoriteIds.has(listingId)) {
+                    button.setAttribute('data-favorited', 'true');
+                    button.setAttribute('title', 'Remove from favorites');
+                } else {
+                    button.setAttribute('data-favorited', 'false');
+                    button.setAttribute('title', 'Save to favorites');
+                }
+            });
         }
     </script>
     
