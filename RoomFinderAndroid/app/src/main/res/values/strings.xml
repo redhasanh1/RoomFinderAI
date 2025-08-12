@@ -42,9 +42,11 @@
     <string name="profile_title">Profile</string>
     <string name="login">Login</string>
     <string name="signup">Sign Up</string>
-    <string name="logout">Logout</string>
+    <string name="logout">Log out</string>
     <string name="guest_user">Guest User</string>
     <string name="login_to_continue">Login to access all features</string>
+    <string name="cd_avatar">Profile avatar</string>
+    <string name="cd_chevron">Go to</string>
     
     <!-- Chat -->
     <string name="chat_title">Messages</string>
