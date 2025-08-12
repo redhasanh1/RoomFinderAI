@@ -1000,6 +1000,12 @@
                 const savedListingsEmpty = document.getElementById('savedListingsEmpty');
                 const savedListingsCount = document.getElementById('savedListingsCount');
                 
+                // Add null checks to prevent errors
+                if (!savedListingsContainer || !savedListingsCount) {
+                    console.error('❌ Required DOM elements not found for saved listings');
+                    return;
+                }
+                
                 try {
                     console.log('🔖 Loading saved listings for user:', currentUser.email);
                     
@@ -1042,12 +1048,16 @@
                     savedListingsCount.textContent = `${savedListings.length} saved`;
                     
                     if (!savedListings || savedListings.length === 0) {
-                        savedListingsEmpty.style.display = 'block';
+                        if (savedListingsEmpty) {
+                            savedListingsEmpty.style.display = 'block';
+                        }
                         return;
                     }
                     
                     // Hide empty state and show listings
-                    savedListingsEmpty.style.display = 'none';
+                    if (savedListingsEmpty) {
+                        savedListingsEmpty.style.display = 'none';
+                    }
                     
                     // Clear container and add listings
                     savedListingsContainer.innerHTML = '';
@@ -1162,14 +1172,46 @@
                         }
                     }, 3000);
                     
-                    // Refresh saved listings
-                    await displaySavedListings();
+                    // Remove the card from UI immediately without re-fetching
+                    const cardElement = document.querySelector(`[onclick="removeSavedListing('${listingId}')"]`);
+                    if (cardElement) {
+                        const listingCard = cardElement.closest('.saved-listing-card');
+                        if (listingCard) {
+                            listingCard.style.transition = 'all 0.3s ease';
+                            listingCard.style.opacity = '0';
+                            listingCard.style.transform = 'translateX(-100%)';
+                            setTimeout(() => {
+                                listingCard.remove();
+                                updateSavedListingsCount();
+                            }, 300);
+                        }
+                    }
                     
                 } catch (error) {
                     console.error('❌ Error removing saved listing:', error);
                     alert('Failed to remove listing from favorites. Please try again.');
                 }
             };
+            
+            // Function to update saved listings count
+            function updateSavedListingsCount() {
+                const savedListingsContainer = document.getElementById('savedListingsContainer');
+                const savedListingsCount = document.getElementById('savedListingsCount');
+                const savedListingsEmpty = document.getElementById('savedListingsEmpty');
+                
+                if (!savedListingsContainer || !savedListingsCount || !savedListingsEmpty) {
+                    return;
+                }
+                
+                const remainingCards = savedListingsContainer.querySelectorAll('.saved-listing-card').length;
+                savedListingsCount.textContent = `${remainingCards} saved`;
+                
+                if (remainingCards === 0) {
+                    savedListingsEmpty.style.display = 'block';
+                } else {
+                    savedListingsEmpty.style.display = 'none';
+                }
+            }
 
             // Function to view listing details
             window.viewListing = function(listingId) {
