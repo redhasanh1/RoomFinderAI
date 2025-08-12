@@ -31,7 +31,7 @@ enum ListingRealtimeEvent {
 }
 
 class RealSupabaseService: ObservableObject {
-    private let client = SupabaseConfig.client
+    private let client = SupabaseClientProvider.shared
     private var realtimeChannel: RealtimeChannelV2?
     
     // Publishers for real-time events

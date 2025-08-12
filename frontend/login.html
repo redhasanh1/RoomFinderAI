@@ -332,34 +332,57 @@
 
 
     <script>
-        // Form handling - no Turnstile needed here as it's handled in the modal
-        
-        // Get default profile image from UniversalAuth or use fallback
-        function getDefaultProfileImage() {
-            if (window.UniversalAuth && window.UniversalAuth.DEFAULT_PROFILE_IMAGE) {
-                return window.UniversalAuth.DEFAULT_PROFILE_IMAGE;
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Login page JavaScript initializing...');
+            
+            // Get default profile image from UniversalAuth or use fallback
+            function getDefaultProfileImage() {
+                if (window.UniversalAuth && window.UniversalAuth.DEFAULT_PROFILE_IMAGE) {
+                    return window.UniversalAuth.DEFAULT_PROFILE_IMAGE;
+                }
+                // Fallback SVG if UniversalAuth isn't loaded yet
+                return 'data:image/svg+xml;base64,' + btoa(`
+                    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+                        <rect width="100" height="100" rx="50" fill="#E5E7EB"/>
+                        <path d="M50 45C56.075 45 61 40.075 61 34C61 27.925 56.075 23 50 23C43.925 23 39 27.925 39 34C39 40.075 43.925 45 50 45Z" fill="#9CA3AF"/>
+                        <path d="M30 77C30 77 30 66.103 30 62C30 55.373 36.268 50 44 50H56C63.732 50 70 55.373 70 62C70 66.103 70 77 70 77" fill="#9CA3AF"/>
+                    </svg>
+                `.trim());
             }
-            // Fallback SVG if UniversalAuth isn't loaded yet
-            return 'data:image/svg+xml;base64,' + btoa(`
-                <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-                    <rect width="100" height="100" rx="50" fill="#E5E7EB"/>
-                    <path d="M50 45C56.075 45 61 40.075 61 34C61 27.925 56.075 23 50 23C43.925 23 39 27.925 39 34C39 40.075 43.925 45 50 45Z" fill="#9CA3AF"/>
-                    <path d="M30 77C30 77 30 66.103 30 62C30 55.373 36.268 50 44 50H56C63.732 50 70 55.373 70 62C70 66.103 70 77 70 77" fill="#9CA3AF"/>
-                </svg>
-            `.trim());
-        }
-        
-        // Initialize form handling
-        const form = document.getElementById('authForm');
-        const formTitle = document.getElementById('formTitle');
-        const submitButton = document.getElementById('submitButton');
-        const toggleForm = document.getElementById('toggleForm');
-        const toggleText = document.getElementById('toggleText');
-        const nameFields = document.getElementById('nameFields');
-        const loginOptions = document.getElementById('loginOptions');
-        const passwordRequirements = document.getElementById('passwordRequirements');
-        const passwordInput = document.getElementById('password');
-        let isLogin = true;
+            
+            // Initialize form handling with error checking
+            console.log('🔍 Looking for form elements...');
+            const form = document.getElementById('authForm');
+            const formTitle = document.getElementById('formTitle');
+            const submitButton = document.getElementById('submitButton');
+            const toggleForm = document.getElementById('toggleForm');
+            const toggleText = document.getElementById('toggleText');
+            const nameFields = document.getElementById('nameFields');
+            const loginOptions = document.getElementById('loginOptions');
+            const passwordRequirements = document.getElementById('passwordRequirements');
+            const passwordInput = document.getElementById('password');
+            
+            // Debug: Check which elements were found
+            console.log('📋 Element check results:');
+            console.log('- form:', form ? '✅ Found' : '❌ Missing');
+            console.log('- formTitle:', formTitle ? '✅ Found' : '❌ Missing');
+            console.log('- submitButton:', submitButton ? '✅ Found' : '❌ Missing');
+            console.log('- toggleForm:', toggleForm ? '✅ Found' : '❌ Missing');
+            console.log('- toggleText:', toggleText ? '✅ Found' : '❌ Missing');
+            console.log('- nameFields:', nameFields ? '✅ Found' : '❌ Missing');
+            console.log('- loginOptions:', loginOptions ? '✅ Found' : '❌ Missing');
+            console.log('- passwordRequirements:', passwordRequirements ? '✅ Found' : '❌ Missing');
+            console.log('- passwordInput:', passwordInput ? '✅ Found' : '❌ Missing');
+            
+            // Check for critical missing elements
+            if (!form || !toggleForm || !nameFields) {
+                console.error('❌ Critical elements missing! Cannot initialize form.');
+                alert('Form initialization failed. Please refresh the page.');
+                return;
+            }
+            
+            let isLogin = true;
 
         // Password validation functions
         function validatePassword(password) {
@@ -402,26 +425,47 @@
             });
         }
 
-        toggleForm.addEventListener('click', () => {
-            isLogin = !isLogin;
-            formTitle.textContent = isLogin ? 'Welcome Back' : 'Create Account';
-            submitButton.textContent = isLogin ? 'Sign In' : 'Create Account';
-            toggleText.textContent = isLogin ? "Don't have an account?" : 'Already have an account?';
-            toggleForm.textContent = isLogin ? 'Register now' : 'Sign in';
-            nameFields.classList.toggle('hidden', isLogin);
-            loginOptions.classList.toggle('hidden', !isLogin);
-            
-            // Hide password requirements when switching to login
-            if (isLogin && passwordRequirements) {
-                passwordRequirements.style.display = 'none';
+            // Add toggle form event listener with error handling
+            if (toggleForm) {
+                console.log('🔄 Setting up form toggle functionality...');
+                toggleForm.addEventListener('click', () => {
+                    console.log('🔄 Toggle button clicked! Current mode:', isLogin ? 'login' : 'registration');
+                    
+                    isLogin = !isLogin;
+                    
+                    // Update form elements with null checks
+                    if (formTitle) formTitle.textContent = isLogin ? 'Welcome Back' : 'Create Account';
+                    if (submitButton) submitButton.textContent = isLogin ? 'Sign In' : 'Create Account';
+                    if (toggleText) toggleText.textContent = isLogin ? "Don't have an account?" : 'Already have an account?';
+                    if (toggleForm) toggleForm.textContent = isLogin ? 'Register now' : 'Sign in';
+                    
+                    // Toggle visibility of form sections
+                    if (nameFields) {
+                        nameFields.classList.toggle('hidden', isLogin);
+                        console.log('👤 Name fields:', isLogin ? 'hidden' : 'visible');
+                    }
+                    if (loginOptions) {
+                        loginOptions.classList.toggle('hidden', !isLogin);
+                        console.log('🔐 Login options:', !isLogin ? 'hidden' : 'visible');
+                    }
+                    
+                    // Hide password requirements when switching to login
+                    if (isLogin && passwordRequirements) {
+                        passwordRequirements.style.display = 'none';
+                    }
+                    
+                    console.log('✅ Form switched to:', isLogin ? 'login' : 'registration');
+                });
+            } else {
+                console.error('❌ toggleForm element not found! Cannot set up form switching.');
             }
-            
-            // Reset button state when switching forms
-            console.log('Form switched to:', isLogin ? 'login' : 'registration');
-        });
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+            // Add form submit event listener with error handling
+            if (form) {
+                console.log('📝 Setting up form submit handler...');
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    console.log('📤 Form submitted! Mode:', isLogin ? 'login' : 'registration');
             
             // Basic form validation
             
@@ -568,10 +612,13 @@
                     submitButton.innerHTML = 'Create Account';
                 }
             }
-        });
+                });
+            } else {
+                console.error('❌ form element not found! Cannot set up form submission.');
+            }
 
-        // Verification handling
-        let pendingUserData = null;
+            // Verification handling
+            let pendingUserData = null;
 
         function showVerificationSection(email, userData) {
             pendingUserData = userData;
@@ -586,7 +633,11 @@
             pendingUserData = null;
         }
 
-        document.getElementById('verificationForm').addEventListener('submit', async (e) => {
+            // Add verification form event listener with error handling  
+            const verificationForm = document.getElementById('verificationForm');
+            if (verificationForm) {
+                console.log('✉️ Setting up verification form handler...');
+                verificationForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             if (!pendingUserData) {
@@ -647,9 +698,16 @@
                 console.error('Verification error:', error);
                 alert('Verification failed. Please try again.');
             }
-        });
+                });
+            } else {
+                console.error('❌ verificationForm element not found! Cannot set up verification.');
+            }
 
-        document.getElementById('resendCode').addEventListener('click', async () => {
+            // Add resend code event listener with error handling
+            const resendCode = document.getElementById('resendCode');
+            if (resendCode) {
+                console.log('🔄 Setting up resend code handler...');
+                resendCode.addEventListener('click', async () => {
             if (!pendingUserData) {
                 alert('No pending verification. Please try registering again.');
                 return;
@@ -673,14 +731,30 @@
             } catch (error) {
                 alert('Failed to resend verification code. Please try again.');
             }
-        });
+                });
+            } else {
+                console.error('❌ resendCode element not found! Cannot set up resend functionality.');
+            }
 
-        document.getElementById('backToRegistration').addEventListener('click', hideVerificationSection);
+            // Add back to registration event listener with error handling
+            const backToRegistration = document.getElementById('backToRegistration');
+            if (backToRegistration) {
+                console.log('⬅️ Setting up back to registration handler...');
+                backToRegistration.addEventListener('click', hideVerificationSection);
+            } else {
+                console.error('❌ backToRegistration element not found! Cannot set up back navigation.');
+            }
 
-        // Format verification code input
-        document.getElementById('verificationCode').addEventListener('input', (e) => {
-            e.target.value = e.target.value.replace(/[^0-9]/g, '');
-        });
+            // Format verification code input with error handling
+            const verificationCode = document.getElementById('verificationCode');
+            if (verificationCode) {
+                console.log('🔢 Setting up verification code formatting...');
+                verificationCode.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                });
+            } else {
+                console.error('❌ verificationCode element not found! Cannot set up formatting.');
+            }
         
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {
@@ -860,6 +934,9 @@
                 alert('Apple Sign-In failed. Please try again.');
             }
         }
+            
+            console.log('✅ Login page JavaScript initialization complete!');
+        }); // End of DOMContentLoaded event listener
     </script>
 </body>
 </html>

@@ -18,7 +18,7 @@ struct ContentView: View {
                         }
                         .tag(0)
                     
-                    ListingsView()
+                    NewListingsView()
                         .tabItem {
                             Image(systemName: "magnifyingglass")
                             Text("Search")
@@ -43,7 +43,7 @@ struct ContentView: View {
                         }
                         .tag(0)
                     
-                    ListingsView()
+                    NewListingsView()
                         .tabItem {
                             Image(systemName: "magnifyingglass")
                             Text("Search")
