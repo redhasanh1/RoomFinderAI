@@ -1173,18 +1173,25 @@
                     }, 3000);
                     
                     // Remove the card from UI immediately without re-fetching
+                    console.log(`🗑️ Removing card for listing: ${listingId}`);
                     const cardElement = document.querySelector(`[onclick="removeSavedListing('${listingId}')"]`);
                     if (cardElement) {
                         const listingCard = cardElement.closest('.saved-listing-card');
                         if (listingCard) {
+                            console.log('🎬 Starting remove animation...');
                             listingCard.style.transition = 'all 0.3s ease';
                             listingCard.style.opacity = '0';
                             listingCard.style.transform = 'translateX(-100%)';
                             setTimeout(() => {
+                                console.log('🚮 Removing card from DOM...');
                                 listingCard.remove();
                                 updateSavedListingsCount();
                             }, 300);
+                        } else {
+                            console.log('❌ Could not find listing card element');
                         }
+                    } else {
+                        console.log('❌ Could not find card element to remove');
                     }
                     
                 } catch (error) {
@@ -1199,18 +1206,27 @@
                 const savedListingsCount = document.getElementById('savedListingsCount');
                 const savedListingsEmpty = document.getElementById('savedListingsEmpty');
                 
-                if (!savedListingsContainer || !savedListingsCount || !savedListingsEmpty) {
+                console.log('🔢 Updating saved listings count...');
+                
+                if (!savedListingsContainer || !savedListingsCount) {
+                    console.log('❌ Missing DOM elements for count update');
                     return;
                 }
                 
                 const remainingCards = savedListingsContainer.querySelectorAll('.saved-listing-card').length;
+                console.log(`📊 Found ${remainingCards} remaining cards`);
+                
                 savedListingsCount.textContent = `${remainingCards} saved`;
                 
-                if (remainingCards === 0) {
-                    savedListingsEmpty.style.display = 'block';
-                } else {
-                    savedListingsEmpty.style.display = 'none';
+                if (savedListingsEmpty) {
+                    if (remainingCards === 0) {
+                        savedListingsEmpty.style.display = 'block';
+                    } else {
+                        savedListingsEmpty.style.display = 'none';
+                    }
                 }
+                
+                console.log(`✅ Updated count to: ${remainingCards} saved`);
             }
 
             // Function to view listing details
