@@ -11,6 +11,17 @@
     <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
     <script src="universal-auth-manager.js"></script>
     
+    <!-- Initialize auth immediately -->
+    <script>
+        // Initialize auth as soon as possible
+        window.addEventListener('load', function() {
+            console.log('🚀 Early auth initialization...');
+            if (typeof window.UniversalAuth !== 'undefined') {
+                window.UniversalAuth.init({ allowAnonymous: false, requireSupabase: false });
+            }
+        });
+    </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -861,12 +872,12 @@
                 </div>
                 
                 <!-- Dashboard - Highlighted -->
-                <a href="https://www.roomfinderai.com/profile.html" class="nav-item" style="color: #667eea; font-weight: 600;">Dashboard</a>
+                <a href="dashboard.html" class="nav-item" style="color: #667eea; font-weight: 600;">Dashboard</a>
             </div>
             
             <!-- Desktop Auth/Profile Section -->
             <div id="authSection" class="desktop-auth hidden md:flex items-center space-x-4">
-                <!-- Default content before JS loads -->
+                <!-- Will be populated by universal-auth-manager.js -->
                 <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
                     Login/Register
                 </a>
@@ -5172,7 +5183,7 @@
         function updateNotificationCount() {
             const count = 3; // This would come from your backend
             const countElement = document.getElementById('notificationCount');
-            if (count > 0) {
+            if (countElement && count > 0) {
                 countElement.textContent = count;
                 countElement.classList.remove('hidden');
             }
@@ -9796,12 +9807,42 @@
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 console.log('📄 DOM ready, starting initialization...');
+                
+                // Update welcome message with user's name
+                const currentUser = localStorage.getItem('currentUser');
+                if (currentUser) {
+                    try {
+                        const user = JSON.parse(currentUser);
+                        const welcomeName = document.getElementById('welcomeName');
+                        if (welcomeName && user.firstName) {
+                            welcomeName.textContent = user.firstName;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing user data:', e);
+                    }
+                }
+                
                 initializeDateDisplay();
                 loadDashboardStats();
                 loadConfigWithFallback();
             });
         } else {
             console.log('📄 DOM already ready, starting initialization...');
+            
+            // Update welcome message with user's name
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                try {
+                    const user = JSON.parse(currentUser);
+                    const welcomeName = document.getElementById('welcomeName');
+                    if (welcomeName && user.firstName) {
+                        welcomeName.textContent = user.firstName;
+                    }
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                }
+            }
+            
             initializeDateDisplay();
             loadDashboardStats();
             loadConfigWithFallback();
@@ -9948,11 +9989,6 @@
                 event.preventDefault();
             }
         }, { passive: false });
-        
-        // Initialize Universal Authentication Manager
-        if (typeof window.UniversalAuth !== 'undefined') {
-            window.UniversalAuth.init({ allowAnonymous: false, requireSupabase: true });
-        }
     </script>
 </body>
 </html>

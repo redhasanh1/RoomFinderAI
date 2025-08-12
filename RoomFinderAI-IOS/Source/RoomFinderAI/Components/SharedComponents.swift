@@ -206,31 +206,6 @@ struct PremiumFeatureCard: View {
     }
 }
 
-// MARK: - Filter Components
-
-struct FilterChip: View {
-    let text: String
-    let onRemove: () -> Void
-    
-    var body: some View {
-        HStack(spacing: 4) {
-            Text(text)
-                .font(.caption)
-                .foregroundColor(.white)
-            
-            Button(action: onRemove) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 8))
-                    .foregroundColor(.white)
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.primaryBlue)
-        .cornerRadius(12)
-    }
-}
-
 // MARK: - Network Error Component
 
 struct NetworkErrorView: View {
