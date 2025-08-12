@@ -56,4 +56,9 @@
         <item name="boxCornerRadiusBottomStart">12dp</item>
         <item name="boxCornerRadiusBottomEnd">12dp</item>
     </style>
+    
+    <!-- Shape Appearance for circular images -->
+    <style name="ShapeAppearance.Circle" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>
