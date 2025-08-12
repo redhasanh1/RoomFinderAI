@@ -866,10 +866,7 @@
             
             <!-- Desktop Auth/Profile Section -->
             <div id="authSection" class="desktop-auth hidden md:flex items-center space-x-4">
-                <!-- Default content before JS loads -->
-                <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                    Login/Register
-                </a>
+                <!-- Will be populated by universal-auth-manager.js -->
             </div>
         </nav>
         
@@ -9796,12 +9793,52 @@
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 console.log('📄 DOM ready, starting initialization...');
+                
+                // Initialize authentication FIRST
+                if (typeof window.UniversalAuth !== 'undefined') {
+                    window.UniversalAuth.init({ allowAnonymous: false, requireSupabase: false });
+                }
+                
+                // Update welcome message with user's name
+                const currentUser = localStorage.getItem('currentUser');
+                if (currentUser) {
+                    try {
+                        const user = JSON.parse(currentUser);
+                        const welcomeName = document.getElementById('welcomeName');
+                        if (welcomeName && user.firstName) {
+                            welcomeName.textContent = user.firstName;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing user data:', e);
+                    }
+                }
+                
                 initializeDateDisplay();
                 loadDashboardStats();
                 loadConfigWithFallback();
             });
         } else {
             console.log('📄 DOM already ready, starting initialization...');
+            
+            // Initialize authentication FIRST
+            if (typeof window.UniversalAuth !== 'undefined') {
+                window.UniversalAuth.init({ allowAnonymous: false, requireSupabase: false });
+            }
+            
+            // Update welcome message with user's name
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                try {
+                    const user = JSON.parse(currentUser);
+                    const welcomeName = document.getElementById('welcomeName');
+                    if (welcomeName && user.firstName) {
+                        welcomeName.textContent = user.firstName;
+                    }
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                }
+            }
+            
             initializeDateDisplay();
             loadDashboardStats();
             loadConfigWithFallback();
@@ -9948,11 +9985,6 @@
                 event.preventDefault();
             }
         }, { passive: false });
-        
-        // Initialize Universal Authentication Manager
-        if (typeof window.UniversalAuth !== 'undefined') {
-            window.UniversalAuth.init({ allowAnonymous: false, requireSupabase: true });
-        }
     </script>
 </body>
 </html>
