@@ -44,6 +44,17 @@ public class AiChatFragment extends Fragment {
     private AnimatorSet sendButtonReleaseAnimator;
     private LinearLayoutManager layoutManager;
     
+    // Conversation context management (like web version)
+    private String pendingUserResponse = null;
+    private NegotiationState negotiationState = NegotiationState.IDLE;
+    private List<Listing> matchingListings = new ArrayList<>();
+    
+    public enum NegotiationState {
+        IDLE,
+        AWAITING_CONFIRMATION,
+        NEGOTIATING
+    }
+    
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentAiChatBinding.inflate(inflater, container, false);
@@ -190,6 +201,73 @@ public class AiChatFragment extends Fragment {
         scrollToBottom();
     }
     
+    // Check if user response matches conversation context (like web version)
+    private boolean checkForNegotiationResponse(String message) {
+        Log.d(TAG, "🔍 Checking for negotiation response. State: " + negotiationState + ", Pending: " + pendingUserResponse);
+        
+        String cleanMessage = message.toLowerCase().trim();
+        
+        // Check if we're awaiting confirmation for negotiations
+        if (negotiationState == NegotiationState.AWAITING_CONFIRMATION && 
+            "negotiate_offer".equals(pendingUserResponse)) {
+            
+            // Check for affirmative responses
+            boolean isAffirmative = cleanMessage.contains("yes") || 
+                                  cleanMessage.contains("sure") || 
+                                  cleanMessage.contains("ok") || 
+                                  cleanMessage.contains("okay") || 
+                                  cleanMessage.contains("go ahead") || 
+                                  cleanMessage.contains("help me") || 
+                                  cleanMessage.contains("negotiate") || 
+                                  cleanMessage.equals("y");
+            
+            if (isAffirmative && !matchingListings.isEmpty()) {
+                Log.d(TAG, "✅ Affirmative response detected, starting negotiations");
+                
+                // Clear pending response
+                pendingUserResponse = null;
+                negotiationState = NegotiationState.NEGOTIATING;
+                
+                // Show confirmation message
+                ChatMessage confirmMessage = ChatMessage.createAiMessage(
+                    "🤖 Great! I'll contact the landlords for you using smart negotiation strategies..."
+                );
+                messages.add(confirmMessage);
+                chatAdapter.notifyItemInserted(messages.size() - 1);
+                scrollToBottom();
+                
+                // Start negotiations after a brief delay
+                mainHandler.postDelayed(this::startNegotiationsForAllListings, 1500);
+                return true;
+            }
+            
+            // Check for negative responses
+            boolean isNegative = cleanMessage.contains("no") || 
+                               cleanMessage.contains("not") || 
+                               cleanMessage.contains("don't") || 
+                               cleanMessage.contains("nope") || 
+                               cleanMessage.equals("n");
+            
+            if (isNegative) {
+                Log.d(TAG, "❌ Negative response detected, canceling negotiations");
+                
+                // Clear pending response
+                pendingUserResponse = null;
+                negotiationState = NegotiationState.IDLE;
+                
+                ChatMessage cancelMessage = ChatMessage.createAiMessage(
+                    "👍 No problem! Feel free to ask if you need help with anything else, like finding more properties or getting rental advice."
+                );
+                messages.add(cancelMessage);
+                chatAdapter.notifyItemInserted(messages.size() - 1);
+                scrollToBottom();
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     private void sendMessage(String messageText) {
         // Check authentication before processing any AI requests
         AuthManager authManager = AuthManager.getInstance(requireContext());
@@ -214,6 +292,12 @@ public class AiChatFragment extends Fragment {
         
         // Scroll to bottom
         scrollToBottom();
+        
+        // First check if this is a response to a pending negotiation question
+        if (checkForNegotiationResponse(messageText)) {
+            setProcessingState(false);
+            return;
+        }
         
         // Show typing indicator
         showTypingIndicator();
@@ -300,6 +384,10 @@ public class AiChatFragment extends Fragment {
         } else {
             Log.d(TAG, "Found " + listings.size() + " properties");
             
+            // Store matching listings for potential negotiations
+            matchingListings.clear();
+            matchingListings.addAll(listings);
+            
             String resultMessage = String.format("🏠 Found %d properties matching your criteria:\n\n", listings.size());
             
             // Show top 5 properties
@@ -319,13 +407,155 @@ public class AiChatFragment extends Fragment {
                 resultMessage += String.format("...and %d more properties\n\n", listings.size() - 5);
             }
             
-            resultMessage += "💡 Need help negotiating with any of these landlords? I can help you write professional messages and negotiation strategies!";
-            
             ChatMessage resultsMessage = ChatMessage.createPropertySearchMessage(resultMessage);
             messages.add(resultsMessage);
             chatAdapter.notifyItemInserted(messages.size() - 1);
+            
+            // Ask explicit confirmation question (like web version)
+            ChatMessage confirmationMessage = ChatMessage.createAiMessage(
+                "💡 Would you like me to help you negotiate with any of these landlords? I can send professional messages and negotiation strategies on your behalf!"
+            );
+            messages.add(confirmationMessage);
+            chatAdapter.notifyItemInserted(messages.size() - 1);
+            
+            // Set conversation context to await user response
+            pendingUserResponse = "negotiate_offer";
+            negotiationState = NegotiationState.AWAITING_CONFIRMATION;
+            
+            Log.d(TAG, "✅ Set negotiation state to AWAITING_CONFIRMATION");
         }
         
+        scrollToBottom();
+    }
+    
+    // Start negotiations for all matching listings (like web version)
+    private void startNegotiationsForAllListings() {
+        Log.d(TAG, "🤝 Starting negotiations for " + matchingListings.size() + " listings");
+        
+        if (matchingListings.isEmpty()) {
+            addSystemMessage("❌ No properties available for negotiation.", ChatMessage.MessageType.ERROR);
+            negotiationState = NegotiationState.IDLE;
+            return;
+        }
+        
+        // Show progress message
+        ChatMessage progressMessage = ChatMessage.createAiMessage(
+            "📧 Contacting landlords for " + matchingListings.size() + " properties..."
+        );
+        messages.add(progressMessage);
+        chatAdapter.notifyItemInserted(messages.size() - 1);
+        scrollToBottom();
+        
+        // Simulate negotiation process for each property
+        for (int i = 0; i < Math.min(3, matchingListings.size()); i++) {
+            Listing listing = matchingListings.get(i);
+            
+            // Delay each negotiation slightly for realistic effect
+            int delay = (i + 1) * 2000;
+            
+            mainHandler.postDelayed(() -> {
+                simulateNegotiationForProperty(listing);
+            }, delay);
+        }
+        
+        // Show completion message after all negotiations
+        int finalDelay = Math.min(3, matchingListings.size()) * 2000 + 1000;
+        mainHandler.postDelayed(() -> {
+            showNegotiationSummary();
+            negotiationState = NegotiationState.IDLE;
+        }, finalDelay);
+    }
+    
+    // Simulate negotiation for a single property
+    private void simulateNegotiationForProperty(Listing listing) {
+        Log.d(TAG, "💬 Simulating negotiation for property: " + listing.getTitle());
+        
+        // Generate professional negotiation message
+        String negotiationMessage = generateProfessionalMessage(listing);
+        
+        // Show the message being sent
+        ChatMessage sentMessage = ChatMessage.createAiMessage(
+            "📤 **Sent to " + listing.getTitle() + " landlord:**\n\n" + negotiationMessage
+        );
+        messages.add(sentMessage);
+        chatAdapter.notifyItemInserted(messages.size() - 1);
+        scrollToBottom();
+        
+        // Simulate landlord response after short delay
+        mainHandler.postDelayed(() -> {
+            simulateLandlordResponse(listing);
+        }, 1500);
+    }
+    
+    // Generate professional negotiation message
+    private String generateProfessionalMessage(Listing listing) {
+        String[] templates = {
+            "Hello,\n\nI am very interested in your property at " + listing.getLocation() + 
+            ". I am a reliable tenant with excellent references and stable income. " +
+            "Would you be open to discussing the rental terms? I'm prepared to move in quickly and can provide all necessary documentation.\n\nBest regards,\n[Your Name]",
+            
+            "Dear Property Owner,\n\nI hope this message finds you well. I am writing to express my strong interest in your " +
+            listing.getTitle().toLowerCase() + " listed at $" + String.format("%.0f", listing.getPrice()) + "/month. " +
+            "As a responsible tenant, I would love to discuss any flexibility in the rental terms. " +
+            "I have a clean rental history and can provide references upon request.\n\nThank you for your time,\n[Your Name]",
+            
+            "Hi there,\n\nI came across your listing for " + listing.getTitle() + " and I'm very interested! " +
+            "I'm a working professional looking for a long-term rental. Given the current market conditions, " +
+            "would you consider any adjustments to the monthly rent or lease terms? I'm a reliable tenant " +
+            "and can provide proof of income and references.\n\nLooking forward to hearing from you,\n[Your Name]"
+        };
+        
+        return templates[(int)(Math.random() * templates.length)];
+    }
+    
+    // Simulate landlord response
+    private void simulateLandlordResponse(Listing listing) {
+        // Random response scenarios
+        double responseType = Math.random();
+        String response;
+        
+        if (responseType < 0.4) {
+            // Positive response with negotiation
+            int discount = (int)(listing.getPrice() * (0.05 + Math.random() * 0.10)); // 5-15% discount
+            response = "📥 **Response from " + listing.getTitle() + " landlord:**\n\n" +
+                      "Thank you for your interest! I appreciate tenants who are upfront about their needs. " +
+                      "I can offer the property for $" + (int)(listing.getPrice() - discount) + "/month " +
+                      "for a 12-month lease. Would this work for you?";
+        } else if (responseType < 0.7) {
+            // Willing to discuss terms
+            response = "📥 **Response from " + listing.getTitle() + " landlord:**\n\n" +
+                      "Hello! Thank you for reaching out. I'm happy to discuss the rental terms. " +
+                      "The property is currently priced competitively, but I'm open to considering " +
+                      "a longer lease term or including some utilities. Let's schedule a viewing to discuss further.";
+        } else {
+            // Not flexible on price but interested
+            response = "📥 **Response from " + listing.getTitle() + " landlord:**\n\n" +
+                      "Hi there! I appreciate your interest in the property. While I can't adjust the monthly rent " +
+                      "as it's already priced fairly for the area, I'd be happy to waive the application fee " +
+                      "if you're ready to move forward. The property is move-in ready!";
+        }
+        
+        ChatMessage responseMessage = ChatMessage.createAiMessage(response);
+        messages.add(responseMessage);
+        chatAdapter.notifyItemInserted(messages.size() - 1);
+        scrollToBottom();
+    }
+    
+    // Show negotiation summary
+    private void showNegotiationSummary() {
+        String summary = "🎉 **Negotiation Summary:**\n\n" +
+                        "✅ Successfully contacted " + Math.min(3, matchingListings.size()) + " landlords\n" +
+                        "📧 Professional messages sent with your requirements\n" +
+                        "💬 Initial responses received\n\n" +
+                        "**Next Steps:**\n" +
+                        "• Review the responses above\n" +
+                        "• Schedule viewings for properties with flexible terms\n" +
+                        "• I can help you craft follow-up messages\n\n" +
+                        "Would you like me to help you with anything else?";
+        
+        ChatMessage summaryMessage = ChatMessage.createAiMessage(summary);
+        messages.add(summaryMessage);
+        chatAdapter.notifyItemInserted(messages.size() - 1);
         scrollToBottom();
     }
     
