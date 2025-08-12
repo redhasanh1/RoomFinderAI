@@ -4698,14 +4698,19 @@
                         console.log('ℹ️ Anonymous user, loading listings...');
                     }
                     loadListings().then(() => {
-                        // Load favorite states after listings are loaded
-                        loadFavoriteStates();
+                        // Load favorite states after listings are loaded, with a small delay to ensure DOM is ready
+                        setTimeout(() => {
+                            loadFavoriteStates();
+                        }, 100);
                     });
                 })
                 .catch(error => {
                     console.error('Auth initialization error:', error);
                     loadListings().then(() => {
-                        loadFavoriteStates();
+                        // Load favorite states after listings are loaded, with a small delay to ensure DOM is ready
+                        setTimeout(() => {
+                            loadFavoriteStates();
+                        }, 100);
                     });
                 });
         }
@@ -4824,6 +4829,8 @@
                 return;
             }
 
+            console.log(`🔄 Loading favorite states for user: ${currentUser.email}`);
+
             let favoriteIds = new Set();
 
             try {
@@ -4845,19 +4852,38 @@
                 const savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
                 favoriteIds = new Set(savedListings);
                 console.log(`✅ Loaded ${savedListings.length} favorite states via localStorage`);
+                console.log(`💾 Raw localStorage data:`, savedListings);
             }
 
-            // Update heart button states
-            document.querySelectorAll('.favorite-btn').forEach(button => {
+            // Update heart button states with retry mechanism
+            updateHeartStates(favoriteIds);
+        }
+        
+        function updateHeartStates(favoriteIds, retryCount = 0) {
+            const favoriteButtons = document.querySelectorAll('.favorite-btn');
+            console.log(`🔍 Found ${favoriteButtons.length} favorite buttons to update (attempt ${retryCount + 1})`);
+            console.log(`🔍 Favorite IDs to mark:`, Array.from(favoriteIds));
+            
+            if (favoriteButtons.length === 0 && retryCount < 3) {
+                // Retry if no buttons found yet
+                console.log('⏳ No buttons found, retrying in 200ms...');
+                setTimeout(() => updateHeartStates(favoriteIds, retryCount + 1), 200);
+                return;
+            }
+            
+            favoriteButtons.forEach(button => {
                 const listingId = button.getAttribute('data-listing-id');
                 if (favoriteIds.has(listingId)) {
                     button.setAttribute('data-favorited', 'true');
                     button.setAttribute('title', 'Remove from favorites');
+                    console.log(`❤️ Marked as favorited: ${listingId}`);
                 } else {
                     button.setAttribute('data-favorited', 'false');
                     button.setAttribute('title', 'Save to favorites');
                 }
             });
+            
+            console.log(`✅ Updated ${favoriteButtons.length} heart button states`);
         }
     </script>
     
