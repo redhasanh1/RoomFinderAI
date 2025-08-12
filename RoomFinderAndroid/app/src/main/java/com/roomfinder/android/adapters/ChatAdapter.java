@@ -1,5 +1,7 @@
 package com.roomfinder.android.adapters;
 
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.graphics.Color;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -7,6 +9,7 @@ import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -71,13 +74,87 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         
         if (holder instanceof UserMessageViewHolder) {
             ((UserMessageViewHolder) holder).bind(message);
+            applySlideInAnimation(holder.itemView, VIEW_TYPE_USER);
         } else if (holder instanceof AiMessageViewHolder) {
             ((AiMessageViewHolder) holder).bind(message);
+            applySlideInAnimation(holder.itemView, VIEW_TYPE_AI);
         } else if (holder instanceof SystemMessageViewHolder) {
             ((SystemMessageViewHolder) holder).bind(message);
         } else if (holder instanceof TypingViewHolder) {
             ((TypingViewHolder) holder).bind(message);
+            applyTypingAnimation(holder);
         }
+    }
+    
+    private void applySlideInAnimation(View view, int viewType) {
+        try {
+            AnimatorSet animator;
+            
+            if (viewType == VIEW_TYPE_USER) {
+                animator = (AnimatorSet) AnimatorInflater.loadAnimator(view.getContext(), 
+                    R.animator.message_slide_in_right);
+            } else {
+                animator = (AnimatorSet) AnimatorInflater.loadAnimator(view.getContext(), 
+                    R.animator.message_slide_in_left);
+            }
+            
+            animator.setTarget(view);
+            animator.start();
+        } catch (Exception e) {
+            // Fallback animation
+            view.setAlpha(0f);
+            view.animate().alpha(1f).setDuration(300).start();
+        }
+    }
+    
+    private void applyTypingAnimation(RecyclerView.ViewHolder holder) {
+        if (holder instanceof TypingViewHolder) {
+            TypingViewHolder typingHolder = (TypingViewHolder) holder;
+            
+            // Animate typing dots with staggered delays
+            if (typingHolder.typingDot1 != null) {
+                animateTypingDot(typingHolder.typingDot1, 0);
+            }
+            if (typingHolder.typingDot2 != null) {
+                animateTypingDot(typingHolder.typingDot2, 200);
+            }
+            if (typingHolder.typingDot3 != null) {
+                animateTypingDot(typingHolder.typingDot3, 400);
+            }
+            
+            // Pulse avatar
+            if (typingHolder.avatarPulse != null) {
+                animateAvatarPulse(typingHolder.avatarPulse);
+            }
+        }
+    }
+    
+    private void animateTypingDot(View dot, int delay) {
+        dot.postDelayed(() -> {
+            try {
+                AnimatorSet animator = (AnimatorSet) AnimatorInflater.loadAnimator(
+                    dot.getContext(), R.animator.typing_dots_animation);
+                animator.setTarget(dot);
+                animator.start();
+            } catch (Exception e) {
+                // Fallback simple animation
+                dot.animate()
+                    .scaleX(1.2f).scaleY(1.2f).alpha(1f)
+                    .setDuration(300)
+                    .withEndAction(() -> 
+                        dot.animate().scaleX(1f).scaleY(1f).alpha(0.4f).setDuration(300).start())
+                    .start();
+            }
+        }, delay);
+    }
+    
+    private void animateAvatarPulse(View avatar) {
+        avatar.animate()
+            .scaleX(1.05f).scaleY(1.05f).alpha(0.8f)
+            .setDuration(1000)
+            .withEndAction(() -> 
+                avatar.animate().scaleX(1f).scaleY(1f).alpha(0.6f).setDuration(1000).start())
+            .start();
     }
     
     @Override
@@ -112,16 +189,30 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     static class UserMessageViewHolder extends RecyclerView.ViewHolder {
         TextView messageText;
         TextView timestamp;
+        ImageView deliveryStatus;
+        ImageView userAvatar;
         
         UserMessageViewHolder(View itemView) {
             super(itemView);
             messageText = itemView.findViewById(R.id.messageText);
             timestamp = itemView.findViewById(R.id.timestamp);
+            deliveryStatus = itemView.findViewById(R.id.deliveryStatus);
+            userAvatar = itemView.findViewById(R.id.userAvatar);
         }
         
         void bind(ChatMessage message) {
             messageText.setText(message.getContent());
             timestamp.setText(message.getFormattedTime());
+            
+            // Show delivery status if available
+            if (deliveryStatus != null) {
+                if (message.isDelivered()) {
+                    deliveryStatus.setVisibility(View.VISIBLE);
+                    deliveryStatus.setImageResource(R.drawable.ic_check);
+                } else {
+                    deliveryStatus.setVisibility(View.GONE);
+                }
+            }
         }
     }
     
@@ -129,11 +220,15 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     static class AiMessageViewHolder extends RecyclerView.ViewHolder {
         TextView messageText;
         TextView timestamp;
+        ImageView aiAvatar;
+        View messageStatus;
         
         AiMessageViewHolder(View itemView) {
             super(itemView);
             messageText = itemView.findViewById(R.id.messageText);
             timestamp = itemView.findViewById(R.id.timestamp);
+            aiAvatar = itemView.findViewById(R.id.aiAvatar);
+            messageStatus = itemView.findViewById(R.id.messageStatus);
         }
         
         void bind(ChatMessage message) {
@@ -160,6 +255,20 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             
             messageText.setText(spannableString);
             timestamp.setText(message.getFormattedTime());
+            
+            // Add subtle avatar animation
+            if (aiAvatar != null) {
+                animateAvatarGlow(aiAvatar);
+            }
+        }
+        
+        private void animateAvatarGlow(View avatar) {
+            avatar.animate()
+                .scaleX(1.02f).scaleY(1.02f)
+                .setDuration(800)
+                .withEndAction(() -> 
+                    avatar.animate().scaleX(1f).scaleY(1f).setDuration(800).start())
+                .start();
         }
     }
     
@@ -186,13 +295,21 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     
     // Typing Indicator ViewHolder
     static class TypingViewHolder extends RecyclerView.ViewHolder {
+        View typingDot1, typingDot2, typingDot3;
+        View avatarPulse;
+        ImageView aiAvatar;
         
         TypingViewHolder(View itemView) {
             super(itemView);
+            typingDot1 = itemView.findViewById(R.id.typingDot1);
+            typingDot2 = itemView.findViewById(R.id.typingDot2);
+            typingDot3 = itemView.findViewById(R.id.typingDot3);
+            avatarPulse = itemView.findViewById(R.id.avatarPulse);
+            aiAvatar = itemView.findViewById(R.id.aiAvatar);
         }
         
         void bind(ChatMessage message) {
-            // Typing indicator animation is handled by the layout
+            // Typing indicator animations are applied in applyTypingAnimation method
         }
     }
 }

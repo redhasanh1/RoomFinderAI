@@ -14,18 +14,18 @@
     <color name="gradient_start_accent">#4facfe</color>
     <color name="gradient_end_accent">#00f2fe</color>
     
-    <!-- Glass Morphism Colors (Dark Theme) -->
-    <color name="glass_background">#800F1422</color>
-    <color name="glass_border">#4DFFFFFF</color>
+    <!-- Glass Morphism Colors (Light Theme) -->
+    <color name="glass_background">#F0FFFFFF</color>
+    <color name="glass_border">#30667EEA</color>
     <color name="glass_overlay">#1A7C8CFF</color>
     
-    <!-- Card Colors (Dark Theme) -->
-    <color name="card_background">#800F1422</color>
-    <color name="card_surface">#80131827</color>
+    <!-- Card Colors (Light Theme) -->
+    <color name="card_background">#FFFFFF</color>
+    <color name="card_surface">#FAFBFF</color>
     
-    <!-- Outline Colors (Dark Theme) -->
-    <color name="outline">#334055</color>
-    <color name="outline_variant">#4DFFFFFF</color>
+    <!-- Outline Colors (Light Theme) -->
+    <color name="outline">#E0E1E6</color>
+    <color name="outline_variant">#30667EEA</color>
     
     <!-- Accent Colors -->
     <color name="pink_accent">#EC4899</color>
@@ -54,17 +54,17 @@
     <color name="warning">#F59E0B</color>
     <color name="info">#3B82F6</color>
     
-    <!-- Background Colors (Dark Theme) -->
-    <color name="background">#0B0D12</color>
-    <color name="background_light">#131827</color>
-    <color name="background_demo">#0F1422</color>
-    <color name="surface">#131827</color>
-    <color name="surface_variant">#0F1422</color>
+    <!-- Background Colors (Light Purple Theme) -->
+    <color name="background">#F8F7FF</color>
+    <color name="background_light">#FFFFFF</color>
+    <color name="background_demo">#FDFCFF</color>
+    <color name="surface">#FDFCFF</color>
+    <color name="surface_variant">#F5F3FF</color>
     
-    <!-- Text Colors (Dark Theme) -->
-    <color name="text_primary">#E8ECF1</color>
-    <color name="text_secondary">#A8B0BE</color>
-    <color name="text_disabled">#6B7280</color>
+    <!-- Text Colors (Dark for Readability) -->
+    <color name="text_primary">#1A1C2E</color>
+    <color name="text_secondary">#5A5C72</color>
+    <color name="text_disabled">#9B9CAF</color>
     
     <!-- Heart Colors -->
     <color name="heart_red_dim">#CC5555</color>

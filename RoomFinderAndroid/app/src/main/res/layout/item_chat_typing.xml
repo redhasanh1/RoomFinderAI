@@ -4,53 +4,105 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="8dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
     android:gravity="start">
 
-    <ImageView
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="4dp"
-        android:src="@drawable/ic_bot"
-        android:background="@drawable/circle_background"
-        android:backgroundTint="@color/ai_chat_primary"
-        android:padding="6dp"
-        app:tint="@android:color/white" />
+    <!-- AI Avatar with Animated Pulse -->
+    <FrameLayout
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="6dp">
+        
+        <ImageView
+            android:id="@+id/aiAvatar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/glassmorphism_card"
+            android:src="@drawable/ic_bot"
+            android:padding="10dp"
+            android:tint="@color/white"
+            android:elevation="4dp"
+            android:contentDescription="AI Assistant is typing" />
+            
+        <!-- Animated pulse glow -->
+        <View
+            android:id="@+id/avatarPulse"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/ai_chat_card_glow"
+            android:alpha="0.6" />
+        
+    </FrameLayout>
 
-    <com.google.android.material.card.MaterialCardView
+    <!-- Enhanced Typing Indicator Bubble -->
+    <FrameLayout
+        android:id="@+id/typingBubbleContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:cardBackgroundColor="@color/surface"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="2dp"
-        app:strokeWidth="1dp"
-        app:strokeColor="@color/outline">
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="80dp"
+        android:background="@drawable/chat_bubble_ai_premium"
+        android:elevation="3dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="16dp"
-            android:gravity="center">
+            android:layout_margin="20dp"
+            android:gravity="center_vertical">
+
+            <!-- Animated Typing Dots -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginEnd="12dp">
+                
+                <View
+                    android:id="@+id/typingDot1"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/circle_background"
+                    android:backgroundTint="@color/ai_chat_primary"
+                    android:alpha="0.4" />
+                    
+                <View
+                    android:id="@+id/typingDot2"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/circle_background"
+                    android:backgroundTint="@color/ai_chat_primary"
+                    android:alpha="0.4" />
+                    
+                <View
+                    android:id="@+id/typingDot3"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/circle_background"
+                    android:backgroundTint="@color/ai_chat_primary"
+                    android:alpha="0.4" />
+
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="AI is typing"
+                android:text="AI is thinking..."
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp"
-                android:textStyle="italic" />
-
-            <ProgressBar
-                style="?android:attr/progressBarStyleSmall"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginStart="8dp"
-                android:indeterminateTint="@color/ai_chat_primary" />
+                android:fontFamily="sans-serif"
+                android:textStyle="italic"
+                android:alpha="0.8" />
 
         </LinearLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+    </FrameLayout>
 
 </LinearLayout>
