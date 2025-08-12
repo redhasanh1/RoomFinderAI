@@ -1185,7 +1185,23 @@
                             setTimeout(() => {
                                 console.log('🚮 Removing card from DOM...');
                                 listingCard.remove();
+                                
+                                // Check if this was the last card
+                                const remainingCards = savedListingsContainer.querySelectorAll('.saved-listing-card').length;
+                                console.log(`🔍 Cards remaining after removal: ${remainingCards}`);
+                                
                                 updateSavedListingsCount();
+                                
+                                // Extra check to ensure empty state shows
+                                if (remainingCards === 0) {
+                                    console.log('🔄 No cards left, ensuring empty state is visible');
+                                    const savedListingsEmpty = document.getElementById('savedListingsEmpty');
+                                    if (savedListingsEmpty) {
+                                        savedListingsEmpty.style.display = 'block';
+                                        savedListingsEmpty.style.visibility = 'visible';
+                                        console.log('✅ Forced empty state to show');
+                                    }
+                                }
                             }, 300);
                         } else {
                             console.log('❌ Could not find listing card element');
@@ -1209,7 +1225,7 @@
                 console.log('🔢 Updating saved listings count...');
                 
                 if (!savedListingsContainer || !savedListingsCount) {
-                    console.log('❌ Missing DOM elements for count update');
+                    console.log('❌ Missing required DOM elements for count update');
                     return;
                 }
                 
@@ -1220,10 +1236,14 @@
                 
                 if (savedListingsEmpty) {
                     if (remainingCards === 0) {
+                        console.log('📝 Showing empty state message');
                         savedListingsEmpty.style.display = 'block';
                     } else {
+                        console.log('📝 Hiding empty state message');
                         savedListingsEmpty.style.display = 'none';
                     }
+                } else {
+                    console.log('❌ savedListingsEmpty element not found!');
                 }
                 
                 console.log(`✅ Updated count to: ${remainingCards} saved`);
