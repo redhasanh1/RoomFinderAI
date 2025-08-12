@@ -1003,16 +1003,40 @@
                 try {
                     console.log('🔖 Loading saved listings for user:', currentUser.email);
                     
-                    // Fetch user's saved listings from the API
-                    const response = await fetch(`/api/favorites?userEmail=${encodeURIComponent(currentUser.email)}`);
+                    let savedListings = [];
                     
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error || 'Failed to fetch saved listings');
+                    try {
+                        // Try API first
+                        const response = await fetch(`/api/favorites?userEmail=${encodeURIComponent(currentUser.email)}`);
+                        
+                        if (!response.ok) {
+                            throw new Error(`API failed: ${response.status}`);
+                        }
+                        
+                        savedListings = await response.json();
+                        console.log('📋 Fetched saved listings via API:', savedListings);
+                    } catch (apiError) {
+                        console.log('📱 API unavailable, loading from localStorage:', apiError.message);
+                        
+                        // Fallback to localStorage
+                        const storageKey = `savedListings_${currentUser.email}`;
+                        const savedListingIds = JSON.parse(localStorage.getItem(storageKey)) || [];
+                        
+                        // Create listing objects from IDs with offline indicator
+                        savedListings = savedListingIds.map(id => ({
+                            id: id,
+                            listing_id: id,
+                            title: `📱 Saved Listing #${id}`,
+                            price: '💰 Click to view details',
+                            location: '📍 Details available on listings page',
+                            description: '🔄 This listing was saved offline. Visit the listings page to see full details, or connect to the internet for complete information.',
+                            favorited_at: new Date().toISOString(),
+                            media: [],
+                            isOffline: true
+                        }));
+                        
+                        console.log('📋 Loaded saved listings via localStorage:', savedListings);
                     }
-                    
-                    const savedListings = await response.json();
-                    console.log('📋 Fetched saved listings:', savedListings);
                     
                     // Update count
                     savedListingsCount.textContent = `${savedListings.length} saved`;
@@ -1030,7 +1054,10 @@
                     
                     savedListings.forEach(listing => {
                         const listingCard = document.createElement('div');
-                        listingCard.className = 'saved-listing-card bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow';
+                        const cardClass = listing.isOffline 
+                            ? 'saved-listing-card bg-blue-50 border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow'
+                            : 'saved-listing-card bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow';
+                        listingCard.className = cardClass;
                         
                         // Get primary image
                         const primaryImage = listing.media && listing.media.length > 0 && listing.media[0].type?.startsWith('image/')
@@ -1051,8 +1078,8 @@
                                             </svg>
                                         </button>
                                     </div>
-                                    <p class="text-xl font-bold text-blue-600">$${listing.price?.toLocaleString() || 'N/A'}/mo</p>
-                                    <p class="text-gray-600 text-sm">${listing.street || ''}, ${listing.city || ''}</p>
+                                    <p class="text-xl font-bold text-blue-600">${listing.isOffline ? listing.price : `$${listing.price?.toLocaleString() || 'N/A'}/mo`}</p>
+                                    <p class="text-gray-600 text-sm">${listing.isOffline ? listing.location : `${listing.street || ''}, ${listing.city || ''}`}</p>
                                     <div class="flex items-center space-x-2 text-sm text-gray-500 mt-2">
                                         <span>${listing.bedrooms || 'N/A'} Bed</span>
                                         <span>•</span>
@@ -1092,13 +1119,35 @@
                 try {
                     console.log('🗑️ Removing saved listing:', listingId);
                     
-                    const response = await fetch(`/api/favorites/${listingId}?userEmail=${encodeURIComponent(currentUser.email)}`, {
-                        method: 'DELETE'
-                    });
+                    let success = false;
                     
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error || 'Failed to remove saved listing');
+                    try {
+                        // Try API first
+                        const response = await fetch(`/api/favorites/${listingId}?userEmail=${encodeURIComponent(currentUser.email)}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`API failed: ${response.status}`);
+                        }
+                        
+                        success = true;
+                        console.log('✅ Removed from favorites via API:', listingId);
+                    } catch (apiError) {
+                        console.log('📱 API unavailable, removing from localStorage:', apiError.message);
+                        
+                        // Fallback to localStorage
+                        const storageKey = `savedListings_${currentUser.email}`;
+                        let savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
+                        savedListings = savedListings.filter(id => id !== listingId);
+                        localStorage.setItem(storageKey, JSON.stringify(savedListings));
+                        
+                        success = true;
+                        console.log('✅ Removed from favorites via localStorage:', listingId);
+                    }
+                    
+                    if (!success) {
+                        throw new Error('Failed to remove saved listing');
                     }
                     
                     // Show success message
