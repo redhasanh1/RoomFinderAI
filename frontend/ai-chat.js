@@ -524,12 +524,29 @@ class AIChatHandler {
             return;
         }
 
-        this.appendMessage('AI', `📧 Initiating contact with landlord for listing ${listingId}...`, 'left');
+        console.log('📧 Opening chat for listing:', listing);
         
-        if (this.negotiationEngine) {
-            this.sendMessage(listing);
+        // Try to open real chat modal using the chat system
+        if (typeof window.openChatModal === 'function') {
+            // Use the real chat system
+            window.openChatModal(listing.id, listing.title || 'Property', listing.user_email);
+            this.appendMessage('AI', `✅ Opening chat for ${listing.title}. You can now message the landlord directly!`, 'left');
+        } else if (window.globalChatSystem && window.globalChatSystem.startConversation) {
+            // Try global chat system
+            window.globalChatSystem.startConversation(listing.id, listing.title, listing.user_email);
+            this.appendMessage('AI', `✅ Starting conversation for ${listing.title}`, 'left');
         } else {
-            this.sendBasicMessage(listing);
+            // Fallback: show a helpful message about setting up communication
+            this.appendMessage('AI', `📧 To contact the landlord for "${listing.title}", please:
+            
+1. Use the blue chat button (💬) in the bottom-right corner
+2. Start a new conversation 
+3. Reference listing ID: ${listing.id}
+
+Property Details:
+📍 ${listing.city || listing.street || listing.location}
+💰 $${listing.price}/month
+📧 Landlord: ${listing.user_email || 'Contact via platform'}`, 'left');
         }
     }
 
