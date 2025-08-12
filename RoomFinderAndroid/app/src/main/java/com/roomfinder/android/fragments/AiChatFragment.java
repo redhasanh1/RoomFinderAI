@@ -1,10 +1,14 @@
 package com.roomfinder.android.fragments;
 
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
@@ -12,6 +16,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.LinearSmoothScroller;
+import androidx.recyclerview.widget.RecyclerView;
 import com.roomfinder.android.R;
 import com.roomfinder.android.databinding.FragmentAiChatBinding;
 import com.roomfinder.android.adapters.ChatAdapter;
@@ -34,6 +40,9 @@ public class AiChatFragment extends Fragment {
     private AiNegotiatorService aiService;
     private Handler mainHandler;
     private boolean isProcessingMessage = false;
+    private AnimatorSet sendButtonPressAnimator;
+    private AnimatorSet sendButtonReleaseAnimator;
+    private LinearLayoutManager layoutManager;
     
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -46,9 +55,11 @@ public class AiChatFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         
         initializeServices();
+        initializeAnimations();
         setupToolbar();
         setupRecyclerView();
         setupClickListeners();
+        setupSendButtonAnimations();
         loadWelcomeMessage();
         checkNetworkConnection();
     }
@@ -81,10 +92,68 @@ public class AiChatFragment extends Fragment {
         });
     }
     
+    private void initializeAnimations() {
+        try {
+            // Initialize send button animations
+            sendButtonPressAnimator = (AnimatorSet) AnimatorInflater.loadAnimator(
+                requireContext(), R.animator.send_button_press);
+            sendButtonReleaseAnimator = (AnimatorSet) AnimatorInflater.loadAnimator(
+                requireContext(), R.animator.send_button_release);
+                
+            sendButtonPressAnimator.setTarget(binding.sendButton);
+            sendButtonReleaseAnimator.setTarget(binding.sendButton);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to load animations", e);
+        }
+    }
+    
     private void setupRecyclerView() {
         chatAdapter = new ChatAdapter(messages);
-        binding.messagesRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        layoutManager = new LinearLayoutManager(getContext());
+        layoutManager.setStackFromEnd(true);
+        
+        binding.messagesRecyclerView.setLayoutManager(layoutManager);
         binding.messagesRecyclerView.setAdapter(chatAdapter);
+        
+        // Enable smooth scrolling
+        binding.messagesRecyclerView.setHasFixedSize(false);
+        binding.messagesRecyclerView.setItemAnimator(new androidx.recyclerview.widget.DefaultItemAnimator());
+        
+        // Add scroll listener for better UX
+        binding.messagesRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                // Add any scroll-based effects here if needed
+            }
+        });
+    }
+    
+    private void setupSendButtonAnimations() {
+        binding.sendButton.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    // Haptic feedback
+                    v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                    
+                    // Press animation
+                    if (sendButtonPressAnimator != null && !isProcessingMessage) {
+                        sendButtonReleaseAnimator.cancel();
+                        sendButtonPressAnimator.start();
+                    }
+                    return false; // Allow click to continue
+                    
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    // Release animation
+                    if (sendButtonReleaseAnimator != null) {
+                        sendButtonPressAnimator.cancel();
+                        sendButtonReleaseAnimator.start();
+                    }
+                    return false;
+            }
+            return false;
+        });
     }
     
     private void setupClickListeners() {
@@ -314,110 +383,46 @@ public class AiChatFragment extends Fragment {
     
     private void scrollToBottom() {
         if (messages.size() > 0) {
-            binding.messagesRecyclerView.smoothScrollToPosition(messages.size() - 1);
+            // Use smooth scroller for better animation
+            LinearSmoothScroller smoothScroller = new LinearSmoothScroller(getContext()) {
+                @Override
+                protected int getVerticalSnapPreference() {
+                    return LinearSmoothScroller.SNAP_TO_END;
+                }
+                
+                @Override
+                protected float calculateSpeedPerPixel(android.util.DisplayMetrics displayMetrics) {
+                    return 100f / displayMetrics.densityDpi; // Faster scrolling
+                }
+            };
+            
+            smoothScroller.setTargetPosition(messages.size() - 1);
+            layoutManager.startSmoothScroll(smoothScroller);
         }
     }
     
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        
         // Cancel any pending network requests
         NetworkUtils.cancelAllRequests();
+        
+        // Clean up animations
+        if (sendButtonPressAnimator != null) {
+            sendButtonPressAnimator.cancel();
+            sendButtonPressAnimator = null;
+        }
+        if (sendButtonReleaseAnimator != null) {
+            sendButtonReleaseAnimator.cancel();
+            sendButtonReleaseAnimator = null;
+        }
+        
+        // Remove any pending callbacks
+        if (mainHandler != null) {
+            mainHandler.removeCallbacksAndMessages(null);
+        }
+        
         binding = null;
-    }
-
-    // Simple ChatAdapter (you might want to create a separate file for this)
-    private static class ChatAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<ChatAdapter.ChatViewHolder> {
-        private List<ChatMessage> messages;
-        
-        public ChatAdapter(List<ChatMessage> messages) {
-            this.messages = messages;
-        }
-        
-        @NonNull
-        @Override
-        public ChatViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            // Create a proper chat bubble layout
-            android.widget.LinearLayout container = new android.widget.LinearLayout(parent.getContext());
-            container.setOrientation(android.widget.LinearLayout.VERTICAL);
-            container.setPadding(16, 8, 16, 8);
-            
-            android.widget.TextView textView = new android.widget.TextView(parent.getContext());
-            textView.setPadding(24, 16, 24, 16);
-            textView.setTextSize(16);
-            textView.setLineSpacing(4, 1.2f);
-            
-            container.addView(textView);
-            return new ChatViewHolder(container, textView);
-        }
-        
-        @Override
-        public void onBindViewHolder(@NonNull ChatViewHolder holder, int position) {
-            ChatMessage message = messages.get(position);
-            
-            holder.textView.setText(message.getContent());
-            
-            // Style based on sender and message type
-            android.widget.LinearLayout.LayoutParams params = 
-                (android.widget.LinearLayout.LayoutParams) holder.textView.getLayoutParams();
-            
-            if (message.isFromUser()) {
-                // User messages - right aligned, blue background
-                params.gravity = android.view.Gravity.END;
-                holder.textView.setBackgroundResource(android.R.drawable.editbox_background);
-                holder.textView.getBackground().setTint(0xFF6366F1); // Purple primary
-                holder.textView.setTextColor(0xFFFFFFFF); // White text
-                params.setMargins(80, 8, 16, 8);
-            } else if (message.isSystemMessage() || message.isErrorMessage()) {
-                // System/error messages - center aligned
-                params.gravity = android.view.Gravity.CENTER;
-                holder.textView.setBackgroundResource(android.R.drawable.editbox_background);
-                
-                if (message.isErrorMessage()) {
-                    holder.textView.getBackground().setTint(0xFFEF4444); // Error red
-                    holder.textView.setTextColor(0xFFFFFFFF);
-                } else {
-                    holder.textView.getBackground().setTint(0xFFF3F4F6); // Light gray
-                    holder.textView.setTextColor(0xFF6B7280);
-                }
-                
-                holder.textView.setTextSize(14);
-                params.setMargins(32, 8, 32, 8);
-            } else {
-                // AI messages - left aligned, light background
-                params.gravity = android.view.Gravity.START;
-                holder.textView.setBackgroundResource(android.R.drawable.editbox_background);
-                holder.textView.getBackground().setTint(0xFFFFFFFF); // White
-                holder.textView.setTextColor(0xFF1F2937); // Dark text
-                params.setMargins(16, 8, 80, 8);
-                
-                // Add subtle shadow for AI messages
-                holder.textView.setElevation(2f);
-            }
-            
-            // Special styling for typing indicator
-            if (message.isTyping()) {
-                holder.textView.setTextSize(14);
-                holder.textView.setAlpha(0.7f);
-            } else {
-                holder.textView.setAlpha(1.0f);
-            }
-            
-            holder.textView.setLayoutParams(params);
-        }
-        
-        @Override
-        public int getItemCount() {
-            return messages.size();
-        }
-        
-        static class ChatViewHolder extends androidx.recyclerview.widget.RecyclerView.ViewHolder {
-            android.widget.TextView textView;
-            
-            public ChatViewHolder(@NonNull View itemView, android.widget.TextView textView) {
-                super(itemView);
-                this.textView = textView;
-            }
-        }
     }
 }

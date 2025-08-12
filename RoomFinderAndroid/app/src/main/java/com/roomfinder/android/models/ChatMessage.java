@@ -8,6 +8,7 @@ public class ChatMessage {
     private String sender; // "user" or "ai"
     private long timestamp;
     private boolean isTyping;
+    private boolean delivered; // For message delivery status
     private MessageType type;
     private String propertyId; // For property-related messages
     
@@ -25,6 +26,7 @@ public class ChatMessage {
         this.timestamp = System.currentTimeMillis();
         this.type = MessageType.TEXT;
         this.isTyping = false;
+        this.delivered = false;
     }
     
     public ChatMessage(String content, String sender) {
@@ -132,6 +134,14 @@ public class ChatMessage {
     
     public void setPropertyId(String propertyId) {
         this.propertyId = propertyId;
+    }
+    
+    public boolean isDelivered() {
+        return delivered;
+    }
+    
+    public void setDelivered(boolean delivered) {
+        this.delivered = delivered;
     }
     
     // Helper methods

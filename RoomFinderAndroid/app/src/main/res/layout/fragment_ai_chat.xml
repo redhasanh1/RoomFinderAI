@@ -26,37 +26,71 @@
         android:padding="16dp"
         android:clipToPadding="false" />
 
-    <!-- Message Input Area -->
+    <!-- Premium Message Input Area -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
-        android:elevation="8dp"
+        android:background="@drawable/glass_card_background"
+        android:elevation="12dp"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:padding="20dp">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/messageInput"
+        <!-- Enhanced Input Field Container -->
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/circle_background"
-            android:backgroundTint="@color/background"
-            android:hint="@string/type_message"
-            android:maxLines="3"
-            android:padding="12dp"
-            android:textSize="16sp" />
+            android:layout_marginEnd="12dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/sendButton"
-            style="@style/Widget.Material3.Button.Icon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:backgroundTint="@color/purple_primary"
-            android:text="@string/send"
-            app:icon="@drawable/ic_send"
-            app:iconTint="@color/white" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/messageInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/chat_input_selector"
+                android:hint="@string/type_message"
+                android:maxLines="4"
+                android:minHeight="52dp"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:paddingTop="14dp"
+                android:paddingBottom="14dp"
+                android:textSize="16sp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:fontFamily="sans-serif"
+                android:lineSpacingExtra="2dp"
+                android:scrollbars="vertical"
+                android:scrollbarStyle="insideInset"
+                android:inputType="textCapSentences|textMultiLine"
+                android:imeOptions="actionSend" />
+
+        </FrameLayout>
+
+        <!-- Premium Send Button -->
+        <FrameLayout
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_gravity="bottom">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/sendButton"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center"
+                android:background="@drawable/chat_send_button_premium"
+                android:elevation="6dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                app:icon="@drawable/ic_send"
+                app:iconTint="@color/white"
+                app:iconSize="20dp"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                android:contentDescription="Send message" />
+
+        </FrameLayout>
 
     </LinearLayout>
 

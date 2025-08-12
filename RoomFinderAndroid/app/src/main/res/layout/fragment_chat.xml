@@ -30,31 +30,48 @@
         android:id="@+id/aiChatCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="24dp"
         android:clickable="true"
         android:focusable="true"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="4dp"
-        app:strokeColor="@color/purple_primary"
-        app:strokeWidth="0dp">
+        android:foreground="?android:attr/selectableItemBackground"
+        android:background="@drawable/ai_chat_card_selector"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="8dp"
+        app:strokeWidth="0dp"
+        android:translationZ="4dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="20dp">
+            android:padding="28dp"
+            android:gravity="center_vertical">
 
             <!-- AI Chat Icon -->
-            <ImageView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_gravity="center_vertical"
-                android:layout_marginEnd="16dp"
-                android:background="@drawable/circle_background"
-                android:backgroundTint="@color/purple_primary"
-                android:padding="12dp"
-                android:src="@drawable/ic_chat"
-                android:tint="@color/white" />
+            <FrameLayout
+                android:id="@+id/aiChatIcon"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_marginEnd="20dp">
+                
+                <ImageView
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:background="@drawable/glassmorphism_card"
+                    android:padding="18dp"
+                    android:src="@drawable/ic_bot"
+                    android:tint="@color/white"
+                    android:elevation="4dp"
+                    android:contentDescription="AI Negotiator Icon" />
+                    
+                <!-- Subtle glow effect around icon -->
+                <View
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:background="@drawable/ai_chat_card_glow"
+                    android:alpha="0.6" />
+                
+            </FrameLayout>
 
             <!-- AI Chat Content -->
             <LinearLayout
@@ -64,30 +81,46 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/aiChatTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="4dp"
+                    android:layout_marginBottom="6dp"
                     android:text="@string/ai_negotiator_chat"
-                    android:textColor="@color/text_primary"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:shadowColor="#30000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2" />
 
                 <TextView
+                    android:id="@+id/aiChatDescription"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/ai_negotiator_description"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
+                    android:textColor="#E0FFFFFF"
+                    android:textSize="15sp"
+                    android:fontFamily="sans-serif"
+                    android:lineSpacingExtra="2dp"
+                    android:shadowColor="#30000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="1" />
 
             </LinearLayout>
 
             <!-- Arrow Icon -->
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:id="@+id/aiChatArrow"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:layout_gravity="center_vertical"
                 android:src="@drawable/ic_arrow_right"
-                android:tint="@color/text_secondary" />
+                android:tint="#D0FFFFFF"
+                android:layout_marginStart="12dp"
+                android:contentDescription="Navigate to AI Chat" />
 
         </LinearLayout>
 

@@ -35,7 +35,8 @@
       "Bash(git rebase:*)",
       "Bash(git reset:*)",
       "Bash(swift -frontend -typecheck:*)",
-      "Bash(pgrep:*)"
+      "Bash(pgrep:*)",
+      "Bash(git restore:*)"
     ],
     "deny": []
   }
