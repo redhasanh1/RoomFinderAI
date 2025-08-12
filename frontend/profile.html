@@ -955,17 +955,45 @@
                         } catch (supabaseError) {
                             console.log('📱 Supabase unavailable, checking localStorage:', supabaseError.message);
                             
-                            // Fallback to localStorage
+                            // Fallback to localStorage - check both storage locations
                             const storageKey = `userListings_${currentUser.email}`;
-                            listings = JSON.parse(localStorage.getItem(storageKey)) || [];
+                            const storedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
+                            
+                            // Also check currentUser.listings for backward compatibility
+                            const userListings = currentUser.listings || [];
+                            
+                            // Merge both sources and remove duplicates based on ID
+                            const allListings = [...storedListings, ...userListings];
+                            const uniqueListings = allListings.reduce((acc, listing) => {
+                                if (!acc.find(l => l.id === listing.id)) {
+                                    acc.push(listing);
+                                }
+                                return acc;
+                            }, []);
+                            
+                            listings = uniqueListings;
                             console.log('📱 Loaded listings from localStorage:', listings);
                         }
                     } else {
                         console.log('📱 Supabase not loaded, using localStorage only');
                         
-                        // Use localStorage only
+                        // Use localStorage only - check both storage locations
                         const storageKey = `userListings_${currentUser.email}`;
-                        listings = JSON.parse(localStorage.getItem(storageKey)) || [];
+                        const storedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
+                        
+                        // Also check currentUser.listings for backward compatibility
+                        const userListings = currentUser.listings || [];
+                        
+                        // Merge both sources and remove duplicates based on ID
+                        const allListings = [...storedListings, ...userListings];
+                        const uniqueListings = allListings.reduce((acc, listing) => {
+                            if (!acc.find(l => l.id === listing.id)) {
+                                acc.push(listing);
+                            }
+                            return acc;
+                        }, []);
+                        
+                        listings = uniqueListings;
                         console.log('📱 Loaded listings from localStorage:', listings);
                     }
 

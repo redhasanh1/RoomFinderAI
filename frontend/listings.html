@@ -2592,29 +2592,58 @@
                     return;
                 }
 
-                const { data, error } = await supabase
-                    .from('listings')
-                    .insert([listing])
-                    .select();
+                let newListing;
+                let supabaseSuccess = false;
+                
+                // Try Supabase first
+                try {
+                    if (typeof supabase !== 'undefined' && supabase) {
+                        const { data, error } = await supabase
+                            .from('listings')
+                            .insert([listing])
+                            .select();
 
-                if (error) {
-                    console.error('Error inserting listing:', error);
-                    alert('Failed to add listing: ' + error.message);
-                    return;
+                        if (error) {
+                            console.error('Supabase error:', error);
+                            throw error;
+                        }
+                        
+                        newListing = {
+                            ...listing,
+                            id: data[0].id,
+                            media: media
+                        };
+                        supabaseSuccess = true;
+                        console.log('✅ Listing saved to Supabase');
+                    } else {
+                        throw new Error('Supabase not available');
+                    }
+                } catch (supabaseError) {
+                    console.log('📱 Supabase unavailable, using localStorage only:', supabaseError.message);
+                    
+                    // Fallback to localStorage with generated ID
+                    newListing = {
+                        ...listing,
+                        id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                        media: media
+                    };
+                    console.log('💾 Saving to localStorage only');
                 }
-
-                const newListing = {
-                    ...listing,
-                    id: data[0].id,
-                    media: media
-                };
                 currentUser.listings = currentUser.listings || [];
                 currentUser.listings.push(newListing);
                 let users = JSON.parse(localStorage.getItem('users')) || [];
                 users = users.map(u => u.email === currentUser.email ? currentUser : u);
                 localStorage.setItem('users', JSON.stringify(users));
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                // Also save to userListings key for profile page compatibility
+                const userListingsKey = `userListings_${currentUser.email}`;
+                let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                userListings.push(newListing);
+                localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                
                 console.log('Updated localStorage with new listing:', newListing);
+                console.log('Saved to userListings key:', userListingsKey);
 
                 e.target.reset();
                 mediaPreview.innerHTML = '';
