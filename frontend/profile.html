@@ -1059,8 +1059,14 @@
                         savedListingsEmpty.style.display = 'none';
                     }
                     
-                    // Clear container and add listings
-                    savedListingsContainer.innerHTML = '';
+                    // Clear only the listing cards, preserve the empty state element
+                    const listingCards = savedListingsContainer.querySelectorAll('.saved-listing-card');
+                    console.log(`🧹 Clearing ${listingCards.length} existing listing cards`);
+                    listingCards.forEach(card => card.remove());
+                    
+                    // Verify empty state element still exists
+                    const emptyStateCheck = document.getElementById('savedListingsEmpty');
+                    console.log(`🔍 Empty state element exists after clear:`, !!emptyStateCheck);
                     
                     savedListings.forEach(listing => {
                         const listingCard = document.createElement('div');
