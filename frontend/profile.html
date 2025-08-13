@@ -1970,18 +1970,17 @@
                         }
                         
                         if (updateSuccess) {
-                            alert('Listing updated successfully!');
+                            // Immediately refresh the listings display
+                            await displayUserListings();
+                            
+                            // Close modal and show success
                             editModal.remove();
+                            alert('Listing updated successfully!');
                             
                             // Trigger storage event to notify other pages
                             window.dispatchEvent(new CustomEvent('listingUpdated', { 
                                 detail: { listingId: listingId, action: 'update' } 
                             }));
-                            
-                            // Small delay to ensure consistency
-                            setTimeout(async () => {
-                                await displayUserListings(); // Refresh the listings
-                            }, 100);
                         } else {
                             console.error('Update failed - listing not found');
                             alert('Update failed - listing may not exist or you may not have permission to edit it.');
@@ -2078,14 +2077,16 @@
                 }
                 
                 if (deleteSuccess) {
+                    // Immediately refresh the listings display
+                    await displayUserListings();
+                    
+                    // Show success message after refresh
                     alert('Listing deleted successfully!');
                     
                     // Trigger storage event to notify other pages
                     window.dispatchEvent(new CustomEvent('listingUpdated', { 
                         detail: { listingId: listingId, action: 'delete' } 
                     }));
-                    
-                    await displayUserListings(); // Refresh the listings
                 } else {
                     console.error('Delete failed - listing not found');
                     alert('Error deleting listing. The listing may not exist.');
