@@ -1028,31 +1028,227 @@
             </div>
         </div>
 
-        <!-- Example 3: Property-Centric Dashboard Content -->
+        <!-- Example 4: AI-Enhanced Dashboard Content -->
         <div id="tab-content">
-            <!-- Property Dashboard Overview -->
+            <!-- AI Dashboard Overview -->
             <div id="overview-tab" class="tab-content">
-                <!-- Featured Properties Carousel -->
-                <div class="glass-card p-6 mb-8">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-xl font-bold text-gray-900">Featured Properties</h3>
+                <!-- AI Assistant Welcome -->
+                <div class="glass-card p-6 mb-8 bg-gradient-to-r from-purple-50 to-blue-50">
+                    <div class="flex items-start space-x-4">
+                        <div class="p-3 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">AI Housing Assistant</h3>
+                            <p class="text-gray-600 mb-4">Based on your search history and preferences, I've prepared personalized recommendations and insights for you today.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-700">🎯 95% Match Found</span>
+                                <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-700">📈 Market Trending Up</span>
+                                <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-700">💡 3 New Insights</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Chat & Recommendations -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- AI Chat Interface -->
+                    <div class="glass-card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">AI Chat Assistant</h3>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                <span class="text-xs text-gray-500">Online</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat Messages -->
+                        <div class="bg-gray-50 rounded-lg p-4 h-64 overflow-y-auto mb-4 space-y-3">
+                            <div class="flex items-start space-x-2">
+                                <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1 bg-white p-3 rounded-lg">
+                                    <p class="text-sm text-gray-700">I found 3 properties that match your criteria perfectly! The first one is a 2BR apartment in Downtown with great amenities.</p>
+                                    <button class="text-xs text-blue-600 mt-2 hover:text-blue-700">View Properties →</button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start space-x-2 flex-row-reverse">
+                                <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
+                                <div class="flex-1 bg-blue-600 p-3 rounded-lg">
+                                    <p class="text-sm text-white">Show me properties under $2500 with parking</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start space-x-2">
+                                <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1 bg-white p-3 rounded-lg">
+                                    <p class="text-sm text-gray-700">I can also help you negotiate! Based on market data, you could save an average of $150/month on similar properties.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat Input -->
                         <div class="flex space-x-2">
-                            <button class="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
-                                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                                </svg>
-                            </button>
-                            <button class="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
-                                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            <input type="text" placeholder="Ask about properties, pricing, or neighborhoods..." 
+                                   class="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            <button class="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-lg hover:opacity-90 transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                                 </svg>
                             </button>
                         </div>
                     </div>
+
+                    <!-- AI Recommendations -->
+                    <div class="glass-card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">AI Recommendations</h3>
+                            <span class="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">Powered by AI</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <!-- Perfect Match -->
+                            <div class="border-2 border-purple-200 bg-purple-50 rounded-lg p-4">
+                                <div class="flex items-start justify-between mb-2">
+                                    <div>
+                                        <div class="flex items-center space-x-2 mb-1">
+                                            <span class="text-lg font-bold text-purple-900">Perfect Match!</span>
+                                            <span class="text-xs bg-purple-600 text-white px-2 py-0.5 rounded-full">98% Match</span>
+                                        </div>
+                                        <h4 class="font-semibold text-gray-900">Luxury 2BR in Financial District</h4>
+                                        <p class="text-sm text-gray-600">$2,450/mo • Available Now</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs text-purple-600 font-medium">AI Score</p>
+                                        <p class="text-2xl font-bold text-purple-600">9.8</p>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded p-2 mb-3">
+                                    <p class="text-xs text-gray-700">✨ Why it's perfect for you:</p>
+                                    <ul class="text-xs text-gray-600 mt-1 space-y-1">
+                                        <li>• 5 min walk to your workplace</li>
+                                        <li>• Pet-friendly (you mentioned a dog)</li>
+                                        <li>• In-unit laundry as requested</li>
+                                        <li>• Price negotiable based on market analysis</li>
+                                    </ul>
+                                </div>
+                                <button class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition text-sm font-medium">
+                                    Schedule AI-Assisted Tour
+                                </button>
+                            </div>
+
+                            <!-- Price Prediction -->
+                            <div class="bg-blue-50 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 mb-2">💰 Price Prediction</h4>
+                                <p class="text-sm text-gray-600 mb-2">Based on your saved properties, AI predicts you'll pay:</p>
+                                <div class="flex items-baseline space-x-2">
+                                    <span class="text-2xl font-bold text-blue-600">$2,100-2,400</span>
+                                    <span class="text-sm text-gray-500">/month</span>
+                                </div>
+                                <p class="text-xs text-blue-600 mt-2">15% below market average</p>
+                            </div>
+
+                            <!-- Smart Tip -->
+                            <div class="bg-green-50 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 mb-2">💡 Smart Tip</h4>
+                                <p class="text-sm text-gray-600">Properties in Midtown are 20% cheaper right now due to seasonal trends. Consider expanding your search there.</p>
+                                <button class="text-xs text-green-600 hover:text-green-700 font-medium mt-2">Explore Midtown →</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Insights Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="glass-card p-6 text-center">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">AI Confidence</h4>
+                        <p class="text-2xl font-bold text-gray-900">94%</p>
+                        <p class="text-xs text-gray-500">Match accuracy</p>
+                    </div>
+
+                    <div class="glass-card p-6 text-center">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">Properties Analyzed</h4>
+                        <p class="text-2xl font-bold text-gray-900">1,247</p>
+                        <p class="text-xs text-gray-500">This week</p>
+                    </div>
+
+                    <div class="glass-card p-6 text-center">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">Avg Savings</h4>
+                        <p class="text-2xl font-bold text-gray-900">$380</p>
+                        <p class="text-xs text-gray-500">Per month</p>
+                    </div>
+
+                    <div class="glass-card p-6 text-center">
+                        <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">Response Time</h4>
+                        <p class="text-2xl font-bold text-gray-900">< 1s</p>
+                        <p class="text-xs text-gray-500">AI analysis</p>
+                    </div>
+                </div>
+
+                <!-- Learning Progress -->
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">AI Learning Your Preferences</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <!-- Property Card 1 -->
-                        <div class="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow cursor-pointer">
-                            <div class="relative">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm text-gray-600">Location Preferences</span>
+                                <span class="text-sm font-semibold text-gray-900">85%</span>
+                            </div>
+                            <div class="bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm text-gray-600">Price Range</span>
+                                <span class="text-sm font-semibold text-gray-900">92%</span>
+                            </div>
+                            <div class="bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full" style="width: 92%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm text-gray-600">Amenity Priorities</span>
+                                <span class="text-sm font-semibold text-gray-900">78%</span>
+                            </div>
+                            <div class="bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full" style="width: 78%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-4">The more you interact, the better recommendations you'll receive</p>
+                </div>
                                 <div class="h-48 bg-gradient-to-br from-blue-400 to-purple-500"></div>
                                 <div class="absolute top-3 left-3 bg-white px-2 py-1 rounded-full text-xs font-semibold text-gray-700">NEW</div>
                                 <div class="absolute top-3 right-3 bg-white p-2 rounded-full hover:bg-red-50 transition">
