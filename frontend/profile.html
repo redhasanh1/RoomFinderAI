@@ -2011,6 +2011,7 @@
                     return;
                 }
                 
+                console.log('🗑️ Attempting to delete listing:', { listingId, userEmail: currentUser.email });
                 let deleteSuccess = false;
                 
                 // Try Supabase delete first
@@ -2038,6 +2039,22 @@
                             if (!error) {
                                 deleteSuccess = true;
                                 console.log('✅ Listing deleted from Supabase');
+                                
+                                // Also clean up localStorage to keep them in sync
+                                const userListingsKey = `userListings_${currentUser.email}`;
+                                let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                                userListings = userListings.filter(l => l.id !== listingId);
+                                localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                                
+                                // Also clean up currentUser.listings
+                                if (currentUser.listings) {
+                                    currentUser.listings = currentUser.listings.filter(l => l.id !== listingId);
+                                    let users = JSON.parse(localStorage.getItem('users')) || [];
+                                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                                    localStorage.setItem('users', JSON.stringify(users));
+                                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                                }
+                                console.log('✅ Also cleaned up localStorage');
                             }
                         }
                     } catch (supabaseError) {
@@ -2077,6 +2094,8 @@
                 }
                 
                 if (deleteSuccess) {
+                    console.log('🎉 Delete operation successful, listing ID:', listingId);
+                    
                     // Trigger storage event to notify other pages
                     window.dispatchEvent(new CustomEvent('listingUpdated', { 
                         detail: { listingId: listingId, action: 'delete' } 
@@ -2086,7 +2105,7 @@
                     alert('Listing deleted successfully!');
                     window.location.reload();
                 } else {
-                    console.error('Delete failed - listing not found');
+                    console.error('❌ Delete failed - listing not found:', listingId);
                     alert('Error deleting listing. The listing may not exist.');
                 }
             } catch (err) {
