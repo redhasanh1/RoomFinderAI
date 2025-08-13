@@ -1184,10 +1184,10 @@
                     </div>
                 </div>
                 
-                <!-- About Dropdown -->
+                <!-- More Dropdown -->
                 <div class="dropdown">
                     <button class="nav-item dropdown-trigger" onclick="toggleDropdown('about')">
-                        About <span class="dropdown-arrow">▼</span>
+                        More <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="dropdown-menu" id="about-dropdown">
                         <a href="index.html#about" class="dropdown-item">About Us</a>
@@ -1247,7 +1247,7 @@
                     <!-- About Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('about')">
-                            ℹ️ About <span class="mobile-arrow" id="about-arrow">▼</span>
+                            ℹ️ More <span class="mobile-arrow" id="about-arrow">▼</span>
                         </button>
                         <div class="mobile-section-content" id="about-section">
                             <a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
@@ -4974,13 +4974,23 @@
             
             favoriteButtons.forEach(button => {
                 const listingId = button.getAttribute('data-listing-id');
-                if (favoriteIds.has(listingId)) {
-                    button.setAttribute('data-favorited', 'true');
-                    button.setAttribute('title', 'Remove from favorites');
-                    console.log(`❤️ Marked as favorited: ${listingId}`);
-                } else {
-                    button.setAttribute('data-favorited', 'false');
-                    button.setAttribute('title', 'Save to favorites');
+                const isFavorited = favoriteIds.has(listingId);
+                
+                // Update data attribute
+                button.setAttribute('data-favorited', isFavorited ? 'true' : 'false');
+                button.setAttribute('title', isFavorited ? 'Remove from favorites' : 'Save to favorites');
+                
+                // Force style update by accessing the SVG directly
+                const svg = button.querySelector('svg');
+                if (svg) {
+                    if (isFavorited) {
+                        svg.style.fill = '#ef4444';
+                        svg.style.color = '#ef4444';
+                        console.log(`❤️ Marked as favorited: ${listingId}`);
+                    } else {
+                        svg.style.fill = 'none';
+                        svg.style.color = '#9ca3af';
+                    }
                 }
             });
             
