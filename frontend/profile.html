@@ -1721,15 +1721,45 @@
         // Edit listing function
         window.editListing = async function(listingId) {
             try {
-                // Fetch the listing details
-                const { data: listing, error } = await supabase
-                    .from('listings')
-                    .select('*')
-                    .eq('id', listingId)
-                    .single();
-
-                if (error || !listing) {
-                    console.error('Error fetching listing:', error);
+                let listing = null;
+                
+                // Try to fetch from Supabase first
+                if (typeof supabase !== 'undefined' && supabase) {
+                    try {
+                        const { data, error } = await supabase
+                            .from('listings')
+                            .select('*')
+                            .eq('id', listingId)
+                            .single();
+                        
+                        if (!error && data) {
+                            listing = data;
+                            console.log('Loaded listing from Supabase');
+                        }
+                    } catch (supabaseError) {
+                        console.log('Supabase fetch failed, checking localStorage:', supabaseError);
+                    }
+                }
+                
+                // If not found in Supabase, check localStorage
+                if (!listing) {
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                    const userListingsKey = `userListings_${currentUser.email}`;
+                    const userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                    
+                    // Also check currentUser.listings
+                    const currentUserListings = currentUser.listings || [];
+                    const allListings = [...userListings, ...currentUserListings];
+                    
+                    listing = allListings.find(l => l.id === listingId);
+                    
+                    if (listing) {
+                        console.log('Loaded listing from localStorage');
+                    }
+                }
+                
+                if (!listing) {
+                    console.error('Listing not found in Supabase or localStorage');
                     alert('Error loading listing details');
                     return;
                 }
@@ -1853,58 +1883,101 @@
                             return;
                         }
                         
-                        // First verify the user owns this listing
-                        const { data: existingListing, error: fetchError } = await supabase
-                            .from('listings')
-                            .select('*')
-                            .eq('id', listingId)
-                            .single();
-                            
-                        console.log('Existing listing check:', { 
-                            listingId, 
-                            existingListing, 
-                            fetchError, 
-                            currentUserEmail: currentUser.email 
-                        });
-                            
-                        if (fetchError || !existingListing) {
-                            alert('Listing not found: ' + (fetchError?.message || 'Unknown error'));
-                            return;
+                        let updateSuccess = false;
+                        
+                        // Try Supabase update first
+                        if (typeof supabase !== 'undefined' && supabase && !listingId.startsWith('local_')) {
+                            try {
+                                // First verify the user owns this listing
+                                const { data: existingListing, error: fetchError } = await supabase
+                                    .from('listings')
+                                    .select('*')
+                                    .eq('id', listingId)
+                                    .single();
+                                    
+                                console.log('Existing listing check:', { 
+                                    listingId, 
+                                    existingListing, 
+                                    fetchError, 
+                                    currentUserEmail: currentUser.email 
+                                });
+                                    
+                                if (!fetchError && existingListing) {
+                                    if (existingListing.user_email !== currentUser.email) {
+                                        alert(`You can only edit your own listings.`);
+                                        return;
+                                    }
+                                    
+                                    // Now update the listing
+                                    console.log('About to update with:', {
+                                        listingId,
+                                        userEmail: currentUser.email,
+                                        updatedListing
+                                    });
+                                    
+                                    const { data, error } = await supabase
+                                        .from('listings')
+                                        .update(updatedListing)
+                                        .eq('id', listingId)
+                                        .eq('user_email', currentUser.email)
+                                        .select();
+
+                                    if (!error && data && data.length > 0) {
+                                        updateSuccess = true;
+                                        console.log('✅ Listing updated in Supabase');
+                                    }
+                                }
+                            } catch (supabaseError) {
+                                console.log('Supabase update failed, will use localStorage:', supabaseError);
+                            }
                         }
                         
-                        if (existingListing.user_email !== currentUser.email) {
-                            alert(`You can only edit your own listings. This listing belongs to: ${existingListing.user_email}, but you are: ${currentUser.email}`);
-                            return;
+                        // If Supabase failed or listing is local, update in localStorage
+                        if (!updateSuccess) {
+                            console.log('📱 Updating listing in localStorage');
+                            
+                            // Update in userListings
+                            const userListingsKey = `userListings_${currentUser.email}`;
+                            let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                            const listingIndex = userListings.findIndex(l => l.id === listingId);
+                            
+                            if (listingIndex !== -1) {
+                                userListings[listingIndex] = {
+                                    ...userListings[listingIndex],
+                                    ...updatedListing
+                                };
+                                localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                                updateSuccess = true;
+                            }
+                            
+                            // Also update in currentUser.listings
+                            if (currentUser.listings) {
+                                const userListingIndex = currentUser.listings.findIndex(l => l.id === listingId);
+                                if (userListingIndex !== -1) {
+                                    currentUser.listings[userListingIndex] = {
+                                        ...currentUser.listings[userListingIndex],
+                                        ...updatedListing
+                                    };
+                                    
+                                    // Update users array
+                                    let users = JSON.parse(localStorage.getItem('users')) || [];
+                                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                                    localStorage.setItem('users', JSON.stringify(users));
+                                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                                    updateSuccess = true;
+                                }
+                            }
                         }
                         
-                        // Now update the listing
-                        console.log('About to update with:', {
-                            listingId,
-                            userEmail: currentUser.email,
-                            updatedListing
-                        });
-                        
-                        const { data, error } = await supabase
-                            .from('listings')
-                            .update(updatedListing)
-                            .eq('id', listingId)
-                            .eq('user_email', currentUser.email)
-                            .select();
-
-                        console.log('Update result:', { data, error, rowsAffected: data?.length || 0 });
-
-                        if (error) {
-                            console.error('Error updating listing:', error);
-                            alert('Error updating listing: ' + error.message);
-                        } else if (data && data.length > 0) {
+                        if (updateSuccess) {
                             alert('Listing updated successfully!');
                             editModal.remove();
-                            // Small delay to ensure database consistency
+                            // Small delay to ensure consistency
                             setTimeout(async () => {
                                 await displayUserListings(); // Refresh the listings
                             }, 100);
                         } else {
-                            console.error('Update succeeded but no rows affected');
+                            console.error('Update failed - listing not found');
                             alert('Update failed - listing may not exist or you may not have permission to edit it.');
                         }
                     } catch (err) {
@@ -1933,35 +2006,77 @@
                     return;
                 }
                 
-                // First verify the user owns this listing
-                const { data: existingListing, error: fetchError } = await supabase
-                    .from('listings')
-                    .select('user_email')
-                    .eq('id', listingId)
-                    .single();
-                    
-                if (fetchError || !existingListing) {
-                    alert('Listing not found.');
-                    return;
-                }
+                let deleteSuccess = false;
                 
-                if (existingListing.user_email !== currentUser.email) {
-                    alert('You can only delete your own listings.');
-                    return;
-                }
-                
-                const { error } = await supabase
-                    .from('listings')
-                    .delete()
-                    .eq('id', listingId)
-                    .eq('user_email', currentUser.email);
+                // Try Supabase delete first
+                if (typeof supabase !== 'undefined' && supabase && !listingId.startsWith('local_')) {
+                    try {
+                        // First verify the user owns this listing
+                        const { data: existingListing, error: fetchError } = await supabase
+                            .from('listings')
+                            .select('user_email')
+                            .eq('id', listingId)
+                            .single();
+                            
+                        if (!fetchError && existingListing) {
+                            if (existingListing.user_email !== currentUser.email) {
+                                alert('You can only delete your own listings.');
+                                return;
+                            }
+                            
+                            const { error } = await supabase
+                                .from('listings')
+                                .delete()
+                                .eq('id', listingId)
+                                .eq('user_email', currentUser.email);
 
-                if (error) {
-                    console.error('Error deleting listing:', error);
-                    alert('Error deleting listing. Please try again.');
-                } else {
+                            if (!error) {
+                                deleteSuccess = true;
+                                console.log('✅ Listing deleted from Supabase');
+                            }
+                        }
+                    } catch (supabaseError) {
+                        console.log('Supabase delete failed, will use localStorage:', supabaseError);
+                    }
+                }
+                
+                // If Supabase failed or listing is local, delete from localStorage
+                if (!deleteSuccess) {
+                    console.log('📱 Deleting listing from localStorage');
+                    
+                    // Delete from userListings
+                    const userListingsKey = `userListings_${currentUser.email}`;
+                    let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                    const originalLength = userListings.length;
+                    userListings = userListings.filter(l => l.id !== listingId);
+                    
+                    if (userListings.length < originalLength) {
+                        localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                        deleteSuccess = true;
+                    }
+                    
+                    // Also delete from currentUser.listings
+                    if (currentUser.listings) {
+                        const originalUserListingsLength = currentUser.listings.length;
+                        currentUser.listings = currentUser.listings.filter(l => l.id !== listingId);
+                        
+                        if (currentUser.listings.length < originalUserListingsLength) {
+                            // Update users array
+                            let users = JSON.parse(localStorage.getItem('users')) || [];
+                            users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                            localStorage.setItem('users', JSON.stringify(users));
+                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                            deleteSuccess = true;
+                        }
+                    }
+                }
+                
+                if (deleteSuccess) {
                     alert('Listing deleted successfully!');
                     await displayUserListings(); // Refresh the listings
+                } else {
+                    console.error('Delete failed - listing not found');
+                    alert('Error deleting listing. The listing may not exist.');
                 }
             } catch (err) {
                 console.error('Error deleting listing:', err);
