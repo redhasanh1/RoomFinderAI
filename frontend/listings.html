@@ -2003,12 +2003,60 @@
             // Listen for listing updates from other pages (e.g., profile page edits)
             window.addEventListener('listingUpdated', async (event) => {
                 console.log('📱 Received listing update event:', event.detail);
-                await displayListings(); // Refresh listings display
                 
-                // Also reload favorite states after a short delay
-                setTimeout(() => {
-                    loadFavoriteStates();
-                }, 200);
+                // If it's a delete action, also clean up localStorage immediately
+                if (event.detail.action === 'delete') {
+                    const listingId = event.detail.listingId;
+                    console.log('🗑️ Processing delete event for listing:', listingId);
+                    
+                    // Clean up localStorage on this page too
+                    const users = JSON.parse(localStorage.getItem('users')) || [];
+                    users.forEach(user => {
+                        // Clean userListings key
+                        const userListingsKey = `userListings_${user.email}`;
+                        let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                        const originalLength = userListings.length;
+                        userListings = userListings.filter(l => l.id !== listingId);
+                        if (userListings.length < originalLength) {
+                            localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                            console.log(`🧹 Cleaned ${userListingsKey}`);
+                        }
+                        
+                        // Clean user.listings
+                        if (user.listings) {
+                            const originalUserLength = user.listings.length;
+                            user.listings = user.listings.filter(l => l.id !== listingId);
+                            if (user.listings.length < originalUserLength) {
+                                console.log(`🧹 Cleaned user.listings for ${user.email}`);
+                            }
+                        }
+                    });
+                    
+                    // Update users array
+                    localStorage.setItem('users', JSON.stringify(users));
+                    
+                    // Also update currentUser if it exists
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                    if (currentUser && currentUser.listings) {
+                        const originalLength = currentUser.listings.length;
+                        currentUser.listings = currentUser.listings.filter(l => l.id !== listingId);
+                        if (currentUser.listings.length < originalLength) {
+                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                            console.log('🧹 Cleaned currentUser.listings');
+                        }
+                    }
+                }
+                
+                // Add a small delay to ensure localStorage changes are applied
+                setTimeout(async () => {
+                    console.log('🔄 Refreshing listings display...');
+                    await displayListings(); // Refresh listings display
+                    
+                    // Also reload favorite states after a short delay
+                    setTimeout(() => {
+                        loadFavoriteStates();
+                    }, 200);
+                }, 100);
             });
             
             // Load listings with error handling
