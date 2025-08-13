@@ -1093,18 +1093,64 @@
                         const storageKey = `savedListings_${currentUser.email}`;
                         const savedListingIds = JSON.parse(localStorage.getItem(storageKey)) || [];
                         
-                        // Create listing objects from IDs with offline indicator
-                        savedListings = savedListingIds.map(id => ({
-                            id: id,
-                            listing_id: id,
-                            title: `📱 Saved Listing #${id}`,
-                            price: '💰 Click to view details',
-                            location: '📍 Details available on listings page',
-                            description: '🔄 This listing was saved offline. Visit the listings page to see full details, or connect to the internet for complete information.',
-                            favorited_at: new Date().toISOString(),
-                            media: [],
-                            isOffline: true
-                        }));
+                        // Fetch actual listing data for each saved listing ID
+                        savedListings = [];
+                        for (const listingId of savedListingIds) {
+                            let actualListing = null;
+                            
+                            // Try to find the listing in Supabase first
+                            if (typeof supabase !== 'undefined' && supabase) {
+                                try {
+                                    const { data, error } = await supabase
+                                        .from('listings')
+                                        .select('*')
+                                        .eq('id', listingId)
+                                        .single();
+                                    
+                                    if (!error && data) {
+                                        actualListing = data;
+                                    }
+                                } catch (supabaseError) {
+                                    console.log('Could not fetch listing from Supabase:', listingId);
+                                }
+                            }
+                            
+                            // If not found in Supabase, check localStorage
+                            if (!actualListing) {
+                                // Check all user listings in localStorage
+                                const users = JSON.parse(localStorage.getItem('users')) || [];
+                                for (const user of users) {
+                                    // Check userListings key
+                                    const userListingsKey = `userListings_${user.email}`;
+                                    const userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                                    const found = userListings.find(l => l.id === listingId);
+                                    if (found) {
+                                        actualListing = found;
+                                        break;
+                                    }
+                                    
+                                    // Check user.listings
+                                    if (user.listings) {
+                                        const found = user.listings.find(l => l.id === listingId);
+                                        if (found) {
+                                            actualListing = found;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            if (actualListing) {
+                                // Add favorited_at timestamp
+                                savedListings.push({
+                                    ...actualListing,
+                                    listing_id: actualListing.id,
+                                    favorited_at: new Date().toISOString()
+                                });
+                            } else {
+                                console.warn('Could not find listing data for:', listingId);
+                            }
+                        }
                         
                         console.log('📋 Loaded saved listings via localStorage:', savedListings);
                     }
@@ -1165,8 +1211,6 @@
                                         <span>${listing.bedrooms || 'N/A'} Bed</span>
                                         <span>•</span>
                                         <span>${listing.house_type || 'N/A'}</span>
-                                        <span>•</span>
-                                        <span>Saved ${favoriteDate}</span>
                                     </div>
                                     <div class="flex space-x-2 mt-3">
                                         <a href="listings.html?highlight=${listing.id}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">View Details</a>
