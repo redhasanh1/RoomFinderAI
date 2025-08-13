@@ -1028,75 +1028,185 @@
             </div>
         </div>
 
-        <!-- Tab Content -->
+        <!-- Example 1: Analytics-First Dashboard Content -->
         <div id="tab-content">
-            <!-- Overview Tab -->
+            <!-- Analytics Overview -->
             <div id="overview-tab" class="tab-content">
-                <!-- Stats Grid -->
+                <!-- Key Metrics Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="stats-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600">Total Listings</p>
-                                <p id="totalListings" class="text-2xl font-bold gradient-text">0</p>
-                            </div>
-                            <div class="gradient-bg p-3 rounded-lg">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="stats-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600">Active Chats</p>
-                                <p id="activeChats" class="text-2xl font-bold gradient-text">0</p>
-                            </div>
-                            <div class="gradient-bg-alt p-3 rounded-lg">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="stats-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600">Monthly Views</p>
-                                <p id="monthlyViews" class="text-2xl font-bold gradient-text">0</p>
-                            </div>
-                            <div class="gradient-bg-green p-3 rounded-lg">
+                    <!-- Property Views -->
+                    <div class="glass-card p-6 hover:scale-105 transition-transform cursor-pointer">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                 </svg>
                             </div>
+                            <span class="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">+12%</span>
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-600 mb-1">Property Views</h3>
+                        <p class="text-3xl font-bold text-gray-900">2,847</p>
+                        <p class="text-xs text-gray-500 mt-1">This month</p>
+                    </div>
+
+                    <!-- Saved Favorites -->
+                    <div class="glass-card p-6 hover:scale-105 transition-transform cursor-pointer">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-3 rounded-xl bg-gradient-to-br from-red-500 to-pink-600">
+                                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                </svg>
+                            </div>
+                            <span class="text-xs font-medium text-red-600 bg-red-100 px-2 py-1 rounded-full">+8</span>
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-600 mb-1">Saved Properties</h3>
+                        <p class="text-3xl font-bold text-gray-900" id="savedCount">12</p>
+                        <p class="text-xs text-gray-500 mt-1">Total favorites</p>
+                    </div>
+
+                    <!-- Search Activity -->
+                    <div class="glass-card p-6 hover:scale-105 transition-transform cursor-pointer">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            <span class="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full">+23%</span>
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-600 mb-1">Searches</h3>
+                        <p class="text-3xl font-bold text-gray-900">156</p>
+                        <p class="text-xs text-gray-500 mt-1">Last 30 days</p>
+                    </div>
+
+                    <!-- Average Rent -->
+                    <div class="glass-card p-6 hover:scale-105 transition-transform cursor-pointer">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                </svg>
+                            </div>
+                            <span class="text-xs font-medium text-orange-600 bg-orange-100 px-2 py-1 rounded-full">+5%</span>
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-600 mb-1">Avg. Rent Viewed</h3>
+                        <p class="text-3xl font-bold text-gray-900">$2,340</p>
+                        <p class="text-xs text-gray-500 mt-1">Per month</p>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- Activity Chart -->
+                    <div class="glass-card p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900">Search Activity</h3>
+                            <select class="text-sm border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option>Last 7 days</option>
+                                <option>Last 30 days</option>
+                                <option>Last 90 days</option>
+                            </select>
+                        </div>
+                        <canvas id="activityChart" width="400" height="200"></canvas>
+                    </div>
+
+                    <!-- Property Types Chart -->
+                    <div class="glass-card p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900">Property Preferences</h3>
+                            <div class="flex space-x-2">
+                                <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                <div class="w-3 h-3 bg-purple-500 rounded-full"></div>
+                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            </div>
+                        </div>
+                        <canvas id="propertyChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Activity & Quick Stats -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Recent Activity -->
+                    <div class="lg:col-span-2 glass-card p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900">Saved Modern Apartment in Downtown</p>
+                                    <p class="text-xs text-gray-500">2 hours ago</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900">Searched for 2BR apartments under $2500</p>
+                                    <p class="text-xs text-gray-500">5 hours ago</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                                <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900">Viewed Luxury Condo in Midtown</p>
+                                    <p class="text-xs text-gray-500">1 day ago</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="stats-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600">Account Status</p>
-                                <p id="accountStatus" class="text-xl font-bold text-green-600">Active</p>
+                    <!-- Quick Stats -->
+                    <div class="glass-card p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Total Listings Viewed</span>
+                                <span class="font-semibold text-gray-900">47</span>
                             </div>
-                            <div class="gradient-bg-orange p-3 rounded-lg">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Average View Time</span>
+                                <span class="font-semibold text-gray-900">3m 42s</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Conversion Rate</span>
+                                <span class="font-semibold text-green-600">12.4%</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Saved vs Viewed</span>
+                                <span class="font-semibold text-blue-600">25.5%</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="mt-6 pt-4 border-t border-gray-200">
+                            <h4 class="text-sm font-medium text-gray-900 mb-3">Quick Actions</h4>
+                            <div class="space-y-2">
+                                <button class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                    Export Search History
+                                </button>
+                                <button class="w-full text-left px-3 py-2 text-sm text-purple-600 hover:bg-purple-50 rounded-lg transition-colors">
+                                    View Recommendations
+                                </button>
+                                <button class="w-full text-left px-3 py-2 text-sm text-green-600 hover:bg-green-50 rounded-lg transition-colors">
+                                    Schedule Tour
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Quick Actions -->
-                <div class="glass-card p-6 mb-8">
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Quick Actions</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <a href="/listings" class="flex items-center p-4 bg-white rounded-lg hover:shadow-lg transition">
                             <div class="gradient-bg p-2 rounded-lg mr-3">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -9990,6 +10100,115 @@
                 event.preventDefault();
             }
         }, { passive: false });
+
+        // Example 1: Analytics Dashboard Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update current date
+            const currentDate = document.getElementById('currentDate');
+            if (currentDate) {
+                currentDate.textContent = new Date().toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+            }
+
+            // Update saved count from localStorage
+            updateSavedCount();
+
+            // Initialize charts
+            initializeCharts();
+        });
+
+        function updateSavedCount() {
+            // Get current user from auth
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (currentUser.email) {
+                const storageKey = `savedListings_${currentUser.email}`;
+                const savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
+                const savedCountElement = document.getElementById('savedCount');
+                if (savedCountElement) {
+                    savedCountElement.textContent = savedListings.length;
+                }
+            }
+        }
+
+        function initializeCharts() {
+            // Activity Chart
+            const activityCtx = document.getElementById('activityChart');
+            if (activityCtx) {
+                new Chart(activityCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [{
+                            label: 'Property Searches',
+                            data: [12, 19, 15, 25, 22, 18, 24],
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Property Types Chart
+            const propertyCtx = document.getElementById('propertyChart');
+            if (propertyCtx) {
+                new Chart(propertyCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Apartments', 'Houses', 'Condos'],
+                        datasets: [{
+                            data: [45, 30, 25],
+                            backgroundColor: [
+                                'rgb(59, 130, 246)',
+                                'rgb(147, 51, 234)',
+                                'rgb(16, 185, 129)'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    usePointStyle: true,
+                                    padding: 20
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html>
