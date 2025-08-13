@@ -1028,25 +1028,238 @@
             </div>
         </div>
 
-        <!-- Example 4: AI-Enhanced Dashboard Content -->
+        <!-- Example 5: Minimalist Data Dashboard Content -->
         <div id="tab-content">
-            <!-- AI Dashboard Overview -->
+            <!-- Minimalist Dashboard Overview -->
             <div id="overview-tab" class="tab-content">
-                <!-- AI Assistant Welcome -->
-                <div class="glass-card p-6 mb-8 bg-gradient-to-r from-purple-50 to-blue-50">
-                    <div class="flex items-start space-x-4">
-                        <div class="p-3 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl">
-                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                            </svg>
+                <!-- Clean Header Stats -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-gray-900">Overview</h2>
+                            <p class="text-gray-500 text-sm mt-1">Your housing activity summary</p>
                         </div>
-                        <div class="flex-1">
-                            <h3 class="text-xl font-bold text-gray-900 mb-2">AI Housing Assistant</h3>
-                            <p class="text-gray-600 mb-4">Based on your search history and preferences, I've prepared personalized recommendations and insights for you today.</p>
-                            <div class="flex flex-wrap gap-2">
-                                <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-700">🎯 95% Match Found</span>
-                                <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-700">📈 Market Trending Up</span>
-                                <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-700">💡 3 New Insights</span>
+                        <div class="flex items-center space-x-3">
+                            <div class="text-right">
+                                <p class="text-xs text-gray-500">Last updated</p>
+                                <p class="text-sm font-medium text-gray-900">2 min ago</p>
+                            </div>
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Horizontal Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="bg-white border border-gray-100 rounded-lg p-6 hover:shadow-sm transition-shadow">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">Total Searches</p>
+                                    <p class="text-2xl font-semibold text-gray-900">247</p>
+                                </div>
+                                <div class="text-green-500">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17l9.2-9.2M17 17V7H7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-xs text-green-600 mt-2">+18% from last week</p>
+                        </div>
+
+                        <div class="bg-white border border-gray-100 rounded-lg p-6 hover:shadow-sm transition-shadow">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">Saved Properties</p>
+                                    <p class="text-2xl font-semibold text-gray-900" id="savedCountMinimal">0</p>
+                                </div>
+                                <div class="text-blue-500">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-xs text-blue-600 mt-2">3 new this week</p>
+                        </div>
+
+                        <div class="bg-white border border-gray-100 rounded-lg p-6 hover:shadow-sm transition-shadow">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">Avg Response Time</p>
+                                    <p class="text-2xl font-semibold text-gray-900">2.4h</p>
+                                </div>
+                                <div class="text-purple-500">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">From landlords</p>
+                        </div>
+
+                        <div class="bg-white border border-gray-100 rounded-lg p-6 hover:shadow-sm transition-shadow">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">Success Rate</p>
+                                    <p class="text-2xl font-semibold text-gray-900">68%</p>
+                                </div>
+                                <div class="text-emerald-500">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-xs text-emerald-600 mt-2">Applications approved</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clean Activity List -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                    <div class="lg:col-span-2">
+                        <div class="bg-white border border-gray-100 rounded-lg">
+                            <div class="p-6 border-b border-gray-100">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-lg font-medium text-gray-900">Recent Activity</h3>
+                                    <button class="text-sm text-gray-500 hover:text-gray-700">View all</button>
+                                </div>
+                            </div>
+                            <div class="divide-y divide-gray-50">
+                                <div class="p-6 flex items-center space-x-4 hover:bg-gray-50 transition-colors">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900">Searched "2BR apartments under $2500"</p>
+                                        <p class="text-sm text-gray-500">47 results found</p>
+                                    </div>
+                                    <div class="text-sm text-gray-400">2h ago</div>
+                                </div>
+
+                                <div class="p-6 flex items-center space-x-4 hover:bg-gray-50 transition-colors">
+                                    <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900">Saved Modern Loft on Pine Street</p>
+                                        <p class="text-sm text-gray-500">$2,300/month • 2 bed 1 bath</p>
+                                    </div>
+                                    <div class="text-sm text-gray-400">4h ago</div>
+                                </div>
+
+                                <div class="p-6 flex items-center space-x-4 hover:bg-gray-50 transition-colors">
+                                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900">Viewed Downtown Apartment</p>
+                                        <p class="text-sm text-gray-500">Stayed 3m 42s on listing</p>
+                                    </div>
+                                    <div class="text-sm text-gray-400">6h ago</div>
+                                </div>
+
+                                <div class="p-6 flex items-center space-x-4 hover:bg-gray-50 transition-colors">
+                                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900">Received message from landlord</p>
+                                        <p class="text-sm text-gray-500">Re: Studio apartment inquiry</p>
+                                    </div>
+                                    <div class="text-sm text-gray-400">1d ago</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Sidebar -->
+                    <div class="space-y-6">
+                        <div class="bg-white border border-gray-100 rounded-lg p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+                            <div class="space-y-3">
+                                <button class="w-full text-left p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center space-x-3">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                    <span>New Search</span>
+                                </button>
+                                <button class="w-full text-left p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center space-x-3">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <span>Schedule Tour</span>
+                                </button>
+                                <button class="w-full text-left p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center space-x-3">
+                                    <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                    </svg>
+                                    <span>View Saved</span>
+                                </button>
+                                <button class="w-full text-left p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center space-x-3">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    <span>View Analytics</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Current Search */
+                        <div class="bg-white border border-gray-100 rounded-lg p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Current Search</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-500">Price Range</span>
+                                    <span class="text-sm font-medium text-gray-900">$1,800 - $2,500</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-500">Bedrooms</span>
+                                    <span class="text-sm font-medium text-gray-900">1-2</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-500">Area</span>
+                                    <span class="text-sm font-medium text-gray-900">Downtown, Midtown</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-500">Available</span>
+                                    <span class="text-sm font-medium text-gray-900">Next 30 days</span>
+                                </div>
+                            </div>
+                            <button class="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">Edit criteria</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Minimal Status Overview -->
+                <div class="bg-white border border-gray-100 rounded-lg p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-6">Status Overview</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="text-center">
+                            <div class="text-3xl font-semibold text-gray-900 mb-2">12</div>
+                            <div class="text-sm text-gray-500 mb-3">Properties viewed this week</div>
+                            <div class="h-1 bg-gray-200 rounded-full">
+                                <div class="h-1 bg-blue-500 rounded-full" style="width: 75%"></div>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-semibold text-gray-900 mb-2">3</div>
+                            <div class="text-sm text-gray-500 mb-3">Tours scheduled</div>
+                            <div class="h-1 bg-gray-200 rounded-full">
+                                <div class="h-1 bg-green-500 rounded-full" style="width: 60%"></div>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-semibold text-gray-900 mb-2">1</div>
+                            <div class="text-sm text-gray-500 mb-3">Application submitted</div>
+                            <div class="h-1 bg-gray-200 rounded-full">
+                                <div class="h-1 bg-purple-500 rounded-full" style="width: 90%"></div>
                             </div>
                         </div>
                     </div>
@@ -10815,7 +11028,7 @@
                 const storageKey = `savedListings_${currentUser.email}`;
                 const savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
                 
-                // Update both saved count elements
+                // Update all saved count elements
                 const savedCountElement = document.getElementById('savedCount');
                 if (savedCountElement) {
                     savedCountElement.textContent = savedListings.length;
@@ -10824,6 +11037,11 @@
                 const savedCountQuickElement = document.getElementById('savedCountQuick');
                 if (savedCountQuickElement) {
                     savedCountQuickElement.textContent = savedListings.length;
+                }
+                
+                const savedCountMinimalElement = document.getElementById('savedCountMinimal');
+                if (savedCountMinimalElement) {
+                    savedCountMinimalElement.textContent = savedListings.length;
                 }
             }
         }
