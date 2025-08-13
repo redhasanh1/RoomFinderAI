@@ -1970,17 +1970,17 @@
                         }
                         
                         if (updateSuccess) {
-                            // Immediately refresh the listings display
-                            await displayUserListings();
-                            
-                            // Close modal and show success
+                            // Close modal first
                             editModal.remove();
-                            alert('Listing updated successfully!');
                             
                             // Trigger storage event to notify other pages
                             window.dispatchEvent(new CustomEvent('listingUpdated', { 
                                 detail: { listingId: listingId, action: 'update' } 
                             }));
+                            
+                            // Show success message and refresh the entire page
+                            alert('Listing updated successfully!');
+                            window.location.reload();
                         } else {
                             console.error('Update failed - listing not found');
                             alert('Update failed - listing may not exist or you may not have permission to edit it.');
@@ -2077,16 +2077,14 @@
                 }
                 
                 if (deleteSuccess) {
-                    // Immediately refresh the listings display
-                    await displayUserListings();
-                    
-                    // Show success message after refresh
-                    alert('Listing deleted successfully!');
-                    
                     // Trigger storage event to notify other pages
                     window.dispatchEvent(new CustomEvent('listingUpdated', { 
                         detail: { listingId: listingId, action: 'delete' } 
                     }));
+                    
+                    // Show success message and refresh the entire page
+                    alert('Listing deleted successfully!');
+                    window.location.reload();
                 } else {
                     console.error('Delete failed - listing not found');
                     alert('Error deleting listing. The listing may not exist.');
