@@ -2000,6 +2000,17 @@
                 }
             });
             
+            // Listen for listing updates from other pages (e.g., profile page edits)
+            window.addEventListener('listingUpdated', async (event) => {
+                console.log('📱 Received listing update event:', event.detail);
+                await displayListings(); // Refresh listings display
+                
+                // Also reload favorite states after a short delay
+                setTimeout(() => {
+                    loadFavoriteStates();
+                }, 200);
+            });
+            
             // Load listings with error handling
             try {
                 console.log('🔄 Attempting to load listings automatically...');
@@ -2337,20 +2348,75 @@
 
         // Fetch listings from Supabase
         async function fetchListings() {
-            console.log('Fetching listings from Supabase');
+            console.log('Fetching listings from all sources');
+            let allListings = [];
+            
+            // Try to fetch from Supabase first
+            if (typeof supabase !== 'undefined' && supabase) {
+                try {
+                    const { data, error } = await supabase
+                        .from('listings')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    console.log('Supabase fetch result:', { data, error });
+                    if (!error && data) {
+                        allListings = data || [];
+                        console.log('✅ Loaded', allListings.length, 'listings from Supabase');
+                    }
+                } catch (supabaseError) {
+                    console.log('Supabase fetch failed:', supabaseError);
+                }
+            }
+            
+            // Also include localStorage listings from all users
             try {
-                const { data, error } = await supabase
-                    .from('listings')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .range(0, 19);
-                console.log('Fetch result:', { data, error });
-                if (error) throw error;
-                return data || [];
+                const users = JSON.parse(localStorage.getItem('users')) || [];
+                const localListings = [];
+                
+                users.forEach(user => {
+                    // Check userListings_${email} key
+                    const userListingsKey = `userListings_${user.email}`;
+                    const userStoredListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                    localListings.push(...userStoredListings);
+                    
+                    // Also check user.listings
+                    if (user.listings && Array.isArray(user.listings)) {
+                        localListings.push(...user.listings);
+                    }
+                });
+                
+                // Merge Supabase and localStorage listings, removing duplicates
+                const allListingsMap = new Map();
+                
+                // Add Supabase listings first
+                allListings.forEach(listing => {
+                    allListingsMap.set(listing.id, listing);
+                });
+                
+                // Add/update with localStorage listings (this allows localStorage to override Supabase)
+                localListings.forEach(listing => {
+                    if (listing && listing.id) {
+                        allListingsMap.set(listing.id, listing);
+                    }
+                });
+                
+                const mergedListings = Array.from(allListingsMap.values());
+                
+                // Sort by created_at (newest first)
+                mergedListings.sort((a, b) => {
+                    const dateA = new Date(a.created_at || 0);
+                    const dateB = new Date(b.created_at || 0);
+                    return dateB - dateA;
+                });
+                
+                console.log('📋 Total listings loaded:', mergedListings.length, 
+                           '(Supabase:', allListings.length, 'LocalStorage:', localListings.length, ')');
+                           
+                return mergedListings;
+                
             } catch (error) {
-                console.error('Error fetching listings:', error);
-                alert('Failed to load listings: ' + error.message);
-                return [];
+                console.error('Error merging listings from localStorage:', error);
+                return allListings; // Return at least Supabase data
             }
         }
 
@@ -2650,6 +2716,12 @@
                 uploadedFiles = [];
 
                 alert('Listing added successfully!');
+                
+                // Trigger storage event to notify other pages
+                window.dispatchEvent(new CustomEvent('listingUpdated', { 
+                    detail: { listingId: newListing.id, action: 'create' } 
+                }));
+                
                 console.log('🔄 Refreshing listings and map after new listing added');
                 await displayListings();
             } catch (err) {
