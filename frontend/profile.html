@@ -1972,6 +1972,12 @@
                         if (updateSuccess) {
                             alert('Listing updated successfully!');
                             editModal.remove();
+                            
+                            // Trigger storage event to notify other pages
+                            window.dispatchEvent(new CustomEvent('listingUpdated', { 
+                                detail: { listingId: listingId, action: 'update' } 
+                            }));
+                            
                             // Small delay to ensure consistency
                             setTimeout(async () => {
                                 await displayUserListings(); // Refresh the listings
@@ -2073,6 +2079,12 @@
                 
                 if (deleteSuccess) {
                     alert('Listing deleted successfully!');
+                    
+                    // Trigger storage event to notify other pages
+                    window.dispatchEvent(new CustomEvent('listingUpdated', { 
+                        detail: { listingId: listingId, action: 'delete' } 
+                    }));
+                    
                     await displayUserListings(); // Refresh the listings
                 } else {
                     console.error('Delete failed - listing not found');
