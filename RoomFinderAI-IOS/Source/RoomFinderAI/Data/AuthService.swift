@@ -2,9 +2,12 @@ import Foundation
 import Supabase
 import Security
 
+typealias AuthUser = Auth.User
+typealias AppUser = User
+
 final class AuthService: ObservableObject {
     @Published var isAuthenticated = false
-    @Published var currentUser: User?
+    @Published var currentUser: AppUser?
     
     private let client = SupabaseClientProvider.shared
     
@@ -19,11 +22,19 @@ final class AuthService: ObservableObject {
         let response = try await client.auth.signIn(email: email, password: password)
         
         await MainActor.run {
-            self.currentUser = response.user
+            self.currentUser = AppUser(
+                id: response.user.id.uuidString,
+                email: response.user.email ?? "",
+                firstName: response.user.userMetadata["first_name"]?.stringValue,
+                lastName: response.user.userMetadata["last_name"]?.stringValue,
+                profileImage: response.user.userMetadata["profile_image"]?.stringValue,
+                createdAt: response.user.createdAt,
+                updatedAt: response.user.updatedAt
+            )
             self.isAuthenticated = true
         }
         
-        await saveSessionToKeychain(response.session)
+        await saveSessionToKeychain(response)
         await setCurrentUserEmail(email)
     }
     
@@ -37,20 +48,26 @@ final class AuthService: ObservableObject {
             ]
         )
         
-        if let user = response.user {
-            await MainActor.run {
-                self.currentUser = user
-                self.isAuthenticated = true
-            }
-            
-            if let session = response.session {
-                await saveSessionToKeychain(session)
-            }
-            
-            await setCurrentUserEmail(email)
-            
-            try await createUserProfile(email: email, firstName: firstName, lastName: lastName)
+        await MainActor.run {
+            self.currentUser = AppUser(
+                id: response.user.id.uuidString,
+                email: response.user.email ?? "",
+                firstName: firstName,
+                lastName: lastName,
+                profileImage: "https://via.placeholder.com/40",
+                createdAt: response.user.createdAt,
+                updatedAt: response.user.updatedAt
+            )
+            self.isAuthenticated = true
         }
+        
+        if let session = response.session {
+            await saveSessionToKeychain(session)
+        }
+            
+        await setCurrentUserEmail(email)
+            
+        try await createUserProfile(email: email, firstName: firstName, lastName: lastName)
     }
     
     func signOut() async throws {
@@ -69,14 +86,21 @@ final class AuthService: ObservableObject {
         
         await saveSessionToKeychain(session)
         
-        if let user = session.user {
-            await MainActor.run {
-                self.currentUser = user
-                self.isAuthenticated = true
-            }
-            
-            await setCurrentUserEmail(user.email ?? "")
+        let authUser = try await client.auth.user()
+        await MainActor.run {
+            self.currentUser = AppUser(
+                id: authUser.id.uuidString,
+                email: authUser.email ?? "",
+                firstName: authUser.userMetadata["first_name"]?.stringValue,
+                lastName: authUser.userMetadata["last_name"]?.stringValue,
+                profileImage: authUser.userMetadata["profile_image"]?.stringValue,
+                createdAt: authUser.createdAt,
+                updatedAt: authUser.updatedAt
+            )
+            self.isAuthenticated = true
         }
+        
+        await setCurrentUserEmail(authUser.email ?? "")
     }
     
     private func checkAuthStatus() {
@@ -85,13 +109,21 @@ final class AuthService: ObservableObject {
                 do {
                     try await client.auth.setSession(accessToken: session.accessToken, refreshToken: session.refreshToken)
                     
-                    let user = try await client.auth.user()
+                    let authUser = try await client.auth.user()
                     await MainActor.run {
-                        self.currentUser = user
+                        self.currentUser = AppUser(
+                            id: authUser.id.uuidString,
+                            email: authUser.email ?? "",
+                            firstName: authUser.userMetadata["first_name"]?.stringValue,
+                            lastName: authUser.userMetadata["last_name"]?.stringValue,
+                            profileImage: authUser.userMetadata["profile_image"]?.stringValue,
+                            createdAt: authUser.createdAt,
+                            updatedAt: authUser.updatedAt
+                        )
                         self.isAuthenticated = true
                     }
                     
-                    await setCurrentUserEmail(user.email ?? "")
+                    await setCurrentUserEmail(authUser.email ?? "")
                 } catch {
                     print("Failed to restore session: \(error)")
                     removeSessionFromKeychain()
@@ -108,15 +140,15 @@ final class AuthService: ObservableObject {
             "profile_image": .string("https://via.placeholder.com/40")
         ]
         
-        try await client.database
-            .from("users")
+        try await client.from("users")
             .insert(profileData)
             .execute()
     }
     
     private func setCurrentUserEmail(_ email: String) async {
         do {
-            try await client.database.rpc("set_current_user_email", params: ["user_email": email]).execute()
+            try await client.rpc("set_current_user_email", params: ["user_email": email])
+                .execute()
         } catch {
             print("Failed to set current user email: \(error)")
         }
@@ -126,7 +158,7 @@ final class AuthService: ObservableObject {
         let sessionData = try? JSONEncoder().encode(SessionData(
             accessToken: session.accessToken,
             refreshToken: session.refreshToken,
-            expiresAt: session.expiresAt
+            expiresAt: Date(timeIntervalSince1970: session.expiresAt)
         ))
         
         guard let data = sessionData else { return }
