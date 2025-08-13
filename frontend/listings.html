@@ -2436,16 +2436,16 @@
                 // Merge Supabase and localStorage listings, removing duplicates
                 const allListingsMap = new Map();
                 
-                // Add Supabase listings first
-                allListings.forEach(listing => {
-                    allListingsMap.set(listing.id, listing);
-                });
-                
-                // Add/update with localStorage listings (this allows localStorage to override Supabase)
+                // Add localStorage listings first (local-only listings)
                 localListings.forEach(listing => {
                     if (listing && listing.id) {
                         allListingsMap.set(listing.id, listing);
                     }
+                });
+                
+                // Add Supabase listings (these override localStorage for global visibility)
+                allListings.forEach(listing => {
+                    allListingsMap.set(listing.id, listing);
                 });
                 
                 const mergedListings = Array.from(allListingsMap.values());
@@ -2542,6 +2542,9 @@
                 listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
 
                 const hasOwner = !!listing.user_email;
+                const currentUser = window.UniversalAuth.getCurrentUser();
+                const isOwner = currentUser && currentUser.email && listing.user_email === currentUser.email;
+                
                 listingCard.innerHTML = `
                     <div class="relative">
                         <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+">
@@ -2554,6 +2557,26 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                             </svg>
                         </button>
+                        ${isOwner ? `
+                            <div class="absolute top-2 left-2 flex space-x-1">
+                                <button class="edit-listing-btn p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 z-10" 
+                                        data-listing-id="${listing.id}" 
+                                        title="Edit listing"
+                                        onclick="editListingFromListingsPage('${listing.id}')">
+                                    <svg class="w-4 h-4 text-gray-600 hover:text-blue-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </button>
+                                <button class="delete-listing-btn p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 z-10" 
+                                        data-listing-id="${listing.id}" 
+                                        title="Delete listing"
+                                        onclick="deleteListingFromListingsPage('${listing.id}')">
+                                    <svg class="w-4 h-4 text-gray-600 hover:text-red-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        ` : ''}
                     </div>
                     <div class="p-4">
                         <h3 class="text-lg font-semibold text-gray-800 truncate">${listing.title}</h3>
@@ -2568,8 +2591,14 @@
                         </div>
                         <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
                         <div class="flex space-x-2 mt-4">
-                            <button class="view-details-btn w-1/2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                            <button class="chat-btn w-1/2 ${hasOwner ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
+                            ${isOwner ? `
+                                <button class="view-details-btn w-1/3 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg text-sm" data-listing='${JSON.stringify(listing)}'>View</button>
+                                <button class="edit-listing-btn-large w-1/3 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg text-sm" onclick="editListingFromListingsPage('${listing.id}')">Edit</button>
+                                <button class="delete-listing-btn-large w-1/3 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg text-sm" onclick="deleteListingFromListingsPage('${listing.id}')">Delete</button>
+                            ` : `
+                                <button class="view-details-btn w-1/2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
+                                <button class="chat-btn w-1/2 ${hasOwner ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
+                            `}
                         </div>
                     </div>
                 `;
@@ -5044,6 +5073,124 @@
             
             console.log(`✅ Updated ${favoriteButtons.length} heart button states`);
         }
+        
+        // Delete listing function for listings page
+        window.deleteListingFromListingsPage = async function(listingId) {
+            if (!confirm('Are you sure you want to delete this listing? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const currentUser = window.UniversalAuth.getCurrentUser();
+                if (!currentUser || !currentUser.email) {
+                    alert('Please log in to delete listings.');
+                    return;
+                }
+                
+                console.log('🗑️ Attempting to delete listing from listings page:', { listingId, userEmail: currentUser.email });
+                let deleteSuccess = false;
+                
+                // Try Supabase delete first
+                if (typeof supabase !== 'undefined' && supabase && !listingId.startsWith('local_')) {
+                    try {
+                        const { data: existingListing, error: fetchError } = await supabase
+                            .from('listings')
+                            .select('user_email')
+                            .eq('id', listingId)
+                            .single();
+                            
+                        if (!fetchError && existingListing) {
+                            if (existingListing.user_email !== currentUser.email) {
+                                alert('You can only delete your own listings.');
+                                return;
+                            }
+                            
+                            const { error } = await supabase
+                                .from('listings')
+                                .delete()
+                                .eq('id', listingId)
+                                .eq('user_email', currentUser.email);
+
+                            if (!error) {
+                                deleteSuccess = true;
+                                console.log('✅ Listing deleted from Supabase');
+                                
+                                // Also clean up localStorage
+                                const userListingsKey = `userListings_${currentUser.email}`;
+                                let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                                userListings = userListings.filter(l => l.id !== listingId);
+                                localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                                
+                                if (currentUser.listings) {
+                                    currentUser.listings = currentUser.listings.filter(l => l.id !== listingId);
+                                    let users = JSON.parse(localStorage.getItem('users')) || [];
+                                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                                    localStorage.setItem('users', JSON.stringify(users));
+                                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                                }
+                                console.log('✅ Also cleaned up localStorage');
+                            }
+                        }
+                    } catch (supabaseError) {
+                        console.log('Supabase delete failed, will use localStorage:', supabaseError);
+                    }
+                }
+                
+                // If Supabase failed or listing is local, delete from localStorage
+                if (!deleteSuccess) {
+                    console.log('📱 Deleting listing from localStorage');
+                    
+                    const userListingsKey = `userListings_${currentUser.email}`;
+                    let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                    const originalLength = userListings.length;
+                    userListings = userListings.filter(l => l.id !== listingId);
+                    
+                    if (userListings.length < originalLength) {
+                        localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                        deleteSuccess = true;
+                    }
+                    
+                    if (currentUser.listings) {
+                        const originalUserListingsLength = currentUser.listings.length;
+                        currentUser.listings = currentUser.listings.filter(l => l.id !== listingId);
+                        
+                        if (currentUser.listings.length < originalUserListingsLength) {
+                            let users = JSON.parse(localStorage.getItem('users')) || [];
+                            users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                            localStorage.setItem('users', JSON.stringify(users));
+                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                            deleteSuccess = true;
+                        }
+                    }
+                }
+                
+                if (deleteSuccess) {
+                    console.log('🎉 Delete operation successful, listing ID:', listingId);
+                    
+                    // Trigger storage event to notify other pages
+                    window.dispatchEvent(new CustomEvent('listingUpdated', { 
+                        detail: { listingId: listingId, action: 'delete' } 
+                    }));
+                    
+                    // Refresh the listings display immediately
+                    await displayListings();
+                    alert('Listing deleted successfully!');
+                } else {
+                    console.error('❌ Delete failed - listing not found:', listingId);
+                    alert('Error deleting listing. The listing may not exist.');
+                }
+            } catch (err) {
+                console.error('Error deleting listing:', err);
+                alert('Error deleting listing. Please try again.');
+            }
+        };
+        
+        // Edit listing function for listings page (redirect to profile)
+        window.editListingFromListingsPage = function(listingId) {
+            // Redirect to profile page with edit parameter
+            window.location.href = `/profile.html?edit=${listingId}`;
+        };
+        
     </script>
     
     <!-- Property Visit Tracker -->

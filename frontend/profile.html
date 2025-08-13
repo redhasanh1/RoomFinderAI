@@ -1925,6 +1925,31 @@
                                     if (!error && data && data.length > 0) {
                                         updateSuccess = true;
                                         console.log('✅ Listing updated in Supabase');
+                                        
+                                        // Clean up localStorage to ensure global consistency
+                                        const userListingsKey = `userListings_${currentUser.email}`;
+                                        let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                                        const listingIndex = userListings.findIndex(l => l.id === listingId);
+                                        
+                                        if (listingIndex !== -1) {
+                                            // Remove the listing from localStorage since Supabase is now the source of truth
+                                            userListings.splice(listingIndex, 1);
+                                            localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                                            console.log('🧹 Cleaned localStorage to ensure Supabase data takes precedence');
+                                        }
+                                        
+                                        // Also clean from currentUser.listings
+                                        if (currentUser.listings) {
+                                            const userListingIndex = currentUser.listings.findIndex(l => l.id === listingId);
+                                            if (userListingIndex !== -1) {
+                                                currentUser.listings.splice(userListingIndex, 1);
+                                                let users = JSON.parse(localStorage.getItem('users')) || [];
+                                                users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                                                localStorage.setItem('users', JSON.stringify(users));
+                                                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                                                console.log('🧹 Also cleaned currentUser.listings');
+                                            }
+                                        }
                                     }
                                 }
                             } catch (supabaseError) {
