@@ -22,7 +22,9 @@ final class ListingsViewModel: ObservableObject {
     }
     
     deinit {
-        stopRealtime()
+        Task { @MainActor in
+            stopRealtime()
+        }
     }
     
     func loadInitial() async {

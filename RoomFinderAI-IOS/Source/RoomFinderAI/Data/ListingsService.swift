@@ -65,7 +65,7 @@ final class ListingsService: ObservableObject {
             }
             
             if let search = filters.search, !search.isEmpty {
-                query = query.eq("title", value: search)
+                query = query.ilike("title", pattern: "%\(search)%")
             }
             
             let response: [Listing] = try await query.execute().value
