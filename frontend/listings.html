@@ -5183,10 +5183,284 @@
             }
         };
         
-        // Edit listing function for listings page (redirect to profile)
-        window.editListingFromListingsPage = function(listingId) {
-            // Redirect to profile page with edit parameter
-            window.location.href = `/profile.html?edit=${listingId}`;
+        // Edit listing function for listings page (show modal)
+        window.editListingFromListingsPage = async function(listingId) {
+            try {
+                let listing = null;
+                
+                // Try to fetch from Supabase first
+                if (typeof supabase !== 'undefined' && supabase) {
+                    try {
+                        const { data, error } = await supabase
+                            .from('listings')
+                            .select('*')
+                            .eq('id', listingId)
+                            .single();
+                        
+                        if (!error && data) {
+                            listing = data;
+                            console.log('Loaded listing from Supabase for edit');
+                        }
+                    } catch (supabaseError) {
+                        console.log('Supabase fetch failed, checking localStorage:', supabaseError);
+                    }
+                }
+                
+                // If not found in Supabase, check localStorage
+                if (!listing) {
+                    const currentUser = window.UniversalAuth.getCurrentUser();
+                    const userListingsKey = `userListings_${currentUser.email}`;
+                    const userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                    
+                    // Also check currentUser.listings
+                    const currentUserListings = currentUser.listings || [];
+                    const allListings = [...userListings, ...currentUserListings];
+                    
+                    listing = allListings.find(l => l.id === listingId);
+                    
+                    if (listing) {
+                        console.log('Loaded listing from localStorage for edit');
+                    }
+                }
+                
+                if (!listing) {
+                    console.error('Listing not found for edit');
+                    alert('Error loading listing details');
+                    return;
+                }
+
+                // Create edit modal
+                const editModal = document.createElement('div');
+                editModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+                editModal.innerHTML = `
+                    <div class="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-2xl font-semibold text-gray-800">Edit Listing</h3>
+                            <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <form id="editListingFormListingsPage" class="space-y-4">
+                            <input type="hidden" id="editListingIdListingsPage" value="${listing.id}">
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                                <input type="text" id="editTitleListingsPage" value="${listing.title || ''}" 
+                                    class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Price ($/month)</label>
+                                    <input type="number" id="editPriceListingsPage" value="${listing.price || ''}" 
+                                        class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
+                                    <input type="number" id="editBedroomsListingsPage" value="${listing.bedrooms || ''}" 
+                                        class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                <input type="text" id="editCityListingsPage" value="${listing.city || ''}" 
+                                    class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+                                <input type="text" id="editStreetListingsPage" value="${listing.street || ''}" 
+                                    class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                                <input type="text" id="editPostalCodeListingsPage" value="${listing.postalCode || ''}" 
+                                    class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">House Type</label>
+                                <select id="editHouseTypeListingsPage" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="apartment" ${listing.house_type === 'apartment' ? 'selected' : ''}>Apartment</option>
+                                    <option value="house" ${listing.house_type === 'house' ? 'selected' : ''}>House</option>
+                                    <option value="condo" ${listing.house_type === 'condo' ? 'selected' : ''}>Condo</option>
+                                    <option value="townhouse" ${listing.house_type === 'townhouse' ? 'selected' : ''}>Townhouse</option>
+                                    <option value="studio" ${listing.house_type === 'studio' ? 'selected' : ''}>Studio</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Utilities</label>
+                                <input type="text" id="editUtilitiesListingsPage" value="${listing.utilities || ''}" 
+                                    class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., Included, Not included, Partially included">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea id="editDescriptionListingsPage" rows="4" 
+                                    class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">${listing.description || ''}</textarea>
+                            </div>
+                            
+                            <div class="flex space-x-3 pt-4">
+                                <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                                    Save Changes
+                                </button>
+                                <button type="button" onclick="this.closest('.fixed').remove()" 
+                                    class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+
+                document.body.appendChild(editModal);
+
+                // Handle form submission
+                document.getElementById('editListingFormListingsPage').addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const updatedListing = {
+                        title: document.getElementById('editTitleListingsPage').value,
+                        price: parseFloat(document.getElementById('editPriceListingsPage').value),
+                        bedrooms: parseInt(document.getElementById('editBedroomsListingsPage').value),
+                        city: document.getElementById('editCityListingsPage').value,
+                        street: document.getElementById('editStreetListingsPage').value,
+                        postalCode: document.getElementById('editPostalCodeListingsPage').value,
+                        house_type: document.getElementById('editHouseTypeListingsPage').value,
+                        utilities: document.getElementById('editUtilitiesListingsPage').value,
+                        description: document.getElementById('editDescriptionListingsPage').value,
+                        updated_at: new Date().toISOString()
+                    };
+
+                    try {
+                        const currentUser = window.UniversalAuth.getCurrentUser();
+                        if (!currentUser || !currentUser.email) {
+                            alert('Please log in to edit listings.');
+                            return;
+                        }
+                        
+                        let updateSuccess = false;
+                        
+                        // Try Supabase update first
+                        if (typeof supabase !== 'undefined' && supabase && !listingId.startsWith('local_')) {
+                            try {
+                                const { data: existingListing, error: fetchError } = await supabase
+                                    .from('listings')
+                                    .select('*')
+                                    .eq('id', listingId)
+                                    .single();
+                                    
+                                if (!fetchError && existingListing) {
+                                    if (existingListing.user_email !== currentUser.email) {
+                                        alert('You can only edit your own listings.');
+                                        return;
+                                    }
+                                    
+                                    const { data, error } = await supabase
+                                        .from('listings')
+                                        .update(updatedListing)
+                                        .eq('id', listingId)
+                                        .eq('user_email', currentUser.email)
+                                        .select();
+
+                                    if (!error && data && data.length > 0) {
+                                        updateSuccess = true;
+                                        console.log('✅ Listing updated in Supabase');
+                                        
+                                        // Clean up localStorage to ensure global consistency
+                                        const userListingsKey = `userListings_${currentUser.email}`;
+                                        let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                                        const listingIndex = userListings.findIndex(l => l.id === listingId);
+                                        
+                                        if (listingIndex !== -1) {
+                                            userListings.splice(listingIndex, 1);
+                                            localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                                        }
+                                        
+                                        if (currentUser.listings) {
+                                            const userListingIndex = currentUser.listings.findIndex(l => l.id === listingId);
+                                            if (userListingIndex !== -1) {
+                                                currentUser.listings.splice(userListingIndex, 1);
+                                                let users = JSON.parse(localStorage.getItem('users')) || [];
+                                                users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                                                localStorage.setItem('users', JSON.stringify(users));
+                                                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (supabaseError) {
+                                console.log('Supabase update failed, will use localStorage:', supabaseError);
+                            }
+                        }
+                        
+                        // If Supabase failed or listing is local, update in localStorage
+                        if (!updateSuccess) {
+                            console.log('📱 Updating listing in localStorage');
+                            
+                            const userListingsKey = `userListings_${currentUser.email}`;
+                            let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                            const listingIndex = userListings.findIndex(l => l.id === listingId);
+                            
+                            if (listingIndex !== -1) {
+                                userListings[listingIndex] = {
+                                    ...userListings[listingIndex],
+                                    ...updatedListing
+                                };
+                                localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                                updateSuccess = true;
+                            }
+                            
+                            if (currentUser.listings) {
+                                const userListingIndex = currentUser.listings.findIndex(l => l.id === listingId);
+                                if (userListingIndex !== -1) {
+                                    currentUser.listings[userListingIndex] = {
+                                        ...currentUser.listings[userListingIndex],
+                                        ...updatedListing
+                                    };
+                                    
+                                    let users = JSON.parse(localStorage.getItem('users')) || [];
+                                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                                    localStorage.setItem('users', JSON.stringify(users));
+                                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                                    updateSuccess = true;
+                                }
+                            }
+                        }
+                        
+                        if (updateSuccess) {
+                            // Close modal first
+                            editModal.remove();
+                            
+                            // Trigger storage event to notify other pages
+                            window.dispatchEvent(new CustomEvent('listingUpdated', { 
+                                detail: { listingId: listingId, action: 'update' } 
+                            }));
+                            
+                            // Refresh the listings display immediately
+                            await displayListings();
+                            alert('Listing updated successfully!');
+                        } else {
+                            alert('Update failed - listing may not exist or you may not have permission to edit it.');
+                        }
+                    } catch (err) {
+                        console.error('Error updating listing:', err);
+                        alert('Error updating listing. Please try again.');
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error in editListingFromListingsPage:', error);
+                alert('Error loading listing details');
+            }
         };
         
     </script>
