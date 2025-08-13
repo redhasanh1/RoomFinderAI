@@ -1028,77 +1028,259 @@
             </div>
         </div>
 
-        <!-- Example 1: Analytics-First Dashboard Content -->
+        <!-- Example 2: Task-Oriented Dashboard Content -->
         <div id="tab-content">
-            <!-- Analytics Overview -->
+            <!-- Task Dashboard Overview -->
             <div id="overview-tab" class="tab-content">
-                <!-- Key Metrics Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <!-- Property Views -->
-                    <div class="glass-card p-6 hover:scale-105 transition-transform cursor-pointer">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
+                <!-- User Journey Progress -->
+                <div class="glass-card p-6 mb-8">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Your Housing Journey</h3>
+                    <div class="relative">
+                        <div class="absolute top-5 left-0 right-0 h-1 bg-gray-200 rounded-full"></div>
+                        <div class="absolute top-5 left-0 h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full" style="width: 60%;"></div>
+                        <div class="relative flex justify-between">
+                            <div class="text-center">
+                                <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">✓</div>
+                                <p class="text-xs mt-2 text-gray-600">Profile Setup</p>
                             </div>
-                            <span class="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">+12%</span>
-                        </div>
-                        <h3 class="text-sm font-medium text-gray-600 mb-1">Property Views</h3>
-                        <p class="text-3xl font-bold text-gray-900">2,847</p>
-                        <p class="text-xs text-gray-500 mt-1">This month</p>
-                    </div>
-
-                    <!-- Saved Favorites -->
-                    <div class="glass-card p-6 hover:scale-105 transition-transform cursor-pointer">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="p-3 rounded-xl bg-gradient-to-br from-red-500 to-pink-600">
-                                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                                </svg>
+                            <div class="text-center">
+                                <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">✓</div>
+                                <p class="text-xs mt-2 text-gray-600">Search Preferences</p>
                             </div>
-                            <span class="text-xs font-medium text-red-600 bg-red-100 px-2 py-1 rounded-full">+8</span>
+                            <div class="text-center">
+                                <div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">3</div>
+                                <p class="text-xs mt-2 text-gray-900 font-medium">Viewing Properties</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 text-sm font-bold">4</div>
+                                <p class="text-xs mt-2 text-gray-500">Apply & Negotiate</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 text-sm font-bold">5</div>
+                                <p class="text-xs mt-2 text-gray-500">Move In</p>
+                            </div>
                         </div>
-                        <h3 class="text-sm font-medium text-gray-600 mb-1">Saved Properties</h3>
-                        <p class="text-3xl font-bold text-gray-900" id="savedCount">12</p>
-                        <p class="text-xs text-gray-500 mt-1">Total favorites</p>
                     </div>
+                </div>
 
-                    <!-- Search Activity -->
-                    <div class="glass-card p-6 hover:scale-105 transition-transform cursor-pointer">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600">
+                <!-- Quick Actions Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Action Cards -->
+                    <div class="glass-card p-6 hover:shadow-xl transition-all cursor-pointer group">
+                        <div class="flex items-start space-x-4">
+                            <div class="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl group-hover:scale-110 transition-transform">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                 </svg>
                             </div>
-                            <span class="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full">+23%</span>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 mb-1">Search Properties</h4>
+                                <p class="text-sm text-gray-600 mb-3">Find your perfect home with advanced filters</p>
+                                <a href="listings.html" class="text-blue-600 text-sm font-medium hover:text-blue-700">Start Searching →</a>
+                            </div>
                         </div>
-                        <h3 class="text-sm font-medium text-gray-600 mb-1">Searches</h3>
-                        <p class="text-3xl font-bold text-gray-900">156</p>
-                        <p class="text-xs text-gray-500 mt-1">Last 30 days</p>
                     </div>
 
-                    <!-- Average Rent -->
-                    <div class="glass-card p-6 hover:scale-105 transition-transform cursor-pointer">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600">
+                    <div class="glass-card p-6 hover:shadow-xl transition-all cursor-pointer group">
+                        <div class="flex items-start space-x-4">
+                            <div class="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl group-hover:scale-110 transition-transform">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
                             </div>
-                            <span class="text-xs font-medium text-orange-600 bg-orange-100 px-2 py-1 rounded-full">+5%</span>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 mb-1">Schedule Tours</h4>
+                                <p class="text-sm text-gray-600 mb-3">Book property viewings at your convenience</p>
+                                <button class="text-purple-600 text-sm font-medium hover:text-purple-700">Schedule Now →</button>
+                            </div>
                         </div>
-                        <h3 class="text-sm font-medium text-gray-600 mb-1">Avg. Rent Viewed</h3>
-                        <p class="text-3xl font-bold text-gray-900">$2,340</p>
-                        <p class="text-xs text-gray-500 mt-1">Per month</p>
+                    </div>
+
+                    <div class="glass-card p-6 hover:shadow-xl transition-all cursor-pointer group">
+                        <div class="flex items-start space-x-4">
+                            <div class="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 mb-1">Verify Profile</h4>
+                                <p class="text-sm text-gray-600 mb-3">Complete verification for premium features</p>
+                                <a href="profile.html" class="text-green-600 text-sm font-medium hover:text-green-700">Complete Verification →</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 hover:shadow-xl transition-all cursor-pointer group">
+                        <div class="flex items-start space-x-4">
+                            <div class="p-3 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 mb-1">Saved Properties</h4>
+                                <p class="text-sm text-gray-600 mb-3">View and manage your favorite listings</p>
+                                <a href="profile.html#saved" class="text-red-600 text-sm font-medium hover:text-red-700">View Saved (<span id="savedCountQuick">0</span>) →</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 hover:shadow-xl transition-all cursor-pointer group">
+                        <div class="flex items-start space-x-4">
+                            <div class="p-3 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 mb-1">AI Negotiator</h4>
+                                <p class="text-sm text-gray-600 mb-3">Get help negotiating better deals</p>
+                                <a href="ai-negotiator.html" class="text-indigo-600 text-sm font-medium hover:text-indigo-700">Start Chat →</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 hover:shadow-xl transition-all cursor-pointer group">
+                        <div class="flex items-start space-x-4">
+                            <div class="p-3 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 mb-1">List Property</h4>
+                                <p class="text-sm text-gray-600 mb-3">Post your property for rent or sublease</p>
+                                <a href="sublease.html" class="text-orange-600 text-sm font-medium hover:text-orange-700">Create Listing →</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Charts Section -->
+                <!-- To-Do List & Recent Activity -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <!-- Activity Chart -->
+                    <!-- To-Do List -->
+                    <div class="glass-card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Your To-Do List</h3>
+                            <span class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">3 pending</span>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex items-center p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
+                                <input type="checkbox" class="mr-3 w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900">Complete profile verification</p>
+                                    <p class="text-xs text-gray-500">Unlock premium features</p>
+                                </div>
+                                <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Priority</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-white border border-gray-200 rounded-lg">
+                                <input type="checkbox" class="mr-3 w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900">Schedule property viewing</p>
+                                    <p class="text-xs text-gray-500">3 properties shortlisted</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-3 bg-white border border-gray-200 rounded-lg">
+                                <input type="checkbox" class="mr-3 w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900">Update search preferences</p>
+                                    <p class="text-xs text-gray-500">Refine your criteria</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-3 bg-green-50 border border-gray-200 rounded-lg opacity-60">
+                                <input type="checkbox" checked class="mr-3 w-5 h-5 text-green-600 rounded focus:ring-green-500">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900 line-through">Set up email alerts</p>
+                                    <p class="text-xs text-gray-500">Completed yesterday</p>
+                                </div>
+                                <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Done</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendations Widget -->
+                    <div class="glass-card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Recommended For You</h3>
+                            <button class="text-sm text-blue-600 hover:text-blue-700">View All</button>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg cursor-pointer hover:shadow-md transition-shadow">
+                                <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold">95%</div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-gray-900">Modern 2BR Apartment</p>
+                                    <p class="text-xs text-gray-600">Downtown • $2,200/mo</p>
+                                    <p class="text-xs text-blue-600 mt-1">Matches your preferences</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3 p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg cursor-pointer hover:shadow-md transition-shadow">
+                                <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center text-white font-bold">88%</div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-gray-900">Spacious Studio</p>
+                                    <p class="text-xs text-gray-600">Midtown • $1,800/mo</p>
+                                    <p class="text-xs text-green-600 mt-1">Near your workplace</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg cursor-pointer hover:shadow-md transition-shadow">
+                                <div class="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold">85%</div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-gray-900">Luxury Condo</p>
+                                    <p class="text-xs text-gray-600">Financial District • $3,500/mo</p>
+                                    <p class="text-xs text-purple-600 mt-1">Premium amenities included</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Upcoming Tours -->
+                    <div class="glass-card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-sm font-medium text-gray-600">Upcoming Tours</h4>
+                            <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900 mb-2">2</p>
+                        <p class="text-xs text-gray-500">Next: Tomorrow at 2 PM</p>
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <button class="text-xs text-purple-600 hover:text-purple-700 font-medium">Manage Schedule →</button>
+                        </div>
+                    </div>
+
+                    <!-- Messages -->
+                    <div class="glass-card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-sm font-medium text-gray-600">New Messages</h4>
+                            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900 mb-2">5</p>
+                        <p class="text-xs text-gray-500">From landlords and agents</p>
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <button class="text-xs text-blue-600 hover:text-blue-700 font-medium">View Inbox →</button>
+                        </div>
+                    </div>
+
+                    <!-- Applications -->
+                    <div class="glass-card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-sm font-medium text-gray-600">Active Applications</h4>
+                            <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900 mb-2">3</p>
+                        <p class="text-xs text-gray-500">1 pending review</p>
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <button class="text-xs text-green-600 hover:text-green-700 font-medium">Track Status →</button>
+                        </div>
+                    </div>
+                </div>
                     <div class="glass-card p-6">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-lg font-semibold text-gray-900">Search Activity</h3>
@@ -10127,9 +10309,16 @@
             if (currentUser.email) {
                 const storageKey = `savedListings_${currentUser.email}`;
                 const savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
+                
+                // Update both saved count elements
                 const savedCountElement = document.getElementById('savedCount');
                 if (savedCountElement) {
                     savedCountElement.textContent = savedListings.length;
+                }
+                
+                const savedCountQuickElement = document.getElementById('savedCountQuick');
+                if (savedCountQuickElement) {
+                    savedCountQuickElement.textContent = savedListings.length;
                 }
             }
         }
