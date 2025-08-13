@@ -2478,6 +2478,10 @@
             let listings = await fetchListings();
             console.log('📋 Fetched listings:', listings);
             
+            // Check for highlight parameter in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const highlightListingId = urlParams.get('highlight');
+            
             const container = document.getElementById('listingsContainer');
             container.innerHTML = '';
 
@@ -2487,6 +2491,16 @@
             if (listings.length === 0) {
                 console.log('📝 No listings found in database');
                 return; // updateListingCount already handles empty state
+            }
+            
+            // If highlighting a specific listing, move it to the top
+            if (highlightListingId) {
+                const highlightIndex = listings.findIndex(l => l.id === highlightListingId);
+                if (highlightIndex !== -1) {
+                    const highlightListing = listings.splice(highlightIndex, 1)[0];
+                    listings.unshift(highlightListing);
+                    console.log('📌 Moved highlighted listing to top:', highlightListingId);
+                }
             }
 
             listings.forEach(listing => {
@@ -2539,7 +2553,10 @@
                     .catch(err => console.error('Failed to fetch MIME type for', primaryImage, err));
 
                 const listingCard = document.createElement('div');
-                listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
+                const isHighlighted = highlightListingId && listing.id === highlightListingId;
+                listingCard.className = isHighlighted 
+                    ? 'listing-card bg-blue-50 border-2 border-blue-500 rounded-lg shadow-lg overflow-hidden relative animate-pulse'
+                    : 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
 
                 const hasOwner = !!listing.user_email;
                 const currentUser = window.UniversalAuth.getCurrentUser();
@@ -2601,6 +2618,28 @@
                     </div>
                 `;
                 container.appendChild(listingCard);
+                
+                // If this is the highlighted listing, scroll to it and add a badge
+                if (isHighlighted) {
+                    setTimeout(() => {
+                        listingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        // Add a highlighted badge
+                        const badge = document.createElement('div');
+                        badge.className = 'absolute top-2 left-2 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-semibold z-20';
+                        badge.textContent = 'FROM FAVORITES';
+                        listingCard.querySelector('.relative').appendChild(badge);
+                        
+                        // Stop the pulse animation after 3 seconds
+                        setTimeout(() => {
+                            listingCard.classList.remove('animate-pulse');
+                        }, 3000);
+                        
+                        // Clear the URL parameter after highlighting
+                        const newUrl = window.location.pathname;
+                        window.history.replaceState({}, '', newUrl);
+                    }, 500);
+                }
             });
 
             document.querySelectorAll('.view-details-btn').forEach(button => {
