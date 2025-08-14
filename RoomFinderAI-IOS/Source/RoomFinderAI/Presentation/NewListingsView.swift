@@ -232,7 +232,7 @@ struct ListingCardNew: View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 12) {
                 // Image
-                AsyncImage(url: URL(string: listing.images.first ?? "")) { image in
+                AsyncImage(url: URL(string: listing.images?.first ?? "")) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -251,7 +251,7 @@ struct ListingCardNew: View {
                 // Content
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text(listing.title)
+                        Text(listing.title ?? "Unknown")
                             .font(.headline)
                             .fontWeight(.semibold)
                             .foregroundColor(.primary)
@@ -266,7 +266,7 @@ struct ListingCardNew: View {
                     }
                     
                     HStack {
-                        Label(listing.city, systemImage: "location")
+                        Label(listing.city ?? "Unknown", systemImage: "location")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         
@@ -274,7 +274,7 @@ struct ListingCardNew: View {
                         
                         HStack(spacing: 12) {
                             Label("\(listing.bedrooms)", systemImage: "bed.double")
-                            Label(listing.houseType, systemImage: "house")
+                            Label(listing.houseType ?? "Unknown", systemImage: "house")
                         }
                         .font(.caption)
                         .foregroundColor(.secondary)
