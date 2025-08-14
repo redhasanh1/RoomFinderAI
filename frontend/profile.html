@@ -851,18 +851,27 @@
                         }
 
                         // Update profile image in Supabase if available
-                        if (window.supabase && currentUser.id) {
-                            window.supabase
-                                .from('profiles')
-                                .update({ profile_image: imageDataUrl })
-                                .eq('id', currentUser.id)
-                                .then(({ error }) => {
-                                    if (error) {
-                                        console.error('Error updating profile image in Supabase:', error);
-                                    } else {
-                                        console.log('Profile image updated in Supabase');
-                                    }
-                                });
+                        // Check both the local supabase variable and window.supabase
+                        const supabaseClient = supabase || (window.supabase && typeof window.supabase.from === 'function' ? window.supabase : null);
+                        
+                        if (supabaseClient && typeof supabaseClient.from === 'function' && currentUser.id) {
+                            try {
+                                const { error } = await supabaseClient
+                                    .from('profiles')
+                                    .update({ profile_image: imageDataUrl })
+                                    .eq('id', currentUser.id);
+                                    
+                                if (error) {
+                                    console.error('Error updating profile image in Supabase:', error);
+                                } else {
+                                    console.log('Profile image updated in Supabase');
+                                }
+                            } catch (supabaseError) {
+                                console.log('Supabase update skipped:', supabaseError.message);
+                                // Continue with local storage update
+                            }
+                        } else {
+                            console.log('Supabase not available or not properly initialized, using local storage only');
                         }
 
                         // Update displayed images
