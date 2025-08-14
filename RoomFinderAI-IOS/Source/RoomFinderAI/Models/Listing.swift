@@ -71,73 +71,73 @@ struct Location: Codable, Equatable {
     }
 }
 
+/*
+WebQuerySpec (from frontend/listings-api.js):
+- SOURCE: "listings"
+- SELECT: "*" (all columns)
+- ORDER: created_at desc
+- FILTERS: city (ilike), maxPrice (lte), minPrice (gte), house_type (eq), bedrooms (eq)
+*/
+
 // MARK: - Main Listing Model
-struct Listing: Identifiable, Codable, Equatable {
+struct Listing: Codable, Identifiable, Equatable {
     let id: String
-    let title: String
+    let title: String?
+    let price: Double?
+    let city: String?
+    let created_at: String?
+    let cover_image: String?
+    let category: String?
+    
+    // Additional fields that may exist but are not part of our minimal select
+    let houseType: String?
+    let bedrooms: Int?
     let description: String?
-    let price: Int
-    let city: String
-    let street: String
-    let postalCode: String
-    let houseType: String
-    let bedrooms: Int
-    let utilities: String
-    let media: [String]
-    let userEmail: String
-    let createdAt: Date
-    let updatedAt: Date
+    let street: String?
+    let images: [String]?
+    let isFavorited: Bool?
+    let utilities: String?
+    let userEmail: String?
+    
+    enum CodingKeys: String, CodingKey { 
+        case id, title, price, city, created_at, cover_image, category
+        case houseType = "house_type", bedrooms, description, street, images, isFavorited, utilities, userEmail
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        if let s = try? c.decode(String.self, forKey: .id) { id = s }
+        else if let u = try? c.decode(UUID.self, forKey: .id) { id = u.uuidString }
+        else { id = UUID().uuidString } // last-resort to avoid hard failure
+        title = try? c.decode(String.self, forKey: .title)
+        price = try? c.decode(Double.self, forKey: .price)
+        city = try? c.decode(String.self, forKey: .city)
+        created_at = try? c.decode(String.self, forKey: .created_at)
+        cover_image = try? c.decode(String.self, forKey: .cover_image)
+        category = try? c.decode(String.self, forKey: .category)
+        
+        // These may or may not be in the response, depending on what we select
+        houseType = try? c.decode(String.self, forKey: .houseType)
+        bedrooms = try? c.decode(Int.self, forKey: .bedrooms)
+        description = try? c.decode(String.self, forKey: .description)
+        street = try? c.decode(String.self, forKey: .street)
+        images = try? c.decode([String].self, forKey: .images)
+        isFavorited = try? c.decode(Bool.self, forKey: .isFavorited)
+        utilities = try? c.decode(String.self, forKey: .utilities)
+        userEmail = try? c.decode(String.self, forKey: .userEmail)
+    }
     
     // Computed properties for backwards compatibility
     var propertyType: PropertyType {
-        PropertyType(rawValue: houseType.lowercased()) ?? .apartment
+        PropertyType(rawValue: houseType?.capitalized ?? "") ?? .apartment
     }
     
-    var location: Location {
-        Location(
-            address: "\(street), \(city)",
-            city: city,
-            state: "",
-            zipCode: postalCode,
-            country: "Canada",
-            latitude: 43.6532 + Double.random(in: -0.1...0.1), // Mock Toronto coordinates
-            longitude: -79.3832 + Double.random(in: -0.1...0.1),
-            neighborhood: nil
-        )
-    }
-    
-    var images: [String] {
-        return media
-    }
-    
-    var imageURLs: [String] {
-        return media
-    }
-    
-    var isActive: Bool {
-        return true // For now, assume all listings are active
-    }
-    
-    var availableDate: Date {
-        return Date() // Default to current date
-    }
-    
-    var bathrooms: Int {
-        return 1 // Default to 1 bathroom
-    }
-    
-    var isFavorited: Bool {
-        // This will be determined by checking favorites table
-        return false
-    }
-    
-    enum CodingKeys: String, CodingKey {
-        case id, title, description, price, city, street, bedrooms, utilities, media
-        case postalCode = "postal_code"
-        case houseType = "house_type"
-        case userEmail = "user_email"
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
+    var createdAt: Date {
+        if let dateStr = created_at {
+            let formatter = ISO8601DateFormatter()
+            return formatter.date(from: dateStr) ?? Date()
+        }
+        return Date()
     }
 }
 
