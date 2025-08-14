@@ -1928,8 +1928,37 @@
                         
                         let updateSuccess = false;
                         
-                        // Try Supabase update first
-                        if (typeof supabase !== 'undefined' && supabase && !listingId.startsWith('local_')) {
+                        // Try backend API update first for better synchronization
+                        try {
+                            const response = await fetch(`/api/listings/${listingId}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    title: updatedListing.title,
+                                    price: updatedListing.price,
+                                    city: updatedListing.city,
+                                    street: updatedListing.street,
+                                    postalCode: updatedListing.postalCode,
+                                    houseType: updatedListing.house_type,
+                                    bedrooms: updatedListing.bedrooms,
+                                    utilities: updatedListing.utilities,
+                                    description: updatedListing.description
+                                })
+                            });
+                            
+                            if (response.ok) {
+                                const result = await response.json();
+                                console.log('✅ Listing updated via backend API:', result);
+                                updateSuccess = true;
+                            }
+                        } catch (apiError) {
+                            console.log('Backend API update failed, trying Supabase:', apiError);
+                        }
+                        
+                        // Try Supabase update if API failed
+                        if (!updateSuccess && typeof supabase !== 'undefined' && supabase && !listingId.startsWith('local_')) {
                             try {
                                 // First verify the user owns this listing
                                 const { data: existingListing, error: fetchError } = await supabase
@@ -2045,6 +2074,18 @@
                             window.dispatchEvent(new CustomEvent('listingUpdated', { 
                                 detail: { listingId: listingId, action: 'update' } 
                             }));
+                            
+                            // Also trigger a storage update to notify other tabs/windows
+                            // This will fire a storage event in other tabs
+                            const triggerKey = 'listingUpdateTrigger';
+                            const triggerValue = JSON.stringify({
+                                listingId: listingId,
+                                action: 'update',
+                                timestamp: Date.now()
+                            });
+                            localStorage.setItem(triggerKey, triggerValue);
+                            // Clean up the trigger after a short delay
+                            setTimeout(() => localStorage.removeItem(triggerKey), 100);
                             
                             // Show success message and refresh the entire page
                             alert('Listing updated successfully!');

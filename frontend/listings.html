@@ -2059,6 +2059,25 @@
                 }, 100);
             });
             
+            // Listen for storage events to detect updates from other tabs/pages
+            window.addEventListener('storage', async (event) => {
+                // Check if the storage event is related to listings
+                if (event.key && (event.key.includes('userListings_') || event.key === 'listingUpdateTrigger')) {
+                    console.log('📱 Detected listing update from another tab/page:', event.key);
+                    
+                    // Small delay to ensure all localStorage updates are complete
+                    setTimeout(async () => {
+                        console.log('🔄 Refreshing listings due to storage event...');
+                        await displayListings();
+                        
+                        // Also reload favorite states
+                        setTimeout(() => {
+                            loadFavoriteStates();
+                        }, 200);
+                    }, 100);
+                }
+            });
+            
             // Load listings with error handling
             try {
                 console.log('🔄 Attempting to load listings automatically...');
