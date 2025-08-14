@@ -825,22 +825,26 @@ class RealSupabaseService: ObservableObject {
     
     /// Create a mock listing for testing real-time events
     private func createMockListing() -> Listing {
-        return Listing(
-            id: UUID().uuidString,
-            title: "Real-time Test Listing",
-            description: "This is a test listing created for real-time functionality",
-            price: 1500,
-            city: "Toronto",
-            street: "Test Street",
-            postalCode: "M5H 1J8",
-            houseType: "Apartment",
-            bedrooms: 2,
-            utilities: "Included",
-            media: [],
-            userEmail: "test@roomfinder.ai",
-            createdAt: Date(),
-            updatedAt: Date()
-        )
+        let listingDict: [String: Any] = [
+            "id": UUID().uuidString,
+            "title": "Real-time Test Listing",
+            "price": 1500.0,
+            "city": "Toronto",
+            "created_at": ISO8601DateFormatter().string(from: Date()),
+            "description": "This is a test listing created for real-time functionality",
+            "street": "Test Street",
+            "postal_code": "M5H 1J8",
+            "house_type": "Apartment",
+            "bedrooms": 2,
+            "utilities": "Included",
+            "media": [],
+            "user_email": "test@roomfinder.ai",
+            "updated_at": ISO8601DateFormatter().string(from: Date())
+        ]
+        
+        // Convert to JSON data and decode
+        let jsonData = try! JSONSerialization.data(withJSONObject: listingDict)
+        return try! JSONDecoder().decode(Listing.self, from: jsonData)
     }
     
     /// Parse a single listing from JSON data
@@ -1137,22 +1141,27 @@ class RealSupabaseService: ObservableObject {
             let createdAt = Date() // Use current date as fallback
             let updatedAt = Date() // Use current date as fallback
             
-            let listing = Listing(
-                id: id,
-                title: title,
-                description: description,
-                price: price,
-                city: city,
-                street: street,
-                postalCode: postalCode,
-                houseType: houseType,
-                bedrooms: bedrooms,
-                utilities: utilities,
-                media: media,
-                userEmail: userEmail,
-                createdAt: createdAt,
-                updatedAt: updatedAt
-            )
+            // Create a JSON representation that matches our new Listing structure
+            let listingDict: [String: Any] = [
+                "id": id,
+                "title": title,
+                "price": Double(price),
+                "city": city,
+                "created_at": ISO8601DateFormatter().string(from: createdAt),
+                "description": description as Any,
+                "street": street,
+                "postal_code": postalCode,
+                "house_type": houseType,
+                "bedrooms": bedrooms,
+                "utilities": utilities,
+                "media": media,
+                "user_email": userEmail,
+                "updated_at": ISO8601DateFormatter().string(from: updatedAt)
+            ]
+            
+            // Convert to JSON data and decode
+            let jsonData = try JSONSerialization.data(withJSONObject: listingDict)
+            let listing = try JSONDecoder().decode(Listing.self, from: jsonData)
             
             listings.append(listing)
             
@@ -1358,22 +1367,27 @@ class RealSupabaseService: ObservableObject {
         let createdAt = parseDate(from: dict["created_at"]) ?? Date()
         let updatedAt = parseDate(from: dict["updated_at"]) ?? Date()
         
-        return Listing(
-            id: id,
-            title: title,
-            description: description,
-            price: price,
-            city: city,
-            street: street,
-            postalCode: postalCode,
-            houseType: houseType,
-            bedrooms: bedrooms,
-            utilities: utilities,
-            media: media,
-            userEmail: userEmail,
-            createdAt: createdAt,
-            updatedAt: updatedAt
-        )
+        // Create a JSON representation that matches our new Listing structure
+        let listingDict: [String: Any] = [
+            "id": id,
+            "title": title,
+            "price": Double(price),
+            "city": city,
+            "created_at": ISO8601DateFormatter().string(from: createdAt),
+            "description": description as Any,
+            "street": street,
+            "postal_code": postalCode,
+            "house_type": houseType,
+            "bedrooms": bedrooms,
+            "utilities": utilities,
+            "media": media,
+            "user_email": userEmail,
+            "updated_at": ISO8601DateFormatter().string(from: updatedAt)
+        ]
+        
+        // Convert to JSON data and decode
+        let jsonData = try JSONSerialization.data(withJSONObject: listingDict)
+        return try JSONDecoder().decode(Listing.self, from: jsonData)
     }
     
     private func parseDate(from value: Any?) -> Date? {
