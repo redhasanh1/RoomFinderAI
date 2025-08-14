@@ -298,7 +298,7 @@ struct FeaturedListingCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            AsyncImage(url: URL(string: listing.images.first ?? "")) { image in
+            AsyncImage(url: URL(string: listing.images?.first ?? "")) { image in
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -310,12 +310,12 @@ struct FeaturedListingCard: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
             VStack(alignment: .leading, spacing: 4) {
-                Text(listing.title)
+                Text(listing.title ?? "Unknown")
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .lineLimit(2)
                 
-                Text("$\(listing.price)")
+                Text("$\(listing.price ?? 0)")
                     .font(.headline)
                     .fontWeight(.bold)
                     .foregroundColor(.primaryBlue)

@@ -507,7 +507,7 @@ struct ListingCard: View {
             VStack(alignment: .leading, spacing: 12) {
                 // Image
                 ZStack(alignment: .topTrailing) {
-                    AsyncImage(url: URL(string: listing.images.first ?? "")) { image in
+                    AsyncImage(url: URL(string: listing.images?.first ?? "")) { image in
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -520,8 +520,8 @@ struct ListingCard: View {
                     
                     // Favorite Button
                     Button(action: onFavorite) {
-                        Image(systemName: listing.isFavorited ? "heart.fill" : "heart")
-                            .foregroundColor(listing.isFavorited ? .red : .white)
+                        Image(systemName: (listing.isFavorited ?? false) ? "heart.fill" : "heart")
+                            .foregroundColor((listing.isFavorited ?? false) ? .red : .white)
                             .font(.title2)
                             .padding(8)
                             .background(Color.black.opacity(0.5))
@@ -533,7 +533,7 @@ struct ListingCard: View {
                 // Content
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text(listing.title)
+                        Text(listing.title ?? "Unknown")
                             .font(.headline)
                             .fontWeight(.semibold)
                             .foregroundColor(.primary)
@@ -548,7 +548,7 @@ struct ListingCard: View {
                     }
                     
                     HStack {
-                        Label(listing.location.city, systemImage: "location")
+                        Label(listing.city ?? "Unknown", systemImage: "location")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         
