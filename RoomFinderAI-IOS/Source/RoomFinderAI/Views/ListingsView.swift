@@ -541,7 +541,7 @@ struct ListingCard: View {
                         
                         Spacer()
                         
-                        Text("$\(listing.price)")
+                        Text("$\(listing.price ?? 0)")
                             .font(.headline)
                             .fontWeight(.bold)
                             .foregroundColor(.primaryBlue)

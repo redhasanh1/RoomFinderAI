@@ -172,7 +172,7 @@ struct SubleaseCard: View {
                         Spacer()
                         
                         VStack(alignment: .trailing) {
-                            Text("$\(listing.price)")
+                            Text("$\(listing.price ?? 0)")
                                 .font(.headline)
                                 .fontWeight(.bold)
                                 .foregroundColor(.primaryBlue)
@@ -197,7 +197,7 @@ struct SubleaseCard: View {
                         // Bedrooms
                         HStack {
                             Image(systemName: "bed.double")
-                            Text("\(listing.bedrooms)")
+                            Text("\(listing.bedrooms ?? 0)")
                         }
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -443,7 +443,7 @@ struct SubleaseDetailView: View {
                             Spacer()
                             
                             VStack(alignment: .trailing) {
-                                Text("$\(listing.price)")
+                                Text("$\(listing.price ?? 0)")
                                     .font(.title2)
                                     .fontWeight(.bold)
                                     .foregroundColor(.primaryBlue)

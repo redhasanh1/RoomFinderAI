@@ -259,7 +259,7 @@ struct ListingCardNew: View {
                         
                         Spacer()
                         
-                        Text("$\(listing.price)")
+                        Text("$\(listing.price ?? 0)")
                             .font(.headline)
                             .fontWeight(.bold)
                             .foregroundColor(.blue)
@@ -273,7 +273,7 @@ struct ListingCardNew: View {
                         Spacer()
                         
                         HStack(spacing: 12) {
-                            Label("\(listing.bedrooms)", systemImage: "bed.double")
+                            Label("\(listing.bedrooms ?? 0)", systemImage: "bed.double")
                             Label(listing.houseType ?? "Unknown", systemImage: "house")
                         }
                         .font(.caption)
