@@ -119,7 +119,7 @@ struct SubleaseView: View {
     
     private var averageSubleasePrice: Int {
         guard !subleaseListings.isEmpty else { return 0 }
-        return subleaseListings.map { $0.price }.reduce(0, +) / subleaseListings.count
+        return subleaseListings.map { Int($0.price ?? 0) }.reduce(0, +) / subleaseListings.count
     }
 }
 
@@ -134,7 +134,7 @@ struct SubleaseCard: View {
             VStack(alignment: .leading, spacing: 12) {
                 // Image with urgency badge
                 ZStack(alignment: .topLeading) {
-                    AsyncImage(url: URL(string: listing.images.first ?? "")) { image in
+                    AsyncImage(url: URL(string: listing.images?.first ?? "")) { image in
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -163,7 +163,7 @@ struct SubleaseCard: View {
                 VStack(alignment: .leading, spacing: 8) {
                     // Title and price
                     HStack {
-                        Text(listing.title)
+                        Text(listing.title ?? "Unknown")
                             .font(.headline)
                             .fontWeight(.semibold)
                             .foregroundColor(.primary)
@@ -208,7 +208,7 @@ struct SubleaseCard: View {
                         Image(systemName: "location")
                             .foregroundColor(.secondary)
                         
-                        Text(listing.location.city)
+                        Text(listing.city ?? "Unknown")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         
@@ -226,7 +226,7 @@ struct SubleaseCard: View {
                     
                     // Key features
                     HStack {
-                        Text("• \(listing.utilities)")
+                        Text("• \(listing.utilities ?? "Unknown")")
                             .font(.caption)
                             .foregroundColor(.secondary)
                         
@@ -417,7 +417,7 @@ struct SubleaseDetailView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     // Image gallery
                     TabView {
-                        ForEach(listing.images, id: \.self) { imageUrl in
+                        ForEach(listing.images ?? [], id: \.self) { imageUrl in
                             AsyncImage(url: URL(string: imageUrl)) { image in
                                 image
                                     .resizable()
@@ -436,7 +436,7 @@ struct SubleaseDetailView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         // Title and price
                         HStack {
-                            Text(listing.title)
+                            Text(listing.title ?? "Unknown")
                                 .font(.title2)
                                 .fontWeight(.bold)
                             
@@ -473,9 +473,9 @@ struct SubleaseDetailView: View {
                                 .font(.headline)
                                 .fontWeight(.semibold)
                             
-                            DetailRow(icon: "bed.double", title: "Bedrooms", value: "\(listing.bedrooms)")
-                            DetailRow(icon: "location", title: "Location", value: listing.location.city)
-                            DetailRow(icon: "bolt", title: "Utilities", value: listing.utilities)
+                            DetailRow(icon: "bed.double", title: "Bedrooms", value: "\(listing.bedrooms ?? 0)")
+                            DetailRow(icon: "location", title: "Location", value: listing.city ?? "Unknown")
+                            DetailRow(icon: "bolt", title: "Utilities", value: listing.utilities ?? "Unknown")
                             DetailRow(icon: "clock", title: "Duration", value: "4 months")
                         }
                         
