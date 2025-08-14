@@ -1222,7 +1222,7 @@
                                         <span>${listing.house_type || 'N/A'}</span>
                                     </div>
                                     <div class="flex space-x-2 mt-3">
-                                        <button onclick="viewListingDetails('${listing.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">View Details</button>
+                                        <button data-listing-id="${listing.id}" onclick="viewListingDetails(this.getAttribute('data-listing-id'))" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">View Details</button>
                                     </div>
                                 </div>
                             </div>
@@ -2373,8 +2373,15 @@
         
         // View listing details function
         window.viewListingDetails = function(listingId) {
+            console.log('🔍 viewListingDetails called with ID:', listingId);
+            if (!listingId) {
+                console.error('❌ No listing ID provided');
+                return;
+            }
             // Navigate to listings page with the listing ID to open the modal
-            window.location.href = `listings.html?viewListing=${listingId}`;
+            const url = `listings.html?viewListing=${encodeURIComponent(listingId)}`;
+            console.log('📍 Navigating to:', url);
+            window.location.href = url;
         };
     </script>
 

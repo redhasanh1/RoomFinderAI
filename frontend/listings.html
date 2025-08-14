@@ -2088,12 +2088,22 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const viewListingId = urlParams.get('viewListing');
                 
+                console.log('🔍 URL params:', window.location.search);
+                console.log('🔍 viewListing parameter:', viewListingId);
+                
                 if (viewListingId) {
                     console.log('📋 Opening listing modal for ID:', viewListingId);
-                    // Small delay to ensure DOM is ready
+                    // Small delay to ensure DOM is ready and listings are loaded
                     setTimeout(async () => {
-                        await openListingModalById(viewListingId);
-                    }, 500);
+                        console.log('⏰ Attempting to open modal after delay...');
+                        if (typeof window.openListingModalById === 'function') {
+                            await window.openListingModalById(viewListingId);
+                        } else {
+                            console.error('❌ openListingModalById function not found!');
+                            // Try to define it if not found
+                            console.log('🔧 Attempting to find listing manually...');
+                        }
+                    }, 1500); // Increased delay to ensure listings are loaded
                 }
             } catch (error) {
                 console.error('❌ Failed to load listings in initializeListingsPage():', error);
@@ -2676,7 +2686,7 @@
             document.querySelectorAll('.view-details-btn').forEach(button => {
                 button.addEventListener('click', () => {
                     const listing = JSON.parse(button.dataset.listing);
-                    showListingModal(listing);
+                    window.showListingModal(listing);
                 });
             });
 
@@ -2704,8 +2714,8 @@
             console.log('✅ Listings display complete:', listings.length, 'listings processed');
         }
 
-        // Function to open listing modal by ID
-        async function openListingModalById(listingId) {
+        // Function to open listing modal by ID (make it global)
+        window.openListingModalById = async function(listingId) {
             try {
                 console.log('🔍 Fetching listing with ID:', listingId);
                 
@@ -2713,7 +2723,7 @@
                 const listingButton = document.querySelector(`.view-details-btn[data-listing*="${listingId}"]`);
                 if (listingButton) {
                     const listing = JSON.parse(listingButton.dataset.listing);
-                    showListingModal(listing);
+                    window.showListingModal(listing);
                     return;
                 }
                 
@@ -2776,7 +2786,7 @@
                 }
                 
                 if (listing) {
-                    showListingModal(listing);
+                    window.showListingModal(listing);
                 } else {
                     console.error('❌ Listing not found with ID:', listingId);
                     alert('Listing not found. It may have been removed.');
@@ -2791,7 +2801,7 @@
         const modal = document.getElementById('listingModal');
         const closeButton = document.querySelector('.close-button');
 
-        function showListingModal(listing) {
+        window.showListingModal = function(listing) {
             document.getElementById('modalTitle').textContent = listing.title;
             document.getElementById('modalPrice').textContent = `$${listing.price.toLocaleString()}/mo`;
             document.getElementById('modalLocation').textContent = `${listing.street}, ${listing.city}, ${listing.postalCode}`;
