@@ -253,7 +253,7 @@ class SimpleListingsViewModel: ObservableObject {
         // Search query filter
         if !searchQuery.isEmpty {
             let searchLower = searchQuery.lowercased()
-            let matchesTitle = listing.title.lowercased().contains(searchLower)
+            let matchesTitle = listing.title?.lowercased().contains(searchLower) ?? false
             let matchesDescription = listing.description?.lowercased().contains(searchLower) ?? false
             if !matchesTitle && !matchesDescription {
                 return false
@@ -263,7 +263,7 @@ class SimpleListingsViewModel: ObservableObject {
         // Location filter
         if !selectedLocation.isEmpty {
             let locationLower = selectedLocation.lowercased()
-            if !listing.city.lowercased().contains(locationLower) {
+            if !(listing.city?.lowercased().contains(locationLower) ?? false) {
                 return false
             }
         }
@@ -277,13 +277,13 @@ class SimpleListingsViewModel: ObservableObject {
         
         // Bedrooms filter
         if let minBedrooms = selectedBedrooms {
-            if listing.bedrooms < minBedrooms {
+            if (listing.bedrooms ?? 0) < minBedrooms {
                 return false
             }
         }
         
         // Price range filter
-        let listingPrice = Double(listing.price)
+        let listingPrice = listing.price ?? 0
         if minPrice > 0 && listingPrice < minPrice {
             return false
         }
@@ -355,7 +355,7 @@ class SimpleListingsViewModel: ObservableObject {
                     self.listingsCount = fetchedListings.count
                     
                     if !fetchedListings.isEmpty {
-                        self.debugInfo += "\n📍 First: \(fetchedListings[0].title) - $\(fetchedListings[0].price)"
+                        self.debugInfo += "\n📍 First: \(fetchedListings[0].title ?? "Unknown") - $\(fetchedListings[0].price ?? 0)"
                     }
                     
                     // Update favorites status
@@ -370,13 +370,7 @@ class SimpleListingsViewModel: ObservableObject {
                     self.errorMessage = "Failed to load listings: \(error.localizedDescription)"
                     self.isLoading = false
                     self.debugInfo = "❌ Fetch failed: \(error.localizedDescription)"
-                    
-                    // Show mock data as fallback only if there's no data
-                    if self.listings.isEmpty {
-                        self.debugInfo += "\n🔄 Loading mock data as fallback"
-                        self.listings = self.mockDataService.getSampleListings()
-                        self.listingsCount = self.listings.count
-                    }
+                    // No mock data fallback - show real error
                 }
             }
         }
@@ -472,8 +466,8 @@ extension SimpleListingsViewModel {
     
     // Load user's favorite listings - simplified for now
     func loadFavoriteListings() {
-        let allListings = mockDataService.getSampleListings()
-        self.listings = allListings.filter { favoriteListingIds.contains($0.id) }
+        // Filter favorites from current listings
+        self.listings = self.listings.filter { favoriteListingIds.contains($0.id) }
     }
     
     // Featured listings are just the first 3 listings
