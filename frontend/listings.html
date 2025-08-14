@@ -2211,31 +2211,28 @@
                 }
             });
             
+            // Check if we need to open a specific listing modal FIRST (before heavy operations)
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewListingId = urlParams.get('viewListing');
+            
+            if (viewListingId) {
+                console.log('🚀 Fast-track modal opening for ID:', viewListingId);
+                // Open modal immediately using saved listing data (much faster than waiting for full display)
+                setTimeout(() => {
+                    if (typeof window.openListingModalById === 'function') {
+                        window.openListingModalById(viewListingId);
+                    }
+                }, 50); // Tiny delay just to ensure function is defined
+            }
+
             // Load listings with error handling
             try {
                 console.log('🔄 Attempting to load listings automatically...');
                 await displayListings();
                 console.log('✅ Listings loaded successfully in initializeListingsPage()');
                 
-                // Check if we need to open a specific listing modal
-                const urlParams = new URLSearchParams(window.location.search);
-                const viewListingId = urlParams.get('viewListing');
-                
                 console.log('🔍 URL params:', window.location.search);
                 console.log('🔍 viewListing parameter:', viewListingId);
-                
-                if (viewListingId) {
-                    console.log('📋 Opening listing modal for ID:', viewListingId);
-                    // Open modal immediately since displayListings is now fast
-                    setTimeout(async () => {
-                        console.log('⏰ Opening modal immediately...');
-                        if (typeof window.openListingModalById === 'function') {
-                            await window.openListingModalById(viewListingId);
-                        } else {
-                            console.error('❌ openListingModalById function not found!');
-                        }
-                    }, 100); // Minimal delay just for DOM readiness
-                }
             } catch (error) {
                 console.error('❌ Failed to load listings in initializeListingsPage():', error);
                 // Don't throw the error - let the fallback mechanism handle it
