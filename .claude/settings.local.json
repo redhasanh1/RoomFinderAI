@@ -36,7 +36,17 @@
       "Bash(git reset:*)",
       "Bash(swift -frontend -typecheck:*)",
       "Bash(pgrep:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(awk:*)",
+      "Bash(sed:*)",
+      "Bash(diff:*)",
+      "Bash(swift:*)",
+      "Bash(log show:*)",
+      "Bash(rm \"/Users/arsalanamirali/Downloads/RoomFinderAI/RoomFinderAI-IOS/Source/RoomFinderAI/Utils/SupabaseConfig.swift\")",
+      "Bash(xcrun:*)",
+      "Bash(timeout 60 xcodebuild build:*)",
+      "Bash(killall:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }
