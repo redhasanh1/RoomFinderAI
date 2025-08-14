@@ -17,7 +17,7 @@ struct PropertyDetailView: View {
                     // Image Gallery
                     TabView(selection: $selectedImageIndex) {
                         if let images = listing.images {
-                            ForEach(Range<Int>(0..<images.count), id: \.self) { index in
+                            ForEach(0..<images.count, id: \.self) { index in
                                 AsyncImage(url: URL(string: images[index])) { image in
                                 image
                                     .resizable()
@@ -408,7 +408,7 @@ struct ImageViewer: View {
             Color.black.ignoresSafeArea()
             
             TabView(selection: $selectedIndex) {
-                ForEach(Range<Int>(0..<images.count), id: \.self) { index in
+                ForEach(0..<images.count, id: \.self) { index in
                     AsyncImage(url: URL(string: images[index])) { image in
                         image
                             .resizable()
