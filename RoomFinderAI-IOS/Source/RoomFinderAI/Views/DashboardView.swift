@@ -229,33 +229,8 @@ struct DashboardView: View {
     }
     
     private var recentActivities: [RecentActivity] {
-        // Mock recent activities - in a real app, this would come from the backend
-        return [
-            RecentActivity(
-                id: "1",
-                type: .search,
-                title: "Searched for apartments in Downtown",
-                subtitle: "Found 15 matches",
-                timestamp: Date().addingTimeInterval(-3600),
-                icon: "magnifyingglass"
-            ),
-            RecentActivity(
-                id: "2",
-                type: .favorite,
-                title: "Saved Modern Studio Apartment",
-                subtitle: "$1,200/month",
-                timestamp: Date().addingTimeInterval(-7200),
-                icon: "heart.fill"
-            ),
-            RecentActivity(
-                id: "3",
-                type: .message,
-                title: "New message from John Doe",
-                subtitle: "About 2BR apartment inquiry",
-                timestamp: Date().addingTimeInterval(-10800),
-                icon: "message.fill"
-            )
-        ]
+        // TODO: Replace with real recent activities from database
+        return []
     }
 }
 
