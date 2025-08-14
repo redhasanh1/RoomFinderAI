@@ -2226,15 +2226,15 @@
                 
                 if (viewListingId) {
                     console.log('📋 Opening listing modal for ID:', viewListingId);
-                    // Small delay after listings are loaded to ensure DOM is ready
+                    // Open modal immediately since displayListings is now fast
                     setTimeout(async () => {
-                        console.log('⏰ Attempting to open modal after 0.5s...');
+                        console.log('⏰ Opening modal immediately...');
                         if (typeof window.openListingModalById === 'function') {
                             await window.openListingModalById(viewListingId);
                         } else {
                             console.error('❌ openListingModalById function not found!');
                         }
-                    }, 500); // 0.5 second delay
+                    }, 100); // Minimal delay just for DOM readiness
                 }
             } catch (error) {
                 console.error('❌ Failed to load listings in initializeListingsPage():', error);
@@ -2647,11 +2647,15 @@
             // Show loading state
             updateListingCount(0, false, true);
             
+            // Check if we need to open a modal (skip heavy operations for fast modal opening)
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewListingId = urlParams.get('viewListing');
+            const shouldOpenModal = !!viewListingId;
+            
             let listings = await fetchListings();
             console.log('📋 Fetched listings:', listings);
             
             // Check for highlight parameter in URL
-            const urlParams = new URLSearchParams(window.location.search);
             const highlightListingId = urlParams.get('highlight');
             
             const container = document.getElementById('listingsContainer');
@@ -2839,9 +2843,19 @@
                 }
             });
 
-            // Update map with all listings
-            console.log('📍 Updating map with', listings.length, 'listings...');
-            await updateMap(listings);
+            // Update map with all listings (skip if opening modal for speed)
+            if (shouldOpenModal) {
+                console.log('🚀 Skipping map update for fast modal opening...');
+                // Update map asynchronously in background
+                setTimeout(async () => {
+                    console.log('📍 Updating map with', listings.length, 'listings in background...');
+                    await updateMap(listings);
+                    console.log('✅ Background map update complete');
+                }, 100); // Small delay to let modal open first
+            } else {
+                console.log('📍 Updating map with', listings.length, 'listings...');
+                await updateMap(listings);
+            }
             console.log('✅ Listings display complete:', listings.length, 'listings processed');
         }
 
