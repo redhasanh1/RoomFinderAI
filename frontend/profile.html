@@ -1222,7 +1222,7 @@
                                         <span>${listing.house_type || 'N/A'}</span>
                                     </div>
                                     <div class="flex space-x-2 mt-3">
-                                        <a href="listings.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">View Details</a>
+                                        <button onclick="viewListingDetails('${listing.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">View Details</button>
                                     </div>
                                 </div>
                             </div>
@@ -2370,6 +2370,12 @@
         if (typeof window.UniversalAuth !== 'undefined') {
             window.UniversalAuth.init({ allowAnonymous: false, requireSupabase: true });
         }
+        
+        // View listing details function
+        window.viewListingDetails = function(listingId) {
+            // Navigate to listings page with the listing ID to open the modal
+            window.location.href = `listings.html?viewListing=${listingId}`;
+        };
     </script>
 
 </body>
