@@ -36,13 +36,15 @@ class SimpleListingsViewModel: ObservableObject {
     @Published var lastUpdateTime: Date?
     @Published var realtimeEnabled = true
     
+    // Featured listings - use the SAME real query as main listings
+    @Published var featuredListings: [Listing] = []
+    
     // Pagination
     @Published var hasNextPage = false
     private var currentOffset = 0
     private let pageSize = 20
     
     let supabaseService = RealSupabaseService()
-    private let mockDataService = MockDataService.shared // Fallback for development
     private var favoriteListingIds: Set<String> = []
     
     // Combine subscriptions for real-time updates
@@ -66,6 +68,8 @@ class SimpleListingsViewModel: ObservableObject {
                 self.debugInfo = "🚀 Starting comprehensive debugging..."
                 self.connectionStatus = "Testing..."
             }
+            // Load featured listings first
+            await loadFeaturedListings()
             
             // Get UI-visible debug information
             await MainActor.run {
@@ -206,10 +210,10 @@ class SimpleListingsViewModel: ObservableObject {
             // Add to beginning of list (newest first)
             if !listings.contains(where: { $0.id == newListing.id }) {
                 listings.insert(newListing, at: 0)
-                debugInfo = "✅ Added new listing: \(newListing.title)"
+                debugInfo = "✅ Added new listing: \(newListing.title ?? "Unknown")"
                 
                 // Update UI to show new listing indicator
-                showRealtimeNotification("New listing: \(newListing.title)")
+                showRealtimeNotification("New listing: \(newListing.title ?? "Unknown")")
             }
         }
     }
@@ -222,16 +226,16 @@ class SimpleListingsViewModel: ObservableObject {
             // Check if updated listing still matches filters
             if listingMatchesCurrentFilters(updatedListing) {
                 listings[index] = updatedListing
-                debugInfo = "✅ Updated listing: \(updatedListing.title)"
+                debugInfo = "✅ Updated listing: \(updatedListing.title ?? "Unknown")"
             } else {
                 // Remove if it no longer matches filters
                 listings.remove(at: index)
-                debugInfo = "🔄 Removed listing (no longer matches filters): \(updatedListing.title)"
+                debugInfo = "🔄 Removed listing (no longer matches filters): \(updatedListing.title ?? "Unknown")"
             }
         } else if listingMatchesCurrentFilters(updatedListing) {
             // Add if it now matches filters and wasn't in list before
             listings.insert(updatedListing, at: 0)
-            debugInfo = "✅ Added updated listing: \(updatedListing.title)"
+            debugInfo = "✅ Added updated listing: \(updatedListing.title ?? "Unknown")"
         }
     }
     
@@ -240,7 +244,7 @@ class SimpleListingsViewModel: ObservableObject {
         print("🗑️ Removing listing: \(listingId)")
         
         if let index = listings.firstIndex(where: { $0.id == listingId }) {
-            let deletedTitle = listings[index].title
+            let deletedTitle = listings[index].title ?? "Unknown"
             listings.remove(at: index)
             debugInfo = "✅ Removed listing: \(deletedTitle)"
             
@@ -376,8 +380,30 @@ class SimpleListingsViewModel: ObservableObject {
         }
     }
     
+    // Load featured listings using the SAME real query as main listings
+    func loadFeaturedListings() async {
+        do {
+            let listingsService = ListingsService()
+            let fetchedListings = try await listingsService.fetchListings(
+                page: 0,
+                pageSize: 3,
+                filters: .empty // Use empty filters for featured listings
+            )
+            
+            await MainActor.run {
+                self.featuredListings = fetchedListings
+            }
+        } catch {
+            print("❌ Failed to load featured listings: \(error.localizedDescription)")
+        }
+    }
+    
     func refreshListings() {
         loadListings(reset: true)
+        // Also refresh featured listings
+        Task {
+            await loadFeaturedListings()
+        }
     }
     
     func loadNextPage() {
@@ -468,11 +494,6 @@ extension SimpleListingsViewModel {
     func loadFavoriteListings() {
         // Filter favorites from current listings
         self.listings = self.listings.filter { favoriteListingIds.contains($0.id) }
-    }
-    
-    // Featured listings are just the first 3 listings
-    var featuredListings: [Listing] {
-        return Array(listings.prefix(3))
     }
     
     // Favorite listings based on local state
