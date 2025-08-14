@@ -65,7 +65,7 @@ class AuthenticationService: ObservableObject {
     @Published var isAuthenticated = false
     @Published var isLoading = false
     
-    private let client = SupabaseConfig.client
+    private let client = SupabaseClientProvider.shared
     
     private init() {
         Task {
