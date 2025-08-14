@@ -1,5 +1,5 @@
 import SwiftUI
-import MapKit
+import Foundation
 
 struct PropertyDetailView: View {
     let listing: Listing
@@ -12,12 +12,13 @@ struct PropertyDetailView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
+            ZStack {
                 VStack(alignment: .leading, spacing: 0) {
                     // Image Gallery
                     TabView(selection: $selectedImageIndex) {
-                        ForEach(0..<listing.images.count, id: \.self) { index in
-                            AsyncImage(url: URL(string: listing.images[index])) { image in
+                        if let images = listing.images {
+                            ForEach(Range<Int>(0..<images.count), id: \.self) { index in
+                                AsyncImage(url: URL(string: images[index])) { image in
                                 image
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
@@ -30,6 +31,7 @@ struct PropertyDetailView: View {
                             .tag(index)
                             .onTapGesture {
                                 showingImageViewer = true
+                            }
                             }
                         }
                     }
@@ -69,7 +71,7 @@ struct PropertyDetailView: View {
                     VStack(alignment: .leading, spacing: 20) {
                         // Title and Price
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(listing.title)
+                            Text(listing.title ?? "Unknown")
                                 .font(.title2)
                                 .fontWeight(.bold)
                             
@@ -107,20 +109,24 @@ struct PropertyDetailView: View {
                         
                         // Policies section removed - no policies in Listing model
                         
-                        // Map
+                        // Map - Temporarily disabled
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Location")
                                 .font(.headline)
                                 .fontWeight(.semibold)
                             
-                            Map(coordinateRegion: .constant(MKCoordinateRegion(
-                                center: listing.location.coordinate,
-                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                            )), annotationItems: [listing]) { listing in
-                                MapPin(coordinate: listing.location.coordinate, tint: .primaryBlue)
-                            }
-                            .frame(height: 200)
-                            .cornerRadius(12)
+                            Text(listing.city ?? "Location not available")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .frame(height: 200)
+                                .frame(maxWidth: .infinity)
+                                .background(Color.gray.opacity(0.1))
+                                .cornerRadius(12)
+                                .overlay(
+                                    Text("Map view temporarily disabled")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                )
                         }
                         
                         // Contact Info
@@ -133,14 +139,14 @@ struct PropertyDetailView: View {
                                 HStack {
                                     Image(systemName: "person.circle")
                                         .foregroundColor(.secondary)
-                                    Text(listing.userEmail)
+                                    Text(listing.userEmail ?? "Unknown")
                                         .font(.subheadline)
                                 }
                                 
                                 HStack {
                                     Image(systemName: "envelope")
                                         .foregroundColor(.secondary)
-                                    Text(listing.userEmail)
+                                    Text(listing.userEmail ?? "Unknown")
                                         .font(.subheadline)
                                 }
                                 
@@ -282,7 +288,7 @@ struct ContactSheet: View {
             VStack(spacing: 20) {
                 // Header
                 VStack(spacing: 12) {
-                    AsyncImage(url: URL(string: listing.images.first ?? "")) { image in
+                    AsyncImage(url: URL(string: listing.images?.first ?? "")) { image in
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -294,11 +300,11 @@ struct ContactSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     
                     VStack(spacing: 4) {
-                        Text(listing.title)
+                        Text(listing.title ?? "Unknown")
                             .font(.headline)
                             .fontWeight(.semibold)
                         
-                        Text(listing.userEmail)
+                        Text(listing.userEmail ?? "Unknown")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -402,7 +408,7 @@ struct ImageViewer: View {
             Color.black.ignoresSafeArea()
             
             TabView(selection: $selectedIndex) {
-                ForEach(0..<images.count, id: \.self) { index in
+                ForEach(Range<Int>(0..<images.count), id: \.self) { index in
                     AsyncImage(url: URL(string: images[index])) { image in
                         image
                             .resizable()
@@ -460,7 +466,7 @@ struct AINegotiatorSheet: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
+            ZStack {
                 VStack(spacing: 24) {
                     // Header
                     VStack(spacing: 16) {
@@ -486,7 +492,7 @@ struct AINegotiatorSheet: View {
                             .fontWeight(.semibold)
                         
                         HStack {
-                            AsyncImage(url: URL(string: listing.images.first ?? "")) { image in
+                            AsyncImage(url: URL(string: listing.images?.first ?? "")) { image in
                                 image
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
@@ -498,7 +504,7 @@ struct AINegotiatorSheet: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(listing.title)
+                                Text(listing.title ?? "Unknown")
                                     .font(.headline)
                                     .fontWeight(.semibold)
                                 
@@ -507,7 +513,7 @@ struct AINegotiatorSheet: View {
                                     .foregroundColor(.primaryBlue)
                                     .fontWeight(.medium)
                                 
-                                Text(listing.location.city)
+                                Text(listing.city ?? "Unknown")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -657,14 +663,14 @@ class SimpleAIService {
         try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
         
         // Generate mock negotiation result
-        let difference = Double(listing.price) - initialOffer
+        let difference = (listing.price ?? 0) - initialOffer
         let recommendedPrice = Int(initialOffer + (difference / 2)) // Split the difference
         let successProbability = Int(difference) < 200 ? 85 : Int(difference) < 500 ? 65 : 45
         
         return NegotiationResult(
             recommendedPrice: recommendedPrice,
             successProbability: successProbability,
-            marketComparison: recommendedPrice < listing.price ? "Below market average" : "At market rate",
+            marketComparison: recommendedPrice < Int(listing.price ?? 0) ? "Below market average" : "At market rate",
             analysis: "Based on similar properties in the area, a counter-offer of $\\(recommendedPrice) has a \\(successProbability)% chance of acceptance."
         )
     }
