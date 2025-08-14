@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import UIKit
 
 struct PropertyDetailView: View {
     let listing: Listing
@@ -17,7 +18,7 @@ struct PropertyDetailView: View {
                     // Image Gallery
                     TabView(selection: $selectedImageIndex) {
                         if let images = listing.images {
-                            ForEach(images.indices, id: \.self) { index in
+                            ForEach(0..<images.count) { index in
                                 AsyncImage(url: URL(string: images[index])) { image in
                                 image
                                     .resizable()
@@ -55,9 +56,9 @@ struct PropertyDetailView: View {
                             Button(action: {
                                 listingsViewModel.toggleFavorite(listing: listing)
                             }) {
-                                Image(systemName: listing.isFavorited ? "heart.fill" : "heart")
+                                Image(systemName: (listing.isFavorited ?? false) ? "heart.fill" : "heart")
                                     .font(.title2)
-                                    .foregroundColor(listing.isFavorited ? .red : .white)
+                                    .foregroundColor((listing.isFavorited ?? false) ? .red : .white)
                                     .padding(8)
                                     .background(Color.black.opacity(0.5))
                                     .clipShape(Circle())
@@ -75,19 +76,19 @@ struct PropertyDetailView: View {
                                 .font(.title2)
                                 .fontWeight(.bold)
                             
-                            Text("$\(listing.price)")
+                            Text("$\(listing.price ?? 0)")
                                 .font(.title)
                                 .fontWeight(.bold)
                                 .foregroundColor(.primaryBlue)
                             
-                            Text(listing.location.fullAddress)
+                            Text("\(listing.street ?? ""), \(listing.city ?? "")")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
                         
                         // Key Details
                         HStack(spacing: 20) {
-                            DetailItem(icon: "bed.double", text: "\(listing.bedrooms) Bed")
+                            DetailItem(icon: "bed.double", text: "\(listing.bedrooms ?? 0) Bed")
                         }
                         
                         // Description
@@ -103,7 +104,7 @@ struct PropertyDetailView: View {
                                 .font(.headline)
                                 .fontWeight(.semibold)
                             
-                            Text(listing.utilities)
+                            Text(listing.utilities ?? "Not specified")
                                 .font(.body)
                         }
                         
@@ -225,7 +226,7 @@ struct PropertyDetailView: View {
             AINegotiatorSheet(listing: listing)
         }
         .fullScreenCover(isPresented: $showingImageViewer) {
-            ImageViewer(images: listing.images, selectedIndex: $selectedImageIndex)
+            ImageViewer(images: listing.images ?? [], selectedIndex: $selectedImageIndex)
         }
     }
 }
@@ -408,7 +409,7 @@ struct ImageViewer: View {
             Color.black.ignoresSafeArea()
             
             TabView(selection: $selectedIndex) {
-                ForEach(images.indices, id: \.self) { index in
+                ForEach(0..<images.count) { index in
                     AsyncImage(url: URL(string: images[index])) { image in
                         image
                             .resizable()
@@ -508,7 +509,7 @@ struct AINegotiatorSheet: View {
                                     .font(.headline)
                                     .fontWeight(.semibold)
                                 
-                                Text("Listed at $\\(listing.price)")
+                                Text("Listed at $\(listing.price ?? 0)")
                                     .font(.subheadline)
                                     .foregroundColor(.primaryBlue)
                                     .fontWeight(.medium)
@@ -584,8 +585,8 @@ struct AINegotiatorSheet: View {
                                 .fontWeight(.semibold)
                             
                             VStack(alignment: .leading, spacing: 12) {
-                                ResultRow(title: "Recommended Counter-Offer", value: "$\\(result.recommendedPrice)")
-                                ResultRow(title: "Success Probability", value: "\\(result.successProbability)%")
+                                ResultRow(title: "Recommended Counter-Offer", value: "$\(result.recommendedPrice)")
+                                ResultRow(title: "Success Probability", value: "\(result.successProbability)%")
                                 ResultRow(title: "Market Comparison", value: result.marketComparison)
                             }
                             .padding()
@@ -671,10 +672,11 @@ class SimpleAIService {
             recommendedPrice: recommendedPrice,
             successProbability: successProbability,
             marketComparison: recommendedPrice < Int(listing.price ?? 0) ? "Below market average" : "At market rate",
-            analysis: "Based on similar properties in the area, a counter-offer of $\\(recommendedPrice) has a \\(successProbability)% chance of acceptance."
+            analysis: "Based on similar properties in the area, a counter-offer of $\(recommendedPrice) has a \(successProbability)% chance of acceptance."
         )
     }
 }
+
 
 /*#Preview {
     PropertyDetailView(listing: Listing(
