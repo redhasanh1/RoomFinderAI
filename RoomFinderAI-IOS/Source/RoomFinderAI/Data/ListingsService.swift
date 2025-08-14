@@ -1,192 +1,40 @@
-import Foundation
 import Supabase
-import PostgREST
 
-enum RealtimeChange<T> {
-    case insert(T)
-    case update(T)
-    case delete(T)
-}
+struct ListingsService {
+    let client = SupabaseClientProvider.shared
 
-enum ListingsServiceError: LocalizedError {
-    case networkTimeout
-    case serverError(String)
-    case decodingError(String)
-    case unknownError(String)
-    
-    var errorDescription: String? {
-        switch self {
-        case .networkTimeout:
-            return "Network timeout. Please check your connection and try again."
-        case .serverError(let message):
-            return "Server error: \(message)"
-        case .decodingError(let message):
-            return "Data parsing error: \(message)"
-        case .unknownError(let message):
-            return "An unexpected error occurred: \(message)"
-        }
-    }
-}
-
-final class ListingsService: ObservableObject {
-    private let client = SupabaseConfig.client
-    private let maxRetries = 2
-    private let retryDelay: TimeInterval = 1.0
-    
     func fetchListings(page: Int, pageSize: Int = 20, filters: ListingsFilter = .empty) async throws -> [Listing] {
-        return try await withRetry {
-            let from = page * pageSize
-            let to = from + pageSize - 1
-            
-            var query = client
-                .from("listings")
-                .select("*")
-                .order("created_at", ascending: false)
-                .range(from: from, to: to)
-            
-            if let city = filters.city, !city.isEmpty {
-                query = query.eq("city", value: city)
-            }
-            
-            if let maxPrice = filters.maxPrice {
-                query = query.lte("price", value: maxPrice)
-            }
-            
-            if let minPrice = filters.minPrice {
-                query = query.gte("price", value: minPrice)
-            }
-            
-            if let houseType = filters.houseType, !houseType.isEmpty {
-                query = query.eq("house_type", value: houseType)
-            }
-            
-            if let bedrooms = filters.bedrooms {
-                query = query.eq("bedrooms", value: bedrooms)
-            }
-            
-            if let search = filters.search, !search.isEmpty {
-                query = query.ilike("title", pattern: "%\(search)%")
-            }
-            
-            let response: [Listing] = try await query.execute().value
-            return response
-        }
-    }
-    
-    func fetchListing(id: UUID) async throws -> Listing? {
-        let response: Listing = try await client
+        let offset = page * pageSize
+        let end = offset + pageSize - 1
+
+        var q = client.database
             .from("listings")
-            .select("*")
-            .eq("id", value: id.uuidString)
-            .single()
-            .execute()
-            .value
-        
-        return response
-    }
-    
-    func createListing(_ listing: CreateListingRequest) async throws -> Listing {
-        let response: Listing = try await client
-            .from("listings")
-            .insert(listing)
-            .select()
-            .single()
-            .execute()
-            .value
-        
-        return response
-    }
-    
-    func updateListing(id: UUID, updates: UpdateListingRequest) async throws -> Listing {
-        let response: Listing = try await client
-            .from("listings")
-            .update(updates)
-            .eq("id", value: id.uuidString)
-            .select()
-            .single()
-            .execute()
-            .value
-        
-        return response
-    }
-    
-    func deleteListing(id: UUID) async throws {
-        try await client
-            .from("listings")
-            .delete()
-            .eq("id", value: id.uuidString)
-            .execute()
-    }
-    
-    func getListingsByUser(_ userEmail: String) async throws -> [Listing] {
-        let response: [Listing] = try await client
-            .from("listings")
-            .select("*")
-            .eq("user_email", value: userEmail)
+            // Include house_type and bedrooms since filters use them:
+            .select("id,title,price,city,created_at,cover_image,category,house_type,bedrooms")
+
+        // Apply SAME filters as website:
+        if let s = filters.city, !s.isEmpty { q = q.ilike("city", pattern: "%\(s)%") }
+        if let maxP = filters.maxPrice { q = q.lte("price", value: Double(maxP)) }
+        if let minP = filters.minPrice { q = q.gte("price", value: Double(minP)) }
+        if let ht = filters.houseType, !ht.isEmpty { q = q.eq("house_type", value: ht) }
+        if let b = filters.bedrooms { q = q.eq("bedrooms", value: b) }
+        if let search = filters.search, !search.isEmpty { q = q.ilike("title", pattern: "%\(search)%") }
+
+        // ORDER + RANGE exactly like website:
+        let listings: [Listing] = try await q
             .order("created_at", ascending: false)
+            .range(from: offset, to: end)
             .execute()
             .value
-        
-        return response
-    }
-    
-    private func withRetry<T>(_ operation: @escaping () async throws -> T) async throws -> T {
-        var lastError: Error?
-        
-        for attempt in 0...maxRetries {
-            do {
-                return try await operation()
-            } catch {
-                lastError = error
-                
-                if attempt < maxRetries {
-                    // Exponential backoff
-                    let delay = retryDelay * Double(1 << attempt)
-                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-                }
-            }
+
+        // DEBUG: dump raw JSON so we can see shape if decode fails
+        #if DEBUG
+        print("[RAW] listings count:", listings.count)
+        if let first = listings.first {
+            print("[RAW] first listing: id=\(first.id), title=\(first.title ?? "nil")")
         }
-        
-        throw lastError ?? ListingsServiceError.unknownError("Max retries exceeded")
-    }
-}
+        #endif
 
-struct CreateListingRequest: Codable {
-    let title: String
-    let price: Int
-    let city: String
-    let street: String
-    let postalCode: String
-    let houseType: String
-    let bedrooms: Int
-    let utilities: String
-    let description: String?
-    let media: [String]
-    let userEmail: String
-    
-    enum CodingKeys: String, CodingKey {
-        case title, price, city, street, bedrooms, utilities, description, media
-        case postalCode = "postal_code"
-        case houseType = "house_type"
-        case userEmail = "user_email"
-    }
-}
-
-struct UpdateListingRequest: Codable {
-    let title: String?
-    let price: Int?
-    let city: String?
-    let street: String?
-    let postalCode: String?
-    let houseType: String?
-    let bedrooms: Int?
-    let utilities: String?
-    let description: String?
-    let media: [String]?
-    
-    enum CodingKeys: String, CodingKey {
-        case title, price, city, street, bedrooms, utilities, description, media
-        case postalCode = "postal_code"
-        case houseType = "house_type"
+        return listings
     }
 }
