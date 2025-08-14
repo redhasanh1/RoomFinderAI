@@ -1,8 +1,14 @@
 import Foundation
 import Supabase
 
+enum RealtimeChange<T> {
+    case insert(T)
+    case update(T)
+    case delete(T)
+}
+
 final class ListingsRealtime {
-    private let client = SupabaseConfig.client
+    private let client = SupabaseClientProvider.shared
     private var channel: RealtimeChannelV2?
     
     func start(onChange: @escaping (RealtimeChange<Listing>) -> Void) {
