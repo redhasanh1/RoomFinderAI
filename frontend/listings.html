@@ -2226,17 +2226,15 @@
                 
                 if (viewListingId) {
                     console.log('📋 Opening listing modal for ID:', viewListingId);
-                    // Small delay to ensure DOM is ready and listings are loaded
-                    setTimeout(async () => {
-                        console.log('⏰ Attempting to open modal after delay...');
-                        if (typeof window.openListingModalById === 'function') {
-                            await window.openListingModalById(viewListingId);
-                        } else {
-                            console.error('❌ openListingModalById function not found!');
-                            // Try to define it if not found
-                            console.log('🔧 Attempting to find listing manually...');
-                        }
-                    }, 1500); // Increased delay to ensure listings are loaded
+                    // Open modal immediately
+                    console.log('⏰ Attempting to open modal immediately...');
+                    if (typeof window.openListingModalById === 'function') {
+                        await window.openListingModalById(viewListingId);
+                    } else {
+                        console.error('❌ openListingModalById function not found!');
+                        // Try to define it if not found
+                        console.log('🔧 Attempting to find listing manually...');
+                    }
                 }
             } catch (error) {
                 console.error('❌ Failed to load listings in initializeListingsPage():', error);
