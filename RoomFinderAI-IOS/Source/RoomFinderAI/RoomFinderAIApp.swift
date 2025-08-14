@@ -6,6 +6,10 @@ struct RoomFinderAIApp: App {
     @StateObject private var authViewModel = SimpleAuthViewModel()
     @StateObject private var listingsViewModel = SimpleListingsViewModel()
     
+    init() {
+        // Debug schema probe temporarily removed to fix build
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
