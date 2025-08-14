@@ -152,19 +152,19 @@ final class ListingsViewModel: ObservableObject {
     
     private func matchesCurrentFilters(_ listing: Listing) -> Bool {
         if let city = filters.city, !city.isEmpty {
-            if !listing.city.localizedCaseInsensitiveContains(city) {
+            if !(listing.city?.localizedCaseInsensitiveContains(city) ?? false) {
                 return false
             }
         }
         
         if let minPrice = filters.minPrice {
-            if listing.price < minPrice {
+            if Int(listing.price ?? 0) < minPrice {
                 return false
             }
         }
         
         if let maxPrice = filters.maxPrice {
-            if listing.price > maxPrice {
+            if Int(listing.price ?? 0) > maxPrice {
                 return false
             }
         }
@@ -182,7 +182,7 @@ final class ListingsViewModel: ObservableObject {
         }
         
         if let search = filters.search, !search.isEmpty {
-            if !listing.title.localizedCaseInsensitiveContains(search) {
+            if !(listing.title?.localizedCaseInsensitiveContains(search) ?? false) {
                 return false
             }
         }
