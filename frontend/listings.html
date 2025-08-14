@@ -1719,6 +1719,139 @@
             }
         }
 
+        // Function to show listing modal - defined early for global access
+        window.showListingModal = function(listing) {
+            const modal = document.getElementById('listingModal');
+            if (!modal) {
+                console.error('❌ Modal element not found!');
+                return;
+            }
+            
+            document.getElementById('modalTitle').textContent = listing.title;
+            document.getElementById('modalPrice').textContent = `$${listing.price?.toLocaleString() || 'N/A'}/mo`;
+            document.getElementById('modalLocation').textContent = `${listing.street || ''}, ${listing.city || ''}, ${listing.postalCode || ''}`;
+            document.getElementById('modalDetails').innerHTML = `
+                <span>${listing.bedrooms || 'N/A'} Bed</span> • <span>${listing.house_type || 'N/A'}</span> • <span>${listing.utilities || 'N/A'}</span>
+            `;
+            document.getElementById('modalDescription').textContent = listing.description || 'No description provided';
+            
+            const modalImage = document.getElementById('modalImage');
+            if (modalImage) {
+                modalImage.src = listing.media && listing.media.length > 0 && listing.media[0].type?.startsWith('image/')
+                    ? listing.media[0].url
+                    : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+            }
+            
+            const modalMedia = document.getElementById('modalMedia');
+            if (modalMedia) {
+                modalMedia.innerHTML = '';
+                if (listing.media && listing.media.length > 0) {
+                    listing.media.forEach(media => {
+                        if (media.type?.startsWith('image/')) {
+                            const img = document.createElement('img');
+                            img.src = media.url;
+                            img.alt = media.name || 'Listing image';
+                            img.style.maxWidth = '100%';
+                            img.style.marginBottom = '10px';
+                            modalMedia.appendChild(img);
+                        }
+                    });
+                }
+            }
+            
+            const modalViewDetails = document.getElementById('modalViewDetails');
+            if (modalViewDetails) {
+                modalViewDetails.href = `/listing_details?id=${listing.id}`;
+            }
+            
+            // modal.style.display = 'block';
+            modal.classList.add('active'); // Use class for animation
+            console.log('✅ Modal shown for listing:', listing.title);
+        };
+        
+        // Function to open listing modal by ID - defined early for global access
+        window.openListingModalById = async function(listingId) {
+            try {
+                console.log('🔍 Fetching listing with ID:', listingId);
+                
+                // First try to find the listing in the current displayed listings
+                const listingButton = document.querySelector(`.view-details-btn[data-listing*="${listingId}"]`);
+                if (listingButton) {
+                    const listing = JSON.parse(listingButton.dataset.listing);
+                    window.showListingModal(listing);
+                    return;
+                }
+                
+                // If not found in displayed listings, fetch from all sources
+                let listing = null;
+                
+                // Try Supabase first
+                if (typeof supabase !== 'undefined' && supabase) {
+                    try {
+                        const { data, error } = await supabase
+                            .from('listings')
+                            .select('*')
+                            .eq('id', listingId)
+                            .single();
+                        
+                        if (!error && data) {
+                            listing = data;
+                            console.log('✅ Found listing in Supabase');
+                        }
+                    } catch (supabaseError) {
+                        console.log('Supabase fetch failed:', supabaseError);
+                    }
+                }
+                
+                // If not found in Supabase, check localStorage
+                if (!listing) {
+                    const users = JSON.parse(localStorage.getItem('users')) || [];
+                    for (const user of users) {
+                        // Check userListings_${email} key
+                        const userListingsKey = `userListings_${user.email}`;
+                        const userStoredListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                        listing = userStoredListings.find(l => l.id === listingId);
+                        if (listing) {
+                            console.log('✅ Found listing in localStorage');
+                            break;
+                        }
+                        
+                        // Also check user.listings
+                        if (user.listings && Array.isArray(user.listings)) {
+                            listing = user.listings.find(l => l.id === listingId);
+                            if (listing) {
+                                console.log('✅ Found listing in user.listings');
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // Also check saved listings
+                if (!listing) {
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                    if (currentUser.email) {
+                        const savedListingsKey = `savedListings_${currentUser.email}`;
+                        const savedListings = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
+                        listing = savedListings.find(l => l.id === listingId);
+                        if (listing) {
+                            console.log('✅ Found listing in saved listings');
+                        }
+                    }
+                }
+                
+                if (listing) {
+                    window.showListingModal(listing);
+                } else {
+                    console.error('❌ Listing not found with ID:', listingId);
+                    alert('Listing not found. It may have been removed.');
+                }
+            } catch (error) {
+                console.error('❌ Error opening listing modal:', error);
+                alert('Error loading listing details. Please try again.');
+            }
+        };
+
         // Simple and reliable geocoding with fallback coordinates
         async function geocodeLocation(location, retries = 2, delay = 1000) {
             console.log('Geocoding location:', location);
@@ -2714,88 +2847,6 @@
             console.log('✅ Listings display complete:', listings.length, 'listings processed');
         }
 
-        // Function to open listing modal by ID (make it global)
-        window.openListingModalById = async function(listingId) {
-            try {
-                console.log('🔍 Fetching listing with ID:', listingId);
-                
-                // First try to find the listing in the current displayed listings
-                const listingButton = document.querySelector(`.view-details-btn[data-listing*="${listingId}"]`);
-                if (listingButton) {
-                    const listing = JSON.parse(listingButton.dataset.listing);
-                    window.showListingModal(listing);
-                    return;
-                }
-                
-                // If not found in displayed listings, fetch from all sources
-                let listing = null;
-                
-                // Try Supabase first
-                if (typeof supabase !== 'undefined' && supabase) {
-                    try {
-                        const { data, error } = await supabase
-                            .from('listings')
-                            .select('*')
-                            .eq('id', listingId)
-                            .single();
-                        
-                        if (!error && data) {
-                            listing = data;
-                            console.log('✅ Found listing in Supabase');
-                        }
-                    } catch (supabaseError) {
-                        console.log('Supabase fetch failed:', supabaseError);
-                    }
-                }
-                
-                // If not found in Supabase, check localStorage
-                if (!listing) {
-                    const users = JSON.parse(localStorage.getItem('users')) || [];
-                    for (const user of users) {
-                        // Check userListings_${email} key
-                        const userListingsKey = `userListings_${user.email}`;
-                        const userStoredListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                        listing = userStoredListings.find(l => l.id === listingId);
-                        if (listing) {
-                            console.log('✅ Found listing in localStorage');
-                            break;
-                        }
-                        
-                        // Also check user.listings
-                        if (user.listings && Array.isArray(user.listings)) {
-                            listing = user.listings.find(l => l.id === listingId);
-                            if (listing) {
-                                console.log('✅ Found listing in user.listings');
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                // Also check saved listings
-                if (!listing) {
-                    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-                    if (currentUser.email) {
-                        const savedListingsKey = `savedListings_${currentUser.email}`;
-                        const savedListings = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
-                        listing = savedListings.find(l => l.id === listingId);
-                        if (listing) {
-                            console.log('✅ Found listing in saved listings');
-                        }
-                    }
-                }
-                
-                if (listing) {
-                    window.showListingModal(listing);
-                } else {
-                    console.error('❌ Listing not found with ID:', listingId);
-                    alert('Listing not found. It may have been removed.');
-                }
-            } catch (error) {
-                console.error('❌ Error opening listing modal:', error);
-                alert('Error loading listing details. Please try again.');
-            }
-        }
 
         // Modal handling for listings
         const modal = document.getElementById('listingModal');
