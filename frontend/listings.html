@@ -5190,20 +5190,59 @@
                 } catch (apiError) {
                     console.log('📱 API unavailable, using localStorage fallback:', apiError.message);
                     
-                    // Fallback to localStorage
+                    // Fallback to localStorage - save complete listing objects
                     const storageKey = `savedListings_${currentUser.email}`;
                     let savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
                     
                     if (isFavorited) {
                         // Remove from localStorage
-                        savedListings = savedListings.filter(id => id !== listingId);
+                        savedListings = savedListings.filter(item => {
+                            // Handle both old format (just ID) and new format (full object)
+                            const itemId = typeof item === 'string' ? item : item.id;
+                            return itemId !== listingId;
+                        });
                         localStorage.setItem(storageKey, JSON.stringify(savedListings));
                         console.log('✅ Removed from favorites via localStorage:', listingId);
                     } else {
-                        // Add to localStorage
-                        if (!savedListings.includes(listingId)) {
-                            savedListings.push(listingId);
-                            localStorage.setItem(storageKey, JSON.stringify(savedListings));
+                        // Add to localStorage - save complete listing object
+                        // First, find the complete listing data
+                        let listingToSave = null;
+                        
+                        // Try to find from the button's data attribute
+                        const listingCard = buttonElement.closest('.listing-card');
+                        if (listingCard) {
+                            const viewDetailsBtn = listingCard.querySelector('.view-details-btn');
+                            if (viewDetailsBtn && viewDetailsBtn.dataset.listing) {
+                                try {
+                                    listingToSave = JSON.parse(viewDetailsBtn.dataset.listing);
+                                } catch (e) {
+                                    console.error('Failed to parse listing data:', e);
+                                }
+                            }
+                        }
+                        
+                        // If not found, try to fetch from all listings
+                        if (!listingToSave) {
+                            const allListings = await fetchListings();
+                            listingToSave = allListings.find(l => l.id === listingId);
+                        }
+                        
+                        if (listingToSave) {
+                            // Check if not already saved (by ID)
+                            const alreadySaved = savedListings.some(item => {
+                                const itemId = typeof item === 'string' ? item : item.id;
+                                return itemId === listingId;
+                            });
+                            
+                            if (!alreadySaved) {
+                                // Add the complete listing object with a favorited timestamp
+                                listingToSave.favorited_at = new Date().toISOString();
+                                savedListings.push(listingToSave);
+                                localStorage.setItem(storageKey, JSON.stringify(savedListings));
+                                console.log('✅ Added complete listing to favorites:', listingToSave);
+                            }
+                        } else {
+                            console.error('❌ Could not find complete listing data for ID:', listingId);
                         }
                         console.log('✅ Added to favorites via localStorage:', listingId);
                     }
@@ -5256,8 +5295,11 @@
                 // Fallback to localStorage
                 const storageKey = `savedListings_${currentUser.email}`;
                 const savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
-                favoriteIds = new Set(savedListings);
-                console.log(`✅ Loaded ${savedListings.length} favorite states via localStorage`);
+                // Handle both old format (just IDs) and new format (full objects)
+                favoriteIds = new Set(savedListings.map(item => {
+                    return typeof item === 'string' ? item : item.id;
+                }));
+                console.log(`✅ Loaded ${favoriteIds.size} favorite states via localStorage`);
                 console.log(`💾 Raw localStorage data:`, savedListings);
             }
 

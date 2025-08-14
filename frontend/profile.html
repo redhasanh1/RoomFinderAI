@@ -1100,12 +1100,18 @@
                         
                         // Fallback to localStorage
                         const storageKey = `savedListings_${currentUser.email}`;
-                        const savedListingIds = JSON.parse(localStorage.getItem(storageKey)) || [];
+                        const savedData = JSON.parse(localStorage.getItem(storageKey)) || [];
                         
-                        // Fetch actual listing data for each saved listing ID
+                        console.log('📱 Raw savedData from localStorage:', savedData);
+                        
+                        // Handle both old format (just IDs) and new format (full objects)
                         savedListings = [];
-                        for (const listingId of savedListingIds) {
-                            let actualListing = null;
+                        for (const item of savedData) {
+                            if (typeof item === 'string') {
+                                // Old format - just an ID, need to fetch the full listing
+                                console.log('🔄 Converting old format ID to listing object:', item);
+                                let actualListing = null;
+                                const listingId = item;
                             
                             // Try to find the listing in Supabase first
                             if (typeof supabase !== 'undefined' && supabase) {
@@ -1149,15 +1155,20 @@
                                 }
                             }
                             
-                            if (actualListing) {
-                                // Add favorited_at timestamp
-                                savedListings.push({
-                                    ...actualListing,
-                                    listing_id: actualListing.id,
-                                    favorited_at: new Date().toISOString()
-                                });
+                                if (actualListing) {
+                                    // Add favorited_at timestamp
+                                    savedListings.push({
+                                        ...actualListing,
+                                        listing_id: actualListing.id,
+                                        favorited_at: new Date().toISOString()
+                                    });
+                                } else {
+                                    console.warn('Could not find listing data for:', listingId);
+                                }
                             } else {
-                                console.warn('Could not find listing data for:', listingId);
+                                // New format - already a complete listing object
+                                console.log('✅ Using new format listing object:', item.id);
+                                savedListings.push(item);
                             }
                         }
                         
@@ -1272,7 +1283,11 @@
                         // Fallback to localStorage
                         const storageKey = `savedListings_${currentUser.email}`;
                         let savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
-                        savedListings = savedListings.filter(id => id !== listingId);
+                        // Handle both old format (just IDs) and new format (full objects)
+                        savedListings = savedListings.filter(item => {
+                            const itemId = typeof item === 'string' ? item : item.id;
+                            return itemId !== listingId;
+                        });
                         localStorage.setItem(storageKey, JSON.stringify(savedListings));
                         
                         success = true;
