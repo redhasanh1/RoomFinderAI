@@ -2083,6 +2083,18 @@
                 console.log('🔄 Attempting to load listings automatically...');
                 await displayListings();
                 console.log('✅ Listings loaded successfully in initializeListingsPage()');
+                
+                // Check if we need to open a specific listing modal
+                const urlParams = new URLSearchParams(window.location.search);
+                const viewListingId = urlParams.get('viewListing');
+                
+                if (viewListingId) {
+                    console.log('📋 Opening listing modal for ID:', viewListingId);
+                    // Small delay to ensure DOM is ready
+                    setTimeout(async () => {
+                        await openListingModalById(viewListingId);
+                    }, 500);
+                }
             } catch (error) {
                 console.error('❌ Failed to load listings in initializeListingsPage():', error);
                 // Don't throw the error - let the fallback mechanism handle it
@@ -2692,6 +2704,89 @@
             console.log('✅ Listings display complete:', listings.length, 'listings processed');
         }
 
+        // Function to open listing modal by ID
+        async function openListingModalById(listingId) {
+            try {
+                console.log('🔍 Fetching listing with ID:', listingId);
+                
+                // First try to find the listing in the current displayed listings
+                const listingButton = document.querySelector(`.view-details-btn[data-listing*="${listingId}"]`);
+                if (listingButton) {
+                    const listing = JSON.parse(listingButton.dataset.listing);
+                    showListingModal(listing);
+                    return;
+                }
+                
+                // If not found in displayed listings, fetch from all sources
+                let listing = null;
+                
+                // Try Supabase first
+                if (typeof supabase !== 'undefined' && supabase) {
+                    try {
+                        const { data, error } = await supabase
+                            .from('listings')
+                            .select('*')
+                            .eq('id', listingId)
+                            .single();
+                        
+                        if (!error && data) {
+                            listing = data;
+                            console.log('✅ Found listing in Supabase');
+                        }
+                    } catch (supabaseError) {
+                        console.log('Supabase fetch failed:', supabaseError);
+                    }
+                }
+                
+                // If not found in Supabase, check localStorage
+                if (!listing) {
+                    const users = JSON.parse(localStorage.getItem('users')) || [];
+                    for (const user of users) {
+                        // Check userListings_${email} key
+                        const userListingsKey = `userListings_${user.email}`;
+                        const userStoredListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                        listing = userStoredListings.find(l => l.id === listingId);
+                        if (listing) {
+                            console.log('✅ Found listing in localStorage');
+                            break;
+                        }
+                        
+                        // Also check user.listings
+                        if (user.listings && Array.isArray(user.listings)) {
+                            listing = user.listings.find(l => l.id === listingId);
+                            if (listing) {
+                                console.log('✅ Found listing in user.listings');
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // Also check saved listings
+                if (!listing) {
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                    if (currentUser.email) {
+                        const savedListingsKey = `savedListings_${currentUser.email}`;
+                        const savedListings = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
+                        listing = savedListings.find(l => l.id === listingId);
+                        if (listing) {
+                            console.log('✅ Found listing in saved listings');
+                        }
+                    }
+                }
+                
+                if (listing) {
+                    showListingModal(listing);
+                } else {
+                    console.error('❌ Listing not found with ID:', listingId);
+                    alert('Listing not found. It may have been removed.');
+                }
+            } catch (error) {
+                console.error('❌ Error opening listing modal:', error);
+                alert('Error loading listing details. Please try again.');
+            }
+        }
+
         // Modal handling for listings
         const modal = document.getElementById('listingModal');
         const closeButton = document.querySelector('.close-button');
@@ -2730,6 +2825,14 @@
             // modal.style.display = 'none';
             modal.classList.remove('active'); // Use class for animation
             console.log('Modal closed');
+            
+            // Clean up URL if we came from profile page
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('viewListing')) {
+                urlParams.delete('viewListing');
+                const newUrl = urlParams.toString() ? `${window.location.pathname}?${urlParams.toString()}` : window.location.pathname;
+                window.history.replaceState({}, '', newUrl);
+            }
         });
 
         window.addEventListener('click', (event) => {
@@ -2737,6 +2840,14 @@
                 // modal.style.display = 'none';
                 modal.classList.remove('active'); // Use class for animation
                 console.log('Modal closed by clicking outside');
+                
+                // Clean up URL if we came from profile page
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('viewListing')) {
+                    urlParams.delete('viewListing');
+                    const newUrl = urlParams.toString() ? `${window.location.pathname}?${urlParams.toString()}` : window.location.pathname;
+                    window.history.replaceState({}, '', newUrl);
+                }
             }
         });
 
