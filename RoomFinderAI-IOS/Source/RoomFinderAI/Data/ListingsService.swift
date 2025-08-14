@@ -10,7 +10,7 @@ struct ListingsService {
         var q = client.database
             .from("listings")
             // Include house_type and bedrooms since filters use them:
-            .select("id,title,price,city,created_at,cover_image,category,house_type,bedrooms")
+            .select("id,title,price,city,created_at,images,category,house_type,bedrooms")
 
         // Apply SAME filters as website:
         if let s = filters.city, !s.isEmpty { q = q.ilike("city", pattern: "%\(s)%") }
