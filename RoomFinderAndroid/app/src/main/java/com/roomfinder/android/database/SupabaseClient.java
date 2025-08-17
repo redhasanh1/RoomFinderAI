@@ -204,6 +204,76 @@ public class SupabaseClient {
     }
     
     /**
+     * Enhanced filter listings by criteria including bathrooms
+     */
+    public List<Listing> filterListingsEnhanced(Integer minPrice, Integer maxPrice, Integer bedrooms, 
+                                               Integer bathrooms, String propertyType, String location) {
+        try {
+            StringBuilder urlBuilder = new StringBuilder(baseUrl + "listings?select=*");
+            
+            // Add filters
+            List<String> filters = new ArrayList<>();
+            
+            if (minPrice != null) {
+                filters.add("price.gte." + minPrice);
+            }
+            if (maxPrice != null) {
+                filters.add("price.lte." + maxPrice);
+            }
+            if (bedrooms != null) {
+                filters.add("bedrooms.eq." + bedrooms);
+            }
+            if (bathrooms != null) {
+                filters.add("bathrooms.eq." + bathrooms);
+            }
+            if (propertyType != null && !propertyType.isEmpty()) {
+                filters.add("house_type.ilike." + java.net.URLEncoder.encode("%" + propertyType + "%", "UTF-8"));
+            }
+            if (location != null && !location.trim().isEmpty()) {
+                String encodedLocation = java.net.URLEncoder.encode("%" + location.toLowerCase() + "%", "UTF-8");
+                filters.add("or=(city.ilike." + encodedLocation + ",street.ilike." + encodedLocation + ")");
+            }
+            
+            if (!filters.isEmpty()) {
+                urlBuilder.append("&").append(String.join("&", filters));
+            }
+            
+            urlBuilder.append("&order=created_at.desc");
+            
+            Request request = new Request.Builder()
+                    .url(urlBuilder.toString())
+                    .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Content-Type", "application/json")
+                    .build();
+            
+            Log.d(TAG, "Enhanced filtering listings with URL: " + urlBuilder.toString());
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Enhanced filter error: " + response.code() + " - " + response.message());
+                    return new ArrayList<>();
+                }
+                
+                String responseBody = response.body().string();
+                Type listType = new TypeToken<List<Listing>>(){}.getType();
+                List<Listing> listings = gson.fromJson(responseBody, listType);
+                
+                if (listings == null) {
+                    listings = new ArrayList<>();
+                }
+                
+                Log.d(TAG, "Enhanced filter returned " + listings.size() + " listings");
+                return listings;
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error in enhanced filtering listings: " + e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
      * Get single listing by ID
      */
     public Listing getListingById(String listingId) {
