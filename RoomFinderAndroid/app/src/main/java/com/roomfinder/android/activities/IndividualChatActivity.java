@@ -71,6 +71,9 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
     // Attachment service
     private AttachmentUploadService attachmentService;
     
+    // AI negotiator integration
+    private String pendingMessageTemplate;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -90,7 +93,7 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
         // Get intent data
         getIntentData();
         
-        if (listingId == null || otherUserEmail == null) {
+        if (otherUserEmail == null) {
             Toast.makeText(this, "Error: Missing chat information", Toast.LENGTH_SHORT).show();
             finish();
             return;
@@ -112,6 +115,25 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
         listingTitle = intent.getStringExtra("listing_title");
         listingOwnerEmail = intent.getStringExtra("owner_email");
         otherUserEmail = intent.getStringExtra("other_user_email");
+        
+        // Handle AI negotiator integration
+        String landlordEmail = intent.getStringExtra("LANDLORD_EMAIL");
+        String landlordName = intent.getStringExtra("LANDLORD_NAME");
+        String propertyTitle = intent.getStringExtra("PROPERTY_TITLE");
+        String conversationType = intent.getStringExtra("CONVERSATION_TYPE");
+        String aiMessageTemplate = intent.getStringExtra("AI_MESSAGE_TEMPLATE");
+        
+        // If coming from AI negotiator, set up for landlord contact
+        if ("LANDLORD_CONTACT".equals(conversationType) && landlordEmail != null) {
+            otherUserEmail = landlordEmail;
+            listingTitle = propertyTitle != null ? propertyTitle : "Property";
+            
+            // Pre-populate message input with AI template if provided
+            if (aiMessageTemplate != null && !aiMessageTemplate.isEmpty()) {
+                // Store template to set after UI is initialized
+                pendingMessageTemplate = aiMessageTemplate;
+            }
+        }
         
         // If no explicit other_user_email, use owner_email
         if (otherUserEmail == null) {
@@ -152,6 +174,19 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
             sendMessage();
             return true;
         });
+        
+        // Pre-populate message input with AI template if available
+        if (pendingMessageTemplate != null && !pendingMessageTemplate.isEmpty()) {
+            binding.messageInput.setText(pendingMessageTemplate);
+            binding.messageInput.setSelection(binding.messageInput.getText().length()); // Move cursor to end
+            
+            // Show a helpful hint
+            Toast.makeText(this, "💡 AI has prepared a professional message for you. Feel free to customize it!", 
+                          Toast.LENGTH_LONG).show();
+            
+            // Clear the template so it's only used once
+            pendingMessageTemplate = null;
+        }
     }
     
     private String getDisplayName(String email) {
