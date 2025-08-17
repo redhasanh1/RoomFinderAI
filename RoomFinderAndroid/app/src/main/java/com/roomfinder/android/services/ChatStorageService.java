@@ -2,6 +2,10 @@ package com.roomfinder.android.services;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Handler;
+import android.os.Looper;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.roomfinder.android.models.ChatMessage;
@@ -17,9 +21,22 @@ public class ChatStorageService {
     private static final String KEY_CONVERSATIONS = "conversations";
     private static final String KEY_MESSAGES_PREFIX = "messages_";
     
+    // Callback interfaces for async operations
+    public interface ConversationsCallback {
+        void onConversationsLoaded(List<Conversation> conversations);
+        void onError(String error);
+    }
+    
+    public interface MessagesCallback {
+        void onMessagesLoaded(List<ChatMessage> messages);
+        void onError(String error);
+    }
+    
     private static ChatStorageService instance;
     private final SharedPreferences prefs;
     private final Gson gson;
+    private final ExecutorService executor;
+    private final Handler mainHandler;
     
     // Conversation metadata
     public static class Conversation {
@@ -49,6 +66,8 @@ public class ChatStorageService {
     private ChatStorageService(Context context) {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         gson = new Gson();
+        executor = Executors.newFixedThreadPool(2); // Small thread pool for background operations
+        mainHandler = new Handler(Looper.getMainLooper());
     }
     
     public static synchronized ChatStorageService getInstance(Context context) {
@@ -79,7 +98,7 @@ public class ChatStorageService {
         prefs.edit().putString(key, json).apply();
     }
     
-    // Get messages for a conversation
+    // Get messages for a conversation (sync version)
     public List<ChatMessage> getMessages(String conversationId) {
         String key = KEY_MESSAGES_PREFIX + conversationId;
         String json = prefs.getString(key, null);
@@ -89,6 +108,18 @@ public class ChatStorageService {
         
         Type type = new TypeToken<List<ChatMessage>>(){}.getType();
         return gson.fromJson(json, type);
+    }
+    
+    // Get messages for a conversation (async version)
+    public void getMessagesAsync(String conversationId, MessagesCallback callback) {
+        executor.execute(() -> {
+            try {
+                List<ChatMessage> messages = getMessages(conversationId);
+                mainHandler.post(() -> callback.onMessagesLoaded(messages));
+            } catch (Exception e) {
+                mainHandler.post(() -> callback.onError("Failed to load messages: " + e.getMessage()));
+            }
+        });
     }
     
     // Update or create conversation metadata
@@ -122,7 +153,7 @@ public class ChatStorageService {
         return conversations != null ? conversations : new HashMap<>();
     }
     
-    // Get conversations for a specific user
+    // Get conversations for a specific user (sync version)
     public List<Conversation> getUserConversations(String userEmail) {
         Map<String, Conversation> allConversations = getAllConversations();
         List<Conversation> userConversations = new ArrayList<>();
@@ -137,6 +168,18 @@ public class ChatStorageService {
         userConversations.sort((a, b) -> Long.compare(b.lastMessageTime, a.lastMessageTime));
         
         return userConversations;
+    }
+    
+    // Get conversations for a specific user (async version)
+    public void getUserConversationsAsync(String userEmail, ConversationsCallback callback) {
+        executor.execute(() -> {
+            try {
+                List<Conversation> userConversations = getUserConversations(userEmail);
+                mainHandler.post(() -> callback.onConversationsLoaded(userConversations));
+            } catch (Exception e) {
+                mainHandler.post(() -> callback.onError("Failed to load conversations: " + e.getMessage()));
+            }
+        });
     }
     
     // Save all conversations
@@ -190,5 +233,12 @@ public class ChatStorageService {
     // Clear all chat data (for logout)
     public void clearAllData() {
         prefs.edit().clear().apply();
+    }
+    
+    // Clean up resources (call when app is shutting down)
+    public void shutdown() {
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+        }
     }
 }

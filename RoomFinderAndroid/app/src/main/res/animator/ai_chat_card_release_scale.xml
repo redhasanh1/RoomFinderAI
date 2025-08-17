@@ -1,29 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <set xmlns:android="http://schemas.android.com/apk/res/android"
     android:ordering="together"
-    android:interpolator="@android:interpolator/overshoot">
+    android:interpolator="@android:interpolator/accelerate_decelerate">
     
-    <!-- Scale back up with bounce -->
+    <!-- Simplified scale back up -->
     <objectAnimator
         android:propertyName="scaleX"
-        android:duration="250"
-        android:valueFrom="0.95"
+        android:duration="100"
+        android:valueFrom="0.97"
         android:valueTo="1.0"
         android:valueType="floatType" />
         
     <objectAnimator
         android:propertyName="scaleY"
-        android:duration="250"
-        android:valueFrom="0.95"
+        android:duration="100"
+        android:valueFrom="0.97"
         android:valueTo="1.0"
-        android:valueType="floatType" />
-        
-    <!-- Elevation back to normal -->
-    <objectAnimator
-        android:propertyName="elevation"
-        android:duration="250"
-        android:valueFrom="16dp"
-        android:valueTo="8dp"
         android:valueType="floatType" />
         
 </set>

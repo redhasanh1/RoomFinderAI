@@ -15,9 +15,12 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import android.content.Context;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.roomfinder.android.R;
+import com.roomfinder.android.activities.IndividualChatActivity;
 import com.roomfinder.android.activities.LoginActivity;
 import com.roomfinder.android.adapters.ListingsAdapter;
+import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.databinding.FragmentProfileBinding;
 import com.roomfinder.android.models.Listing;
 import com.roomfinder.android.network.SupabaseService;
@@ -457,6 +460,33 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
             recentListings.clear();
         } catch (Exception e) {
             Log.e(TAG, "Error in onDestroyView: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public void onChatClick(Listing listing) {
+        AuthManager authManager = AuthManager.getInstance(requireContext());
+        
+        if (authManager.isUserAuthenticated()) {
+            String currentUserEmail = authManager.getUserEmail();
+            
+            Intent intent = new Intent(requireContext(), IndividualChatActivity.class);
+            intent.putExtra("listing_id", listing.getId());
+            intent.putExtra("listing_title", listing.getTitle());
+            intent.putExtra("owner_email", listing.getUserEmail());
+            intent.putExtra("current_user_email", currentUserEmail);
+            startActivity(intent);
+        } else {
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Login Required")
+                    .setMessage("You need to sign in to chat with property owners.")
+                    .setPositiveButton("Sign In", (dialog, which) -> {
+                        Intent loginIntent = new Intent(requireContext(), LoginActivity.class);
+                        startActivity(loginIntent);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .setIcon(R.drawable.ic_chat)
+                    .show();
         }
     }
 }
