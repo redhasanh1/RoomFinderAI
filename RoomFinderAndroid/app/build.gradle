@@ -16,8 +16,8 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
         // Build config fields for API keys
-        buildConfigField "String", "OPENAI_API_KEY", "\"${System.getenv('OPENAI_API_KEY') ?: 'your_openai_api_key_here'}\""
-        buildConfigField "String", "OPENAI_ORG_ID", "\"${System.getenv('OPENAI_ORG_ID') ?: 'your_openai_org_id_here'}\""
+        buildConfigField "String", "OPENAI_API_KEY", "\"${System.getenv('OPENAI_API_KEY') ?: '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'}\""
+        buildConfigField "String", "OPENAI_ORG_ID", "\"${System.getenv('OPENAI_ORG_ID') ?: 'org-EPHQ1A3u0XIUZml6JABMgZzg'}\""
     }
 
     buildTypes {

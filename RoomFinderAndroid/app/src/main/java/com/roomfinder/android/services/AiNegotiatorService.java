@@ -252,76 +252,275 @@ public class AiNegotiatorService {
         return request;
     }
     
-    // Extract property search criteria from user message using simple parsing
+    // Extract property search criteria from user message using enhanced parsing
     private PropertyCriteria extractPropertyCriteria(String message) {
         PropertyCriteria criteria = new PropertyCriteria();
         String lowerMessage = message.toLowerCase();
         
-        // Extract location
-        if (lowerMessage.contains(" in ")) {
-            String[] parts = lowerMessage.split(" in ");
+        // Enhanced location extraction
+        criteria.location = extractLocation(lowerMessage);
+        criteria.maxPrice = extractMaxPrice(lowerMessage);
+        criteria.minPrice = extractMinPrice(lowerMessage);
+        criteria.propertyType = extractPropertyType(lowerMessage);
+        criteria.bedrooms = extractBedrooms(lowerMessage);
+        criteria.bathrooms = extractBathrooms(lowerMessage);
+        
+        return criteria;
+    }
+    
+    private String extractLocation(String message) {
+        // Pattern 1: "in [location]"
+        if (message.contains(" in ")) {
+            String[] parts = message.split(" in ");
             if (parts.length > 1) {
-                String locationPart = parts[1].split(" ")[0];
-                criteria.location = locationPart.replaceAll("[^a-zA-Z\\s]", "").trim();
+                String locationPart = parts[1];
+                // Take everything until next major keyword or end
+                String[] stopWords = {" with ", " under ", " over ", " for ", " that ", " where ", " near ", " around "};
+                for (String stopWord : stopWords) {
+                    if (locationPart.contains(stopWord)) {
+                        locationPart = locationPart.split(stopWord)[0];
+                    }
+                }
+                return locationPart.trim().replaceAll("[^a-zA-Z\\s]", "").trim();
             }
         }
         
-        // Extract price range
-        if (lowerMessage.contains("$")) {
-            String[] words = lowerMessage.split("\\s+");
-            for (String word : words) {
-                if (word.contains("$")) {
+        // Pattern 2: "near [location]", "around [location]"
+        if (message.contains(" near ") || message.contains(" around ")) {
+            String pattern = message.contains(" near ") ? " near " : " around ";
+            String[] parts = message.split(pattern);
+            if (parts.length > 1) {
+                String locationPart = parts[1].split(" ")[0];
+                return locationPart.replaceAll("[^a-zA-Z\\s]", "").trim();
+            }
+        }
+        
+        return null;
+    }
+    
+    private Integer extractMaxPrice(String message) {
+        // Pattern 1: "under $X", "below $X", "max $X"
+        if (message.contains("under") || message.contains("below") || message.contains("max")) {
+            String[] words = message.split("\\s+");
+            for (int i = 0; i < words.length; i++) {
+                String word = words[i].toLowerCase();
+                if ((word.equals("under") || word.equals("below") || word.equals("max")) && i + 1 < words.length) {
+                    String nextWord = words[i + 1];
+                    if (nextWord.contains("$")) {
+                        try {
+                            String priceStr = nextWord.replaceAll("[^0-9]", "");
+                            if (!priceStr.isEmpty()) {
+                                return Integer.parseInt(priceStr);
+                            }
+                        } catch (NumberFormatException e) {
+                            // Continue searching
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Pattern 2: "$X or less", "$X maximum"
+        if (message.contains("$")) {
+            String[] words = message.split("\\s+");
+            for (int i = 0; i < words.length; i++) {
+                if (words[i].contains("$")) {
                     try {
-                        String priceStr = word.replaceAll("[^0-9]", "");
+                        String priceStr = words[i].replaceAll("[^0-9]", "");
                         if (!priceStr.isEmpty()) {
                             int price = Integer.parseInt(priceStr);
-                            if (lowerMessage.contains("under") || lowerMessage.contains("below") || lowerMessage.contains("max")) {
-                                criteria.maxPrice = price;
-                            } else if (lowerMessage.contains("over") || lowerMessage.contains("above") || lowerMessage.contains("min")) {
-                                criteria.minPrice = price;
-                            } else {
-                                criteria.maxPrice = price; // Default to max price
+                            // Check if followed by max indicators
+                            if (i + 1 < words.length) {
+                                String nextWord = words[i + 1].toLowerCase();
+                                if (nextWord.equals("or") || nextWord.equals("maximum") || nextWord.equals("max")) {
+                                    return price;
+                                }
+                            }
+                            // Default to max if no other context
+                            if (!message.contains("over") && !message.contains("above") && !message.contains("min")) {
+                                return price;
                             }
                         }
                     } catch (NumberFormatException e) {
-                        // Ignore invalid price formats
+                        // Continue searching
                     }
                 }
             }
         }
         
-        // Extract property type
-        if (lowerMessage.contains("studio")) {
-            criteria.propertyType = "studio";
-        } else if (lowerMessage.contains("apartment")) {
-            criteria.propertyType = "apartment";
-        } else if (lowerMessage.contains("house")) {
-            criteria.propertyType = "house";
-        } else if (lowerMessage.contains("condo")) {
-            criteria.propertyType = "condo";
+        return null;
+    }
+    
+    private Integer extractMinPrice(String message) {
+        // Pattern 1: "over $X", "above $X", "min $X"
+        if (message.contains("over") || message.contains("above") || message.contains("min")) {
+            String[] words = message.split("\\s+");
+            for (int i = 0; i < words.length; i++) {
+                String word = words[i].toLowerCase();
+                if ((word.equals("over") || word.equals("above") || word.equals("min")) && i + 1 < words.length) {
+                    String nextWord = words[i + 1];
+                    if (nextWord.contains("$")) {
+                        try {
+                            String priceStr = nextWord.replaceAll("[^0-9]", "");
+                            if (!priceStr.isEmpty()) {
+                                return Integer.parseInt(priceStr);
+                            }
+                        } catch (NumberFormatException e) {
+                            // Continue searching
+                        }
+                    }
+                }
+            }
         }
         
-        // Extract bedrooms
-        if (lowerMessage.contains("bedroom")) {
-            String[] words = lowerMessage.split("\\s+");
-            for (int i = 0; i < words.length - 1; i++) {
-                if (words[i + 1].contains("bedroom")) {
+        // Pattern 2: "$X or more", "$X minimum"
+        if (message.contains("$")) {
+            String[] words = message.split("\\s+");
+            for (int i = 0; i < words.length; i++) {
+                if (words[i].contains("$")) {
                     try {
-                        criteria.bedrooms = Integer.parseInt(words[i].replaceAll("[^0-9]", ""));
-                        break;
+                        String priceStr = words[i].replaceAll("[^0-9]", "");
+                        if (!priceStr.isEmpty()) {
+                            int price = Integer.parseInt(priceStr);
+                            // Check if followed by min indicators
+                            if (i + 1 < words.length) {
+                                String nextWord = words[i + 1].toLowerCase();
+                                if (nextWord.equals("or") || nextWord.equals("minimum") || nextWord.equals("min")) {
+                                    return price;
+                                }
+                            }
+                        }
                     } catch (NumberFormatException e) {
-                        // Try text numbers
-                        String numWord = words[i].toLowerCase();
-                        if (numWord.contains("one") || numWord.contains("1")) criteria.bedrooms = 1;
-                        else if (numWord.contains("two") || numWord.contains("2")) criteria.bedrooms = 2;
-                        else if (numWord.contains("three") || numWord.contains("3")) criteria.bedrooms = 3;
-                        else if (numWord.contains("four") || numWord.contains("4")) criteria.bedrooms = 4;
+                        // Continue searching
                     }
                 }
             }
         }
         
-        return criteria;
+        return null;
+    }
+    
+    private String extractPropertyType(String message) {
+        // Check for property types with priority (most specific first)
+        if (message.contains("studio") || message.contains("bachelor")) {
+            return "studio";
+        } else if (message.contains("townhouse") || message.contains("town house")) {
+            return "townhouse";
+        } else if (message.contains("condo") || message.contains("condominium")) {
+            return "condo";
+        } else if (message.contains("apartment") || message.contains("apt")) {
+            return "apartment";
+        } else if (message.contains("house") || message.contains("home")) {
+            return "house";
+        } else if (message.contains("room") || message.contains("shared")) {
+            return "room";
+        }
+        
+        return null;
+    }
+    
+    private Integer extractBedrooms(String message) {
+        // Pattern 1: "X bedroom", "X bed"
+        String[] patterns = {"bedroom", "bed"};
+        for (String pattern : patterns) {
+            if (message.contains(pattern)) {
+                String[] words = message.split("\\s+");
+                for (int i = 0; i < words.length - 1; i++) {
+                    if (words[i + 1].contains(pattern)) {
+                        try {
+                            String numStr = words[i].replaceAll("[^0-9]", "");
+                            if (!numStr.isEmpty()) {
+                                return Integer.parseInt(numStr);
+                            }
+                        } catch (NumberFormatException e) {
+                            // Try text numbers
+                            String numWord = words[i].toLowerCase();
+                            Integer num = parseTextNumber(numWord);
+                            if (num != null) {
+                                return num;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Pattern 2: "X-bedroom", "X-bed"
+        if (message.contains("-bedroom") || message.contains("-bed")) {
+            String[] words = message.split("\\s+");
+            for (String word : words) {
+                if (word.contains("-bedroom") || word.contains("-bed")) {
+                    try {
+                        String numStr = word.split("-")[0].replaceAll("[^0-9]", "");
+                        if (!numStr.isEmpty()) {
+                            return Integer.parseInt(numStr);
+                        }
+                    } catch (Exception e) {
+                        // Continue searching
+                    }
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    private Integer extractBathrooms(String message) {
+        // Pattern 1: "X bathroom", "X bath"
+        String[] patterns = {"bathroom", "bath"};
+        for (String pattern : patterns) {
+            if (message.contains(pattern)) {
+                String[] words = message.split("\\s+");
+                for (int i = 0; i < words.length - 1; i++) {
+                    if (words[i + 1].contains(pattern)) {
+                        try {
+                            String numStr = words[i].replaceAll("[^0-9]", "");
+                            if (!numStr.isEmpty()) {
+                                return Integer.parseInt(numStr);
+                            }
+                        } catch (NumberFormatException e) {
+                            // Try text numbers
+                            String numWord = words[i].toLowerCase();
+                            Integer num = parseTextNumber(numWord);
+                            if (num != null) {
+                                return num;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Pattern 2: "X-bathroom", "X-bath"
+        if (message.contains("-bathroom") || message.contains("-bath")) {
+            String[] words = message.split("\\s+");
+            for (String word : words) {
+                if (word.contains("-bathroom") || word.contains("-bath")) {
+                    try {
+                        String numStr = word.split("-")[0].replaceAll("[^0-9]", "");
+                        if (!numStr.isEmpty()) {
+                            return Integer.parseInt(numStr);
+                        }
+                    } catch (Exception e) {
+                        // Continue searching
+                    }
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    private Integer parseTextNumber(String word) {
+        switch (word.toLowerCase()) {
+            case "one": case "1": return 1;
+            case "two": case "2": return 2;
+            case "three": case "3": return 3;
+            case "four": case "4": return 4;
+            case "five": case "5": return 5;
+            case "six": case "6": return 6;
+            default: return null;
+        }
     }
     
     // Clear conversation history

@@ -347,27 +347,20 @@ public class AiChatFragment extends Fragment {
         
         SupabaseService supabaseService = SupabaseService.getInstance();
         
-        // Use the existing filter method which handles all our criteria
-        supabaseService.filterListings(
-            criteria.minPrice,
-            criteria.maxPrice, 
-            criteria.bedrooms,
-            criteria.propertyType,
-            criteria.location,
-            new SupabaseService.ListingsCallback() {
-                @Override
-                public void onSuccess(List<Listing> listings) {
-                    // SupabaseService already posts to main thread, so no need for mainHandler
-                    handlePropertySearchResults(listings, criteria);
-                }
-                
-                @Override
-                public void onError(String error) {
-                    Log.e(TAG, "Property search failed: " + error);
-                    addSystemMessage("❌ Property search failed: " + error, ChatMessage.MessageType.ERROR);
-                }
+        // Use the enhanced search method that includes bathrooms and all criteria
+        supabaseService.searchWithCriteria(criteria, new SupabaseService.ListingsCallback() {
+            @Override
+            public void onSuccess(List<Listing> listings) {
+                // SupabaseService already posts to main thread, so no need for mainHandler
+                handlePropertySearchResults(listings, criteria);
             }
-        );
+            
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Property search failed: " + error);
+                addSystemMessage("❌ Property search failed: " + error, ChatMessage.MessageType.ERROR);
+            }
+        });
     }
     
     private void handlePropertySearchResults(List<Listing> listings, AiNegotiatorService.PropertyCriteria criteria) {

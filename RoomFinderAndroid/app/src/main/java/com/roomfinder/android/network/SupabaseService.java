@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.roomfinder.android.database.SupabaseClient;
 import com.roomfinder.android.models.Listing;
+import com.roomfinder.android.services.AiNegotiatorService.PropertyCriteria;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -122,6 +123,52 @@ public class SupabaseService {
                 Log.e(TAG, "Error filtering listings: " + e.getMessage(), e);
                 android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
                 mainHandler.post(() -> callback.onError("Filter error: " + e.getMessage()));
+            }
+        });
+    }
+    
+    /**
+     * Search listings with enhanced criteria from AI extraction
+     */
+    public void searchWithCriteria(PropertyCriteria criteria, ListingsCallback callback) {
+        if (criteria == null || !criteria.hasValidCriteria()) {
+            callback.onError("No valid search criteria provided");
+            return;
+        }
+        
+        executorService.execute(() -> {
+            try {
+                Log.d(TAG, "Searching with AI-extracted criteria:");
+                Log.d(TAG, "  Location: " + criteria.location);
+                Log.d(TAG, "  Property Type: " + criteria.propertyType);
+                Log.d(TAG, "  Price Range: $" + criteria.minPrice + " - $" + criteria.maxPrice);
+                Log.d(TAG, "  Bedrooms: " + criteria.bedrooms);
+                Log.d(TAG, "  Bathrooms: " + criteria.bathrooms);
+                
+                // Use the enhanced filter method that includes bathrooms
+                List<Listing> listings = supabaseClient.filterListingsEnhanced(
+                    criteria.minPrice, 
+                    criteria.maxPrice, 
+                    criteria.bedrooms, 
+                    criteria.bathrooms,
+                    criteria.propertyType, 
+                    criteria.location
+                );
+                
+                android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+                mainHandler.post(() -> {
+                    if (listings != null) {
+                        Log.d(TAG, "AI criteria search returned " + listings.size() + " results");
+                        callback.onSuccess(listings);
+                    } else {
+                        callback.onError("Search with criteria failed");
+                    }
+                });
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Error searching with criteria: " + e.getMessage(), e);
+                android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+                mainHandler.post(() -> callback.onError("Search error: " + e.getMessage()));
             }
         });
     }
