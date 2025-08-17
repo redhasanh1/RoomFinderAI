@@ -25,9 +25,15 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int VIEW_TYPE_TYPING = 4;
     
     private List<ChatMessage> messages;
+    private String currentUserEmail;
     
     public ChatAdapter(List<ChatMessage> messages) {
         this.messages = messages;
+    }
+    
+    public ChatAdapter(List<ChatMessage> messages, String currentUserEmail) {
+        this.messages = messages;
+        this.currentUserEmail = currentUserEmail;
     }
     
     @Override
@@ -37,6 +43,13 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         // Determine view type based on sender and typing status
         if (message.isTyping()) {
             return VIEW_TYPE_TYPING;
+        } else if (message.isRealUserMessage()) {
+            // For real user messages, check if it's from current user
+            if (currentUserEmail != null && message.isFromCurrentUser(currentUserEmail)) {
+                return VIEW_TYPE_USER;
+            } else {
+                return VIEW_TYPE_AI; // Use AI layout for other users' messages
+            }
         } else if (message.isFromUser()) {
             return VIEW_TYPE_USER;
         } else if (message.isFromAi()) {

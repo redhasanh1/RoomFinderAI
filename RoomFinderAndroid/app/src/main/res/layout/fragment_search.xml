@@ -3,44 +3,68 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/futuristic_gradient_background"
+    android:background="@color/background"
     android:orientation="vertical">
 
-    <!-- Modern Search Header -->
+    <!-- Search Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="@drawable/ai_chat_card_background"
-        android:elevation="8dp"
-        android:paddingBottom="16dp">
+        android:background="@color/white"
+        android:elevation="2dp">
+
+        <!-- Title Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Search Properties"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Find your perfect home"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+        </LinearLayout>
 
         <!-- Main Search Bar -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="24dp"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="16dp"
             android:gravity="center_vertical">
 
-            <!-- Enhanced Search Input -->
+            <!-- Search Input Container -->
             <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="60dp"
+                android:layout_height="56dp"
                 android:layout_weight="1"
                 android:orientation="horizontal"
-                android:background="@drawable/glassmorphism_search_bar"
+                android:background="@drawable/search_bar_background"
                 android:gravity="center_vertical"
-                android:paddingHorizontal="18dp"
-                android:elevation="8dp">
+                android:paddingHorizontal="16dp"
+                android:elevation="2dp">
 
                 <ImageView
-                    android:layout_width="26dp"
-                    android:layout_height="26dp"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
                     android:src="@drawable/ic_search"
-                    android:tint="@color/accent_cyan"
-                    android:alpha="0.9"
-                    android:scaleType="centerInside" />
+                    android:tint="@color/purple_primary" />
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/searchInput"
@@ -49,39 +73,41 @@
                     android:layout_weight="1"
                     android:layout_marginStart="12dp"
                     android:background="@null"
-                    android:hint="Search apartments, houses, condos..."
-                    android:textColorHint="#80FFFFFF"
-                    android:textColor="@color/white"
+                    android:hint="Search by location, type, or price"
+                    android:textColorHint="@color/text_secondary"
+                    android:textColor="@color/text_primary"
                     android:maxLines="1"
                     android:textSize="16sp"
                     android:imeOptions="actionSearch" />
 
                 <ImageView
                     android:id="@+id/voiceSearchButton"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
                     android:src="@drawable/ic_mic"
-                    android:tint="@color/accent_cyan"
-                    android:alpha="0.7"
+                    android:tint="@color/purple_primary"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="4dp" />
+                    android:padding="2dp" />
 
             </LinearLayout>
 
             <!-- Search Action Button -->
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/searchButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:backgroundTint="@android:color/transparent"
-                android:background="@drawable/premium_button_gradient"
-                android:src="@drawable/ic_search"
-                android:tint="@color/white"
-                android:elevation="12dp"
-                app:fabSize="normal"
-                app:borderWidth="0dp"
-                app:rippleColor="#40FFFFFF" />
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginStart="12dp"
+                android:backgroundTint="@color/purple_primary"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:icon="@drawable/ic_search"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:cornerRadius="12dp"
+                android:elevation="2dp" />
 
         </LinearLayout>
 
@@ -89,8 +115,8 @@
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="24dp"
-            android:paddingVertical="8dp"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="12dp"
             android:scrollbars="none">
 
             <com.google.android.material.chip.ChipGroup
@@ -98,68 +124,76 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:singleLine="true"
-                app:chipSpacingHorizontal="12dp">
+                app:chipSpacingHorizontal="8dp">
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/quickFilterPrice"
                     style="@style/Widget.MaterialComponents.Chip.Filter"
                     android:layout_width="wrap_content"
-                    android:layout_height="42dp"
-                    android:text="💰 Price"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:background="@drawable/floating_chip_glass"
-                    android:elevation="6dp"
+                    android:layout_height="36dp"
+                    android:text="Price"
+                    android:textSize="14sp"
+                    app:chipBackgroundColor="@color/gray_100"
+                    app:chipStrokeColor="@color/gray_300"
+                    app:chipStrokeWidth="1dp"
+                    android:textColor="@color/text_primary"
+                    app:checkedIconTint="@color/purple_primary"
                     android:checkable="true" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/quickFilterLocation"
                     style="@style/Widget.MaterialComponents.Chip.Filter"
                     android:layout_width="wrap_content"
-                    android:layout_height="42dp"
-                    android:text="📍 Location"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:background="@drawable/floating_chip_glass"
-                    android:elevation="6dp"
+                    android:layout_height="36dp"
+                    android:text="Location"
+                    android:textSize="14sp"
+                    app:chipBackgroundColor="@color/gray_100"
+                    app:chipStrokeColor="@color/gray_300"
+                    app:chipStrokeWidth="1dp"
+                    android:textColor="@color/text_primary"
+                    app:checkedIconTint="@color/purple_primary"
                     android:checkable="true" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/quickFilterType"
                     style="@style/Widget.MaterialComponents.Chip.Filter"
                     android:layout_width="wrap_content"
-                    android:layout_height="42dp"
-                    android:text="🏠 Type"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:background="@drawable/floating_chip_glass"
-                    android:elevation="6dp"
+                    android:layout_height="36dp"
+                    android:text="Type"
+                    android:textSize="14sp"
+                    app:chipBackgroundColor="@color/gray_100"
+                    app:chipStrokeColor="@color/gray_300"
+                    app:chipStrokeWidth="1dp"
+                    android:textColor="@color/text_primary"
+                    app:checkedIconTint="@color/purple_primary"
                     android:checkable="true" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/quickFilterBeds"
                     style="@style/Widget.MaterialComponents.Chip.Filter"
                     android:layout_width="wrap_content"
-                    android:layout_height="42dp"
-                    android:text="🛏️ Beds"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:background="@drawable/floating_chip_glass"
-                    android:elevation="6dp"
+                    android:layout_height="36dp"
+                    android:text="Bedrooms"
+                    android:textSize="14sp"
+                    app:chipBackgroundColor="@color/gray_100"
+                    app:chipStrokeColor="@color/gray_300"
+                    app:chipStrokeWidth="1dp"
+                    android:textColor="@color/text_primary"
+                    app:checkedIconTint="@color/purple_primary"
                     android:checkable="true" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/quickFilterMore"
                     style="@style/Widget.MaterialComponents.Chip.Action"
                     android:layout_width="wrap_content"
-                    android:layout_height="42dp"
-                    android:text="✨ More Filters"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:background="@drawable/floating_chip_glass"
-                    android:elevation="6dp"
+                    android:layout_height="36dp"
+                    android:text="More Filters"
+                    android:textSize="14sp"
+                    app:chipBackgroundColor="@color/purple_light"
+                    app:chipStrokeWidth="0dp"
+                    android:textColor="@color/purple_primary"
                     app:chipIcon="@drawable/ic_filter"
-                    app:chipIconTint="@color/accent_cyan" />
+                    app:chipIconTint="@color/purple_primary" />
 
             </com.google.android.material.chip.ChipGroup>
 
@@ -193,103 +227,106 @@
                 android:visibility="gone"
                 android:orientation="horizontal" />
 
-            <!-- Legacy Active Filters Summary (removed to avoid duplicate ID) -->
-
-            <!-- Search Suggestions - Always Visible -->
-            <LinearLayout
+            <!-- Search Suggestions -->
+            <com.google.android.material.card.MaterialCardView
                 android:id="@+id/searchSuggestionsContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="16dp"
                 android:layout_marginHorizontal="16dp"
-                android:paddingHorizontal="24dp"
-                android:paddingVertical="20dp"
-                android:background="@drawable/glassmorphism_card"
-                android:elevation="6dp">
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="💡 Popular searches"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:alpha="0.9"
-                    android:layout_marginBottom="16dp" />
-
-                <HorizontalScrollView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:scrollbars="none">
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/searchSuggestionsChips"
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:singleLine="true"
-                        app:chipSpacingHorizontal="12dp">
+                        android:text="Popular Searches"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="12dp" />
 
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/suggestionDowntown"
-                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:scrollbars="none">
+
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/searchSuggestionsChips"
                             android:layout_width="wrap_content"
-                            android:layout_height="38dp"
-                            android:text="🏙️ Downtown"
-                            android:textSize="13sp"
-                            android:background="@drawable/floating_chip_glass"
-                            android:elevation="4dp"
-                            android:checkable="false" />
+                            android:layout_height="wrap_content"
+                            app:singleLine="true"
+                            app:chipSpacingHorizontal="8dp">
 
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/suggestionAffordable"
-                            style="@style/Widget.MaterialComponents.Chip.Choice"
-                            android:layout_width="wrap_content"
-                            android:layout_height="38dp"
-                            android:text="💸 Under $1200"
-                            android:textSize="13sp"
-                            android:background="@drawable/floating_chip_glass"
-                            android:elevation="4dp"
-                            android:checkable="false" />
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/suggestionDowntown"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="Downtown"
+                                android:textSize="14sp"
+                                app:chipBackgroundColor="@color/purple_light"
+                                android:textColor="@color/purple_primary"
+                                android:checkable="false" />
 
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/suggestion2Bed"
-                            style="@style/Widget.MaterialComponents.Chip.Choice"
-                            android:layout_width="wrap_content"
-                            android:layout_height="38dp"
-                            android:text="🏠 2 Bedroom"
-                            android:textSize="13sp"
-                            android:background="@drawable/floating_chip_glass"
-                            android:elevation="4dp"
-                            android:checkable="false" />
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/suggestionAffordable"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="Under $1200"
+                                android:textSize="14sp"
+                                app:chipBackgroundColor="@color/purple_light"
+                                android:textColor="@color/purple_primary"
+                                android:checkable="false" />
 
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/suggestionPetFriendly"
-                            style="@style/Widget.MaterialComponents.Chip.Choice"
-                            android:layout_width="wrap_content"
-                            android:layout_height="38dp"
-                            android:text="🐕 Pet Friendly"
-                            android:textSize="13sp"
-                            android:background="@drawable/floating_chip_glass"
-                            android:elevation="4dp"
-                            android:checkable="false" />
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/suggestion2Bed"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="2 Bedroom"
+                                android:textSize="14sp"
+                                app:chipBackgroundColor="@color/purple_light"
+                                android:textColor="@color/purple_primary"
+                                android:checkable="false" />
 
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/suggestionNearby"
-                            style="@style/Widget.MaterialComponents.Chip.Choice"
-                            android:layout_width="wrap_content"
-                            android:layout_height="38dp"
-                            android:text="📍 Near Me"
-                            android:textSize="13sp"
-                            android:background="@drawable/floating_chip_glass"
-                            android:elevation="4dp"
-                            android:checkable="false" />
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/suggestionPetFriendly"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="Pet Friendly"
+                                android:textSize="14sp"
+                                app:chipBackgroundColor="@color/purple_light"
+                                android:textColor="@color/purple_primary"
+                                android:checkable="false" />
 
-                    </com.google.android.material.chip.ChipGroup>
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/suggestionNearby"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="Near Me"
+                                android:textSize="14sp"
+                                app:chipBackgroundColor="@color/purple_light"
+                                android:textColor="@color/purple_primary"
+                                android:checkable="false" />
 
-                </HorizontalScrollView>
+                        </com.google.android.material.chip.ChipGroup>
 
-            </LinearLayout>
+                    </HorizontalScrollView>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Active Filters Display -->
             <LinearLayout
@@ -297,8 +334,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="32dp"
-                android:paddingHorizontal="24dp"
+                android:layout_marginTop="16dp"
+                android:paddingHorizontal="16dp"
                 android:visibility="gone">
 
                 <LinearLayout
@@ -306,17 +343,16 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="12dp">
+                    android:layout_marginBottom="8dp">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="🎯 Active Filters"
-                        android:textColor="@android:color/white"
+                        android:text="Active Filters"
+                        android:textColor="@color/text_primary"
                         android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:alpha="0.9" />
+                        android:textStyle="bold" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/clearAllFiltersButton"
@@ -324,7 +360,7 @@
                         android:layout_height="32dp"
                         android:layout_marginStart="8dp"
                         android:text="Clear All"
-                        android:textColor="@color/accent_cyan"
+                        android:textColor="@color/purple_primary"
                         android:textSize="12sp"
                         android:background="@android:color/transparent"
                         android:insetTop="0dp"
@@ -349,51 +385,48 @@
 
             </LinearLayout>
 
-            <!-- Advanced Filters - Collapsible -->
+            <!-- Advanced Filters -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="24dp"
-                android:layout_marginTop="32dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="10dp"
-                app:cardBackgroundColor="@android:color/transparent">
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/glassmorphism_card">
+                    android:orientation="vertical">
 
-                    <!-- Filters Header - Always Visible -->
+                    <!-- Filters Header -->
                     <LinearLayout
                         android:id="@+id/filtersHeader"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:paddingHorizontal="24dp"
-                        android:paddingVertical="20dp"
-                        android:background="@android:color/transparent"
+                        android:padding="16dp"
                         android:clickable="true"
                         android:focusable="true"
                         android:foreground="?android:attr/selectableItemBackground">
 
                         <ImageView
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
                             android:src="@drawable/ic_filter"
-                            android:tint="@color/accent_cyan"
+                            android:tint="@color/purple_primary"
                             android:layout_marginEnd="12dp" />
 
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="🔧 Advanced Filters"
-                            android:textColor="@android:color/white"
-                            android:textSize="18sp"
+                            android:text="Advanced Filters"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
                             android:textStyle="bold" />
 
                         <ImageView
@@ -401,51 +434,34 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_arrow_right"
-                            android:tint="@color/accent_cyan"
-                            android:alpha="0.8" />
+                            android:tint="@color/text_secondary" />
 
                     </LinearLayout>
 
-                    <!-- Filter Content - Organized in Sections -->
+                    <!-- Filter Content -->
                     <LinearLayout
                         android:id="@+id/filtersScrollView"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:visibility="gone"
-                        android:paddingHorizontal="24dp"
-                        android:paddingVertical="24dp">
+                        android:padding="16dp">
 
                         <!-- Price Range Section -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
-                            android:layout_marginBottom="28dp">
+                            android:layout_marginBottom="20dp">
 
-                            <LinearLayout
-                                android:layout_width="match_parent"
+                            <TextView
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical"
-                                android:layout_marginBottom="16dp">
-
-                                <ImageView
-                                    android:layout_width="20dp"
-                                    android:layout_height="20dp"
-                                    android:src="@drawable/ic_money"
-                                    android:tint="@color/accent_cyan"
-                                    android:layout_marginEnd="8dp" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Price Range"
-                                    android:textColor="@android:color/white"
-                                    android:textSize="16sp"
-                                    android:textStyle="bold" />
-
-                            </LinearLayout>
+                                android:text="Price Range"
+                                android:textColor="@color/text_primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:layout_marginBottom="12dp" />
 
                             <com.google.android.material.chip.ChipGroup
                                 android:id="@+id/priceChipGroup"
@@ -458,7 +474,7 @@
                                 <com.google.android.material.chip.Chip
                                     android:id="@+id/priceUnder1000"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="44dp"
+                                    android:layout_height="40dp"
                                     android:text="Under $1000"
                                     android:textSize="14sp"
                                     style="@style/Widget.MaterialComponents.Chip.Filter" />
@@ -466,7 +482,7 @@
                                 <com.google.android.material.chip.Chip
                                     android:id="@+id/price1000to1500"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="44dp"
+                                    android:layout_height="40dp"
                                     android:text="$1000 - $1500"
                                     android:textSize="14sp"
                                     style="@style/Widget.MaterialComponents.Chip.Filter" />
@@ -474,7 +490,7 @@
                                 <com.google.android.material.chip.Chip
                                     android:id="@+id/price1500to2000"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="44dp"
+                                    android:layout_height="40dp"
                                     android:text="$1500 - $2000"
                                     android:textSize="14sp"
                                     style="@style/Widget.MaterialComponents.Chip.Filter" />
@@ -482,7 +498,7 @@
                                 <com.google.android.material.chip.Chip
                                     android:id="@+id/priceOver2000"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="44dp"
+                                    android:layout_height="40dp"
                                     android:text="Over $2000"
                                     android:textSize="14sp"
                                     style="@style/Widget.MaterialComponents.Chip.Filter" />
@@ -496,31 +512,16 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
-                            android:layout_marginBottom="28dp">
+                            android:layout_marginBottom="20dp">
 
-                            <LinearLayout
-                                android:layout_width="match_parent"
+                            <TextView
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical"
-                                android:layout_marginBottom="16dp">
-
-                                <ImageView
-                                    android:layout_width="20dp"
-                                    android:layout_height="20dp"
-                                    android:src="@drawable/ic_home"
-                                    android:tint="@color/accent_cyan"
-                                    android:layout_marginEnd="8dp" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Property Type"
-                                    android:textColor="@android:color/white"
-                                    android:textSize="16sp"
-                                    android:textStyle="bold" />
-
-                            </LinearLayout>
+                                android:text="Property Type"
+                                android:textColor="@color/text_primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:layout_marginBottom="12dp" />
 
                             <com.google.android.material.chip.ChipGroup
                                 android:id="@+id/propertyTypeChipGroup"
@@ -533,32 +534,32 @@
                                 <com.google.android.material.chip.Chip
                                     android:id="@+id/typeApartment"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="44dp"
-                                    android:text="🏢 Apartment"
+                                    android:layout_height="40dp"
+                                    android:text="Apartment"
                                     android:textSize="14sp"
                                     style="@style/Widget.MaterialComponents.Chip.Filter" />
 
                                 <com.google.android.material.chip.Chip
                                     android:id="@+id/typeHouse"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="44dp"
-                                    android:text="🏠 House"
+                                    android:layout_height="40dp"
+                                    android:text="House"
                                     android:textSize="14sp"
                                     style="@style/Widget.MaterialComponents.Chip.Filter" />
 
                                 <com.google.android.material.chip.Chip
                                     android:id="@+id/typeCondo"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="44dp"
-                                    android:text="🏘️ Condo"
+                                    android:layout_height="40dp"
+                                    android:text="Condo"
                                     android:textSize="14sp"
                                     style="@style/Widget.MaterialComponents.Chip.Filter" />
 
                                 <com.google.android.material.chip.Chip
                                     android:id="@+id/typeStudio"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="44dp"
-                                    android:text="🏠 Studio"
+                                    android:layout_height="40dp"
+                                    android:text="Studio"
                                     android:textSize="14sp"
                                     style="@style/Widget.MaterialComponents.Chip.Filter" />
 
@@ -571,31 +572,16 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
-                            android:layout_marginBottom="28dp">
+                            android:layout_marginBottom="20dp">
 
-                            <LinearLayout
-                                android:layout_width="match_parent"
+                            <TextView
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical"
-                                android:layout_marginBottom="16dp">
-
-                                <ImageView
-                                    android:layout_width="20dp"
-                                    android:layout_height="20dp"
-                                    android:src="@drawable/ic_bed"
-                                    android:tint="@color/accent_cyan"
-                                    android:layout_marginEnd="8dp" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Bedrooms"
-                                    android:textColor="@android:color/white"
-                                    android:textSize="16sp"
-                                    android:textStyle="bold" />
-
-                            </LinearLayout>
+                                android:text="Bedrooms"
+                                android:textColor="@color/text_primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:layout_marginBottom="12dp" />
 
                             <com.google.android.material.chip.ChipGroup
                                 android:id="@+id/bedroomsChipGroup"
@@ -607,32 +593,32 @@
                                 <com.google.android.material.chip.Chip
                                     android:id="@+id/bedroom1"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="44dp"
-                                    android:text="🛏️ 1 Bed"
+                                    android:layout_height="40dp"
+                                    android:text="1 Bed"
                                     android:textSize="14sp"
                                     style="@style/Widget.MaterialComponents.Chip.Filter" />
 
                                 <com.google.android.material.chip.Chip
                                     android:id="@+id/bedroom2"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="44dp"
-                                    android:text="🛏️ 2 Beds"
+                                    android:layout_height="40dp"
+                                    android:text="2 Beds"
                                     android:textSize="14sp"
                                     style="@style/Widget.MaterialComponents.Chip.Filter" />
 
                                 <com.google.android.material.chip.Chip
                                     android:id="@+id/bedroom3"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="44dp"
-                                    android:text="🛏️ 3 Beds"
+                                    android:layout_height="40dp"
+                                    android:text="3 Beds"
                                     android:textSize="14sp"
                                     style="@style/Widget.MaterialComponents.Chip.Filter" />
 
                                 <com.google.android.material.chip.Chip
                                     android:id="@+id/bedroom4Plus"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="44dp"
-                                    android:text="🛏️ 4+ Beds"
+                                    android:layout_height="40dp"
+                                    android:text="4+ Beds"
                                     android:textSize="14sp"
                                     style="@style/Widget.MaterialComponents.Chip.Filter" />
 
@@ -644,15 +630,13 @@
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/clearFiltersButton"
                             android:layout_width="match_parent"
-                            android:layout_height="56dp"
+                            android:layout_height="48dp"
                             android:layout_marginTop="8dp"
-                            android:text="✨ Apply Filters"
+                            android:text="Apply Filters"
                             android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:background="@drawable/premium_button_gradient"
-                            android:textColor="@android:color/white"
-                            app:cornerRadius="28dp"
-                            android:elevation="8dp" />
+                            android:backgroundTint="@color/purple_primary"
+                            android:textColor="@color/white"
+                            app:cornerRadius="8dp" />
 
                     </LinearLayout>
 
@@ -665,7 +649,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="24dp">
+                android:layout_marginTop="8dp">
 
                 <!-- Results RecyclerView -->
                 <androidx.recyclerview.widget.RecyclerView
@@ -676,7 +660,7 @@
                     android:clipToPadding="false"
                     android:nestedScrollingEnabled="false" />
 
-                <!-- Enhanced Loading State -->
+                <!-- Loading State -->
                 <LinearLayout
                     android:id="@+id/progressBar"
                     android:layout_width="match_parent"
@@ -690,21 +674,20 @@
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:indeterminate="true"
-                        app:indicatorColor="@color/accent_cyan"
-                        app:trackColor="#33FFFFFF" />
+                        app:indicatorColor="@color/purple_primary"
+                        app:trackColor="@color/gray_200" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="🔍 Searching properties..."
-                        android:textColor="@android:color/white"
-                        android:textSize="16sp"
-                        android:alpha="0.8" />
+                        android:text="Searching properties..."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="16sp" />
 
                 </LinearLayout>
 
-                <!-- Enhanced Empty State -->
+                <!-- Empty State -->
                 <LinearLayout
                     android:id="@+id/emptyLayout"
                     android:layout_width="match_parent"
@@ -718,8 +701,7 @@
                         android:layout_width="120dp"
                         android:layout_height="120dp"
                         android:src="@drawable/ic_search_empty"
-                        android:tint="#60FFFFFF"
-                        android:alpha="0.6" />
+                        android:tint="@color/gray_400" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -728,17 +710,15 @@
                         android:text="No properties found"
                         android:textSize="20sp"
                         android:textStyle="bold"
-                        android:textColor="@android:color/white"
-                        android:alpha="0.9" />
+                        android:textColor="@color/text_primary" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Try adjusting your search criteria or filters"
+                        android:text="Try adjusting your search criteria"
                         android:textSize="14sp"
-                        android:textColor="@android:color/white"
-                        android:alpha="0.7"
+                        android:textColor="@color/text_secondary"
                         android:gravity="center" />
 
                     <com.google.android.material.button.MaterialButton
@@ -746,12 +726,12 @@
                         android:layout_width="wrap_content"
                         android:layout_height="48dp"
                         android:layout_marginTop="24dp"
-                        android:text="🔄 Clear All Filters"
+                        android:text="Clear Filters"
                         android:textSize="14sp"
                         android:background="@android:color/transparent"
-                        android:textColor="@color/accent_cyan"
-                        app:strokeColor="@color/accent_cyan"
-                        app:strokeWidth="2dp"
+                        android:textColor="@color/purple_primary"
+                        app:strokeColor="@color/purple_primary"
+                        app:strokeWidth="1dp"
                         app:cornerRadius="24dp" />
 
                 </LinearLayout>
@@ -762,13 +742,13 @@
 
     </ScrollView>
 
-    <!-- Modern Bottom Bar -->
+    <!-- Bottom Bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="@drawable/floating_dock_background"
-        android:elevation="16dp">
+        android:background="@color/white"
+        android:elevation="4dp">
 
         <!-- Results Summary -->
         <LinearLayout
@@ -776,44 +756,45 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingHorizontal="24dp"
-            android:paddingVertical="16dp">
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="12dp">
 
             <TextView
                 android:id="@+id/resultsCountText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="🏠 0 properties found"
-                android:textColor="@android:color/white"
+                android:text="0 properties found"
+                android:textColor="@color/text_primary"
                 android:textSize="16sp"
-                android:textStyle="bold"
-                android:alpha="0.9" />
+                android:textStyle="bold" />
 
             <!-- Sort Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/sortButton"
                 android:layout_width="wrap_content"
-                android:layout_height="44dp"
-                android:text="📊 Sort"
+                android:layout_height="36dp"
+                android:text="Sort"
                 android:textSize="14sp"
-                android:textColor="@color/accent_cyan"
-                android:background="@drawable/floating_chip_glass"
-                app:cornerRadius="22dp"
+                android:textColor="@color/purple_primary"
+                android:background="@android:color/transparent"
+                app:icon="@drawable/ic_arrow_right"
+                app:iconTint="@color/purple_primary"
+                app:iconGravity="end"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:minWidth="0dp"
-                android:paddingHorizontal="16dp" />
+                android:paddingHorizontal="12dp" />
 
         </LinearLayout>
 
-        <!-- Hidden Sort Options -->
+        <!-- Sort Options -->
         <HorizontalScrollView
             android:id="@+id/sortOptionsContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="24dp"
-            android:paddingBottom="16dp"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="12dp"
             android:scrollbars="none"
             android:visibility="gone">
 
@@ -829,42 +810,34 @@
                     android:id="@+id/sortRelevance"
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
-                    android:layout_height="38dp"
-                    android:text="⚡ Relevance"
+                    android:layout_height="36dp"
+                    android:text="Relevance"
                     android:textSize="13sp"
-                    android:background="@drawable/floating_chip_glass"
-                    android:elevation="4dp"
                     android:checked="true" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/sortPriceLow"
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
-                    android:layout_height="38dp"
-                    android:text="💰 Price: Low to High"
-                    android:textSize="13sp"
-                    android:background="@drawable/floating_chip_glass"
-                    android:elevation="4dp" />
+                    android:layout_height="36dp"
+                    android:text="Price: Low to High"
+                    android:textSize="13sp" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/sortPriceHigh"
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
-                    android:layout_height="38dp"
-                    android:text="💎 Price: High to Low"
-                    android:textSize="13sp"
-                    android:background="@drawable/floating_chip_glass"
-                    android:elevation="4dp" />
+                    android:layout_height="36dp"
+                    android:text="Price: High to Low"
+                    android:textSize="13sp" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/sortNewest"
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
-                    android:layout_height="38dp"
-                    android:text="🆕 Newest First"
-                    android:textSize="13sp"
-                    android:background="@drawable/floating_chip_glass"
-                    android:elevation="4dp" />
+                    android:layout_height="36dp"
+                    android:text="Newest First"
+                    android:textSize="13sp" />
 
             </com.google.android.material.chip.ChipGroup>
 
