@@ -108,6 +108,9 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             case VIEW_TYPE_TYPING:
                 View typingView = inflater.inflate(R.layout.item_chat_typing, parent, false);
                 return new TypingViewHolder(typingView);
+            case VIEW_TYPE_PROPERTY_CARD:
+                View propertyCardView = inflater.inflate(R.layout.item_chat_property_card, parent, false);
+                return new PropertyCardViewHolder(propertyCardView);
             case VIEW_TYPE_SYSTEM:
             default:
                 View systemView = inflater.inflate(R.layout.item_chat_system, parent, false);
@@ -131,6 +134,16 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         } else if (holder instanceof AiPhotoViewHolder) {
             ((AiPhotoViewHolder) holder).bind(message);
             applySlideInAnimation(holder.itemView, VIEW_TYPE_AI);
+        } else if (holder instanceof PropertyCardViewHolder) {
+            PropertyCardViewHolder propertyHolder = (PropertyCardViewHolder) holder;
+            propertyHolder.bind(message);
+            applySlideInAnimation(holder.itemView, VIEW_TYPE_AI);
+            
+            // Set click listener for contact button
+            if (propertyCardClickListener != null && message.getAssociatedListing() != null) {
+                propertyHolder.contactLandlordButton.setOnClickListener(v -> 
+                    propertyCardClickListener.onContactLandlordClick(message.getAssociatedListing()));
+            }
         } else if (holder instanceof SystemMessageViewHolder) {
             ((SystemMessageViewHolder) holder).bind(message);
         } else if (holder instanceof TypingViewHolder) {
@@ -608,6 +621,63 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         private void showImageError() {
             photoLoadingProgress.setVisibility(View.GONE);
             photoErrorOverlay.setVisibility(View.VISIBLE);
+        }
+        
+        private void animateAvatar(View avatar) {
+            avatar.animate()
+                .scaleX(1.02f).scaleY(1.02f)
+                .setDuration(800)
+                .withEndAction(() -> 
+                    avatar.animate().scaleX(1f).scaleY(1f).setDuration(800).start())
+                .start();
+        }
+    }
+    
+    static class PropertyCardViewHolder extends RecyclerView.ViewHolder {
+        TextView propertyTitle;
+        TextView propertyLocation;
+        TextView propertyPrice;
+        TextView propertyBedBath;
+        TextView propertyType;
+        TextView timestamp;
+        ImageView aiAvatar;
+        com.google.android.material.button.MaterialButton contactLandlordButton;
+        
+        PropertyCardViewHolder(View itemView) {
+            super(itemView);
+            propertyTitle = itemView.findViewById(R.id.propertyTitle);
+            propertyLocation = itemView.findViewById(R.id.propertyLocation);
+            propertyPrice = itemView.findViewById(R.id.propertyPrice);
+            propertyBedBath = itemView.findViewById(R.id.propertyBedBath);
+            propertyType = itemView.findViewById(R.id.propertyType);
+            timestamp = itemView.findViewById(R.id.timestamp);
+            aiAvatar = itemView.findViewById(R.id.aiAvatar);
+            contactLandlordButton = itemView.findViewById(R.id.contactLandlordButton);
+        }
+        
+        void bind(ChatMessage message) {
+            if (message.getAssociatedListing() != null) {
+                Listing listing = message.getAssociatedListing();
+                
+                propertyTitle.setText(listing.getTitle());
+                propertyLocation.setText(listing.getLocation());
+                propertyPrice.setText(String.format("$%,.0f/month", listing.getPrice()));
+                propertyBedBath.setText(String.format("%d bed, %d bath", listing.getBedrooms(), listing.getBathrooms()));
+                propertyType.setText(listing.getHouseType());
+                
+                // Format timestamp
+                timestamp.setText(formatTime(message.getTimestamp()));
+                
+                // Add avatar animation
+                if (aiAvatar != null) {
+                    animateAvatar(aiAvatar);
+                }
+            }
+        }
+        
+        private String formatTime(long timestamp) {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault());
+            return sdf.format(new java.util.Date(timestamp));
         }
         
         private void animateAvatar(View avatar) {
