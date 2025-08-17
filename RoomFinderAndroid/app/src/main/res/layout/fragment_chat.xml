@@ -119,6 +119,7 @@
         android:layout_height="wrap_content"
         android:clickable="true"
         android:focusable="true"
+        app:cardBackgroundColor="@color/white"
         app:cardCornerRadius="12dp"
         app:cardElevation="4dp"
         app:strokeColor="@color/purple_primary"
