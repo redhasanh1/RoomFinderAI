@@ -257,116 +257,173 @@ public class AiNegotiatorService {
         PropertyCriteria criteria = new PropertyCriteria();
         String lowerMessage = message.toLowerCase();
         
+        Log.d(TAG, "🔍 Extracting criteria from: \"" + message + "\"");
+        
         // Enhanced location extraction
         criteria.location = extractLocation(lowerMessage);
+        Log.d(TAG, "📍 Location extracted: " + criteria.location);
+        
         criteria.maxPrice = extractMaxPrice(lowerMessage);
+        Log.d(TAG, "💰 Max price extracted: " + criteria.maxPrice);
+        
         criteria.minPrice = extractMinPrice(lowerMessage);
+        Log.d(TAG, "💰 Min price extracted: " + criteria.minPrice);
+        
         criteria.propertyType = extractPropertyType(lowerMessage);
+        Log.d(TAG, "🏠 Property type extracted: " + criteria.propertyType);
+        
         criteria.bedrooms = extractBedrooms(lowerMessage);
+        Log.d(TAG, "🛏️ Bedrooms extracted: " + criteria.bedrooms);
+        
         criteria.bathrooms = extractBathrooms(lowerMessage);
+        Log.d(TAG, "🚿 Bathrooms extracted: " + criteria.bathrooms);
+        
+        Log.d(TAG, "✅ Criteria extraction complete. Has valid criteria: " + criteria.hasValidCriteria());
         
         return criteria;
     }
     
     private String extractLocation(String message) {
-        // Pattern 1: "in [location]"
+        Log.d(TAG, "🔎 Extracting location from: " + message);
+        
+        // Pattern 1: "in [location]" - most common
         if (message.contains(" in ")) {
             String[] parts = message.split(" in ");
             if (parts.length > 1) {
                 String locationPart = parts[1];
+                Log.d(TAG, "📍 Found 'in' pattern, location part: " + locationPart);
+                
                 // Take everything until next major keyword or end
-                String[] stopWords = {" with ", " under ", " over ", " for ", " that ", " where ", " near ", " around "};
+                String[] stopWords = {" with ", " under ", " over ", " for ", " that ", " where ", " near ", " around ", " at ", " priced ", " costing ", " around ", " about "};
                 for (String stopWord : stopWords) {
                     if (locationPart.contains(stopWord)) {
                         locationPart = locationPart.split(stopWord)[0];
+                        Log.d(TAG, "📍 Trimmed at stop word '" + stopWord + "': " + locationPart);
+                        break;
                     }
                 }
-                return locationPart.trim().replaceAll("[^a-zA-Z\\s]", "").trim();
+                
+                String cleanLocation = locationPart.trim().replaceAll("[^a-zA-Z\\s]", "").trim();
+                if (!cleanLocation.isEmpty()) {
+                    Log.d(TAG, "📍 Final location: " + cleanLocation);
+                    return cleanLocation;
+                }
             }
         }
         
         // Pattern 2: "near [location]", "around [location]"
-        if (message.contains(" near ") || message.contains(" around ")) {
-            String pattern = message.contains(" near ") ? " near " : " around ";
-            String[] parts = message.split(pattern);
-            if (parts.length > 1) {
-                String locationPart = parts[1].split(" ")[0];
-                return locationPart.replaceAll("[^a-zA-Z\\s]", "").trim();
+        String[] locationPatterns = {" near ", " around ", " at "};
+        for (String pattern : locationPatterns) {
+            if (message.contains(pattern)) {
+                String[] parts = message.split(pattern);
+                if (parts.length > 1) {
+                    String locationPart = parts[1];
+                    // Take first word or phrase before stop words
+                    String[] stopWords = {" with ", " under ", " over ", " for ", " that ", " priced "};
+                    for (String stopWord : stopWords) {
+                        if (locationPart.contains(stopWord)) {
+                            locationPart = locationPart.split(stopWord)[0];
+                            break;
+                        }
+                    }
+                    
+                    String cleanLocation = locationPart.trim().replaceAll("[^a-zA-Z\\s]", "").trim();
+                    if (!cleanLocation.isEmpty()) {
+                        Log.d(TAG, "📍 Found '" + pattern + "' pattern, location: " + cleanLocation);
+                        return cleanLocation;
+                    }
+                }
             }
         }
         
+        // Pattern 3: Common location names as fallback
+        String[] commonLocations = {"downtown", "midtown", "uptown", "city center", "city centre", "suburbs", "waterfront"};
+        for (String location : commonLocations) {
+            if (message.contains(location)) {
+                Log.d(TAG, "📍 Found common location: " + location);
+                return location;
+            }
+        }
+        
+        Log.d(TAG, "📍 No location found");
         return null;
     }
     
     private Integer extractMaxPrice(String message) {
+        Log.d(TAG, "💰 Extracting max price from: " + message);
+        
         // Pattern 1: "under $X", "below $X", "max $X"
-        if (message.contains("under") || message.contains("below") || message.contains("max")) {
-            String[] words = message.split("\\s+");
-            for (int i = 0; i < words.length; i++) {
-                String word = words[i].toLowerCase();
-                if ((word.equals("under") || word.equals("below") || word.equals("max")) && i + 1 < words.length) {
-                    String nextWord = words[i + 1];
-                    if (nextWord.contains("$")) {
-                        try {
-                            String priceStr = nextWord.replaceAll("[^0-9]", "");
-                            if (!priceStr.isEmpty()) {
-                                return Integer.parseInt(priceStr);
+        String[] maxKeywords = {"under", "below", "max", "maximum", "up to", "no more than"};
+        for (String keyword : maxKeywords) {
+            if (message.contains(keyword)) {
+                Log.d(TAG, "💰 Found max keyword: " + keyword);
+                
+                // Look for price after keyword
+                String[] words = message.split("\\s+");
+                for (int i = 0; i < words.length; i++) {
+                    if (words[i].toLowerCase().contains(keyword.replace(" ", ""))) {
+                        // Check next few words for price
+                        for (int j = i + 1; j < Math.min(i + 4, words.length); j++) {
+                            Integer price = parsePrice(words[j]);
+                            if (price != null) {
+                                Log.d(TAG, "💰 Max price found: " + price);
+                                return price;
                             }
-                        } catch (NumberFormatException e) {
-                            // Continue searching
                         }
                     }
                 }
             }
         }
         
-        // Pattern 2: "$X or less", "$X maximum"
+        // Pattern 2: "$X or less", "$X maximum", "$X max"
         if (message.contains("$")) {
             String[] words = message.split("\\s+");
             for (int i = 0; i < words.length; i++) {
                 if (words[i].contains("$")) {
-                    try {
-                        String priceStr = words[i].replaceAll("[^0-9]", "");
-                        if (!priceStr.isEmpty()) {
-                            int price = Integer.parseInt(priceStr);
-                            // Check if followed by max indicators
-                            if (i + 1 < words.length) {
-                                String nextWord = words[i + 1].toLowerCase();
-                                if (nextWord.equals("or") || nextWord.equals("maximum") || nextWord.equals("max")) {
-                                    return price;
-                                }
-                            }
-                            // Default to max if no other context
-                            if (!message.contains("over") && !message.contains("above") && !message.contains("min")) {
+                    Integer price = parsePrice(words[i]);
+                    if (price != null) {
+                        // Check if followed by max indicators
+                        if (i + 1 < words.length) {
+                            String nextWord = words[i + 1].toLowerCase();
+                            if (nextWord.contains("or") || nextWord.contains("max") || nextWord.contains("less")) {
+                                Log.d(TAG, "💰 Max price found (with suffix): " + price);
                                 return price;
                             }
                         }
-                    } catch (NumberFormatException e) {
-                        // Continue searching
+                        
+                        // If no min keywords present, assume it's max
+                        if (!message.contains("over") && !message.contains("above") && !message.contains("minimum") && !message.contains("more than")) {
+                            Log.d(TAG, "💰 Max price found (default): " + price);
+                            return price;
+                        }
                     }
                 }
             }
         }
         
+        Log.d(TAG, "💰 No max price found");
         return null;
     }
     
     private Integer extractMinPrice(String message) {
-        // Pattern 1: "over $X", "above $X", "min $X"
-        if (message.contains("over") || message.contains("above") || message.contains("min")) {
-            String[] words = message.split("\\s+");
-            for (int i = 0; i < words.length; i++) {
-                String word = words[i].toLowerCase();
-                if ((word.equals("over") || word.equals("above") || word.equals("min")) && i + 1 < words.length) {
-                    String nextWord = words[i + 1];
-                    if (nextWord.contains("$")) {
-                        try {
-                            String priceStr = nextWord.replaceAll("[^0-9]", "");
-                            if (!priceStr.isEmpty()) {
-                                return Integer.parseInt(priceStr);
+        Log.d(TAG, "💰 Extracting min price from: " + message);
+        
+        // Pattern 1: "over $X", "above $X", "min $X", "minimum $X"
+        String[] minKeywords = {"over", "above", "min", "minimum", "more than", "at least"};
+        for (String keyword : minKeywords) {
+            if (message.contains(keyword)) {
+                Log.d(TAG, "💰 Found min keyword: " + keyword);
+                
+                String[] words = message.split("\\s+");
+                for (int i = 0; i < words.length; i++) {
+                    if (words[i].toLowerCase().contains(keyword.replace(" ", ""))) {
+                        // Check next few words for price
+                        for (int j = i + 1; j < Math.min(i + 4, words.length); j++) {
+                            Integer price = parsePrice(words[j]);
+                            if (price != null) {
+                                Log.d(TAG, "💰 Min price found: " + price);
+                                return price;
                             }
-                        } catch (NumberFormatException e) {
-                            // Continue searching
                         }
                     }
                 }
@@ -378,25 +435,22 @@ public class AiNegotiatorService {
             String[] words = message.split("\\s+");
             for (int i = 0; i < words.length; i++) {
                 if (words[i].contains("$")) {
-                    try {
-                        String priceStr = words[i].replaceAll("[^0-9]", "");
-                        if (!priceStr.isEmpty()) {
-                            int price = Integer.parseInt(priceStr);
-                            // Check if followed by min indicators
-                            if (i + 1 < words.length) {
-                                String nextWord = words[i + 1].toLowerCase();
-                                if (nextWord.equals("or") || nextWord.equals("minimum") || nextWord.equals("min")) {
-                                    return price;
-                                }
+                    Integer price = parsePrice(words[i]);
+                    if (price != null) {
+                        // Check if followed by min indicators
+                        if (i + 1 < words.length) {
+                            String nextWords = String.join(" ", java.util.Arrays.copyOfRange(words, i + 1, Math.min(i + 3, words.length)));
+                            if (nextWords.contains("or more") || nextWords.contains("minimum") || nextWords.contains("plus")) {
+                                Log.d(TAG, "💰 Min price found (with suffix): " + price);
+                                return price;
                             }
                         }
-                    } catch (NumberFormatException e) {
-                        // Continue searching
                     }
                 }
             }
         }
         
+        Log.d(TAG, "💰 No min price found");
         return null;
     }
     
@@ -508,6 +562,31 @@ public class AiNegotiatorService {
             }
         }
         
+        return null;
+    }
+    
+    private Integer parsePrice(String word) {
+        try {
+            // Remove all non-digit characters except commas
+            String priceStr = word.replaceAll("[^0-9,]", "");
+            if (!priceStr.isEmpty()) {
+                // Remove commas and parse
+                return Integer.parseInt(priceStr.replace(",", ""));
+            }
+        } catch (NumberFormatException e) {
+            // Try text numbers for prices
+            String lowerWord = word.toLowerCase();
+            if (lowerWord.contains("thousand")) {
+                String numPart = lowerWord.replace("thousand", "").replaceAll("[^0-9]", "");
+                if (!numPart.isEmpty()) {
+                    try {
+                        return Integer.parseInt(numPart) * 1000;
+                    } catch (NumberFormatException ex) {
+                        return null;
+                    }
+                }
+            }
+        }
         return null;
     }
     
