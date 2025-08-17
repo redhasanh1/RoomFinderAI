@@ -32,6 +32,8 @@ import android.content.Intent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class AiChatFragment extends Fragment {
     
@@ -46,15 +48,17 @@ public class AiChatFragment extends Fragment {
     private AnimatorSet sendButtonReleaseAnimator;
     private LinearLayoutManager layoutManager;
     
-    // Conversation context management (like web version)
-    private String pendingUserResponse = null;
+    // Conversation context management (matching web ai-chat.js exactly)
+    private String pendingUserResponse = null; // Tracks expected user response type
     private NegotiationState negotiationState = NegotiationState.IDLE;
     private List<Listing> matchingListings = new ArrayList<>();
+    private Map<String, Boolean> activeConversations = new HashMap<>(); // Track active chat contexts
+    private List<String> conversationHistory = new ArrayList<>(); // Store conversation for context
     
     public enum NegotiationState {
-        IDLE,
-        AWAITING_CONFIRMATION,
-        NEGOTIATING
+        IDLE,           // No active negotiation context
+        AWAITING_CONFIRMATION,  // Waiting for user to confirm negotiation
+        NEGOTIATING     // Actively negotiating with landlords
     }
     
     @Override
@@ -73,7 +77,10 @@ public class AiChatFragment extends Fragment {
         setupRecyclerView();
         setupClickListeners();
         setupSendButtonAnimations();
-        loadWelcomeMessage();
+        loadConversationHistory(); // Load previous conversation like web version
+        if (conversationHistory.isEmpty()) {
+            loadWelcomeMessage(); // Only show welcome if no previous conversation
+        }
         checkNetworkConnection();
     }
     
@@ -206,51 +213,64 @@ public class AiChatFragment extends Fragment {
         scrollToBottom();
     }
     
-    // Check if user response matches conversation context (like web version)
+    // Check if user response matches conversation context (matching web ai-chat.js exactly)
     private boolean checkForNegotiationResponse(String message) {
-        Log.d(TAG, "🔍 Checking for negotiation response. State: " + negotiationState + ", Pending: " + pendingUserResponse);
-        
+        Log.d(TAG, "🔍 [NEGOTIATION CHECK] Starting check for message: " + message);
         String cleanMessage = message.toLowerCase().trim();
         
-        // Check if we're awaiting confirmation for negotiations
-        if (negotiationState == NegotiationState.AWAITING_CONFIRMATION && 
-            "negotiate_offer".equals(pendingUserResponse)) {
+        // First check: Do we have any active conversations waiting for user response?
+        boolean hasActiveContext = pendingUserResponse != null || !activeConversations.isEmpty();
+        
+        if (hasActiveContext) {
+            Log.d(TAG, "🔍 [NEGOTIATION CHECK] Has active context, checking responses...");
             
-            // Check for affirmative responses
-            boolean isAffirmative = cleanMessage.contains("yes") || 
-                                  cleanMessage.contains("sure") || 
-                                  cleanMessage.contains("ok") || 
-                                  cleanMessage.contains("okay") || 
-                                  cleanMessage.contains("go ahead") || 
-                                  cleanMessage.contains("help me") || 
-                                  cleanMessage.contains("negotiate") || 
-                                  cleanMessage.equals("y");
+            // Check for affirmative responses (matching web version exactly)
+            String[] affirmativeResponses = {"yes", "sure", "ok", "okay", "please", "go ahead", 
+                                            "proceed", "contact them", "negotiate", "send message"};
+            boolean isAffirmative = false;
+            for (String response : affirmativeResponses) {
+                if (cleanMessage.contains(response)) {
+                    isAffirmative = true;
+                    break;
+                }
+            }
             
             if (isAffirmative && !matchingListings.isEmpty()) {
-                Log.d(TAG, "✅ Affirmative response detected, showing contact options");
+                Log.d(TAG, "✅ [NEGOTIATION CHECK] Affirmative response detected, starting negotiations");
+                
+                ChatMessage aiMessage = ChatMessage.createAiMessage(
+                    "🤖 Great! I'll contact the landlords for you using smart negotiation strategies..."
+                );
+                messages.add(aiMessage);
+                chatAdapter.notifyItemInserted(messages.size() - 1);
+                scrollToBottom();
                 
                 // Clear pending response
                 pendingUserResponse = null;
-                negotiationState = NegotiationState.IDLE;
+                negotiationState = NegotiationState.NEGOTIATING;
                 
-                // Show property cards with contact buttons instead of fake negotiations
-                showPropertyContactOptions();
+                // Start negotiations for all matching listings (like web version)
+                mainHandler.postDelayed(() -> startNegotiationsForAllListings(), 1000);
                 return true;
             }
             
             // Check for negative responses
-            boolean isNegative = cleanMessage.contains("no") || 
-                               cleanMessage.contains("not") || 
-                               cleanMessage.contains("don't") || 
-                               cleanMessage.contains("nope") || 
-                               cleanMessage.equals("n");
+            String[] negativeResponses = {"no", "not", "don't", "nope", "cancel", "nevermind"};
+            boolean isNegative = false;
+            for (String response : negativeResponses) {
+                if (cleanMessage.contains(response)) {
+                    isNegative = true;
+                    break;
+                }
+            }
             
             if (isNegative) {
-                Log.d(TAG, "❌ Negative response detected, canceling negotiations");
+                Log.d(TAG, "❌ [NEGOTIATION CHECK] Negative response detected, canceling");
                 
                 // Clear pending response
                 pendingUserResponse = null;
                 negotiationState = NegotiationState.IDLE;
+                activeConversations.clear();
                 
                 ChatMessage cancelMessage = ChatMessage.createAiMessage(
                     "👍 No problem! Feel free to ask if you need help with anything else, like finding more properties or getting rental advice."
@@ -262,6 +282,30 @@ public class AiChatFragment extends Fragment {
             }
         }
         
+        // Check for direct negotiation requests about specific listings
+        String[] negotiationKeywords = {"negotiate", "contact", "message", "talk to landlord", "reach out"};
+        boolean hasNegotiationKeyword = false;
+        for (String keyword : negotiationKeywords) {
+            if (cleanMessage.contains(keyword)) {
+                hasNegotiationKeyword = true;
+                break;
+            }
+        }
+        
+        if (hasNegotiationKeyword && !matchingListings.isEmpty()) {
+            Log.d(TAG, "✅ [NEGOTIATION CHECK] Direct negotiation request detected");
+            ChatMessage aiMessage = ChatMessage.createAiMessage(
+                "🤖 I'll help you negotiate with the landlords. Starting contact now..."
+            );
+            messages.add(aiMessage);
+            chatAdapter.notifyItemInserted(messages.size() - 1);
+            scrollToBottom();
+            
+            mainHandler.postDelayed(() -> startNegotiationsForAllListings(), 1000);
+            return true;
+        }
+        
+        Log.d(TAG, "❌ [NEGOTIATION CHECK] No negotiation response detected");
         return false;
     }
     
@@ -282,6 +326,10 @@ public class AiChatFragment extends Fragment {
         ChatMessage userMessage = ChatMessage.createUserMessage(messageText);
         messages.add(userMessage);
         chatAdapter.notifyItemInserted(messages.size() - 1);
+        
+        // Save conversation history after each message (like web version)
+        conversationHistory.add(messageText);
+        saveConversationHistory();
         
         // Clear input and disable sending
         binding.messageInput.setText("");
@@ -340,6 +388,30 @@ public class AiChatFragment extends Fragment {
     }
     
     private void searchProperties(AiNegotiatorService.PropertyCriteria criteria) {
+        // Log the criteria being used for search
+        Log.d(TAG, "🔍 Search Criteria Debug:");
+        Log.d(TAG, "  Location: " + (criteria.location != null ? criteria.location : "not specified"));
+        Log.d(TAG, "  Max Price: " + (criteria.maxPrice != null ? "$" + criteria.maxPrice : "not specified"));
+        Log.d(TAG, "  Min Price: " + (criteria.minPrice != null ? "$" + criteria.minPrice : "not specified"));
+        Log.d(TAG, "  Property Type: " + (criteria.propertyType != null ? criteria.propertyType : "not specified"));
+        Log.d(TAG, "  Bedrooms: " + (criteria.bedrooms != null ? criteria.bedrooms : "not specified"));
+        Log.d(TAG, "  Bathrooms: " + (criteria.bathrooms != null ? criteria.bathrooms : "not specified"));
+        
+        // Validate we have at least some criteria
+        if (!criteria.hasValidCriteria()) {
+            Log.w(TAG, "⚠️ No valid search criteria extracted!");
+            ChatMessage errorMessage = ChatMessage.createAiMessage(
+                "I couldn't extract specific search criteria from your message. Please try being more specific, like:\n" +
+                "• \"2 bedroom apartment in downtown under $2000\"\n" +
+                "• \"House in Chicago for $1500\"\n" +
+                "• \"Studio apartment under $1000\""
+            );
+            messages.add(errorMessage);
+            chatAdapter.notifyItemInserted(messages.size() - 1);
+            scrollToBottom();
+            return;
+        }
+        
         addSystemMessage("🔍 Searching for properties that match your criteria...", ChatMessage.MessageType.SYSTEM_MESSAGE);
         
         SupabaseService supabaseService = SupabaseService.getInstance();
@@ -418,7 +490,34 @@ public class AiChatFragment extends Fragment {
         scrollToBottom();
     }
     
-    // Start negotiations for all matching listings (like web version)
+    // Start negotiations for all matching listings (matching web ai-chat.js)
+    private void startNegotiationsForAllListings() {
+        Log.d(TAG, "📧 Starting negotiations for all matching listings");
+        
+        if (matchingListings.isEmpty()) {
+            ChatMessage noListingsMessage = ChatMessage.createAiMessage(
+                "No listings available for negotiation. Please search for properties first."
+            );
+            messages.add(noListingsMessage);
+            chatAdapter.notifyItemInserted(messages.size() - 1);
+            scrollToBottom();
+            return;
+        }
+        
+        // Show AI response about helping with negotiations
+        ChatMessage helpMessage = ChatMessage.createAiMessage(
+            "🤖 Great! I'll help you contact the landlords using smart negotiation strategies. " +
+            "Here are the properties you can contact:"
+        );
+        messages.add(helpMessage);
+        chatAdapter.notifyItemInserted(messages.size() - 1);
+        scrollToBottom();
+        
+        // Now show property cards with contact buttons (like web version)
+        showPropertyContactOptions();
+    }
+    
+    // Show property contact options (updated to match web flow)
     private void showPropertyContactOptions() {
         Log.d(TAG, "📋 Showing contact options for " + matchingListings.size() + " properties");
         
@@ -607,9 +706,109 @@ public class AiChatFragment extends Fragment {
         }
     }
     
+    // Load conversation history from SharedPreferences (matching web localStorage)
+    private void loadConversationHistory() {
+        try {
+            AuthManager authManager = AuthManager.getInstance(requireContext());
+            String userEmail = authManager.isUserAuthenticated() ? authManager.getUserEmail() : "anonymous";
+            String storageKey = "ai_negotiator_chat_" + userEmail;
+            
+            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("ai_chat", android.content.Context.MODE_PRIVATE);
+            String savedHistory = prefs.getString(storageKey, null);
+            
+            if (savedHistory != null && !savedHistory.isEmpty()) {
+                // Parse saved history and restore messages
+                String[] messages = savedHistory.split("\\|\\|\\|");
+                for (String msg : messages) {
+                    if (msg.contains(":::")) {
+                        String[] parts = msg.split(":::");
+                        if (parts.length == 2) {
+                            String role = parts[0];
+                            String content = parts[1];
+                            conversationHistory.add(content);
+                            
+                            // Display the message
+                            if ("user".equals(role)) {
+                                ChatMessage userMessage = ChatMessage.createUserMessage(content);
+                                this.messages.add(userMessage);
+                            } else {
+                                ChatMessage aiMessage = ChatMessage.createAiMessage(content);
+                                this.messages.add(aiMessage);
+                            }
+                        }
+                    }
+                }
+                
+                if (!this.messages.isEmpty()) {
+                    chatAdapter.notifyDataSetChanged();
+                    scrollToBottom();
+                    Log.d(TAG, "📂 Loaded " + this.messages.size() + " messages from history");
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading conversation history: " + e.getMessage());
+            conversationHistory.clear();
+        }
+    }
+    
+    // Save conversation history to SharedPreferences (matching web localStorage)
+    private void saveConversationHistory() {
+        try {
+            AuthManager authManager = AuthManager.getInstance(requireContext());
+            String userEmail = authManager.isUserAuthenticated() ? authManager.getUserEmail() : "anonymous";
+            String storageKey = "ai_negotiator_chat_" + userEmail;
+            
+            // Build history string
+            StringBuilder historyBuilder = new StringBuilder();
+            for (int i = 0; i < messages.size(); i++) {
+                ChatMessage msg = messages.get(i);
+                if (msg.getSender().equals("user")) {
+                    historyBuilder.append("user:::").append(msg.getContent());
+                } else if (msg.getSender().equals("ai")) {
+                    historyBuilder.append("ai:::").append(msg.getContent());
+                }
+                
+                if (i < messages.size() - 1) {
+                    historyBuilder.append("|||");
+                }
+            }
+            
+            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("ai_chat", android.content.Context.MODE_PRIVATE);
+            prefs.edit().putString(storageKey, historyBuilder.toString()).apply();
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error saving conversation history: " + e.getMessage());
+        }
+    }
+    
+    // Clear conversation history (matching web version)
+    private void clearConversationHistory() {
+        try {
+            AuthManager authManager = AuthManager.getInstance(requireContext());
+            String userEmail = authManager.isUserAuthenticated() ? authManager.getUserEmail() : "anonymous";
+            String storageKey = "ai_negotiator_chat_" + userEmail;
+            
+            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("ai_chat", android.content.Context.MODE_PRIVATE);
+            prefs.edit().remove(storageKey).apply();
+            
+            conversationHistory.clear();
+            messages.clear();
+            chatAdapter.notifyDataSetChanged();
+            
+            // Show welcome message after clearing
+            loadWelcomeMessage();
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error clearing conversation history: " + e.getMessage());
+        }
+    }
+    
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        
+        // Save conversation history before destroying view
+        saveConversationHistory();
         
         // Cancel any pending network requests
         NetworkUtils.cancelAllRequests();

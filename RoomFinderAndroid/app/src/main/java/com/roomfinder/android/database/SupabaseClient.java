@@ -211,51 +211,92 @@ public class SupabaseClient {
         try {
             StringBuilder urlBuilder = new StringBuilder(baseUrl + "listings?select=*");
             
-            // Add filters
-            List<String> filters = new ArrayList<>();
+            // Build separate filter groups for proper query construction
+            List<String> standardFilters = new ArrayList<>();
+            String locationFilter = null;
             
+            // Add standard equality and comparison filters
             if (minPrice != null) {
-                filters.add("price.gte." + minPrice);
+                standardFilters.add("price.gte." + minPrice);
             }
             if (maxPrice != null) {
-                filters.add("price.lte." + maxPrice);
+                standardFilters.add("price.lte." + maxPrice);
             }
             if (bedrooms != null) {
-                filters.add("bedrooms.eq." + bedrooms);
+                standardFilters.add("bedrooms.eq." + bedrooms);
             }
             if (bathrooms != null) {
-                filters.add("bathrooms.eq." + bathrooms);
+                standardFilters.add("bathrooms.eq." + bathrooms);
             }
             if (propertyType != null && !propertyType.isEmpty()) {
-                filters.add("house_type.ilike." + java.net.URLEncoder.encode("%" + propertyType + "%", "UTF-8"));
-            }
-            if (location != null && !location.trim().isEmpty()) {
-                String encodedLocation = java.net.URLEncoder.encode("%" + location.toLowerCase() + "%", "UTF-8");
-                filters.add("or=(city.ilike." + encodedLocation + ",street.ilike." + encodedLocation + ")");
+                standardFilters.add("house_type.ilike." + java.net.URLEncoder.encode("%" + propertyType + "%", "UTF-8"));
             }
             
-            if (!filters.isEmpty()) {
-                urlBuilder.append("&").append(String.join("&", filters));
+            // Handle location filter separately to avoid query syntax conflicts
+            if (location != null && !location.trim().isEmpty()) {
+                String encodedLocation = java.net.URLEncoder.encode("%" + location.toLowerCase() + "%", "UTF-8");
+                locationFilter = "or=(city.ilike." + encodedLocation + ",street.ilike." + encodedLocation + ")";
+            }
+            
+            // DEBUG: Log what filters we have before constructing query
+            Log.d(TAG, "📋 Filter Debug:");
+            Log.d(TAG, "  - Standard filters count: " + standardFilters.size());
+            for (String filter : standardFilters) {
+                Log.d(TAG, "    • " + filter);
+            }
+            Log.d(TAG, "  - Location filter: " + (locationFilter != null ? locationFilter : "none"));
+            
+            // Construct query based on what filters we have
+            // IMPORTANT: Supabase PostgREST doesn't use "and=()" syntax, just combine filters with &
+            if (!standardFilters.isEmpty() || locationFilter != null) {
+                // Add all standard filters first
+                if (!standardFilters.isEmpty()) {
+                    urlBuilder.append("&").append(String.join("&", standardFilters));
+                    Log.d(TAG, "🔍 Added standard filters");
+                }
+                
+                // Add location filter if present
+                if (locationFilter != null) {
+                    urlBuilder.append("&").append(locationFilter);
+                    Log.d(TAG, "🔍 Added location filter");
+                }
+            } else {
+                Log.w(TAG, "⚠️ No valid filters provided - this will return ALL listings!");
+                // Return empty list instead of all listings when no criteria provided
+                Log.d(TAG, "Returning empty list instead of all listings due to no valid criteria");
+                return new ArrayList<>();
             }
             
             urlBuilder.append("&order=created_at.desc");
             
+            String finalUrl = urlBuilder.toString();
+            Log.d(TAG, "🌐 Enhanced filtering listings with URL: " + finalUrl);
+            
+            // Validate URL construction
+            if (finalUrl.contains("&and=") && finalUrl.contains("&or=")) {
+                Log.e(TAG, "❌ Invalid query: mixing AND and OR at top level");
+                return new ArrayList<>();
+            }
+            
             Request request = new Request.Builder()
-                    .url(urlBuilder.toString())
+                    .url(finalUrl)
                     .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
                     .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
                     .addHeader("Content-Type", "application/json")
                     .build();
             
-            Log.d(TAG, "Enhanced filtering listings with URL: " + urlBuilder.toString());
-            
             try (Response response = httpClient.newCall(request).execute()) {
                 if (!response.isSuccessful()) {
-                    Log.e(TAG, "Enhanced filter error: " + response.code() + " - " + response.message());
+                    String errorBody = response.body() != null ? response.body().string() : "Unknown error";
+                    Log.e(TAG, "❌ Enhanced filter error: " + response.code() + " - " + response.message());
+                    Log.e(TAG, "❌ Error response: " + errorBody);
+                    Log.e(TAG, "❌ Failed URL: " + finalUrl);
                     return new ArrayList<>();
                 }
                 
                 String responseBody = response.body().string();
+                Log.d(TAG, "✅ Filter response received, length: " + responseBody.length());
+                
                 Type listType = new TypeToken<List<Listing>>(){}.getType();
                 List<Listing> listings = gson.fromJson(responseBody, listType);
                 
@@ -263,12 +304,22 @@ public class SupabaseClient {
                     listings = new ArrayList<>();
                 }
                 
-                Log.d(TAG, "Enhanced filter returned " + listings.size() + " listings");
+                Log.d(TAG, "✅ Enhanced filter returned " + listings.size() + " listings (filtered results)");
+                
+                // Additional validation - log first few results for debugging
+                if (!listings.isEmpty()) {
+                    Log.d(TAG, "📋 Sample results:");
+                    for (int i = 0; i < Math.min(3, listings.size()); i++) {
+                        Listing listing = listings.get(i);
+                        Log.d(TAG, "  " + (i + 1) + ". " + listing.getTitle() + " - $" + listing.getPrice() + " - " + listing.getLocation());
+                    }
+                }
+                
                 return listings;
             }
             
         } catch (Exception e) {
-            Log.e(TAG, "Error in enhanced filtering listings: " + e.getMessage(), e);
+            Log.e(TAG, "❌ Error in enhanced filtering listings: " + e.getMessage(), e);
             return new ArrayList<>();
         }
     }
