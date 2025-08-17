@@ -38,6 +38,7 @@
       "Bash(pgrep:*)",
       "Bash(git restore:*)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits"
   }
 }
