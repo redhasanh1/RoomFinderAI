@@ -73,6 +73,7 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
     
     // AI negotiator integration
     private String pendingMessageTemplate;
+    private String conversationType;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,18 +121,25 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
         String landlordEmail = intent.getStringExtra("LANDLORD_EMAIL");
         String landlordName = intent.getStringExtra("LANDLORD_NAME");
         String propertyTitle = intent.getStringExtra("PROPERTY_TITLE");
-        String conversationType = intent.getStringExtra("CONVERSATION_TYPE");
+        conversationType = intent.getStringExtra("CONVERSATION_TYPE");
         String aiMessageTemplate = intent.getStringExtra("AI_MESSAGE_TEMPLATE");
         
         // If coming from AI negotiator, set up for landlord contact
         if ("LANDLORD_CONTACT".equals(conversationType) && landlordEmail != null) {
             otherUserEmail = landlordEmail;
-            listingTitle = propertyTitle != null ? propertyTitle : "Property";
+            listingTitle = propertyTitle != null ? propertyTitle : "Property Inquiry";
+            
+            // Create a virtual listing for AI negotiator conversations
+            listingId = "ai_property_" + System.currentTimeMillis(); // Unique ID
+            listingOwnerEmail = landlordEmail;
+            
+            Log.d(TAG, "AI Negotiator setup - landlord: " + landlordEmail + ", property: " + propertyTitle);
             
             // Pre-populate message input with AI template if provided
             if (aiMessageTemplate != null && !aiMessageTemplate.isEmpty()) {
                 // Store template to set after UI is initialized
                 pendingMessageTemplate = aiMessageTemplate;
+                Log.d(TAG, "AI template prepared for pre-population");
             }
         }
         
@@ -145,7 +153,15 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
             currentListing = new Listing();
             currentListing.setId(listingId);
             currentListing.setTitle(listingTitle);
-            currentListing.setUserEmail(listingOwnerEmail);
+            currentListing.setUserEmail(listingOwnerEmail != null ? listingOwnerEmail : otherUserEmail);
+            
+            // For AI negotiator conversations, set basic property details
+            if ("LANDLORD_CONTACT".equals(conversationType)) {
+                currentListing.setPrice(0.0); // Will be set later if needed
+                currentListing.setHouseType("Property"); // Generic type
+                currentListing.setCity("TBD"); // To be determined
+                Log.d(TAG, "Created virtual listing for AI negotiator: " + listingId);
+            }
         }
         
         Log.d(TAG, "Intent data - listingId: " + listingId + ", otherUser: " + otherUserEmail + ", conversationId: " + conversationId);
