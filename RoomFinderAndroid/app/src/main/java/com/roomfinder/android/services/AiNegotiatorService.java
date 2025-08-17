@@ -18,6 +18,9 @@ public class AiNegotiatorService {
     
     private OkHttpClient client;
     private List<ChatMessage> conversationHistory;
+    private int retryCount = 0;
+    private static final int MAX_RETRIES = 3;
+    private static final long RETRY_DELAY_MS = 2000; // 2 seconds
     
     public AiNegotiatorService() {
         this.client = new OkHttpClient.Builder()
@@ -85,23 +88,44 @@ public class AiNegotiatorService {
     
     // Process user message and get AI response
     public void processMessage(String userMessage, AiResponseCallback callback) {
-        Log.d(TAG, "Processing message: " + userMessage);
+        // Reset retry count for new message
+        retryCount = 0;
+        processMessageWithRetry(userMessage, callback);
+    }
+    
+    private void processMessageWithRetry(String userMessage, AiResponseCallback callback) {
+        Log.d(TAG, "Processing message (attempt " + (retryCount + 1) + "): " + userMessage);
         
         // Validate API key
-        if (ApiKeys.OPENAI_API_KEY == null || ApiKeys.OPENAI_API_KEY.isEmpty()) {
+        if (ApiKeys.OPENAI_API_KEY == null || ApiKeys.OPENAI_API_KEY.isEmpty() || 
+            "your_openai_api_key_here".equals(ApiKeys.OPENAI_API_KEY)) {
             Log.e(TAG, "OpenAI API key is not configured");
-            callback.onError("AI service not configured. Please contact support.");
+            callback.onError("AI service not configured. Please set your OpenAI API key in the environment variables.");
             return;
         }
         
-        // Add user message to conversation history
-        conversationHistory.add(new ChatMessage("user", userMessage));
+        // Validate and sanitize user input
+        if (userMessage == null || userMessage.trim().isEmpty()) {
+            callback.onError("Please enter a message");
+            return;
+        }
+        
+        // Limit message length to prevent excessive API costs
+        String sanitizedMessage = userMessage.trim();
+        if (sanitizedMessage.length() > 1000) {
+            sanitizedMessage = sanitizedMessage.substring(0, 1000) + "...";
+        }
+        
+        // Add user message to conversation history only on first attempt
+        if (retryCount == 0) {
+            conversationHistory.add(new ChatMessage("user", sanitizedMessage));
+        }
         
         // Build the system prompt for the AI negotiator
         String systemPrompt = buildSystemPrompt();
         
         try {
-            JSONObject requestBody = buildOpenAiRequest(systemPrompt, userMessage);
+            JSONObject requestBody = buildOpenAiRequest(systemPrompt, sanitizedMessage);
             Request request = new Request.Builder()
                     .url(OPENAI_API_URL)
                     .addHeader("Authorization", "Bearer " + ApiKeys.OPENAI_API_KEY)

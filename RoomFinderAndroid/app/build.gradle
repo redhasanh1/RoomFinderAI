@@ -14,6 +14,10 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Build config fields for API keys
+        buildConfigField "String", "OPENAI_API_KEY", "\"${System.getenv('OPENAI_API_KEY') ?: 'your_openai_api_key_here'}\""
+        buildConfigField "String", "OPENAI_ORG_ID", "\"${System.getenv('OPENAI_ORG_ID') ?: 'your_openai_org_id_here'}\""
     }
 
     buildTypes {
@@ -30,6 +34,7 @@ android {
     
     buildFeatures {
         viewBinding true
+        buildConfig true
     }
     
     packagingOptions {

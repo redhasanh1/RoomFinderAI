@@ -26,6 +26,7 @@ import com.roomfinder.android.models.Listing;
 import com.roomfinder.android.services.RealTimeChatService;
 import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.utils.ApiKeys;
+import com.roomfinder.android.services.AttachmentUploadService;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +45,7 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
     private static final int REQUEST_STORAGE_PERMISSION = 1002;
     private static final int REQUEST_IMAGE_CAPTURE = 2001;
     private static final int REQUEST_IMAGE_PICK = 2002;
+    private static final int REQUEST_DOCUMENT_PICK = 2003;
     
     private ActivityIndividualChatBinding binding;
     private ChatAdapter chatAdapter;
@@ -65,6 +67,9 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
     // Photo handling
     private Uri currentPhotoUri;
     private String currentPhotoPath;
+    
+    // Attachment service
+    private AttachmentUploadService attachmentService;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,6 +98,7 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
         
         setupUI();
         initializeChatService();
+        initializeServices();
     }
     
     private void getIntentData() {
@@ -157,6 +163,10 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
             return email.substring(0, atIndex);
         }
         return email;
+    }
+    
+    private void initializeServices() {
+        attachmentService = new AttachmentUploadService(this);
     }
     
     private void initializeChatService() {
@@ -260,10 +270,10 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
      * Show attachment options dialog
      */
     private void showAttachmentOptions() {
-        String[] options = {"Camera", "Gallery"};
+        String[] options = {"Camera", "Photo Gallery", "Documents"};
         
         new MaterialAlertDialogBuilder(this)
-                .setTitle("Add Photo")
+                .setTitle("Add Attachment")
                 .setItems(options, (dialog, which) -> {
                     switch (which) {
                         case 0:
@@ -271,6 +281,9 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
                             break;
                         case 1:
                             openGallery();
+                            break;
+                        case 2:
+                            openDocumentPicker();
                             break;
                     }
                 })
@@ -382,6 +395,34 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
     }
     
     /**
+     * Open document picker for PDF and Word documents
+     */
+    private void openDocumentPicker() {
+        try {
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            
+            // Specify allowed MIME types
+            String[] mimeTypes = {
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            };
+            intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
+            
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                startActivityForResult(Intent.createChooser(intent, "Select Document"), REQUEST_DOCUMENT_PICK);
+            } else {
+                Toast.makeText(this, "No document picker available", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error opening document picker", e);
+            Toast.makeText(this, "Error opening document picker", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
      * Create a temporary file for camera photo
      */
     private File createImageFile() throws IOException {
@@ -459,6 +500,13 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
                         Toast.makeText(this, "No photo selected", Toast.LENGTH_SHORT).show();
                     }
                     break;
+                case REQUEST_DOCUMENT_PICK:
+                    if (data != null && data.getData() != null) {
+                        handleDocumentSelected(data.getData());
+                    } else {
+                        Toast.makeText(this, "No document selected", Toast.LENGTH_SHORT).show();
+                    }
+                    break;
             }
         }
     }
@@ -490,9 +538,89 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
     private void handlePhotoSelected(Uri photoUri) {
         Log.d(TAG, "Photo selected: " + photoUri.toString());
         
-        // TODO: Show photo preview dialog with caption input
-        // For now, directly upload and send
-        uploadAndSendPhoto(photoUri, null);
+        // Use new attachment service for photos
+        handleAttachmentSelected(photoUri, true);
+    }
+    
+    /**
+     * Handle selected document and prepare for sending
+     */
+    private void handleDocumentSelected(Uri documentUri) {
+        Log.d(TAG, "Document selected: " + documentUri.toString());
+        
+        // Use new attachment service for documents
+        handleAttachmentSelected(documentUri, false);
+    }
+    
+    /**
+     * Handle any attachment (photo or document) using AttachmentUploadService
+     */
+    private void handleAttachmentSelected(Uri attachmentUri, boolean isPhoto) {
+        if (conversationId == null) {
+            Toast.makeText(this, "Cannot send attachment: No conversation", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Validate file first
+        AttachmentUploadService.FileValidationResult validation = attachmentService.validateFile(attachmentUri);
+        if (!validation.isValid) {
+            Toast.makeText(this, validation.error, Toast.LENGTH_LONG).show();
+            return;
+        }
+        
+        // Generate file name
+        String fileName = AttachmentUploadService.generateFileName(null, validation.mimeType);
+        
+        // Create file message with temporary URI (for immediate display)
+        ChatMessage fileMessage = ChatMessage.createFileMessage(fileName, attachmentUri.toString(), currentUserEmail, conversationId);
+        fileMessage.setFileType(validation.mimeType);
+        fileMessage.setFileSize(validation.fileSize);
+        
+        // Add to local messages immediately for better UX
+        runOnUiThread(() -> {
+            messages.add(fileMessage);
+            chatAdapter.notifyItemInserted(messages.size() - 1);
+            scrollToBottom();
+        });
+        
+        // Start background upload
+        attachmentService.uploadFile(attachmentUri, fileName, conversationId, new AttachmentUploadService.UploadCallback() {
+            @Override
+            public void onSuccess(String publicUrl, String fileName, String mimeType) {
+                runOnUiThread(() -> {
+                    // Update message with public URL
+                    fileMessage.setFileUrl(publicUrl);
+                    
+                    // Send through chat service
+                    chatService.sendFileMessage(conversationId, fileName, publicUrl, null, IndividualChatActivity.this);
+                    
+                    String fileType = AttachmentUploadService.isImageFile(mimeType) ? "Photo" : "Document";
+                    Toast.makeText(IndividualChatActivity.this, fileType + " shared successfully!", Toast.LENGTH_SHORT).show();
+                });
+            }
+            
+            @Override
+            public void onProgress(int percentage) {
+                // TODO: Show progress indicator in UI
+                Log.d(TAG, "Upload progress: " + percentage + "%");
+            }
+            
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    Toast.makeText(IndividualChatActivity.this, "Upload failed: " + error, Toast.LENGTH_LONG).show();
+                    
+                    // Remove failed message from list
+                    for (int i = messages.size() - 1; i >= 0; i--) {
+                        if (messages.get(i) == fileMessage) {
+                            messages.remove(i);
+                            chatAdapter.notifyItemRemoved(i);
+                            break;
+                        }
+                    }
+                });
+            }
+        });
     }
     
     /**
@@ -549,9 +677,14 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
                 byteArrayOutputStream.close();
                 
                 // Try to upload to Supabase Storage
-                String bucketName = "chat-photos";
+                String bucketName = "chat-attachments";
                 String uploadPath = "conversations/" + conversationId + "/" + fileName;
-                String supabaseStorageUrl = ApiKeys.SUPABASE_URL + "storage/v1/object/" + bucketName + "/" + uploadPath;
+                // Fix URL construction to avoid double slashes
+                String baseUrl = ApiKeys.SUPABASE_URL;
+                if (baseUrl.endsWith("/")) {
+                    baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+                }
+                String supabaseStorageUrl = baseUrl + "/storage/v1/object/" + bucketName + "/" + uploadPath;
                 
                 Log.d(TAG, "Attempting to upload photo to: " + supabaseStorageUrl);
                 
@@ -574,7 +707,7 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
                 
                 if (response.isSuccessful()) {
                     // Success: Use Supabase Storage URL
-                    String publicUrl = ApiKeys.SUPABASE_URL + "storage/v1/object/public/" + bucketName + "/" + uploadPath;
+                    String publicUrl = baseUrl + "/storage/v1/object/public/" + bucketName + "/" + uploadPath;
                     photoMessage.setFileUrl(publicUrl);
                     
                     Log.d(TAG, "Photo uploaded successfully to Supabase: " + publicUrl);
