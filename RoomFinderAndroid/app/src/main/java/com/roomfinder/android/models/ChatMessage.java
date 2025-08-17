@@ -18,6 +18,7 @@ public class ChatMessage {
     private String fileName; // For file messages
     private Long fileSize; // For file messages
     private String fileType; // For file messages
+    private Listing associatedListing; // For property card messages
     
     public enum MessageType {
         TEXT,
@@ -27,7 +28,8 @@ public class ChatMessage {
         SYSTEM_MESSAGE,
         ERROR,
         USER_MESSAGE,
-        FILE_MESSAGE
+        FILE_MESSAGE,
+        PROPERTY_CARD
     }
     
     // Constructors
@@ -99,6 +101,12 @@ public class ChatMessage {
     public static ChatMessage createTypingIndicator() {
         ChatMessage message = new ChatMessage("AI is typing...", "ai", MessageType.SYSTEM_MESSAGE);
         message.setTyping(true);
+        return message;
+    }
+    
+    public static ChatMessage createPropertyCardMessage(String content, Listing listing) {
+        ChatMessage message = new ChatMessage(content, "ai", MessageType.PROPERTY_CARD);
+        message.setAssociatedListing(listing);
         return message;
     }
     
@@ -225,6 +233,14 @@ public class ChatMessage {
     
     public void setDelivered(boolean delivered) {
         this.delivered = delivered;
+    }
+    
+    public Listing getAssociatedListing() {
+        return associatedListing;
+    }
+    
+    public void setAssociatedListing(Listing associatedListing) {
+        this.associatedListing = associatedListing;
     }
     
     // Helper methods

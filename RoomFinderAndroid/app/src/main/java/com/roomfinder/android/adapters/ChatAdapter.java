@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.roomfinder.android.R;
 import com.roomfinder.android.models.ChatMessage;
+import com.roomfinder.android.models.Listing;
 import java.util.List;
 
 public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -25,9 +26,15 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int VIEW_TYPE_TYPING = 4;
     private static final int VIEW_TYPE_USER_PHOTO = 5;
     private static final int VIEW_TYPE_AI_PHOTO = 6;
+    private static final int VIEW_TYPE_PROPERTY_CARD = 7;
     
     private List<ChatMessage> messages;
     private String currentUserEmail;
+    private OnPropertyCardClickListener propertyCardClickListener;
+    
+    public interface OnPropertyCardClickListener {
+        void onContactLandlordClick(Listing listing);
+    }
     
     public ChatAdapter(List<ChatMessage> messages) {
         this.messages = messages;
@@ -38,6 +45,10 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         this.currentUserEmail = currentUserEmail;
     }
     
+    public void setOnPropertyCardClickListener(OnPropertyCardClickListener listener) {
+        this.propertyCardClickListener = listener;
+    }
+    
     @Override
     public int getItemViewType(int position) {
         ChatMessage message = messages.get(position);
@@ -45,6 +56,8 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         // Determine view type based on sender and typing status
         if (message.isTyping()) {
             return VIEW_TYPE_TYPING;
+        } else if (message.getType() == ChatMessage.MessageType.PROPERTY_CARD) {
+            return VIEW_TYPE_PROPERTY_CARD;
         } else if (message.isFileMessage()) {
             // Handle photo/file messages
             if (message.isRealUserMessage()) {
