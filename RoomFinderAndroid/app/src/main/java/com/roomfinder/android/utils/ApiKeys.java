@@ -1,5 +1,7 @@
 package com.roomfinder.android.utils;
 
+import com.roomfinder.android.BuildConfig;
+
 public class ApiKeys {
     
     // Supabase Configuration
@@ -18,10 +20,10 @@ public class ApiKeys {
     public static final String GOOGLE_API_KEY = "AIzaSyBzE8cPfeO5YkmpJFc8SLtVsz_eGB-wYYM";
     public static final String GOOGLE_OAUTH_CLIENT_ID = "971569749460-a8c7vqutq3eqjf1q6jtit28gqnos268v.apps.googleusercontent.com";
     
-    // OpenAI
-    public static final String OPENAI_API_KEY = "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";
+    // OpenAI - Load from build config or environment variables
+    public static final String OPENAI_API_KEY = BuildConfig.OPENAI_API_KEY;
     public static final String OPENAI_MODEL = "gpt-3.5-turbo";
-    public static final String OPENAI_ORG_ID = "org-EPHQ1A3u0XIUZml6JABMgZzg";
+    public static final String OPENAI_ORG_ID = BuildConfig.OPENAI_ORG_ID;
     
     // Payment & Analytics
     public static final String RENTCAST_KEY = "3bc616ab43604dbb94000590c342b1a4";
