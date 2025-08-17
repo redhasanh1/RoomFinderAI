@@ -78,6 +78,14 @@ public class AuthManager {
     }
     
     /**
+     * Get current user's email
+     */
+    public String getUserEmail() {
+        User currentUser = getCurrentUser();
+        return currentUser != null ? currentUser.getEmail() : null;
+    }
+    
+    /**
      * Store current user (matching website localStorage.setItem('currentUser'))
      */
     public void storeCurrentUser(User user) {

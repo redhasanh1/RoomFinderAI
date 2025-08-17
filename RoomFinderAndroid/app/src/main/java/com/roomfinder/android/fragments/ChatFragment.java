@@ -55,80 +55,129 @@ public class ChatFragment extends Fragment {
             iconAnimator = (AnimatorSet) AnimatorInflater.loadAnimator(requireContext(), 
                 R.animator.ai_chat_icon_rotation);
                 
-            // Set animation targets
-            pressAnimator.setTarget(binding.aiChatCard);
-            releaseAnimator.setTarget(binding.aiChatCard);
-            iconAnimator.setTarget(binding.aiChatIcon);
+            // Set animation targets only if animators loaded successfully
+            if (pressAnimator != null && binding.aiChatCard != null) {
+                pressAnimator.setTarget(binding.aiChatCard);
+            }
+            if (releaseAnimator != null && binding.aiChatCard != null) {
+                releaseAnimator.setTarget(binding.aiChatCard);
+            }
+            if (iconAnimator != null && binding.aiChatIcon != null) {
+                iconAnimator.setTarget(binding.aiChatIcon);
+            }
         } catch (Exception e) {
-            // Fallback if animations fail to load
-            e.printStackTrace();
+            // Fallback if animations fail to load - disable animations
+            pressAnimator = null;
+            releaseAnimator = null;
+            iconAnimator = null;
+            android.util.Log.w("ChatFragment", "Failed to load animations, continuing without them", e);
         }
     }
     
     private void setupTouchFeedback() {
         // Enhanced touch feedback for AI Chat Card
-        binding.aiChatCard.setOnTouchListener((v, event) -> {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    // Haptic feedback
-                    v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
-                    // Start press animation
-                    if (pressAnimator != null) {
-                        releaseAnimator.cancel();
-                        pressAnimator.start();
-                    }
-                    return false; // Allow click to continue
-                    
-                case MotionEvent.ACTION_UP:
-                case MotionEvent.ACTION_CANCEL:
-                    // Start release animation with delay
-                    animationHandler.postDelayed(() -> {
-                        if (releaseAnimator != null) {
-                            pressAnimator.cancel();
-                            releaseAnimator.start();
+        if (binding.aiChatCard != null) {
+            binding.aiChatCard.setOnTouchListener((v, event) -> {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        // Haptic feedback
+                        try {
+                            v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                        } catch (Exception e) {
+                            // Ignore haptic feedback errors
                         }
-                    }, 50);
-                    return false;
-            }
-            return false;
-        });
+                        // Start press animation
+                        if (pressAnimator != null && releaseAnimator != null) {
+                            try {
+                                releaseAnimator.cancel();
+                                pressAnimator.start();
+                            } catch (Exception e) {
+                                android.util.Log.w("ChatFragment", "Animation error on press", e);
+                            }
+                        }
+                        return false; // Allow click to continue
+                        
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        // Start release animation with delay
+                        if (animationHandler != null) {
+                            animationHandler.postDelayed(() -> {
+                                if (releaseAnimator != null && pressAnimator != null) {
+                                    try {
+                                        pressAnimator.cancel();
+                                        releaseAnimator.start();
+                                    } catch (Exception e) {
+                                        android.util.Log.w("ChatFragment", "Animation error on release", e);
+                                    }
+                                }
+                            }, 50);
+                        }
+                        return false;
+                }
+                return false;
+            });
+        }
     }
     
     private void setupClickListeners() {
         // AI Negotiator Chat Card
-        binding.aiChatCard.setOnClickListener(v -> {
-            // Trigger icon animation
-            if (iconAnimator != null) {
-                iconAnimator.start();
-            }
-            
-            // Navigate to AI Chat Fragment with slight delay for animation
-            animationHandler.postDelayed(() -> {
-                navigateToAiChat();
-            }, 150);
-        });
+        if (binding.aiChatCard != null) {
+            binding.aiChatCard.setOnClickListener(v -> {
+                // Trigger icon animation
+                if (iconAnimator != null) {
+                    try {
+                        iconAnimator.start();
+                    } catch (Exception e) {
+                        android.util.Log.w("ChatFragment", "Icon animation error", e);
+                    }
+                }
+                
+                // Navigate to AI Chat Fragment with slight delay for animation
+                if (animationHandler != null) {
+                    animationHandler.postDelayed(() -> {
+                        navigateToAiChat();
+                    }, 150);
+                } else {
+                    navigateToAiChat();
+                }
+            });
+        }
         
         // Normal Chat Card
-        binding.normalChatCard.setOnClickListener(v -> {
-            // Navigate to Normal Chat Fragment
-            navigateToNormalChat();
-        });
+        if (binding.normalChatCard != null) {
+            binding.normalChatCard.setOnClickListener(v -> {
+                // Navigate to Normal Chat Fragment
+                navigateToNormalChat();
+            });
+        }
     }
     
     private void navigateToAiChat() {
-        AuthManager authManager = AuthManager.getInstance(requireContext());
-        
-        if (authManager.isUserAuthenticated()) {
-            // User is logged in, proceed to AI Chat
-            AiChatFragment aiChatFragment = new AiChatFragment();
-            getParentFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragmentContainer, aiChatFragment)
-                    .addToBackStack(null)
-                    .commit();
-        } else {
-            // User is not logged in, show login requirement dialog
-            showLoginRequiredDialog();
+        try {
+            AuthManager authManager = AuthManager.getInstance(requireContext());
+            
+            if (authManager != null && authManager.isUserAuthenticated()) {
+                // User is logged in, proceed to AI Chat
+                AiChatFragment aiChatFragment = new AiChatFragment();
+                if (getParentFragmentManager() != null) {
+                    getParentFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragmentContainer, aiChatFragment)
+                            .addToBackStack(null)
+                            .commit();
+                }
+            } else {
+                // User is not logged in, show login requirement dialog
+                showLoginRequiredDialog();
+            }
+        } catch (Exception e) {
+            android.util.Log.e("ChatFragment", "Error navigating to AI chat", e);
+            // Fallback: show error message or simple navigation
+            if (getContext() != null) {
+                android.widget.Toast.makeText(getContext(), 
+                    "Unable to open AI chat. Please try again.", 
+                    android.widget.Toast.LENGTH_SHORT).show();
+            }
         }
     }
     
@@ -149,12 +198,23 @@ public class ChatFragment extends Fragment {
     }
     
     private void navigateToNormalChat() {
-        NormalChatFragment normalChatFragment = new NormalChatFragment();
-        getParentFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragmentContainer, normalChatFragment)
-                .addToBackStack(null)
-                .commit();
+        try {
+            NormalChatFragment normalChatFragment = new NormalChatFragment();
+            if (getParentFragmentManager() != null) {
+                getParentFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragmentContainer, normalChatFragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
+        } catch (Exception e) {
+            android.util.Log.e("ChatFragment", "Error navigating to normal chat", e);
+            if (getContext() != null) {
+                android.widget.Toast.makeText(getContext(), 
+                    "Unable to open chat. Please try again.", 
+                    android.widget.Toast.LENGTH_SHORT).show();
+            }
+        }
     }
     
     @Override

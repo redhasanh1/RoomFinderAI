@@ -121,50 +121,70 @@ public class RealTimeChatService {
      * Setup real-time connection using Supabase realtime
      */
     private void setupRealtimeConnection() {
-        String realtimeUrl = ApiKeys.SUPABASE_URL.replace("https://", "wss://") + "/realtime/v1/websocket";
-        String channel = "messages_realtime_" + System.currentTimeMillis();
-        
-        // Build WebSocket URL with authentication
-        HttpUrl.Builder urlBuilder = HttpUrl.parse(realtimeUrl).newBuilder()
-                .addQueryParameter("apikey", ApiKeys.SUPABASE_ANON_KEY)
-                .addQueryParameter("vsn", "1.0.0");
-        
-        Request request = new Request.Builder()
-                .url(urlBuilder.build())
-                .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
-                .build();
-        
-        EventSourceListener listener = new EventSourceListener() {
-            @Override
-            public void onOpen(EventSource eventSource, Response response) {
-                Log.d(TAG, "✅ Real-time connection opened");
-                isConnected = true;
-                reconnectAttempts = 0;
-                subscribeToMessages();
+        try {
+            // Fix URL construction to avoid double slashes
+            String baseUrl = ApiKeys.SUPABASE_URL;
+            if (baseUrl.endsWith("/")) {
+                baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+            }
+            String realtimeUrl = baseUrl.replace("https://", "wss://") + "/realtime/v1/websocket";
+            String channel = "messages_realtime_" + System.currentTimeMillis();
+            
+            Log.d(TAG, "🔗 Attempting to connect to: " + realtimeUrl);
+            
+            // Build WebSocket URL with authentication - add null safety check
+            HttpUrl parsedUrl = HttpUrl.parse(realtimeUrl);
+            if (parsedUrl == null) {
+                Log.e(TAG, "❌ Failed to parse realtime URL: " + realtimeUrl);
+                handleConnectionError("Invalid WebSocket URL");
+                return;
             }
             
-            @Override
-            public void onEvent(EventSource eventSource, String id, String type, String data) {
-                Log.d(TAG, "📨 Real-time event received: " + type + " - " + data);
-                handleRealtimeEvent(type, data);
-            }
-            
-            @Override
-            public void onClosed(EventSource eventSource) {
-                Log.d(TAG, "🔌 Real-time connection closed");
-                isConnected = false;
-                scheduleReconnect();
-            }
-            
-            @Override
-            public void onFailure(EventSource eventSource, Throwable t, Response response) {
-                Log.e(TAG, "❌ Real-time connection failed", t);
-                isConnected = false;
-                scheduleReconnect();
-            }
-        };
+            HttpUrl.Builder urlBuilder = parsedUrl.newBuilder()
+                    .addQueryParameter("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                    .addQueryParameter("vsn", "1.0.0");
         
-        eventSource = EventSources.createFactory(httpClient).newEventSource(request, listener);
+            Request request = new Request.Builder()
+                    .url(urlBuilder.build())
+                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .build();
+            
+            EventSourceListener listener = new EventSourceListener() {
+                @Override
+                public void onOpen(EventSource eventSource, Response response) {
+                    Log.d(TAG, "✅ Real-time connection opened");
+                    isConnected = true;
+                    reconnectAttempts = 0;
+                    subscribeToMessages();
+                }
+                
+                @Override
+                public void onEvent(EventSource eventSource, String id, String type, String data) {
+                    Log.d(TAG, "📨 Real-time event received: " + type + " - " + data);
+                    handleRealtimeEvent(type, data);
+                }
+                
+                @Override
+                public void onClosed(EventSource eventSource) {
+                    Log.d(TAG, "🔌 Real-time connection closed");
+                    isConnected = false;
+                    scheduleReconnect();
+                }
+                
+                @Override
+                public void onFailure(EventSource eventSource, Throwable t, Response response) {
+                    Log.e(TAG, "❌ Real-time connection failed", t);
+                    isConnected = false;
+                    scheduleReconnect();
+                }
+            };
+            
+            eventSource = EventSources.createFactory(httpClient).newEventSource(request, listener);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Failed to setup real-time connection", e);
+            handleConnectionError("Real-time connection setup failed: " + e.getMessage());
+        }
     }
     
     /**
@@ -247,6 +267,24 @@ public class RealTimeChatService {
         }
         
         return message;
+    }
+    
+    /**
+     * Handle connection errors and fallback to polling
+     */
+    private void handleConnectionError(String errorMessage) {
+        Log.e(TAG, "Connection error: " + errorMessage);
+        isConnected = false;
+        
+        // Notify all message listeners about the error
+        for (MessageListener listener : messageListeners.values()) {
+            if (listener != null) {
+                mainHandler.post(() -> listener.onError("Real-time connection failed: " + errorMessage));
+            }
+        }
+        
+        // Start polling as fallback
+        startMessagePolling();
     }
     
     /**

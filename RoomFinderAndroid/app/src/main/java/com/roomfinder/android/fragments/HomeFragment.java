@@ -1,5 +1,6 @@
 package com.roomfinder.android.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -16,7 +17,12 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.roomfinder.android.R;
+import com.roomfinder.android.activities.IndividualChatActivity;
+import com.roomfinder.android.activities.LoginActivity;
 import com.roomfinder.android.adapters.ListingsAdapter;
+import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.databinding.FragmentHomeBinding;
 import com.roomfinder.android.models.Listing;
 import com.roomfinder.android.network.SupabaseService;
@@ -429,5 +435,35 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         listing.setFavorite(!listing.isFavorite());
         adapter.notifyItemChanged(position);
         // TODO: Save to local storage
+    }
+    
+    @Override
+    public void onChatClick(Listing listing) {
+        AuthManager authManager = AuthManager.getInstance(requireContext());
+        
+        if (authManager.isUserAuthenticated()) {
+            // Get current user email
+            String currentUserEmail = authManager.getUserEmail();
+            
+            // Start chat activity
+            Intent intent = new Intent(requireContext(), IndividualChatActivity.class);
+            intent.putExtra("listing_id", listing.getId());
+            intent.putExtra("listing_title", listing.getTitle());
+            intent.putExtra("owner_email", listing.getUserEmail());
+            intent.putExtra("current_user_email", currentUserEmail);
+            startActivity(intent);
+        } else {
+            // Show login required dialog
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Login Required")
+                    .setMessage("You need to sign in to chat with property owners.")
+                    .setPositiveButton("Sign In", (dialog, which) -> {
+                        Intent loginIntent = new Intent(requireContext(), LoginActivity.class);
+                        startActivity(loginIntent);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .setIcon(R.drawable.ic_chat)
+                    .show();
+        }
     }
 }
