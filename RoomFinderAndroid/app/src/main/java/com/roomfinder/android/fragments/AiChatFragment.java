@@ -125,6 +125,9 @@ public class AiChatFragment extends Fragment {
         layoutManager = new LinearLayoutManager(getContext());
         layoutManager.setStackFromEnd(true);
         
+        // Set up property card click listener
+        chatAdapter.setOnPropertyCardClickListener(this::contactLandlord);
+        
         binding.messagesRecyclerView.setLayoutManager(layoutManager);
         binding.messagesRecyclerView.setAdapter(chatAdapter);
         
