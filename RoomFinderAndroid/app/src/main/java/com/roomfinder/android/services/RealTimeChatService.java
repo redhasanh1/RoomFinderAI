@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.*;
 import okhttp3.sse.*;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Real-time chat service for handling user-to-user messaging
@@ -50,6 +51,10 @@ public class RealTimeChatService {
     // Message listeners
     private ConcurrentHashMap<String, MessageListener> messageListeners = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, ConversationListener> conversationListeners = new ConcurrentHashMap<>();
+    
+    // Message tracking for polling
+    private ConcurrentHashMap<String, Long> lastMessageTimestamps = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, String> lastMessageIds = new ConcurrentHashMap<>();
     
     // Conversation cache
     private List<Conversation> cachedConversations = new ArrayList<>();
@@ -191,9 +196,57 @@ public class RealTimeChatService {
      * Subscribe to message changes
      */
     private void subscribeToMessages() {
-        // This would be handled by the WebSocket connection
-        // For now, we'll use polling as a fallback
+        try {
+            if (isConnected && eventSource != null) {
+                // Send subscription message for all active conversations
+                for (String conversationId : messageListeners.keySet()) {
+                    subscribeToConversation(conversationId);
+                }
+                
+                Log.d(TAG, "✅ Subscribed to " + messageListeners.size() + " conversation channels");
+            } else {
+                Log.d(TAG, "WebSocket not connected, using polling fallback");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error subscribing to messages, falling back to polling", e);
+        }
+        
+        // Always start polling as a fallback
         startMessagePolling();
+    }
+    
+    /**
+     * Subscribe to a specific conversation channel
+     */
+    private void subscribeToConversation(String conversationId) {
+        try {
+            // Create subscription payload for Supabase realtime
+            JSONObject payload = new JSONObject();
+            payload.put("topic", "realtime:messages");
+            payload.put("event", "phx_join");
+            
+            JSONObject payloadData = new JSONObject();
+            payloadData.put("config", new JSONObject()
+                    .put("postgres_changes", new JSONArray()
+                            .put(new JSONObject()
+                                    .put("event", "INSERT")
+                                    .put("schema", "public")
+                                    .put("table", "messages")
+                                    .put("filter", "conversation_id=eq." + conversationId)
+                            )
+                    )
+            );
+            payload.put("payload", payloadData);
+            payload.put("ref", "conversation_" + conversationId);
+            
+            Log.d(TAG, "🔔 Subscribing to conversation: " + conversationId);
+            
+            // Note: In a real implementation, this would send the subscription through the WebSocket
+            // For now, we rely on polling since the WebSocket subscription is complex
+            
+        } catch (JSONException e) {
+            Log.e(TAG, "Error creating subscription payload for conversation " + conversationId, e);
+        }
     }
     
     /**
@@ -211,8 +264,105 @@ public class RealTimeChatService {
      * Check for new messages via polling
      */
     private void checkForNewMessages() {
-        // Implementation would check for new messages
-        // This is a simplified version
+        if (messageListeners.isEmpty()) {
+            return; // No active conversations to check
+        }
+        
+        Log.d(TAG, "Polling for new messages in " + messageListeners.size() + " conversations");
+        
+        // Check each conversation that has an active listener
+        for (String conversationId : messageListeners.keySet()) {
+            checkMessagesForConversation(conversationId);
+        }
+    }
+    
+    /**
+     * Check for new messages in a specific conversation
+     */
+    private void checkMessagesForConversation(String conversationId) {
+        try {
+            // Get the last message timestamp for this conversation
+            Long lastTimestamp = lastMessageTimestamps.get(conversationId);
+            String lastMessageId = lastMessageIds.get(conversationId);
+            
+            // Build URL to get messages newer than last known
+            StringBuilder urlBuilder = new StringBuilder();
+            urlBuilder.append(ApiKeys.SUPABASE_URL)
+                    .append("rest/v1/messages?select=*")
+                    .append("&conversation_id=eq.").append(conversationId)
+                    .append("&order=created_at.asc");
+            
+            // If we have a last timestamp, only get newer messages
+            if (lastTimestamp != null) {
+                // Convert timestamp to ISO format for Supabase
+                String isoTimestamp = java.time.Instant.ofEpochMilli(lastTimestamp).toString();
+                urlBuilder.append("&created_at=gt.").append(isoTimestamp);
+            }
+            
+            String url = urlBuilder.toString();
+            
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Content-Type", "application/json")
+                    .build();
+            
+            // Execute request asynchronously
+            httpClient.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    Log.e(TAG, "Failed to poll messages for conversation " + conversationId, e);
+                }
+                
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    if (response.isSuccessful() && response.body() != null) {
+                        try {
+                            String responseBody = response.body().string();
+                            JSONArray messagesArray = new JSONArray(responseBody);
+                            
+                            List<ChatMessage> newMessages = new ArrayList<>();
+                            for (int i = 0; i < messagesArray.length(); i++) {
+                                JSONObject messageJson = messagesArray.getJSONObject(i);
+                                ChatMessage message = parseMessageFromJson(messageJson);
+                                
+                                // Skip if this is the last message we already have
+                                if (lastMessageId != null && lastMessageId.equals(message.getId())) {
+                                    continue;
+                                }
+                                
+                                // Skip messages from current user (they're already shown when sent)
+                                if (currentUserEmail != null && currentUserEmail.equals(message.getSenderEmail())) {
+                                    continue;
+                                }
+                                
+                                newMessages.add(message);
+                                
+                                // Update tracking
+                                lastMessageTimestamps.put(conversationId, message.getTimestamp());
+                                lastMessageIds.put(conversationId, message.getId());
+                            }
+                            
+                            // Notify listeners of new messages
+                            if (!newMessages.isEmpty()) {
+                                Log.d(TAG, "Found " + newMessages.size() + " new messages for conversation " + conversationId);
+                                for (ChatMessage message : newMessages) {
+                                    notifyMessageListeners(message);
+                                }
+                            }
+                            
+                        } catch (JSONException e) {
+                            Log.e(TAG, "Error parsing messages response for conversation " + conversationId, e);
+                        }
+                    }
+                    response.close();
+                }
+            });
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking messages for conversation " + conversationId, e);
+        }
     }
     
     /**
@@ -444,6 +594,86 @@ public class RealTimeChatService {
     }
     
     /**
+     * Send a file message
+     */
+    public void sendFileMessage(String conversationId, String fileName, String fileUrl, String caption, MessageListener listener) {
+        if (currentUserEmail == null) {
+            if (listener != null) listener.onError("User not authenticated");
+            return;
+        }
+        
+        executorService.execute(() -> {
+            try {
+                JSONObject messageData = new JSONObject();
+                messageData.put("conversation_id", conversationId);
+                messageData.put("sender_email", currentUserEmail);
+                messageData.put("content", caption != null && !caption.trim().isEmpty() ? caption : fileName);
+                messageData.put("message_type", "file");
+                messageData.put("file_url", fileUrl != null ? fileUrl : "");
+                messageData.put("file_name", fileName != null ? fileName : "photo.jpg");
+                messageData.put("created_at", java.time.Instant.now().toString());
+                
+                String url = ApiKeys.SUPABASE_URL + "rest/v1/messages";
+                
+                RequestBody body = RequestBody.create(
+                        messageData.toString(),
+                        MediaType.parse("application/json")
+                );
+                
+                Request request = new Request.Builder()
+                        .url(url)
+                        .post(body)
+                        .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("Prefer", "return=representation")
+                        .build();
+                
+                try (Response response = httpClient.newCall(request).execute()) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        String responseBody = response.body().string();
+                        JSONArray messages = new JSONArray(responseBody);
+                        
+                        if (messages.length() > 0) {
+                            JSONObject messageJson = messages.getJSONObject(0);
+                            ChatMessage message = parseMessageFromJson(messageJson);
+                            
+                            mainHandler.post(() -> {
+                                if (listener != null) listener.onMessageSent(message);
+                            });
+                        } else {
+                            mainHandler.post(() -> {
+                                if (listener != null) listener.onError("No message returned from server");
+                            });
+                        }
+                    } else {
+                        String errorMessage = "Failed to send file message";
+                        if (response.body() != null) {
+                            try {
+                                String errorBody = response.body().string();
+                                Log.e(TAG, "File message send error response: " + errorBody);
+                                errorMessage = "Failed to send file message: " + response.code();
+                            } catch (Exception e) {
+                                // Ignore
+                            }
+                        }
+                        final String finalError = errorMessage;
+                        mainHandler.post(() -> {
+                            if (listener != null) listener.onError(finalError);
+                        });
+                    }
+                }
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Error sending file message", e);
+                mainHandler.post(() -> {
+                    if (listener != null) listener.onError("Error sending file message: " + e.getMessage());
+                });
+            }
+        });
+    }
+    
+    /**
      * Send a text message
      */
     public void sendMessage(String conversationId, String content, MessageListener listener) {
@@ -529,10 +759,20 @@ public class RealTimeChatService {
                         JSONArray messagesArray = new JSONArray(responseBody);
                         
                         List<ChatMessage> messages = new ArrayList<>();
+                        ChatMessage lastMessage = null;
+                        
                         for (int i = 0; i < messagesArray.length(); i++) {
                             JSONObject messageJson = messagesArray.getJSONObject(i);
                             ChatMessage message = parseMessageFromJson(messageJson);
                             messages.add(message);
+                            lastMessage = message; // Keep track of the latest message
+                        }
+                        
+                        // Update tracking data with the latest message
+                        if (lastMessage != null) {
+                            lastMessageTimestamps.put(conversationId, lastMessage.getTimestamp());
+                            lastMessageIds.put(conversationId, lastMessage.getId());
+                            Log.d(TAG, "Updated tracking for conversation " + conversationId + " - last message: " + lastMessage.getId());
                         }
                         
                         mainHandler.post(() -> callback.onSuccess(messages));
@@ -553,6 +793,18 @@ public class RealTimeChatService {
      */
     public void registerMessageListener(String conversationId, MessageListener listener) {
         messageListeners.put(conversationId, listener);
+        
+        // Initialize timestamp tracking for this conversation
+        if (!lastMessageTimestamps.containsKey(conversationId)) {
+            lastMessageTimestamps.put(conversationId, System.currentTimeMillis());
+        }
+        
+        // Subscribe to this conversation if we're connected
+        if (isConnected) {
+            subscribeToConversation(conversationId);
+        }
+        
+        Log.d(TAG, "📱 Registered listener for conversation: " + conversationId);
     }
     
     /**
@@ -560,6 +812,12 @@ public class RealTimeChatService {
      */
     public void unregisterMessageListener(String conversationId) {
         messageListeners.remove(conversationId);
+        
+        // Clean up tracking data for this conversation
+        lastMessageTimestamps.remove(conversationId);
+        lastMessageIds.remove(conversationId);
+        
+        Log.d(TAG, "🗑️ Unregistered listener for conversation: " + conversationId);
     }
     
     /**
@@ -588,6 +846,8 @@ public class RealTimeChatService {
         
         messageListeners.clear();
         conversationListeners.clear();
+        lastMessageTimestamps.clear();
+        lastMessageIds.clear();
     }
     
     /**

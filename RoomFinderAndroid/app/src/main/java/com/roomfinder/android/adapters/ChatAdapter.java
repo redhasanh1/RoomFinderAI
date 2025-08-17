@@ -23,6 +23,8 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int VIEW_TYPE_AI = 2;
     private static final int VIEW_TYPE_SYSTEM = 3;
     private static final int VIEW_TYPE_TYPING = 4;
+    private static final int VIEW_TYPE_USER_PHOTO = 5;
+    private static final int VIEW_TYPE_AI_PHOTO = 6;
     
     private List<ChatMessage> messages;
     private String currentUserEmail;
@@ -43,6 +45,19 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         // Determine view type based on sender and typing status
         if (message.isTyping()) {
             return VIEW_TYPE_TYPING;
+        } else if (message.isFileMessage()) {
+            // Handle photo/file messages
+            if (message.isRealUserMessage()) {
+                if (currentUserEmail != null && message.isFromCurrentUser(currentUserEmail)) {
+                    return VIEW_TYPE_USER_PHOTO;
+                } else {
+                    return VIEW_TYPE_AI_PHOTO;
+                }
+            } else if (message.isFromUser()) {
+                return VIEW_TYPE_USER_PHOTO;
+            } else {
+                return VIEW_TYPE_AI_PHOTO;
+            }
         } else if (message.isRealUserMessage()) {
             // For real user messages, check if it's from current user
             if (currentUserEmail != null && message.isFromCurrentUser(currentUserEmail)) {
@@ -71,6 +86,12 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             case VIEW_TYPE_AI:
                 View aiView = inflater.inflate(R.layout.item_chat_ai, parent, false);
                 return new AiMessageViewHolder(aiView);
+            case VIEW_TYPE_USER_PHOTO:
+                View userPhotoView = inflater.inflate(R.layout.item_chat_user_photo, parent, false);
+                return new UserPhotoViewHolder(userPhotoView);
+            case VIEW_TYPE_AI_PHOTO:
+                View aiPhotoView = inflater.inflate(R.layout.item_chat_ai_photo, parent, false);
+                return new AiPhotoViewHolder(aiPhotoView);
             case VIEW_TYPE_TYPING:
                 View typingView = inflater.inflate(R.layout.item_chat_typing, parent, false);
                 return new TypingViewHolder(typingView);
@@ -90,6 +111,12 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             applySlideInAnimation(holder.itemView, VIEW_TYPE_USER);
         } else if (holder instanceof AiMessageViewHolder) {
             ((AiMessageViewHolder) holder).bind(message);
+            applySlideInAnimation(holder.itemView, VIEW_TYPE_AI);
+        } else if (holder instanceof UserPhotoViewHolder) {
+            ((UserPhotoViewHolder) holder).bind(message);
+            applySlideInAnimation(holder.itemView, VIEW_TYPE_USER);
+        } else if (holder instanceof AiPhotoViewHolder) {
+            ((AiPhotoViewHolder) holder).bind(message);
             applySlideInAnimation(holder.itemView, VIEW_TYPE_AI);
         } else if (holder instanceof SystemMessageViewHolder) {
             ((SystemMessageViewHolder) holder).bind(message);
@@ -323,6 +350,260 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         
         void bind(ChatMessage message) {
             // Typing indicator animations are applied in applyTypingAnimation method
+        }
+    }
+    
+    // User Photo Message ViewHolder
+    static class UserPhotoViewHolder extends RecyclerView.ViewHolder {
+        ImageView photoImageView;
+        TextView photoCaptionText;
+        TextView timestamp;
+        ImageView deliveryStatus;
+        ImageView userAvatar;
+        View photoLoadingProgress;
+        View photoErrorOverlay;
+        
+        UserPhotoViewHolder(View itemView) {
+            super(itemView);
+            photoImageView = itemView.findViewById(R.id.photoImageView);
+            photoCaptionText = itemView.findViewById(R.id.photoCaptionText);
+            timestamp = itemView.findViewById(R.id.timestamp);
+            deliveryStatus = itemView.findViewById(R.id.deliveryStatus);
+            userAvatar = itemView.findViewById(R.id.userAvatar);
+            photoLoadingProgress = itemView.findViewById(R.id.photoLoadingProgress);
+            photoErrorOverlay = itemView.findViewById(R.id.photoErrorOverlay);
+        }
+        
+        void bind(ChatMessage message) {
+            // Set timestamp
+            timestamp.setText(message.getFormattedTime());
+            
+            // Show delivery status if available
+            if (deliveryStatus != null) {
+                if (message.isDelivered()) {
+                    deliveryStatus.setVisibility(View.VISIBLE);
+                    deliveryStatus.setImageResource(R.drawable.ic_check);
+                } else {
+                    deliveryStatus.setVisibility(View.GONE);
+                }
+            }
+            
+            // Handle photo caption
+            if (message.getContent() != null && !message.getContent().trim().isEmpty()) {
+                photoCaptionText.setText(message.getContent());
+                photoCaptionText.setVisibility(View.VISIBLE);
+            } else {
+                photoCaptionText.setVisibility(View.GONE);
+            }
+            
+            // Load photo image
+            loadPhotoImage(message);
+        }
+        
+        private void loadPhotoImage(ChatMessage message) {
+            if (message.getFileUrl() != null && !message.getFileUrl().isEmpty()) {
+                // Show loading state
+                photoLoadingProgress.setVisibility(View.VISIBLE);
+                photoErrorOverlay.setVisibility(View.GONE);
+                
+                String fileUrl = message.getFileUrl();
+                
+                try {
+                    if (fileUrl.startsWith("data:image/")) {
+                        // Handle base64 data URLs
+                        loadBase64Image(fileUrl);
+                    } else if (fileUrl.startsWith("http")) {
+                        // Handle regular HTTP URLs (Supabase Storage)
+                        loadNetworkImage(fileUrl);
+                    } else {
+                        // Handle local file URIs
+                        loadLocalImage(fileUrl);
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("ChatAdapter", "Error loading image: " + e.getMessage());
+                    showImageError();
+                }
+                
+                // Add click listener for full-screen view
+                photoImageView.setOnClickListener(v -> {
+                    // TODO: Open full-screen image viewer
+                });
+            } else {
+                // Show error state
+                showImageError();
+            }
+        }
+        
+        private void loadBase64Image(String dataUrl) {
+            try {
+                // Extract base64 data from data URL
+                String base64Data = dataUrl.substring(dataUrl.indexOf(",") + 1);
+                byte[] imageBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT);
+                
+                // Convert to bitmap
+                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                
+                if (bitmap != null) {
+                    photoLoadingProgress.setVisibility(View.GONE);
+                    photoImageView.setImageBitmap(bitmap);
+                } else {
+                    showImageError();
+                }
+            } catch (Exception e) {
+                android.util.Log.e("ChatAdapter", "Error loading base64 image", e);
+                showImageError();
+            }
+        }
+        
+        private void loadNetworkImage(String url) {
+            // TODO: Implement proper network image loading with Glide
+            // For now, show placeholder
+            photoLoadingProgress.setVisibility(View.GONE);
+            photoImageView.setImageResource(R.drawable.ic_image);
+        }
+        
+        private void loadLocalImage(String uri) {
+            try {
+                android.net.Uri imageUri = android.net.Uri.parse(uri);
+                photoLoadingProgress.setVisibility(View.GONE);
+                photoImageView.setImageURI(imageUri);
+            } catch (Exception e) {
+                android.util.Log.e("ChatAdapter", "Error loading local image", e);
+                showImageError();
+            }
+        }
+        
+        private void showImageError() {
+            photoLoadingProgress.setVisibility(View.GONE);
+            photoErrorOverlay.setVisibility(View.VISIBLE);
+        }
+    }
+    
+    // AI/Other User Photo Message ViewHolder
+    static class AiPhotoViewHolder extends RecyclerView.ViewHolder {
+        ImageView photoImageView;
+        TextView photoCaptionText;
+        TextView timestamp;
+        ImageView aiAvatar;
+        View photoLoadingProgress;
+        View photoErrorOverlay;
+        
+        AiPhotoViewHolder(View itemView) {
+            super(itemView);
+            photoImageView = itemView.findViewById(R.id.photoImageView);
+            photoCaptionText = itemView.findViewById(R.id.photoCaptionText);
+            timestamp = itemView.findViewById(R.id.timestamp);
+            aiAvatar = itemView.findViewById(R.id.aiAvatar);
+            photoLoadingProgress = itemView.findViewById(R.id.photoLoadingProgress);
+            photoErrorOverlay = itemView.findViewById(R.id.photoErrorOverlay);
+        }
+        
+        void bind(ChatMessage message) {
+            // Set timestamp
+            timestamp.setText(message.getFormattedTime());
+            
+            // Handle photo caption
+            if (message.getContent() != null && !message.getContent().trim().isEmpty()) {
+                photoCaptionText.setText(message.getContent());
+                photoCaptionText.setVisibility(View.VISIBLE);
+            } else {
+                photoCaptionText.setVisibility(View.GONE);
+            }
+            
+            // Load photo image
+            loadPhotoImage(message);
+            
+            // Add subtle avatar animation
+            if (aiAvatar != null) {
+                animateAvatar(aiAvatar);
+            }
+        }
+        
+        private void loadPhotoImage(ChatMessage message) {
+            if (message.getFileUrl() != null && !message.getFileUrl().isEmpty()) {
+                // Show loading state
+                photoLoadingProgress.setVisibility(View.VISIBLE);
+                photoErrorOverlay.setVisibility(View.GONE);
+                
+                String fileUrl = message.getFileUrl();
+                
+                try {
+                    if (fileUrl.startsWith("data:image/")) {
+                        // Handle base64 data URLs
+                        loadBase64Image(fileUrl);
+                    } else if (fileUrl.startsWith("http")) {
+                        // Handle regular HTTP URLs (Supabase Storage)
+                        loadNetworkImage(fileUrl);
+                    } else {
+                        // Handle local file URIs
+                        loadLocalImage(fileUrl);
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("ChatAdapter", "Error loading image: " + e.getMessage());
+                    showImageError();
+                }
+                
+                // Add click listener for full-screen view
+                photoImageView.setOnClickListener(v -> {
+                    // TODO: Open full-screen image viewer
+                });
+            } else {
+                // Show error state
+                showImageError();
+            }
+        }
+        
+        private void loadBase64Image(String dataUrl) {
+            try {
+                // Extract base64 data from data URL
+                String base64Data = dataUrl.substring(dataUrl.indexOf(",") + 1);
+                byte[] imageBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT);
+                
+                // Convert to bitmap
+                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                
+                if (bitmap != null) {
+                    photoLoadingProgress.setVisibility(View.GONE);
+                    photoImageView.setImageBitmap(bitmap);
+                } else {
+                    showImageError();
+                }
+            } catch (Exception e) {
+                android.util.Log.e("ChatAdapter", "Error loading base64 image", e);
+                showImageError();
+            }
+        }
+        
+        private void loadNetworkImage(String url) {
+            // TODO: Implement proper network image loading with Glide
+            // For now, show placeholder
+            photoLoadingProgress.setVisibility(View.GONE);
+            photoImageView.setImageResource(R.drawable.ic_image);
+        }
+        
+        private void loadLocalImage(String uri) {
+            try {
+                android.net.Uri imageUri = android.net.Uri.parse(uri);
+                photoLoadingProgress.setVisibility(View.GONE);
+                photoImageView.setImageURI(imageUri);
+            } catch (Exception e) {
+                android.util.Log.e("ChatAdapter", "Error loading local image", e);
+                showImageError();
+            }
+        }
+        
+        private void showImageError() {
+            photoLoadingProgress.setVisibility(View.GONE);
+            photoErrorOverlay.setVisibility(View.VISIBLE);
+        }
+        
+        private void animateAvatar(View avatar) {
+            avatar.animate()
+                .scaleX(1.02f).scaleY(1.02f)
+                .setDuration(800)
+                .withEndAction(() -> 
+                    avatar.animate().scaleX(1f).scaleY(1f).setDuration(800).start())
+                .start();
         }
     }
 }
