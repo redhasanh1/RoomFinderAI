@@ -22,7 +22,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="@drawable/glassmorphism_card"
-            android:src="@drawable/ic_bot"
+            android:src="@drawable/ic_computer"
             android:padding="10dp"
             android:tint="@color/white"
             android:elevation="4dp"

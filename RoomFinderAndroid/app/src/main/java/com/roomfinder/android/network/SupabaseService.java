@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.roomfinder.android.database.SupabaseClient;
 import com.roomfinder.android.models.Listing;
+import com.roomfinder.android.services.AiNegotiatorService.PropertyCriteria;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -124,6 +125,105 @@ public class SupabaseService {
                 mainHandler.post(() -> callback.onError("Filter error: " + e.getMessage()));
             }
         });
+    }
+    
+    /**
+     * Search listings with enhanced criteria from AI extraction
+     */
+    public void searchWithCriteria(PropertyCriteria criteria, ListingsCallback callback) {
+        if (criteria == null || !criteria.hasValidCriteria()) {
+            Log.w(TAG, "❌ No valid search criteria provided");
+            callback.onError("No valid search criteria provided");
+            return;
+        }
+        
+        executorService.execute(() -> {
+            try {
+                Log.d(TAG, "🔍 Searching with AI-extracted criteria:");
+                Log.d(TAG, "  📍 Location: " + (criteria.location != null ? criteria.location : "Any"));
+                Log.d(TAG, "  🏠 Property Type: " + (criteria.propertyType != null ? criteria.propertyType : "Any"));
+                Log.d(TAG, "  💰 Price Range: $" + criteria.minPrice + " - $" + criteria.maxPrice);
+                Log.d(TAG, "  🛏️ Bedrooms: " + (criteria.bedrooms != null ? criteria.bedrooms : "Any"));
+                Log.d(TAG, "  🚿 Bathrooms: " + (criteria.bathrooms != null ? criteria.bathrooms : "Any"));
+                
+                // Validate criteria before sending to database
+                if (!isValidCriteria(criteria)) {
+                    android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+                    mainHandler.post(() -> callback.onError("Invalid search criteria values"));
+                    return;
+                }
+                
+                // Use the enhanced filter method that includes bathrooms
+                List<Listing> listings = supabaseClient.filterListingsEnhanced(
+                    criteria.minPrice, 
+                    criteria.maxPrice, 
+                    criteria.bedrooms, 
+                    criteria.bathrooms,
+                    criteria.propertyType, 
+                    criteria.location
+                );
+                
+                android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+                mainHandler.post(() -> {
+                    if (listings != null) {
+                        Log.d(TAG, "✅ AI criteria search returned " + listings.size() + " filtered results");
+                        
+                        // Additional validation - ensure we're not returning ALL listings unexpectedly
+                        if (listings.size() > 50) {
+                            Log.w(TAG, "⚠️ Suspiciously large result set (" + listings.size() + " properties). This might indicate filter failure.");
+                        }
+                        
+                        callback.onSuccess(listings);
+                    } else {
+                        Log.e(TAG, "❌ Search with criteria returned null");
+                        callback.onError("Search with criteria failed");
+                    }
+                });
+                
+            } catch (Exception e) {
+                Log.e(TAG, "❌ Error searching with criteria: " + e.getMessage(), e);
+                android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+                mainHandler.post(() -> callback.onError("Search error: " + e.getMessage()));
+            }
+        });
+    }
+    
+    /**
+     * Validate search criteria to prevent invalid database queries
+     */
+    private boolean isValidCriteria(PropertyCriteria criteria) {
+        // Validate price ranges
+        if (criteria.minPrice != null && criteria.minPrice < 0) {
+            Log.w(TAG, "❌ Invalid min price: " + criteria.minPrice);
+            return false;
+        }
+        if (criteria.maxPrice != null && criteria.maxPrice < 0) {
+            Log.w(TAG, "❌ Invalid max price: " + criteria.maxPrice);
+            return false;
+        }
+        if (criteria.minPrice != null && criteria.maxPrice != null && criteria.minPrice > criteria.maxPrice) {
+            Log.w(TAG, "❌ Min price (" + criteria.minPrice + ") greater than max price (" + criteria.maxPrice + ")");
+            return false;
+        }
+        
+        // Validate bedroom/bathroom counts
+        if (criteria.bedrooms != null && (criteria.bedrooms < 0 || criteria.bedrooms > 10)) {
+            Log.w(TAG, "❌ Invalid bedrooms count: " + criteria.bedrooms);
+            return false;
+        }
+        if (criteria.bathrooms != null && (criteria.bathrooms < 0 || criteria.bathrooms > 10)) {
+            Log.w(TAG, "❌ Invalid bathrooms count: " + criteria.bathrooms);
+            return false;
+        }
+        
+        // Validate location string
+        if (criteria.location != null && criteria.location.trim().length() > 100) {
+            Log.w(TAG, "❌ Location string too long: " + criteria.location.length() + " chars");
+            return false;
+        }
+        
+        Log.d(TAG, "✅ Criteria validation passed");
+        return true;
     }
     
     /**

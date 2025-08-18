@@ -2,6 +2,7 @@ package com.roomfinder.android.fragments;
 
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,7 +17,12 @@ import android.text.TextWatcher;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import com.google.android.material.chip.Chip;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.roomfinder.android.R;
+import com.roomfinder.android.activities.IndividualChatActivity;
+import com.roomfinder.android.activities.LoginActivity;
 import com.roomfinder.android.adapters.ListingsAdapter;
+import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.databinding.FragmentSearchBinding;
 import com.roomfinder.android.models.ApiResponse;
 import com.roomfinder.android.models.Listing;
@@ -154,12 +160,11 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
             return false;
         });
         
-        // Search button (new floating button)
-        if (binding.searchButton != null) {
-            binding.searchButton.setOnClickListener(v -> {
-                animateButtonClick(v);
-                animateSearchButtonRotation();
+        // Search input field
+        if (binding.searchInput != null) {
+            binding.searchInput.setOnEditorActionListener((v, actionId, event) -> {
                 performSearch();
+                return true;
             });
         }
         
@@ -647,25 +652,11 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
     }
     
     private void animateSearchButtonGlow() {
-        if (binding.searchButton != null) {
-            ValueAnimator glowAnimator = ValueAnimator.ofFloat(0.8f, 1f, 0.8f);
-            glowAnimator.setDuration(2000);
-            glowAnimator.setRepeatCount(ValueAnimator.INFINITE);
-            glowAnimator.addUpdateListener(animation -> {
-                float alpha = (Float) animation.getAnimatedValue();
-                binding.searchButton.setAlpha(alpha);
-            });
-            glowAnimator.start();
-        }
+        // Animation removed as search uses input field
     }
     
     private void animateSearchButtonRotation() {
-        if (binding.searchButton != null) {
-            ObjectAnimator rotationAnimator = ObjectAnimator.ofFloat(binding.searchButton, "rotation", 0f, 360f);
-            rotationAnimator.setDuration(500);
-            rotationAnimator.setInterpolator(new DecelerateInterpolator());
-            rotationAnimator.start();
-        }
+        // Animation removed as search uses input field
     }
     
     private void setupQuickFilters() {
@@ -849,5 +840,32 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
         // Update display and perform new search
         updateActiveFiltersDisplay();
         performSearch();
+    }
+    
+    @Override
+    public void onChatClick(Listing listing) {
+        AuthManager authManager = AuthManager.getInstance(requireContext());
+        
+        if (authManager.isUserAuthenticated()) {
+            String currentUserEmail = authManager.getUserEmail();
+            
+            Intent intent = new Intent(requireContext(), IndividualChatActivity.class);
+            intent.putExtra("listing_id", listing.getId());
+            intent.putExtra("listing_title", listing.getTitle());
+            intent.putExtra("owner_email", listing.getUserEmail());
+            intent.putExtra("current_user_email", currentUserEmail);
+            startActivity(intent);
+        } else {
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Login Required")
+                    .setMessage("You need to sign in to chat with property owners.")
+                    .setPositiveButton("Sign In", (dialog, which) -> {
+                        Intent loginIntent = new Intent(requireContext(), LoginActivity.class);
+                        startActivity(loginIntent);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .setIcon(R.drawable.ic_chat)
+                    .show();
+        }
     }
 }
