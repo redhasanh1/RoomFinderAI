@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.roomfinder.android.models.User;
 import java.lang.reflect.Type;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,10 +53,40 @@ public class AuthManager {
      * Check if user is authenticated (matching website isUserAuthenticated())
      */
     public boolean isUserAuthenticated() {
-        String currentUser = prefs.getString(KEY_CURRENT_USER, null);
-        boolean authenticated = currentUser != null && !currentUser.equals("null") && !currentUser.equals("undefined");
-        Log.d(TAG, "isUserAuthenticated: " + authenticated);
-        return authenticated;
+        try {
+            User currentUser = getCurrentUser();
+            boolean hasUser = currentUser != null;
+            boolean hasValidToken = hasUser && currentUser.getAccessToken() != null && 
+                                  !currentUser.getAccessToken().isEmpty() && 
+                                  !currentUser.getAccessToken().equals("null") &&
+                                  !currentUser.getAccessToken().equals("undefined");
+            
+            boolean authenticated = hasUser && hasValidToken;
+            Log.d(TAG, "isUserAuthenticated: " + authenticated + 
+                      " (hasUser: " + hasUser + ", hasValidToken: " + hasValidToken + ")");
+            
+            if (hasUser && !hasValidToken) {
+                Log.w(TAG, "User exists but no valid access token found. Generating tokens to upgrade account.");
+                // Generate tokens for existing user instead of clearing session
+                if (generateTokensForUser(currentUser)) {
+                    // Re-check authentication after token generation
+                    hasValidToken = currentUser.getAccessToken() != null && 
+                                   !currentUser.getAccessToken().isEmpty() && 
+                                   !currentUser.getAccessToken().equals("null") &&
+                                   !currentUser.getAccessToken().equals("undefined");
+                    authenticated = hasUser && hasValidToken;
+                    Log.d(TAG, "Token generation successful. User now authenticated: " + authenticated);
+                } else {
+                    Log.e(TAG, "Token generation failed. Clearing invalid session.");
+                    logout(); // Only logout if token generation fails
+                }
+            }
+            
+            return authenticated;
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking authentication status", e);
+            return false;
+        }
     }
     
     /**
@@ -252,6 +283,18 @@ public class AuthManager {
     }
     
     /**
+     * Clear all authentication data (for debugging/fixing login issues)
+     */
+    public void clearAllAuthData() {
+        try {
+            prefs.edit().clear().apply();
+            Log.d(TAG, "Cleared all authentication data");
+        } catch (Exception error) {
+            Log.e(TAG, "Error clearing auth data", error);
+        }
+    }
+    
+    /**
      * Register new user (add to users array)
      */
     public void registerUser(User user) {
@@ -289,6 +332,59 @@ public class AuthManager {
             Log.d(TAG, "User registered: " + user.getEmail());
         } catch (Exception error) {
             Log.e(TAG, "Error registering user", error);
+        }
+    }
+    
+    /**
+     * Generate local tokens for existing users who don't have them
+     * This upgrades old user accounts to work with the new authentication system
+     */
+    public boolean generateTokensForUser(User user) {
+        try {
+            if (user == null || user.getEmail() == null) {
+                Log.w(TAG, "Cannot generate tokens for null user or user without email");
+                return false;
+            }
+            
+            // Generate tokens
+            String accessToken = generateLocalToken(user.getEmail(), "access");
+            String refreshToken = generateLocalToken(user.getEmail(), "refresh");
+            
+            // Set tokens on user
+            user.setAccessToken(accessToken);
+            user.setRefreshToken(refreshToken);
+            
+            // Update stored user
+            storeCurrentUser(user);
+            registerUser(user); // Update in users array too
+            
+            Log.d(TAG, "Generated tokens for user: " + user.getEmail());
+            return true;
+        } catch (Exception error) {
+            Log.e(TAG, "Error generating tokens for user", error);
+            return false;
+        }
+    }
+    
+    /**
+     * Generate local token for authentication compatibility
+     */
+    private String generateLocalToken(String email, String type) {
+        try {
+            // Generate a simple but unique token for local auth
+            String baseData = email + "_" + type + "_" + System.currentTimeMillis();
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = md.digest(baseData.getBytes());
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashBytes) {
+                sb.append(String.format("%02x", b));
+            }
+            // Return first 32 characters as token
+            return "local_" + sb.toString().substring(0, 32);
+        } catch (Exception e) {
+            Log.e(TAG, "Error generating local token", e);
+            // Fallback token
+            return "local_" + email.hashCode() + "_" + type + "_" + System.currentTimeMillis();
         }
     }
 }
