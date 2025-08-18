@@ -88,15 +88,14 @@ public class AiChatFragment extends Fragment {
         aiService = new AiNegotiatorService();
         mainHandler = new Handler(Looper.getMainLooper());
         
-        // Check authentication status
+        // Check authentication status for enhanced features
         AuthManager authManager = AuthManager.getInstance(requireContext());
-        if (!authManager.isUserAuthenticated()) {
-            Log.w(TAG, "User not authenticated, redirecting to login");
-            requireActivity().onBackPressed();
-            return;
+        if (authManager.isUserAuthenticated()) {
+            Log.d(TAG, "AI Negotiator services initialized for authenticated user - enhanced features available");
+        } else {
+            Log.d(TAG, "AI Negotiator services initialized for guest user - basic features available");
+            // Guest users can still use AI negotiator but with limited features
         }
-        
-        Log.d(TAG, "AI Negotiator services initialized");
     }
     
     private void checkNetworkConnection() {
