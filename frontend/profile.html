@@ -252,27 +252,423 @@
             border-color: #667eea;
             background-color: rgba(102, 126, 234, 0.05);
         }
+
+        /* Dropdown Styles */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-arrow {
+            font-size: 0.8rem;
+            transition: transform 0.2s ease;
+        }
+
+        .dropdown:hover .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            z-index: 100;
+            padding: 0.5rem 0;
+        }
+        
+        .dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .dropdown-item {
+            display: block;
+            padding: 0.75rem 1.25rem;
+            color: #374151;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        
+        .dropdown-item:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+            color: #667eea;
+            padding-left: 1.5rem;
+        }
+
+        /* Mobile Menu Styles */
+        .mobile-menu-btn {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            width: 30px;
+            height: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            z-index: 60;
+        }
+        
+        .hamburger-line {
+            width: 100%;
+            height: 3px;
+            background-color: #374151;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+            transform-origin: center;
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .mobile-menu-btn.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+        
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 55;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-menu.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .mobile-menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+        }
+        
+        .mobile-menu-content {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 85%;
+            max-width: 350px;
+            height: 100%;
+            background: white;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mobile-menu.active .mobile-menu-content {
+            transform: translateX(0);
+        }
+        
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+        
+        .mobile-menu-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.25rem;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+        }
+        
+        .mobile-menu-close:hover {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+        
+        .mobile-menu-items {
+            padding: 1rem 0;
+        }
+        
+        .mobile-menu-item {
+            display: block;
+            padding: 1rem 1.5rem;
+            color: #374151;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            border-bottom: 1px solid #f3f4f6;
+            transition: all 0.2s ease;
+            min-height: 56px;
+            display: flex;
+            align-items: center;
+            background: none;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+        }
+        
+        .mobile-menu-item:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+            color: #667eea;
+            padding-left: 2rem;
+        }
+        
+        .mobile-section {
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .mobile-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            color: #374151;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .mobile-section-header:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+            color: #667eea;
+        }
+        
+        .mobile-arrow {
+            font-size: 0.8rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .mobile-section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background-color: #f9fafb;
+        }
+        
+        .mobile-section-content.expanded {
+            max-height: 300px;
+        }
+        
+        .mobile-section-content .mobile-menu-item {
+            padding-left: 3rem;
+            font-size: 0.9rem;
+            font-weight: 400;
+            background-color: transparent;
+        }
+        
+        .mobile-section-content .mobile-menu-item:hover {
+            padding-left: 3.5rem;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        .auth-item {
+            background-color: rgba(102, 126, 234, 0.1);
+            color: #667eea !important;
+            font-weight: 600;
+            margin: 1rem;
+            border-radius: 0.5rem;
+            border-bottom: none !important;
+        }
+        
+        .auth-item:hover {
+            background-color: rgba(102, 126, 234, 0.2);
+            padding-left: 1.5rem;
+        }
+        
+        /* Hide mobile menu on desktop */
+        @media (min-width: 768px) {
+            .mobile-menu {
+                display: none;
+            }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 767px) {
+            .desktop-nav,
+            .desktop-auth {
+                display: none !important;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .mobile-menu-btn {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
     <!-- Header -->
-    <header class="glass-card sticky top-0 z-50 py-4">
-        <nav class="max-w-7xl mx-auto px-4 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    RoomFinderAI
-                </h1>
+    <header id="header" class="fixed top-0 w-full premium-header z-50">
+        <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
+            <!-- Mobile Layout -->
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <a href="index.html" class="text-xl md:text-2xl font-bold brand-logo font-display" style="text-decoration: none; color: inherit;">RoomFinderAI</a>
+                
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
             </div>
-            <div class="flex items-center gap-4">
-                <a href="dashboard.html" class="text-gray-600 hover:text-gray-900 font-medium">Dashboard</a>
-                <a href="listings.html" class="text-gray-600 hover:text-gray-900 font-medium">Listings</a>
-                <button onclick="logout()" class="btn-secondary text-sm">Logout</button>
+            
+            <!-- Desktop Navigation -->
+            <div class="desktop-nav hidden md:flex items-center space-x-8">
+                <!-- Home - Standalone -->
+                <a href="index.html" class="nav-item">Home</a>
+                
+                <!-- Dashboard - Standalone -->
+                <a href="dashboard.html" class="nav-item">Dashboard</a>
+                
+                <!-- Browse Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
+                        Browse <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="browse-dropdown">
+                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
+                        <a href="sublease.html" class="dropdown-item">Sublease Property</a>
+                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
+                    </div>
+                </div>
+                
+                <!-- Tools Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('tools')">
+                        Tools <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="tools-dropdown">
+                        <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
+                        <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
+                        <a href="legal.html" class="dropdown-item">Legal Help</a>
+                        <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
+                    </div>
+                </div>
+                
+                <!-- About Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('about')">
+                        About <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="about-dropdown">
+                        <a href="index.html#about" class="dropdown-item">About Us</a>
+                        <a href="index.html#contact" class="dropdown-item">Contact</a>
+                        <a href="support.html" class="dropdown-item">Support</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Desktop Auth -->
+            <div id="authSection" class="desktop-auth hidden md:block">
+                <!-- Profile content will be loaded here by JS -->
+                <button onclick="logout()" class="auth-link bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                    Logout
+                </button>
             </div>
         </nav>
+        
+        <!-- Mobile Navigation Menu -->
+        <div class="mobile-menu" id="mobile-menu">
+            <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+            <div class="mobile-menu-content">
+                <div class="mobile-menu-header">
+                    <a href="index.html" class="text-lg font-bold brand-logo font-display" style="text-decoration: none; color: inherit;">RoomFinderAI</a>
+                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
+                </div>
+                
+                <div class="mobile-menu-items">
+                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
+                    <a href="dashboard.html" class="mobile-menu-item" onclick="closeMobileMenu()">📊 Dashboard</a>
+                    
+                    <!-- Browse Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
+                            🔍 Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="browse-section">
+                            <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
+                            <a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
+                            <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Tools Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('tools')">
+                            🛠️ Tools <span class="mobile-arrow" id="tools-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="tools-section">
+                            <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
+                            <a href="pricing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing Plans</a>
+                            <a href="legal.html" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Help</a>
+                            <a href="mortgage.html" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
+                        </div>
+                    </div>
+                    
+                    <!-- About Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('about')">
+                            ℹ️ About <span class="mobile-arrow" id="about-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="about-section">
+                            <a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
+                            <a href="index.html#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
+                            <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Mobile Auth -->
+                    <button onclick="logout()" class="mobile-menu-item auth-item">🚪 Logout</button>
+                </div>
+            </div>
+        </div>
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 py-8">
+    <main class="max-w-7xl mx-auto px-4 py-8 mt-20">
         <!-- Enhanced Profile Header Section -->
         <div class="glass-card p-8 mb-8 fade-in">
             <div class="flex flex-col md:flex-row items-center gap-8">
@@ -620,6 +1016,12 @@
                 const userListingsKey = `userListings_${user.email}`;
                 const userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                 
+                console.log('🏠 Loading user listings:', {
+                    key: userListingsKey,
+                    count: userListings.length,
+                    listings: userListings
+                });
+                
                 document.getElementById('listingsCount').textContent = userListings.length;
                 
                 const container = document.getElementById('userListings');
@@ -631,23 +1033,35 @@
                             </svg>
                             <h3 class="text-lg font-medium text-gray-900 mb-2">No listings yet</h3>
                             <p class="text-gray-500">Create your first listing to get started</p>
-                            <a href="create-listing.html" class="inline-block mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">Create Listing</a>
+                            <a href="listings.html" class="inline-block mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">Create Listing</a>
                         </div>
                     `;
                 } else {
-                    container.innerHTML = userListings.map(listing => `
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    container.innerHTML = userListings.map(listing => {
+                        console.log('📝 Processing listing:', listing);
+                        
+                        // Create a more robust display with fallbacks
+                        const title = listing.title || listing.name || 'Untitled Listing';
+                        const price = listing.price || 0;
+                        const location = [listing.street, listing.city].filter(x => x).join(', ') || 'No location';
+                        const createdDate = listing.created_at ? new Date(listing.created_at).toLocaleDateString() : 'Unknown date';
+                        const bedrooms = listing.bedrooms || '?';
+                        const houseType = listing.house_type || listing.type || 'Property';
+                        
+                        return `
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-3">
                             <div class="flex-1">
-                                <h4 class="font-semibold text-gray-900">${listing.title || 'Untitled'}</h4>
-                                <p class="text-sm text-gray-600">$${listing.price || 0}/month • ${listing.city || 'No location'}</p>
-                                <p class="text-xs text-gray-500">Created: ${new Date(listing.created_at || Date.now()).toLocaleDateString()}</p>
+                                <h4 class="font-semibold text-gray-900">${title}</h4>
+                                <p class="text-sm text-gray-600">$${price.toLocaleString()}/month • ${location}</p>
+                                <p class="text-xs text-gray-500">${bedrooms} bed ${houseType} • Created: ${createdDate}</p>
                             </div>
                             <div class="flex space-x-2">
                                 <button onclick="editListing('${listing.id}')" class="text-blue-600 hover:text-blue-700 font-medium text-sm">Edit</button>
                                 <button onclick="deleteListing('${listing.id}')" class="text-red-600 hover:text-red-700 font-medium text-sm">Delete</button>
                             </div>
                         </div>
-                    `).join('');
+                    `;
+                    }).join('');
                 }
             } catch (error) {
                 console.error('Error loading user listings:', error);
@@ -690,7 +1104,39 @@
         async function loadSavedListings(user) {
             try {
                 const savedListingsKey = `savedListings_${user.email}`;
-                const savedListings = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
+                const savedListingIds = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
+                
+                console.log('💾 Loading saved listings:', {
+                    key: savedListingsKey,
+                    ids: savedListingIds
+                });
+                
+                // Get all listings from localStorage to match the saved IDs
+                const allListingsData = localStorage.getItem('listings') || '[]';
+                const allListings = JSON.parse(allListingsData);
+                
+                // Also check user-specific listings from all users
+                const allUsers = JSON.parse(localStorage.getItem('users')) || [];
+                const userListingsFromAllUsers = allUsers.flatMap(u => u.listings || []);
+                
+                // Combine all possible listings
+                const combinedListings = [...allListings, ...userListingsFromAllUsers];
+                
+                console.log('🔍 All available listings:', combinedListings);
+                
+                // Match saved IDs with actual listing data
+                const savedListings = savedListingIds.map(id => {
+                    const listing = combinedListings.find(l => l.id === id);
+                    if (listing) {
+                        return {
+                            ...listing,
+                            saved_at: new Date().toISOString() // Add saved timestamp
+                        };
+                    }
+                    return null;
+                }).filter(Boolean);
+                
+                console.log('❤️ Matched saved listings:', savedListings);
                 
                 document.getElementById('savedCount').textContent = savedListings.length;
                 document.getElementById('savedListingsCount').textContent = `${savedListings.length} saved`;
@@ -699,23 +1145,44 @@
                 const emptyState = document.getElementById('savedListingsEmpty');
                 
                 if (savedListings.length === 0) {
-                    emptyState.style.display = 'block';
-                    container.innerHTML = emptyState.outerHTML;
+                    container.innerHTML = `
+                        <div id="savedListingsEmpty" class="text-center py-12">
+                            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                            </svg>
+                            <p class="text-gray-500 text-lg">No saved listings yet</p>
+                            <p class="text-gray-400 text-sm mt-2">Click the heart icon on any listing to save it here</p>
+                            <a href="listings.html" class="inline-block mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">Browse Listings</a>
+                        </div>
+                    `;
                 } else {
-                    emptyState.style.display = 'none';
-                    container.innerHTML = savedListings.map(listing => `
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    container.innerHTML = savedListings.map(listing => {
+                        const title = listing.title || listing.name || 'Untitled Listing';
+                        const price = listing.price || 0;
+                        const location = [listing.street, listing.city].filter(x => x).join(', ') || 'No location';
+                        const savedDate = listing.saved_at ? new Date(listing.saved_at).toLocaleDateString() : 'Recently';
+                        const bedrooms = listing.bedrooms || '?';
+                        const houseType = listing.house_type || listing.type || 'Property';
+                        
+                        return `
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-3">
                             <div class="flex-1">
-                                <h4 class="font-semibold text-gray-900">${listing.title || 'Untitled'}</h4>
-                                <p class="text-sm text-gray-600">$${listing.price || 0}/month • ${listing.city || 'No location'}</p>
-                                <p class="text-xs text-gray-500">Saved: ${new Date(listing.saved_at || Date.now()).toLocaleDateString()}</p>
+                                <h4 class="font-semibold text-gray-900">${title}</h4>
+                                <p class="text-sm text-gray-600">$${price.toLocaleString()}/month • ${location}</p>
+                                <p class="text-xs text-gray-500">${bedrooms} bed ${houseType} • Saved: ${savedDate}</p>
                             </div>
                             <div class="flex space-x-2">
                                 <button onclick="viewListing('${listing.id}')" class="text-blue-600 hover:text-blue-700 font-medium text-sm">View</button>
-                                <button onclick="unsaveListing('${listing.id}')" class="text-red-600 hover:text-red-700 font-medium text-sm">Remove</button>
+                                <button onclick="unsaveListing('${listing.id}')" class="text-red-600 hover:text-red-700 font-medium text-sm">
+                                    <svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                    </svg>
+                                    Remove
+                                </button>
                             </div>
                         </div>
-                    `).join('');
+                    `;
+                    }).join('');
                 }
             } catch (error) {
                 console.error('Error loading saved listings:', error);
@@ -811,11 +1278,20 @@
         function unsaveListing(id) {
             const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
             const savedListingsKey = `savedListings_${currentUser.email}`;
-            let savedListings = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
+            let savedListingIds = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
             
-            savedListings = savedListings.filter(l => l.id !== id);
-            localStorage.setItem(savedListingsKey, JSON.stringify(savedListings));
+            console.log('🗑️ Removing saved listing:', {
+                id: id,
+                beforeRemoval: savedListingIds
+            });
             
+            // Remove the listing ID from the array
+            savedListingIds = savedListingIds.filter(savedId => savedId !== id);
+            localStorage.setItem(savedListingsKey, JSON.stringify(savedListingIds));
+            
+            console.log('✅ Updated saved listings:', savedListingIds);
+            
+            // Reload the saved listings
             loadSavedListings(currentUser);
         }
 
@@ -834,6 +1310,96 @@
                 reader.readAsDataURL(file);
             }
         }
+
+        // Navigation functions
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId + '-dropdown');
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            
+            // Close all other dropdowns
+            allDropdowns.forEach(menu => {
+                if (menu.id !== dropdownId + '-dropdown') {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                }
+            });
+            
+            // Toggle current dropdown
+            if (dropdown.style.opacity === '1') {
+                dropdown.style.opacity = '0';
+                dropdown.style.visibility = 'hidden';
+                dropdown.style.transform = 'translateY(-10px)';
+            } else {
+                dropdown.style.opacity = '1';
+                dropdown.style.visibility = 'visible';
+                dropdown.style.transform = 'translateY(0)';
+            }
+        }
+
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            
+            if (mobileMenu.classList.contains('active')) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        }
+
+        function openMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            if (mobileMenu) {
+                mobileMenu.classList.add('active');
+            }
+            if (hamburgerBtn) {
+                hamburgerBtn.classList.add('active');
+            }
+            body.style.overflow = 'hidden';
+        }
+
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerBtn = document.querySelector('.mobile-menu-btn');
+            const body = document.body;
+            
+            if (mobileMenu) {
+                mobileMenu.classList.remove('active');
+            }
+            if (hamburgerBtn) {
+                hamburgerBtn.classList.remove('active');
+            }
+            body.style.overflow = '';
+        }
+
+        function toggleMobileSection(sectionId) {
+            const section = document.getElementById(sectionId + '-section');
+            const arrow = document.getElementById(sectionId + '-arrow');
+            
+            if (section.classList.contains('expanded')) {
+                section.classList.remove('expanded');
+                arrow.textContent = '▼';
+            } else {
+                section.classList.add('expanded');
+                arrow.textContent = '▲';
+            }
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.dropdown')) {
+                const allDropdowns = document.querySelectorAll('.dropdown-menu');
+                allDropdowns.forEach(menu => {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                });
+            }
+        });
     </script>
 </body>
 </html>
