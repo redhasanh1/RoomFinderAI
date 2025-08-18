@@ -24,6 +24,7 @@ import com.roomfinder.android.models.ChatMessage;
 import com.roomfinder.android.models.Conversation;
 import com.roomfinder.android.models.Listing;
 import com.roomfinder.android.services.RealTimeChatService;
+import com.roomfinder.android.services.AiNegotiationEngine;
 import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.utils.ApiKeys;
 import com.roomfinder.android.services.AttachmentUploadService;
@@ -71,9 +72,13 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
     // Attachment service
     private AttachmentUploadService attachmentService;
     
-    // AI negotiator integration
+    // AI negotiation integration
     private String pendingMessageTemplate;
     private String conversationType;
+    private AiNegotiationEngine negotiationEngine;
+    private String negotiationId;
+    private String negotiationStrategy;
+    private boolean isAiNegotiationActive = false;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,29 +122,43 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
         listingOwnerEmail = intent.getStringExtra("owner_email");
         otherUserEmail = intent.getStringExtra("other_user_email");
         
-        // Handle AI negotiator integration
+        // Handle AI negotiation integration
         String landlordEmail = intent.getStringExtra("LANDLORD_EMAIL");
         String landlordName = intent.getStringExtra("LANDLORD_NAME");
         String propertyTitle = intent.getStringExtra("PROPERTY_TITLE");
         conversationType = intent.getStringExtra("CONVERSATION_TYPE");
-        String aiMessageTemplate = intent.getStringExtra("AI_MESSAGE_TEMPLATE");
+        String aiGeneratedMessage = intent.getStringExtra("AI_GENERATED_MESSAGE");
+        negotiationId = intent.getStringExtra("AI_NEGOTIATION_ID");
+        negotiationStrategy = intent.getStringExtra("NEGOTIATION_STRATEGY");
         
-        // If coming from AI negotiator, set up for landlord contact
-        if ("LANDLORD_CONTACT".equals(conversationType) && landlordEmail != null) {
+        // If coming from AI negotiation, set up for real negotiation
+        if ("AI_NEGOTIATION".equals(conversationType) && landlordEmail != null) {
             otherUserEmail = landlordEmail;
-            listingTitle = propertyTitle != null ? propertyTitle : "Property Inquiry";
+            listingTitle = propertyTitle != null ? propertyTitle : "Property Negotiation";
+            isAiNegotiationActive = true;
             
-            // Create a virtual listing for AI negotiator conversations
-            listingId = "ai_property_" + System.currentTimeMillis(); // Unique ID
+            // Create a virtual listing for AI negotiation conversations
+            listingId = "ai_negotiation_" + System.currentTimeMillis();
             listingOwnerEmail = landlordEmail;
             
-            Log.d(TAG, "AI Negotiator setup - landlord: " + landlordEmail + ", property: " + propertyTitle);
+            Log.d(TAG, "AI Negotiation setup - landlord: " + landlordEmail + ", property: " + propertyTitle + ", negotiationId: " + negotiationId);
             
-            // Pre-populate message input with AI template if provided
+            // Pre-populate message input with AI-generated message
+            if (aiGeneratedMessage != null && !aiGeneratedMessage.isEmpty()) {
+                pendingMessageTemplate = aiGeneratedMessage;
+                Log.d(TAG, "AI-generated message prepared for negotiation");
+            }
+        }
+        // Legacy support for old LANDLORD_CONTACT type
+        else if ("LANDLORD_CONTACT".equals(conversationType) && landlordEmail != null) {
+            otherUserEmail = landlordEmail;
+            listingTitle = propertyTitle != null ? propertyTitle : "Property Inquiry";
+            listingId = "ai_property_" + System.currentTimeMillis();
+            listingOwnerEmail = landlordEmail;
+            
+            String aiMessageTemplate = intent.getStringExtra("AI_MESSAGE_TEMPLATE");
             if (aiMessageTemplate != null && !aiMessageTemplate.isEmpty()) {
-                // Store template to set after UI is initialized
                 pendingMessageTemplate = aiMessageTemplate;
-                Log.d(TAG, "AI template prepared for pre-population");
             }
         }
         
@@ -155,12 +174,12 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
             currentListing.setTitle(listingTitle);
             currentListing.setUserEmail(listingOwnerEmail != null ? listingOwnerEmail : otherUserEmail);
             
-            // For AI negotiator conversations, set basic property details
-            if ("LANDLORD_CONTACT".equals(conversationType)) {
+            // For AI negotiation conversations, set basic property details
+            if ("AI_NEGOTIATION".equals(conversationType) || "LANDLORD_CONTACT".equals(conversationType)) {
                 currentListing.setPrice(0.0); // Will be set later if needed
                 currentListing.setHouseType("Property"); // Generic type
                 currentListing.setCity("TBD"); // To be determined
-                Log.d(TAG, "Created virtual listing for AI negotiator: " + listingId);
+                Log.d(TAG, "Created virtual listing for AI conversation: " + listingId);
             }
         }
         
@@ -168,8 +187,11 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
     }
     
     private void setupUI() {
-        // Set title
-        if (listingTitle != null) {
+        // Set title based on conversation type
+        if (isAiNegotiationActive) {
+            binding.toolbar.setTitle("🤖 AI Negotiation - " + (listingTitle != null ? listingTitle : "Property"));
+            binding.toolbar.setSubtitle("Real-time AI assistance active");
+        } else if (listingTitle != null) {
             binding.toolbar.setTitle("Chat about " + listingTitle);
         } else {
             binding.toolbar.setTitle("Chat with " + getDisplayName(otherUserEmail));
@@ -191,16 +213,17 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
             return true;
         });
         
-        // Pre-populate message input with AI template if available
+        // Pre-populate message input with AI-generated message if available
         if (pendingMessageTemplate != null && !pendingMessageTemplate.isEmpty()) {
             binding.messageInput.setText(pendingMessageTemplate);
-            binding.messageInput.setSelection(binding.messageInput.getText().length()); // Move cursor to end
+            binding.messageInput.setSelection(binding.messageInput.getText().length());
             
-            // Show a helpful hint
-            Toast.makeText(this, "💡 AI has prepared a professional message for you. Feel free to customize it!", 
-                          Toast.LENGTH_LONG).show();
+            if (isAiNegotiationActive) {
+                Toast.makeText(this, "🤖 AI has crafted a strategic negotiation message for you!", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "💡 AI has prepared a professional message for you. Feel free to customize it!", Toast.LENGTH_LONG).show();
+            }
             
-            // Clear the template so it's only used once
             pendingMessageTemplate = null;
         }
     }
@@ -218,6 +241,12 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
     
     private void initializeServices() {
         attachmentService = new AttachmentUploadService(this);
+        
+        // Initialize AI negotiation engine if this is an AI negotiation
+        if (isAiNegotiationActive && negotiationId != null) {
+            negotiationEngine = new AiNegotiationEngine();
+            Log.d(TAG, "AI Negotiation Engine initialized for negotiation: " + negotiationId);
+        }
     }
     
     private void initializeChatService() {
@@ -309,6 +338,49 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
         
         // Send message through chat service
         chatService.sendMessage(conversationId, messageText, this);
+        
+        // If AI negotiation is active, analyze the message and provide assistance
+        if (isAiNegotiationActive && negotiationEngine != null && negotiationId != null) {
+            provideAiNegotiationAssistance(messageText);
+        }
+    }
+    
+    // Provide real-time AI assistance during negotiation
+    private void provideAiNegotiationAssistance(String userMessage) {
+        // Get the active negotiation
+        AiNegotiationEngine.Negotiation negotiation = negotiationEngine.getNegotiation(negotiationId);
+        if (negotiation == null) {
+            Log.w(TAG, "No active negotiation found for ID: " + negotiationId);
+            return;
+        }
+        
+        // Analyze user's message and provide contextual assistance
+        String analysisContext = "The user just sent this message to the landlord: '" + userMessage + "'. " +
+                                "Provide brief strategic advice for the next steps in this negotiation. " +
+                                "Keep response under 100 words and focus on actionable negotiation tips.";
+        
+        negotiationEngine.generateNegotiationMessage(negotiation, analysisContext, new AiNegotiationEngine.NegotiationCallback() {
+            @Override
+            public void onSuccess(String aiAdvice) {
+                runOnUiThread(() -> {
+                    // Add AI assistance message to the chat
+                    ChatMessage aiAssistance = ChatMessage.createAiMessage(
+                        "🤖 **AI Negotiation Assistant:**\n\n" + aiAdvice
+                    );
+                    messages.add(aiAssistance);
+                    chatAdapter.notifyItemInserted(messages.size() - 1);
+                    scrollToBottom();
+                    
+                    Log.d(TAG, "AI negotiation assistance provided");
+                });
+            }
+            
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "AI assistance failed: " + error);
+                // Don't show error to user for assistance - it's not critical
+            }
+        });
     }
     
     private void scrollToBottom() {
@@ -909,6 +981,45 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
                 chatAdapter.notifyItemInserted(messages.size() - 1);
                 scrollToBottom();
                 Log.d(TAG, "Message received: " + message.getContent());
+                
+                // If AI negotiation is active and this is from the landlord, provide response suggestions
+                if (isAiNegotiationActive && !message.getSender().equals(currentUserEmail)) {
+                    provideLandlordResponseAnalysis(message.getContent());
+                }
+            }
+        });
+    }
+    
+    // Analyze landlord's response and suggest user's next move
+    private void provideLandlordResponseAnalysis(String landlordMessage) {
+        if (negotiationEngine == null || negotiationId == null) return;
+        
+        AiNegotiationEngine.Negotiation negotiation = negotiationEngine.getNegotiation(negotiationId);
+        if (negotiation == null) return;
+        
+        String responseContext = "The landlord responded with: '" + landlordMessage + "'. " +
+                               "Analyze this response and suggest the user's best next move in the negotiation. " +
+                               "Provide 2-3 specific response options or strategies. Keep under 150 words.";
+        
+        negotiationEngine.generateNegotiationMessage(negotiation, responseContext, new AiNegotiationEngine.NegotiationCallback() {
+            @Override
+            public void onSuccess(String aiAnalysis) {
+                runOnUiThread(() -> {
+                    // Add AI response analysis after a short delay
+                    new android.os.Handler().postDelayed(() -> {
+                        ChatMessage aiResponseAnalysis = ChatMessage.createAiMessage(
+                            "🎯 **Negotiation Analysis:**\n\n" + aiAnalysis
+                        );
+                        messages.add(aiResponseAnalysis);
+                        chatAdapter.notifyItemInserted(messages.size() - 1);
+                        scrollToBottom();
+                    }, 2000); // 2 second delay to let user read landlord's message first
+                });
+            }
+            
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "AI response analysis failed: " + error);
             }
         });
     }
