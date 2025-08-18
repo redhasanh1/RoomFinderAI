@@ -35,6 +35,7 @@
     
     <!-- Neutral Colors -->
     <color name="white">#FFFFFF</color>
+    <color name="white_80">#CCFFFFFF</color>
     <color name="black">#000000</color>
     <color name="light_gray">#F8F9FA</color>
     <color name="gray_50">#F9FAFB</color>
@@ -73,6 +74,11 @@
     <!-- AI Chat Colors -->
     <color name="ai_chat_primary">#2196F3</color>
     <color name="ai_chat_secondary">#1976D2</color>
+    
+    <!-- Property Card Colors -->
+    <color name="property_card_background">@color/white</color>
+    <color name="property_card_border">@color/outline</color>
+    <color name="icon_secondary">@color/gray_500</color>
     
     <!-- Material 3 Colors -->
     <color name="primary">@color/purple_primary</color>

@@ -20,6 +20,7 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
     public interface OnListingClickListener {
         void onListingClick(Listing listing);
         void onFavoriteClick(Listing listing, int position);
+        void onChatClick(Listing listing);
     }
     
     public ListingsAdapter(List<Listing> listings, OnListingClickListener listener) {
@@ -156,6 +157,12 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
             binding.favoriteButton.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onFavoriteClick(listing, position);
+                }
+            });
+            
+            binding.chatButton.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onChatClick(listing);
                 }
             });
         }

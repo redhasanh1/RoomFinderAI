@@ -5,12 +5,20 @@ import java.util.Date;
 public class ChatMessage {
     private String id;
     private String content;
-    private String sender; // "user" or "ai"
+    private String sender; // "user" or "ai" for AI chat, or email for real messaging
+    private String senderEmail; // Email of the sender for real messaging
+    private String conversationId; // For real messaging conversations
     private long timestamp;
     private boolean isTyping;
     private boolean delivered; // For message delivery status
     private MessageType type;
     private String propertyId; // For property-related messages
+    private String messageType; // "text", "file", "lease" for real messaging
+    private String fileUrl; // For file messages
+    private String fileName; // For file messages
+    private Long fileSize; // For file messages
+    private String fileType; // For file messages
+    private Listing associatedListing; // For property card messages
     
     public enum MessageType {
         TEXT,
@@ -18,7 +26,10 @@ public class ChatMessage {
         NEGOTIATION_ADVICE,
         TEMPLATE_MESSAGE,
         SYSTEM_MESSAGE,
-        ERROR
+        ERROR,
+        USER_MESSAGE,
+        FILE_MESSAGE,
+        PROPERTY_CARD
     }
     
     // Constructors
@@ -27,6 +38,7 @@ public class ChatMessage {
         this.type = MessageType.TEXT;
         this.isTyping = false;
         this.delivered = false;
+        this.messageType = "text";
     }
     
     public ChatMessage(String content, String sender) {
@@ -43,6 +55,23 @@ public class ChatMessage {
     // Static factory methods
     public static ChatMessage createUserMessage(String content) {
         return new ChatMessage(content, "user", MessageType.TEXT);
+    }
+    
+    public static ChatMessage createRealUserMessage(String content, String senderEmail, String conversationId) {
+        ChatMessage message = new ChatMessage(content, senderEmail, MessageType.USER_MESSAGE);
+        message.setSenderEmail(senderEmail);
+        message.setConversationId(conversationId);
+        return message;
+    }
+    
+    public static ChatMessage createFileMessage(String fileName, String fileUrl, String senderEmail, String conversationId) {
+        ChatMessage message = new ChatMessage(fileName, senderEmail, MessageType.FILE_MESSAGE);
+        message.setSenderEmail(senderEmail);
+        message.setConversationId(conversationId);
+        message.setFileUrl(fileUrl);
+        message.setFileName(fileName);
+        message.setMessageType("file");
+        return message;
     }
     
     public static ChatMessage createAiMessage(String content) {
@@ -75,6 +104,12 @@ public class ChatMessage {
         return message;
     }
     
+    public static ChatMessage createPropertyCardMessage(String content, Listing listing) {
+        ChatMessage message = new ChatMessage(content, "ai", MessageType.PROPERTY_CARD);
+        message.setAssociatedListing(listing);
+        return message;
+    }
+    
     // Getters and Setters
     public String getId() {
         return id;
@@ -98,6 +133,62 @@ public class ChatMessage {
     
     public void setSender(String sender) {
         this.sender = sender;
+    }
+    
+    public String getSenderEmail() {
+        return senderEmail;
+    }
+    
+    public void setSenderEmail(String senderEmail) {
+        this.senderEmail = senderEmail;
+    }
+    
+    public String getConversationId() {
+        return conversationId;
+    }
+    
+    public void setConversationId(String conversationId) {
+        this.conversationId = conversationId;
+    }
+    
+    public String getMessageType() {
+        return messageType;
+    }
+    
+    public void setMessageType(String messageType) {
+        this.messageType = messageType;
+    }
+    
+    public String getFileUrl() {
+        return fileUrl;
+    }
+    
+    public void setFileUrl(String fileUrl) {
+        this.fileUrl = fileUrl;
+    }
+    
+    public String getFileName() {
+        return fileName;
+    }
+    
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+    
+    public Long getFileSize() {
+        return fileSize;
+    }
+    
+    public void setFileSize(Long fileSize) {
+        this.fileSize = fileSize;
+    }
+    
+    public String getFileType() {
+        return fileType;
+    }
+    
+    public void setFileType(String fileType) {
+        this.fileType = fileType;
     }
     
     public long getTimestamp() {
@@ -144,6 +235,14 @@ public class ChatMessage {
         this.delivered = delivered;
     }
     
+    public Listing getAssociatedListing() {
+        return associatedListing;
+    }
+    
+    public void setAssociatedListing(Listing associatedListing) {
+        this.associatedListing = associatedListing;
+    }
+    
     // Helper methods
     public boolean isFromUser() {
         return "user".equals(sender);
@@ -151,6 +250,18 @@ public class ChatMessage {
     
     public boolean isFromAi() {
         return "ai".equals(sender);
+    }
+    
+    public boolean isFromCurrentUser(String currentUserEmail) {
+        return currentUserEmail != null && currentUserEmail.equals(senderEmail);
+    }
+    
+    public boolean isFileMessage() {
+        return type == MessageType.FILE_MESSAGE || "file".equals(messageType);
+    }
+    
+    public boolean isRealUserMessage() {
+        return type == MessageType.USER_MESSAGE && senderEmail != null;
     }
     
     public boolean isSystemMessage() {
@@ -178,6 +289,17 @@ public class ChatMessage {
         Date date = new Date(timestamp);
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault());
         return sdf.format(date);
+    }
+    
+    public String getFormattedFileSize() {
+        if (fileSize == null) return "";
+        
+        long bytes = fileSize;
+        if (bytes < 1024) return bytes + " B";
+        
+        int exp = (int) (Math.log(bytes) / Math.log(1024));
+        String pre = "KMGTPE".charAt(exp-1) + "";
+        return String.format("%.1f %sB", bytes / Math.pow(1024, exp), pre);
     }
     
     public String getFormattedDate() {

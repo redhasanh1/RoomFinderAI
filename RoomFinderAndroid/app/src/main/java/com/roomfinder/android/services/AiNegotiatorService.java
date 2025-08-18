@@ -18,6 +18,9 @@ public class AiNegotiatorService {
     
     private OkHttpClient client;
     private List<ChatMessage> conversationHistory;
+    private int retryCount = 0;
+    private static final int MAX_RETRIES = 3;
+    private static final long RETRY_DELAY_MS = 2000; // 2 seconds
     
     public AiNegotiatorService() {
         this.client = new OkHttpClient.Builder()
@@ -85,23 +88,44 @@ public class AiNegotiatorService {
     
     // Process user message and get AI response
     public void processMessage(String userMessage, AiResponseCallback callback) {
-        Log.d(TAG, "Processing message: " + userMessage);
+        // Reset retry count for new message
+        retryCount = 0;
+        processMessageWithRetry(userMessage, callback);
+    }
+    
+    private void processMessageWithRetry(String userMessage, AiResponseCallback callback) {
+        Log.d(TAG, "Processing message (attempt " + (retryCount + 1) + "): " + userMessage);
         
         // Validate API key
-        if (ApiKeys.OPENAI_API_KEY == null || ApiKeys.OPENAI_API_KEY.isEmpty()) {
+        if (ApiKeys.OPENAI_API_KEY == null || ApiKeys.OPENAI_API_KEY.isEmpty() || 
+            "your_openai_api_key_here".equals(ApiKeys.OPENAI_API_KEY)) {
             Log.e(TAG, "OpenAI API key is not configured");
-            callback.onError("AI service not configured. Please contact support.");
+            callback.onError("AI service not configured. Please set your OpenAI API key in the environment variables.");
             return;
         }
         
-        // Add user message to conversation history
-        conversationHistory.add(new ChatMessage("user", userMessage));
+        // Validate and sanitize user input
+        if (userMessage == null || userMessage.trim().isEmpty()) {
+            callback.onError("Please enter a message");
+            return;
+        }
+        
+        // Limit message length to prevent excessive API costs
+        String sanitizedMessage = userMessage.trim();
+        if (sanitizedMessage.length() > 1000) {
+            sanitizedMessage = sanitizedMessage.substring(0, 1000) + "...";
+        }
+        
+        // Add user message to conversation history only on first attempt
+        if (retryCount == 0) {
+            conversationHistory.add(new ChatMessage("user", sanitizedMessage));
+        }
         
         // Build the system prompt for the AI negotiator
         String systemPrompt = buildSystemPrompt();
         
         try {
-            JSONObject requestBody = buildOpenAiRequest(systemPrompt, userMessage);
+            JSONObject requestBody = buildOpenAiRequest(systemPrompt, sanitizedMessage);
             Request request = new Request.Builder()
                     .url(OPENAI_API_URL)
                     .addHeader("Authorization", "Bearer " + ApiKeys.OPENAI_API_KEY)
@@ -228,76 +252,354 @@ public class AiNegotiatorService {
         return request;
     }
     
-    // Extract property search criteria from user message using simple parsing
+    // Extract property search criteria from user message using enhanced parsing
     private PropertyCriteria extractPropertyCriteria(String message) {
         PropertyCriteria criteria = new PropertyCriteria();
         String lowerMessage = message.toLowerCase();
         
-        // Extract location
-        if (lowerMessage.contains(" in ")) {
-            String[] parts = lowerMessage.split(" in ");
-            if (parts.length > 1) {
-                String locationPart = parts[1].split(" ")[0];
-                criteria.location = locationPart.replaceAll("[^a-zA-Z\\s]", "").trim();
-            }
-        }
+        Log.d(TAG, "🔍 Extracting criteria from: \"" + message + "\"");
         
-        // Extract price range
-        if (lowerMessage.contains("$")) {
-            String[] words = lowerMessage.split("\\s+");
-            for (String word : words) {
-                if (word.contains("$")) {
-                    try {
-                        String priceStr = word.replaceAll("[^0-9]", "");
-                        if (!priceStr.isEmpty()) {
-                            int price = Integer.parseInt(priceStr);
-                            if (lowerMessage.contains("under") || lowerMessage.contains("below") || lowerMessage.contains("max")) {
-                                criteria.maxPrice = price;
-                            } else if (lowerMessage.contains("over") || lowerMessage.contains("above") || lowerMessage.contains("min")) {
-                                criteria.minPrice = price;
-                            } else {
-                                criteria.maxPrice = price; // Default to max price
-                            }
-                        }
-                    } catch (NumberFormatException e) {
-                        // Ignore invalid price formats
-                    }
-                }
-            }
-        }
+        // Enhanced location extraction
+        criteria.location = extractLocation(lowerMessage);
+        Log.d(TAG, "📍 Location extracted: " + criteria.location);
         
-        // Extract property type
-        if (lowerMessage.contains("studio")) {
-            criteria.propertyType = "studio";
-        } else if (lowerMessage.contains("apartment")) {
-            criteria.propertyType = "apartment";
-        } else if (lowerMessage.contains("house")) {
-            criteria.propertyType = "house";
-        } else if (lowerMessage.contains("condo")) {
-            criteria.propertyType = "condo";
-        }
+        criteria.maxPrice = extractMaxPrice(lowerMessage);
+        Log.d(TAG, "💰 Max price extracted: " + criteria.maxPrice);
         
-        // Extract bedrooms
-        if (lowerMessage.contains("bedroom")) {
-            String[] words = lowerMessage.split("\\s+");
-            for (int i = 0; i < words.length - 1; i++) {
-                if (words[i + 1].contains("bedroom")) {
-                    try {
-                        criteria.bedrooms = Integer.parseInt(words[i].replaceAll("[^0-9]", ""));
-                        break;
-                    } catch (NumberFormatException e) {
-                        // Try text numbers
-                        String numWord = words[i].toLowerCase();
-                        if (numWord.contains("one") || numWord.contains("1")) criteria.bedrooms = 1;
-                        else if (numWord.contains("two") || numWord.contains("2")) criteria.bedrooms = 2;
-                        else if (numWord.contains("three") || numWord.contains("3")) criteria.bedrooms = 3;
-                        else if (numWord.contains("four") || numWord.contains("4")) criteria.bedrooms = 4;
-                    }
-                }
-            }
-        }
+        criteria.minPrice = extractMinPrice(lowerMessage);
+        Log.d(TAG, "💰 Min price extracted: " + criteria.minPrice);
+        
+        criteria.propertyType = extractPropertyType(lowerMessage);
+        Log.d(TAG, "🏠 Property type extracted: " + criteria.propertyType);
+        
+        criteria.bedrooms = extractBedrooms(lowerMessage);
+        Log.d(TAG, "🛏️ Bedrooms extracted: " + criteria.bedrooms);
+        
+        criteria.bathrooms = extractBathrooms(lowerMessage);
+        Log.d(TAG, "🚿 Bathrooms extracted: " + criteria.bathrooms);
+        
+        Log.d(TAG, "✅ Criteria extraction complete. Has valid criteria: " + criteria.hasValidCriteria());
         
         return criteria;
+    }
+    
+    private String extractLocation(String message) {
+        Log.d(TAG, "🔎 Extracting location from: " + message);
+        
+        // Pattern 1: "in [location]" - most common
+        if (message.contains(" in ")) {
+            String[] parts = message.split(" in ");
+            if (parts.length > 1) {
+                String locationPart = parts[1];
+                Log.d(TAG, "📍 Found 'in' pattern, location part: " + locationPart);
+                
+                // Take everything until next major keyword or end
+                String[] stopWords = {" with ", " under ", " over ", " for ", " that ", " where ", " near ", " around ", " at ", " priced ", " costing ", " around ", " about "};
+                for (String stopWord : stopWords) {
+                    if (locationPart.contains(stopWord)) {
+                        locationPart = locationPart.split(stopWord)[0];
+                        Log.d(TAG, "📍 Trimmed at stop word '" + stopWord + "': " + locationPart);
+                        break;
+                    }
+                }
+                
+                String cleanLocation = locationPart.trim().replaceAll("[^a-zA-Z\\s]", "").trim();
+                if (!cleanLocation.isEmpty()) {
+                    Log.d(TAG, "📍 Final location: " + cleanLocation);
+                    return cleanLocation;
+                }
+            }
+        }
+        
+        // Pattern 2: "near [location]", "around [location]"
+        String[] locationPatterns = {" near ", " around ", " at "};
+        for (String pattern : locationPatterns) {
+            if (message.contains(pattern)) {
+                String[] parts = message.split(pattern);
+                if (parts.length > 1) {
+                    String locationPart = parts[1];
+                    // Take first word or phrase before stop words
+                    String[] stopWords = {" with ", " under ", " over ", " for ", " that ", " priced "};
+                    for (String stopWord : stopWords) {
+                        if (locationPart.contains(stopWord)) {
+                            locationPart = locationPart.split(stopWord)[0];
+                            break;
+                        }
+                    }
+                    
+                    String cleanLocation = locationPart.trim().replaceAll("[^a-zA-Z\\s]", "").trim();
+                    if (!cleanLocation.isEmpty()) {
+                        Log.d(TAG, "📍 Found '" + pattern + "' pattern, location: " + cleanLocation);
+                        return cleanLocation;
+                    }
+                }
+            }
+        }
+        
+        // Pattern 3: Common location names as fallback
+        String[] commonLocations = {"downtown", "midtown", "uptown", "city center", "city centre", "suburbs", "waterfront"};
+        for (String location : commonLocations) {
+            if (message.contains(location)) {
+                Log.d(TAG, "📍 Found common location: " + location);
+                return location;
+            }
+        }
+        
+        Log.d(TAG, "📍 No location found");
+        return null;
+    }
+    
+    private Integer extractMaxPrice(String message) {
+        Log.d(TAG, "💰 Extracting max price from: " + message);
+        
+        // Pattern 1: "under $X", "below $X", "max $X"
+        String[] maxKeywords = {"under", "below", "max", "maximum", "up to", "no more than"};
+        for (String keyword : maxKeywords) {
+            if (message.contains(keyword)) {
+                Log.d(TAG, "💰 Found max keyword: " + keyword);
+                
+                // Look for price after keyword
+                String[] words = message.split("\\s+");
+                for (int i = 0; i < words.length; i++) {
+                    if (words[i].toLowerCase().contains(keyword.replace(" ", ""))) {
+                        // Check next few words for price
+                        for (int j = i + 1; j < Math.min(i + 4, words.length); j++) {
+                            Integer price = parsePrice(words[j]);
+                            if (price != null) {
+                                Log.d(TAG, "💰 Max price found: " + price);
+                                return price;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Pattern 2: "$X or less", "$X maximum", "$X max"
+        if (message.contains("$")) {
+            String[] words = message.split("\\s+");
+            for (int i = 0; i < words.length; i++) {
+                if (words[i].contains("$")) {
+                    Integer price = parsePrice(words[i]);
+                    if (price != null) {
+                        // Check if followed by max indicators
+                        if (i + 1 < words.length) {
+                            String nextWord = words[i + 1].toLowerCase();
+                            if (nextWord.contains("or") || nextWord.contains("max") || nextWord.contains("less")) {
+                                Log.d(TAG, "💰 Max price found (with suffix): " + price);
+                                return price;
+                            }
+                        }
+                        
+                        // If no min keywords present, assume it's max
+                        if (!message.contains("over") && !message.contains("above") && !message.contains("minimum") && !message.contains("more than")) {
+                            Log.d(TAG, "💰 Max price found (default): " + price);
+                            return price;
+                        }
+                    }
+                }
+            }
+        }
+        
+        Log.d(TAG, "💰 No max price found");
+        return null;
+    }
+    
+    private Integer extractMinPrice(String message) {
+        Log.d(TAG, "💰 Extracting min price from: " + message);
+        
+        // Pattern 1: "over $X", "above $X", "min $X", "minimum $X"
+        String[] minKeywords = {"over", "above", "min", "minimum", "more than", "at least"};
+        for (String keyword : minKeywords) {
+            if (message.contains(keyword)) {
+                Log.d(TAG, "💰 Found min keyword: " + keyword);
+                
+                String[] words = message.split("\\s+");
+                for (int i = 0; i < words.length; i++) {
+                    if (words[i].toLowerCase().contains(keyword.replace(" ", ""))) {
+                        // Check next few words for price
+                        for (int j = i + 1; j < Math.min(i + 4, words.length); j++) {
+                            Integer price = parsePrice(words[j]);
+                            if (price != null) {
+                                Log.d(TAG, "💰 Min price found: " + price);
+                                return price;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Pattern 2: "$X or more", "$X minimum"
+        if (message.contains("$")) {
+            String[] words = message.split("\\s+");
+            for (int i = 0; i < words.length; i++) {
+                if (words[i].contains("$")) {
+                    Integer price = parsePrice(words[i]);
+                    if (price != null) {
+                        // Check if followed by min indicators
+                        if (i + 1 < words.length) {
+                            String nextWords = String.join(" ", java.util.Arrays.copyOfRange(words, i + 1, Math.min(i + 3, words.length)));
+                            if (nextWords.contains("or more") || nextWords.contains("minimum") || nextWords.contains("plus")) {
+                                Log.d(TAG, "💰 Min price found (with suffix): " + price);
+                                return price;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Log.d(TAG, "💰 No min price found");
+        return null;
+    }
+    
+    private String extractPropertyType(String message) {
+        // Check for property types with priority (most specific first)
+        if (message.contains("studio") || message.contains("bachelor")) {
+            return "studio";
+        } else if (message.contains("townhouse") || message.contains("town house")) {
+            return "townhouse";
+        } else if (message.contains("condo") || message.contains("condominium")) {
+            return "condo";
+        } else if (message.contains("apartment") || message.contains("apt")) {
+            return "apartment";
+        } else if (message.contains("house") || message.contains("home")) {
+            return "house";
+        } else if (message.contains("room") || message.contains("shared")) {
+            return "room";
+        }
+        
+        return null;
+    }
+    
+    private Integer extractBedrooms(String message) {
+        // Pattern 1: "X bedroom", "X bed"
+        String[] patterns = {"bedroom", "bed"};
+        for (String pattern : patterns) {
+            if (message.contains(pattern)) {
+                String[] words = message.split("\\s+");
+                for (int i = 0; i < words.length - 1; i++) {
+                    if (words[i + 1].contains(pattern)) {
+                        try {
+                            String numStr = words[i].replaceAll("[^0-9]", "");
+                            if (!numStr.isEmpty()) {
+                                return Integer.parseInt(numStr);
+                            }
+                        } catch (NumberFormatException e) {
+                            // Try text numbers
+                            String numWord = words[i].toLowerCase();
+                            Integer num = parseTextNumber(numWord);
+                            if (num != null) {
+                                return num;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Pattern 2: "X-bedroom", "X-bed"
+        if (message.contains("-bedroom") || message.contains("-bed")) {
+            String[] words = message.split("\\s+");
+            for (String word : words) {
+                if (word.contains("-bedroom") || word.contains("-bed")) {
+                    try {
+                        String numStr = word.split("-")[0].replaceAll("[^0-9]", "");
+                        if (!numStr.isEmpty()) {
+                            return Integer.parseInt(numStr);
+                        }
+                    } catch (Exception e) {
+                        // Continue searching
+                    }
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    private Integer extractBathrooms(String message) {
+        // Pattern 1: "X bathroom", "X bath"
+        String[] patterns = {"bathroom", "bath"};
+        for (String pattern : patterns) {
+            if (message.contains(pattern)) {
+                String[] words = message.split("\\s+");
+                for (int i = 0; i < words.length - 1; i++) {
+                    if (words[i + 1].contains(pattern)) {
+                        try {
+                            String numStr = words[i].replaceAll("[^0-9]", "");
+                            if (!numStr.isEmpty()) {
+                                return Integer.parseInt(numStr);
+                            }
+                        } catch (NumberFormatException e) {
+                            // Try text numbers
+                            String numWord = words[i].toLowerCase();
+                            Integer num = parseTextNumber(numWord);
+                            if (num != null) {
+                                return num;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Pattern 2: "X-bathroom", "X-bath"
+        if (message.contains("-bathroom") || message.contains("-bath")) {
+            String[] words = message.split("\\s+");
+            for (String word : words) {
+                if (word.contains("-bathroom") || word.contains("-bath")) {
+                    try {
+                        String numStr = word.split("-")[0].replaceAll("[^0-9]", "");
+                        if (!numStr.isEmpty()) {
+                            return Integer.parseInt(numStr);
+                        }
+                    } catch (Exception e) {
+                        // Continue searching
+                    }
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    private Integer parsePrice(String word) {
+        try {
+            // Remove all non-digit characters except commas
+            String priceStr = word.replaceAll("[^0-9,]", "");
+            if (!priceStr.isEmpty()) {
+                // Remove commas and parse
+                return Integer.parseInt(priceStr.replace(",", ""));
+            }
+        } catch (NumberFormatException e) {
+            // Try text numbers for prices
+            String lowerWord = word.toLowerCase();
+            if (lowerWord.contains("thousand")) {
+                String numPart = lowerWord.replace("thousand", "").replaceAll("[^0-9]", "");
+                if (!numPart.isEmpty()) {
+                    try {
+                        return Integer.parseInt(numPart) * 1000;
+                    } catch (NumberFormatException ex) {
+                        return null;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    private Integer parseTextNumber(String word) {
+        switch (word.toLowerCase()) {
+            case "one": case "1": return 1;
+            case "two": case "2": return 2;
+            case "three": case "3": return 3;
+            case "four": case "4": return 4;
+            case "five": case "5": return 5;
+            case "six": case "6": return 6;
+            default: return null;
+        }
     }
     
     // Clear conversation history
