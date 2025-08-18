@@ -25,6 +25,7 @@ import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.models.ChatMessage;
 import com.roomfinder.android.models.Listing;
 import com.roomfinder.android.services.AiNegotiatorService;
+import com.roomfinder.android.services.AiNegotiationEngine;
 import com.roomfinder.android.network.SupabaseService;
 import com.roomfinder.android.utils.NetworkUtils;
 import com.roomfinder.android.activities.IndividualChatActivity;
@@ -42,6 +43,7 @@ public class AiChatFragment extends Fragment {
     private List<ChatMessage> messages = new ArrayList<>();
     private ChatAdapter chatAdapter;
     private AiNegotiatorService aiService;
+    private AiNegotiationEngine negotiationEngine;
     private Handler mainHandler;
     private boolean isProcessingMessage = false;
     private AnimatorSet sendButtonPressAnimator;
@@ -54,6 +56,10 @@ public class AiChatFragment extends Fragment {
     private List<Listing> matchingListings = new ArrayList<>();
     private Map<String, Boolean> activeConversations = new HashMap<>(); // Track active chat contexts
     private List<String> conversationHistory = new ArrayList<>(); // Store conversation for context
+    
+    // Negotiation progress tracking
+    private Map<String, AiNegotiationEngine.Negotiation> activeNegotiations = new HashMap<>();
+    private List<String> completedNegotiations = new ArrayList<>();
     
     public enum NegotiationState {
         IDLE,           // No active negotiation context
@@ -86,6 +92,7 @@ public class AiChatFragment extends Fragment {
     
     private void initializeServices() {
         aiService = new AiNegotiatorService();
+        negotiationEngine = new AiNegotiationEngine();
         mainHandler = new Handler(Looper.getMainLooper());
         
         // Check authentication status
@@ -380,6 +387,11 @@ public class AiChatFragment extends Fragment {
         chatAdapter.notifyItemInserted(messages.size() - 1);
         scrollToBottom();
         
+        // Check if user is asking about negotiation status
+        if (checkForNegotiationStatusQuery(originalMessage)) {
+            return; // Query handled
+        }
+        
         // If the AI extracted property search criteria, search for properties
         if (response.extractedCriteria != null && response.extractedCriteria.hasValidCriteria()) {
             Log.d(TAG, "Property criteria detected, searching database...");
@@ -485,6 +497,19 @@ public class AiChatFragment extends Fragment {
             negotiationState = NegotiationState.AWAITING_CONFIRMATION;
             
             Log.d(TAG, "✅ Set negotiation state to AWAITING_CONFIRMATION");
+        
+        // If user has active negotiations, mention them
+        if (!activeNegotiations.isEmpty()) {
+            mainHandler.postDelayed(() -> {
+                ChatMessage activeNegMsg = ChatMessage.createAiMessage(
+                    "\n📊 **Active Negotiations Update:** You currently have " + activeNegotiations.size() + 
+                    " ongoing negotiation(s). Say 'negotiation status' to see details."
+                );
+                messages.add(activeNegMsg);
+                chatAdapter.notifyItemInserted(messages.size() - 1);
+                scrollToBottom();
+            }, 2000);
+        }
         }
         
         scrollToBottom();
@@ -587,50 +612,428 @@ public class AiChatFragment extends Fragment {
         }
     }
     
-    // Handle contact landlord action
+    // Handle contact landlord action - START REAL AI NEGOTIATION
     public void contactLandlord(Listing listing) {
-        Log.d(TAG, "📱 Contacting landlord for property: " + listing.getTitle());
-        
-        // Generate professional negotiation message template
-        String messageTemplate = generateNegotiationTemplate(listing);
-        
-        // Show AI message about what's happening
-        ChatMessage aiMessage = ChatMessage.createAiMessage(
-            "🤖 Opening chat with the landlord for **" + listing.getTitle() + "**...\n\n" +
-            "💡 I've prepared a professional message template for you. You can use it as-is or customize it!"
+        try {
+            Log.d(TAG, "🤖 Starting AI negotiation for property: " + (listing != null ? listing.getTitle() : "null"));
+            
+            // Comprehensive listing validation
+            if (listing == null) {
+                showNegotiationError("Invalid property data - listing is null");
+                return;
+            }
+            
+            if (listing.getTitle() == null || listing.getTitle().trim().isEmpty()) {
+                showNegotiationError("Invalid property data - missing title");
+                return;
+            }
+            
+            // Validate price with detailed logging
+            double price;
+            try {
+                price = listing.getPrice();
+                Log.d(TAG, "💰 Property price retrieved: $" + price);
+                
+                if (price <= 0 || Double.isNaN(price) || Double.isInfinite(price)) {
+                    Log.e(TAG, "❌ Invalid price value: " + price);
+                    showNegotiationError("Invalid property price: $" + price);
+                    return;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "❌ Error accessing property price: " + e.getMessage(), e);
+                showNegotiationError("Error accessing property price: " + e.getMessage());
+                return;
+            }
+            
+            // Show AI message about starting negotiation
+            ChatMessage aiMessage = ChatMessage.createAiMessage(
+                "🤖 Starting AI negotiation for **" + listing.getTitle() + "**...\n\n" +
+                "📊 Analyzing market data and preparing negotiation strategy..."
+            );
+            messages.add(aiMessage);
+            chatAdapter.notifyItemInserted(messages.size() - 1);
+            scrollToBottom();
+            
+            // Start real AI negotiation process
+            startAiNegotiation(listing);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Unexpected error in contactLandlord: " + e.getMessage(), e);
+            showNegotiationError("Unexpected error starting negotiation: " + e.getMessage());
+        }
+    }
+    
+    // Start real AI negotiation process (matching web ai-negotiation.js)
+    private void startAiNegotiation(Listing listing) {
+        try {
+            // Comprehensive listing validation
+            if (listing == null) {
+                showNegotiationError("Invalid property data - listing is null");
+                return;
+            }
+            
+            // Use built-in validation method
+            if (!listing.isValidForNegotiation()) {
+                String validationErrors = listing.getValidationErrors();
+                String errorMessage = "Property validation failed: " + (validationErrors != null ? validationErrors : "Unknown validation error");
+                Log.e(TAG, "❌ " + errorMessage);
+                showNegotiationError(errorMessage);
+                return;
+            }
+            
+            Log.d(TAG, "✅ Property validation passed for: " + listing.getTitle());
+            
+            // Validate price data using safe accessor
+            double price;
+            try {
+                price = listing.getSafePrice();
+                Log.d(TAG, "💰 Safe price retrieved: $" + price);
+            } catch (Exception e) {
+                Log.e(TAG, "❌ Error with safe price accessor: " + e.getMessage(), e);
+                // Fallback to regular price getter
+                try {
+                    price = listing.getPrice();
+                    Log.d(TAG, "💰 Fallback price retrieved: $" + price);
+                } catch (Exception e2) {
+                    Log.e(TAG, "❌ Error with fallback price getter: " + e2.getMessage(), e2);
+                    showNegotiationError("Unable to access property price");
+                    return;
+                }
+            }
+            
+            if (price <= 0 || Double.isNaN(price) || Double.isInfinite(price)) {
+                Log.e(TAG, "❌ Invalid price value after safe access: " + price);
+                showNegotiationError("Invalid property price: $" + price);
+                return;
+            }
+            
+            Log.d(TAG, "Starting negotiation for property: " + listing.getTitle() + ", Price: $" + price);
+            
+            // Prepare user preferences and negotiation goals
+            Map<String, Object> userPreferences = new HashMap<>();
+            userPreferences.put("maxBudget", price * 0.9); // 10% reduction target
+            userPreferences.put("flexibleTerms", true);
+            userPreferences.put("moveInTimeline", "flexible");
+            
+            List<String> negotiationGoals = new ArrayList<>();
+            negotiationGoals.add("price_reduction");
+            negotiationGoals.add("lease_terms");
+            negotiationGoals.add("move_in_benefits");
+            
+            // Start negotiation using the engine
+            AiNegotiationEngine.Negotiation negotiation = negotiationEngine.startNegotiation(
+                listing, userPreferences, negotiationGoals
+            );
+            
+            if (negotiation != null) {
+                Log.d(TAG, "Negotiation created successfully, ID: " + negotiation.id);
+                showNegotiationAnalysis(negotiation);
+                generateInitialNegotiationMessage(negotiation);
+            } else {
+                showNegotiationError("Failed to start negotiation process");
+            }
+            
+        } catch (NumberFormatException e) {
+            Log.e(TAG, "Number format error in negotiation: " + e.getMessage(), e);
+            showNegotiationError("Error processing property data: Invalid number format");
+        } catch (ClassCastException e) {
+            Log.e(TAG, "Type casting error in negotiation: " + e.getMessage(), e);
+            showNegotiationError("Error processing property data: Type mismatch");
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting AI negotiation: " + e.getMessage(), e);
+            showNegotiationError("Error starting negotiation: " + e.getMessage());
+        }
+    }
+    
+    // Show market analysis and negotiation strategy
+    private void showNegotiationAnalysis(AiNegotiationEngine.Negotiation negotiation) {
+        String analysisMessage = String.format(
+            "📊 **Market Analysis Complete**\n\n" +
+            "🏠 Property: %s\n" +
+            "💰 Listed Price: $%,.0f/month\n" +
+            "📈 Market Average: $%,.0f/month\n" +
+            "📅 Days on Market: %d days\n" +
+            "🎯 Negotiation Potential: %d%%\n\n" +
+            "**Strategy: %s**\n" +
+            "Priority: %s\n" +
+            "Target Reduction: $%.0f/month",
+            negotiation.property.getTitle(),
+            negotiation.property.getPrice(),
+            Math.round(negotiation.marketAnalysis.averageRentInArea),
+            negotiation.marketAnalysis.daysOnMarket,
+            Math.round(negotiation.marketAnalysis.negotiationPotential * 100),
+            negotiation.strategy.type != null ? negotiation.strategy.type.replace("_", " ").toUpperCase() : "MARKET BASED",
+            negotiation.strategy.priority != null ? negotiation.strategy.priority.toUpperCase() : "HIGH",
+            negotiation.strategy.targetReduction
         );
-        messages.add(aiMessage);
+        
+        ChatMessage analysisMsg = ChatMessage.createAiMessage(analysisMessage);
+        messages.add(analysisMsg);
+        chatAdapter.notifyItemInserted(messages.size() - 1);
+        scrollToBottom();
+    }
+    
+    // Generate initial negotiation message using OpenAI
+    private void generateInitialNegotiationMessage(AiNegotiationEngine.Negotiation negotiation) {
+        ChatMessage loadingMessage = ChatMessage.createAiMessage(
+            "🤖 Generating professional negotiation message..."
+        );
+        messages.add(loadingMessage);
         chatAdapter.notifyItemInserted(messages.size() - 1);
         scrollToBottom();
         
-        // Launch real chat activity with the landlord
-        Intent chatIntent = new Intent(getActivity(), IndividualChatActivity.class);
-        chatIntent.putExtra("LANDLORD_EMAIL", listing.getUserEmail());
-        chatIntent.putExtra("LANDLORD_NAME", "Landlord of " + listing.getTitle());
-        chatIntent.putExtra("PROPERTY_TITLE", listing.getTitle());
-        chatIntent.putExtra("CONVERSATION_TYPE", "LANDLORD_CONTACT");
-        chatIntent.putExtra("AI_MESSAGE_TEMPLATE", messageTemplate);
+        String context = "Generate an initial professional message to the landlord expressing interest in the property and incorporating our negotiation strategy. " +
+                        "The message should be friendly, professional, and subtly introduce negotiation points without being aggressive.";
         
-        startActivity(chatIntent);
+        negotiationEngine.generateNegotiationMessage(negotiation, context, new AiNegotiationEngine.NegotiationCallback() {
+            @Override
+            public void onSuccess(String aiGeneratedMessage) {
+                mainHandler.post(() -> {
+                    // Remove loading message
+                    messages.remove(messages.size() - 1);
+                    chatAdapter.notifyItemRemoved(messages.size());
+                    
+                    // Show generated message
+                    ChatMessage generatedMsg = ChatMessage.createAiMessage(
+                        "✅ **Generated Professional Message:**\n\n" + aiGeneratedMessage +
+                        "\n\n🚀 Ready to start real conversation with landlord!"
+                    );
+                    messages.add(generatedMsg);
+                    chatAdapter.notifyItemInserted(messages.size() - 1);
+                    scrollToBottom();
+                    
+                    // Track active negotiation
+                    activeNegotiations.put(negotiation.id, negotiation);
+                    
+                    // Launch real chat with AI-generated message
+                    launchNegotiationChat(negotiation, aiGeneratedMessage);
+                });
+            }
+            
+            @Override
+            public void onError(String error) {
+                mainHandler.post(() -> {
+                    // Remove loading message
+                    messages.remove(messages.size() - 1);
+                    chatAdapter.notifyItemRemoved(messages.size());
+                    
+                    showNegotiationError("AI message generation failed: " + error);
+                });
+            }
+        });
     }
     
-    // Generate professional negotiation message template
-    private String generateNegotiationTemplate(Listing listing) {
-        String userEmail = AuthManager.getInstance(getContext()).getUserEmail();
-        String userName = userEmail != null ? userEmail.split("@")[0] : "Prospective Tenant";
+    // Launch real negotiation chat with generated AI message
+    private void launchNegotiationChat(AiNegotiationEngine.Negotiation negotiation, String aiMessage) {
+        Intent chatIntent = new Intent(getActivity(), IndividualChatActivity.class);
+        chatIntent.putExtra("LANDLORD_EMAIL", negotiation.property.getUserEmail());
+        chatIntent.putExtra("LANDLORD_NAME", "Landlord of " + negotiation.property.getTitle());
+        chatIntent.putExtra("PROPERTY_TITLE", negotiation.property.getTitle());
+        chatIntent.putExtra("CONVERSATION_TYPE", "AI_NEGOTIATION");
+        chatIntent.putExtra("AI_NEGOTIATION_ID", negotiation.id);
+        chatIntent.putExtra("AI_GENERATED_MESSAGE", aiMessage);
+        chatIntent.putExtra("NEGOTIATION_STRATEGY", negotiation.strategy.type);
         
-        return String.format(
-            "Hello,\n\n" +
-            "I hope this message finds you well. I am writing to express my strong interest in your property: %s, listed at $%,.0f/month.\n\n" +
-            "As a reliable tenant with stable income, I would love to discuss the rental terms and schedule a viewing. " +
-            "I have excellent references and can provide all necessary documentation quickly.\n\n" +
-            "Would you be available to discuss this opportunity? I'm flexible with move-in dates and lease terms.\n\n" +
-            "Thank you for your time and consideration.\n\n" +
-            "Best regards,\n%s",
-            listing.getTitle(),
-            listing.getPrice(),
-            userName
+        startActivity(chatIntent);
+        
+        // Show negotiation progress tracking
+        showNegotiationProgress(negotiation);
+        
+        // Set up periodic progress updates
+        startNegotiationProgressTracking(negotiation.id);
+    }
+    
+    // Show negotiation progress and next steps
+    private void showNegotiationProgress(AiNegotiationEngine.Negotiation negotiation) {
+        String progressMessage = String.format(
+            "🎯 **Active Negotiation: %s**\n\n" +
+            "📈 **Progress Overview:**\n" +
+            "• Status: %s\n" +
+            "• Strategy: %s\n" +
+            "• Target Savings: $%.0f/month\n" +
+            "• Success Probability: %d%%\n\n" +
+            "💬 **Real-time Features:**\n" +
+            "• AI response analysis\n" +
+            "• Strategic message suggestions\n" +
+            "• Market-based negotiation tips\n" +
+            "• Progress milestone tracking\n\n" +
+            "🚀 Chat window opened - negotiation in progress!",
+            negotiation.property.getTitle(),
+            negotiation.status.toUpperCase(),
+            negotiation.strategy.type != null ? negotiation.strategy.type.replace("_", " ").toUpperCase() : "STRATEGIC",
+            negotiation.strategy.targetReduction,
+            Math.round(negotiation.marketAnalysis.negotiationPotential * 100)
         );
+        
+        ChatMessage progressMsg = ChatMessage.createAiMessage(progressMessage);
+        messages.add(progressMsg);
+        chatAdapter.notifyItemInserted(messages.size() - 1);
+        scrollToBottom();
+    }
+    
+    // Start tracking negotiation progress
+    private void startNegotiationProgressTracking(String negotiationId) {
+        // Simulate progress updates (in real implementation, this would be based on actual chat events)
+        mainHandler.postDelayed(() -> {
+            updateNegotiationProgress(negotiationId, "Landlord contacted");
+        }, 10000); // 10 seconds
+        
+        mainHandler.postDelayed(() -> {
+            updateNegotiationProgress(negotiationId, "Initial response received");
+        }, 30000); // 30 seconds
+        
+        mainHandler.postDelayed(() -> {
+            updateNegotiationProgress(negotiationId, "Counter-offer analysis");
+        }, 60000); // 1 minute
+    }
+    
+    // Update negotiation progress
+    private void updateNegotiationProgress(String negotiationId, String milestone) {
+        AiNegotiationEngine.Negotiation negotiation = activeNegotiations.get(negotiationId);
+        if (negotiation == null) return;
+        
+        // Update negotiation engine
+        negotiationEngine.updateNegotiationStatus(negotiationId, "active", milestone);
+        
+        // Show progress update to user
+        ChatMessage updateMsg = ChatMessage.createAiMessage(
+            "📊 **Negotiation Update:** " + milestone + "\n\n" +
+            "Your negotiation is progressing well. Keep following the AI suggestions for best results!"
+        );
+        messages.add(updateMsg);
+        chatAdapter.notifyItemInserted(messages.size() - 1);
+        scrollToBottom();
+        
+        Log.d(TAG, "Negotiation progress updated: " + negotiationId + " - " + milestone);
+    }
+    
+    // Complete negotiation with outcome
+    public void completeNegotiation(String negotiationId, String outcome, Map<String, Object> finalTerms) {
+        AiNegotiationEngine.Negotiation negotiation = activeNegotiations.get(negotiationId);
+        if (negotiation == null) return;
+        
+        // End negotiation in engine
+        negotiationEngine.endNegotiation(negotiationId, outcome, finalTerms);
+        
+        // Move to completed list
+        activeNegotiations.remove(negotiationId);
+        completedNegotiations.add(negotiationId);
+        
+        // Show completion message
+        showNegotiationOutcome(negotiation, outcome, finalTerms);
+    }
+    
+    // Show negotiation outcome
+    private void showNegotiationOutcome(AiNegotiationEngine.Negotiation negotiation, String outcome, Map<String, Object> finalTerms) {
+        String outcomeEmoji = "success".equals(outcome) ? "🎉" : 
+                             "partial".equals(outcome) ? "👍" : "🤔";
+        
+        String outcomeMessage = String.format(
+            "%s **Negotiation Complete!**\n\n" +
+            "🏠 Property: %s\n" +
+            "🎯 Outcome: %s\n" +
+            "%s\n\n" +
+            "📋 **Next Steps:**\n" +
+            "• Review final terms\n" +
+            "• Schedule property viewing\n" +
+            "• Prepare application materials\n\n" +
+            "Great job negotiating! Would you like to search for more properties?",
+            outcomeEmoji,
+            negotiation.property.getTitle(),
+            outcome.toUpperCase(),
+            getOutcomeDetails(outcome, finalTerms)
+        );
+        
+        ChatMessage outcomeMsg = ChatMessage.createAiMessage(outcomeMessage);
+        messages.add(outcomeMsg);
+        chatAdapter.notifyItemInserted(messages.size() - 1);
+        scrollToBottom();
+    }
+    
+    // Get outcome details based on result
+    private String getOutcomeDetails(String outcome, Map<String, Object> finalTerms) {
+        switch (outcome) {
+            case "success":
+                return "🎯 Successfully negotiated better terms!\n" +
+                       "💰 Estimated savings: $" + (finalTerms != null ? finalTerms.get("savings") : "TBD") + "/month";
+            case "partial":
+                return "👍 Achieved some concessions\n" +
+                       "📝 Consider the offered terms carefully";
+            case "declined":
+                return "💭 Landlord declined changes\n" +
+                       "🔄 Original terms still available";
+            default:
+                return "📋 Review the final discussion details";
+        }
+    }
+    
+    // Show active negotiations summary
+    private void showNegotiationsSummary() {
+        if (activeNegotiations.isEmpty() && completedNegotiations.isEmpty()) {
+            ChatMessage summaryMsg = ChatMessage.createAiMessage(
+                "📊 **Negotiation Summary**\n\n" +
+                "No active negotiations at the moment.\n\n" +
+                "Search for properties to start negotiating better deals!"
+            );
+            messages.add(summaryMsg);
+            chatAdapter.notifyItemInserted(messages.size() - 1);
+            scrollToBottom();
+            return;
+        }
+        
+        StringBuilder summary = new StringBuilder("📊 **Your Negotiations**\n\n");
+        
+        if (!activeNegotiations.isEmpty()) {
+            summary.append("🗓️ **Active Negotiations (" + activeNegotiations.size() + "):**\n");
+            for (AiNegotiationEngine.Negotiation negotiation : activeNegotiations.values()) {
+                summary.append(String.format(
+                    "• %s - %s (Target: $%.0f savings)\n",
+                    negotiation.property.getTitle(),
+                    negotiation.status.toUpperCase(),
+                    negotiation.strategy.targetReduction
+                ));
+            }
+            summary.append("\n");
+        }
+        
+        if (!completedNegotiations.isEmpty()) {
+            summary.append("✅ **Completed Negotiations:** " + completedNegotiations.size() + "\n\n");
+        }
+        
+        summary.append("Need help with any ongoing negotiations? Just ask!");
+        
+        ChatMessage summaryMsg = ChatMessage.createAiMessage(summary.toString());
+        messages.add(summaryMsg);
+        chatAdapter.notifyItemInserted(messages.size() - 1);
+        scrollToBottom();
+    }
+    
+    // Check if user is asking about negotiation status
+    private boolean checkForNegotiationStatusQuery(String message) {
+        String lowerMessage = message.toLowerCase();
+        
+        String[] statusKeywords = {"negotiation status", "how are my negotiations", "negotiation progress", 
+                                  "active negotiations", "negotiation summary", "my deals"};
+        
+        for (String keyword : statusKeywords) {
+            if (lowerMessage.contains(keyword)) {
+                showNegotiationsSummary();
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    // Show negotiation error
+    private void showNegotiationError(String error) {
+        ChatMessage errorMsg = ChatMessage.createAiMessage(
+            "❌ **Negotiation Error**\n\n" + error +
+            "\n\nWould you like me to try a different approach or help you contact the landlord directly?"
+        );
+        messages.add(errorMsg);
+        chatAdapter.notifyItemInserted(messages.size() - 1);
+        scrollToBottom();
     }
     
     

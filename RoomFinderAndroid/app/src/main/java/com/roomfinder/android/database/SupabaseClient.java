@@ -72,7 +72,22 @@ public class SupabaseClient {
                 Log.d(TAG, "Response body: " + responseBody);
                 
                 Type listType = new TypeToken<List<Listing>>(){}.getType();
-                List<Listing> listings = gson.fromJson(responseBody, listType);
+                List<Listing> listings;
+                
+                try {
+                    // Add debug logging for JSON parsing
+                    Log.d(TAG, "📊 JSON Response sample: " + (responseBody.length() > 200 ? responseBody.substring(0, 200) + "..." : responseBody));
+                    listings = gson.fromJson(responseBody, listType);
+                    Log.d(TAG, "✅ JSON parsing successful, parsed " + (listings != null ? listings.size() : 0) + " listings");
+                } catch (com.google.gson.JsonSyntaxException e) {
+                    Log.e(TAG, "❌ JSON syntax error - likely data type mismatch: " + e.getMessage(), e);
+                    Log.e(TAG, "📄 Problematic JSON: " + responseBody);
+                    return new ArrayList<>();
+                } catch (Exception e) {
+                    Log.e(TAG, "❌ JSON parsing error: " + e.getMessage(), e);
+                    Log.e(TAG, "📄 Problematic JSON: " + responseBody);
+                    return new ArrayList<>();
+                }
                 
                 if (listings == null) {
                     listings = new ArrayList<>();

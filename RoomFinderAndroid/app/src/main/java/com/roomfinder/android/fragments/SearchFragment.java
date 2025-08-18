@@ -160,12 +160,11 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
             return false;
         });
         
-        // Search button (new floating button)
-        if (binding.searchButton != null) {
-            binding.searchButton.setOnClickListener(v -> {
-                animateButtonClick(v);
-                animateSearchButtonRotation();
+        // Search input field
+        if (binding.searchInput != null) {
+            binding.searchInput.setOnEditorActionListener((v, actionId, event) -> {
                 performSearch();
+                return true;
             });
         }
         
@@ -653,25 +652,11 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
     }
     
     private void animateSearchButtonGlow() {
-        if (binding.searchButton != null) {
-            ValueAnimator glowAnimator = ValueAnimator.ofFloat(0.8f, 1f, 0.8f);
-            glowAnimator.setDuration(2000);
-            glowAnimator.setRepeatCount(ValueAnimator.INFINITE);
-            glowAnimator.addUpdateListener(animation -> {
-                float alpha = (Float) animation.getAnimatedValue();
-                binding.searchButton.setAlpha(alpha);
-            });
-            glowAnimator.start();
-        }
+        // Animation removed as search uses input field
     }
     
     private void animateSearchButtonRotation() {
-        if (binding.searchButton != null) {
-            ObjectAnimator rotationAnimator = ObjectAnimator.ofFloat(binding.searchButton, "rotation", 0f, 360f);
-            rotationAnimator.setDuration(500);
-            rotationAnimator.setInterpolator(new DecelerateInterpolator());
-            rotationAnimator.start();
-        }
+        // Animation removed as search uses input field
     }
     
     private void setupQuickFilters() {
