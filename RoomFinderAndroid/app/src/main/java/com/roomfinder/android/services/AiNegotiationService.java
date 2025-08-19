@@ -222,19 +222,48 @@ public class AiNegotiationService {
         }
         
         // Analyze landlord response to determine next action
-        String response = landlordResponse.toLowerCase();
+        String response = landlordResponse.toLowerCase().trim();
+        Log.d(TAG, "🧠 Analyzing landlord response: '" + response + "'");
         
-        if (response.contains("interested") || response.contains("yes") || response.contains("schedule")) {
-            return "positive_response";
-        } else if (response.contains("price") || response.contains("rent") || response.contains("cost")) {
-            return "price_discussion";
-        } else if (response.contains("no") || response.contains("not available") || response.contains("taken")) {
-            return "negative_response";
-        } else if (response.contains("when") || response.contains("move in") || response.contains("date")) {
-            return "timing_discussion";
-        } else {
-            return "general_follow_up";
+        // Enhanced price negotiation detection - PRIORITY CHECK
+        if (response.contains("lower") || response.contains("reduce") || response.contains("can do") || 
+            response.contains("decrease") || response.contains("cut") || response.contains("drop") ||
+            response.contains("cheaper") || response.contains("less") || 
+            (response.contains("sure") && (response.contains("lower") || response.contains("price"))) ||
+            (response.contains("can") && response.contains("lower")) ||
+            response.contains("negotiate price") || response.contains("adjust")) {
+            Log.d(TAG, "💰 Price negotiation opportunity detected!");
+            return "price_negotiation_opportunity";
         }
+        
+        // Positive responses
+        if (response.contains("interested") || response.contains("yes") || response.contains("sure") || 
+            response.contains("sounds good") || response.contains("ok") || response.contains("okay") ||
+            response.contains("schedule") || response.contains("viewing") || response.contains("meet")) {
+            return "positive_response";
+        }
+        
+        // General price discussion
+        if (response.contains("price") || response.contains("rent") || response.contains("cost") ||
+            response.contains("amount") || response.contains("payment") || response.contains("monthly")) {
+            return "price_discussion";
+        }
+        
+        // Negative responses
+        if (response.contains("no") || response.contains("not available") || response.contains("taken") ||
+            response.contains("sorry") || response.contains("can't") || response.contains("cannot") ||
+            response.contains("already rented") || response.contains("not interested")) {
+            return "negative_response";
+        }
+        
+        // Timing discussion
+        if (response.contains("when") || response.contains("move in") || response.contains("date") ||
+            response.contains("available") || response.contains("timing") || response.contains("start")) {
+            return "timing_discussion";
+        }
+        
+        // Default to general follow-up
+        return "general_follow_up";
     }
     
     /**
@@ -244,6 +273,12 @@ public class AiNegotiationService {
         ConversationState state = activeConversations.get(listingId);
         
         switch (nextAction) {
+            case "price_negotiation_opportunity":
+                return "Thank you so much for being open to discussing the price! I really appreciate your flexibility. " +
+                       "What price range would work for you? Based on my research of similar properties in the area and my budget, " +
+                       "I was hoping for something around " + (userNeeds.maxPrice != null ? "$" + userNeeds.maxPrice : "a competitive rate") + 
+                       ". Would you be able to accommodate something in that range? I'm also happy to discuss a longer lease term if that helps make the numbers work.";
+                
             case "positive_response":
                 return "Thank you for your positive response! I'm very excited about this opportunity. When would be a good time for a viewing? I'm flexible with my schedule and can accommodate your availability.";
                 
@@ -977,7 +1012,23 @@ public class AiNegotiationService {
             
             @Override
             public void onMessageReceived(ChatMessage message) {
-                // Handle any immediate responses from landlord
+                // Handle landlord responses in real-time
+                Log.d(TAG, "📬 Received message from " + message.getSenderEmail() + ": " + message.getContent());
+                
+                // Check if this is a landlord reply (not from current user)
+                if (!message.getSenderEmail().equals(currentUserEmail)) {
+                    Log.d(TAG, "🏠 Landlord reply detected: " + message.getContent());
+                    
+                    mainHandler.post(() -> {
+                        if (callback != null) {
+                            callback.onMessage("AI", "📧 **Landlord Response Received**\\n\\n" + message.getContent());
+                            callback.onMessage("AI", "🤖 Analyzing response and preparing follow-up negotiation...");
+                        }
+                    });
+                    
+                    // Continue negotiation based on landlord reply
+                    continueNegotiationBasedOnReply(listing.getId(), message.getContent());
+                }
             }
             
             @Override
@@ -1123,22 +1174,16 @@ public class AiNegotiationService {
     }
     
     /**
-     * Handle landlord reply
+     * Handle landlord reply (deprecated - now handled by real-time chat monitoring)
      */
     private void handleLandlordReply(org.json.JSONObject update) {
         try {
             String listingId = update.optString("listing_id", "");
             String reply = update.optString("message", "");
             
-            mainHandler.post(() -> {
-                if (callback != null) {
-                    callback.onMessage("AI", "📧 **Landlord Response Received**\n\n" + reply);
-                    callback.onMessage("AI", "🤖 Analyzing response and preparing follow-up negotiation...");
-                }
-            });
-            
-            // Continue negotiation based on reply
-            continueNegotiationBasedOnReply(listingId, reply);
+            // Note: Landlord replies are now handled immediately by onMessageReceived for faster response
+            // This method is kept for backwards compatibility but may not be needed
+            Log.d(TAG, "📭 Landlord reply detected in AI monitoring (may be duplicate): " + reply);
             
         } catch (Exception e) {
             Log.e(TAG, "Error handling landlord reply", e);
@@ -1197,6 +1242,23 @@ public class AiNegotiationService {
             try {
                 Thread.sleep(2000); // Brief delay to show analysis message
                 
+                // Check if negotiation should continue
+                if (!shouldContinueNegotiation(listingId)) {
+                    mainHandler.post(() -> {
+                        if (callback != null) {
+                            callback.onMessage("AI", "📋 Negotiation cycle completed for listing " + listingId + ". Moving to conclusion phase.");
+                        }
+                    });
+                    return;
+                }
+                
+                // Update conversation state
+                updateConversationState(listingId, "processing_reply", reply);
+                
+                // Determine next action using intelligent analysis
+                String nextAction = determineNextAction(listingId, reply);
+                Log.d(TAG, "Next action for " + listingId + ": " + nextAction);
+                
                 // Find the listing
                 Listing listing = null;
                 for (Listing l : matchingListings) {
@@ -1207,17 +1269,27 @@ public class AiNegotiationService {
                 }
                 
                 if (listing != null) {
-                    // Generate follow-up message based on reply
-                    String followUpMessage = generateFollowUpMessage(reply, listing);
+                    // Generate intelligent follow-up message
+                    String followUpMessage = generateFollowUpMessage(listingId, reply, nextAction);
                     
                     mainHandler.post(() -> {
                         if (callback != null) {
-                            callback.onMessage("AI", "📤 Sending follow-up negotiation message...");
+                            callback.onMessage("AI", "🧠 Analysis: " + nextAction.replace("_", " ").toUpperCase() + " detected");
+                            callback.onMessage("AI", "📤 Sending intelligent follow-up message...");
                         }
                     });
                     
+                    // Update state to sending follow-up
+                    updateConversationState(listingId, "sending_followup", followUpMessage);
+                    
                     // Send follow-up through chat service
                     sendFollowUpMessage(listingId, followUpMessage, listing);
+                    
+                    // Handle conclusion if negative response
+                    if ("negative_response".equals(nextAction)) {
+                        updateConversationState(listingId, "completed", "Negotiation concluded - negative response");
+                        activeConversations.remove(listingId);
+                    }
                 }
                 
             } catch (Exception e) {
@@ -1226,33 +1298,7 @@ public class AiNegotiationService {
         });
     }
     
-    /**
-     * Generate follow-up message based on landlord reply
-     */
-    private String generateFollowUpMessage(String reply, Listing listing) {
-        String lowerReply = reply.toLowerCase();
-        
-        if (lowerReply.contains("price") && (lowerReply.contains("too low") || lowerReply.contains("higher"))) {
-            // Price objection - try compromise
-            return "I understand your concerns about the price. I'm a reliable tenant with excellent references and stable income. " +
-                   "Would you consider meeting in the middle? I can also offer a longer lease term for a better rate.";
-                   
-        } else if (lowerReply.contains("interested") || lowerReply.contains("sounds good")) {
-            // Positive response - move forward
-            return "Excellent! I'm very excited about this opportunity. When would be a good time for a viewing? " +
-                   "I have all my documentation ready and can move in quickly.";
-                   
-        } else if (lowerReply.contains("no") || lowerReply.contains("not available") || lowerReply.contains("rented")) {
-            // Property not available
-            return "Thank you for letting me know. If anything changes or you have other similar properties available, " +
-                   "please keep me in mind. I'm actively looking and ready to move quickly.";
-                   
-        } else {
-            // Generic follow-up
-            return "Thank you for your response. I'm very interested in this property and believe I would be an excellent tenant. " +
-                   "Please let me know what additional information you need from me.";
-        }
-    }
+    // Old generateFollowUpMessage method removed - now using intelligent conversation management
     
     /**
      * Send follow-up message
