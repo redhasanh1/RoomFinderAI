@@ -25,6 +25,7 @@ import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.models.ChatMessage;
 import com.roomfinder.android.models.Listing;
 import com.roomfinder.android.services.AiNegotiatorService;
+import com.roomfinder.android.services.AiNegotiationService;
 import com.roomfinder.android.network.SupabaseService;
 import com.roomfinder.android.utils.NetworkUtils;
 import com.roomfinder.android.activities.IndividualChatActivity;
@@ -54,6 +55,9 @@ public class AiChatFragment extends Fragment {
     private List<Listing> matchingListings = new ArrayList<>();
     private Map<String, Boolean> activeConversations = new HashMap<>();
     private List<String> conversationHistory = new ArrayList<>();
+    
+    // AI Negotiation Service for background messaging
+    private AiNegotiationService aiNegotiationService;
     
     public enum NegotiationState {
         IDLE,           // No active negotiation context
@@ -88,10 +92,49 @@ public class AiChatFragment extends Fragment {
         aiService = new AiNegotiatorService();
         mainHandler = new Handler(Looper.getMainLooper());
         
+        // Initialize AI Negotiation Service for background messaging
+        aiNegotiationService = AiNegotiationService.getInstance(requireContext());
+        
         // Check authentication status for enhanced features
         AuthManager authManager = AuthManager.getInstance(requireContext());
         if (authManager.isUserAuthenticated()) {
             Log.d(TAG, "AI Negotiator services initialized for authenticated user - enhanced features available");
+            
+            // Initialize negotiation service with user email
+            String userEmail = authManager.getCurrentUser().getEmail();
+            aiNegotiationService.init(userEmail, new AiNegotiationService.AiChatCallback() {
+                @Override
+                public void onMessage(String sender, String message) {
+                    // Display messages from negotiation service in the chat
+                    mainHandler.post(() -> {
+                        ChatMessage aiMessage = ChatMessage.createAiMessage(message);
+                        addMessageAndUpdate(aiMessage);
+                    });
+                }
+                
+                @Override
+                public void onSearchResults(List<Listing> listings) {
+                    // Already handled by our own search
+                }
+                
+                @Override
+                public void onNegotiationStarted(String listingId) {
+                    Log.d(TAG, "Negotiation started for listing: " + listingId);
+                }
+                
+                @Override
+                public void onNegotiationComplete(String listingId, String result) {
+                    Log.d(TAG, "Negotiation complete for listing: " + listingId);
+                }
+                
+                @Override
+                public void onError(String error) {
+                    mainHandler.post(() -> {
+                        ChatMessage errorMessage = ChatMessage.createAiMessage("❌ " + error);
+                        addMessageAndUpdate(errorMessage);
+                    });
+                }
+            });
         } else {
             Log.d(TAG, "AI Negotiator services initialized for guest user - basic features available");
             // Guest users can still use AI negotiator but with limited features
@@ -489,48 +532,68 @@ public class AiChatFragment extends Fragment {
         scrollToBottom();
     }
     
-    // Start negotiations for all matching listings (matching web ai-chat.js) - MOVED TO BACKGROUND THREAD
+    // Start negotiations for all matching listings (matching web ai-chat.js) - AUTOMATED BACKGROUND NEGOTIATION
     private void startNegotiationsForAllListings() {
-        Log.d(TAG, "📧 Starting negotiations for all matching listings");
+        Log.d(TAG, "📧 Starting automated negotiations for all matching listings");
         
-        // Show loading indicator immediately
-        showLoadingIndicator("Preparing negotiation options...");
+        if (matchingListings.isEmpty()) {
+            ChatMessage noListingsMessage = ChatMessage.createAiMessage(
+                "No listings available for negotiation. Please search for properties first."
+            );
+            addMessageAndUpdate(noListingsMessage);
+            return;
+        }
         
-        // Move heavy processing to background thread
+        // Set the listings in the negotiation service
+        if (aiNegotiationService != null) {
+            aiNegotiationService.setMatchingListings(matchingListings);
+        }
+        
+        // Show initial message
+        ChatMessage startMessage = ChatMessage.createAiMessage(
+            "📧 Contacting landlords for " + matchingListings.size() + " listing(s)...\n" +
+            "I'll send professional negotiation messages to each landlord automatically."
+        );
+        addMessageAndUpdate(startMessage);
+        
+        // Process each listing in background
         new Thread(() -> {
             try {
-                if (matchingListings.isEmpty()) {
-                    // Update UI on main thread
+                for (int i = 0; i < matchingListings.size(); i++) {
+                    Listing listing = matchingListings.get(i);
+                    final int index = i + 1;
+                    
+                    // Update progress
                     mainHandler.post(() -> {
-                        hideLoadingIndicator();
-                        ChatMessage noListingsMessage = ChatMessage.createAiMessage(
-                            "No listings available for negotiation. Please search for properties first."
+                        ChatMessage progressMessage = ChatMessage.createAiMessage(
+                            "📤 Sending negotiation message " + index + " of " + matchingListings.size() + 
+                            " for **" + listing.getTitle() + "**..."
                         );
-                        addMessageAndUpdate(noListingsMessage);
+                        addMessageAndUpdate(progressMessage);
                     });
-                    return;
+                    
+                    // Directly start negotiation for this listing using the service
+                    if (aiNegotiationService != null) {
+                        // The service will handle creating conversation and sending messages
+                        aiNegotiationService.startNegotiationForListing(listing);
+                    }
+                    
+                    // Small delay between messages
+                    Thread.sleep(500);
                 }
                 
-                // Prepare messages in background
-                final ChatMessage helpMessage = ChatMessage.createAiMessage(
-                    "🤖 Great! I'll help you contact the landlords using smart negotiation strategies. " +
-                    "Here are the properties you can contact:"
-                );
-                
-                // Update UI on main thread
+                // Show completion message
                 mainHandler.post(() -> {
-                    hideLoadingIndicator();
-                    addMessageAndUpdate(helpMessage);
-                    
-                    // Show property cards with contact buttons (like web version) 
-                    showPropertyContactOptions();
+                    ChatMessage completeMessage = ChatMessage.createAiMessage(
+                        "✅ All negotiations initiated! The landlords will receive your messages and you can continue the conversation in the chat section."
+                    );
+                    addMessageAndUpdate(completeMessage);
                 });
                 
             } catch (Exception e) {
-                Log.e(TAG, "Error in background negotiation processing", e);
+                Log.e(TAG, "Error in automated negotiation", e);
                 mainHandler.post(() -> {
-                    hideLoadingIndicator();
-                    showSimpleError("Failed to prepare negotiations. Please try again.");
+                    showSimpleError("Failed to complete all negotiations. Some messages may have been sent.");
                 });
             }
         }).start();
@@ -659,11 +722,19 @@ public class AiChatFragment extends Fragment {
                                "'. I'd like to discuss the rental terms. When would be a good time to chat?";
         
         Intent chatIntent = new Intent(getActivity(), IndividualChatActivity.class);
+        
+        // Pass all necessary data for proper chat setup
+        chatIntent.putExtra("listing_id", listing.getId());
+        chatIntent.putExtra("listing_title", listing.getTitle());
+        chatIntent.putExtra("owner_email", listing.getUserEmail());
+        
+        // AI negotiation specific data
         chatIntent.putExtra("LANDLORD_EMAIL", listing.getUserEmail());
         chatIntent.putExtra("LANDLORD_NAME", "Landlord of " + listing.getTitle());
         chatIntent.putExtra("PROPERTY_TITLE", listing.getTitle());
         chatIntent.putExtra("CONVERSATION_TYPE", "AI_NEGOTIATION");
         chatIntent.putExtra("AI_GENERATED_MESSAGE", defaultMessage);
+        chatIntent.putExtra("AI_NEGOTIATION_ID", "ai_neg_" + System.currentTimeMillis()); // Generate unique negotiation ID
         
         startActivity(chatIntent);
         
