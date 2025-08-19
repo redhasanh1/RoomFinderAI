@@ -2296,6 +2296,32 @@
             }, 3500);
         }
 
+        // Search form handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchForm = document.getElementById('search-form');
+            
+            if (searchForm) {
+                searchForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const location = document.getElementById('location').value;
+                    const propertyType = document.getElementById('property-type').value;
+                    
+                    // Build URL with search parameters
+                    const params = new URLSearchParams();
+                    if (location) {
+                        params.set('city', location);
+                    }
+                    if (propertyType) {
+                        params.set('roomType', propertyType);
+                    }
+                    
+                    // Redirect to listings page with parameters
+                    window.location.href = 'listings.html?' + params.toString();
+                });
+            }
+        });
+        
         // Contact form handling
         document.addEventListener('DOMContentLoaded', function() {
             const contactForm = document.querySelector('#contact form');
