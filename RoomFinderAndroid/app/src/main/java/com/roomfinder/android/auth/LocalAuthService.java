@@ -171,7 +171,44 @@ public class LocalAuthService {
             try {
                 Log.d(TAG, "Local login attempt for: " + email);
                 
-                // Check registered users
+                // FIRST: Check DEMO_ACCOUNTS for immediate authentication
+                if (DEMO_ACCOUNTS.containsKey(email)) {
+                    String demoPassword = DEMO_ACCOUNTS.get(email);
+                    if (password.equals(demoPassword)) {
+                        Log.d(TAG, "✅ Demo account login successful for: " + email);
+                        
+                        // Create user object for demo account
+                        User demoUser = new User();
+                        demoUser.setEmail(email);
+                        if (email.equals("humblewoslayer@gmail.com")) {
+                            demoUser.setFirstName("User");
+                            demoUser.setLastName("Account");
+                        } else {
+                            demoUser.setFirstName("Demo");
+                            demoUser.setLastName("User");
+                        }
+                        demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+                        demoUser.setEmailVerified(true);
+                        
+                        // Generate tokens for auth compatibility
+                        String accessToken = generateLocalToken(email, "access");
+                        String refreshToken = generateLocalToken(email, "refresh");
+                        demoUser.setAccessToken(accessToken);
+                        demoUser.setRefreshToken(refreshToken);
+                        
+                        // Store and authenticate
+                        authManager.storeCurrentUser(demoUser);
+                        Log.d(TAG, "🎉 Demo account authentication successful: " + email);
+                        callback.onSuccess(demoUser);
+                        return;
+                    } else {
+                        Log.w(TAG, "❌ Demo account password mismatch for: " + email);
+                        callback.onError("Invalid email or password");
+                        return;
+                    }
+                }
+                
+                // SECOND: Check registered users from SharedPreferences
                 List<User> registeredUsers = getRegisteredUsers();
                 Log.d(TAG, "Found " + registeredUsers.size() + " registered users");
                 
