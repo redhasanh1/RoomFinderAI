@@ -35,13 +35,13 @@ public class LocalAuthService {
     private static final String KEY_REGISTERED_USERS = "registeredUsers";
     private static final String KEY_VERIFICATION_CODES = "verificationCodes";
     
-    // Demo accounts for testing
+    // Demo accounts for testing (generic test accounts only - no real user credentials)
     private static final Map<String, String> DEMO_ACCOUNTS = new HashMap<>();
     static {
         DEMO_ACCOUNTS.put("demo@roomfinder.com", "demo123");
         DEMO_ACCOUNTS.put("test@roomfinder.com", "test123");
         DEMO_ACCOUNTS.put("user@example.com", "password123");
-        DEMO_ACCOUNTS.put("humblewoslayer@gmail.com", "bigboy123"); // Test account with real credentials
+        // Real user accounts are stored in Supabase database, not hardcoded here
     }
     
     private LocalAuthService(Context context) {
@@ -83,16 +83,11 @@ public class LocalAuthService {
             String email = demoAccount.getKey();
             String password = demoAccount.getValue();
             
-            // Create demo user with proper names for test account
+            // Create demo user
             User demoUser = new User();
             demoUser.setEmail(email);
-            if (email.equals("humblewoslayer@gmail.com")) {
-                demoUser.setFirstName("Humble");
-                demoUser.setLastName("Woslayer");
-            } else {
-                demoUser.setFirstName("Demo");
-                demoUser.setLastName("User");
-            }
+            demoUser.setFirstName("Demo");
+            demoUser.setLastName("User");
             demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
             demoUser.setEmailVerified(true);
             
@@ -131,16 +126,11 @@ public class LocalAuthService {
             String email = demoAccount.getKey();
             String password = demoAccount.getValue();
             
-            // Create demo user with proper names for test account
+            // Create demo user
             User demoUser = new User();
             demoUser.setEmail(email);
-            if (email.equals("humblewoslayer@gmail.com")) {
-                demoUser.setFirstName("Humble");
-                demoUser.setLastName("Woslayer");
-            } else {
-                demoUser.setFirstName("Demo");
-                demoUser.setLastName("User");
-            }
+            demoUser.setFirstName("Demo");
+            demoUser.setLastName("User");
             demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
             demoUser.setEmailVerified(true);
             
