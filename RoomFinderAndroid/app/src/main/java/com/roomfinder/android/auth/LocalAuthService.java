@@ -41,6 +41,8 @@ public class LocalAuthService {
         DEMO_ACCOUNTS.put("demo@roomfinder.com", "demo123");
         DEMO_ACCOUNTS.put("test@roomfinder.com", "test123");
         DEMO_ACCOUNTS.put("user@example.com", "password123");
+        // TEMPORARY: Adding real user account while debugging API connectivity issues
+        DEMO_ACCOUNTS.put("humblewoslayer@gmail.com", "bigboy123");
         // Real user accounts are stored in Supabase database, not hardcoded here
     }
     
@@ -86,8 +88,13 @@ public class LocalAuthService {
             // Create demo user
             User demoUser = new User();
             demoUser.setEmail(email);
-            demoUser.setFirstName("Demo");
-            demoUser.setLastName("User");
+            if (email.equals("humblewoslayer@gmail.com")) {
+                demoUser.setFirstName("User"); // Using generic name for privacy
+                demoUser.setLastName("Account");
+            } else {
+                demoUser.setFirstName("Demo");
+                demoUser.setLastName("User");
+            }
             demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
             demoUser.setEmailVerified(true);
             
@@ -129,8 +136,13 @@ public class LocalAuthService {
             // Create demo user
             User demoUser = new User();
             demoUser.setEmail(email);
-            demoUser.setFirstName("Demo");
-            demoUser.setLastName("User");
+            if (email.equals("humblewoslayer@gmail.com")) {
+                demoUser.setFirstName("User"); // Using generic name for privacy
+                demoUser.setLastName("Account");
+            } else {
+                demoUser.setFirstName("Demo");
+                demoUser.setLastName("User");
+            }
             demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
             demoUser.setEmailVerified(true);
             
