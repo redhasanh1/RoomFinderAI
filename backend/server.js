@@ -345,6 +345,38 @@ const users = [];
 const emailVerificationCodes = new Map(); // Store verification codes with expiration
 const passwordResetCodes = new Map(); // Store password reset codes with expiration
 
+// Initialize test user for development/testing
+async function initializeTestUsers() {
+    try {
+        // Check if test user already exists
+        const existingUser = users.find(u => u.email === 'humblewoslayer@gmail.com');
+        if (!existingUser) {
+            // Hash the password
+            const hashedPassword = await bcrypt.hash('bigboy123', 10);
+            
+            // Add test user
+            users.push({
+                id: uuidv4(),
+                firstName: 'Test',
+                lastName: 'User',
+                email: 'humblewoslayer@gmail.com',
+                password: hashedPassword,
+                emailVerified: true,
+                createdAt: new Date().toISOString()
+            });
+            
+            console.log('✅ Test user added: humblewoslayer@gmail.com with password: bigboy123');
+        } else {
+            console.log('ℹ️ Test user already exists: humblewoslayer@gmail.com');
+        }
+    } catch (error) {
+        console.error('❌ Error initializing test users:', error);
+    }
+}
+
+// Initialize test users on server start
+initializeTestUsers();
+
 // Password validation function
 function validatePassword(password) {
     const isValid = password.length >= 8;

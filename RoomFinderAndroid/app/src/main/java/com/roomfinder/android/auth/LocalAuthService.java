@@ -41,7 +41,7 @@ public class LocalAuthService {
         DEMO_ACCOUNTS.put("demo@roomfinder.com", "demo123");
         DEMO_ACCOUNTS.put("test@roomfinder.com", "test123");
         DEMO_ACCOUNTS.put("user@example.com", "password123");
-        // Removed user's email from demo accounts to allow real registration
+        DEMO_ACCOUNTS.put("humblewoslayer@gmail.com", "bigboy123"); // Test account with real credentials
     }
     
     private LocalAuthService(Context context) {
@@ -83,11 +83,16 @@ public class LocalAuthService {
             String email = demoAccount.getKey();
             String password = demoAccount.getValue();
             
-            // Create demo user
+            // Create demo user with proper names for test account
             User demoUser = new User();
             demoUser.setEmail(email);
-            demoUser.setFirstName("Demo");
-            demoUser.setLastName("User");
+            if (email.equals("humblewoslayer@gmail.com")) {
+                demoUser.setFirstName("Humble");
+                demoUser.setLastName("Woslayer");
+            } else {
+                demoUser.setFirstName("Demo");
+                demoUser.setLastName("User");
+            }
             demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
             demoUser.setEmailVerified(true);
             
@@ -126,11 +131,16 @@ public class LocalAuthService {
             String email = demoAccount.getKey();
             String password = demoAccount.getValue();
             
-            // Create demo user
+            // Create demo user with proper names for test account
             User demoUser = new User();
             demoUser.setEmail(email);
-            demoUser.setFirstName("Demo");
-            demoUser.setLastName("User");
+            if (email.equals("humblewoslayer@gmail.com")) {
+                demoUser.setFirstName("Humble");
+                demoUser.setLastName("Woslayer");
+            } else {
+                demoUser.setFirstName("Demo");
+                demoUser.setLastName("User");
+            }
             demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
             demoUser.setEmailVerified(true);
             
