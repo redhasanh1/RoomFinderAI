@@ -320,10 +320,9 @@ public class AiChatFragment extends Fragment {
             return;
         }
         
-        // Add user message
+        // Add user message using optimized method
         ChatMessage userMessage = ChatMessage.createUserMessage(messageText);
-        messages.add(userMessage);
-        chatAdapter.notifyItemInserted(messages.size() - 1);
+        addMessageAndUpdate(userMessage);
         
         // Save conversation history after each message (like web version)
         conversationHistory.add(messageText);
@@ -332,9 +331,6 @@ public class AiChatFragment extends Fragment {
         // Clear input and disable sending
         binding.messageInput.setText("");
         setProcessingState(true);
-        
-        // Scroll to bottom
-        scrollToBottom();
         
         // First check if this is a response to a pending negotiation question
         if (checkForNegotiationResponse(messageText)) {
@@ -493,31 +489,51 @@ public class AiChatFragment extends Fragment {
         scrollToBottom();
     }
     
-    // Start negotiations for all matching listings (matching web ai-chat.js)
+    // Start negotiations for all matching listings (matching web ai-chat.js) - MOVED TO BACKGROUND THREAD
     private void startNegotiationsForAllListings() {
         Log.d(TAG, "📧 Starting negotiations for all matching listings");
         
-        if (matchingListings.isEmpty()) {
-            ChatMessage noListingsMessage = ChatMessage.createAiMessage(
-                "No listings available for negotiation. Please search for properties first."
-            );
-            messages.add(noListingsMessage);
-            chatAdapter.notifyItemInserted(messages.size() - 1);
-            scrollToBottom();
-            return;
-        }
+        // Show loading indicator immediately
+        showLoadingIndicator("Preparing negotiation options...");
         
-        // Show AI response about helping with negotiations
-        ChatMessage helpMessage = ChatMessage.createAiMessage(
-            "🤖 Great! I'll help you contact the landlords using smart negotiation strategies. " +
-            "Here are the properties you can contact:"
-        );
-        messages.add(helpMessage);
-        chatAdapter.notifyItemInserted(messages.size() - 1);
-        scrollToBottom();
-        
-        // Now show property cards with contact buttons (like web version)
-        showPropertyContactOptions();
+        // Move heavy processing to background thread
+        new Thread(() -> {
+            try {
+                if (matchingListings.isEmpty()) {
+                    // Update UI on main thread
+                    mainHandler.post(() -> {
+                        hideLoadingIndicator();
+                        ChatMessage noListingsMessage = ChatMessage.createAiMessage(
+                            "No listings available for negotiation. Please search for properties first."
+                        );
+                        addMessageAndUpdate(noListingsMessage);
+                    });
+                    return;
+                }
+                
+                // Prepare messages in background
+                final ChatMessage helpMessage = ChatMessage.createAiMessage(
+                    "🤖 Great! I'll help you contact the landlords using smart negotiation strategies. " +
+                    "Here are the properties you can contact:"
+                );
+                
+                // Update UI on main thread
+                mainHandler.post(() -> {
+                    hideLoadingIndicator();
+                    addMessageAndUpdate(helpMessage);
+                    
+                    // Show property cards with contact buttons (like web version) 
+                    showPropertyContactOptions();
+                });
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Error in background negotiation processing", e);
+                mainHandler.post(() -> {
+                    hideLoadingIndicator();
+                    showSimpleError("Failed to prepare negotiations. Please try again.");
+                });
+            }
+        }).start();
     }
     
     // Show property contact options (updated to match web flow)
@@ -547,47 +563,61 @@ public class AiChatFragment extends Fragment {
         showPropertyListingCards();
     }
     
-    // Show property listing cards with contact buttons
+    // Show property listing cards with contact buttons - OPTIMIZED FOR PERFORMANCE
     private void showPropertyListingCards() {
-        // Display up to 3 properties with contact buttons
-        int displayCount = Math.min(3, matchingListings.size());
-        
-        for (int i = 0; i < displayCount; i++) {
-            Listing listing = matchingListings.get(i);
-            
-            // Create property card message with contact button
-            String propertyCard = String.format(
-                "🏠 **%s**\n" +
-                "📍 %s\n" +
-                "💰 $%,.0f/month\n" +
-                "🛏️ %d bed, %d bath\n" +
-                "🏷️ %s\n\n" +
-                "📧 Landlord: %s",
-                listing.getTitle(),
-                listing.getLocation(),
-                listing.getPrice(),
-                listing.getBedrooms(),
-                listing.getBathrooms(),
-                listing.getHouseType(),
-                listing.getUserEmail()
-            );
-            
-            // Create special property card message with contact action
-            ChatMessage propertyMessage = ChatMessage.createPropertyCardMessage(propertyCard, listing);
-            messages.add(propertyMessage);
-            chatAdapter.notifyItemInserted(messages.size() - 1);
-            scrollToBottom();
-        }
-        
-        if (matchingListings.size() > 3) {
-            ChatMessage moreMessage = ChatMessage.createAiMessage(
-                String.format("...and %d more properties available. Would you like to see more options?", 
-                matchingListings.size() - 3)
-            );
-            messages.add(moreMessage);
-            chatAdapter.notifyItemInserted(messages.size() - 1);
-            scrollToBottom();
-        }
+        // Move to background thread for processing
+        new Thread(() -> {
+            try {
+                // Prepare all messages in background
+                List<ChatMessage> propertyMessages = new ArrayList<>();
+                
+                // Display up to 3 properties with contact buttons
+                int displayCount = Math.min(3, matchingListings.size());
+                
+                for (int i = 0; i < displayCount; i++) {
+                    Listing listing = matchingListings.get(i);
+                    
+                    // Create property card message with contact button
+                    String propertyCard = String.format(
+                        "🏠 **%s**\n" +
+                        "📍 %s\n" +
+                        "💰 $%,.0f/month\n" +
+                        "🛏️ %d bed, %d bath\n" +
+                        "🏷️ %s\n\n" +
+                        "📧 Landlord: %s",
+                        listing.getTitle(),
+                        listing.getLocation(),
+                        listing.getPrice(),
+                        listing.getBedrooms(),
+                        listing.getBathrooms(),
+                        listing.getHouseType(),
+                        listing.getUserEmail()
+                    );
+                    
+                    // Create special property card message with contact action
+                    ChatMessage propertyMessage = ChatMessage.createPropertyCardMessage(propertyCard, listing);
+                    propertyMessages.add(propertyMessage);
+                }
+                
+                // Add more message if needed
+                if (matchingListings.size() > 3) {
+                    ChatMessage moreMessage = ChatMessage.createAiMessage(
+                        String.format("...and %d more properties available. Would you like to see more options?", 
+                        matchingListings.size() - 3)
+                    );
+                    propertyMessages.add(moreMessage);
+                }
+                
+                // Update UI on main thread with batch insert
+                mainHandler.post(() -> {
+                    addMessagesAndUpdate(propertyMessages);
+                });
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Error processing property cards", e);
+                mainHandler.post(() -> showSimpleError("Failed to display properties. Please try again."));
+            }
+        }).start();
     }
     
     // Handle contact landlord action - START SIMPLE AI NEGOTIATION
@@ -603,16 +633,28 @@ public class AiChatFragment extends Fragment {
         ChatMessage aiMessage = ChatMessage.createAiMessage(
             "🤖 Opening chat with the landlord for **" + listing.getTitle() + "**..."
         );
-        messages.add(aiMessage);
-        chatAdapter.notifyItemInserted(messages.size() - 1);
-        scrollToBottom();
+        addMessageAndUpdate(aiMessage);
         
         // Launch chat directly - no complex validation
         launchSimpleNegotiationChat(listing);
     }
     
-    // Launch simple negotiation chat - no complex validation
+    // Launch simple negotiation chat - with validation to prevent self-chat
     private void launchSimpleNegotiationChat(Listing listing) {
+        // Check if user is trying to chat with themselves
+        AuthManager authManager = AuthManager.getInstance(requireContext());
+        String currentUserEmail = authManager.getCurrentUser() != null ? authManager.getCurrentUser().getEmail() : "";
+        
+        if (currentUserEmail.equals(listing.getUserEmail())) {
+            // This is the user's own listing - show appropriate message
+            ChatMessage ownListingMsg = ChatMessage.createAiMessage(
+                "💡 This appears to be your own property listing! You can't negotiate with yourself. " +
+                "Try searching for properties listed by other landlords to start negotiations."
+            );
+            addMessageAndUpdate(ownListingMsg);
+            return;
+        }
+        
         String defaultMessage = "Hi! I'm interested in your property '" + listing.getTitle() + 
                                "'. I'd like to discuss the rental terms. When would be a good time to chat?";
         
@@ -629,9 +671,7 @@ public class AiChatFragment extends Fragment {
         ChatMessage successMsg = ChatMessage.createAiMessage(
             "💬 Chat opened with landlord! The conversation has been started with a professional message."
         );
-        messages.add(successMsg);
-        chatAdapter.notifyItemInserted(messages.size() - 1);
-        scrollToBottom();
+        addMessageAndUpdate(successMsg);
     }
     
     
@@ -723,8 +763,65 @@ public class AiChatFragment extends Fragment {
         }
     }
     
+    // Loading indicator helpers for better UX during background processing
+    private void showLoadingIndicator(String message) {
+        ChatMessage loadingMessage = ChatMessage.createAiMessage("⏳ " + message);
+        addMessageAndUpdate(loadingMessage);
+    }
+    
+    private void hideLoadingIndicator() {
+        // Remove the last message if it's a loading message
+        if (!messages.isEmpty()) {
+            ChatMessage lastMessage = messages.get(messages.size() - 1);
+            if (lastMessage.getContent() != null && lastMessage.getContent().startsWith("⏳")) {
+                messages.remove(messages.size() - 1);
+                chatAdapter.notifyItemRemoved(messages.size());
+            }
+        }
+    }
+    
+    // Batch UI update helper to reduce main thread work
+    private void addMessageAndUpdate(ChatMessage message) {
+        messages.add(message);
+        chatAdapter.notifyItemInserted(messages.size() - 1);
+        scrollToBottom();
+    }
+    
+    // Batch UI update for multiple messages
+    private void addMessagesAndUpdate(List<ChatMessage> newMessages) {
+        int startPosition = messages.size();
+        messages.addAll(newMessages);
+        chatAdapter.notifyItemRangeInserted(startPosition, newMessages.size());
+        scrollToBottom();
+    }
+    
+    
+    // Optimized scrolling with debouncing to reduce main thread work
+    private Runnable pendingScrollRunnable = null;
+    
     private void scrollToBottom() {
         if (messages.size() > 0) {
+            // Cancel any pending scroll to debounce multiple calls
+            if (pendingScrollRunnable != null) {
+                mainHandler.removeCallbacks(pendingScrollRunnable);
+            }
+            
+            // Schedule scroll with slight delay to batch multiple scroll requests
+            pendingScrollRunnable = () -> {
+                if (layoutManager != null && isAdded()) {
+                    // Use smooth scroll to last position
+                    layoutManager.smoothScrollToPosition(binding.messagesRecyclerView, null, messages.size() - 1);
+                }
+                pendingScrollRunnable = null;
+            };
+            
+            mainHandler.postDelayed(pendingScrollRunnable, 50); // 50ms delay for batching
+        }
+    }
+    
+    // Immediate scroll for urgent cases
+    private void scrollToBottomImmediate() {
+        if (messages.size() > 0 && layoutManager != null && isAdded()) {
             // Use smooth scroller for better animation
             LinearSmoothScroller smoothScroller = new LinearSmoothScroller(getContext()) {
                 @Override
