@@ -29,7 +29,7 @@ public class AuthService {
     private final LocalAuthService localAuthService;
     
     // API endpoints (matching website exactly)
-    private static final String BASE_URL = "https://roomfinderai.com";
+    private static final String BASE_URL = "https://www.roomfinderai.com";
     private static final String LOGIN_URL = BASE_URL + "/api/login";
     private static final String SEND_VERIFICATION_URL = BASE_URL + "/api/send-verification";
     private static final String VERIFY_EMAIL_URL = BASE_URL + "/api/verify-email";
@@ -71,66 +71,31 @@ public class AuthService {
     }
     
     /**
-     * Login with email and password (Supabase first, API fallback, then local)
+     * Login with email and password (API first, then local fallback - matching website exactly)
      */
     public void login(String email, String password, AuthCallback callback) {
         Log.d(TAG, "Starting login for: " + email);
         
-        // Try direct Supabase authentication first for real accounts
-        loginWithSupabase(email, password, new AuthCallback() {
+        // Try API first (matching website login.html logic)
+        loginWithAPI(email, password, new AuthCallback() {
             @Override
             public void onSuccess(User user) {
-                Log.d(TAG, "✅ Supabase direct login successful");
+                Log.d(TAG, "✅ API login successful");
                 callback.onSuccess(user);
             }
             
             @Override
-            public void onError(String error) {
-                Log.d(TAG, "Supabase direct login failed, trying API: " + error);
-                
-                // Try API second
-                loginWithAPI(email, password, new AuthCallback() {
-                    @Override
-                    public void onSuccess(User user) {
-                        callback.onSuccess(user);
-                    }
-                    
-                    @Override
-                    public void onError(String apiError) {
-                        Log.d(TAG, "API login failed, trying local auth: " + apiError);
-                        localAuthService.loginLocal(email, password, callback);
-                    }
-                });
+            public void onError(String apiError) {
+                Log.d(TAG, "API login failed, trying local auth: " + apiError);
+                // Fallback to local authentication if API fails
+                localAuthService.loginLocal(email, password, callback);
             }
         });
     }
     
-    /**
-     * Login directly with Supabase (bypassing API) - for real user accounts
-     */
-    private void loginWithSupabase(String email, String password, AuthCallback callback) {
-        new Thread(() -> {
-            try {
-                Log.d(TAG, "🔐 Attempting direct Supabase authentication for: " + email);
-                
-                // Create Supabase client
-                com.roomfinder.android.database.SupabaseClient supabaseClient = com.roomfinder.android.database.SupabaseClient.getInstance();
-                
-                // TODO: Implement direct Supabase auth when SupabaseClient supports authentication
-                // For now, this is a placeholder that will fail and fall back to API/local
-                
-                Log.w(TAG, "⚠️ Direct Supabase authentication not yet implemented");
-                runOnMainThread(() -> callback.onError("Supabase direct auth not implemented"));
-                
-            } catch (Exception e) {
-                Log.e(TAG, "💥 Error in direct Supabase authentication", e);
-                runOnMainThread(() -> callback.onError("Supabase authentication error: " + e.getMessage()));
-            }
-        }).start();
-    }
     
     /**
-     * Login using API (original implementation)
+     * Login using API (matching website login.html exactly)
      */
     private void loginWithAPI(String email, String password, AuthCallback callback) {
         new Thread(() -> {
@@ -164,22 +129,29 @@ public class AuthService {
                     
                     if (response.isSuccessful()) {
                         Log.d(TAG, "🎉 API login successful, processing response");
-                        // Handle successful login (matching website logic)
-                        handleLoginSuccess(email, callback);
+                        // Handle successful login with API response data
+                        handleLoginSuccessWithApiResponse(responseBody, callback);
                     } else {
                         Log.e(TAG, "❌ API login failed with code: " + response.code());
-                        Log.e(TAG, "❌ Response body: " + responseBody);
                         
-                        // Handle login error
-                        try {
-                            JSONObject errorObj = new JSONObject(responseBody);
-                            String error = errorObj.optString("error", "API Error: " + response.code() + " - " + response.message());
-                            Log.e(TAG, "❌ Parsed error: " + error);
-                            runOnMainThread(() -> callback.onError("API login failed: " + error));
-                        } catch (Exception e) {
-                            Log.e(TAG, "❌ Error parsing response: " + e.getMessage());
-                            String error = "API Error: " + response.code() + " - " + response.message() + " (Body: " + responseBody + ")";
-                            runOnMainThread(() -> callback.onError(error));
+                        // Handle specific error codes gracefully
+                        if (response.code() == 404) {
+                            Log.w(TAG, "⚠️ API endpoint not found (404) - this is expected, falling back to local auth");
+                            runOnMainThread(() -> callback.onError("API endpoint unavailable"));
+                        } else {
+                            Log.e(TAG, "❌ Response body: " + responseBody);
+                            
+                            // Handle other API errors
+                            try {
+                                JSONObject errorObj = new JSONObject(responseBody);
+                                String error = errorObj.optString("error", "API Error: " + response.code() + " - " + response.message());
+                                Log.e(TAG, "❌ Parsed error: " + error);
+                                runOnMainThread(() -> callback.onError("API login failed: " + error));
+                            } catch (Exception e) {
+                                Log.e(TAG, "❌ Error parsing response: " + e.getMessage());
+                                String error = "API Error: " + response.code() + " - " + response.message();
+                                runOnMainThread(() -> callback.onError(error));
+                            }
                         }
                     }
                 }
@@ -194,6 +166,50 @@ public class AuthService {
                 runOnMainThread(() -> callback.onError("API login failed: " + e.getMessage()));
             }
         }).start();
+    }
+    
+    /**
+     * Handle successful login with API response data
+     */
+    private void handleLoginSuccessWithApiResponse(String responseBody, AuthCallback callback) {
+        try {
+            Log.d(TAG, "Processing API login response: " + responseBody);
+            
+            JSONObject apiResponse = new JSONObject(responseBody);
+            JSONObject userData = apiResponse.optJSONObject("user");
+            
+            if (userData != null) {
+                // Create user from API response (matching website logic)
+                User user = new User();
+                user.setFirstName(userData.optString("firstName", "User"));
+                user.setLastName(userData.optString("lastName", "Account"));
+                user.setEmail(userData.optString("email"));
+                user.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+                user.setEmailVerified(true);
+                
+                // Set tokens if provided
+                String accessToken = apiResponse.optString("access_token");
+                if (!accessToken.isEmpty()) {
+                    user.setAccessToken(accessToken);
+                }
+                
+                // Initialize lists (matching website user structure)
+                user.setAiChats(new java.util.ArrayList<>());
+                user.setListings(new java.util.ArrayList<>());
+                
+                // Store user and complete authentication
+                authManager.storeCurrentUser(user);
+                Log.d(TAG, "API login successful for user: " + user.getFirstName() + " " + user.getLastName() + " (" + user.getEmail() + ")");
+                runOnMainThread(() -> callback.onSuccess(user));
+            } else {
+                Log.e(TAG, "API response missing user data");
+                runOnMainThread(() -> callback.onError("Invalid API response format"));
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error processing API login response", e);
+            runOnMainThread(() -> callback.onError("Login processing failed"));
+        }
     }
     
     /**

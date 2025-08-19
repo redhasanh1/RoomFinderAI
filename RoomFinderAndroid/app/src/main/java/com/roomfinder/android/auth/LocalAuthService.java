@@ -113,6 +113,47 @@ public class LocalAuthService {
     }
     
     /**
+     * Initialize real user account that was created on website
+     * This matches the website's localStorage approach
+     */
+    public void initializeRealUserAccount(String email, String password) {
+        Log.d(TAG, "Initializing real user account: " + email);
+        
+        List<User> registeredUsers = getRegisteredUsers();
+        
+        // Check if user already exists
+        boolean exists = registeredUsers.stream()
+                .anyMatch(user -> user.getEmail().equals(email));
+        
+        if (exists) {
+            Log.d(TAG, "Real user account already exists: " + email);
+            return;
+        }
+        
+        // Create real user account (matching website structure)
+        User realUser = new User();
+        realUser.setEmail(email);
+        realUser.setFirstName("User");
+        realUser.setLastName("Account");
+        realUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+        realUser.setEmailVerified(true);
+        realUser.setAiChats(new java.util.ArrayList<>());
+        realUser.setListings(new java.util.ArrayList<>());
+        
+        // Hash password
+        String hashedPassword = hashPassword(password);
+        
+        // Store user with hashed password
+        registeredUsers.add(realUser);
+        
+        // Store password hash separately
+        prefs.edit().putString("pwd_" + email, hashedPassword).apply();
+        
+        saveRegisteredUsers(registeredUsers);
+        Log.d(TAG, "Real user account initialized: " + email);
+    }
+    
+    /**
      * Initialize demo accounts for testing (only if no users exist at all)
      * This method is now only called manually when needed for testing
      */
