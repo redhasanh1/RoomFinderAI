@@ -71,24 +71,62 @@ public class AuthService {
     }
     
     /**
-     * Login with email and password (API first, local fallback)
+     * Login with email and password (Supabase first, API fallback, then local)
      */
     public void login(String email, String password, AuthCallback callback) {
         Log.d(TAG, "Starting login for: " + email);
         
-        // Try API first, fallback to local auth
-        loginWithAPI(email, password, new AuthCallback() {
+        // Try direct Supabase authentication first for real accounts
+        loginWithSupabase(email, password, new AuthCallback() {
             @Override
             public void onSuccess(User user) {
+                Log.d(TAG, "✅ Supabase direct login successful");
                 callback.onSuccess(user);
             }
             
             @Override
             public void onError(String error) {
-                Log.d(TAG, "API login failed, trying local auth: " + error);
-                localAuthService.loginLocal(email, password, callback);
+                Log.d(TAG, "Supabase direct login failed, trying API: " + error);
+                
+                // Try API second
+                loginWithAPI(email, password, new AuthCallback() {
+                    @Override
+                    public void onSuccess(User user) {
+                        callback.onSuccess(user);
+                    }
+                    
+                    @Override
+                    public void onError(String apiError) {
+                        Log.d(TAG, "API login failed, trying local auth: " + apiError);
+                        localAuthService.loginLocal(email, password, callback);
+                    }
+                });
             }
         });
+    }
+    
+    /**
+     * Login directly with Supabase (bypassing API) - for real user accounts
+     */
+    private void loginWithSupabase(String email, String password, AuthCallback callback) {
+        new Thread(() -> {
+            try {
+                Log.d(TAG, "🔐 Attempting direct Supabase authentication for: " + email);
+                
+                // Create Supabase client
+                com.roomfinder.android.database.SupabaseClient supabaseClient = com.roomfinder.android.database.SupabaseClient.getInstance();
+                
+                // TODO: Implement direct Supabase auth when SupabaseClient supports authentication
+                // For now, this is a placeholder that will fail and fall back to API/local
+                
+                Log.w(TAG, "⚠️ Direct Supabase authentication not yet implemented");
+                runOnMainThread(() -> callback.onError("Supabase direct auth not implemented"));
+                
+            } catch (Exception e) {
+                Log.e(TAG, "💥 Error in direct Supabase authentication", e);
+                runOnMainThread(() -> callback.onError("Supabase authentication error: " + e.getMessage()));
+            }
+        }).start();
     }
     
     /**

@@ -41,9 +41,7 @@ public class LocalAuthService {
         DEMO_ACCOUNTS.put("demo@roomfinder.com", "demo123");
         DEMO_ACCOUNTS.put("test@roomfinder.com", "test123");
         DEMO_ACCOUNTS.put("user@example.com", "password123");
-        // TEMPORARY: Adding real user account while debugging API connectivity issues
-        DEMO_ACCOUNTS.put("humblewoslayer@gmail.com", "bigboy123");
-        // Real user accounts are stored in Supabase database, not hardcoded here
+        // Real user accounts like humblewoslayer@gmail.com are stored in Supabase database, NOT here!
     }
     
     private LocalAuthService(Context context) {
