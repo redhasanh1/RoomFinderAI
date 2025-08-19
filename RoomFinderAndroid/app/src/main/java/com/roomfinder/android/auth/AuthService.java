@@ -113,33 +113,47 @@ public class AuthService {
                         .addHeader("Content-Type", "application/json")
                         .build();
                 
-                Log.d(TAG, "Executing login request to: " + LOGIN_URL);
+                Log.d(TAG, "🌐 Executing login request to: " + LOGIN_URL);
+                Log.d(TAG, "📧 Email: " + email);
+                Log.d(TAG, "🔗 Request body: " + requestData.toString());
                 
                 try (Response response = httpClient.newCall(request).execute()) {
                     String responseBody = response.body() != null ? response.body().string() : "";
-                    Log.d(TAG, "Login response code: " + response.code());
+                    Log.d(TAG, "📱 Login response code: " + response.code());
+                    Log.d(TAG, "📝 Response headers: " + response.headers().toString());
+                    Log.d(TAG, "📄 Response body: " + responseBody);
+                    Log.d(TAG, "✅ Is successful: " + response.isSuccessful());
                     
                     if (response.isSuccessful()) {
+                        Log.d(TAG, "🎉 API login successful, processing response");
                         // Handle successful login (matching website logic)
                         handleLoginSuccess(email, callback);
                     } else {
+                        Log.e(TAG, "❌ API login failed with code: " + response.code());
+                        Log.e(TAG, "❌ Response body: " + responseBody);
+                        
                         // Handle login error
                         try {
                             JSONObject errorObj = new JSONObject(responseBody);
-                            String error = errorObj.optString("error", "Invalid email or password");
-                            runOnMainThread(() -> callback.onError(error));
+                            String error = errorObj.optString("error", "API Error: " + response.code() + " - " + response.message());
+                            Log.e(TAG, "❌ Parsed error: " + error);
+                            runOnMainThread(() -> callback.onError("API login failed: " + error));
                         } catch (Exception e) {
-                            runOnMainThread(() -> callback.onError("Invalid email or password"));
+                            Log.e(TAG, "❌ Error parsing response: " + e.getMessage());
+                            String error = "API Error: " + response.code() + " - " + response.message() + " (Body: " + responseBody + ")";
+                            runOnMainThread(() -> callback.onError(error));
                         }
                     }
                 }
                 
             } catch (IOException e) {
-                Log.e(TAG, "Network error during login", e);
-                runOnMainThread(() -> callback.onError("Network error: Please check your internet connection"));
+                Log.e(TAG, "🌐 Network error during API login to " + LOGIN_URL, e);
+                Log.e(TAG, "🌐 IOException details: " + e.getMessage());
+                runOnMainThread(() -> callback.onError("Network error accessing " + LOGIN_URL + ": " + e.getMessage()));
             } catch (Exception e) {
-                Log.e(TAG, "Login error", e);
-                runOnMainThread(() -> callback.onError("Login failed: " + e.getMessage()));
+                Log.e(TAG, "💥 Unexpected error during API login", e);
+                Log.e(TAG, "💥 Exception details: " + e.getMessage());
+                runOnMainThread(() -> callback.onError("API login failed: " + e.getMessage()));
             }
         }).start();
     }
