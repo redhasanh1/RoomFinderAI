@@ -1189,6 +1189,75 @@ async function sendPasswordResetEmail(email, code, firstName) {
     }
 }
 
+// Function to generate contact email HTML
+function generateContactEmailHTML(firstName, email, message) {
+    // Escape HTML to prevent injection and ensure proper display
+    const escapeHtml = (text) => {
+        if (!text) return '';
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    };
+
+    const safeFirstName = escapeHtml(firstName || 'Unknown');
+    const safeEmail = escapeHtml(email || 'No email provided');
+    const safeMessage = escapeHtml(message || 'No message provided');
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Contact Form Message</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    <div style="max-width: 600px; margin: 0 auto; background: #ffffff;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%); padding: 40px 30px; text-align: center;">
+            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
+                Contact Form Message
+            </h1>
+            <p style="margin: 10px 0 0 0; color: #E5E7EB; font-size: 16px;">
+                New inquiry from RoomFinderAI website
+            </p>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 40px 30px;">
+            <div style="background: #F8FAFC; padding: 20px; border-radius: 8px; border-left: 4px solid #3B82F6; margin-bottom: 20px;">
+                <h2 style="margin: 0 0 15px 0; color: #1F2937; font-size: 18px;">Contact Details</h2>
+                <p style="margin: 0 0 10px 0; color: #374151;"><strong>Name:</strong> ${safeFirstName}</p>
+                <p style="margin: 0; color: #374151;"><strong>Email:</strong> ${safeEmail}</p>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <h2 style="margin: 0 0 15px 0; color: #1F2937; font-size: 18px;">Message</h2>
+                <div style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px;">
+                    <p style="margin: 0; color: #374151; line-height: 1.6; white-space: pre-wrap;">${safeMessage}</p>
+                </div>
+            </div>
+            
+            <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 15px;">
+                <p style="margin: 0; color: #92400E; font-size: 14px;">
+                    <strong>Action Required:</strong> Please respond to this inquiry within 24 hours for best customer service.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+            <p style="margin: 0; color: #64748b; font-size: 14px;">
+                © 2025 RoomFinderAI. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>`;
+}
+
 // Function to send contact form email
 async function sendContactEmail(firstName, email, message) {
     try {
@@ -1214,58 +1283,21 @@ async function sendContactEmail(firstName, email, message) {
                 name: firstName
             },
             subject: `New Contact Form Message from ${firstName}`,
-            htmlContent: `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1">
-                    <title>Contact Form Message</title>
-                </head>
-                <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-                    <div style="max-width: 600px; margin: 0 auto; background: #ffffff;">
-                        <!-- Header -->
-                        <div style="background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%); padding: 40px 30px; text-align: center;">
-                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
-                                Contact Form Message
-                            </h1>
-                            <p style="margin: 10px 0 0 0; color: #E5E7EB; font-size: 16px;">
-                                New inquiry from RoomFinderAI website
-                            </p>
-                        </div>
-                        
-                        <!-- Content -->
-                        <div style="padding: 40px 30px;">
-                            <div style="background: #F8FAFC; padding: 20px; border-radius: 8px; border-left: 4px solid #3B82F6; margin-bottom: 20px;">
-                                <h2 style="margin: 0 0 15px 0; color: #1F2937; font-size: 18px;">Contact Details</h2>
-                                <p style="margin: 0 0 10px 0; color: #374151;"><strong>Name:</strong> ${firstName}</p>
-                                <p style="margin: 0; color: #374151;"><strong>Email:</strong> ${email}</p>
-                            </div>
-                            
-                            <div style="margin-bottom: 30px;">
-                                <h2 style="margin: 0 0 15px 0; color: #1F2937; font-size: 18px;">Message</h2>
-                                <div style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px;">
-                                    <p style="margin: 0; color: #374151; line-height: 1.6; white-space: pre-wrap;">${message}</p>
-                                </div>
-                            </div>
-                            
-                            <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 15px;">
-                                <p style="margin: 0; color: #92400E; font-size: 14px;">
-                                    <strong>Action Required:</strong> Please respond to this inquiry within 24 hours for best customer service.
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <!-- Footer -->
-                        <div style="background: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
-                            <p style="margin: 0; color: #64748b; font-size: 14px;">
-                                © 2025 RoomFinderAI. All rights reserved.
-                            </p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-            `
+            htmlContent: generateContactEmailHTML(firstName, email, message),
+            textContent: `
+New Contact Form Message
+
+From: ${firstName}
+Email: ${email}
+
+Message:
+${message}
+
+Please respond to this inquiry within 24 hours for best customer service.
+
+---
+RoomFinderAI Contact Form
+            `.trim()
         };
 
         console.log('📧 Sending contact form request to Brevo API...');
