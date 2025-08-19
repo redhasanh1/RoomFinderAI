@@ -100,3 +100,4 @@ Use `gemini -p` when:
 - No need for --yolo flag for read-only analysis
 - Gemini's context window can handle entire codebases that would overflow Claude's context
 - When checking implementations, be specific about what you're looking for to get accurate results
+- please always push with the name EricT2003 and a very short summary. no coauthor, no claude generated, just EricT2003
