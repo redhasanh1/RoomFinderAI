@@ -23,6 +23,7 @@ import com.roomfinder.android.adapters.ListingsAdapter;
 import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.databinding.FragmentProfileBinding;
 import com.roomfinder.android.models.Listing;
+import com.roomfinder.android.models.User;
 import com.roomfinder.android.network.SupabaseService;
 import java.util.ArrayList;
 import java.util.List;

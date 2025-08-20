@@ -326,11 +326,10 @@ public class AiNegotiationService {
                 
                 @Override
                 public void onError(String error) {
-                    Log.w(TAG, "🤖 [INTELLIGENT] OpenAI failed, using fallback: " + error);
-                    // Fallback to hardcoded templates
-                    String fallbackResponse = getFallbackResponse(nextAction);
+                    Log.e(TAG, "🤖 [INTELLIGENT] OpenAI failed: " + error);
+                    // NO FALLBACK - OpenAI only!
                     if (callback != null) {
-                        callback.onSuccess(fallbackResponse);
+                        callback.onError("Failed to generate intelligent response: " + error);
                     }
                 }
             }
@@ -399,30 +398,6 @@ public class AiNegotiationService {
         return prefs.length() > 0 ? prefs.toString() : "Flexible on terms";
     }
     
-    /**
-     * Fallback to hardcoded responses if OpenAI fails
-     */
-    private String getFallbackResponse(String nextAction) {
-        switch (nextAction) {
-            case "price_negotiation_opportunity":
-                return "Thank you so much for being open to discussing the price! I really appreciate your flexibility. " +
-                       "What price range would work for you? Based on my research of similar properties in the area and my budget, " +
-                       "I was hoping for something around " + (userNeeds.maxPrice != null ? "$" + userNeeds.maxPrice : "a competitive rate") + 
-                       ". Would you be able to accommodate something in that range? I'm also happy to discuss a longer lease term if that helps make the numbers work.";
-                
-            case "positive_response":
-                return "Thank you for your positive response! I'm very excited about this opportunity. When would be a good time for a viewing? I'm flexible with my schedule and can accommodate your availability.";
-                
-            case "price_discussion":
-                return "I appreciate you discussing the pricing with me. Based on my budget and the current market, I believe we can find a mutually beneficial arrangement. Would you be open to discussing terms that work for both of us?";
-                
-            case "general_follow_up":
-                return "Thank you for your response. I remain very interested in your property and would love to continue our discussion. Please let me know if you need any additional information from me or if there's anything specific you'd like to discuss.";
-                
-            default:
-                return "Thank you for getting back to me. I'm very interested in moving forward with this opportunity. Please let me know the next steps or any additional information you might need.";
-        }
-    }
     
     /**
      * Initialize the AI system with user (port of website's init method)
@@ -1635,9 +1610,13 @@ public class AiNegotiationService {
                             Log.e(TAG, "🔄 [NEGOTIATION] Failed to generate follow-up message: " + error);
                             mainHandler.post(() -> {
                                 if (callback != null) {
-                                    callback.onMessage("AI", "❌ Error generating response: " + error);
+                                    callback.onMessage("AI", "❌ Unable to generate intelligent response. OpenAI API issue: " + error);
+                                    callback.onMessage("AI", "Please check your OpenAI API configuration and try again.");
                                 }
                             });
+                            
+                            // Mark conversation as having an error
+                            updateConversationState(listingId, "error", "Failed to generate AI response: " + error);
                         }
                     });
                 } else {
