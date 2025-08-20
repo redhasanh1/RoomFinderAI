@@ -271,7 +271,7 @@ public class RealTimeChatService {
                 // Also check for ANY conversations involving current user (website compatibility)
                 checkForAllUserConversations();
             }
-        }, 0, 1, TimeUnit.SECONDS); // Reduced from 3s to 1s for faster detection
+        }, 0, 15, TimeUnit.SECONDS); // Reduced from 1s to 15s to calm down excessive polling
     }
     
     /**
@@ -279,22 +279,22 @@ public class RealTimeChatService {
      */
     private void checkForNewMessages() {
         if (messageListeners.isEmpty()) {
-            Log.d(TAG, "🔍 [POLLING] No active message listeners - skipping poll");
+            Log.v(TAG, "🔍 [POLLING] No active message listeners - skipping poll");
             return; // No active conversations to check
         }
         
-        Log.d(TAG, "🔍 [POLLING] ===== POLLING CYCLE START =====");
-        Log.d(TAG, "🔍 [POLLING] Active conversations: " + messageListeners.size());
-        Log.d(TAG, "🔍 [POLLING] Conversation IDs: " + messageListeners.keySet());
-        Log.d(TAG, "🔍 [POLLING] Current user: " + currentUserEmail);
+        Log.v(TAG, "🔍 [POLLING] ===== POLLING CYCLE START =====");
+        Log.v(TAG, "🔍 [POLLING] Active conversations: " + messageListeners.size());
+        Log.v(TAG, "🔍 [POLLING] Conversation IDs: " + messageListeners.keySet());
+        Log.v(TAG, "🔍 [POLLING] Current user: " + currentUserEmail);
         
         // Check each conversation that has an active listener
         for (String conversationId : messageListeners.keySet()) {
-            Log.d(TAG, "🔍 [POLLING] Checking conversation: " + conversationId);
+            Log.v(TAG, "🔍 [POLLING] Checking conversation: " + conversationId);
             checkMessagesForConversation(conversationId);
         }
         
-        Log.d(TAG, "🔍 [POLLING] ===== POLLING CYCLE END =====");
+        Log.v(TAG, "🔍 [POLLING] ===== POLLING CYCLE END =====");
     }
     
     /**
@@ -306,9 +306,9 @@ public class RealTimeChatService {
             return;
         }
         
-        // Run this check every 2nd poll for aggressive website message detection
-        if (System.currentTimeMillis() % 2000 < 1000) { // Roughly every 2 seconds
-            Log.d(TAG, "🌐 [GLOBAL_CHECK] Checking for any conversations involving user: " + currentUserEmail);
+        // Run this check much less frequently to reduce API calls
+        if (System.currentTimeMillis() % 60000 < 15000) { // Roughly every 60 seconds
+            Log.v(TAG, "🌐 [GLOBAL_CHECK] Checking for any conversations involving user: " + currentUserEmail);
             
             executorService.execute(() -> {
                 try {
@@ -317,7 +317,7 @@ public class RealTimeChatService {
                             "&or=(sender_email.eq." + currentUserEmail + ",receiver_email.eq." + currentUserEmail + ")" +
                             "&order=created_at.desc&limit=20";
                     
-                    Log.d(TAG, "🌐 [GLOBAL_CHECK] URL: " + url);
+                    Log.v(TAG, "🌐 [GLOBAL_CHECK] URL: " + url);
                     
                     Request request = new Request.Builder()
                             .url(url)
@@ -329,7 +329,7 @@ public class RealTimeChatService {
                     try (Response response = httpClient.newCall(request).execute()) {
                         if (response.isSuccessful() && response.body() != null) {
                             String responseBody = response.body().string();
-                            Log.d(TAG, "🌐 [GLOBAL_CHECK] Found conversations: " + responseBody);
+                            Log.v(TAG, "🌐 [GLOBAL_CHECK] Found conversations: " + responseBody);
                             
                             JSONArray conversations = new JSONArray(responseBody);
                             for (int i = 0; i < conversations.length(); i++) {
@@ -357,17 +357,17 @@ public class RealTimeChatService {
      * Check for new messages in a specific conversation
      */
     private void checkMessagesForConversation(String conversationId) {
-        Log.d(TAG, "🔍 [POLL_CONV] ===== CHECKING CONVERSATION =====");
-        Log.d(TAG, "🔍 [POLL_CONV] ConversationId: " + conversationId);
-        Log.d(TAG, "🔍 [POLL_CONV] Current user email: " + currentUserEmail);
+        Log.v(TAG, "🔍 [POLL_CONV] ===== CHECKING CONVERSATION =====");
+        Log.v(TAG, "🔍 [POLL_CONV] ConversationId: " + conversationId);
+        Log.v(TAG, "🔍 [POLL_CONV] Current user email: " + currentUserEmail);
         
         try {
             // Get the last message timestamp for this conversation
             Long lastTimestamp = lastMessageTimestamps.get(conversationId);
             String lastMessageId = lastMessageIds.get(conversationId);
             
-            Log.d(TAG, "🔍 [POLL_CONV] Last timestamp: " + lastTimestamp);
-            Log.d(TAG, "🔍 [POLL_CONV] Last message ID: " + lastMessageId);
+            Log.v(TAG, "🔍 [POLL_CONV] Last timestamp: " + lastTimestamp);
+            Log.v(TAG, "🔍 [POLL_CONV] Last message ID: " + lastMessageId);
             
             // Build URL to get messages newer than last known
             StringBuilder urlBuilder = new StringBuilder();
@@ -385,7 +385,7 @@ public class RealTimeChatService {
             
             String url = urlBuilder.toString();
             
-            Log.d(TAG, "🔍 [POLL_CONV] Request URL: " + url);
+            Log.v(TAG, "🔍 [POLL_CONV] Request URL: " + url);
             
             Request request = new Request.Builder()
                     .url(url)
@@ -394,7 +394,7 @@ public class RealTimeChatService {
                     .addHeader("Content-Type", "application/json")
                     .build();
             
-            Log.d(TAG, "🔍 [POLL_CONV] Making HTTP request...");
+            Log.v(TAG, "🔍 [POLL_CONV] Making HTTP request...");
             
             // Execute request asynchronously
             httpClient.newCall(request).enqueue(new Callback() {
@@ -425,11 +425,11 @@ public class RealTimeChatService {
                         
                         try {
                             String responseBody = response.body().string();
-                            Log.d(TAG, "🔍 [POLL_CONV] Response body length: " + responseBody.length());
-                            Log.d(TAG, "🔍 [POLL_CONV] Response body: " + responseBody);
+                            Log.v(TAG, "🔍 [POLL_CONV] Response body length: " + responseBody.length());
+                            Log.v(TAG, "🔍 [POLL_CONV] Response body: " + responseBody);
                             
                             JSONArray messagesArray = new JSONArray(responseBody);
-                            Log.d(TAG, "🔍 [POLL_CONV] Found " + messagesArray.length() + " messages in response");
+                            Log.v(TAG, "🔍 [POLL_CONV] Found " + messagesArray.length() + " messages in response");
                             
                             List<ChatMessage> newMessages = new ArrayList<>();
                             for (int i = 0; i < messagesArray.length(); i++) {
@@ -444,7 +444,7 @@ public class RealTimeChatService {
                                 
                                 // Skip if this is the last message we already have
                                 if (lastMessageId != null && lastMessageId.equals(message.getId())) {
-                                    Log.d(TAG, "🔍 [POLLING] ⏭️ Skipping already processed message: " + message.getId());
+                                    Log.v(TAG, "🔍 [POLLING] ⏭️ Skipping already processed message: " + message.getId());
                                     continue;
                                 }
                                 
@@ -1057,7 +1057,7 @@ public class RealTimeChatService {
         Log.d(TAG, "📱 [REGISTER] Registered listener for conversation: " + conversationId);
         Log.d(TAG, "📱 [REGISTER] Current user: " + currentUserEmail);
         Log.d(TAG, "📱 [REGISTER] Total active listeners: " + messageListeners.size());
-        Log.d(TAG, "📱 [REGISTER] Polling will check this conversation every 1 second");
+        Log.d(TAG, "📱 [REGISTER] Polling will check this conversation every 15 seconds");
         
         // Immediate check for existing messages (catch-up mechanism)
         Log.d(TAG, "📱 [REGISTER] Performing immediate catch-up check...");
