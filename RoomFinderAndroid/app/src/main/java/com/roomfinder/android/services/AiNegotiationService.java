@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.Calendar;
+import java.util.Collections;
 
 /**
  * AI Negotiation Service - Port of website's AIChatHandler
@@ -246,20 +247,49 @@ public class AiNegotiationService {
     private String determineNextAction(String listingId, String landlordResponse) {
         ConversationState state = activeConversations.get(listingId);
         if (state == null) {
-            return "initial_contact";
+            state = new ConversationState(listingId);
+            activeConversations.put(listingId, state);
         }
         
         // Analyze landlord response to determine next action
         String response = landlordResponse.toLowerCase().trim();
         Log.d(TAG, "🧠 Analyzing landlord response: '" + response + "'");
         
+        // Extract any price mentioned by landlord
+        java.util.regex.Pattern pricePattern = java.util.regex.Pattern.compile("\\$?\\s?(\\d{3,5})");
+        java.util.regex.Matcher priceMatcher = pricePattern.matcher(response);
+        if (priceMatcher.find()) {
+            try {
+                int price = Integer.parseInt(priceMatcher.group(1));
+                if (price >= 500 && price <= 10000) {
+                    state.landlordPrices.add(price);
+                    state.bestLandlordPrice = Collections.min(state.landlordPrices);
+                    state.negotiationPhase = "negotiating";
+                    Log.d(TAG, "💰 Landlord price detected: $" + price);
+                }
+            } catch (NumberFormatException e) {
+                Log.w(TAG, "Failed to parse price: " + priceMatcher.group(1));
+            }
+        }
+        
+        // Check for meeting requests
+        if (response.contains("meet") || response.contains("viewing") || response.contains("see the") || 
+            response.contains("visit") || response.contains("tour")) {
+            state.meetingRequestCount++;
+            state.negotiationPhase = "negotiating";
+            Log.d(TAG, "🏠 Meeting request detected (count: " + state.meetingRequestCount + ")");
+            return "meeting_request";
+        }
+        
         // Enhanced price negotiation detection - PRIORITY CHECK
-        if (response.contains("lower") || response.contains("reduce") || response.contains("can do") || 
+        if (response.contains("lower") || response.contains("reduce") || response.contains("negotiable") ||
+            response.contains("flexible") || response.contains("can do") || 
             response.contains("decrease") || response.contains("cut") || response.contains("drop") ||
             response.contains("cheaper") || response.contains("less") || 
             (response.contains("sure") && (response.contains("lower") || response.contains("price"))) ||
             (response.contains("can") && response.contains("lower")) ||
             response.contains("negotiate price") || response.contains("adjust")) {
+            state.negotiationPhase = "negotiating";
             Log.d(TAG, "💰 Price negotiation opportunity detected!");
             return "price_negotiation_opportunity";
         }
@@ -326,11 +356,10 @@ public class AiNegotiationService {
                 
                 @Override
                 public void onError(String error) {
-                    Log.w(TAG, "🤖 [INTELLIGENT] OpenAI failed, using fallback: " + error);
-                    // Fallback to hardcoded templates
-                    String fallbackResponse = getFallbackResponse(nextAction);
+                    Log.e(TAG, "🤖 [INTELLIGENT] OpenAI failed: " + error);
+                    // NO FALLBACK - OpenAI only!
                     if (callback != null) {
-                        callback.onSuccess(fallbackResponse);
+                        callback.onError("Failed to generate intelligent response: " + error);
                     }
                 }
             }
@@ -346,18 +375,52 @@ public class AiNegotiationService {
     }
     
     /**
-     * Build conversation context for OpenAI
+     * Build conversation context for OpenAI with enhanced memory
      */
     private String buildConversationContext(String listingId) {
         ConversationState state = activeConversations.get(listingId);
         if (state == null || state.negotiationHistory.isEmpty()) {
-            return "This is the beginning of our conversation.";
+            return "This is the initial contact message.";
         }
         
         StringBuilder context = new StringBuilder();
-        for (String entry : state.negotiationHistory) {
-            context.append(entry).append("\n");
+        
+        // Add negotiation phase and memory
+        context.append("NEGOTIATION PHASE: ").append(state.negotiationPhase).append("\n");
+        
+        // Add price tracking
+        if (!state.pricesOffered.isEmpty()) {
+            context.append("PRICES WE'VE OFFERED: ");
+            for (Integer price : state.pricesOffered) {
+                context.append("$").append(price).append(" ");
+            }
+            context.append("\n");
         }
+        
+        if (!state.landlordPrices.isEmpty()) {
+            context.append("LANDLORD'S PRICES: ");
+            for (Integer price : state.landlordPrices) {
+                context.append("$").append(price).append(" ");
+            }
+            context.append("\nBEST LANDLORD PRICE: $").append(Collections.min(state.landlordPrices));
+            context.append("\n");
+        }
+        
+        // Add flags
+        if (state.hasAskedForBestPrice) {
+            context.append("ALREADY ASKED FOR BEST PRICE - don't ask again\n");
+        }
+        if (state.meetingRequestCount > 0) {
+            context.append("MEETING REQUESTS DEFLECTED: ").append(state.meetingRequestCount).append("\n");
+        }
+        
+        // Add conversation history (last 3 exchanges only to save context)
+        context.append("\nRECENT CONVERSATION:\n");
+        int startIndex = Math.max(0, state.negotiationHistory.size() - 6);
+        for (int i = startIndex; i < state.negotiationHistory.size(); i++) {
+            context.append(state.negotiationHistory.get(i)).append("\n");
+        }
+        
         return context.toString();
     }
     
@@ -399,30 +462,6 @@ public class AiNegotiationService {
         return prefs.length() > 0 ? prefs.toString() : "Flexible on terms";
     }
     
-    /**
-     * Fallback to hardcoded responses if OpenAI fails
-     */
-    private String getFallbackResponse(String nextAction) {
-        switch (nextAction) {
-            case "price_negotiation_opportunity":
-                return "Thank you so much for being open to discussing the price! I really appreciate your flexibility. " +
-                       "What price range would work for you? Based on my research of similar properties in the area and my budget, " +
-                       "I was hoping for something around " + (userNeeds.maxPrice != null ? "$" + userNeeds.maxPrice : "a competitive rate") + 
-                       ". Would you be able to accommodate something in that range? I'm also happy to discuss a longer lease term if that helps make the numbers work.";
-                
-            case "positive_response":
-                return "Thank you for your positive response! I'm very excited about this opportunity. When would be a good time for a viewing? I'm flexible with my schedule and can accommodate your availability.";
-                
-            case "price_discussion":
-                return "I appreciate you discussing the pricing with me. Based on my budget and the current market, I believe we can find a mutually beneficial arrangement. Would you be open to discussing terms that work for both of us?";
-                
-            case "general_follow_up":
-                return "Thank you for your response. I remain very interested in your property and would love to continue our discussion. Please let me know if you need any additional information from me or if there's anything specific you'd like to discuss.";
-                
-            default:
-                return "Thank you for getting back to me. I'm very interested in moving forward with this opportunity. Please let me know the next steps or any additional information you might need.";
-        }
-    }
     
     /**
      * Initialize the AI system with user (port of website's init method)
@@ -856,10 +895,41 @@ public class AiNegotiationService {
                 }
             });
             
-            // Generate professional negotiation message
-            String negotiationMessage = generateNegotiationMessage(listing);
-            Log.d(TAG, "Generated negotiation message: " + negotiationMessage);
-            
+            // Generate intelligent negotiation message using OpenAI
+            generateIntelligentNegotiationMessage(listing, new OpenAIService.OpenAICallback() {
+                @Override
+                public void onSuccess(String negotiationMessage) {
+                    Log.d(TAG, "✅ [OPENAI] Generated intelligent initial message: " + negotiationMessage);
+                    
+                    // Start conversation with landlord using RealTimeChatService
+                    startConversationWithMessage(listing, negotiationMessage);
+                }
+                
+                @Override
+                public void onError(String error) {
+                    Log.e(TAG, "❌ [OPENAI] Failed to generate initial message: " + error);
+                    mainHandler.post(() -> {
+                        if (callback != null) {
+                            callback.onMessage("AI", "❌ Failed to generate intelligent initial message: " + error);
+                        }
+                    });
+                }
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting negotiation: " + e.getMessage(), e);
+            mainHandler.post(() -> {
+                if (callback != null) {
+                    callback.onMessage("AI", "❌ Failed to start negotiation: " + e.getMessage());
+                }
+            });
+        }
+    }
+    
+    /**
+     * Start conversation with generated message
+     */
+    private void startConversationWithMessage(Listing listing, String negotiationMessage) {
+        try {
             // Start conversation with landlord using RealTimeChatService
             chatService.startConversation(
                 listing,
@@ -904,85 +974,94 @@ public class AiNegotiationService {
     }
     
     /**
-     * Generate professional negotiation message with market analysis (port of website's AI negotiation engine)
+     * Generate intelligent negotiation message using OpenAI with price-first strategy
      */
-    private String generateNegotiationMessage(Listing listing) {
-        // Analyze the market situation for this property
-        MarketAnalysis analysis = analyzeMarketData(listing);
-        NegotiationStrategy strategy = generateNegotiationStrategy(listing, analysis);
+    private void generateIntelligentNegotiationMessage(Listing listing, OpenAIService.OpenAICallback callback) {
+        Log.d(TAG, "🤖 [OPENAI] Generating intelligent initial message for listing: " + listing.getId());
         
-        StringBuilder message = new StringBuilder();
+        // Build context for OpenAI
+        String listingDetails = buildListingContext(listing);
+        String userPreferences = buildUserPreferencesContext();
+        String conversationContext = "This is the initial contact message.";
         
-        // Professional opening
-        message.append("Hello! I'm very interested in your property");
+        // Use OpenAI service to generate intelligent message
+        openAIService.generateNegotiationResponse(
+            "INITIAL_CONTACT", // Special marker for initial messages
+            conversationContext,
+            listingDetails, 
+            userPreferences,
+            new OpenAIService.OpenAICallback() {
+                @Override
+                public void onSuccess(String response) {
+                    Log.d(TAG, "🤖 [OPENAI] Generated intelligent initial message successfully");
+                    callback.onSuccess(response);
+                }
+                
+                @Override
+                public void onError(String error) {
+                    Log.e(TAG, "🤖 [OPENAI] Failed to generate initial message: " + error);
+                    callback.onError(error);
+                }
+            }
+        );
+    }
+    
+    /**
+     * Build listing context for OpenAI
+     */
+    private String buildListingContext(Listing listing) {
+        StringBuilder context = new StringBuilder();
         
         if (listing.getTitle() != null) {
-            message.append(" \"").append(listing.getTitle()).append("\"");
+            context.append("Property: ").append(listing.getTitle()).append(". ");
         }
         
         if (listing.getCity() != null || listing.getStreet() != null) {
-            message.append(" located in ");
+            context.append("Location: ");
             if (listing.getCity() != null) {
-                message.append(listing.getCity());
+                context.append(listing.getCity());
             }
             if (listing.getStreet() != null) {
-                if (listing.getCity() != null) message.append(", ");
-                message.append(listing.getStreet());
+                if (listing.getCity() != null) context.append(", ");
+                context.append(listing.getStreet());
             }
+            context.append(". ");
         }
         
-        message.append(".\n\n");
-        
-        // Establish credibility as a tenant
-        message.append("I am a reliable professional with stable income, excellent references, and a clean rental history. ");
-        
-        // Add user preferences and requirements
-        if (userNeeds.maxPrice != null || userNeeds.bedrooms != null || userNeeds.houseType != null) {
-            message.append("I'm specifically looking for ");
-            List<String> preferences = new ArrayList<>();
-            
-            if (userNeeds.houseType != null) {
-                preferences.add("a " + userNeeds.houseType.toLowerCase());
-            }
-            if (userNeeds.bedrooms != null) {
-                preferences.add(userNeeds.bedrooms + " bedroom" + (userNeeds.bedrooms > 1 ? "s" : ""));
-            }
-            
-            message.append(String.join(", ", preferences)).append(" in this area.\n\n");
+        if (listing.getPrice() > 0) {
+            context.append("Listed price: $").append((int)listing.getPrice()).append("/month. ");
         }
         
-        // Apply negotiation strategy based on market analysis
-        if (strategy.shouldNegotiatePrice && userNeeds.maxPrice != null && listing.getPrice() > userNeeds.maxPrice) {
-            message.append("I've done some research on comparable properties in the area, ");
-            message.append("and I noticed that similar properties are typically renting for around $");
-            message.append(analysis.averageRentInArea.intValue()).append("/month. ");
-            
-            message.append("Given my qualifications as a tenant and the current market, ");
-            message.append("would you be open to discussing a rental rate of $");
-            message.append(userNeeds.maxPrice.intValue()).append("/month?\n\n");
+        if (listing.getBedrooms() > 0) {
+            context.append("Bedrooms: ").append(listing.getBedrooms()).append(". ");
         }
         
-        // Add value propositions based on strategy
-        message.append("I can offer:\n");
-        message.append("• Quick move-in (I'm ready immediately)\n");
-        message.append("• Long-term tenancy (looking for 12+ months)\n");
-        message.append("• Excellent maintenance of the property\n");
-        message.append("• Prompt payment and professional communication\n\n");
+        return context.toString();
+    }
+    
+    /**
+     * Build user preferences context for OpenAI
+     */
+    private String buildUserPreferencesContext() {
+        StringBuilder context = new StringBuilder();
         
-        // Flexible terms negotiation
-        if (strategy.negotiateTerms) {
-            message.append("I'm also flexible on lease terms and would be happy to discuss:\n");
-            message.append("• Lease duration preferences\n");
-            message.append("• Utility arrangements\n");
-            message.append("• Any property improvement needs\n\n");
+        if (userNeeds.maxPrice != null) {
+            context.append("Budget: up to $").append(userNeeds.maxPrice.intValue()).append("/month. ");
         }
         
-        message.append("I would love to schedule a viewing at your earliest convenience. ");
-        message.append("Please let me know your availability.\n\n");
-        message.append("Thank you for your time, and I look forward to hearing from you!");
+        if (userNeeds.bedrooms != null) {
+            context.append("Bedrooms needed: ").append(userNeeds.bedrooms).append(". ");
+        }
         
-        Log.d(TAG, "Generated strategic negotiation message with market analysis");
-        return message.toString();
+        if (userNeeds.houseType != null) {
+            context.append("Property type: ").append(userNeeds.houseType).append(". ");
+        }
+        
+        if (userNeeds.preferredLocation != null) {
+            context.append("Preferred location: ").append(userNeeds.preferredLocation).append(". ");
+        }
+        
+        return context.toString();
     }
     
     /**
@@ -1635,9 +1714,13 @@ public class AiNegotiationService {
                             Log.e(TAG, "🔄 [NEGOTIATION] Failed to generate follow-up message: " + error);
                             mainHandler.post(() -> {
                                 if (callback != null) {
-                                    callback.onMessage("AI", "❌ Error generating response: " + error);
+                                    callback.onMessage("AI", "❌ Unable to generate intelligent response. OpenAI API issue: " + error);
+                                    callback.onMessage("AI", "Please check your OpenAI API configuration and try again.");
                                 }
                             });
+                            
+                            // Mark conversation as having an error
+                            updateConversationState(listingId, "error", "Failed to generate AI response: " + error);
                         }
                     });
                 } else {
@@ -1791,6 +1874,16 @@ public class AiNegotiationService {
         boolean isWaitingForLandlord;
         List<String> negotiationHistory;
         
+        // Enhanced tracking for smarter negotiation
+        String negotiationPhase; // "opening", "price_discovery", "negotiating", "closing", "walkaway"
+        List<Integer> pricesOffered = new ArrayList<>(); // Track our offers to avoid repetition
+        List<Integer> landlordPrices = new ArrayList<>(); // Track landlord's prices
+        Integer currentOffer;
+        Integer bestLandlordPrice;
+        boolean hasAskedForBestPrice = false;
+        boolean hasDeflectedMeeting = false;
+        int meetingRequestCount = 0;
+        
         ConversationState(String listingId) {
             this.listingId = listingId;
             this.status = "initiated";
@@ -1799,6 +1892,9 @@ public class AiNegotiationService {
             this.totalExchanges = 0;
             this.lastMessageTime = System.currentTimeMillis();
             this.negotiationHistory = new ArrayList<>();
+            this.negotiationPhase = "opening";
+            this.pricesOffered = new ArrayList<>();
+            this.landlordPrices = new ArrayList<>();
         }
         
         void addAiMessage(String message) {
@@ -1820,18 +1916,42 @@ public class AiNegotiationService {
         }
         
         boolean shouldContinueNegotiation() {
-            // Allow up to 8 total exchanges (16 messages) over 24 hours
-            // This gives reasonable room for back-and-forth negotiation
+            // Smart negotiation limits based on phase and progress
             boolean withinTimeLimit = (System.currentTimeMillis() - lastMessageTime) < 24 * 60 * 60 * 1000; // 24 hours
-            boolean withinMessageLimit = totalExchanges < 8; // Allow 8 back-and-forth exchanges
-            boolean hasReasonableHistory = aiMessageCount <= 10 && landlordMessageCount <= 10; // Safety limit
             
-            boolean shouldContinue = withinTimeLimit && withinMessageLimit && hasReasonableHistory;
+            // Different limits based on negotiation phase
+            boolean withinMessageLimit;
+            if ("walkaway".equals(negotiationPhase) || "closing".equals(negotiationPhase)) {
+                withinMessageLimit = false; // Stop if we're walking away or closing
+            } else if (totalExchanges >= 6) {
+                // After 6 exchanges, only continue if making price progress
+                if (!landlordPrices.isEmpty() && !pricesOffered.isEmpty()) {
+                    int initialLandlordPrice = landlordPrices.get(0);
+                    int currentBestPrice = Collections.min(landlordPrices);
+                    boolean makingProgress = currentBestPrice < initialLandlordPrice * 0.95; // 5% improvement
+                    withinMessageLimit = makingProgress && totalExchanges < 8;
+                } else {
+                    withinMessageLimit = totalExchanges < 7; // Allow one more try
+                }
+            } else {
+                withinMessageLimit = totalExchanges < 6; // Normal limit
+            }
+            
+            // Check if stuck (same prices repeated)
+            boolean notStuck = true;
+            if (pricesOffered.size() >= 3) {
+                // Check if we're repeating the same offer
+                int lastThree = Math.min(3, pricesOffered.size());
+                Set<Integer> recentOffers = new HashSet<>(pricesOffered.subList(pricesOffered.size() - lastThree, pricesOffered.size()));
+                notStuck = recentOffers.size() > 1; // We've made different offers
+            }
+            
+            boolean shouldContinue = withinTimeLimit && withinMessageLimit && notStuck;
             
             Log.d(TAG, "📊 [CONTINUE_CHECK] Should continue: " + shouldContinue);
-            Log.d(TAG, "📊 [CONTINUE_CHECK] Within time: " + withinTimeLimit);
-            Log.d(TAG, "📊 [CONTINUE_CHECK] Within message limit: " + withinMessageLimit + " (exchanges: " + totalExchanges + "/8)");
-            Log.d(TAG, "📊 [CONTINUE_CHECK] Reasonable history: " + hasReasonableHistory + " (AI: " + aiMessageCount + ", Landlord: " + landlordMessageCount + ")");
+            Log.d(TAG, "📊 [CONTINUE_CHECK] Phase: " + negotiationPhase);
+            Log.d(TAG, "📊 [CONTINUE_CHECK] Within message limit: " + withinMessageLimit + " (exchanges: " + totalExchanges + ")");
+            Log.d(TAG, "📊 [CONTINUE_CHECK] Not stuck: " + notStuck);
             
             return shouldContinue;
         }
