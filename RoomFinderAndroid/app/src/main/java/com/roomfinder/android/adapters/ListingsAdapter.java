@@ -141,14 +141,12 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
             // Hide availability status
             binding.availableStatus.setVisibility(View.GONE);
             
-            // Set property type badge
+            // Set property type text in description area
             String propertyType = listing.getHouseType();
             if (propertyType != null && !propertyType.isEmpty()) {
-                binding.propertyTypeBadge.setText(propertyType);
-                binding.propertyTypeBadge.setVisibility(View.VISIBLE);
+                binding.propertyTypeText.setText(propertyType);
             } else {
-                binding.propertyTypeBadge.setText("Property");
-                binding.propertyTypeBadge.setVisibility(View.VISIBLE);
+                binding.propertyTypeText.setText("Property");
             }
             
             // Click listeners
@@ -164,11 +162,7 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
                 }
             });
             
-            binding.chatButton.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onChatClick(listing);
-                }
-            });
+            // Chat button removed - users will access chat from listing detail page
         }
     }
 }
