@@ -2466,54 +2466,81 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOMContentLoaded - Initializing auth...');
             
+            // Force immediate auth state check to handle logout redirects
+            console.log('Checking auth state immediately...');
+            const currentUser = localStorage.getItem('currentUser');
+            console.log('Current user in localStorage:', currentUser);
+            
             // Initialize UniversalAuth which will handle the authSection automatically
             if (typeof window.UniversalAuth !== 'undefined') {
                 console.log('UniversalAuth found, initializing...');
                 window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+                
+                // Force a refresh after a short delay to ensure proper state
+                setTimeout(() => {
+                    console.log('Force refreshing auth state...');
+                    if (typeof window.UniversalAuth.refreshAuthState === 'function') {
+                        window.UniversalAuth.refreshAuthState();
+                    }
+                }, 100);
             } else {
                 console.error('UniversalAuth not found! Falling back to manual auth update.');
                 // Fallback: manually update auth section
-                const authSection = document.getElementById('authSection');
-                const currentUser = localStorage.getItem('currentUser');
-                
-                if (authSection) {
-                    if (currentUser && currentUser !== 'null' && currentUser !== 'undefined') {
-                        try {
-                            const userData = JSON.parse(currentUser);
-                            const profileImage = userData.profileImage || 'data:image/svg+xml;base64,' + btoa(`
-                                <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-                                    <rect width="100" height="100" rx="50" fill="#E5E7EB"/>
-                                    <path d="M50 45C56.075 45 61 40.075 61 34C61 27.925 56.075 23 50 23C43.925 23 39 27.925 39 34C39 40.075 43.925 45 50 45Z" fill="#9CA3AF"/>
-                                    <path d="M30 77C30 77 30 66.103 30 62C30 55.373 36.268 50 44 50H56C63.732 50 70 55.373 70 62C70 66.103 70 77 70 77" fill="#9CA3AF"/>
-                                </svg>
-                            `.trim());
-                            
-                            authSection.innerHTML = `
-                                <a href="profile.html" class="profile-link">
-                                    <img id="profileLogo" src="${profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo hover:ring-2 hover:ring-blue-500 transition-all duration-200">
-                                </a>
-                            `;
-                        } catch (e) {
-                            console.error('Error parsing user data:', e);
-                            authSection.innerHTML = `
-                                <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                                    Login/Register
-                                </a>
-                            `;
-                        }
-                    } else {
+                updateAuthSectionManual();
+            }
+        });
+        
+        // Manual auth section update function
+        function updateAuthSectionManual() {
+            const authSection = document.getElementById('authSection');
+            const currentUser = localStorage.getItem('currentUser');
+            
+            console.log('Manual auth update - currentUser:', currentUser);
+            
+            if (authSection) {
+                if (currentUser && currentUser !== 'null' && currentUser !== 'undefined') {
+                    try {
+                        const userData = JSON.parse(currentUser);
+                        const profileImage = userData.profileImage || 'data:image/svg+xml;base64,' + btoa(`
+                            <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+                                <rect width="100" height="100" rx="50" fill="#E5E7EB"/>
+                                <path d="M50 45C56.075 45 61 40.075 61 34C61 27.925 56.075 23 50 23C43.925 23 39 27.925 39 34C39 40.075 43.925 45 50 45Z" fill="#9CA3AF"/>
+                                <path d="M30 77C30 77 30 66.103 30 62C30 55.373 36.268 50 44 50H56C63.732 50 70 55.373 70 62C70 66.103 70 77 70 77" fill="#9CA3AF"/>
+                            </svg>
+                        `.trim());
+                        
+                        authSection.innerHTML = `
+                            <a href="profile.html" class="profile-link">
+                                <img id="profileLogo" src="${profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo hover:ring-2 hover:ring-blue-500 transition-all duration-200">
+                            </a>
+                        `;
+                        console.log('Showing profile image');
+                    } catch (e) {
+                        console.error('Error parsing user data:', e);
                         authSection.innerHTML = `
                             <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
                                 Login/Register
                             </a>
                         `;
+                        console.log('Showing login/register (error case)');
                     }
+                } else {
+                    authSection.innerHTML = `
+                        <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                            Login/Register
+                        </a>
+                    `;
+                    console.log('Showing login/register (not logged in)');
                 }
             }
-            
-            // Also update mobile auth section
+        }
+        
+        // Also update mobile auth section
+        function updateMobileAuthSection() {
             const mobileAuthSection = document.getElementById('mobileAuthSection');
             const currentUser = localStorage.getItem('currentUser');
+            
+            console.log('Updating mobile auth section - currentUser:', currentUser);
             
             if (currentUser && currentUser !== 'null' && currentUser !== 'undefined') {
                 try {
@@ -2527,6 +2554,7 @@
                             <a href="#" onclick="logout()" class="mobile-menu-item auth-item">Logout</a>
                         `;
                     }
+                    console.log('Mobile: Showing logged in state');
                 } catch (e) {
                     console.error('Error parsing current user:', e);
                     // If error, show login link
@@ -2535,6 +2563,7 @@
                             <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
                         `;
                     }
+                    console.log('Mobile: Showing login/register (error case)');
                 }
             } else {
                 // Not logged in - show login link
@@ -2543,12 +2572,25 @@
                         <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
                     `;
                 }
+                console.log('Mobile: Showing login/register (not logged in)');
             }
+        }
+        
+        // Update mobile auth on page load 
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                updateMobileAuthSection();
+            }, 200);
         });
 
         function logout() {
+            // Clear all authentication data
             localStorage.removeItem('currentUser');
-            window.location.href = 'login.html';
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('users');
+            
+            // Refresh the page to show logged out state
+            window.location.reload();
         }
 
     </script>
