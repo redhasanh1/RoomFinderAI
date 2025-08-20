@@ -645,8 +645,6 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         return listing.getHouseType().toLowerCase().contains(filter.toLowerCase());
     }
     
-    private boolean isFirstLoad = true;
-    
     private void loadListings() {
         // Hide error states immediately
         binding.errorLayout.setVisibility(View.GONE);
@@ -660,57 +658,73 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         Log.d(TAG, "🔄 [DEBUG] Starting progressive loadListings()");
         Log.d(TAG, "🔄 [DEBUG] Current allListings.size() = " + allListings.size());
         
-        // Reset for fresh load
-        isFirstLoad = true;
-        
-        supabaseService.getAllListings(new SupabaseService.ListingsCallback() {
+        supabaseService.getAllListingsProgressively(new SupabaseService.ProgressiveLoadingCallback() {
             @Override
-            public void onSuccess(List<Listing> newListings) {
-                Log.d(TAG, "✅ [DEBUG] Progressive load callback with " + (newListings != null ? newListings.size() : 0) + " listings");
+            public void onInitialLoad(List<Listing> newListings) {
+                Log.d(TAG, "📱 [DEBUG] Initial load: clearing and showing " + (newListings != null ? newListings.size() : 0) + " listings");
                 
                 if (newListings == null) {
-                    Log.e(TAG, "❌ [DEBUG] newListings is NULL!");
+                    Log.e(TAG, "❌ [DEBUG] Initial listings is NULL!");
                     showError("Received null data from server");
                     return;
                 }
                 
-                if (isFirstLoad) {
-                    // First batch - clear and show immediately
-                    Log.d(TAG, "📱 [DEBUG] First batch: clearing and showing " + newListings.size() + " listings");
-                    allListings.clear();
-                    allListings.addAll(newListings);
-                    isFirstLoad = false;
-                    
-                    // Hide progress bar after first batch
-                    if (binding != null && binding.progressBar != null) {
-                        binding.progressBar.setVisibility(View.GONE);
-                    }
-                    if (binding != null && binding.swipeRefresh != null) {
-                        binding.swipeRefresh.setRefreshing(false);
-                    }
-                } else {
-                    // Additional batches - add smoothly
-                    Log.d(TAG, "➕ [DEBUG] Additional batch: adding " + newListings.size() + " more listings");
-                    int startIndex = allListings.size();
-                    allListings.addAll(newListings);
-                    
-                    // Smooth animation: notify adapter of new items
-                    if (adapter != null) {
-                        applyFilters(); // This will trigger adapter update
-                        return; // Skip the normal filter apply below
-                    }
+                // Clear and set initial content
+                allListings.clear();
+                allListings.addAll(newListings);
+                
+                // Hide progress bar after first batch
+                if (binding != null && binding.progressBar != null) {
+                    binding.progressBar.setVisibility(View.GONE);
+                }
+                if (binding != null && binding.swipeRefresh != null) {
+                    binding.swipeRefresh.setRefreshing(false);
                 }
                 
                 // Apply filters and update UI
-                Log.d(TAG, "🔍 [DEBUG] Applying filters to " + allListings.size() + " total listings...");
                 applyFilters();
                 
                 if (listings.isEmpty()) {
-                    Log.d(TAG, "⚠️ [DEBUG] No listings after filtering - showing empty state");
                     showEmptyState();
                 } else {
-                    Log.d(TAG, "✅ [DEBUG] Successfully showing " + listings.size() + " listings to user");
+                    Log.d(TAG, "✅ [DEBUG] Initial load complete: showing " + listings.size() + " listings");
                 }
+            }
+            
+            @Override
+            public void onMoreLoaded(List<Listing> moreListings) {
+                Log.d(TAG, "➕ [DEBUG] More content loaded: adding " + (moreListings != null ? moreListings.size() : 0) + " listings");
+                
+                if (moreListings == null || moreListings.isEmpty()) {
+                    Log.d(TAG, "⚠️ [DEBUG] No more listings to add");
+                    return;
+                }
+                
+                // Remember current filtered size before adding new content
+                int previousFilteredSize = listings.size();
+                
+                // Add new listings to the master list
+                allListings.addAll(moreListings);
+                
+                // Apply filters to get updated filtered list
+                applyFilters();
+                
+                // Calculate how many new items were added after filtering
+                int newFilteredItems = listings.size() - previousFilteredSize;
+                
+                if (newFilteredItems > 0 && adapter != null) {
+                    // Notify adapter of range insertion for smooth animation
+                    adapter.notifyItemRangeInserted(previousFilteredSize, newFilteredItems);
+                    Log.d(TAG, "✨ [DEBUG] Smoothly added " + newFilteredItems + " new items to position " + previousFilteredSize);
+                } else {
+                    Log.d(TAG, "💫 [DEBUG] No new items passed filters");
+                }
+            }
+            
+            @Override
+            public void onSuccess(List<Listing> listings) {
+                // This shouldn't be called in progressive loading, but handle it as initial load
+                onInitialLoad(listings);
             }
             
             @Override
