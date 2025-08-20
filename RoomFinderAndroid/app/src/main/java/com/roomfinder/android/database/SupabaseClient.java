@@ -115,6 +115,61 @@ public class SupabaseClient {
     }
     
     /**
+     * Get listings with offset and limit for progressive loading
+     */
+    public List<Listing> getListings(int offset, int limit) {
+        try {
+            String url = baseUrl + "listings?select=*&order=created_at.desc&limit=" + limit + "&offset=" + offset;
+            
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("Prefer", "return=representation")
+                    .build();
+            
+            Log.d(TAG, "Fetching listings with offset: " + offset + ", limit: " + limit);
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "HTTP error: " + response.code() + " - " + response.message());
+                    return new ArrayList<>();
+                }
+                
+                String responseBody = response.body().string();
+                
+                // Check for empty response
+                if (responseBody == null || responseBody.trim().isEmpty()) {
+                    Log.e(TAG, "Empty response from server");
+                    return new ArrayList<>();
+                }
+                
+                Type listType = new TypeToken<List<Listing>>(){}.getType();
+                List<Listing> listings;
+                
+                try {
+                    listings = gson.fromJson(responseBody, listType);
+                    Log.d(TAG, "✅ Parsed " + (listings != null ? listings.size() : 0) + " listings from offset " + offset);
+                } catch (Exception e) {
+                    Log.e(TAG, "❌ JSON parsing error: " + e.getMessage());
+                    return new ArrayList<>();
+                }
+                
+                if (listings == null) {
+                    listings = new ArrayList<>();
+                }
+                
+                return listings;
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error fetching listings: " + e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
      * Fetch additional listings with pagination for infinite scroll
      */
     public List<Listing> getMoreListings(int offset, int limit) {
