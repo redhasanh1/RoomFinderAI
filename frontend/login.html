@@ -266,7 +266,7 @@
                     <!-- Social Login Buttons -->
                     <div class="mt-6 space-y-3">
                         <button type="button" id="googleSignInBtn" class="w-full flex items-center justify-start px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200" onclick="handleGoogleSignIn()">
-                            <i class="fab fa-google text-red-500 text-lg mr-3"></i>
+                            <i class="fab fa-google text-lg mr-3" style="background: linear-gradient(45deg, #ea4335, #34a853, #fbbc05, #4285f4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
                             <span class="text-gray-700 font-medium">Continue with Google</span>
                         </button>
                         <button type="button" id="appleSignInBtn" class="w-full flex items-center justify-start px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200" onclick="handleAppleSignIn()">
@@ -808,15 +808,8 @@
             }
             
             try {
-                google.accounts.id.prompt((notification) => {
-                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        // Fallback to manual trigger
-                        google.accounts.id.renderButton(
-                            document.getElementById('googleSignInBtn'),
-                            { theme: 'outline', size: 'large', width: '100%' }
-                        );
-                    }
-                });
+                // Use our custom button instead of Google's rendered button
+                google.accounts.id.prompt();
             } catch (error) {
                 console.error('Google Sign-In error:', error);
                 alert('Google Sign-In is currently unavailable. Please try email/password login.');
