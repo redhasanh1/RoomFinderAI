@@ -73,13 +73,18 @@ public class SupabaseService {
     private void cacheListings(List<Listing> listings) {
         SharedPreferences prefs = getCachePrefs();
         if (prefs != null) {
-            String json = gson.toJson(listings);
-            long timestamp = System.currentTimeMillis();
-            prefs.edit()
-                    .putString(CACHE_KEY_LISTINGS, json)
-                    .putLong(CACHE_KEY_TIMESTAMP, timestamp)
-                    .apply();
-            Log.d(TAG, "💾 Cached " + listings.size() + " listings");
+            try {
+                String json = gson.toJson(listings);
+                long timestamp = System.currentTimeMillis();
+                prefs.edit()
+                        .putString(CACHE_KEY_LISTINGS, json)
+                        .putLong(CACHE_KEY_TIMESTAMP, timestamp)
+                        .apply();
+                Log.d(TAG, "💾 Cached " + listings.size() + " listings");
+            } catch (Exception e) {
+                Log.e(TAG, "❌ Failed to cache listings: " + e.getMessage());
+                // Continue without caching rather than crashing
+            }
         }
     }
     
@@ -104,6 +109,8 @@ public class SupabaseService {
                 return listings;
             } catch (Exception e) {
                 Log.e(TAG, "❌ Error parsing cached listings: " + e.getMessage());
+                // Clear corrupted cache
+                prefs.edit().remove(CACHE_KEY_LISTINGS).remove(CACHE_KEY_TIMESTAMP).apply();
             }
         }
         return null;
