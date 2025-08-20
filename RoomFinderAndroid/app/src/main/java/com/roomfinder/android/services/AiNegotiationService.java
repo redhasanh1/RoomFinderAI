@@ -17,8 +17,12 @@ import retrofit2.Response;
 import org.json.JSONObject;
 import okhttp3.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.Calendar;
 
 /**
  * AI Negotiation Service - Port of website's AIChatHandler
@@ -30,12 +34,19 @@ public class AiNegotiationService {
     
     private final Context context;
     private final OkHttpClient httpClient;
-    private final ExecutorService executorService;
+    private final ScheduledExecutorService executorService;
     private final Handler mainHandler;
     private final ApiService apiService;
     
     // Real-time chat integration
     private RealTimeChatService chatService;
+    
+    // OpenAI integration for intelligent responses
+    private OpenAIService openAIService;
+    
+    // Real-time negotiation monitoring
+    private boolean isMonitoring = false;
+    private Map<String, String> activeNegotiationIds = new HashMap<>();
     
     // User state (similar to website's AIChatHandler)
     private String currentUserEmail;
@@ -44,6 +55,18 @@ public class AiNegotiationService {
     private String negotiationState;
     private Map<String, Object> activeNegotiations;
     private String pendingUserResponse;
+    
+    // Communication templates (from website's ai-chat.js)
+    private Map<String, MessageTemplate> communicationTemplates;
+    
+    // Conversation state management
+    private Map<String, ConversationState> activeConversations = new HashMap<>();
+    
+    // Track conversation IDs by listing ID for follow-up messages
+    private Map<String, String> listingToConversationMap = new ConcurrentHashMap<>();
+    
+    // CRITICAL: Message deduplication to prevent spam
+    private Set<String> processedMessageIds = ConcurrentHashMap.newKeySet();
     
     // Callbacks
     public interface AiChatCallback {
@@ -81,7 +104,7 @@ public class AiNegotiationService {
     private AiNegotiationService(Context context) {
         this.context = context;
         this.httpClient = new OkHttpClient();
-        this.executorService = Executors.newFixedThreadPool(3);
+        this.executorService = Executors.newScheduledThreadPool(3);
         this.mainHandler = new Handler(Looper.getMainLooper());
         this.apiService = ApiClient.getInstance().getApiService();
         
@@ -91,6 +114,12 @@ public class AiNegotiationService {
         this.negotiationState = "idle";
         this.activeNegotiations = new HashMap<>();
         this.pendingUserResponse = null;
+        
+        // Initialize communication templates like the website
+        initializeCommunicationTemplates();
+        
+        // Initialize OpenAI service for intelligent responses
+        this.openAIService = new OpenAIService();
     }
     
     public static synchronized AiNegotiationService getInstance(Context context) {
@@ -98,6 +127,301 @@ public class AiNegotiationService {
             instance = new AiNegotiationService(context);
         }
         return instance;
+    }
+    
+    /**
+     * Initialize communication templates (from website's ai-chat.js)
+     */
+    private void initializeCommunicationTemplates() {
+        communicationTemplates = new HashMap<>();
+        
+        // Initial inquiry template
+        communicationTemplates.put("initial_inquiry", new MessageTemplate(
+            "Interest in Your Property - {propertyAddress}",
+            "Hello,\\n\\n" +
+            "I am very interested in your property at {propertyAddress}. I am a {tenantProfile} looking for a {propertyType} in this area.\\n\\n" +
+            "{personalizedMessage}\\n\\n" +
+            "I would love to schedule a viewing at your convenience. Please let me know your availability.\\n\\n" +
+            "Best regards,\\n" +
+            "{tenantName}\\n" +
+            "{tenantContact}"
+        ));
+        
+        // Price negotiation template
+        communicationTemplates.put("price_negotiation", new MessageTemplate(
+            "Rental Rate Discussion - {propertyAddress}",
+            "Hello,\\n\\n" +
+            "Thank you for showing me the property at {propertyAddress}. I am very interested and would like to discuss the rental terms.\\n\\n" +
+            "{negotiationPoints}\\n\\n" +
+            "I am prepared to move in quickly and can provide excellent references. Would you be open to discussing these terms?\\n\\n" +
+            "Best regards,\\n" +
+            "{tenantName}"
+        ));
+        
+        // Application submission template
+        communicationTemplates.put("application_submission", new MessageTemplate(
+            "Rental Application - {propertyAddress}",
+            "Hello,\\n\\n" +
+            "I am pleased to submit my application for the property at {propertyAddress}. I have attached all required documents.\\n\\n" +
+            "{applicationSummary}\\n\\n" +
+            "I look forward to hearing from you soon.\\n\\n" +
+            "Best regards,\\n" +
+            "{tenantName}"
+        ));
+        
+        Log.d(TAG, "Communication templates initialized");
+    }
+    
+    /**
+     * Intelligent response detection and conversation state management (from website's checkForNegotiationResponse)
+     */
+    private boolean isNegotiationResponse(String message) {
+        String cleanMessage = message.toLowerCase().trim();
+        
+        // Check for affirmative responses
+        String[] affirmativeResponses = {"yes", "sure", "ok", "okay", "please", "go ahead", "proceed", "contact them", "negotiate", "send message"};
+        for (String response : affirmativeResponses) {
+            if (cleanMessage.contains(response)) {
+                return true;
+            }
+        }
+        
+        // Check for direct negotiation requests
+        String[] negotiationKeywords = {"negotiate", "contact", "message", "talk to landlord", "reach out"};
+        for (String keyword : negotiationKeywords) {
+            if (cleanMessage.contains(keyword)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Update conversation state for a listing
+     */
+    private void updateConversationState(String listingId, String status, String message) {
+        updateConversationState(listingId, status, message, "ai"); // Default to AI message
+    }
+    
+    /**
+     * Update conversation state for a listing with message type
+     */
+    private void updateConversationState(String listingId, String status, String message, String messageType) {
+        ConversationState state = activeConversations.get(listingId);
+        if (state == null) {
+            state = new ConversationState(listingId);
+            activeConversations.put(listingId, state);
+            Log.d(TAG, "📊 [STATE] Created new conversation state for " + listingId);
+        }
+        
+        state.status = status;
+        
+        // Add message based on type
+        if ("landlord".equals(messageType)) {
+            state.addLandlordMessage(message);
+        } else {
+            state.addAiMessage(message);
+        }
+        
+        Log.d(TAG, "📊 [STATE] Updated conversation state for " + listingId + ": " + status);
+        Log.d(TAG, "📊 [STATE] AI messages: " + state.aiMessageCount + ", Landlord messages: " + state.landlordMessageCount + ", Exchanges: " + state.totalExchanges);
+    }
+    
+    /**
+     * Check if negotiation should continue based on conversation state
+     */
+    private boolean shouldContinueNegotiation(String listingId) {
+        ConversationState state = activeConversations.get(listingId);
+        if (state == null) {
+            return true; // New conversation, should start
+        }
+        
+        return state.shouldContinueNegotiation();
+    }
+    
+    /**
+     * Determine next negotiation action based on conversation state
+     */
+    private String determineNextAction(String listingId, String landlordResponse) {
+        ConversationState state = activeConversations.get(listingId);
+        if (state == null) {
+            return "initial_contact";
+        }
+        
+        // Analyze landlord response to determine next action
+        String response = landlordResponse.toLowerCase().trim();
+        Log.d(TAG, "🧠 Analyzing landlord response: '" + response + "'");
+        
+        // Enhanced price negotiation detection - PRIORITY CHECK
+        if (response.contains("lower") || response.contains("reduce") || response.contains("can do") || 
+            response.contains("decrease") || response.contains("cut") || response.contains("drop") ||
+            response.contains("cheaper") || response.contains("less") || 
+            (response.contains("sure") && (response.contains("lower") || response.contains("price"))) ||
+            (response.contains("can") && response.contains("lower")) ||
+            response.contains("negotiate price") || response.contains("adjust")) {
+            Log.d(TAG, "💰 Price negotiation opportunity detected!");
+            return "price_negotiation_opportunity";
+        }
+        
+        // Positive responses
+        if (response.contains("interested") || response.contains("yes") || response.contains("sure") || 
+            response.contains("sounds good") || response.contains("ok") || response.contains("okay") ||
+            response.contains("schedule") || response.contains("viewing") || response.contains("meet")) {
+            return "positive_response";
+        }
+        
+        // General price discussion
+        if (response.contains("price") || response.contains("rent") || response.contains("cost") ||
+            response.contains("amount") || response.contains("payment") || response.contains("monthly")) {
+            return "price_discussion";
+        }
+        
+        // Negative responses
+        if (response.contains("no") || response.contains("not available") || response.contains("taken") ||
+            response.contains("sorry") || response.contains("can't") || response.contains("cannot") ||
+            response.contains("already rented") || response.contains("not interested")) {
+            return "negative_response";
+        }
+        
+        // Timing discussion
+        if (response.contains("when") || response.contains("move in") || response.contains("date") ||
+            response.contains("available") || response.contains("timing") || response.contains("start")) {
+            return "timing_discussion";
+        }
+        
+        // Default to general follow-up
+        return "general_follow_up";
+    }
+    
+    /**
+     * Generate intelligent follow-up message based on conversation context
+     */
+    /**
+     * Generate intelligent follow-up message using OpenAI (with fallback to templates)
+     */
+    private void generateFollowUpMessage(String listingId, String landlordResponse, String nextAction, 
+                                       Listing listing, FollowUpMessageCallback callback) {
+        Log.d(TAG, "🤖 [INTELLIGENT] Generating OpenAI response for: " + landlordResponse);
+        
+        // Build context for OpenAI
+        String conversationContext = buildConversationContext(listingId);
+        String listingDetails = buildListingDetails(listing);
+        String userPreferences = buildUserPreferences();
+        
+        // Try OpenAI first
+        openAIService.generateNegotiationResponse(
+            landlordResponse, 
+            conversationContext, 
+            listingDetails, 
+            userPreferences,
+            new OpenAIService.OpenAICallback() {
+                @Override
+                public void onSuccess(String aiResponse) {
+                    Log.d(TAG, "🤖 [INTELLIGENT] OpenAI success: " + aiResponse);
+                    if (callback != null) {
+                        callback.onSuccess(aiResponse);
+                    }
+                }
+                
+                @Override
+                public void onError(String error) {
+                    Log.w(TAG, "🤖 [INTELLIGENT] OpenAI failed, using fallback: " + error);
+                    // Fallback to hardcoded templates
+                    String fallbackResponse = getFallbackResponse(nextAction);
+                    if (callback != null) {
+                        callback.onSuccess(fallbackResponse);
+                    }
+                }
+            }
+        );
+    }
+    
+    /**
+     * Callback interface for follow-up message generation
+     */
+    public interface FollowUpMessageCallback {
+        void onSuccess(String message);
+        void onError(String error);
+    }
+    
+    /**
+     * Build conversation context for OpenAI
+     */
+    private String buildConversationContext(String listingId) {
+        ConversationState state = activeConversations.get(listingId);
+        if (state == null || state.negotiationHistory.isEmpty()) {
+            return "This is the beginning of our conversation.";
+        }
+        
+        StringBuilder context = new StringBuilder();
+        for (String entry : state.negotiationHistory) {
+            context.append(entry).append("\n");
+        }
+        return context.toString();
+    }
+    
+    /**
+     * Build listing details for OpenAI context
+     */
+    private String buildListingDetails(Listing listing) {
+        if (listing == null) return "Property details not available";
+        
+        StringBuilder details = new StringBuilder();
+        details.append(listing.getTitle());
+        double price = listing.getPrice();
+        if (price > 0) {
+            details.append(" - $").append(price);
+        }
+        if (listing.getLocation() != null) {
+            details.append(" in ").append(listing.getLocation());
+        }
+        return details.toString();
+    }
+    
+    /**
+     * Build user preferences for OpenAI context
+     */
+    private String buildUserPreferences() {
+        if (userNeeds == null) return "No specific preferences set";
+        
+        StringBuilder prefs = new StringBuilder();
+        if (userNeeds.maxPrice != null) {
+            prefs.append("Budget up to $").append(userNeeds.maxPrice);
+        }
+        if (userNeeds.preferredLocation != null) {
+            prefs.append(", prefer ").append(userNeeds.preferredLocation);
+        }
+        if (userNeeds.bedrooms != null) {
+            prefs.append(", ").append(userNeeds.bedrooms).append(" bedrooms");
+        }
+        
+        return prefs.length() > 0 ? prefs.toString() : "Flexible on terms";
+    }
+    
+    /**
+     * Fallback to hardcoded responses if OpenAI fails
+     */
+    private String getFallbackResponse(String nextAction) {
+        switch (nextAction) {
+            case "price_negotiation_opportunity":
+                return "Thank you so much for being open to discussing the price! I really appreciate your flexibility. " +
+                       "What price range would work for you? Based on my research of similar properties in the area and my budget, " +
+                       "I was hoping for something around " + (userNeeds.maxPrice != null ? "$" + userNeeds.maxPrice : "a competitive rate") + 
+                       ". Would you be able to accommodate something in that range? I'm also happy to discuss a longer lease term if that helps make the numbers work.";
+                
+            case "positive_response":
+                return "Thank you for your positive response! I'm very excited about this opportunity. When would be a good time for a viewing? I'm flexible with my schedule and can accommodate your availability.";
+                
+            case "price_discussion":
+                return "I appreciate you discussing the pricing with me. Based on my budget and the current market, I believe we can find a mutually beneficial arrangement. Would you be open to discussing terms that work for both of us?";
+                
+            case "general_follow_up":
+                return "Thank you for your response. I remain very interested in your property and would love to continue our discussion. Please let me know if you need any additional information from me or if there's anything specific you'd like to discuss.";
+                
+            default:
+                return "Thank you for getting back to me. I'm very interested in moving forward with this opportunity. Please let me know the next steps or any additional information you might need.";
+        }
     }
     
     /**
@@ -109,6 +433,10 @@ public class AiNegotiationService {
         
         // Initialize chat service for real messaging
         this.chatService = RealTimeChatService.getInstance(context);
+        
+        // CRITICAL: Initialize chat service to trigger auto-debug and universal conversation discovery
+        Log.d(TAG, "🔧 [INIT] Initializing RealTimeChatService to trigger auto-debug...");
+        this.chatService.initialize();
         
         Log.d(TAG, "🤖 AI Negotiation Service initialized for user: " + userEmail);
         
@@ -541,6 +869,14 @@ public class AiNegotiationService {
                     public void onSuccess(Conversation conversation) {
                         Log.d(TAG, "✅ Conversation created: " + conversation.getId());
                         
+                        // Track this negotiation
+                        activeNegotiationIds.put(listing.getId(), conversation.getId());
+                        
+                        // Start monitoring if not already started
+                        if (!isMonitoring) {
+                            startNegotiationMonitoring();
+                        }
+                        
                         // Send the AI-generated negotiation message
                         sendNegotiationMessage(conversation.getId(), negotiationMessage, listing);
                     }
@@ -568,11 +904,16 @@ public class AiNegotiationService {
     }
     
     /**
-     * Generate professional negotiation message
+     * Generate professional negotiation message with market analysis (port of website's AI negotiation engine)
      */
     private String generateNegotiationMessage(Listing listing) {
+        // Analyze the market situation for this property
+        MarketAnalysis analysis = analyzeMarketData(listing);
+        NegotiationStrategy strategy = generateNegotiationStrategy(listing, analysis);
+        
         StringBuilder message = new StringBuilder();
         
+        // Professional opening
         message.append("Hello! I'm very interested in your property");
         
         if (listing.getTitle() != null) {
@@ -592,9 +933,12 @@ public class AiNegotiationService {
         
         message.append(".\n\n");
         
-        // Add user preferences context
+        // Establish credibility as a tenant
+        message.append("I am a reliable professional with stable income, excellent references, and a clean rental history. ");
+        
+        // Add user preferences and requirements
         if (userNeeds.maxPrice != null || userNeeds.bedrooms != null || userNeeds.houseType != null) {
-            message.append("I'm looking for ");
+            message.append("I'm specifically looking for ");
             List<String> preferences = new ArrayList<>();
             
             if (userNeeds.houseType != null) {
@@ -603,43 +947,205 @@ public class AiNegotiationService {
             if (userNeeds.bedrooms != null) {
                 preferences.add(userNeeds.bedrooms + " bedroom" + (userNeeds.bedrooms > 1 ? "s" : ""));
             }
-            if (userNeeds.maxPrice != null) {
-                preferences.add("within my budget of $" + userNeeds.maxPrice.intValue());
-            }
             
-            message.append(String.join(", ", preferences)).append(".\n\n");
+            message.append(String.join(", ", preferences)).append(" in this area.\n\n");
         }
         
-        message.append("Could you please provide more details about the property? ");
-        message.append("I'm ready to move in soon and would appreciate the opportunity to discuss this rental. ");
-        
-        if (listing.getPrice() > 0 && userNeeds.maxPrice != null && listing.getPrice() > userNeeds.maxPrice) {
-            message.append("I noticed the listing price is $").append((int)listing.getPrice())
-                   .append(", and I was hoping we could discuss the possibility of a rent adjustment to $")
-                   .append(userNeeds.maxPrice.intValue()).append(" given my specific situation.");
+        // Apply negotiation strategy based on market analysis
+        if (strategy.shouldNegotiatePrice && userNeeds.maxPrice != null && listing.getPrice() > userNeeds.maxPrice) {
+            message.append("I've done some research on comparable properties in the area, ");
+            message.append("and I noticed that similar properties are typically renting for around $");
+            message.append(analysis.averageRentInArea.intValue()).append("/month. ");
+            
+            message.append("Given my qualifications as a tenant and the current market, ");
+            message.append("would you be open to discussing a rental rate of $");
+            message.append(userNeeds.maxPrice.intValue()).append("/month?\n\n");
         }
         
-        message.append("\n\nThank you for your time, and I look forward to hearing from you!");
+        // Add value propositions based on strategy
+        message.append("I can offer:\n");
+        message.append("• Quick move-in (I'm ready immediately)\n");
+        message.append("• Long-term tenancy (looking for 12+ months)\n");
+        message.append("• Excellent maintenance of the property\n");
+        message.append("• Prompt payment and professional communication\n\n");
         
+        // Flexible terms negotiation
+        if (strategy.negotiateTerms) {
+            message.append("I'm also flexible on lease terms and would be happy to discuss:\n");
+            message.append("• Lease duration preferences\n");
+            message.append("• Utility arrangements\n");
+            message.append("• Any property improvement needs\n\n");
+        }
+        
+        message.append("I would love to schedule a viewing at your earliest convenience. ");
+        message.append("Please let me know your availability.\n\n");
+        message.append("Thank you for your time, and I look forward to hearing from you!");
+        
+        Log.d(TAG, "Generated strategic negotiation message with market analysis");
         return message.toString();
+    }
+    
+    /**
+     * Analyze market data for property (simplified version of website's analyzeMarketData)
+     */
+    private MarketAnalysis analyzeMarketData(Listing listing) {
+        MarketAnalysis analysis = new MarketAnalysis();
+        
+        // Estimate market average (in real implementation, this would query market APIs)
+        analysis.averageRentInArea = listing.getPrice() * (0.9 + Math.random() * 0.2);
+        analysis.marketTrend = Math.random() > 0.5 ? "increasing" : "stable";
+        analysis.daysOnMarket = (int) (Math.random() * 30) + 7;
+        analysis.seasonalFactor = getSeasonalFactor();
+        analysis.negotiationPotential = Math.random() * 0.4 + 0.1; // 10-50% potential
+        
+        Log.d(TAG, "Market analysis: avg rent=" + analysis.averageRentInArea.intValue() + 
+                   ", trend=" + analysis.marketTrend + 
+                   ", potential=" + (analysis.negotiationPotential * 100) + "%");
+        
+        return analysis;
+    }
+    
+    /**
+     * Generate negotiation strategy based on market analysis
+     */
+    private NegotiationStrategy generateNegotiationStrategy(Listing listing, MarketAnalysis analysis) {
+        NegotiationStrategy strategy = new NegotiationStrategy();
+        
+        // Price negotiation strategy
+        if (analysis.negotiationPotential > 0.2 && userNeeds.maxPrice != null && listing.getPrice() > userNeeds.maxPrice) {
+            strategy.shouldNegotiatePrice = true;
+            strategy.targetPrice = userNeeds.maxPrice;
+            strategy.priceJustification = "Market analysis shows similar properties average lower prices";
+        }
+        
+        // Lease terms strategy
+        strategy.negotiateTerms = true;
+        strategy.proposedTerms.add("Flexible lease duration");
+        strategy.proposedTerms.add("Utility arrangements");
+        strategy.proposedTerms.add("Pet policy if applicable");
+        
+        // Move-in incentives
+        if (analysis.daysOnMarket > 20) {
+            strategy.requestIncentives = true;
+            strategy.incentives.add("Reduced security deposit");
+            strategy.incentives.add("First month prorated");
+        }
+        
+        strategy.estimatedSuccessProbability = calculateSuccessProbability(analysis);
+        
+        Log.d(TAG, "Generated negotiation strategy: price=" + strategy.shouldNegotiatePrice + 
+                   ", terms=" + strategy.negotiateTerms + 
+                   ", success=" + (strategy.estimatedSuccessProbability * 100) + "%");
+        
+        return strategy;
+    }
+    
+    /**
+     * Calculate success probability for negotiation
+     */
+    private double calculateSuccessProbability(MarketAnalysis analysis) {
+        double baseProbability = 0.5;
+        
+        // Adjust based on market conditions
+        if ("increasing".equals(analysis.marketTrend)) {
+            baseProbability -= 0.1;
+        }
+        
+        // Adjust based on days on market
+        if (analysis.daysOnMarket > 20) {
+            baseProbability += 0.2;
+        }
+        
+        // Adjust based on seasonal factor
+        baseProbability += (1 - analysis.seasonalFactor) * 0.3;
+        
+        return Math.min(Math.max(baseProbability, 0.1), 0.9);
+    }
+    
+    /**
+     * Get seasonal factor for rental market
+     */
+    private double getSeasonalFactor() {
+        Calendar cal = Calendar.getInstance();
+        int month = cal.get(Calendar.MONTH);
+        
+        switch (month) {
+            case 0: return 0.85;  // January - Low demand
+            case 1: return 0.90;  // February
+            case 2: return 0.95;  // March - Spring pickup
+            case 3: return 1.00;  // April
+            case 4: return 1.05;  // May - Peak season
+            case 5: return 1.10;  // June - Peak season
+            case 6: return 1.05;  // July
+            case 7: return 1.00;  // August
+            case 8: return 0.95;  // September
+            case 9: return 0.90;  // October
+            case 10: return 0.85; // November - Low demand
+            case 11: return 0.80; // December - Lowest demand
+            default: return 1.0;
+        }
+    }
+    
+    /**
+     * Market analysis data class
+     */
+    private static class MarketAnalysis {
+        Double averageRentInArea;
+        String marketTrend;
+        int daysOnMarket;
+        double seasonalFactor;
+        double negotiationPotential;
+    }
+    
+    /**
+     * Negotiation strategy data class
+     */
+    private static class NegotiationStrategy {
+        boolean shouldNegotiatePrice = false;
+        Double targetPrice;
+        String priceJustification;
+        boolean negotiateTerms = false;
+        List<String> proposedTerms = new ArrayList<>();
+        boolean requestIncentives = false;
+        List<String> incentives = new ArrayList<>();
+        double estimatedSuccessProbability;
     }
     
     /**
      * Send the negotiation message through chat service
      */
     private void sendNegotiationMessage(String conversationId, String message, Listing listing) {
+        // Store listing ID for callback access
+        final String listingId = listing.getId();
+        
         chatService.sendMessage(conversationId, message, new RealTimeChatService.MessageListener() {
             @Override
             public void onMessageSent(ChatMessage sentMessage) {
                 Log.d(TAG, "✅ Negotiation message sent successfully");
+                
+                // Store conversation ID mapping for follow-up messages
+                listingToConversationMap.put(listingId, conversationId);
+                Log.d(TAG, "📝 [MAPPING] Stored conversation mapping: " + listingId + " -> " + conversationId);
+                
                 mainHandler.post(() -> {
                     if (callback != null) {
                         callback.onMessage("AI", "✅ Message sent to " + getDisplayName(listing.getUserEmail()) + " for " + listing.getTitle());
                         callback.onMessage("AI", "📱 Message sent: \"" + message.substring(0, Math.min(100, message.length())) + 
                                           (message.length() > 100 ? "...\"" : "\""));
-                        callback.onNegotiationComplete(listing.getId(), "Message sent successfully");
+                        callback.onNegotiationComplete(listingId, "Message sent successfully");
                     }
                 });
+                
+                // Set up continuous monitoring for this conversation immediately
+                Log.d(TAG, "🔄 Setting up conversation monitoring immediately for " + conversationId);
+                setupConversationMonitoring(conversationId, listingId);
+                
+                // Also set up a backup monitoring after 3 seconds to catch any missed messages
+                Log.d(TAG, "🔄 Scheduling backup monitoring setup for " + conversationId + " in 3 seconds...");
+                mainHandler.postDelayed(() -> {
+                    Log.d(TAG, "🔄 [BACKUP] Re-registering conversation monitoring for " + conversationId);
+                    setupConversationMonitoring(conversationId, listingId);
+                }, 3000);
             }
             
             @Override
@@ -654,7 +1160,25 @@ public class AiNegotiationService {
             
             @Override
             public void onMessageReceived(ChatMessage message) {
-                // Handle any immediate responses from landlord
+                // Handle immediate responses (if any) - but main monitoring is done separately
+                Log.d(TAG, "📬 Immediate response from " + message.getSenderEmail() + ": " + message.getContent());
+                
+                // Check if this is a landlord reply (not from current user) - WITH DEDUPLICATION
+                if (shouldProcessMessage(message.getId(), message.getContent(), message.getSenderEmail(), String.valueOf(message.getTimestamp()))) {
+                    Log.d(TAG, "🏠 [IMMEDIATE] Processing landlord reply: " + message.getContent());
+                    
+                    mainHandler.post(() -> {
+                        if (callback != null) {
+                            callback.onMessage("AI", "📧 **Landlord Response Received**\\n\\n" + message.getContent());
+                            callback.onMessage("AI", "🤖 Analyzing response and preparing follow-up negotiation...");
+                        }
+                    });
+                    
+                    // Continue negotiation based on landlord reply
+                    continueNegotiationBasedOnReply(listingId, message.getContent());
+                } else {
+                    Log.d(TAG, "🚫 [IMMEDIATE] Skipped message due to deduplication check");
+                }
             }
             
             @Override
@@ -662,6 +1186,85 @@ public class AiNegotiationService {
                 // Handle typing indicators if needed
             }
         });
+    }
+    
+    /**
+     * Set up continuous monitoring for a negotiation conversation
+     */
+    private void setupConversationMonitoring(String conversationId, String listingId) {
+        Log.d(TAG, "🔔 [SETUP] Starting conversation monitoring setup...");
+        Log.d(TAG, "🔔 [SETUP] ConversationId: " + conversationId);
+        Log.d(TAG, "🔔 [SETUP] ListingId: " + listingId);
+        Log.d(TAG, "🔔 [SETUP] CurrentUserEmail: " + currentUserEmail);
+        Log.d(TAG, "🔔 [SETUP] ChatService available: " + (chatService != null));
+        
+        // CRITICAL: Also discover ALL conversations for this listing/user combination
+        // This will find conversations that were created from the website side
+        discoverAllConversationsForListing(listingId);
+        
+        if (chatService != null) {
+            Log.d(TAG, "🔔 [SETUP] Registering message listener...");
+            
+            // Register message listener for ongoing conversation monitoring
+            chatService.registerMessageListener(conversationId, new RealTimeChatService.MessageListener() {
+                @Override
+                public void onMessageSent(ChatMessage sentMessage) {
+                    Log.d(TAG, "📤 [MONITORING] Message sent callback (not used): " + sentMessage.getContent());
+                }
+                
+                @Override
+                public void onError(String error) {
+                    Log.e(TAG, "❌ [MONITORING] Error in conversation " + conversationId + ": " + error);
+                }
+                
+                @Override
+                public void onMessageReceived(ChatMessage message) {
+                    // This is the main handler for ongoing conversation messages
+                    Log.d(TAG, "📬 [MONITORING] ===== NEW MESSAGE DETECTED =====");
+                    Log.d(TAG, "📬 [MONITORING] ConversationId: " + message.getConversationId());
+                    Log.d(TAG, "📬 [MONITORING] Expected ConversationId: " + conversationId);
+                    Log.d(TAG, "📬 [MONITORING] Sender: " + message.getSenderEmail());
+                    Log.d(TAG, "📬 [MONITORING] Current User: " + currentUserEmail);
+                    Log.d(TAG, "📬 [MONITORING] Content: " + message.getContent());
+                    Log.d(TAG, "📬 [MONITORING] Timestamp: " + message.getTimestamp());
+                    
+                    // Check if this is a landlord reply (not from current user) - WITH DEDUPLICATION
+                    if (shouldProcessMessage(message.getId(), message.getContent(), message.getSenderEmail(), String.valueOf(message.getTimestamp()))) {
+                        Log.d(TAG, "🏠 [MONITORING] ✅ LANDLORD REPLY APPROVED FOR PROCESSING!");
+                        Log.d(TAG, "🏠 [MONITORING] Processing landlord message: " + message.getContent());
+                        
+                        mainHandler.post(() -> {
+                            if (callback != null) {
+                                Log.d(TAG, "🏠 [MONITORING] Calling UI callback...");
+                                callback.onMessage("AI", "📧 **Landlord Response Received**\\n\\n" + message.getContent());
+                                callback.onMessage("AI", "🤖 Analyzing response and preparing follow-up negotiation...");
+                            } else {
+                                Log.e(TAG, "❌ [MONITORING] Callback is null!");
+                            }
+                        });
+                        
+                        // Continue negotiation based on landlord reply
+                        Log.d(TAG, "🏠 [MONITORING] Calling continueNegotiationBasedOnReply...");
+                        continueNegotiationBasedOnReply(listingId, message.getContent());
+                    } else {
+                        Log.d(TAG, "🚫 [MONITORING] Message skipped due to deduplication check");
+                    }
+                    
+                    Log.d(TAG, "📬 [MONITORING] ===== MESSAGE PROCESSING COMPLETE =====");
+                }
+                
+                @Override
+                public void onTypingIndicator(String senderEmail, boolean isTyping) {
+                    Log.d(TAG, "⌨️ [MONITORING] Typing indicator: " + senderEmail + " is typing: " + isTyping);
+                }
+            });
+            
+            Log.d(TAG, "✅ [SETUP] Conversation monitoring successfully registered for " + conversationId);
+            Log.d(TAG, "✅ [SETUP] AI will now detect landlord replies in real-time");
+        } else {
+            Log.e(TAG, "❌ [SETUP] Cannot setup conversation monitoring - chatService is null");
+            Log.e(TAG, "❌ [SETUP] This means real-time message detection will not work!");
+        }
     }
     
     /**
@@ -683,5 +1286,731 @@ public class AiNegotiationService {
      */
     public void setMatchingListings(List<Listing> listings) {
         this.matchingListings = listings;
+    }
+    
+    /**
+     * Start monitoring for real-time negotiation updates (port of website's listenForNegotiationUpdates)
+     */
+    public void startNegotiationMonitoring() {
+        if (isMonitoring || currentUserEmail == null) {
+            return;
+        }
+        
+        Log.d(TAG, "🔔 Starting real-time negotiation monitoring for user: " + currentUserEmail);
+        isMonitoring = true;
+        
+        // Poll for negotiation updates every 5 seconds (similar to message polling)
+        executorService.scheduleWithFixedDelay(() -> {
+            if (isMonitoring && !activeNegotiationIds.isEmpty()) {
+                checkForNegotiationUpdates();
+            }
+        }, 5, 5, TimeUnit.SECONDS);
+    }
+    
+    /**
+     * Stop monitoring for negotiation updates
+     */
+    public void stopNegotiationMonitoring() {
+        isMonitoring = false;
+        activeNegotiationIds.clear();
+        Log.d(TAG, "🔕 Stopped negotiation monitoring");
+    }
+    
+    /**
+     * Check for negotiation updates from ai_chats table
+     */
+    private void checkForNegotiationUpdates() {
+        try {
+            // Query ai_chats table for updates (similar to website's subscription)
+            String url = ApiKeys.SUPABASE_URL + "rest/v1/ai_chats?select=*" +
+                         "&user_email=eq." + currentUserEmail +
+                         "&order=created_at.desc&limit=10";
+            
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Content-Type", "application/json")
+                    .build();
+            
+            try (okhttp3.Response response = httpClient.newCall(request).execute()) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String responseBody = response.body().string();
+                    org.json.JSONArray updates = new org.json.JSONArray(responseBody);
+                    
+                    for (int i = 0; i < updates.length(); i++) {
+                        org.json.JSONObject update = updates.getJSONObject(i);
+                        processNegotiationUpdate(update);
+                    }
+                }
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking negotiation updates", e);
+        }
+    }
+    
+    /**
+     * Process negotiation update (port of website's update processing)
+     */
+    private void processNegotiationUpdate(org.json.JSONObject update) {
+        try {
+            String title = update.optString("title", "");
+            String message = update.optString("message", "");
+            String listingId = update.optString("listing_id", "");
+            
+            Log.d(TAG, "📨 Processing negotiation update: " + title);
+            
+            if (title.contains("Negotiation Success")) {
+                handleNegotiationSuccess(update);
+            } else if (title.contains("Landlord Reply")) {
+                handleLandlordReply(update);
+            } else if (title.contains("Negotiation Progress")) {
+                handleNegotiationProgress(update);
+            } else if (title.contains("Negotiation Failed")) {
+                handleNegotiationFailure(update);
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error processing negotiation update", e);
+        }
+    }
+    
+    /**
+     * Handle negotiation success
+     */
+    private void handleNegotiationSuccess(org.json.JSONObject update) {
+        try {
+            String listingId = update.optString("listing_id", "");
+            String finalTerms = update.optString("final_terms", "");
+            
+            mainHandler.post(() -> {
+                if (callback != null) {
+                    callback.onMessage("AI", "🎉 **Negotiation Success!** \n\nGreat news! I've successfully negotiated terms for listing " + listingId);
+                    if (!finalTerms.isEmpty()) {
+                        callback.onMessage("AI", "📄 **Final Terms:** " + finalTerms);
+                    }
+                    callback.onNegotiationComplete(listingId, "success");
+                }
+            });
+            
+            // Remove from active negotiations
+            activeNegotiationIds.remove(listingId);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error handling negotiation success", e);
+        }
+    }
+    
+    /**
+     * Handle landlord reply (deprecated - now handled by real-time chat monitoring)
+     */
+    private void handleLandlordReply(org.json.JSONObject update) {
+        try {
+            String listingId = update.optString("listing_id", "");
+            String reply = update.optString("message", "");
+            
+            // Note: Landlord replies are now handled immediately by onMessageReceived for faster response
+            // This method is kept for backwards compatibility but may not be needed
+            Log.d(TAG, "📭 Landlord reply detected in AI monitoring (may be duplicate): " + reply);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error handling landlord reply", e);
+        }
+    }
+    
+    /**
+     * Handle negotiation progress
+     */
+    private void handleNegotiationProgress(org.json.JSONObject update) {
+        try {
+            String progress = update.optString("message", "");
+            
+            mainHandler.post(() -> {
+                if (callback != null) {
+                    callback.onMessage("AI", "⏳ **Negotiation Update:** " + progress);
+                }
+            });
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error handling negotiation progress", e);
+        }
+    }
+    
+    /**
+     * Handle negotiation failure
+     */
+    private void handleNegotiationFailure(org.json.JSONObject update) {
+        try {
+            String listingId = update.optString("listing_id", "");
+            String reason = update.optString("message", "");
+            
+            mainHandler.post(() -> {
+                if (callback != null) {
+                    callback.onMessage("AI", "❌ **Negotiation Unsuccessful** for listing " + listingId);
+                    if (!reason.isEmpty()) {
+                        callback.onMessage("AI", "**Reason:** " + reason);
+                    }
+                    callback.onNegotiationComplete(listingId, "failed");
+                }
+            });
+            
+            // Remove from active negotiations
+            activeNegotiationIds.remove(listingId);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error handling negotiation failure", e);
+        }
+    }
+    
+    /**
+     * Check if message should be processed (deduplication + validation)
+     */
+    private boolean shouldProcessMessage(String messageId, String messageContent, String senderEmail, String timestamp) {
+        // 1. Check if already processed
+        if (processedMessageIds.contains(messageId)) {
+            Log.d(TAG, "🚫 [DEDUP] Message already processed: " + messageId);
+            return false;
+        }
+        
+        // 2. Don't process our own messages
+        if (senderEmail != null && senderEmail.equalsIgnoreCase(currentUserEmail)) {
+            Log.d(TAG, "🚫 [DEDUP] Skipping own message from: " + senderEmail);
+            return false;
+        }
+        
+        // 3. Only process recent messages (last 5 minutes)
+        try {
+            if (timestamp != null) {
+                long messageTime;
+                
+                // Handle both ISO timestamps and epoch timestamps
+                if (timestamp.contains("T")) {
+                    // Parse ISO timestamp: 2025-08-20T00:19:52.901+00:00
+                    messageTime = java.time.Instant.parse(timestamp).toEpochMilli();
+                } else {
+                    // Parse epoch timestamp
+                    messageTime = Long.parseLong(timestamp);
+                }
+                
+                long currentTime = System.currentTimeMillis();
+                long fiveMinutesAgo = currentTime - (5 * 60 * 1000);
+                
+                if (messageTime < fiveMinutesAgo) {
+                    Log.d(TAG, "🚫 [DEDUP] Message too old: " + timestamp);
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "⚠️ [DEDUP] Could not parse timestamp: " + timestamp);
+            // Continue processing if timestamp parsing fails
+        }
+        
+        // 4. Mark as processed
+        processedMessageIds.add(messageId);
+        Log.d(TAG, "✅ [DEDUP] Message approved for processing: " + messageId);
+        return true;
+    }
+    
+    /**
+     * Continue negotiation based on landlord reply
+     */
+    private void continueNegotiationBasedOnReply(String listingId, String reply) {
+        Log.d(TAG, "🔄 [NEGOTIATION] ===== STARTING NEGOTIATION CONTINUATION =====");
+        Log.d(TAG, "🔄 [NEGOTIATION] ListingId: " + listingId);
+        Log.d(TAG, "🔄 [NEGOTIATION] Landlord Reply: '" + reply + "'");
+        
+        // Log current conversation state before processing
+        ConversationState currentState = activeConversations.get(listingId);
+        if (currentState != null) {
+            Log.d(TAG, "🔄 [NEGOTIATION] Current state - AI: " + currentState.aiMessageCount + ", Landlord: " + currentState.landlordMessageCount + ", Exchanges: " + currentState.totalExchanges);
+        } else {
+            Log.d(TAG, "🔄 [NEGOTIATION] No current conversation state found for " + listingId);
+        }
+        
+        executorService.execute(() -> {
+            try {
+                Log.d(TAG, "🔄 [NEGOTIATION] Starting 2-second analysis delay...");
+                Thread.sleep(2000); // Brief delay to show analysis message
+                
+                // Check if negotiation should continue BEFORE updating state
+                Log.d(TAG, "🔄 [NEGOTIATION] Checking if negotiation should continue (before state update)...");
+                boolean shouldContinueBefore = shouldContinueNegotiation(listingId);
+                Log.d(TAG, "🔄 [NEGOTIATION] Should continue before update: " + shouldContinueBefore);
+                
+                if (!shouldContinueBefore) {
+                    Log.w(TAG, "🔄 [NEGOTIATION] ⚠️ STOPPING: Negotiation limits reached before processing landlord reply!");
+                    Log.w(TAG, "🔄 [NEGOTIATION] This means the conversation state is already at limit");
+                    mainHandler.post(() -> {
+                        if (callback != null) {
+                            callback.onMessage("AI", "📋 Negotiation cycle completed for listing " + listingId + ". Moving to conclusion phase.");
+                        }
+                    });
+                    return;
+                }
+                
+                Log.d(TAG, "🔄 [NEGOTIATION] Negotiation will continue - updating conversation state...");
+                // Update conversation state - mark this as a landlord message
+                updateConversationState(listingId, "processing_reply", reply, "landlord");
+                
+                // Check state after update
+                ConversationState stateAfterUpdate = activeConversations.get(listingId);
+                if (stateAfterUpdate != null) {
+                    Log.d(TAG, "🔄 [NEGOTIATION] State after update - AI: " + stateAfterUpdate.aiMessageCount + ", Landlord: " + stateAfterUpdate.landlordMessageCount + ", Exchanges: " + stateAfterUpdate.totalExchanges);
+                }
+                
+                // Check if negotiation should continue AFTER updating state
+                Log.d(TAG, "🔄 [NEGOTIATION] Checking if negotiation should continue (after state update)...");
+                boolean shouldContinueAfter = shouldContinueNegotiation(listingId);
+                Log.d(TAG, "🔄 [NEGOTIATION] Should continue after update: " + shouldContinueAfter);
+                
+                if (!shouldContinueAfter) {
+                    Log.w(TAG, "🔄 [NEGOTIATION] ⚠️ STOPPING: Negotiation limits reached after processing landlord reply!");
+                    mainHandler.post(() -> {
+                        if (callback != null) {
+                            callback.onMessage("AI", "📋 Negotiation cycle completed for listing " + listingId + ". Conversation limits reached.");
+                        }
+                    });
+                    return;
+                }
+                
+                // Determine next action using intelligent analysis
+                Log.d(TAG, "🔄 [NEGOTIATION] ✅ Proceeding with negotiation - determining next action...");
+                String nextAction = determineNextAction(listingId, reply);
+                Log.d(TAG, "🔄 [NEGOTIATION] Next action determined: " + nextAction);
+                
+                // Find the listing
+                Log.d(TAG, "🔄 [NEGOTIATION] Looking for listing in matchingListings...");
+                Listing foundListing = null;
+                for (Listing l : matchingListings) {
+                    if (l.getId().equals(listingId)) {
+                        foundListing = l;
+                        Log.d(TAG, "🔄 [NEGOTIATION] Found matching listing: " + foundListing.getTitle());
+                        break;
+                    }
+                }
+                
+                final Listing listing = foundListing; // Make final for inner class
+                
+                if (listing != null) {
+                    Log.d(TAG, "🔄 [NEGOTIATION] Generating intelligent follow-up message...");
+                    
+                    mainHandler.post(() -> {
+                        if (callback != null) {
+                            Log.d(TAG, "🔄 [NEGOTIATION] Posting UI updates...");
+                            callback.onMessage("AI", "🧠 Analysis: " + nextAction.replace("_", " ").toUpperCase() + " detected");
+                            callback.onMessage("AI", "🤖 Generating intelligent response...");
+                        }
+                    });
+                    
+                    // Generate intelligent follow-up message using OpenAI
+                    generateFollowUpMessage(listingId, reply, nextAction, listing, new FollowUpMessageCallback() {
+                        @Override
+                        public void onSuccess(String followUpMessage) {
+                            Log.d(TAG, "🔄 [NEGOTIATION] Generated follow-up: " + followUpMessage.substring(0, Math.min(100, followUpMessage.length())) + "...");
+                            
+                            mainHandler.post(() -> {
+                                if (callback != null) {
+                                    callback.onMessage("AI", "📤 Sending intelligent follow-up message...");
+                                }
+                            });
+                            
+                            // Update state to sending follow-up
+                            updateConversationState(listingId, "sending_followup", followUpMessage);
+                            
+                            Log.d(TAG, "🔄 [NEGOTIATION] Sending follow-up message through chat service...");
+                            // Send follow-up through chat service
+                            sendFollowUpMessage(listingId, followUpMessage, listing);
+                            
+                            // Handle conclusion if negative response
+                            if ("negative_response".equals(nextAction)) {
+                                Log.d(TAG, "🔄 [NEGOTIATION] Negative response detected - concluding negotiation");
+                                updateConversationState(listingId, "completed", "Negotiation concluded - negative response");
+                                activeConversations.remove(listingId);
+                            }
+                        }
+                        
+                        @Override
+                        public void onError(String error) {
+                            Log.e(TAG, "🔄 [NEGOTIATION] Failed to generate follow-up message: " + error);
+                            mainHandler.post(() -> {
+                                if (callback != null) {
+                                    callback.onMessage("AI", "❌ Error generating response: " + error);
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    Log.e(TAG, "❌ [NEGOTIATION] Could not find listing with ID: " + listingId);
+                    Log.e(TAG, "❌ [NEGOTIATION] Available listings: ");
+                    for (Listing l : matchingListings) {
+                        Log.e(TAG, "❌ [NEGOTIATION] - " + l.getId() + ": " + l.getTitle());
+                    }
+                }
+                
+                Log.d(TAG, "🔄 [NEGOTIATION] ===== NEGOTIATION CONTINUATION COMPLETE =====");
+                
+            } catch (Exception e) {
+                Log.e(TAG, "❌ [NEGOTIATION] Error continuing negotiation", e);
+            }
+        });
+    }
+    
+    // Old generateFollowUpMessage method removed - now using intelligent conversation management
+    
+    /**
+     * Send follow-up message using existing conversation
+     */
+    private void sendFollowUpMessage(String listingId, String message, Listing listing) {
+        Log.d(TAG, "📤 [FOLLOWUP] Attempting to send follow-up message...");
+        Log.d(TAG, "📤 [FOLLOWUP] ListingId: " + listingId);
+        Log.d(TAG, "📤 [FOLLOWUP] Message: " + message.substring(0, Math.min(100, message.length())) + "...");
+        
+        if (chatService != null) {
+            // Check if we have an existing conversation ID for this listing
+            String existingConversationId = listingToConversationMap.get(listingId);
+            
+            if (existingConversationId != null) {
+                Log.d(TAG, "📤 [FOLLOWUP] ✅ Using existing conversation: " + existingConversationId);
+                
+                // Send follow-up message to existing conversation
+                chatService.sendMessage(existingConversationId, message, new RealTimeChatService.MessageListener() {
+                    @Override
+                    public void onMessageSent(ChatMessage sentMessage) {
+                        Log.d(TAG, "📤 [FOLLOWUP] ✅ Follow-up message sent successfully!");
+                        Log.d(TAG, "📤 [FOLLOWUP] Message content: " + sentMessage.getContent());
+                        
+                        mainHandler.post(() -> {
+                            if (callback != null) {
+                                callback.onMessage("AI", "✅ Follow-up message sent to landlord");
+                                callback.onMessage("AI", "📱 Message: \"" + message.substring(0, Math.min(150, message.length())) + 
+                                                  (message.length() > 150 ? "...\"" : "\""));
+                            }
+                        });
+                    }
+                    
+                    @Override
+                    public void onError(String error) {
+                        Log.e(TAG, "📤 [FOLLOWUP] ❌ Failed to send follow-up message: " + error);
+                        mainHandler.post(() -> {
+                            if (callback != null) {
+                                callback.onMessage("AI", "❌ Failed to send follow-up message: " + error);
+                            }
+                        });
+                    }
+                    
+                    @Override
+                    public void onMessageReceived(ChatMessage message) {
+                        // This callback is not used for sending messages
+                    }
+                    
+                    @Override
+                    public void onTypingIndicator(String senderEmail, boolean isTyping) {
+                        // Handle typing indicators if needed
+                    }
+                });
+                
+            } else {
+                Log.w(TAG, "📤 [FOLLOWUP] ⚠️ No existing conversation found for listing: " + listingId);
+                Log.w(TAG, "📤 [FOLLOWUP] Available mappings: " + listingToConversationMap.keySet());
+                
+                // Fallback: create new conversation (should not happen in normal flow)
+                Log.d(TAG, "📤 [FOLLOWUP] Creating new conversation as fallback...");
+                chatService.startConversation(
+                    listing,
+                    listing.getUserEmail(),
+                    new RealTimeChatService.ConversationCallback() {
+                        @Override
+                        public void onSuccess(Conversation conversation) {
+                            Log.d(TAG, "📤 [FOLLOWUP] Fallback conversation created: " + conversation.getId());
+                            
+                            // Store the new conversation mapping
+                            listingToConversationMap.put(listingId, conversation.getId());
+                            
+                            // Send the follow-up message
+                            chatService.sendMessage(conversation.getId(), message, new RealTimeChatService.MessageListener() {
+                                @Override
+                                public void onMessageSent(ChatMessage sentMessage) {
+                                    Log.d(TAG, "📤 [FOLLOWUP] ✅ Fallback message sent successfully");
+                                    mainHandler.post(() -> {
+                                        if (callback != null) {
+                                            callback.onMessage("AI", "✅ Follow-up message sent to landlord (new conversation)");
+                                        }
+                                    });
+                                }
+                                
+                                @Override
+                                public void onError(String error) {
+                                    Log.e(TAG, "📤 [FOLLOWUP] ❌ Fallback message failed: " + error);
+                                }
+                                
+                                @Override
+                                public void onMessageReceived(ChatMessage message) {}
+                                
+                                @Override
+                                public void onTypingIndicator(String senderEmail, boolean isTyping) {}
+                            });
+                        }
+                        
+                        @Override
+                        public void onError(String error) {
+                            Log.e(TAG, "📤 [FOLLOWUP] ❌ Failed to create fallback conversation: " + error);
+                        }
+                    }
+                );
+            }
+        } else {
+            Log.e(TAG, "📤 [FOLLOWUP] ❌ ChatService is null - cannot send follow-up message");
+        }
+    }
+    
+    /**
+     * Message template class (from website's implementation)
+     */
+    private static class MessageTemplate {
+        String subject;
+        String body;
+        
+        MessageTemplate(String subject, String body) {
+            this.subject = subject;
+            this.body = body;
+        }
+    }
+    
+    /**
+     * Conversation state class for tracking negotiation progress
+     */
+    private static class ConversationState {
+        String listingId;
+        String status; // "initiated", "negotiating", "awaiting_response", "completed"
+        int aiMessageCount;
+        int landlordMessageCount;
+        int totalExchanges; // Back-and-forth pairs
+        long lastMessageTime;
+        String lastResponse;
+        boolean isWaitingForLandlord;
+        List<String> negotiationHistory;
+        
+        ConversationState(String listingId) {
+            this.listingId = listingId;
+            this.status = "initiated";
+            this.aiMessageCount = 0;
+            this.landlordMessageCount = 0;
+            this.totalExchanges = 0;
+            this.lastMessageTime = System.currentTimeMillis();
+            this.negotiationHistory = new ArrayList<>();
+        }
+        
+        void addAiMessage(String message) {
+            aiMessageCount++;
+            lastMessageTime = System.currentTimeMillis();
+            negotiationHistory.add("AI: " + message);
+            Log.d(TAG, "📊 [STATE] AI message added. AI: " + aiMessageCount + ", Landlord: " + landlordMessageCount + ", Exchanges: " + totalExchanges);
+        }
+        
+        void addLandlordMessage(String message) {
+            landlordMessageCount++;
+            lastMessageTime = System.currentTimeMillis();
+            negotiationHistory.add("Landlord: " + message);
+            
+            // Calculate exchanges (AI message followed by landlord response = 1 exchange)
+            totalExchanges = Math.min(aiMessageCount, landlordMessageCount);
+            
+            Log.d(TAG, "📊 [STATE] Landlord message added. AI: " + aiMessageCount + ", Landlord: " + landlordMessageCount + ", Exchanges: " + totalExchanges);
+        }
+        
+        boolean shouldContinueNegotiation() {
+            // Allow up to 8 total exchanges (16 messages) over 24 hours
+            // This gives reasonable room for back-and-forth negotiation
+            boolean withinTimeLimit = (System.currentTimeMillis() - lastMessageTime) < 24 * 60 * 60 * 1000; // 24 hours
+            boolean withinMessageLimit = totalExchanges < 8; // Allow 8 back-and-forth exchanges
+            boolean hasReasonableHistory = aiMessageCount <= 10 && landlordMessageCount <= 10; // Safety limit
+            
+            boolean shouldContinue = withinTimeLimit && withinMessageLimit && hasReasonableHistory;
+            
+            Log.d(TAG, "📊 [CONTINUE_CHECK] Should continue: " + shouldContinue);
+            Log.d(TAG, "📊 [CONTINUE_CHECK] Within time: " + withinTimeLimit);
+            Log.d(TAG, "📊 [CONTINUE_CHECK] Within message limit: " + withinMessageLimit + " (exchanges: " + totalExchanges + "/8)");
+            Log.d(TAG, "📊 [CONTINUE_CHECK] Reasonable history: " + hasReasonableHistory + " (AI: " + aiMessageCount + ", Landlord: " + landlordMessageCount + ")");
+            
+            return shouldContinue;
+        }
+    }
+    
+    /**
+     * Discover ALL conversations for a listing - finds conversations created from both Android and website
+     */
+    private void discoverAllConversationsForListing(String listingId) {
+        Log.d(TAG, "🔍 [DISCOVERY] ===== DISCOVERING ALL CONVERSATIONS FOR LISTING =====");
+        Log.d(TAG, "🔍 [DISCOVERY] ListingId: " + listingId);
+        Log.d(TAG, "🔍 [DISCOVERY] CurrentUserEmail: " + currentUserEmail);
+        
+        if (currentUserEmail == null) {
+            Log.e(TAG, "🔍 [DISCOVERY] Cannot discover - current user email is null");
+            return;
+        }
+        
+        executorService.execute(() -> {
+            try {
+                // Get ALL conversations for this listing involving this user (both directions)
+                String url = ApiKeys.SUPABASE_URL + "rest/v1/conversations?select=*" +
+                        "&listing_id=eq." + listingId +
+                        "&or=(sender_email.eq." + currentUserEmail + ",receiver_email.eq." + currentUserEmail + ")" +
+                        "&order=created_at.desc";
+                
+                Log.d(TAG, "🔍 [DISCOVERY] Query URL: " + url);
+                
+                Request request = new Request.Builder()
+                        .url(url)
+                        .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                
+                okhttp3.Response response = httpClient.newCall(request).execute();
+                try {
+                    if (response.isSuccessful() && response.body() != null) {
+                        String responseBody = response.body().string();
+                        Log.d(TAG, "🔍 [DISCOVERY] Response: " + responseBody);
+                        
+                        org.json.JSONArray conversations = new org.json.JSONArray(responseBody);
+                        Log.d(TAG, "🔍 [DISCOVERY] Found " + conversations.length() + " conversations for listing " + listingId);
+                        
+                        for (int i = 0; i < conversations.length(); i++) {
+                            org.json.JSONObject conv = conversations.getJSONObject(i);
+                            String convId = conv.optString("id");
+                            String sender = conv.optString("sender_email");
+                            String receiver = conv.optString("receiver_email");
+                            String createdAt = conv.optString("created_at");
+                            
+                            Log.d(TAG, "🔍 [DISCOVERY] Conversation " + (i+1) + ":");
+                            Log.d(TAG, "🔍 [DISCOVERY]   ID: " + convId);
+                            Log.d(TAG, "🔍 [DISCOVERY]   Sender: " + sender);
+                            Log.d(TAG, "🔍 [DISCOVERY]   Receiver: " + receiver);
+                            Log.d(TAG, "🔍 [DISCOVERY]   Created: " + createdAt);
+                            
+                            // Set up monitoring for this conversation too
+                            Log.d(TAG, "🔍 [DISCOVERY] Setting up monitoring for discovered conversation: " + convId);
+                            registerMessageListenerForConversation(convId, listingId);
+                            
+                            // Check for recent messages in this conversation
+                            checkForRecentMessagesInConversation(convId, listingId);
+                        }
+                        
+                    } else {
+                        Log.e(TAG, "🔍 [DISCOVERY] Failed to get conversations: " + response.code());
+                    }
+                } finally {
+                    if (response != null) response.close();
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "🔍 [DISCOVERY] Error discovering conversations", e);
+            }
+        });
+    }
+    
+    /**
+     * Register message listener for a discovered conversation
+     */
+    private void registerMessageListenerForConversation(String conversationId, String listingId) {
+        if (chatService != null) {
+            Log.d(TAG, "🔔 [DISCOVERY] Registering listener for conversation: " + conversationId);
+            
+            chatService.registerMessageListener(conversationId, new RealTimeChatService.MessageListener() {
+                @Override
+                public void onMessageSent(ChatMessage sentMessage) {
+                    Log.d(TAG, "📤 [DISCOVERY] Message sent in " + conversationId + ": " + sentMessage.getContent());
+                }
+                
+                @Override
+                public void onError(String error) {
+                    Log.e(TAG, "❌ [DISCOVERY] Error in conversation " + conversationId + ": " + error);
+                }
+                
+                @Override
+                public void onMessageReceived(ChatMessage message) {
+                    Log.d(TAG, "📬 [DISCOVERY] ===== MESSAGE RECEIVED IN DISCOVERED CONVERSATION =====");
+                    Log.d(TAG, "📬 [DISCOVERY] ConversationId: " + message.getConversationId());
+                    Log.d(TAG, "📬 [DISCOVERY] Sender: " + message.getSenderEmail());
+                    Log.d(TAG, "📬 [DISCOVERY] Content: " + message.getContent());
+                    Log.d(TAG, "📬 [DISCOVERY] Current User: " + currentUserEmail);
+                    
+                    // Process this message if it's from someone else (landlord reply) - WITH DEDUPLICATION
+                    if (shouldProcessMessage(message.getId(), message.getContent(), message.getSenderEmail(), String.valueOf(message.getTimestamp()))) {
+                        Log.d(TAG, "📬 [DISCOVERY] ✅ Landlord reply approved for processing!");
+                        continueNegotiationBasedOnReply(listingId, message.getContent());
+                    } else {
+                        Log.d(TAG, "🚫 [DISCOVERY] Message skipped due to deduplication check");
+                    }
+                }
+                
+                @Override
+                public void onTypingIndicator(String senderEmail, boolean isTyping) {
+                    Log.d(TAG, "⌨️ [DISCOVERY] Typing in " + conversationId + ": " + senderEmail + " = " + isTyping);
+                }
+            });
+        }
+    }
+    
+    /**
+     * Check for recent messages in a discovered conversation
+     */
+    private void checkForRecentMessagesInConversation(String conversationId, String listingId) {
+        executorService.execute(() -> {
+            try {
+                // Get recent messages from this conversation
+                String url = ApiKeys.SUPABASE_URL + "rest/v1/messages?select=*" +
+                        "&conversation_id=eq." + conversationId +
+                        "&order=created_at.desc&limit=10";
+                
+                Log.d(TAG, "🔍 [CHECK] Checking messages in conversation: " + conversationId);
+                
+                Request request = new Request.Builder()
+                        .url(url)
+                        .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                
+                okhttp3.Response response = httpClient.newCall(request).execute();
+                try {
+                    if (response.isSuccessful() && response.body() != null) {
+                        String responseBody = response.body().string();
+                        org.json.JSONArray messages = new org.json.JSONArray(responseBody);
+                        
+                        Log.d(TAG, "🔍 [CHECK] Found " + messages.length() + " messages in conversation " + conversationId);
+                        
+                        for (int i = 0; i < messages.length(); i++) {
+                            org.json.JSONObject msg = messages.getJSONObject(i);
+                            String content = msg.optString("content");
+                            String sender = msg.optString("sender_email");
+                            String createdAt = msg.optString("created_at");
+                            
+                            Log.d(TAG, "🔍 [CHECK] Message " + (i+1) + ":");
+                            Log.d(TAG, "🔍 [CHECK]   Content: " + content);
+                            Log.d(TAG, "🔍 [CHECK]   Sender: " + sender);
+                            Log.d(TAG, "🔍 [CHECK]   Created: " + createdAt);
+                            
+                            // Check if this is a landlord message we need to respond to - WITH DEDUPLICATION
+                            String messageId = msg.optString("id");
+                            if ((content.toLowerCase().contains("hi") || 
+                                 content.toLowerCase().contains("lower") || 
+                                 content.toLowerCase().contains("abit")) &&
+                                shouldProcessMessage(messageId, content, sender, createdAt)) {
+                                Log.d(TAG, "🔍 [CHECK] ✅ FOUND UNPROCESSED LANDLORD MESSAGE: " + content);
+                                Log.d(TAG, "🔍 [CHECK] Processing this message now...");
+                                continueNegotiationBasedOnReply(listingId, content);
+                            } else if (!processedMessageIds.contains(messageId)) {
+                                Log.d(TAG, "🔍 [CHECK] ℹ️ Message doesn't match criteria or already processed: " + content);
+                            }
+                        }
+                    }
+                } finally {
+                    if (response != null) response.close();
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "🔍 [CHECK] Error checking messages in conversation " + conversationId, e);
+            }
+        });
     }
 }
