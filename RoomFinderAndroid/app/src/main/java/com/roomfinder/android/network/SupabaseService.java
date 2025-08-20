@@ -1,12 +1,18 @@
 package com.roomfinder.android.network;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.roomfinder.android.database.SupabaseClient;
 import com.roomfinder.android.models.Listing;
 import com.roomfinder.android.services.AiNegotiatorService.PropertyCriteria;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -14,13 +20,21 @@ import java.util.concurrent.Executors;
 
 public class SupabaseService {
     private static final String TAG = "SupabaseService";
+    private static final String CACHE_PREFS = "listings_cache";
+    private static final String CACHE_KEY_LISTINGS = "cached_listings";
+    private static final String CACHE_KEY_TIMESTAMP = "cache_timestamp";
+    private static final long CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+    
     private static SupabaseService instance;
     private final SupabaseClient supabaseClient;
     private final ExecutorService executorService;
+    private final Gson gson;
+    private Context context;
     
     private SupabaseService() {
         this.supabaseClient = SupabaseClient.getInstance();
         this.executorService = Executors.newCachedThreadPool();
+        this.gson = new Gson();
     }
     
     public static synchronized SupabaseService getInstance() {
@@ -28,6 +42,13 @@ public class SupabaseService {
             instance = new SupabaseService();
         }
         return instance;
+    }
+    
+    /**
+     * Initialize with context for caching
+     */
+    public void init(Context context) {
+        this.context = context.getApplicationContext();
     }
     
     // Callback interfaces
@@ -42,13 +63,90 @@ public class SupabaseService {
     }
     
     /**
-     * Fetch all listings asynchronously
+     * Cache helper methods
+     */
+    private SharedPreferences getCachePrefs() {
+        if (context == null) return null;
+        return context.getSharedPreferences(CACHE_PREFS, Context.MODE_PRIVATE);
+    }
+    
+    private void cacheListings(List<Listing> listings) {
+        SharedPreferences prefs = getCachePrefs();
+        if (prefs != null) {
+            String json = gson.toJson(listings);
+            long timestamp = System.currentTimeMillis();
+            prefs.edit()
+                    .putString(CACHE_KEY_LISTINGS, json)
+                    .putLong(CACHE_KEY_TIMESTAMP, timestamp)
+                    .apply();
+            Log.d(TAG, "💾 Cached " + listings.size() + " listings");
+        }
+    }
+    
+    private List<Listing> getCachedListings() {
+        SharedPreferences prefs = getCachePrefs();
+        if (prefs == null) return null;
+        
+        long timestamp = prefs.getLong(CACHE_KEY_TIMESTAMP, 0);
+        long age = System.currentTimeMillis() - timestamp;
+        
+        if (age > CACHE_EXPIRY_MS) {
+            Log.d(TAG, "🕒 Cache expired (age: " + (age / 1000) + "s)");
+            return null;
+        }
+        
+        String json = prefs.getString(CACHE_KEY_LISTINGS, null);
+        if (json != null) {
+            try {
+                Type listType = new TypeToken<List<Listing>>(){}.getType();
+                List<Listing> listings = gson.fromJson(json, listType);
+                Log.d(TAG, "⚡ Loaded " + (listings != null ? listings.size() : 0) + " listings from cache");
+                return listings;
+            } catch (Exception e) {
+                Log.e(TAG, "❌ Error parsing cached listings: " + e.getMessage());
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Fetch all listings asynchronously with caching
      */
     public void getAllListings(ListingsCallback callback) {
+        // First, try to load from cache immediately
+        List<Listing> cachedListings = getCachedListings();
+        if (cachedListings != null && !cachedListings.isEmpty()) {
+            Log.d(TAG, "⚡ Returning cached listings immediately");
+            callback.onSuccess(cachedListings);
+            
+            // Continue to refresh in background
+            refreshListingsInBackground();
+            return;
+        }
+        
+        // No cache available, fetch from network
+        Log.d(TAG, "🌐 No cache available, fetching from network...");
+        fetchListingsFromNetwork(callback);
+    }
+    
+    /**
+     * Force refresh listings (bypasses cache)
+     */
+    public void refreshListings(ListingsCallback callback) {
+        Log.d(TAG, "🔄 Force refreshing listings...");
+        fetchListingsFromNetwork(callback);
+    }
+    
+    private void fetchListingsFromNetwork(ListingsCallback callback) {
         executorService.execute(() -> {
             try {
                 Log.d(TAG, "Fetching all listings from Supabase...");
                 List<Listing> listings = supabaseClient.getAllListings();
+                
+                // Cache the results
+                if (listings != null && !listings.isEmpty()) {
+                    cacheListings(listings);
+                }
                 
                 // Post result back to main thread
                 android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
@@ -66,6 +164,21 @@ public class SupabaseService {
                 Log.e(TAG, "Error fetching listings: " + e.getMessage(), e);
                 android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
                 mainHandler.post(() -> callback.onError("Network error: " + e.getMessage()));
+            }
+        });
+    }
+    
+    private void refreshListingsInBackground() {
+        executorService.execute(() -> {
+            try {
+                Log.d(TAG, "🔄 Background refresh starting...");
+                List<Listing> listings = supabaseClient.getAllListings();
+                if (listings != null && !listings.isEmpty()) {
+                    cacheListings(listings);
+                    Log.d(TAG, "🔄 Background refresh completed");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Background refresh failed: " + e.getMessage());
             }
         });
     }
