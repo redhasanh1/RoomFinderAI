@@ -1296,8 +1296,13 @@
         }
 
         function logout() {
+            // Clear all authentication data
             localStorage.removeItem('currentUser');
-            window.location.href = 'login.html';
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('users');
+            
+            // Go to home page instead of login page
+            window.location.href = 'index.html';
         }
 
         function uploadProfileImage(event) {
