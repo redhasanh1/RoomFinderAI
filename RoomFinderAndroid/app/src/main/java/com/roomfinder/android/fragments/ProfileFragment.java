@@ -235,6 +235,11 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
                 performLogout();
             });
             
+            binding.deleteAccountItem.setOnClickListener(v -> {
+                addRippleEffect(v);
+                showDeleteAccountDialog();
+            });
+            
         } catch (Exception e) {
             Log.e(TAG, "Error setting up user view clicks: " + e.getMessage(), e);
         }
@@ -300,7 +305,12 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
     
     private void performLogout() {
         try {
-            // Clear saved user data
+            // Clear ALL authentication data using AuthManager
+            AuthManager authManager = AuthManager.getInstance(requireContext());
+            authManager.completeLogout();
+            authManager.clearAllAuthData();
+            
+            // Clear saved user data from SharedPreferences
             prefs.edit()
                 .remove("user_email")
                 .remove("user_name")
@@ -309,9 +319,15 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
             
             Toast.makeText(requireContext(), "Signed out successfully", Toast.LENGTH_SHORT).show();
             
-            // Update login status and refresh view
-            isLoggedIn = false;
-            showGuestViewWithAnimation();
+            // Navigate to login activity and clear task stack to prevent back navigation
+            Intent loginIntent = new Intent(requireContext(), LoginActivity.class);
+            loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(loginIntent);
+            
+            // Finish the current activity if possible
+            if (getActivity() != null) {
+                getActivity().finish();
+            }
             
         } catch (Exception e) {
             Log.e(TAG, "Error during logout: " + e.getMessage(), e);
@@ -399,6 +415,58 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
             }
         } catch (Exception e) {
             Log.e(TAG, "Error showing error message: " + e.getMessage(), e);
+        }
+    }
+    
+    private void showDeleteAccountDialog() {
+        try {
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Delete Account")
+                    .setMessage("Are you sure you want to delete your account? This action cannot be undone. All your data, listings, and chat history will be permanently deleted.")
+                    .setPositiveButton("Delete Account", (dialog, which) -> {
+                        performDeleteAccount();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .setIcon(android.R.drawable.ic_menu_delete)
+                    .show();
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing delete account dialog: " + e.getMessage(), e);
+            showErrorMessage("Error showing delete dialog");
+        }
+    }
+    
+    private void performDeleteAccount() {
+        try {
+            AuthManager authManager = AuthManager.getInstance(requireContext());
+            User currentUser = authManager.getCurrentUser();
+            
+            if (currentUser == null) {
+                showErrorMessage("No user found to delete");
+                return;
+            }
+            
+            // Clear ALL authentication data
+            authManager.completeLogout();
+            authManager.clearAllAuthData();
+            
+            // Clear saved user data from SharedPreferences
+            prefs.edit().clear().apply();
+            
+            Toast.makeText(requireContext(), "Account deleted successfully", Toast.LENGTH_LONG).show();
+            
+            // Navigate to login activity and clear task stack
+            Intent loginIntent = new Intent(requireContext(), LoginActivity.class);
+            loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(loginIntent);
+            
+            // Finish the current activity
+            if (getActivity() != null) {
+                getActivity().finish();
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error deleting account: " + e.getMessage(), e);
+            showErrorMessage("Error deleting account");
         }
     }
     

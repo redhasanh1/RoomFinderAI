@@ -283,6 +283,38 @@ public class AuthManager {
     }
     
     /**
+     * Complete logout with full session cleanup
+     * This ensures no cached authentication data remains
+     */
+    public void completeLogout() {
+        try {
+            // Clear current user
+            prefs.edit().remove(KEY_CURRENT_USER).apply();
+            
+            // Clear any other auth-related preferences that might be cached
+            SharedPreferences.Editor editor = prefs.edit();
+            String currentUserJson = prefs.getString(KEY_CURRENT_USER, null);
+            if (currentUserJson != null) {
+                try {
+                    User user = gson.fromJson(currentUserJson, User.class);
+                    if (user != null && user.getEmail() != null) {
+                        // Clear profile image cache for this user
+                        editor.remove("profileImage_" + user.getEmail());
+                        editor.remove("profileImageBackup_" + user.getEmail());
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "Error clearing user-specific cache during logout", e);
+                }
+            }
+            editor.apply();
+            
+            Log.d(TAG, "Complete logout performed successfully");
+        } catch (Exception error) {
+            Log.e(TAG, "Error during complete logout", error);
+        }
+    }
+    
+    /**
      * Clear all authentication data (for debugging/fixing login issues)
      */
     public void clearAllAuthData() {
