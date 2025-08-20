@@ -645,6 +645,8 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         return listing.getHouseType().toLowerCase().contains(filter.toLowerCase());
     }
     
+    private boolean isFirstLoad = true;
+    
     private void loadListings() {
         // Hide error states immediately
         binding.errorLayout.setVisibility(View.GONE);
@@ -655,22 +657,16 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
             binding.progressBar.setVisibility(View.VISIBLE);
         }
         
-        Log.d(TAG, "🔄 [DEBUG] Starting loadListings()");
+        Log.d(TAG, "🔄 [DEBUG] Starting progressive loadListings()");
         Log.d(TAG, "🔄 [DEBUG] Current allListings.size() = " + allListings.size());
-        Log.d(TAG, "🔄 [DEBUG] Current listings.size() = " + listings.size());
+        
+        // Reset for fresh load
+        isFirstLoad = true;
         
         supabaseService.getAllListings(new SupabaseService.ListingsCallback() {
             @Override
             public void onSuccess(List<Listing> newListings) {
-                Log.d(TAG, "✅ [DEBUG] onSuccess called with " + (newListings != null ? newListings.size() : 0) + " listings");
-                
-                // Hide progress bar
-                if (binding != null && binding.progressBar != null) {
-                    binding.progressBar.setVisibility(View.GONE);
-                }
-                if (binding != null && binding.swipeRefresh != null) {
-                        binding.swipeRefresh.setRefreshing(false);
-                    }
+                Log.d(TAG, "✅ [DEBUG] Progressive load callback with " + (newListings != null ? newListings.size() : 0) + " listings");
                 
                 if (newListings == null) {
                     Log.e(TAG, "❌ [DEBUG] newListings is NULL!");
@@ -678,18 +674,36 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
                     return;
                 }
                 
-                Log.d(TAG, "📊 [DEBUG] Processing " + newListings.size() + " new listings");
+                if (isFirstLoad) {
+                    // First batch - clear and show immediately
+                    Log.d(TAG, "📱 [DEBUG] First batch: clearing and showing " + newListings.size() + " listings");
+                    allListings.clear();
+                    allListings.addAll(newListings);
+                    isFirstLoad = false;
+                    
+                    // Hide progress bar after first batch
+                    if (binding != null && binding.progressBar != null) {
+                        binding.progressBar.setVisibility(View.GONE);
+                    }
+                    if (binding != null && binding.swipeRefresh != null) {
+                        binding.swipeRefresh.setRefreshing(false);
+                    }
+                } else {
+                    // Additional batches - add smoothly
+                    Log.d(TAG, "➕ [DEBUG] Additional batch: adding " + newListings.size() + " more listings");
+                    int startIndex = allListings.size();
+                    allListings.addAll(newListings);
+                    
+                    // Smooth animation: notify adapter of new items
+                    if (adapter != null) {
+                        applyFilters(); // This will trigger adapter update
+                        return; // Skip the normal filter apply below
+                    }
+                }
                 
-                // Clear and populate allListings
-                allListings.clear();
-                allListings.addAll(newListings);
-                Log.d(TAG, "📊 [DEBUG] allListings now contains " + allListings.size() + " items");
-                
-                // Apply filters which updates the displayed listings
-                Log.d(TAG, "🔍 [DEBUG] Applying filters...");
+                // Apply filters and update UI
+                Log.d(TAG, "🔍 [DEBUG] Applying filters to " + allListings.size() + " total listings...");
                 applyFilters();
-                
-                Log.d(TAG, "📊 [DEBUG] After applyFilters, listings.size() = " + listings.size());
                 
                 if (listings.isEmpty()) {
                     Log.d(TAG, "⚠️ [DEBUG] No listings after filtering - showing empty state");
@@ -701,14 +715,14 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
             
             @Override
             public void onError(String error) {
-                Log.e(TAG, "❌ [DEBUG] onError called: " + error);
+                Log.e(TAG, "❌ [DEBUG] Progressive loading error: " + error);
                 // Hide progress bar
                 if (binding != null && binding.progressBar != null) {
                     binding.progressBar.setVisibility(View.GONE);
                 }
                 if (binding != null && binding.swipeRefresh != null) {
-                        binding.swipeRefresh.setRefreshing(false);
-                    }
+                    binding.swipeRefresh.setRefreshing(false);
+                }
                 showError("Error loading listings: " + error);
             }
         });

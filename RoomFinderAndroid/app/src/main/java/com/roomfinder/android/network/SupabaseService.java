@@ -117,8 +117,7 @@ public class SupabaseService {
     }
     
     /**
-     * Fetch all listings asynchronously with caching
-     * Optimized for fast display
+     * Progressive loading strategy: Load small batch first, then more in background
      */
     public void getAllListings(ListingsCallback callback) {
         // First, try to load from cache immediately
@@ -132,9 +131,9 @@ public class SupabaseService {
             return;
         }
         
-        // No cache available, fetch from network
-        Log.d(TAG, "🌐 No cache available, fetching from network...");
-        fetchListingsFromNetwork(callback);
+        // No cache - use progressive loading
+        Log.d(TAG, "🌐 Starting progressive loading...");
+        fetchListingsProgressively(callback);
     }
     
     /**
@@ -143,6 +142,41 @@ public class SupabaseService {
     public void refreshListings(ListingsCallback callback) {
         Log.d(TAG, "🔄 Force refreshing listings...");
         fetchListingsFromNetwork(callback);
+    }
+    
+    /**
+     * Progressive loading: First load 5 listings immediately, then load more in chunks
+     */
+    private void fetchListingsProgressively(ListingsCallback callback) {
+        executorService.execute(() -> {
+            try {
+                // Step 1: Load first 5 listings immediately
+                Log.d(TAG, "📱 Loading first 5 listings for instant display...");
+                List<Listing> initialListings = supabaseClient.getListings(0, 5);
+                
+                if (initialListings != null && !initialListings.isEmpty()) {
+                    android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+                    mainHandler.post(() -> {
+                        Log.d(TAG, "⚡ Showing first " + initialListings.size() + " listings immediately");
+                        callback.onSuccess(initialListings);
+                    });
+                    
+                    // Step 2: Load next 15 listings in background
+                    loadMoreListingsInBackground(5, 15, callback);
+                    
+                    // Step 3: Load remaining 30 listings in background
+                    loadMoreListingsInBackground(20, 30, callback);
+                } else {
+                    // Fallback to full load if progressive fails
+                    fetchListingsFromNetwork(callback);
+                }
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Progressive loading failed: " + e.getMessage(), e);
+                // Fallback to full load
+                fetchListingsFromNetwork(callback);
+            }
+        });
     }
     
     private void fetchListingsFromNetwork(ListingsCallback callback) {
@@ -172,6 +206,32 @@ public class SupabaseService {
                 Log.e(TAG, "Error fetching listings: " + e.getMessage(), e);
                 android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
                 mainHandler.post(() -> callback.onError("Network error: " + e.getMessage()));
+            }
+        });
+    }
+    
+    /**
+     * Load more listings in background and update the UI
+     */
+    private void loadMoreListingsInBackground(int offset, int limit, ListingsCallback callback) {
+        executorService.execute(() -> {
+            try {
+                // Add a small delay to let the first batch render
+                Thread.sleep(500);
+                
+                Log.d(TAG, "📚 Loading more listings (offset: " + offset + ", limit: " + limit + ")...");
+                List<Listing> moreListings = supabaseClient.getListings(offset, limit);
+                
+                if (moreListings != null && !moreListings.isEmpty()) {
+                    android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+                    mainHandler.post(() -> {
+                        Log.d(TAG, "➕ Adding " + moreListings.size() + " more listings");
+                        // This will trigger the adapter to add more items
+                        callback.onSuccess(moreListings);
+                    });
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Background loading failed: " + e.getMessage());
             }
         });
     }
