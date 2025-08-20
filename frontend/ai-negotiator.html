@@ -1321,15 +1321,38 @@
             setupPeriodicProtection();
             
             // Check for pre-filled search query from index page
-            const aiSearchQuery = localStorage.getItem('aiSearchQuery');
-            if (aiSearchQuery) {
+            let searchQuery = null;
+            
+            // First check URL parameters (from home page search)
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryParam = urlParams.get('query');
+            if (queryParam) {
+                searchQuery = decodeURIComponent(queryParam);
+                // Clean up URL to prevent repeat sends on page refresh
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+            
+            // Fallback to localStorage (existing functionality)
+            if (!searchQuery) {
+                const aiSearchQuery = localStorage.getItem('aiSearchQuery');
+                if (aiSearchQuery) {
+                    searchQuery = aiSearchQuery;
+                    localStorage.removeItem('aiSearchQuery'); // Clean up
+                }
+            }
+            
+            // Auto-start conversation if we have a query
+            if (searchQuery) {
                 const messageInput = document.getElementById('messageInput');
                 if (messageInput) {
-                    messageInput.value = aiSearchQuery;
+                    messageInput.value = searchQuery;
                     messageInput.focus();
+                    // Auto-send the message after AI is initialized
+                    setTimeout(() => {
+                        sendMessage();
+                    }, 1500); // Slightly longer delay to ensure AI is ready
                 }
-                // Clear the stored query after using it
-                localStorage.removeItem('aiSearchQuery');
             }
         });
         
