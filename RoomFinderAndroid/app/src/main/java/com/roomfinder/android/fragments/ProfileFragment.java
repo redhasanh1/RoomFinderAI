@@ -55,6 +55,9 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
             setupViews();
             setupRecentListings();
             
+            // Always try to set up delete account button regardless of login state
+            setupDeleteAccountButton();
+            
             if (!isLoggedIn) {
                 loadRecentListings();
             }
@@ -69,19 +72,22 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
         try {
             // Use AuthManager for proper authentication check
             AuthManager authManager = AuthManager.getInstance(requireContext());
-            isLoggedIn = authManager.isUserAuthenticated();
+            boolean authManagerAuthenticated = authManager.isUserAuthenticated();
             
             // Also check SharedPreferences as fallback
             String userEmail = prefs.getString("user_email", null);
             boolean hasUserEmail = userEmail != null;
             
+            // Set login state based on authentication
+            isLoggedIn = authManagerAuthenticated;
+            
             // If AuthManager says not authenticated but we have email, clear it
-            if (!isLoggedIn && hasUserEmail) {
+            if (!authManagerAuthenticated && hasUserEmail) {
                 prefs.edit().remove("user_email").remove("user_name").remove("auth_token").apply();
             }
             
             Log.d(TAG, "Login status: " + (isLoggedIn ? "Logged in" : "Guest") + 
-                      " (AuthManager: " + isLoggedIn + ", SharedPrefs: " + hasUserEmail + ")");
+                      " (AuthManager: " + authManagerAuthenticated + ", SharedPrefs: " + hasUserEmail + ")");
         } catch (Exception e) {
             Log.e(TAG, "Error checking login status: " + e.getMessage(), e);
             isLoggedIn = false;
@@ -259,17 +265,27 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
                 performLogout();
             });
             
+            // Set up delete account button
+            setupDeleteAccountButton();
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting up user view clicks: " + e.getMessage(), e);
+        }
+    }
+    
+    private void setupDeleteAccountButton() {
+        try {
             if (binding.deleteAccountItem != null) {
+                Log.d(TAG, "Delete account button found, setting up click listener");
                 binding.deleteAccountItem.setOnClickListener(v -> {
                     addRippleEffect(v);
                     showDeleteAccountDialog();
                 });
             } else {
-                Log.w(TAG, "Delete account button not found in layout");
+                Log.w(TAG, "Delete account button not found in layout - this might be a binding issue");
             }
-            
         } catch (Exception e) {
-            Log.e(TAG, "Error setting up user view clicks: " + e.getMessage(), e);
+            Log.e(TAG, "Error setting up delete account button: " + e.getMessage(), e);
         }
     }
     
@@ -347,15 +363,12 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
             
             Toast.makeText(requireContext(), "Signed out successfully", Toast.LENGTH_SHORT).show();
             
-            // Navigate to login activity and clear task stack to prevent back navigation
-            Intent loginIntent = new Intent(requireContext(), LoginActivity.class);
-            loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(loginIntent);
+            // Update login status and show guest view (stay on profile page)
+            isLoggedIn = false;
+            showGuestViewWithAnimation();
             
-            // Finish the current activity if possible
-            if (getActivity() != null) {
-                getActivity().finish();
-            }
+            // Also navigate to home fragment to show logged out state
+            navigateToFragment(new HomeFragment());
             
         } catch (Exception e) {
             Log.e(TAG, "Error during logout: " + e.getMessage(), e);
@@ -482,15 +495,12 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
             
             Toast.makeText(requireContext(), "Account deleted successfully", Toast.LENGTH_LONG).show();
             
-            // Navigate to login activity and clear task stack
-            Intent loginIntent = new Intent(requireContext(), LoginActivity.class);
-            loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(loginIntent);
+            // Update login status and show guest view (stay on profile page)
+            isLoggedIn = false;
+            showGuestViewWithAnimation();
             
-            // Finish the current activity
-            if (getActivity() != null) {
-                getActivity().finish();
-            }
+            // Navigate to home fragment to show logged out state
+            navigateToFragment(new HomeFragment());
             
         } catch (Exception e) {
             Log.e(TAG, "Error deleting account: " + e.getMessage(), e);
