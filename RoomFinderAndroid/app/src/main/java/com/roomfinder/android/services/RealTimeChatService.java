@@ -482,9 +482,8 @@ public class RealTimeChatService {
                                     Log.d(TAG, "🔍 [POLLING] 📨 Notifying listeners about message: '" + message.getContent() + "'");
                                     notifyMessageListeners(message);
                                     
-                                    // Also check if this message should trigger AI negotiation response
-                                    // This helps catch website messages that aren't being monitored
-                                    checkForAiNegotiationTrigger(message);
+                                    // NOTE: Removed checkForAiNegotiationTrigger to prevent duplicate responses
+                                    // AI negotiation is already handled through the message listeners
                                 }
                             } else {
                                 Log.d(TAG, "🔍 [POLLING] 📭 No new messages found for conversation " + conversationId);
@@ -1090,53 +1089,6 @@ public class RealTimeChatService {
         return email.trim().toLowerCase();
     }
     
-    /**
-     * Check if a message should trigger AI negotiation response
-     * This is critical for website-to-Android message handling
-     */
-    private void checkForAiNegotiationTrigger(ChatMessage message) {
-        if (message == null || currentUserEmail == null) {
-            return;
-        }
-        
-        // Only trigger for messages NOT sent by current user (i.e., landlord replies)
-        String normalizedCurrent = normalizeEmail(currentUserEmail);
-        String normalizedSender = normalizeEmail(message.getSenderEmail());
-        
-        Log.d(TAG, "🤖 [AI_TRIGGER] Email check - Current: '" + normalizedCurrent + "' vs Sender: '" + normalizedSender + "'");
-        
-        if (normalizedCurrent != null && normalizedCurrent.equals(normalizedSender)) {
-            Log.d(TAG, "🤖 [AI_TRIGGER] Skipping own message");
-            return;
-        }
-        
-        Log.d(TAG, "🤖 [AI_TRIGGER] Checking if message should trigger AI response...");
-        Log.d(TAG, "🤖 [AI_TRIGGER] Message: '" + message.getContent() + "'");
-        Log.d(TAG, "🤖 [AI_TRIGGER] From: " + message.getSenderEmail());
-        Log.d(TAG, "🤖 [AI_TRIGGER] Conversation: " + message.getConversationId());
-        
-        String messageContent = message.getContent().toLowerCase().trim();
-        boolean looksLikeNegotiationReply = 
-            messageContent.contains("lower") ||
-            messageContent.contains("reduce") ||
-            messageContent.contains("negotiate") ||
-            messageContent.contains("price") ||
-            messageContent.contains("rent") ||
-            messageContent.contains("deal") ||
-            messageContent.contains("okay") ||
-            messageContent.contains("ok") ||
-            messageContent.contains("yes") ||
-            messageContent.contains("sure") ||
-            messageContent.contains("maybe") ||
-            messageContent.contains("consider");
-        
-        if (looksLikeNegotiationReply) {
-            Log.w(TAG, "🤖 [AI_TRIGGER] ⚡ POTENTIAL AI NEGOTIATION TRIGGER DETECTED!");
-            Log.w(TAG, "🤖 [AI_TRIGGER] This message looks like a landlord negotiation reply");
-            Log.w(TAG, "🤖 [AI_TRIGGER] Message content: '" + message.getContent() + "'");
-            Log.w(TAG, "🤖 [AI_TRIGGER] From: " + message.getSenderEmail());
-        }
-    }
     
     /**
      * Notify message listeners
