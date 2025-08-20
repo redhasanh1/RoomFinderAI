@@ -345,6 +345,9 @@ const users = [];
 const emailVerificationCodes = new Map(); // Store verification codes with expiration
 const passwordResetCodes = new Map(); // Store password reset codes with expiration
 
+// Note: Removed hardcoded user initialization - users should register through proper signup flow
+// Real user accounts will be stored in Supabase database, not in-memory arrays
+
 // Password validation function
 function validatePassword(password) {
     const isValid = password.length >= 8;
@@ -1481,7 +1484,7 @@ app.post('/api/verify-email', async (req, res) => {
     }
 });
 
-// API: User login
+// API: User login with Supabase authentication
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -1489,6 +1492,46 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
+        // Try Supabase authentication first
+        if (supabase) {
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    console.log('Supabase login failed:', error.message);
+                    // Fall through to in-memory check for demo accounts
+                } else if (data.user) {
+                    // Get user profile from database
+                    const { data: profile, error: profileError } = await supabase
+                        .from('users')
+                        .select('firstName, lastName, email, profileImage')
+                        .eq('email', email)
+                        .single();
+
+                    const userData = {
+                        firstName: profile?.firstName || 'User',
+                        lastName: profile?.lastName || 'Name', 
+                        email: data.user.email,
+                        profileImage: profile?.profileImage
+                    };
+
+                    return res.json({
+                        message: 'Login successful',
+                        access_token: data.session.access_token,
+                        userId: data.user.id,
+                        user: userData
+                    });
+                }
+            } catch (supabaseError) {
+                console.log('Supabase authentication error:', supabaseError.message);
+                // Fall through to demo account check
+            }
+        }
+
+        // Fallback to in-memory users for demo accounts only
         const user = users.find(u => u.email === email);
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });

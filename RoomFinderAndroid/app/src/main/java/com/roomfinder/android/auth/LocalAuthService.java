@@ -35,13 +35,13 @@ public class LocalAuthService {
     private static final String KEY_REGISTERED_USERS = "registeredUsers";
     private static final String KEY_VERIFICATION_CODES = "verificationCodes";
     
-    // Demo accounts for testing
+    // Demo accounts for testing (generic test accounts only - no real user credentials)
     private static final Map<String, String> DEMO_ACCOUNTS = new HashMap<>();
     static {
         DEMO_ACCOUNTS.put("demo@roomfinder.com", "demo123");
         DEMO_ACCOUNTS.put("test@roomfinder.com", "test123");
         DEMO_ACCOUNTS.put("user@example.com", "password123");
-        // Removed user's email from demo accounts to allow real registration
+        // Real user accounts like humblewoslayer@gmail.com are stored in Supabase database, NOT here!
     }
     
     private LocalAuthService(Context context) {
@@ -86,8 +86,13 @@ public class LocalAuthService {
             // Create demo user
             User demoUser = new User();
             demoUser.setEmail(email);
-            demoUser.setFirstName("Demo");
-            demoUser.setLastName("User");
+            if (email.equals("humblewoslayer@gmail.com")) {
+                demoUser.setFirstName("User"); // Using generic name for privacy
+                demoUser.setLastName("Account");
+            } else {
+                demoUser.setFirstName("Demo");
+                demoUser.setLastName("User");
+            }
             demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
             demoUser.setEmailVerified(true);
             
@@ -105,6 +110,47 @@ public class LocalAuthService {
         
         saveRegisteredUsers(registeredUsers);
         Log.d(TAG, "Demo accounts reinitialization complete");
+    }
+    
+    /**
+     * Initialize real user account that was created on website
+     * This matches the website's localStorage approach
+     */
+    public void initializeRealUserAccount(String email, String password) {
+        Log.d(TAG, "Initializing real user account: " + email);
+        
+        List<User> registeredUsers = getRegisteredUsers();
+        
+        // Check if user already exists
+        boolean exists = registeredUsers.stream()
+                .anyMatch(user -> user.getEmail().equals(email));
+        
+        if (exists) {
+            Log.d(TAG, "Real user account already exists: " + email);
+            return;
+        }
+        
+        // Create real user account (matching website structure)
+        User realUser = new User();
+        realUser.setEmail(email);
+        realUser.setFirstName("User");
+        realUser.setLastName("Account");
+        realUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+        realUser.setEmailVerified(true);
+        realUser.setAiChats(new java.util.ArrayList<>());
+        realUser.setListings(new java.util.ArrayList<>());
+        
+        // Hash password
+        String hashedPassword = hashPassword(password);
+        
+        // Store user with hashed password
+        registeredUsers.add(realUser);
+        
+        // Store password hash separately
+        prefs.edit().putString("pwd_" + email, hashedPassword).apply();
+        
+        saveRegisteredUsers(registeredUsers);
+        Log.d(TAG, "Real user account initialized: " + email);
     }
     
     /**
@@ -129,8 +175,13 @@ public class LocalAuthService {
             // Create demo user
             User demoUser = new User();
             demoUser.setEmail(email);
-            demoUser.setFirstName("Demo");
-            demoUser.setLastName("User");
+            if (email.equals("humblewoslayer@gmail.com")) {
+                demoUser.setFirstName("User"); // Using generic name for privacy
+                demoUser.setLastName("Account");
+            } else {
+                demoUser.setFirstName("Demo");
+                demoUser.setLastName("User");
+            }
             demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
             demoUser.setEmailVerified(true);
             
@@ -159,7 +210,44 @@ public class LocalAuthService {
             try {
                 Log.d(TAG, "Local login attempt for: " + email);
                 
-                // Check registered users
+                // FIRST: Check DEMO_ACCOUNTS for immediate authentication
+                if (DEMO_ACCOUNTS.containsKey(email)) {
+                    String demoPassword = DEMO_ACCOUNTS.get(email);
+                    if (password.equals(demoPassword)) {
+                        Log.d(TAG, "✅ Demo account login successful for: " + email);
+                        
+                        // Create user object for demo account
+                        User demoUser = new User();
+                        demoUser.setEmail(email);
+                        if (email.equals("humblewoslayer@gmail.com")) {
+                            demoUser.setFirstName("User");
+                            demoUser.setLastName("Account");
+                        } else {
+                            demoUser.setFirstName("Demo");
+                            demoUser.setLastName("User");
+                        }
+                        demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+                        demoUser.setEmailVerified(true);
+                        
+                        // Generate tokens for auth compatibility
+                        String accessToken = generateLocalToken(email, "access");
+                        String refreshToken = generateLocalToken(email, "refresh");
+                        demoUser.setAccessToken(accessToken);
+                        demoUser.setRefreshToken(refreshToken);
+                        
+                        // Store and authenticate
+                        authManager.storeCurrentUser(demoUser);
+                        Log.d(TAG, "🎉 Demo account authentication successful: " + email);
+                        callback.onSuccess(demoUser);
+                        return;
+                    } else {
+                        Log.w(TAG, "❌ Demo account password mismatch for: " + email);
+                        callback.onError("Invalid email or password");
+                        return;
+                    }
+                }
+                
+                // SECOND: Check registered users from SharedPreferences
                 List<User> registeredUsers = getRegisteredUsers();
                 Log.d(TAG, "Found " + registeredUsers.size() + " registered users");
                 
