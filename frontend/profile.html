@@ -1304,14 +1304,27 @@
                 window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'currentUser');
                 window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'authToken');
                 window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'users');
+                // Also clear backup data
+                window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'currentUser_backup');
+                window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'currentUser_backup_2');
+                window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'currentUser_emergency');
             } else {
                 localStorage.removeItem('currentUser');
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('users');
+                // Also clear backup data
+                localStorage.removeItem('currentUser_backup');
+                localStorage.removeItem('currentUser_backup_2');
+                localStorage.removeItem('currentUser_emergency');
             }
             
             // Go to home page instead of login page
             window.location.href = 'index.html';
+            
+            // Clear the logout flag after a delay to allow normal backup functionality to resume
+            setTimeout(() => {
+                sessionStorage.removeItem('legitimateLogout');
+            }, 10000); // 10 seconds should be enough for the redirect and page load
         }
 
         function uploadProfileImage(event) {
