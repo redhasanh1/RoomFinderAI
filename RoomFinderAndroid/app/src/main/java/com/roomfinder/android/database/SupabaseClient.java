@@ -48,8 +48,8 @@ public class SupabaseClient {
      */
     public List<Listing> getAllListings() {
         try {
-            // Limit to first 20 listings for ultra-fast initial load
-            String url = baseUrl + "listings?select=*&order=created_at.desc&limit=20";
+            // Limit to first 50 listings for reliable initial load
+            String url = baseUrl + "listings?select=*&order=created_at.desc&limit=50";
             
             Request request = new Request.Builder()
                     .url(url)
@@ -57,7 +57,6 @@ public class SupabaseClient {
                     .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
                     .addHeader("Content-Type", "application/json")
                     .addHeader("Prefer", "return=representation")
-                    .addHeader("Accept-Encoding", "gzip, deflate")
                     .build();
             
             Log.d(TAG, "Fetching listings from: " + url);
@@ -72,23 +71,29 @@ public class SupabaseClient {
                 }
                 
                 String responseBody = response.body().string();
-                Log.d(TAG, "Response body: " + responseBody);
+                Log.d(TAG, "Response body length: " + responseBody.length());
+                
+                // Check for empty or invalid response
+                if (responseBody == null || responseBody.trim().isEmpty()) {
+                    Log.e(TAG, "Empty response from server");
+                    return new ArrayList<>();
+                }
+                
+                // Log first 200 characters for debugging
+                Log.d(TAG, "Response preview: " + (responseBody.length() > 200 ? responseBody.substring(0, 200) + "..." : responseBody));
                 
                 Type listType = new TypeToken<List<Listing>>(){}.getType();
                 List<Listing> listings;
                 
                 try {
-                    // Add debug logging for JSON parsing
-                    Log.d(TAG, "📊 JSON Response sample: " + (responseBody.length() > 200 ? responseBody.substring(0, 200) + "..." : responseBody));
                     listings = gson.fromJson(responseBody, listType);
                     Log.d(TAG, "✅ JSON parsing successful, parsed " + (listings != null ? listings.size() : 0) + " listings");
                 } catch (com.google.gson.JsonSyntaxException e) {
-                    Log.e(TAG, "❌ JSON syntax error - likely data type mismatch: " + e.getMessage(), e);
-                    Log.e(TAG, "📄 Problematic JSON: " + responseBody);
+                    Log.e(TAG, "❌ JSON syntax error: " + e.getMessage(), e);
+                    Log.e(TAG, "📄 Response length: " + responseBody.length());
                     return new ArrayList<>();
                 } catch (Exception e) {
                     Log.e(TAG, "❌ JSON parsing error: " + e.getMessage(), e);
-                    Log.e(TAG, "📄 Problematic JSON: " + responseBody);
                     return new ArrayList<>();
                 }
                 
@@ -121,7 +126,6 @@ public class SupabaseClient {
                     .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
                     .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
                     .addHeader("Content-Type", "application/json")
-                    .addHeader("Accept-Encoding", "gzip, deflate")
                     .build();
             
             Log.d(TAG, "Fetching more listings from offset: " + offset + ", limit: " + limit);
