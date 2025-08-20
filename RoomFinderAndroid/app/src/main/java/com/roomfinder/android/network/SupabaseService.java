@@ -57,6 +57,12 @@ public class SupabaseService {
         void onError(String error);
     }
     
+    // Progressive loading callback for appending content
+    public interface ProgressiveLoadingCallback extends ListingsCallback {
+        void onInitialLoad(List<Listing> listings);   // First batch - replaces content
+        void onMoreLoaded(List<Listing> listings);    // Additional batches - appends content
+    }
+    
     public interface ListingCallback {
         void onSuccess(Listing listing);
         void onError(String error);
@@ -131,6 +137,26 @@ public class SupabaseService {
             return;
         }
         
+        // No cache - fetch all at once (fallback)
+        Log.d(TAG, "🌐 No cache available, fetching from network...");
+        fetchListingsFromNetwork(callback);
+    }
+    
+    /**
+     * Progressive loading with proper append callbacks
+     */
+    public void getAllListingsProgressively(ProgressiveLoadingCallback callback) {
+        // First, try to load from cache immediately
+        List<Listing> cachedListings = getCachedListings();
+        if (cachedListings != null && !cachedListings.isEmpty()) {
+            Log.d(TAG, "⚡ Returning cached listings immediately");
+            callback.onInitialLoad(cachedListings);
+            
+            // Always refresh in background for fresh data
+            refreshListingsInBackground();
+            return;
+        }
+        
         // No cache - use progressive loading
         Log.d(TAG, "🌐 Starting progressive loading...");
         fetchListingsProgressively(callback);
@@ -147,7 +173,7 @@ public class SupabaseService {
     /**
      * Progressive loading: First load 5 listings immediately, then load more in chunks
      */
-    private void fetchListingsProgressively(ListingsCallback callback) {
+    private void fetchListingsProgressively(ProgressiveLoadingCallback callback) {
         executorService.execute(() -> {
             try {
                 // Step 1: Load first 5 listings immediately
@@ -158,7 +184,7 @@ public class SupabaseService {
                     android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
                     mainHandler.post(() -> {
                         Log.d(TAG, "⚡ Showing first " + initialListings.size() + " listings immediately");
-                        callback.onSuccess(initialListings);
+                        callback.onInitialLoad(initialListings);  // Use onInitialLoad for first batch
                     });
                     
                     // Step 2: Load next 15 listings in background
@@ -213,7 +239,7 @@ public class SupabaseService {
     /**
      * Load more listings in background and update the UI
      */
-    private void loadMoreListingsInBackground(int offset, int limit, ListingsCallback callback) {
+    private void loadMoreListingsInBackground(int offset, int limit, ProgressiveLoadingCallback callback) {
         executorService.execute(() -> {
             try {
                 // Add a small delay to let the first batch render
@@ -226,8 +252,8 @@ public class SupabaseService {
                     android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
                     mainHandler.post(() -> {
                         Log.d(TAG, "➕ Adding " + moreListings.size() + " more listings");
-                        // This will trigger the adapter to add more items
-                        callback.onSuccess(moreListings);
+                        // Use onMoreLoaded for additional batches
+                        callback.onMoreLoaded(moreListings);
                     });
                 }
             } catch (Exception e) {
