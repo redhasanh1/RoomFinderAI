@@ -2,12 +2,16 @@ package com.roomfinder.android.fragments;
 
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,6 +33,7 @@ import com.roomfinder.android.services.AiNegotiationService;
 import com.roomfinder.android.network.SupabaseService;
 import com.roomfinder.android.utils.NetworkUtils;
 import com.roomfinder.android.activities.IndividualChatActivity;
+import com.roomfinder.android.services.ChatStorageService;
 import android.content.Intent;
 
 import java.util.ArrayList;
@@ -74,6 +79,9 @@ public class AiChatFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        
+        // Enable menu for this fragment
+        setHasOptionsMenu(true);
         
         initializeServices();
         initializeAnimations();
@@ -151,6 +159,10 @@ public class AiChatFragment extends Fragment {
         binding.toolbar.setNavigationOnClickListener(v -> {
             requireActivity().onBackPressed();
         });
+        
+        // Inflate menu for the toolbar
+        binding.toolbar.inflateMenu(R.menu.ai_chat_menu);
+        binding.toolbar.setOnMenuItemClickListener(this::onOptionsItemSelected);
     }
     
     private void initializeAnimations() {
@@ -986,6 +998,41 @@ public class AiChatFragment extends Fragment {
         }
     }
     
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.ai_chat_menu, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_clear_chat) {
+            showClearChatConfirmation();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    
+    private void showClearChatConfirmation() {
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Clear Chat History")
+            .setMessage("Are you sure you want to clear all AI negotiator chat history? This action cannot be undone.")
+            .setPositiveButton("Clear History", (dialog, which) -> {
+                clearConversationHistory();
+                
+                // Also clear from ChatStorageService for completeness
+                try {
+                    ChatStorageService chatStorage = ChatStorageService.getInstance(requireContext());
+                    chatStorage.clearAllData();
+                    Toast.makeText(requireContext(), "Chat history cleared successfully", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error clearing storage: " + e.getMessage(), e);
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
     // Clear conversation history (matching web version)
     private void clearConversationHistory() {
         try {
