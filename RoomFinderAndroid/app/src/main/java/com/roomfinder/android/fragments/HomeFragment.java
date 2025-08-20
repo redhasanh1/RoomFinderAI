@@ -527,6 +527,36 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         }
     }
     
+    /**
+     * Apply filters without sorting - preserves append order for progressive loading
+     */
+    private void applyFiltersProgressive() {
+        Log.d(TAG, "🔍 [DEBUG] applyFiltersProgressive() called - preserving append order");
+        Log.d(TAG, "🔍 [DEBUG] Input: allListings.size() = " + allListings.size());
+        
+        List<Listing> filteredListings = new ArrayList<>();
+        
+        for (Listing listing : allListings) {
+            boolean matchesSearch = matchesSmartSearch(listing, currentSearchQuery);
+            boolean matchesFilter = matchesFilterCriteria(listing, currentFilter);
+            
+            if (matchesSearch && matchesFilter) {
+                filteredListings.add(listing);
+            }
+        }
+        
+        Log.d(TAG, "🔍 [DEBUG] Progressive filter result: " + filteredListings.size() + " listings (no sorting applied)");
+        
+        listings.clear();
+        listings.addAll(filteredListings);
+        
+        if (listings.isEmpty() && !allListings.isEmpty()) {
+            showEmptyState();
+        } else {
+            binding.emptyLayout.setVisibility(View.GONE);
+        }
+    }
+    
     private void applySorting(List<Listing> listings) {
         switch (currentSortOption) {
             case "Price: Low → High":
@@ -703,11 +733,11 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
                 // Remember current filtered size before adding new content
                 int previousFilteredSize = listings.size();
                 
-                // Add new listings to the master list
+                // Add new listings to the END of master list (preserves chronological order)
                 allListings.addAll(moreListings);
                 
-                // Apply filters to get updated filtered list
-                applyFilters();
+                // Apply progressive filters (no sorting - preserves append order)
+                applyFiltersProgressive();
                 
                 // Calculate how many new items were added after filtering
                 int newFilteredItems = listings.size() - previousFilteredSize;
@@ -715,7 +745,7 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
                 if (newFilteredItems > 0 && adapter != null) {
                     // Notify adapter of range insertion for smooth animation
                     adapter.notifyItemRangeInserted(previousFilteredSize, newFilteredItems);
-                    Log.d(TAG, "✨ [DEBUG] Smoothly added " + newFilteredItems + " new items to position " + previousFilteredSize);
+                    Log.d(TAG, "✨ [DEBUG] Smoothly appended " + newFilteredItems + " new items at bottom (position " + previousFilteredSize + ")");
                 } else {
                     Log.d(TAG, "💫 [DEBUG] No new items passed filters");
                 }
