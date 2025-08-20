@@ -67,9 +67,21 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
     
     private void checkLoginStatus() {
         try {
+            // Use AuthManager for proper authentication check
+            AuthManager authManager = AuthManager.getInstance(requireContext());
+            isLoggedIn = authManager.isUserAuthenticated();
+            
+            // Also check SharedPreferences as fallback
             String userEmail = prefs.getString("user_email", null);
-            isLoggedIn = userEmail != null;
-            Log.d(TAG, "Login status: " + (isLoggedIn ? "Logged in" : "Guest"));
+            boolean hasUserEmail = userEmail != null;
+            
+            // If AuthManager says not authenticated but we have email, clear it
+            if (!isLoggedIn && hasUserEmail) {
+                prefs.edit().remove("user_email").remove("user_name").remove("auth_token").apply();
+            }
+            
+            Log.d(TAG, "Login status: " + (isLoggedIn ? "Logged in" : "Guest") + 
+                      " (AuthManager: " + isLoggedIn + ", SharedPrefs: " + hasUserEmail + ")");
         } catch (Exception e) {
             Log.e(TAG, "Error checking login status: " + e.getMessage(), e);
             isLoggedIn = false;
@@ -179,9 +191,21 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
         if (binding == null) return;
         
         try {
-            // Load user profile data
-            String userName = prefs.getString("user_name", "User");
-            String userEmail = prefs.getString("user_email", "user@example.com");
+            // Load user profile data from AuthManager
+            AuthManager authManager = AuthManager.getInstance(requireContext());
+            User currentUser = authManager.getCurrentUser();
+            
+            String userName = "User";
+            String userEmail = "user@example.com";
+            
+            if (currentUser != null) {
+                userName = currentUser.getFirstName() + " " + currentUser.getLastName();
+                userEmail = currentUser.getEmail();
+            } else {
+                // Fallback to SharedPreferences for backward compatibility
+                userName = prefs.getString("user_name", "User");
+                userEmail = prefs.getString("user_email", "user@example.com");
+            }
             
             binding.userName.setText(userName);
             binding.userEmail.setText(userEmail);
@@ -235,10 +259,14 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
                 performLogout();
             });
             
-            binding.deleteAccountItem.setOnClickListener(v -> {
-                addRippleEffect(v);
-                showDeleteAccountDialog();
-            });
+            if (binding.deleteAccountItem != null) {
+                binding.deleteAccountItem.setOnClickListener(v -> {
+                    addRippleEffect(v);
+                    showDeleteAccountDialog();
+                });
+            } else {
+                Log.w(TAG, "Delete account button not found in layout");
+            }
             
         } catch (Exception e) {
             Log.e(TAG, "Error setting up user view clicks: " + e.getMessage(), e);

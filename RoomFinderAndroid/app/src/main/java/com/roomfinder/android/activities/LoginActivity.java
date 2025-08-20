@@ -344,6 +344,9 @@ public class LoginActivity extends AppCompatActivity {
      * Navigate to main activity
      */
     private void navigateToMainActivity() {
+        // Set result to indicate successful login
+        setResult(RESULT_OK);
+        
         Intent intent = new Intent(this, com.roomfinder.android.MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
