@@ -6,11 +6,12 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.annotations.JsonAdapter;
+import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Listing {
+public class Listing implements Serializable {
     @SerializedName("id")
     private String id;
     
@@ -297,7 +298,7 @@ public class Listing {
     }
     
     // Inner class for media files
-    public static class MediaFile {
+    public static class MediaFile implements Serializable {
         @SerializedName("url")
         private String url;
         

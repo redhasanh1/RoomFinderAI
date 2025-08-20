@@ -72,6 +72,9 @@ dependencies {
     implementation "com.github.bumptech.glide:glide:${rootProject.ext.glideVersion}"
     annotationProcessor "com.github.bumptech.glide:compiler:${rootProject.ext.glideVersion}"
     
+    // PhotoView for zoom and pan support in fullscreen image viewer
+    implementation 'com.github.chrisbanes:PhotoView:2.3.0'
+    
     // Gson
     implementation 'com.google.code.gson:gson:2.10.1'
     
