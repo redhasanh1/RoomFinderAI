@@ -51,6 +51,7 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         super.onViewCreated(view, savedInstanceState);
         
         supabaseService = SupabaseService.getInstance();
+        supabaseService.init(requireContext()); // Initialize with context for caching
         setupRecyclerView();
         setupSwipeRefresh();
         setupSearchAndFilters();
@@ -64,7 +65,31 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     }
     
     private void setupSwipeRefresh() {
-        binding.swipeRefresh.setOnRefreshListener(this::loadListings);
+        binding.swipeRefresh.setOnRefreshListener(() -> {
+            // Force refresh (bypass cache)
+            supabaseService.refreshListings(new SupabaseService.ListingsCallback() {
+                @Override
+                public void onSuccess(List<Listing> newListings) {
+                    binding.swipeRefresh.setRefreshing(false);
+                    Log.d(TAG, "Refresh: Successfully loaded " + newListings.size() + " listings");
+                    
+                    allListings.clear();
+                    allListings.addAll(newListings);
+                    applyFilters();
+                    
+                    if (listings.isEmpty()) {
+                        showEmptyState();
+                    }
+                }
+                
+                @Override
+                public void onError(String error) {
+                    binding.swipeRefresh.setRefreshing(false);
+                    Log.e(TAG, "Refresh error: " + error);
+                    showError("Refresh failed: " + error);
+                }
+            });
+        });
     }
     
     private void setupSearchAndFilters() {

@@ -26,9 +26,9 @@ public class SupabaseClient {
     
     private SupabaseClient() {
         this.httpClient = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
+                .connectTimeout(10, TimeUnit.SECONDS) // Faster timeout
+                .readTimeout(15, TimeUnit.SECONDS)    // Faster timeout
+                .writeTimeout(15, TimeUnit.SECONDS)   // Faster timeout
                 .build();
         this.gson = new Gson();
         this.baseUrl = ApiKeys.SUPABASE_URL + "rest/v1/";
@@ -42,12 +42,13 @@ public class SupabaseClient {
     }
     
     /**
-     * Fetch all listings from Supabase database
-     * Equivalent to: supabase.from('listings').select('*').order('created_at', { ascending: false })
+     * Fetch all listings from Supabase database with pagination
+     * Equivalent to: supabase.from('listings').select('*').order('created_at', { ascending: false }).limit(50)
      */
     public List<Listing> getAllListings() {
         try {
-            String url = baseUrl + "listings?select=*&order=created_at.desc";
+            // Limit to first 50 listings for faster initial load
+            String url = baseUrl + "listings?select=*&order=created_at.desc&limit=50";
             
             Request request = new Request.Builder()
                     .url(url)
