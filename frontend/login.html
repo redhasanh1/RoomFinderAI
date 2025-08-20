@@ -150,6 +150,22 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
         }
+
+        /* Hide auto-generated Google and Apple sign-in elements */
+        div[data-g-sign-in],
+        .g_id_signin,
+        #g_id_onload,
+        iframe[src*="accounts.google.com"],
+        iframe[src*="appleid"],
+        div[id*="appleid"],
+        div[class*="appleid"],
+        div[data-apple-sign-in] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            left: -9999px !important;
+        }
         
         /* Success animation */
         @keyframes success-pulse {
@@ -796,7 +812,8 @@
         // Initialize OAuth when the page loads
         window.addEventListener('load', async () => {
             await loadOAuthConfig();
-            setTimeout(initializeGoogleSignIn, 1000);
+            // Don't auto-initialize to prevent auto-rendering
+            // setTimeout(initializeGoogleSignIn, 1000);
         });
 
         // Google Sign-In Handler
