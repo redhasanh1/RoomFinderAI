@@ -2584,10 +2584,19 @@
         });
 
         function logout() {
-            // Clear all authentication data
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('users');
+            // Mark this as a legitimate logout to bypass protection
+            sessionStorage.setItem('legitimateLogout', 'true');
+            
+            // Clear all authentication data using original methods
+            if (window.ORIGINAL_REMOVE_ITEM) {
+                window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'currentUser');
+                window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'authToken');
+                window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'users');
+            } else {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('users');
+            }
             
             // Refresh the page to show logged out state
             window.location.reload();
