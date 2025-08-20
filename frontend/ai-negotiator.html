@@ -1348,10 +1348,27 @@
                 if (messageInput) {
                     messageInput.value = searchQuery;
                     messageInput.focus();
-                    // Auto-send the message after AI is initialized
-                    setTimeout(() => {
-                        sendMessage();
-                    }, 1500); // Slightly longer delay to ensure AI is ready
+                    
+                    // Show that we're auto-starting the conversation
+                    const autoStartNotice = document.createElement('div');
+                    autoStartNotice.className = 'chat-bubble ai';
+                    autoStartNotice.innerHTML = `
+                        <div class="font-semibold text-sm text-gray-500 mb-1">System</div>
+                        <p class="text-sm text-blue-600">🚀 Auto-starting conversation with your search: "${searchQuery}"</p>
+                    `;
+                    document.getElementById('chatMessages').appendChild(autoStartNotice);
+                    
+                    // Auto-send the message with better reliability
+                    const autoSend = () => {
+                        if (aiNegotiator && typeof sendMessage === 'function') {
+                            sendMessage();
+                        } else {
+                            // Retry if AI not ready yet
+                            setTimeout(autoSend, 500);
+                        }
+                    };
+                    
+                    setTimeout(autoSend, 2000); // Give more time for AI to initialize
                 }
             }
         });

@@ -2315,8 +2315,23 @@
         // AI Demo chat
         function startAISearch() {
             const input = document.getElementById('aiSearchInput');
+            const button = document.querySelector('button[onclick="startAISearch()"]');
             const query = input.value.trim();
-            if (!query) return;
+            
+            if (!query) {
+                input.focus();
+                input.placeholder = "Please enter your search requirements first!";
+                setTimeout(() => {
+                    input.placeholder = "I need a 2-bedroom apartment under $1500 in Toronto";
+                }, 2000);
+                return;
+            }
+
+            // Show loading state
+            if (button) {
+                button.innerHTML = '🚀 Starting AI Search...';
+                button.disabled = true;
+            }
 
             // Redirect to AI negotiator with pre-filled query
             const encodedQuery = encodeURIComponent(query);
@@ -2326,6 +2341,17 @@
         // Search form handling
         document.addEventListener('DOMContentLoaded', function() {
             const searchForm = document.getElementById('search-form');
+            
+            // Add Enter key support for AI search input
+            const aiSearchInput = document.getElementById('aiSearchInput');
+            if (aiSearchInput) {
+                aiSearchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        startAISearch();
+                    }
+                });
+            }
             
             if (searchForm) {
                 searchForm.addEventListener('submit', function(e) {
