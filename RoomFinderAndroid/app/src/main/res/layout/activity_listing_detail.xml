@@ -4,25 +4,24 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="@android:color/white">
 
     <!-- Main Content -->
     <androidx.core.widget.NestedScrollView
-        android:id="@+id/nestedScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true">
 
         <LinearLayout
-            android:id="@+id/contentContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Image Carousel Container -->
-            <RelativeLayout
+            <!-- Simple Image Container -->
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="400dp">
+                android:layout_height="300dp"
+                android:background="@android:color/white">
 
                 <!-- Image ViewPager -->
                 <androidx.viewpager2.widget.ViewPager2
@@ -30,61 +29,54 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" />
 
-                <!-- Image Counter -->
+                <!-- Simple Image Counter -->
                 <TextView
                     android:id="@+id/imageCounter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_alignParentBottom="true"
+                    android:layout_gravity="bottom|end"
                     android:layout_margin="16dp"
-                    android:background="@drawable/glass_card_background"
+                    android:background="@android:color/black"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="6dp"
                     android:text="1 / 5"
-                    android:textColor="@color/text_primary"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:elevation="4dp" />
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp" />
 
-                <!-- Page Indicator -->
+                <!-- Simple Page Indicator -->
                 <com.google.android.material.tabs.TabLayout
                     android:id="@+id/pageIndicator"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_centerHorizontal="true"
-                    android:layout_alignParentBottom="true"
+                    android:layout_gravity="bottom|center_horizontal"
                     android:layout_marginBottom="16dp"
                     android:background="@android:color/transparent"
                     app:tabBackground="@drawable/page_indicator_selector"
                     app:tabGravity="center"
                     app:tabIndicatorHeight="0dp"
-                    app:tabMaxWidth="12dp"
-                    app:tabMinWidth="12dp"
-                    app:tabPaddingEnd="4dp"
-                    app:tabPaddingStart="4dp" />
+                    app:tabMaxWidth="8dp"
+                    app:tabMinWidth="8dp" />
 
-            </RelativeLayout>
+            </FrameLayout>
 
             <!-- Property Information -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="20dp">
+                android:padding="16dp">
 
-                <!-- Title and Price Section -->
-                <RelativeLayout
+                <!-- Title and Price -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:orientation="horizontal"
                     android:layout_marginBottom="16dp">
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_alignParentStart="true"
-                        android:layout_centerVertical="true"
-                        android:layout_toStartOf="@+id/priceContainer"
+                        android:layout_weight="1"
                         android:orientation="vertical">
 
                         <TextView
@@ -92,11 +84,9 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Modern Downtown Apartment"
-                            android:textColor="@color/text_primary"
+                            android:textColor="@android:color/black"
                             android:textSize="24sp"
-                            android:textStyle="bold"
-                            android:maxLines="2"
-                            android:ellipsize="end" />
+                            android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/locationText"
@@ -104,384 +94,246 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:text="Downtown Edmonton"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="16sp"
-                            android:drawableStart="@drawable/ic_location"
-                            android:drawablePadding="6dp"
-                            android:drawableTint="@color/text_secondary" />
+                            android:textColor="#666666"
+                            android:textSize="16sp" />
 
                     </LinearLayout>
 
-                    <LinearLayout
-                        android:id="@+id/priceContainer"
+                    <TextView
+                        android:id="@+id/priceText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:orientation="vertical"
-                        android:gravity="end">
-
-                        <TextView
-                            android:id="@+id/priceText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="$1,500"
-                            android:textColor="@color/purple_primary"
-                            android:textSize="28sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/priceSubtext"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="per month"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="14sp" />
-
-                    </LinearLayout>
-
-                </RelativeLayout>
-
-                <!-- Property Details Cards -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
-                    android:orientation="horizontal"
-                    android:weightSum="3">
-
-                    <!-- Bedrooms Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="0dp"
-                        android:layout_height="80dp"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="8dp"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:strokeWidth="0dp"
-                        android:backgroundTint="@color/card_surface">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:orientation="vertical"
-                            android:gravity="center">
-
-                            <TextView
-                                android:id="@+id/bedroomCount"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="2"
-                                android:textColor="@color/purple_primary"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Bedrooms"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="12sp" />
-
-                        </LinearLayout>
-
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Bathrooms Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="0dp"
-                        android:layout_height="80dp"
-                        android:layout_weight="1"
-                        android:layout_marginHorizontal="4dp"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:strokeWidth="0dp"
-                        android:backgroundTint="@color/card_surface">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:orientation="vertical"
-                            android:gravity="center">
-
-                            <TextView
-                                android:id="@+id/bathroomCount"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="1"
-                                android:textColor="@color/blue_accent"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Bathrooms"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="12sp" />
-
-                        </LinearLayout>
-
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Property Type Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="0dp"
-                        android:layout_height="80dp"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:strokeWidth="0dp"
-                        android:backgroundTint="@color/card_surface">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:orientation="vertical"
-                            android:gravity="center"
-                            android:padding="8dp">
-
-                            <TextView
-                                android:id="@+id/propertyType"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Apartment"
-                                android:textColor="@color/pink_accent"
-                                android:textSize="16sp"
-                                android:textStyle="bold"
-                                android:maxLines="1"
-                                android:ellipsize="end" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Type"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="12sp" />
-
-                        </LinearLayout>
-
-                    </com.google.android.material.card.MaterialCardView>
+                        android:text="$1,500"
+                        android:textColor="@color/purple_primary"
+                        android:textSize="28sp"
+                        android:textStyle="bold" />
 
                 </LinearLayout>
 
-                <!-- Utilities Card -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/utilitiesCard"
+                <!-- Property Details -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="2dp"
-                    app:strokeWidth="0dp"
-                    android:backgroundTint="@color/card_surface">
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="24dp"
+                    android:weightSum="3">
 
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:gravity="center"
+                        android:padding="16dp"
+                        android:background="#f5f5f5">
+
+                        <TextView
+                            android:id="@+id/bedroomCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="2"
+                            android:textColor="@android:color/black"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Utilities &amp; Amenities"
-                            android:textColor="@color/text_primary"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:drawableStart="@drawable/ic_utilities"
-                            android:drawablePadding="8dp"
-                            android:drawableTint="@color/cyan_accent" />
-
-                        <TextView
-                            android:id="@+id/utilitiesText"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="Heat, water, and electricity included"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="16sp"
-                            android:lineSpacingMultiplier="1.2" />
+                            android:text="Bedrooms"
+                            android:textColor="#666666"
+                            android:textSize="12sp" />
 
                     </LinearLayout>
 
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Description Card -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/descriptionContainer"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="2dp"
-                    app:strokeWidth="0dp"
-                    android:backgroundTint="@color/card_surface"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground">
-
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <RelativeLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_centerVertical="true"
-                                android:text="Description"
-                                android:textColor="@color/text_primary"
-                                android:textSize="18sp"
-                                android:textStyle="bold"
-                                android:drawableStart="@drawable/ic_description"
-                                android:drawablePadding="8dp"
-                                android:drawableTint="@color/purple_primary" />
-
-                            <ImageView
-                                android:id="@+id/expandIcon"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_alignParentEnd="true"
-                                android:layout_centerVertical="true"
-                                android:src="@drawable/ic_expand_more"
-                                android:tint="@color/text_secondary" />
-
-                        </RelativeLayout>
+                        android:gravity="center"
+                        android:padding="16dp"
+                        android:background="#f5f5f5"
+                        android:layout_marginHorizontal="8dp">
 
                         <TextView
-                            android:id="@+id/descriptionText"
-                            android:layout_width="match_parent"
+                            android:id="@+id/bathroomCount"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="Beautiful modern apartment in the heart of downtown..."
-                            android:textColor="@color/text_secondary"
-                            android:textSize="16sp"
-                            android:lineSpacingMultiplier="1.3"
-                            android:maxLines="3"
-                            android:ellipsize="end" />
-
-                    </LinearLayout>
-
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Location Card -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/locationCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="2dp"
-                    app:strokeWidth="0dp"
-                    android:backgroundTint="@color/card_surface"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
+                            android:text="1"
+                            android:textColor="@android:color/black"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Location"
-                            android:textColor="@color/text_primary"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:drawableStart="@drawable/ic_map"
-                            android:drawablePadding="8dp"
-                            android:drawableTint="@color/success" />
-
-                        <TextView
-                            android:id="@+id/addressText"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="123 Main Street, Edmonton"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="16sp" />
-
-                        <TextView
-                            android:id="@+id/postalCodeText"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="T5K 2M5"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="Tap to open in Maps"
-                            android:textColor="@color/success"
-                            android:textSize="14sp"
-                            android:textStyle="italic" />
+                            android:text="Bathrooms"
+                            android:textColor="#666666"
+                            android:textSize="12sp" />
 
                     </LinearLayout>
 
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Owner Contact Card -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="100dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="2dp"
-                    app:strokeWidth="0dp"
-                    android:backgroundTint="@color/card_surface">
-
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:gravity="center"
+                        android:padding="16dp"
+                        android:background="#f5f5f5">
 
                         <TextView
+                            android:id="@+id/propertyType"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Property Owner"
-                            android:textColor="@color/text_primary"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:drawableStart="@drawable/ic_person"
-                            android:drawablePadding="8dp"
-                            android:drawableTint="@color/warning" />
-
-                        <TextView
-                            android:id="@+id/ownerNameText"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="John Smith"
-                            android:textColor="@color/text_primary"
+                            android:text="Apartment"
+                            android:textColor="@android:color/black"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
                         <TextView
-                            android:id="@+id/ownerEmailText"
-                            android:layout_width="match_parent"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="john.smith@example.com"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="14sp" />
+                            android:text="Type"
+                            android:textColor="#666666"
+                            android:textSize="12sp" />
 
                     </LinearLayout>
 
-                </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <!-- Utilities -->
+                <LinearLayout
+                    android:id="@+id/utilitiesCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#f9f9f9"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Utilities"
+                        android:textColor="@android:color/black"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:id="@+id/utilitiesText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Heat, water, and electricity included"
+                        android:textColor="#666666"
+                        android:textSize="16sp" />
+
+                </LinearLayout>
+
+                <!-- Description -->
+                <LinearLayout
+                    android:id="@+id/descriptionContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#f9f9f9"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Description"
+                        android:textColor="@android:color/black"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:id="@+id/descriptionText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Beautiful modern apartment in the heart of downtown..."
+                        android:textColor="#666666"
+                        android:textSize="16sp"
+                        android:lineSpacingMultiplier="1.3" />
+
+                </LinearLayout>
+
+                <!-- Location -->
+                <LinearLayout
+                    android:id="@+id/locationCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#f9f9f9"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Location"
+                        android:textColor="@android:color/black"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:id="@+id/addressText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="123 Main Street, Edmonton"
+                        android:textColor="#666666"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:id="@+id/postalCodeText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="T5K 2M5"
+                        android:textColor="#666666"
+                        android:textSize="16sp" />
+
+                </LinearLayout>
+
+                <!-- Owner Contact -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#f9f9f9"
+                    android:padding="16dp"
+                    android:layout_marginBottom="100dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Property Owner"
+                        android:textColor="@android:color/black"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:id="@+id/ownerNameText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="John Smith"
+                        android:textColor="@android:color/black"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/ownerEmailText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="john.smith@example.com"
+                        android:textColor="#666666"
+                        android:textSize="16sp" />
+
+                </LinearLayout>
 
             </LinearLayout>
 
@@ -489,103 +341,86 @@
 
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Floating Toolbar -->
+    <!-- Simple Toolbar -->
     <LinearLayout
-        android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="16dp">
-
-        <!-- Toolbar Background -->
-        <View
-            android:id="@+id/toolbarBackground"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/glass_card_background"
-            android:alpha="0" />
+        android:padding="16dp"
+        android:background="@android:color/white"
+        android:elevation="4dp">
 
         <!-- Back Button -->
         <ImageButton
             android:id="@+id/backButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="@drawable/glass_card_background"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_arrow_back"
-            android:tint="@color/text_primary"
-            android:elevation="4dp" />
+            android:tint="@android:color/black" />
 
         <View
             android:layout_width="0dp"
-            android:layout_height="1dp"
+            android:layout_height="match_parent"
             android:layout_weight="1" />
 
-        <!-- Favorite Button -->
+        <!-- Action Buttons -->
         <ImageButton
             android:id="@+id/favoriteButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:layout_marginStart="8dp"
-            android:background="@drawable/glass_card_background"
-            android:src="@drawable/favorite_button_selector"
-            android:elevation="4dp" />
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_favorite_border"
+            android:tint="@android:color/black"
+            android:layout_marginEnd="8dp" />
 
-        <!-- Share Button -->
         <ImageButton
             android:id="@+id/shareButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:layout_marginStart="8dp"
-            android:background="@drawable/glass_card_background"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_share"
-            android:tint="@color/text_primary"
-            android:elevation="4dp" />
+            android:tint="@android:color/black" />
 
     </LinearLayout>
 
-    <!-- Floating Action Buttons -->
+    <!-- Simple Floating Action Buttons -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="end|bottom"
-        android:layout_margin="20dp"
-        android:orientation="vertical"
-        android:gravity="end">
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:orientation="vertical">
 
-        <!-- Chat FAB -->
+        <!-- Chat Button -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/chatButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:src="@drawable/ic_chat"
-            app:tint="@color/white"
-            app:backgroundTint="@color/purple_primary"
-            app:elevation="6dp"
-            app:fabSize="normal" />
+            app:tint="@android:color/white"
+            app:backgroundTint="@color/purple_primary" />
 
-        <!-- Message FAB -->
+        <!-- Message Button -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/messageButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:src="@drawable/ic_email"
-            app:tint="@color/white"
+            app:tint="@android:color/white"
             app:backgroundTint="@color/blue_accent"
-            app:elevation="6dp"
             app:fabSize="mini" />
 
-        <!-- Call FAB -->
+        <!-- Call Button -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/callButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_phone"
-            app:tint="@color/white"
+            app:tint="@android:color/white"
             app:backgroundTint="@color/success"
-            app:elevation="6dp"
             app:fabSize="mini" />
 
     </LinearLayout>

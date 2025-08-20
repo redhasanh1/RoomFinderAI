@@ -23,7 +23,6 @@ import com.roomfinder.android.activities.IndividualChatActivity;
 import com.roomfinder.android.activities.ListingDetailActivity;
 import com.roomfinder.android.activities.LoginActivity;
 import com.roomfinder.android.adapters.ListingsAdapter;
-import com.roomfinder.android.adapters.SkeletonAdapter;
 import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.databinding.FragmentHomeBinding;
 import com.roomfinder.android.models.Listing;
@@ -40,7 +39,6 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     private static final String TAG = "HomeFragment";
     private FragmentHomeBinding binding;
     private ListingsAdapter adapter;
-    private SkeletonAdapter skeletonAdapter;
     private List<Listing> listings = new ArrayList<>();
     private List<Listing> allListings = new ArrayList<>();
     private SupabaseService supabaseService;
@@ -77,6 +75,10 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     }
     
     private void setupRecyclerView() {
+        if (binding == null || binding.recyclerView == null) {
+            return;
+        }
+        
         adapter = new ListingsAdapter(listings, this);
         
         GridLayoutManager layoutManager = new GridLayoutManager(requireContext(), 2);
@@ -92,27 +94,23 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         
         Log.d(TAG, "📱 [DEBUG] RecyclerView setup completed with GridLayoutManager(spanCount=2)");
         
-        // Setup skeleton loading
-        setupSkeletonLoading();
+        // Removed setupSkeletonLoading() to fix crash
     }
     
-    private void setupSkeletonLoading() {
-        skeletonAdapter = new SkeletonAdapter(8); // Show 8 skeleton items (4 rows x 2 columns)
-        GridLayoutManager skeletonLayoutManager = new GridLayoutManager(requireContext(), 2);
-        binding.skeletonRecyclerView.setLayoutManager(skeletonLayoutManager);
-        binding.skeletonRecyclerView.setAdapter(skeletonAdapter);
-        binding.skeletonRecyclerView.setNestedScrollingEnabled(true);
-        
-        Log.d(TAG, "💀 [DEBUG] Skeleton RecyclerView setup with 8 items");
-    }
     
     private void setupSwipeRefresh() {
+        if (binding == null || binding.swipeRefresh == null) {
+            return;
+        }
+        
         binding.swipeRefresh.setOnRefreshListener(() -> {
             // Force refresh (bypass cache)
             supabaseService.refreshListings(new SupabaseService.ListingsCallback() {
                 @Override
                 public void onSuccess(List<Listing> newListings) {
-                    binding.swipeRefresh.setRefreshing(false);
+                    if (binding != null && binding.swipeRefresh != null) {
+                        binding.swipeRefresh.setRefreshing(false);
+                    }
                     Log.d(TAG, "Refresh: Successfully loaded " + newListings.size() + " listings");
                     
                     allListings.clear();
@@ -126,7 +124,9 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
                 
                 @Override
                 public void onError(String error) {
-                    binding.swipeRefresh.setRefreshing(false);
+                    if (binding != null && binding.swipeRefresh != null) {
+                        binding.swipeRefresh.setRefreshing(false);
+                    }
                     Log.e(TAG, "Refresh error: " + error);
                     showError("Refresh failed: " + error);
                 }
@@ -640,8 +640,10 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     }
     
     private void loadListings() {
-        // Show skeleton loading instead of progress bar
-        showSkeletonLoading();
+        // Show progress bar instead of skeleton loading
+        if (binding != null && binding.progressBar != null) {
+            binding.progressBar.setVisibility(View.VISIBLE);
+        }
         binding.errorLayout.setVisibility(View.GONE);
         binding.emptyLayout.setVisibility(View.GONE);
         
@@ -654,8 +656,13 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
             public void onSuccess(List<Listing> newListings) {
                 Log.d(TAG, "✅ [DEBUG] onSuccess called with " + (newListings != null ? newListings.size() : 0) + " listings");
                 
-                hideSkeletonLoading();
-                binding.swipeRefresh.setRefreshing(false);
+                // Hide progress bar
+                if (binding != null && binding.progressBar != null) {
+                    binding.progressBar.setVisibility(View.GONE);
+                }
+                if (binding != null && binding.swipeRefresh != null) {
+                        binding.swipeRefresh.setRefreshing(false);
+                    }
                 
                 if (newListings == null) {
                     Log.e(TAG, "❌ [DEBUG] newListings is NULL!");
@@ -687,35 +694,34 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
             @Override
             public void onError(String error) {
                 Log.e(TAG, "❌ [DEBUG] onError called: " + error);
-                hideSkeletonLoading();
-                binding.swipeRefresh.setRefreshing(false);
+                // Hide progress bar
+                if (binding != null && binding.progressBar != null) {
+                    binding.progressBar.setVisibility(View.GONE);
+                }
+                if (binding != null && binding.swipeRefresh != null) {
+                        binding.swipeRefresh.setRefreshing(false);
+                    }
                 showError("Error loading listings: " + error);
             }
         });
     }
     
-    private void showSkeletonLoading() {
-        Log.d(TAG, "💀 [DEBUG] showSkeletonLoading() called");
-        binding.skeletonScrollView.setVisibility(View.VISIBLE);
-        binding.progressBar.setVisibility(View.GONE);
-        // Hide other states
-        binding.errorLayout.setVisibility(View.GONE);
-        binding.emptyLayout.setVisibility(View.GONE);
-    }
-    
-    private void hideSkeletonLoading() {
-        Log.d(TAG, "💀 [DEBUG] hideSkeletonLoading() called");
-        binding.skeletonScrollView.setVisibility(View.GONE);
-    }
-    
     private void showError(String message) {
-        binding.errorLayout.setVisibility(View.VISIBLE);
-        binding.errorText.setText(message);
-        binding.retryButton.setOnClickListener(v -> loadListings());
+        if (binding != null && binding.errorLayout != null) {
+            binding.errorLayout.setVisibility(View.VISIBLE);
+        }
+        if (binding != null && binding.errorText != null) {
+            binding.errorText.setText(message);
+        }
+        if (binding != null && binding.retryButton != null) {
+            binding.retryButton.setOnClickListener(v -> loadListings());
+        }
     }
     
     private void showEmptyState() {
-        binding.emptyLayout.setVisibility(View.VISIBLE);
+        if (binding != null && binding.emptyLayout != null) {
+            binding.emptyLayout.setVisibility(View.VISIBLE);
+        }
     }
     
     @Override

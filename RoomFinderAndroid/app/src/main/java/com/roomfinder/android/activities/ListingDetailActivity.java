@@ -66,13 +66,11 @@ public class ListingDetailActivity extends AppCompatActivity {
         binding = ActivityListingDetailBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         
-        // Handle window insets for edge-to-edge
-        ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), (v, insets) -> {
-            int topInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) binding.toolbar.getLayoutParams();
-            params.topMargin = topInset;
-            return insets;
-        });
+        // Handle window insets for edge-to-edge - simplified version
+        // ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), (v, insets) -> {
+        //     int topInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+        //     return insets;
+        // });
         
         // Get listing data from intent
         getListingData();
@@ -112,16 +110,7 @@ public class ListingDetailActivity extends AppCompatActivity {
         // Setup back button navigation
         binding.backButton.setOnClickListener(v -> onBackPressed());
         
-        // Setup nested scroll behavior
-        binding.nestedScrollView.setOnScrollChangeListener((View.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-            // Create parallax effect for image carousel
-            float parallaxFactor = 0.5f;
-            binding.imageViewPager.setTranslationY(scrollY * parallaxFactor);
-            
-            // Fade toolbar based on scroll
-            float alpha = Math.min(1f, (float) scrollY / 500f);
-            binding.toolbarBackground.setAlpha(alpha);
-        });
+        // Simplified - removed complex scroll behavior
     }
     
     private void setupImageCarousel() {
@@ -221,7 +210,7 @@ public class ListingDetailActivity extends AppCompatActivity {
         // Basic info
         binding.titleText.setText(listing.getTitle());
         binding.priceText.setText(String.format(Locale.US, "$%.0f", listing.getPrice()));
-        binding.priceSubtext.setText("per month");
+        // binding.priceSubtext.setText("per month"); // Removed for simplified layout
         
         // Location
         binding.locationText.setText(listing.getLocation());
@@ -254,9 +243,9 @@ public class ListingDetailActivity extends AppCompatActivity {
             // Check if description is long enough to need expanding
             if (listing.getDescription().length() > 200) {
                 binding.descriptionText.setMaxLines(3);
-                binding.expandIcon.setVisibility(View.VISIBLE);
+                // binding.expandIcon.setVisibility(View.VISIBLE); // Removed for simplified layout
             } else {
-                binding.expandIcon.setVisibility(View.GONE);
+                // binding.expandIcon.setVisibility(View.GONE); // Removed for simplified layout
             }
         } else {
             binding.descriptionContainer.setVisibility(View.GONE);
@@ -317,10 +306,10 @@ public class ListingDetailActivity extends AppCompatActivity {
         
         if (isDescriptionExpanded) {
             binding.descriptionText.setMaxLines(Integer.MAX_VALUE);
-            binding.expandIcon.animate().rotation(180f).setDuration(200).start();
+            // binding.expandIcon.animate().rotation(180f).setDuration(200).start(); // Removed for simplified layout
         } else {
             binding.descriptionText.setMaxLines(3);
-            binding.expandIcon.animate().rotation(0f).setDuration(200).start();
+            // binding.expandIcon.animate().rotation(0f).setDuration(200).start(); // Removed for simplified layout
         }
     }
     
@@ -449,16 +438,16 @@ public class ListingDetailActivity extends AppCompatActivity {
     }
     
     private void animateEnter() {
-        // Animate content entrance
-        binding.contentContainer.setAlpha(0f);
-        binding.contentContainer.setTranslationY(100f);
+        // Simplified animation - removed complex content container animation
+        // binding.contentContainer.setAlpha(0f);
+        // binding.contentContainer.setTranslationY(100f);
         
-        binding.contentContainer.animate()
-                .alpha(1f)
-                .translationY(0f)
-                .setDuration(500)
-                .setInterpolator(new AccelerateDecelerateInterpolator())
-                .start();
+        // binding.contentContainer.animate()
+        //         .alpha(1f)
+        //         .translationY(0f)
+        //         .setDuration(500)
+        //         .setInterpolator(new AccelerateDecelerateInterpolator())
+        //         .start();
         
         // Stagger animation for FABs
         binding.chatButton.setScaleX(0f);
@@ -494,15 +483,8 @@ public class ListingDetailActivity extends AppCompatActivity {
     
     @Override
     public void onBackPressed() {
-        // Animate exit
-        binding.contentContainer.animate()
-                .alpha(0f)
-                .translationY(100f)
-                .setDuration(300)
-                .withEndAction(() -> {
-                    super.onBackPressed();
-                    overridePendingTransition(0, 0); // No transition
-                })
-                .start();
+        // Simplified exit - removed complex animation
+        super.onBackPressed();
+        overridePendingTransition(0, 0); // No transition
     }
 }
