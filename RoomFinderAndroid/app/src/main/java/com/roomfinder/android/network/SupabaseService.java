@@ -23,7 +23,7 @@ public class SupabaseService {
     private static final String CACHE_PREFS = "listings_cache";
     private static final String CACHE_KEY_LISTINGS = "cached_listings";
     private static final String CACHE_KEY_TIMESTAMP = "cache_timestamp";
-    private static final long CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+    private static final long CACHE_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes for better performance
     
     private static SupabaseService instance;
     private final SupabaseClient supabaseClient;
@@ -118,6 +118,7 @@ public class SupabaseService {
     
     /**
      * Fetch all listings asynchronously with caching
+     * Optimized for fast display
      */
     public void getAllListings(ListingsCallback callback) {
         // First, try to load from cache immediately
@@ -126,7 +127,7 @@ public class SupabaseService {
             Log.d(TAG, "⚡ Returning cached listings immediately");
             callback.onSuccess(cachedListings);
             
-            // Continue to refresh in background
+            // Always refresh in background for fresh data
             refreshListingsInBackground();
             return;
         }

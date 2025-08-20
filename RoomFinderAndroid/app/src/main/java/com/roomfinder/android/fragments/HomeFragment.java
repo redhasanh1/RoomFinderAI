@@ -88,9 +88,15 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         // Enable nested scrolling for NestedScrollView compatibility
         binding.recyclerView.setNestedScrollingEnabled(true);
         
-        // Improve performance
-        binding.recyclerView.setHasFixedSize(false); // Allow dynamic sizing
-        binding.recyclerView.setItemViewCacheSize(20);
+        // Optimize performance
+        binding.recyclerView.setHasFixedSize(true);  // Fixed size for better performance
+        binding.recyclerView.setItemViewCacheSize(30); // Larger cache
+        
+        // Create shared recycled view pool for better memory management
+        androidx.recyclerview.widget.RecyclerView.RecycledViewPool recycledViewPool = 
+            new androidx.recyclerview.widget.RecyclerView.RecycledViewPool();
+        recycledViewPool.setMaxRecycledViews(0, 20); // Cache up to 20 views
+        binding.recyclerView.setRecycledViewPool(recycledViewPool);
         
         Log.d(TAG, "📱 [DEBUG] RecyclerView setup completed with GridLayoutManager(spanCount=2)");
         
@@ -640,12 +646,14 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     }
     
     private void loadListings() {
-        // Show progress bar instead of skeleton loading
-        if (binding != null && binding.progressBar != null) {
-            binding.progressBar.setVisibility(View.VISIBLE);
-        }
+        // Hide error states immediately
         binding.errorLayout.setVisibility(View.GONE);
         binding.emptyLayout.setVisibility(View.GONE);
+        
+        // Only show progress bar if we have no cached data
+        if (allListings.isEmpty() && binding != null && binding.progressBar != null) {
+            binding.progressBar.setVisibility(View.VISIBLE);
+        }
         
         Log.d(TAG, "🔄 [DEBUG] Starting loadListings()");
         Log.d(TAG, "🔄 [DEBUG] Current allListings.size() = " + allListings.size());

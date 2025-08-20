@@ -26,9 +26,10 @@ public class SupabaseClient {
     
     private SupabaseClient() {
         this.httpClient = new OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS) // Faster timeout
-                .readTimeout(15, TimeUnit.SECONDS)    // Faster timeout
-                .writeTimeout(15, TimeUnit.SECONDS)   // Faster timeout
+                .connectTimeout(5, TimeUnit.SECONDS)  // Faster connection
+                .readTimeout(10, TimeUnit.SECONDS)    // Faster read
+                .writeTimeout(10, TimeUnit.SECONDS)   // Faster write
+                .connectionPool(new okhttp3.ConnectionPool(5, 5, TimeUnit.MINUTES))
                 .build();
         this.gson = new Gson();
         this.baseUrl = ApiKeys.SUPABASE_URL + "rest/v1/";
@@ -47,8 +48,8 @@ public class SupabaseClient {
      */
     public List<Listing> getAllListings() {
         try {
-            // Limit to first 50 listings for faster initial load
-            String url = baseUrl + "listings?select=*&order=created_at.desc&limit=50";
+            // Limit to first 20 listings for ultra-fast initial load
+            String url = baseUrl + "listings?select=*&order=created_at.desc&limit=20";
             
             Request request = new Request.Builder()
                     .url(url)
@@ -56,6 +57,7 @@ public class SupabaseClient {
                     .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
                     .addHeader("Content-Type", "application/json")
                     .addHeader("Prefer", "return=representation")
+                    .addHeader("Accept-Encoding", "gzip, deflate")
                     .build();
             
             Log.d(TAG, "Fetching listings from: " + url);
@@ -103,6 +105,47 @@ public class SupabaseClient {
             return new ArrayList<>();
         } catch (Exception e) {
             Log.e(TAG, "Error parsing listings: " + e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Fetch additional listings with pagination for infinite scroll
+     */
+    public List<Listing> getMoreListings(int offset, int limit) {
+        try {
+            String url = baseUrl + "listings?select=*&order=created_at.desc&limit=" + limit + "&offset=" + offset;
+            
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("Accept-Encoding", "gzip, deflate")
+                    .build();
+            
+            Log.d(TAG, "Fetching more listings from offset: " + offset + ", limit: " + limit);
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Pagination error: " + response.code() + " - " + response.message());
+                    return new ArrayList<>();
+                }
+                
+                String responseBody = response.body().string();
+                Type listType = new TypeToken<List<Listing>>(){}.getType();
+                List<Listing> listings = gson.fromJson(responseBody, listType);
+                
+                if (listings == null) {
+                    listings = new ArrayList<>();
+                }
+                
+                Log.d(TAG, "Pagination returned " + listings.size() + " additional listings");
+                return listings;
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error fetching more listings: " + e.getMessage(), e);
             return new ArrayList<>();
         }
     }
