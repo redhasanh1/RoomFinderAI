@@ -93,10 +93,13 @@ public class OpenAIService {
                 JSONArray messages = new JSONArray();
                 JSONObject systemMessage = new JSONObject();
                 systemMessage.put("role", "system");
-                systemMessage.put("content", "You are an expert rental negotiation AI helping a tenant. Be natural, enthusiastic, and specific. " +
-                        "Respond directly to what the landlord said. If they mention price, address that price specifically. " +
-                        "If they seem positive, suggest next steps like viewing. If they're open to negotiation, engage actively. " +
-                        "Keep responses conversational and under 3 sentences. Never use generic templates.");
+                systemMessage.put("content", "You are an aggressive rental price negotiator. Your ONLY goal is to get the lowest price possible. " +
+                        "RULES: 1) ALWAYS ask for exact price in first message. 2) ALWAYS counter with 15-20% below their price. " +
+                        "3) If they say 'can lower' or 'negotiable', immediately ask 'What's your absolute best price?' " +
+                        "4) If they mention a number, counter with specific amount (e.g., they say $2000, you say 'Would you accept $1600?'). " +
+                        "5) Deflect meetings: 'Let's finalize the price first via text, then we can meet.' " +
+                        "6) After 3 exchanges, close with 'My final offer is $X. I can sign today with deposit ready.' " +
+                        "Be direct, confident, numbers-focused. Maximum 2 sentences per response.");
                 messages.put(systemMessage);
                 
                 JSONObject userMessage = new JSONObject();
@@ -216,19 +219,66 @@ public class OpenAIService {
         // The landlord's specific message
         prompt.append("\nLandlord just replied: \"").append(landlordMessage).append("\"\n\n");
         
-        // Specific instructions based on landlord message content
-        String lowerMessage = landlordMessage.toLowerCase().trim();
-        
-        if (lowerMessage.contains("1500") || lowerMessage.matches(".*\\b(\\d{3,4})\\b.*")) {
-            prompt.append("TASK: The landlord mentioned a specific price. Respond enthusiastically if it works for you, or negotiate if it's too high. Be specific about the amount they mentioned.\n");
-        } else if (lowerMessage.contains("lower") || lowerMessage.contains("reduce") || lowerMessage.contains("can do")) {
-            prompt.append("TASK: The landlord is open to lowering the price. Show appreciation and either suggest a specific amount or ask what they can offer.\n");
-        } else if (lowerMessage.contains("sure") || lowerMessage.contains("okay") || lowerMessage.contains("yes") || lowerMessage.contains("sounds good")) {
-            prompt.append("TASK: The landlord agreed to something. Be excited and suggest concrete next steps like scheduling a viewing.\n");
-        } else if (lowerMessage.contains("hi") || lowerMessage.contains("hello") || lowerMessage.length() < 10) {
-            prompt.append("TASK: This seems like a brief/casual response. Respond warmly and move the conversation toward specifics about the rental.\n");
+        // Handle initial contact vs follow-up responses
+        if (landlordMessage.equals("INITIAL_CONTACT")) {
+            prompt.append("TASK: Write an AGGRESSIVE initial price inquiry. MANDATORY format:\n");
+            prompt.append("'Hi, I'm interested in your [property location]. What's your absolute best price? ");
+            prompt.append("I'm looking to pay around $[offer 25% below listing] and can move in immediately with deposit ready.'\n");
+            prompt.append("RULES: 1) First sentence asks for best price. 2) Second sentence makes lowball offer. ");
+            prompt.append("3) Mention immediate availability. 4) NO pleasantries, NO long introductions.\n");
         } else {
-            prompt.append("TASK: Respond naturally to what they said, show enthusiasm, and move toward next steps (viewing, lease terms, etc.).\n");
+            // Specific instructions based on landlord message content
+            String lowerMessage = landlordMessage.toLowerCase().trim();
+            
+            // Enhanced price detection with multiple patterns
+            java.util.regex.Pattern dollarPattern = java.util.regex.Pattern.compile("\\$\\s?(\\d{3,5})(?:\\.\\d{2})?");
+            java.util.regex.Pattern plainPattern = java.util.regex.Pattern.compile("\\b(\\d{3,5})\\b(?!\\s*(?:pm|am|hours?|minutes?|days?|weeks?|months?|years?))");
+            
+            String extractedPrice = null;
+            java.util.regex.Matcher dollarMatcher = dollarPattern.matcher(lowerMessage);
+            if (dollarMatcher.find()) {
+                extractedPrice = dollarMatcher.group(1);
+            } else {
+                java.util.regex.Matcher plainMatcher = plainPattern.matcher(lowerMessage);
+                if (plainMatcher.find()) {
+                    String potentialPrice = plainMatcher.group(1);
+                    int value = Integer.parseInt(potentialPrice);
+                    if (value >= 500 && value <= 10000) { // Reasonable rent range
+                        extractedPrice = potentialPrice;
+                    }
+                }
+            }
+            
+            if (extractedPrice != null) {
+                int price = Integer.parseInt(extractedPrice);
+                int counterOffer = (int)(price * 0.80); // Start with 20% below
+                int finalOffer = (int)(price * 0.85); // Final offer at 15% below
+                
+                prompt.append("CRITICAL: Landlord stated price of $").append(extractedPrice).append(". ");
+                prompt.append("COUNTER IMMEDIATELY with $").append(counterOffer).append(" (say exactly: 'Would you accept $").append(counterOffer).append("?'). ");
+                prompt.append("If they reject, your final offer is $").append(finalOffer).append(". ");
+                prompt.append("Never go above $").append(finalOffer).append(".\n");
+            } else if (lowerMessage.contains("lower") || lowerMessage.contains("reduce") || lowerMessage.contains("negotiable") || 
+                       lowerMessage.contains("flexible") || lowerMessage.contains("can do") || lowerMessage.contains("abit") || 
+                       lowerMessage.contains("a bit") || lowerMessage.contains("willing to")) {
+                prompt.append("TASK: Landlord is flexible on price! IMMEDIATELY ask: 'Great! What's your absolute best price?' ");
+                prompt.append("If they already stated a price, counter 20% below. Don't waste this opportunity.\n");
+            } else if (lowerMessage.contains("meet") || lowerMessage.contains("viewing") || lowerMessage.contains("see the") || 
+                       lowerMessage.contains("visit") || lowerMessage.contains("show you") || lowerMessage.contains("tour")) {
+                prompt.append("TASK: DEFLECT meeting request. Say: 'I'd love to see it! Let's finalize the price first - what's your best rate? ");
+                prompt.append("Once we agree on price, I can view it immediately.' Keep focus on PRICE.\n");
+            } else if (lowerMessage.contains("sure") || lowerMessage.contains("okay") || lowerMessage.contains("yes") || 
+                       lowerMessage.contains("sounds good") || lowerMessage.contains("agreed")) {
+                prompt.append("TASK: They agreed! Lock it in: 'Excellent! So we're confirmed at $[price]? I can sign the lease today with deposit ready.'\n");
+            } else if (lowerMessage.contains("no") || lowerMessage.contains("can't") || lowerMessage.contains("cannot") || 
+                       lowerMessage.contains("firm") || lowerMessage.contains("final")) {
+                prompt.append("TASK: They're being firm. Make ONE final offer: 'I understand. My absolute best is $[5% below their price]. ");
+                prompt.append("I'm a great tenant with excellent references and ready to move immediately. Can we make this work?'\n");
+            } else if (lowerMessage.contains("hi") || lowerMessage.contains("hello") || lowerMessage.length() < 15) {
+                prompt.append("TASK: Skip pleasantries. Immediately ask: 'Hi! What's your best price on the rental?'\n");
+            } else {
+                prompt.append("TASK: Unknown response. Default to asking about price: 'Thanks for your response. What's the best price you can offer?'\n");
+            }
         }
         
         prompt.append("\nWrite a natural, enthusiastic response (2-3 sentences max). Be specific and avoid generic phrases:");
