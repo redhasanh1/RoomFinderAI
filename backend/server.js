@@ -27,6 +27,18 @@ const serviceStatus = {
 const DEMO_MODE = process.env.ENABLE_DEMO_MODE === 'true' || false;
 const ANONYMOUS_BROWSING = process.env.ENABLE_ANONYMOUS_BROWSING === 'true' || true;
 
+// Email configuration - Centralized for easy management
+const EMAIL_CONFIG = {
+    // Use wilmahenning01@gmail.com as it's authorized in Brevo
+    // This prevents delivery issues due to SPF/DKIM/DMARC checks
+    SENDER_EMAIL: "wilmahenning01@gmail.com",
+    SENDER_NAME: "RoomFinderAI",
+    PRIMARY_RECIPIENT: "roomfinderai@gmail.com",
+    BACKUP_RECIPIENT: "wilmahenning01@gmail.com",  // Backup to ensure delivery
+    // Set to true to send to both recipients, false for primary only
+    USE_BACKUP_RECIPIENT: true
+};
+
 // Load config with error handling
 // Load configuration with environment variables taking priority
 let config = {};
@@ -1007,8 +1019,8 @@ async function sendVerificationEmail(email, code, firstName) {
     try {
         const emailData = {
             sender: {
-                name: "RoomFinderAI",
-                email: "wilmahenning01@gmail.com"
+                name: EMAIL_CONFIG.SENDER_NAME,
+                email: EMAIL_CONFIG.SENDER_EMAIL
             },
             to: [{
                 email: email,
@@ -1101,8 +1113,8 @@ async function sendPasswordResetEmail(email, code, firstName) {
         
         const emailData = {
             sender: {
-                name: "RoomFinderAI",
-                email: "wilmahenning01@gmail.com"
+                name: EMAIL_CONFIG.SENDER_NAME,
+                email: EMAIL_CONFIG.SENDER_EMAIL
             },
             to: [{
                 email: email,
@@ -1286,15 +1298,29 @@ async function sendContactEmail(firstName, email, message, lastName = null) {
         }
         
         const fullName = lastName ? `${firstName} ${lastName}` : firstName;
+        
+        // Build recipient list based on configuration
+        const recipients = [
+            {
+                email: EMAIL_CONFIG.PRIMARY_RECIPIENT,
+                name: "RoomFinderAI Support"
+            }
+        ];
+        
+        // Add backup recipient if configured
+        if (EMAIL_CONFIG.USE_BACKUP_RECIPIENT) {
+            recipients.push({
+                email: EMAIL_CONFIG.BACKUP_RECIPIENT,
+                name: "RoomFinderAI Support (Backup)"
+            });
+        }
+        
         const emailData = {
             sender: {
-                name: "RoomFinderAI Contact Form",
-                email: "roomfinderai@gmail.com"
+                name: `${EMAIL_CONFIG.SENDER_NAME} Contact Form`,
+                email: EMAIL_CONFIG.SENDER_EMAIL  // Using authorized sender
             },
-            to: [{
-                email: "roomfinderai@gmail.com",
-                name: "RoomFinderAI Support"
-            }],
+            to: recipients,
             replyTo: {
                 email: email,
                 name: fullName
