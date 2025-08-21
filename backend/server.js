@@ -2457,6 +2457,99 @@ app.post('/api/ai-negotiate', async (req, res) => {
     }
 });
 
+// API: Send actual message to landlord
+app.post('/api/message-landlord', async (req, res) => {
+    try {
+        const { listingId, landlordEmail, message, userEmail, userName } = req.body;
+        
+        if (!landlordEmail || !message || !userEmail) {
+            return res.status(400).json({ error: 'Landlord email, message, and user email are required' });
+        }
+
+        // Check if Brevo is configured for email sending
+        if (!config.BREVO_API_KEY) {
+            return res.status(503).json({ error: 'Email service not configured' });
+        }
+
+        console.log(`📧 Sending negotiation message to landlord ${landlordEmail} for listing ${listingId}`);
+
+        // Send email to landlord
+        const emailResult = await sendNegotiationEmail(landlordEmail, message, userEmail, userName, listingId);
+        
+        if (emailResult.success) {
+            console.log('✅ Negotiation email sent successfully to landlord');
+            res.json({ 
+                success: true,
+                message: 'Message sent to landlord successfully',
+                emailId: emailResult.emailId
+            });
+        } else {
+            console.error('❌ Failed to send negotiation email:', emailResult.error);
+            res.status(500).json({ 
+                error: 'Failed to send message to landlord',
+                details: emailResult.error
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error in /api/message-landlord:', error.message);
+        res.status(500).json({ error: 'Failed to send message to landlord' });
+    }
+});
+
+// Helper function to send negotiation email to landlord
+async function sendNegotiationEmail(landlordEmail, message, userEmail, userName, listingId) {
+    try {
+        const emailData = {
+            sender: {
+                name: EMAIL_CONFIG.SENDER_NAME,
+                email: EMAIL_CONFIG.SENDER_EMAIL
+            },
+            to: [{
+                email: landlordEmail,
+                name: 'Property Owner'
+            }],
+            replyTo: {
+                email: userEmail,
+                name: userName || 'Interested Renter'
+            },
+            subject: `Interest in Your Property - Listing ${listingId}`,
+            htmlContent: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #2563eb;">New Inquiry About Your Property</h2>
+                    
+                    <p><strong>From:</strong> ${userName || 'Interested Renter'} (${userEmail})</p>
+                    <p><strong>Listing ID:</strong> ${listingId}</p>
+                    
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="margin-top: 0;">Message:</h3>
+                        <p style="white-space: pre-line;">${message}</p>
+                    </div>
+                    
+                    <p style="color: #64748b; font-size: 14px;">
+                        This message was sent through RoomFinderAI. You can reply directly to this email to respond to the inquirer.
+                    </p>
+                </div>
+            `
+        };
+
+        console.log('📧 Sending negotiation email via Brevo...');
+        const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+            headers: {
+                'accept': 'application/json',
+                'api-key': config.BREVO_API_KEY,
+                'content-type': 'application/json'
+            },
+            timeout: 30000
+        });
+
+        console.log('✅ Negotiation email sent successfully');
+        return { success: true, emailId: response.data.messageId };
+    } catch (error) {
+        console.error('❌ Error sending negotiation email:', error.message);
+        return { success: false, error: error.message };
+    }
+}
+
 // Helper function to build the negotiation system prompt
 function buildNegotiationSystemPrompt() {
     return `You are an expert rental negotiation assistant helping users secure better deals with landlords in Hong Kong. You provide strategic advice, coaching, and sample responses to help users negotiate effectively.

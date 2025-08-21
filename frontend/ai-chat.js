@@ -741,14 +741,75 @@ Property Details:
 
             if (response.ok) {
                 const data = await response.json();
+                console.log('🎯 Negotiation response received:', data);
                 this.appendMessage('AI', `✅ Negotiation initiated for listing ${listing.id}`, 'left');
-                this.appendMessage('AI', data.response, 'left');
+                
+                // Display the AI response
+                if (data.response) {
+                    console.log('📝 Displaying AI response:', data.response);
+                    this.appendMessage('AI', data.response, 'left');
+                    
+                    // Now send the actual message to the landlord
+                    this.sendMessageToLandlord(listing, data.response);
+                } else {
+                    console.error('❌ No response in data:', data);
+                    this.appendMessage('AI', 'AI response received but empty', 'left');
+                }
             } else {
                 this.appendMessage('AI', `❌ Failed to initiate negotiation for listing ${listing.id}`, 'left');
             }
         } catch (error) {
             console.error('Negotiation error:', error);
             this.appendMessage('AI', `❌ Error negotiating for listing ${listing.id}: ${error.message}`, 'left');
+        }
+    }
+
+    // Send actual message to landlord via email
+    async sendMessageToLandlord(listing, aiResponse) {
+        try {
+            this.appendMessage('AI', `📧 Sending message to landlord at ${listing.user_email}...`, 'left');
+            
+            const userName = `${this.currentUser?.firstName || 'User'} ${this.currentUser?.lastName || ''}`.trim();
+            
+            // Create a professional message based on AI response
+            const message = `Hello,
+
+I am interested in your property listing (ID: ${listing.id}) - "${listing.title}" in ${listing.city}.
+
+${aiResponse}
+
+I would appreciate the opportunity to discuss this property further. Please let me know if you would like to schedule a viewing or if you need any additional information from me.
+
+Thank you for your time.
+
+Best regards,
+${userName}`;
+
+            const response = await fetch('/api/message-landlord', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    listingId: listing.id,
+                    landlordEmail: listing.user_email,
+                    message: message,
+                    userEmail: this.currentUser?.email,
+                    userName: userName
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                this.appendMessage('AI', `✅ Message sent successfully to ${listing.user_email}! The landlord will receive your inquiry via email.`, 'left');
+                console.log('📧 Email sent to landlord:', data);
+            } else {
+                const errorData = await response.json();
+                this.appendMessage('AI', `❌ Failed to send message to landlord: ${errorData.error}`, 'left');
+            }
+        } catch (error) {
+            console.error('Error sending message to landlord:', error);
+            this.appendMessage('AI', `❌ Error sending message to landlord: ${error.message}`, 'left');
         }
     }
 
