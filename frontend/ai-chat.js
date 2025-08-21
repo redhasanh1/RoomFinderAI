@@ -764,49 +764,59 @@ Property Details:
         }
     }
 
-    // Send message to landlord via chat system
+    // Send automatic negotiation message to landlord
     async sendMessageToLandlord(listing, aiResponse) {
         try {
-            console.log('🔍 [CHAT DEBUG] Listing object:', listing);
-            console.log('🔍 [CHAT DEBUG] Available functions:', {
-                openChatModal: typeof window.openChatModal,
-                globalChatSystem: !!window.globalChatSystem,
-                chatSystem: !!window.chatSystem
-            });
+            this.appendMessage('AI', `🤖 Sending automatic negotiation message to ${listing.user_email}...`, 'left');
             
-            this.appendMessage('AI', `💬 Opening chat with landlord for ${listing.title}...`, 'left');
-            
-            // Try to use the existing chat system
-            if (typeof window.openChatModal === 'function') {
-                console.log('🔍 [CHAT DEBUG] Using openChatModal with:', listing.id, listing.title, listing.user_email);
-                window.openChatModal(listing.id, listing.title || 'Property', listing.user_email);
-                this.appendMessage('AI', `✅ Chat opened with landlord for "${listing.title}". You can now message them directly in the chat window!`, 'left');
-            } else if (window.globalChatSystem && window.globalChatSystem.startConversation) {
-                console.log('🔍 [CHAT DEBUG] Using globalChatSystem with full listing object:', listing);
+            // Create professional negotiation message
+            const userName = `${this.currentUser?.firstName || 'User'} ${this.currentUser?.lastName || ''}`.trim();
+            const negotiationMessage = `Hello,
+
+I'm interested in your property "${listing.title}" (ID: ${listing.id}) in ${listing.city}.
+
+${aiResponse}
+
+I would appreciate the opportunity to discuss this property further. Please let me know your thoughts on the terms I've proposed and if you'd like to schedule a viewing.
+
+Thank you for your time.
+
+Best regards,
+${userName}`;
+
+            // Try to automatically send message through chat system
+            if (window.globalChatSystem && window.globalChatSystem.startConversation) {
+                console.log('🤖 Starting conversation and sending automatic message...');
+                
+                // Start conversation first
                 await window.globalChatSystem.startConversation(listing);
-                this.appendMessage('AI', `✅ Chat conversation started for "${listing.title}"`, 'left');
-            } else if (window.chatSystem && window.chatSystem.startConversation) {
-                console.log('🔍 [CHAT DEBUG] Using chatSystem with full listing:', listing);
-                await window.chatSystem.startConversation(listing);
-                this.appendMessage('AI', `✅ Chat conversation started for "${listing.title}"`, 'left');
+                
+                // Wait a moment for conversation to be established
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Send the negotiation message automatically
+                if (window.globalChatSystem.sendTextMessage) {
+                    await window.globalChatSystem.sendTextMessage(
+                        negotiationMessage, 
+                        this.currentUser, 
+                        new Date().toISOString()
+                    );
+                    this.appendMessage('AI', `✅ Automatic negotiation message sent to ${listing.user_email}! The landlord will receive your professional offer.`, 'left');
+                } else {
+                    this.appendMessage('AI', `✅ Conversation started with ${listing.user_email}. You can now send the negotiation message manually.`, 'left');
+                }
             } else {
-                // Fallback: show helpful message
-                this.appendMessage('AI', `💬 To contact the landlord for "${listing.title}":
+                // Fallback to manual instructions
+                this.appendMessage('AI', `📝 Please send this negotiation message to the landlord:
 
-1. Use the chat button (💬) in the bottom-right corner
-2. Start a new conversation 
-3. Reference listing ID: ${listing.id}
+${negotiationMessage}
 
-Property Details:
-📍 ${listing.city}${listing.street ? ` - ${listing.street}` : ''}
-💰 $${listing.price}/month
-📧 Landlord: ${listing.user_email}
-
-AI Advice: ${aiResponse}`, 'left');
+Property: ${listing.title} (${listing.id})
+Landlord: ${listing.user_email}`, 'left');
             }
         } catch (error) {
-            console.error('Error opening chat with landlord:', error);
-            this.appendMessage('AI', `❌ Error opening chat: ${error.message}`, 'left');
+            console.error('Error sending automatic negotiation message:', error);
+            this.appendMessage('AI', `❌ Error sending automatic message: ${error.message}`, 'left');
         }
     }
 
