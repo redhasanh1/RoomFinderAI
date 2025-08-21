@@ -149,8 +149,7 @@
                                 <ImageView
                                     android:layout_width="32dp"
                                     android:layout_height="32dp"
-                                    android:src="@drawable/ic_bot"
-                                    android:tint="@color/purple_primary"
+                                    android:src="@drawable/ai_negotiator_icon"
                                     android:layout_marginBottom="8dp" />
 
                                 <TextView
@@ -653,8 +652,7 @@
                                 <ImageView
                                     android:layout_width="32dp"
                                     android:layout_height="32dp"
-                                    android:src="@drawable/ic_bot"
-                                    android:tint="@color/purple_primary" />
+                                    android:src="@drawable/ai_negotiator_icon" />
 
                                 <TextView
                                     android:layout_width="wrap_content"

@@ -553,7 +553,9 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         if (listings.isEmpty() && !allListings.isEmpty()) {
             showEmptyState();
         } else {
-            binding.emptyLayout.setVisibility(View.GONE);
+            if (binding != null && binding.emptyLayout != null) {
+                binding.emptyLayout.setVisibility(View.GONE);
+            }
         }
     }
     
