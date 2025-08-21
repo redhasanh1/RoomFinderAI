@@ -37,7 +37,8 @@
       "Bash(swift -frontend -typecheck:*)",
       "Bash(pgrep:*)",
       "Bash(git restore:*)",
-      "Bash(git remote set-head:*)"
+      "Bash(git remote set-head:*)",
+      "WebSearch"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
