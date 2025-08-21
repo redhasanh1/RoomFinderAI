@@ -21,8 +21,8 @@
             android:id="@+id/aiAvatar"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="@drawable/glassmorphism_card"
-            android:src="@drawable/ai_negotiator_logo"
+            android:background="@drawable/ai_bubble_gradient"
+            android:src="@drawable/ic_ai_assistant_vector"
             android:padding="8dp"
             android:elevation="4dp"
             android:contentDescription="AI Assistant Avatar" />
@@ -49,7 +49,7 @@
             android:id="@+id/messageBubbleContainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/chat_bubble_ai_premium"
+            android:background="@drawable/ai_bubble_gradient"
             android:elevation="3dp">
 
             <TextView
@@ -58,12 +58,13 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="18dp"
                 android:text="I found 3 properties that match your criteria. Here they are:"
-                android:textColor="@color/text_primary"
+                android:textColor="#FFFFFF"
                 android:textSize="16sp"
                 android:lineSpacingExtra="2dp"
                 android:fontFamily="sans-serif"
                 android:maxWidth="300dp"
-                android:textIsSelectable="true" />
+                android:textIsSelectable="true"
+                android:alpha="0.95" />
 
         </FrameLayout>
 

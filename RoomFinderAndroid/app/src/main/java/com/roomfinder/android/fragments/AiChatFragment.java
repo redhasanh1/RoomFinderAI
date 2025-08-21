@@ -154,13 +154,12 @@ public class AiChatFragment extends Fragment {
     }
     
     private void setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener(v -> {
+        binding.backButton.setOnClickListener(v -> {
             requireActivity().onBackPressed();
         });
         
-        // Inflate menu for the toolbar
-        binding.toolbar.inflateMenu(R.menu.ai_chat_menu);
-        binding.toolbar.setOnMenuItemClickListener(this::onOptionsItemSelected);
+        // Note: Menu functionality can be added later if needed
+        // For now, we have a clean glassmorphism header without menu
     }
     
     private void initializeAnimations() {
