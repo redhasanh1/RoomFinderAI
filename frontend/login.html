@@ -186,7 +186,8 @@
         /* Allow OAuth iframes and popups to function properly */
         iframe[src*="accounts.google.com"],
         iframe[src*="appleid"] {
-            /* Do not hide - these are needed for OAuth flows */
+            /* OAuth iframes must remain visible for authentication flows */
+            z-index: 9999;
         }
         
         /* Success animation */
