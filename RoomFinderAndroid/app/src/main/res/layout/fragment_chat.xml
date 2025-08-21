@@ -50,14 +50,12 @@
             <!-- AI Chat Icon -->
             <ImageView
                 android:id="@+id/aiChatIcon"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
                 android:layout_marginEnd="16dp"
-                android:background="@drawable/circle_background"
-                android:backgroundTint="@color/purple_light"
-                android:padding="12dp"
-                android:src="@drawable/ic_computer"
-                android:tint="@color/purple_primary"
+                android:padding="8dp"
+                android:src="@drawable/ai_negotiator_icon"
+                android:scaleType="centerInside"
                 android:contentDescription="AI Negotiator Icon" />
 
             <!-- AI Chat Content -->

@@ -93,13 +93,13 @@ public class OpenAIService {
                 JSONArray messages = new JSONArray();
                 JSONObject systemMessage = new JSONObject();
                 systemMessage.put("role", "system");
-                systemMessage.put("content", "You are an aggressive rental price negotiator. Your ONLY goal is to get the lowest price possible. " +
-                        "RULES: 1) ALWAYS ask for exact price in first message. 2) ALWAYS counter with 15-20% below their price. " +
-                        "3) If they say 'can lower' or 'negotiable', immediately ask 'What's your absolute best price?' " +
-                        "4) If they mention a number, counter with specific amount (e.g., they say $2000, you say 'Would you accept $1600?'). " +
-                        "5) Deflect meetings: 'Let's finalize the price first via text, then we can meet.' " +
-                        "6) After 3 exchanges, close with 'My final offer is $X. I can sign today with deposit ready.' " +
-                        "Be direct, confident, numbers-focused. Maximum 2 sentences per response.");
+                systemMessage.put("content", "You are a professional rental negotiation assistant helping tenants secure fair rental terms. Your goal is to achieve reasonable pricing through respectful communication. " +
+                        "APPROACH: 1) Begin by inquiring about rental terms and pricing. 2) If appropriate, make reasonable counter-offers based on market conditions. " +
+                        "3) If they indicate flexibility, ask politely about their best available rate. " +
+                        "4) Make specific offers only after understanding their position (e.g., 'Based on similar properties in the area, would $X work?'). " +
+                        "5) When discussing viewings, suggest coordinating both price discussion and property viewing. " +
+                        "6) Only proceed to lease terms after both parties show genuine interest and agreement. " +
+                        "Be professional, respectful, and patient. Build rapport while advocating for fair terms. Maximum 3 sentences per response.");
                 messages.put(systemMessage);
                 
                 JSONObject userMessage = new JSONObject();
@@ -221,11 +221,11 @@ public class OpenAIService {
         
         // Handle initial contact vs follow-up responses
         if (landlordMessage.equals("INITIAL_CONTACT")) {
-            prompt.append("TASK: Write an AGGRESSIVE initial price inquiry. MANDATORY format:\n");
-            prompt.append("'Hi, I'm interested in your [property location]. What's your absolute best price? ");
-            prompt.append("I'm looking to pay around $[offer 25% below listing] and can move in immediately with deposit ready.'\n");
-            prompt.append("RULES: 1) First sentence asks for best price. 2) Second sentence makes lowball offer. ");
-            prompt.append("3) Mention immediate availability. 4) NO pleasantries, NO long introductions.\n");
+            prompt.append("TASK: Write a professional initial inquiry about the rental property.\n");
+            prompt.append("APPROACH: 'Hello! I'm very interested in your rental property [location]. Could you please share the rental rate and any key details about the lease terms? ");
+            prompt.append("I'm a reliable tenant looking for a place in this area and would appreciate learning more about what you're offering.'\n");
+            prompt.append("GUIDELINES: 1) Be polite and professional. 2) Express genuine interest. ");
+            prompt.append("3) Ask for information before making any offers. 4) Build rapport first.\n");
         } else {
             // Specific instructions based on landlord message content
             String lowerMessage = landlordMessage.toLowerCase().trim();
@@ -251,37 +251,48 @@ public class OpenAIService {
             
             if (extractedPrice != null) {
                 int price = Integer.parseInt(extractedPrice);
-                int counterOffer = (int)(price * 0.80); // Start with 20% below
-                int finalOffer = (int)(price * 0.85); // Final offer at 15% below
+                int reasonableOffer = (int)(price * 0.90); // Start with reasonable 10% below
                 
-                prompt.append("CRITICAL: Landlord stated price of $").append(extractedPrice).append(". ");
-                prompt.append("COUNTER IMMEDIATELY with $").append(counterOffer).append(" (say exactly: 'Would you accept $").append(counterOffer).append("?'). ");
-                prompt.append("If they reject, your final offer is $").append(finalOffer).append(". ");
-                prompt.append("Never go above $").append(finalOffer).append(".\n");
+                prompt.append("CONTEXT: Landlord mentioned a price of $").append(extractedPrice).append(". ");
+                prompt.append("RESPONSE: Thank them for the information and ask if they have any flexibility: 'Thank you for sharing that rate. ");
+                prompt.append("I'm very interested in the property. Is there any flexibility on the rental rate? ");
+                prompt.append("I noticed similar properties in the area are around $").append(reasonableOffer).append(". Would that work for both of us?'\n");
             } else if (lowerMessage.contains("lower") || lowerMessage.contains("reduce") || lowerMessage.contains("negotiable") || 
                        lowerMessage.contains("flexible") || lowerMessage.contains("can do") || lowerMessage.contains("abit") || 
                        lowerMessage.contains("a bit") || lowerMessage.contains("willing to")) {
-                prompt.append("TASK: Landlord is flexible on price! IMMEDIATELY ask: 'Great! What's your absolute best price?' ");
-                prompt.append("If they already stated a price, counter 20% below. Don't waste this opportunity.\n");
+                prompt.append("RESPONSE: Landlord indicates price flexibility. Respond positively: 'That's great to hear you have some flexibility! ");
+                prompt.append("Could you let me know what rate might work best? I'm genuinely interested and looking for a fair arrangement for both of us.'\n");
             } else if (lowerMessage.contains("meet") || lowerMessage.contains("viewing") || lowerMessage.contains("see the") || 
                        lowerMessage.contains("visit") || lowerMessage.contains("show you") || lowerMessage.contains("tour")) {
-                prompt.append("TASK: DEFLECT meeting request. Say: 'I'd love to see it! Let's finalize the price first - what's your best rate? ");
-                prompt.append("Once we agree on price, I can view it immediately.' Keep focus on PRICE.\n");
+                prompt.append("RESPONSE: Landlord suggests viewing the property. Respond enthusiastically: 'I'd love to schedule a viewing! ");
+                prompt.append("Before we set that up, could you share the rental rate so I know it fits my budget? Happy to coordinate a time that works for both of us.'\n");
             } else if (lowerMessage.contains("sure") || lowerMessage.contains("okay") || lowerMessage.contains("yes") || 
                        lowerMessage.contains("sounds good") || lowerMessage.contains("agreed")) {
-                prompt.append("TASK: They agreed! Lock it in: 'Excellent! So we're confirmed at $[price]? I can sign the lease today with deposit ready.'\n");
+                // Try to extract the most recent price mentioned in the conversation
+                String specificPrice = "the terms we discussed";
+                java.util.regex.Matcher priceInContext = dollarPattern.matcher(conversationContext != null ? conversationContext : "");
+                if (priceInContext.find()) {
+                    specificPrice = "$" + priceInContext.group(1) + " per month";
+                } else if (extractedPrice != null) {
+                    specificPrice = "$" + extractedPrice + " per month";
+                }
+                
+                prompt.append("RESPONSE: Landlord seems to agree. Seek clarification: 'Wonderful! Just to confirm, are you agreeing to " + specificPrice + "? ");
+                prompt.append("I want to make sure we're both on the same page before moving forward with next steps.'\n");
             } else if (lowerMessage.contains("no") || lowerMessage.contains("can't") || lowerMessage.contains("cannot") || 
                        lowerMessage.contains("firm") || lowerMessage.contains("final")) {
-                prompt.append("TASK: They're being firm. Make ONE final offer: 'I understand. My absolute best is $[5% below their price]. ");
-                prompt.append("I'm a great tenant with excellent references and ready to move immediately. Can we make this work?'\n");
+                prompt.append("RESPONSE: Landlord indicates they cannot adjust price. Respect their position: 'I understand and appreciate your transparency. ");
+                prompt.append("Let me think about whether the current rate works for my budget. Can I get back to you shortly with my decision?'\n");
             } else if (lowerMessage.contains("hi") || lowerMessage.contains("hello") || lowerMessage.length() < 15) {
-                prompt.append("TASK: Skip pleasantries. Immediately ask: 'Hi! What's your best price on the rental?'\n");
+                prompt.append("RESPONSE: Return the greeting politely: 'Hello! Thank you for reaching out. I'm interested in learning more about your rental property. ");
+                prompt.append("Could you share some details about the rent and lease terms?'\n");
             } else {
-                prompt.append("TASK: Unknown response. Default to asking about price: 'Thanks for your response. What's the best price you can offer?'\n");
+                prompt.append("RESPONSE: Acknowledge their message and ask for clarification: 'Thank you for your message. ");
+                prompt.append("I'm very interested in the property. Could you provide more details about the rental terms?'\n");
             }
         }
         
-        prompt.append("\nWrite a natural, enthusiastic response (2-3 sentences max). Be specific and avoid generic phrases:");
+        prompt.append("\nWrite a natural, professional response (2-3 sentences max). Be respectful, genuine, and focused on building a positive relationship:");
         
         return prompt.toString();
     }

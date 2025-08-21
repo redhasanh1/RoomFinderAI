@@ -294,10 +294,19 @@ public class AiNegotiationService {
             return "price_negotiation_opportunity";
         }
         
-        // Positive responses
+        // Positive responses - but only if we have clear context
         if (response.contains("interested") || response.contains("yes") || response.contains("sure") || 
             response.contains("sounds good") || response.contains("ok") || response.contains("okay") ||
             response.contains("schedule") || response.contains("viewing") || response.contains("meet")) {
+            
+            // Special handling for agreement responses - need to clarify WHAT they're agreeing to
+            if ((response.contains("sure") || response.contains("yes") || response.contains("okay")) && 
+                !state.landlordPrices.isEmpty()) {
+                // They're agreeing to something, but we need to confirm the exact terms
+                Log.d(TAG, "🤝 Agreement detected, but need to confirm exact terms. Last landlord price: $" + state.bestLandlordPrice);
+                return "agreement_needs_clarification";
+            }
+            
             return "positive_response";
         }
         
@@ -479,9 +488,22 @@ public class AiNegotiationService {
         
         Log.d(TAG, "🤖 AI Negotiation Service initialized for user: " + userEmail);
         
-        // Send welcome message like website
+        // Send ChatGPT-style welcome message with icons (exact match to image)
         if (callback != null) {
-            callback.onMessage("AI", "Hello! I'm your AI assistant. Tell me what you're looking for (e.g., \"I want a house in Hong Kong for $1500\") and I'll search our database for matching listings and help you negotiate with landlords!");
+            callback.onMessage("AI", 
+                "Hello! I'm your AI\n" +
+                "Negotiation Assistant. I\n" +
+                "can help you:\n\n" +
+                "[ICON:home] Find rental properties\n" +
+                "       based on your criteria\n\n" +
+                "[ICON:handshake] based on your criteria\n\n" +
+                "[ICON:document] Write professional\n" +
+                "         messages to property\n" +
+                "         owners\n\n" +
+                "Try saying: \"Find me a 2-bedroom\n" +
+                "apartment in [city] under $2000\"\n" +
+                "or \"Help me negotiate rent\""
+            );
         }
     }
     
@@ -1688,14 +1710,28 @@ public class AiNegotiationService {
                         public void onSuccess(String followUpMessage) {
                             Log.d(TAG, "🔄 [NEGOTIATION] Generated follow-up: " + followUpMessage.substring(0, Math.min(100, followUpMessage.length())) + "...");
                             
+                            // CRITICAL: Check for duplicate messages to prevent infinite loops
+                            ConversationState currentState = activeConversations.get(listingId);
+                            if (currentState != null && currentState.isRepeatingMessage(followUpMessage)) {
+                                Log.e(TAG, "🔁 [LOOP_PREVENTION] BLOCKED duplicate message! Ending negotiation to prevent spam.");
+                                mainHandler.post(() -> {
+                                    if (callback != null) {
+                                        callback.onMessage("AI", "🔁 Detected message loop - ending conversation to prevent spam.");
+                                    }
+                                });
+                                updateConversationState(listingId, "completed", "Ended due to message repetition");
+                                activeConversations.remove(listingId);
+                                return; // Exit early to prevent sending duplicate
+                            }
+                            
                             mainHandler.post(() -> {
                                 if (callback != null) {
                                     callback.onMessage("AI", "📤 Sending intelligent follow-up message...");
                                 }
                             });
                             
-                            // Update state to sending follow-up
-                            updateConversationState(listingId, "sending_followup", followUpMessage);
+                            // Update state to sending follow-up - explicitly mark as AI message
+                            updateConversationState(listingId, "sending_followup", followUpMessage, "ai");
                             
                             Log.d(TAG, "🔄 [NEGOTIATION] Sending follow-up message through chat service...");
                             // Send follow-up through chat service
@@ -1900,8 +1936,45 @@ public class AiNegotiationService {
         void addAiMessage(String message) {
             aiMessageCount++;
             lastMessageTime = System.currentTimeMillis();
+            lastResponse = message; // Track last AI response for duplicate detection
             negotiationHistory.add("AI: " + message);
             Log.d(TAG, "📊 [STATE] AI message added. AI: " + aiMessageCount + ", Landlord: " + landlordMessageCount + ", Exchanges: " + totalExchanges);
+        }
+        
+        boolean isRepeatingMessage(String newMessage) {
+            // Check if the new message is too similar to the last response
+            if (lastResponse == null || newMessage == null) {
+                return false;
+            }
+            
+            // Simple similarity check - if 80% of words match, consider it a repeat
+            String[] lastWords = lastResponse.toLowerCase().split("\\s+");
+            String[] newWords = newMessage.toLowerCase().split("\\s+");
+            
+            if (lastWords.length == 0 || newWords.length == 0) {
+                return false;
+            }
+            
+            int matches = 0;
+            for (String newWord : newWords) {
+                for (String lastWord : lastWords) {
+                    if (newWord.equals(lastWord)) {
+                        matches++;
+                        break;
+                    }
+                }
+            }
+            
+            double similarity = (double) matches / Math.max(lastWords.length, newWords.length);
+            boolean isRepeating = similarity > 0.8;
+            
+            if (isRepeating) {
+                Log.w(TAG, "🔁 [DUPLICATE] Detected repeating message! Similarity: " + Math.round(similarity * 100) + "%");
+                Log.w(TAG, "🔁 [DUPLICATE] Last: " + lastResponse);
+                Log.w(TAG, "🔁 [DUPLICATE] New: " + newMessage);
+            }
+            
+            return isRepeating;
         }
         
         void addLandlordMessage(String message) {
