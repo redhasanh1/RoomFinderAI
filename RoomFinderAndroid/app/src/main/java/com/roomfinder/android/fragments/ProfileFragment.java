@@ -251,6 +251,11 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
                 navigateToFragment(new AiChatFragment());
             });
             
+            binding.toolsCard.setOnClickListener(v -> {
+                addCardClickAnimation(v);
+                navigateToFragment(new ToolsFragment());
+            });
+            
             binding.settingsItem.setOnClickListener(v -> {
                 addRippleEffect(v);
                 Toast.makeText(requireContext(), "Settings - Coming Soon", Toast.LENGTH_SHORT).show();
