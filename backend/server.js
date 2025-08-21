@@ -222,6 +222,21 @@ try {
     console.log('❌ Stripe initialization failed:', error.message);
 }
 
+// Initialize OpenAI service status
+try {
+    if (config.OPENAI_API_KEY && config.OPENAI_API_KEY.startsWith('sk-')) {
+        serviceStatus.openai = true;
+        console.log('✅ OpenAI initialized');
+    } else {
+        console.log('⚠️ OpenAI not initialized - missing or invalid API key');
+        if (DEMO_MODE) {
+            console.log('📝 Demo mode enabled - OpenAI features will use mock responses');
+        }
+    }
+} catch (error) {
+    console.log('❌ OpenAI initialization failed:', error.message);
+}
+
 // Initialize Supabase client with error handling
 let supabase;
 try {
