@@ -5,6 +5,8 @@
     <string name="nav_home">Home</string>
     <string name="nav_search">Search</string>
     <string name="nav_post">Post</string>
+    <string name="nav_tools">Tools</string>
+    <string name="nav_student_housing">Housing</string>
     <string name="nav_chat">Chat</string>
     <string name="nav_favorites">Favorites</string>
     <string name="nav_profile">Profile</string>
@@ -47,6 +49,34 @@
     <string name="login_to_continue">Login to access all features</string>
     <string name="cd_avatar">Profile avatar</string>
     <string name="cd_chevron">Go to</string>
+    
+    <!-- Student Housing -->
+    <string name="student_housing_title">Student Housing</string>
+    <string name="housing_budget_title">What\'s your housing budget?</string>
+    <string name="housing_budget_subtitle">Help us find options in your price range</string>
+    <string name="monthly_budget_label">Monthly housing budget</string>
+    <string name="budget_result_format">Great! We\'ll show you options under $%d/month</string>
+    <string name="housing_options_title">Housing Options</string>
+    <string name="quick_profiles_title">Quick Student Profiles</string>
+    <string name="university_search_hint">Search your university...</string>
+    <string name="trusted_by_students">Trusted by 50,000+ Students</string>
+    <string name="housing_made_simple">Made Simple</string>
+    <string name="housing_subtitle">Find housing at your university. Free for students.</string>
+    <string name="start_budget_calculator">Start Budget Calculator</string>
+    <string name="find_roommates">Find Roommates</string>
+    <string name="ready_to_master_housing">Ready to Master Student Housing?</string>
+    <string name="students_found_solution">Join 2.3M+ students who\'ve found their perfect housing solution</string>
+    
+    <!-- Tools -->
+    <string name="tools_title">RoomFinder Tools</string>
+    <string name="tools_subtitle">Everything you need for your housing journey</string>
+    <string name="available_tools">Available Tools</string>
+    <string name="quick_actions">Quick Actions</string>
+    <string name="coming_soon">Coming Soon</string>
+    <string name="legal_center_description">AI-powered legal guidance for housing rights and documents</string>
+    <string name="mortgage_tools_description">Mortgage calculators, pre-approval tools, and buying guides</string>
+    <string name="student_housing_description">Find housing at your university with budget calculator and roommate finder</string>
+    <string name="coming_soon_message">%s coming soon! Stay tuned for updates.</string>
     
     <!-- Chat -->
     <string name="chat_title">Messages</string>
