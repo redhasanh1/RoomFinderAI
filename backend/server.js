@@ -36,7 +36,7 @@ const EMAIL_CONFIG = {
     PRIMARY_RECIPIENT: "roomfinderai@gmail.com",
     BACKUP_RECIPIENT: "wilmahenning01@gmail.com",  // Backup to ensure delivery
     // Set to true to send to both recipients, false for primary only
-    USE_BACKUP_RECIPIENT: true
+    USE_BACKUP_RECIPIENT: false  // Disabled to avoid spam folder issues
 };
 
 // Load config with error handling
@@ -1233,19 +1233,19 @@ function generateContactEmailHTML(firstName, email, message, lastName = null) {
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
     <div style="max-width: 600px; margin: 0 auto; background: #ffffff;">
         <!-- Header -->
-        <div style="background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%); padding: 40px 30px; text-align: center;">
-            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
-                Contact Form Message
+        <div style="background: #4F46E5; padding: 30px; text-align: center;">
+            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: normal;">
+                RoomFinderAI
             </h1>
-            <p style="margin: 10px 0 0 0; color: #E5E7EB; font-size: 16px;">
-                New inquiry from RoomFinderAI website
+            <p style="margin: 8px 0 0 0; color: #E0E7FF; font-size: 14px;">
+                Customer Inquiry
             </p>
         </div>
         
         <!-- Content -->
         <div style="padding: 40px 30px;">
             <div style="background: #F8FAFC; padding: 20px; border-radius: 8px; border-left: 4px solid #3B82F6; margin-bottom: 20px;">
-                <h2 style="margin: 0 0 15px 0; color: #1F2937; font-size: 18px;">Contact Details</h2>
+                <h2 style="margin: 0 0 15px 0; color: #1F2937; font-size: 18px;">Customer Information</h2>
                 <p style="margin: 0 0 10px 0; color: #374151;"><strong>Name:</strong> ${safeFullName}</p>
                 <p style="margin: 0; color: #374151;"><strong>Email:</strong> ${safeEmail}</p>
             </div>
@@ -1317,31 +1317,41 @@ async function sendContactEmail(firstName, email, message, lastName = null) {
         
         const emailData = {
             sender: {
-                name: `${EMAIL_CONFIG.SENDER_NAME} Contact Form`,
-                email: EMAIL_CONFIG.SENDER_EMAIL  // Using authorized sender
+                name: `${EMAIL_CONFIG.SENDER_NAME}`,  // Remove "Contact Form" to avoid spam triggers
+                email: EMAIL_CONFIG.SENDER_EMAIL
             },
             to: recipients,
             replyTo: {
                 email: email,
                 name: fullName
             },
-            subject: `New Contact Form Message from ${fullName}`,
+            // More professional subject line to avoid spam filters
+            subject: `Customer Inquiry from ${fullName}`,
+            // Add headers to improve deliverability and avoid spam filters
+            headers: {
+                'X-Priority': '3',
+                'X-Mailer': 'RoomFinderAI-Contact-System',
+                'Message-ID': `<${emailId}@roomfinderai.com>`,
+                'Reply-To': `${email}`,
+                'X-Auto-Response-Suppress': 'All'
+            },
             htmlContent: generateContactEmailHTML(firstName, email, message, lastName),
             textContent: `
-New Contact Form Message
+Customer Inquiry - RoomFinderAI
 
-From: ${fullName}
+Contact Information:
+Name: ${fullName}
 Email: ${email}
 
 Message:
 ${message}
 
-Please respond to this inquiry within 24 hours for best customer service.
+---
+This message was sent through the RoomFinderAI contact form.
+Please respond directly to the customer's email address.
 
-----
-RoomFinderAI Contact Form
-Sent at: ${new Date().toISOString()}
-Email ID: ${emailId}
+Reference ID: ${emailId}
+Date: ${new Date().toISOString()}
             `.trim()
         };
 
