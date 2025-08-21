@@ -2441,7 +2441,12 @@ app.post('/api/ai-negotiate', async (req, res) => {
         
     } catch (error) {
         console.error('❌ Error in /api/ai-negotiate:', error.message);
-        res.status(500).json({ error: 'Failed to process AI negotiation request' });
+        console.error('Full error:', error);
+        res.status(500).json({ 
+            error: 'Failed to process AI negotiation request',
+            details: error.message,
+            stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+        });
     }
 });
 
