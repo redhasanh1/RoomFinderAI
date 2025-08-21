@@ -764,52 +764,42 @@ Property Details:
         }
     }
 
-    // Send actual message to landlord via email
+    // Send message to landlord via chat system
     async sendMessageToLandlord(listing, aiResponse) {
         try {
-            this.appendMessage('AI', `📧 Sending message to landlord at ${listing.user_email}...`, 'left');
+            this.appendMessage('AI', `💬 Opening chat with landlord for ${listing.title}...`, 'left');
             
-            const userName = `${this.currentUser?.firstName || 'User'} ${this.currentUser?.lastName || ''}`.trim();
-            
-            // Create a professional message based on AI response
-            const message = `Hello,
-
-I am interested in your property listing (ID: ${listing.id}) - "${listing.title}" in ${listing.city}.
-
-${aiResponse}
-
-I would appreciate the opportunity to discuss this property further. Please let me know if you would like to schedule a viewing or if you need any additional information from me.
-
-Thank you for your time.
-
-Best regards,
-${userName}`;
-
-            const response = await fetch('/api/message-landlord', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    listingId: listing.id,
-                    landlordEmail: listing.user_email,
-                    message: message,
-                    userEmail: this.currentUser?.email,
-                    userName: userName
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                this.appendMessage('AI', `✅ Message sent successfully to ${listing.user_email}! The landlord will receive your inquiry via email.`, 'left');
-                console.log('📧 Email sent to landlord:', data);
+            // Try to use the existing chat system
+            if (typeof window.openChatModal === 'function') {
+                // Use the real chat modal
+                window.openChatModal(listing.id, listing.title || 'Property', listing.user_email);
+                this.appendMessage('AI', `✅ Chat opened with landlord for "${listing.title}". You can now message them directly in the chat window!`, 'left');
+            } else if (window.globalChatSystem && window.globalChatSystem.startConversation) {
+                // Try global chat system
+                await window.globalChatSystem.startConversation(listing.id, listing.title, listing.user_email);
+                this.appendMessage('AI', `✅ Chat conversation started for "${listing.title}"`, 'left');
+            } else if (window.chatSystem && window.chatSystem.startConversation) {
+                // Try window.chatSystem
+                await window.chatSystem.startConversation(listing);
+                this.appendMessage('AI', `✅ Chat conversation started for "${listing.title}"`, 'left');
             } else {
-                const errorData = await response.json();
-                this.appendMessage('AI', `❌ Failed to send message to landlord: ${errorData.error}`, 'left');
+                // Fallback: show helpful message
+                this.appendMessage('AI', `💬 To contact the landlord for "${listing.title}":
+
+1. Use the chat button (💬) in the bottom-right corner
+2. Start a new conversation 
+3. Reference listing ID: ${listing.id}
+
+Property Details:
+📍 ${listing.city}${listing.street ? ` - ${listing.street}` : ''}
+💰 $${listing.price}/month
+📧 Landlord: ${listing.user_email}
+
+AI Advice: ${aiResponse}`, 'left');
             }
         } catch (error) {
-            console.error('Error sending message to landlord:', error);
-            this.appendMessage('AI', `❌ Error sending message to landlord: ${error.message}`, 'left');
+            console.error('Error opening chat with landlord:', error);
+            this.appendMessage('AI', `❌ Error opening chat: ${error.message}`, 'left');
         }
     }
 
