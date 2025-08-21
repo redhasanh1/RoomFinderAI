@@ -2390,7 +2390,14 @@ app.post('/api/ai-negotiate', async (req, res) => {
         if (!openaiResponse.ok) {
             const errorData = await openaiResponse.json().catch(() => ({}));
             console.error('❌ OpenAI API error:', errorData);
-            throw new Error(`OpenAI API error: ${openaiResponse.status}`);
+            console.error('OpenAI error details:', {
+                status: openaiResponse.status,
+                error: errorData.error,
+                message: errorData.error?.message,
+                type: errorData.error?.type,
+                code: errorData.error?.code
+            });
+            throw new Error(`OpenAI API error: ${openaiResponse.status} - ${errorData.error?.message || JSON.stringify(errorData)}`);
         }
 
         const data = await openaiResponse.json();
