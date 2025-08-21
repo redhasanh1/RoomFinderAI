@@ -782,8 +782,8 @@ Property Details:
                 window.openChatModal(listing.id, listing.title || 'Property', listing.user_email);
                 this.appendMessage('AI', `✅ Chat opened with landlord for "${listing.title}". You can now message them directly in the chat window!`, 'left');
             } else if (window.globalChatSystem && window.globalChatSystem.startConversation) {
-                console.log('🔍 [CHAT DEBUG] Using globalChatSystem with:', listing.id, listing.title, listing.user_email);
-                await window.globalChatSystem.startConversation(listing.id, listing.title, listing.user_email);
+                console.log('🔍 [CHAT DEBUG] Using globalChatSystem with full listing object:', listing);
+                await window.globalChatSystem.startConversation(listing);
                 this.appendMessage('AI', `✅ Chat conversation started for "${listing.title}"`, 'left');
             } else if (window.chatSystem && window.chatSystem.startConversation) {
                 console.log('🔍 [CHAT DEBUG] Using chatSystem with full listing:', listing);
