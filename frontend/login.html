@@ -1,1115 +1,562 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#667eea">
-    <title>RoomFinder AI - Login</title>
-    
-    <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
-    <script src="universal-auth-protection.js"></script>
-    
-    <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
-    <script src="universal-auth-manager.js"></script>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    
-    <!-- Google Sign-In SDK -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    
-    <!-- Apple Sign-In SDK -->
-    <script src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/mobile-android.css">
-    <script src="js/mobile-init.js"></script>
-    <script src="js/mobile-auth-fix.js"></script>
-    <style>
-        /* Prevent horizontal scroll */
-        html, body {
-            overflow-x: hidden;
-            max-width: 100%;
-            position: relative;
-        }
-        
-        /* Grand Background */
-        .grand-bg {
-            position: fixed;
-            inset: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            z-index: -2;
-        }
-        
-        .bg-pattern {
-            position: fixed;
-            inset: 0;
-            background-image: 
-                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
-            z-index: -1;
-        }
-        
-        /* Orb container to prevent overflow */
-        .orb-container {
-            position: fixed;
-            inset: 0;
-            overflow: hidden;
-            pointer-events: none;
-            z-index: -1;
-        }
-        
-        /* Animated orbs */
-        .orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(40px);
-            opacity: 0.5;
-            animation: float-orb 20s infinite ease-in-out;
-            pointer-events: none;
-        }
-        
-        .orb-1 {
-            width: 400px;
-            height: 400px;
-            background: rgba(102, 126, 234, 0.3);
-            top: -200px;
-            right: -200px;
-            transform: translate(50%, -50%);
-        }
-        
-        .orb-2 {
-            width: 300px;
-            height: 300px;
-            background: rgba(118, 75, 162, 0.3);
-            bottom: -150px;
-            left: -150px;
-            transform: translate(-50%, 50%);
-            animation-delay: -5s;
-        }
-        
-        @keyframes float-orb {
-            0%, 100% { transform: scale(1); }
-            33% { transform: scale(1.1); }
-            66% { transform: scale(0.9); }
-        }
-        
-        /* Grand Auth container */
-        .auth-container-grand {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 32px;
-            box-shadow: 
-                0 30px 60px rgba(0, 0, 0, 0.1),
-                0 20px 40px rgba(102, 126, 234, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.5);
-            position: relative;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
-        }
-        
-        .auth-container-grand::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent);
-            animation: shimmer 3s infinite;
-        }
-        
-        .auth-container-grand:hover {
-            transform: translateY(-5px) translateX(0);
-            box-shadow: 
-                0 40px 80px rgba(0, 0, 0, 0.15),
-                0 30px 50px rgba(102, 126, 234, 0.2);
-        }
-        
-        /* Social buttons */
-        .social-btn {
-            background: white;
-            border: 2px solid rgba(102, 126, 234, 0.2);
-            padding: 0.75rem 1.5rem;
-            border-radius: 50px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .social-btn:hover {
-            border-color: var(--purple-primary);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
-        }
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#667eea" />
+  <title>RoomFinder AI - Login</title>
 
-        /* Enhanced centering for social buttons - bulletproof across browsers */
-        .social-btn {
-            display: grid !important;
-            place-items: center;
-            width: 100%;
-            aspect-ratio: 6 / 2;
-            border-radius: 9999px;
-            text-align: center;
-        }
+  <!-- Optional local auth helpers -->
+  <script src="universal-auth-protection.js"></script>
+  <script src="universal-auth-manager.js"></script>
 
-        .social-btn i,
-        .social-btn svg {
-            display: block;
-            margin: 0;
-            line-height: 1;
-            pointer-events: none;
-        }
+  <!-- UI & SDKs -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- Apple Sign-In -->
+  <script src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"></script>
 
-        /* Brand-specific styling */
-        .social-btn.google { 
-            background: #fff; 
-        }
-        
-        .social-btn.apple { 
-            background: #fff; 
-        }
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
-        /* Hide only auto-rendered button containers, not OAuth iframes */
-        .g_id_signin {
-            display: none !important;
-        }
-        
-        /* Allow OAuth iframes and popups to function properly */
-        iframe[src*="accounts.google.com"],
-        iframe[src*="appleid"] {
-            /* OAuth iframes must remain visible for authentication flows */
-            z-index: 9999;
-        }
-        
-        /* Success animation */
-        @keyframes success-pulse {
-            0% { transform: scale(0); opacity: 0; }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        
-        .success-icon {
-            animation: success-pulse 0.5s ease-out;
-        }
-    </style>
+  <!-- Optional site CSS -->
+  <link rel="stylesheet" href="css/styles.css"/>
+  <link rel="stylesheet" href="css/mobile-android.css"/>
+
+  <style>
+    html, body { overflow-x:hidden; max-width:100%; position:relative; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+
+    .grand-bg{position:fixed; inset:0; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); z-index:-2;}
+    .bg-pattern{position:fixed; inset:0; background-image:
+      radial-gradient(circle at 20% 50%, rgba(255,255,255,.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(255,255,255,.05) 0%, transparent 50%),
+      radial-gradient(circle at 40% 20%, rgba(255,255,255,.08) 0%, transparent 50%);
+      z-index:-1;}
+    .orb-container{position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:-1;}
+    .orb{position:absolute; border-radius:50%; filter:blur(40px); opacity:.5; animation:float-orb 20s infinite ease-in-out; pointer-events:none; will-change:transform;}
+    .orb-1{width:400px; height:400px; background:rgba(102,126,234,.3); top:-200px; right:-200px; transform:translate(50%,-50%);}
+    .orb-2{width:300px; height:300px; background:rgba(118,75,162,.3); bottom:-150px; left:-150px; transform:translate(-50%,50%); animation-delay:-5s;}
+    @keyframes float-orb{0%,100%{transform:scale(1)} 33%{transform:scale(1.1)} 66%{transform:scale(.9)}}
+    @media (max-width:420px){ .orb{filter:blur(24px); opacity:.4;} }
+
+    .auth-container-grand{
+      background:rgba(255,255,255,.98);
+      backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+      border:1px solid rgba(255,255,255,.3);
+      border-radius:32px;
+      box-shadow:0 30px 60px rgba(0,0,0,.1), 0 20px 40px rgba(102,126,234,.15), inset 0 1px 0 rgba(255,255,255,.5);
+      position:relative; overflow:hidden;
+      transition:all .4s cubic-bezier(.23,1,.32,1);
+    }
+    .auth-container-grand::before{
+      content:""; position:absolute; top:0; left:0; right:0; height:1px;
+      background:linear-gradient(90deg,transparent, rgba(102,126,234,.5), transparent);
+      animation:shimmer 3s infinite;
+    }
+    @keyframes shimmer {0%{opacity:.4}50%{opacity:1}100%{opacity:.4}}
+
+    /* Inputs & buttons (light “grand” style) */
+    .input-grand{
+      border:1px solid rgba(0,0,0,.08);
+      background:#fff; height:48px; border-radius:14px; padding:0 14px;
+      outline:none; box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
+      transition:border .2s, box-shadow .2s, transform .05s;
+    }
+    .input-grand:focus{ border-color:#7c83ff; box-shadow:0 0 0 4px rgba(124,131,255,.15); }
+    .btn-grand{
+      height:48px; border-radius:9999px; font-weight:700;
+      background:linear-gradient(90deg,#6d74ff,#8b57e3);
+      color:#fff; box-shadow:0 10px 20px rgba(109,116,255,.25); transition:transform .06s ease, box-shadow .2s;
+    }
+    .btn-grand:hover{ box-shadow:0 14px 26px rgba(109,116,255,.3); transform:translateY(-1px); }
+    .btn-grand:active{ transform:translateY(0); }
+
+    /* Social buttons: bulletproof centering */
+    .social-btn{
+      background:#fff; border:2px solid rgba(102,126,234,.2);
+      border-radius:9999px; font-weight:600; transition:all .2s;
+      display:grid !important; place-items:center; width:100%; aspect-ratio:6/2; text-align:center;
+    }
+    .social-btn:hover{ border-color:#7c83ff; box-shadow:0 10px 25px rgba(102,126,234,.2); transform:translateY(-2px); }
+    .social-btn i, .social-btn svg{display:block; margin:0; line-height:1; pointer-events:none;}
+    .social-btn.google{background:#fff;}
+    .social-btn.apple{background:#fff;}
+
+    /* Don’t hide OAuth iframes. If you rendered the Google default button somewhere, you can hide its container: */
+    .g_id_signin{ display:none !important; }
+
+    @keyframes success-pulse {0%{transform:scale(0);opacity:0} 50%{transform:scale(1.2)} 100%{transform:scale(1);opacity:1}}
+    .success-icon{ animation:success-pulse .5s ease-out; }
+    .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  </style>
 </head>
 <body>
-    <!-- Grand Background -->
-    <div class="grand-bg"></div>
-    <div class="bg-pattern"></div>
-    <div class="orb-container">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
+  <!-- Background -->
+  <div class="grand-bg"></div>
+  <div class="bg-pattern"></div>
+  <div class="orb-container">
+    <div class="orb orb-1"></div><div class="orb orb-2"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-lg border-b border-white/20">
+    <div class="mx-auto px-4 py-4 flex items-center justify-between" style="max-width: 100%;">
+      <a href="index.html" class="flex items-center text-white hover:text-purple-200 transition-colors text-lg font-semibold">
+        <i class="fas fa-arrow-left mr-3 text-xl"></i><span class="text-lg">Back to Home</span>
+      </a>
+      <div id="authSection"></div>
     </div>
+  </header>
 
-    <!-- Header Navigation -->
-    <header class="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-lg border-b border-white/20" style="max-width: 100vw;">
-        <div class="container mx-auto px-4 py-4 flex items-center justify-between" style="max-width: 100%;">
-            <a href="index.html" class="flex items-center text-white hover:text-purple-200 transition-colors text-lg font-semibold">
-                <i class="fas fa-arrow-left mr-3 text-xl"></i>
-                <span class="text-lg">Back to Home</span>
-            </a>
-            <div id="authSection">
-                <!-- Will be populated by universal-auth-manager.js -->
-            </div>
+  <!-- Main -->
+  <div class="min-h-screen flex items-center justify-center px-4 py-12 pt-20">
+    <div class="auth-container-grand w-full max-w-md p-8 sm:p-12">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-purple-600 to-purple-800 rounded-2xl mb-4 shadow-lg">
+          <i class="fas fa-home text-white text-3xl"></i>
         </div>
-    </header>
+        <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">RoomFinder AI</h1>
+      </div>
 
-    <!-- Main Content -->
-    <div class="min-h-screen flex items-center justify-center px-4 py-12 pt-20" style="max-width: 100vw; overflow-x: hidden;">
-        <div class="auth-container-grand w-full max-w-md p-8 sm:p-12">
-            <!-- Logo Section -->
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-purple-600 to-purple-800 rounded-2xl mb-4 shadow-lg">
-                    <i class="fas fa-home text-white text-3xl"></i>
-                </div>
-                <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
-                    RoomFinder AI
-                </h1>
-            </div>
+      <!-- Auth Form -->
+      <div id="authFormContainer">
+        <h2 id="formTitle" class="text-2xl font-bold text-gray-800 mb-2 text-center">Welcome Back</h2>
+        <p class="text-gray-600 text-center mb-8">Find your perfect room with AI</p>
 
-            <!-- Auth Form Container -->
-            <div id="authFormContainer">
-                <h2 id="formTitle" class="text-2xl font-bold text-gray-800 mb-2 text-center">Welcome Back</h2>
-                <p class="text-gray-600 text-center mb-8">Find your perfect room with AI</p>
-                
-                <form id="authForm" class="space-y-6">
-                    <!-- Name Fields (Hidden for Login) -->
-                    <div id="nameFields" class="hidden space-y-4">
-                        <div>
-                            <label for="firstName" class="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
-                            <input type="text" id="firstName" name="firstName" class="input-grand w-full" placeholder="John">
-                        </div>
-                        <div>
-                            <label for="lastName" class="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
-                            <input type="text" id="lastName" name="lastName" class="input-grand w-full" placeholder="Doe">
-                        </div>
-                    </div>
-                    
-                    <!-- Email Field -->
-                    <div>
-                        <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-                        <div class="relative">
-                            <input type="email" id="email" name="email" required 
-                                   class="input-grand w-full pl-12" 
-                                   placeholder="john@example.com"
-                                   autocomplete="email"
-                                   aria-describedby="email-help">
-                            <i class="fas fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400"></i>
-                        </div>
-                    </div>
-                    
-                    <!-- Password Field -->
-                    <div>
-                        <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-                        <div class="relative">
-                            <input type="password" id="password" name="password" required 
-                                   class="input-grand w-full pl-12" 
-                                   placeholder="••••••••"
-                                   autocomplete="current-password"
-                                   aria-describedby="password-help">
-                            <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400"></i>
-                        </div>
-                        <!-- Password Requirements (Only shown during registration) -->
-                        <div id="passwordRequirements" class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg shadow-sm" style="display: none;">
-                            <div id="req-length" class="flex items-center text-sm">
-                                <span id="length-icon" class="mr-2 text-red-500">✗</span>
-                                <span>At least 8 characters</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Forgot Password -->
-                    <div id="loginOptions" class="flex items-center justify-end">
-                        <a href="/forgot-password" class="text-sm text-purple-600 hover:text-purple-800 font-medium">Forgot password?</a>
-                    </div>
-                    
-                    <!-- Submit Button -->
-                    <button type="submit" id="submitButton" class="btn-grand w-full mt-4">
-                        Sign In
-                    </button>
-                    
-                    <!-- Divider -->
-                    <div class="mt-6">
-                        <div class="relative">
-                            <div class="absolute inset-0 flex items-center">
-                                <div class="w-full border-t border-gray-300"></div>
-                            </div>
-                            <div class="relative flex justify-center text-sm">
-                                <span class="px-4 bg-white text-gray-500">Or</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Social Login Buttons -->
-                    <div class="mt-6">
-                        <div class="grid grid-cols-2 gap-4">
-                            <!-- Google -->
-                            <button
-                                type="button"
-                                id="googleSignInBtn"
-                                class="social-btn google"
-                                aria-label="Continue with Google">
-                                <i class="fab fa-google text-xl" style="color:#DB4437;"></i>
-                            </button>
+        <form id="authForm" class="space-y-6" novalidate>
+          <!-- Hidden name fields for registration -->
+          <div id="nameFields" class="hidden space-y-4">
+            <div>
+              <label for="firstName" class="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+              <input type="text" id="firstName" name="firstName" class="input-grand w-full" placeholder="John" autocomplete="given-name"/>
+            </div>
+            <div>
+              <label for="lastName" class="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+              <input type="text" id="lastName" name="lastName" class="input-grand w-full" placeholder="Doe" autocomplete="family-name"/>
+            </div>
+          </div>
 
-                            <!-- Apple -->
-                            <button
-                                type="button"
-                                id="appleSignInBtn"
-                                class="social-btn apple"
-                                aria-label="Continue with Apple">
-                                <i class="fab fa-apple text-xl" style="color:#000000;"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Toggle Form -->
-                    <div class="text-center mt-8">
-                        <span class="text-gray-600">
-                            <span id="toggleText">Don't have an account?</span>
-                            <button type="button" id="toggleForm" class="text-purple-600 hover:text-purple-800 font-semibold ml-1">
-                                Register now
-                            </button>
-                        </span>
-                    </div>
-                </form>
+          <!-- Email -->
+          <div>
+            <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+            <div class="relative">
+              <input type="email" id="email" name="email" required class="input-grand w-full pl-12" placeholder="john@example.com" autocomplete="email" />
+              <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-purple-400"></i>
             </div>
-            
-            <!-- Email Verification Section (Hidden) -->
-            <div id="verificationSection" class="hidden">
-                <div class="text-center mb-8">
-                    <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full mb-4 success-icon">
-                        <i class="fas fa-envelope-open-text text-white text-3xl"></i>
-                    </div>
-                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Verify Your Email</h2>
-                    <p class="text-gray-600">We've sent a verification code to</p>
-                    <p id="verificationEmail" class="text-purple-600 font-semibold mt-1"></p>
-                </div>
-                
-                <form id="verificationForm" class="space-y-6">
-                    <div>
-                        <label for="verificationCode" class="block text-sm font-semibold text-gray-700 mb-2 text-center">
-                            Enter 6-digit code
-                        </label>
-                        <input type="text" id="verificationCode" name="verificationCode" required 
-                               class="input-grand w-full text-center text-2xl font-bold tracking-wider" 
-                               placeholder="000000" maxlength="6" pattern="[0-9]{6}"
-                               style="letter-spacing: 0.5rem;">
-                        <p class="text-sm text-gray-500 text-center mt-2">Code expires in 10 minutes</p>
-                    </div>
-                    
-                    <button type="submit" class="btn-grand w-full">
-                        Verify Email
-                    </button>
-                    
-                    <div class="text-center space-y-3">
-                        <button type="button" id="resendCode" class="text-purple-600 hover:text-purple-800 font-medium">
-                            Didn't receive code? Resend
-                        </button>
-                        <br>
-                        <button type="button" id="backToRegistration" class="text-gray-600 hover:text-gray-800">
-                            <i class="fas fa-arrow-left mr-2"></i>Back to registration
-                        </button>
-                    </div>
-                </form>
+            <small id="email-help" class="sr-only">Use your email address.</small>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+            <div class="relative">
+              <input type="password" id="password" name="password" required class="input-grand w-full pl-12" placeholder="••••••••" autocomplete="current-password" />
+              <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-purple-400"></i>
             </div>
+            <!-- Password Requirements (registration only) -->
+            <div id="passwordRequirements" class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg shadow-sm" style="display:none;">
+              <div id="req-length" class="flex items-center text-sm">
+                <span id="length-icon" class="mr-2 text-red-500">✗</span>
+                <span>At least 8 characters</span>
+              </div>
+            </div>
+            <small id="password-help" class="sr-only">Enter your account password.</small>
+          </div>
+
+          <!-- Forgot password -->
+          <div id="loginOptions" class="flex items-center justify-end">
+            <a href="/forgot-password" class="text-sm text-purple-600 hover:text-purple-800 font-medium">Forgot password?</a>
+          </div>
+
+          <!-- Primary action -->
+          <button type="submit" id="submitButton" class="btn-grand w-full mt-4">Sign In</button>
+
+          <!-- Divider -->
+          <div class="mt-6">
+            <div class="relative">
+              <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-300"></div></div>
+              <div class="relative flex justify-center text-sm"><span class="px-4 bg-white text-gray-500">Or</span></div>
+            </div>
+          </div>
+
+          <!-- Social login -->
+          <div class="mt-6">
+            <div class="grid grid-cols-2 gap-4">
+              <button type="button" id="googleSignInBtn" class="social-btn google" aria-label="Continue with Google">
+                <i class="fab fa-google text-xl" style="color:#DB4437;"></i>
+              </button>
+              <button type="button" id="appleSignInBtn" class="social-btn apple" aria-label="Continue with Apple">
+                <i class="fab fa-apple text-xl" style="color:#000000;"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Toggle -->
+          <div class="text-center mt-8">
+            <span class="text-gray-600">
+              <span id="toggleText">Don't have an account?</span>
+              <button type="button" id="toggleForm" class="text-purple-600 hover:text-purple-800 font-semibold ml-1">Register now</button>
+            </span>
+          </div>
+        </form>
+      </div>
+
+      <!-- Email verification -->
+      <div id="verificationSection" class="hidden">
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full mb-4 success-icon">
+            <i class="fas fa-envelope-open-text text-white text-3xl"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">Verify Your Email</h2>
+          <p class="text-gray-600">We've sent a verification code to</p>
+          <p id="verificationEmail" class="text-purple-600 font-semibold mt-1"></p>
         </div>
+
+        <form id="verificationForm" class="space-y-6">
+          <div>
+            <label for="verificationCode" class="block text-sm font-semibold text-gray-700 mb-2 text-center">Enter 6-digit code</label>
+            <input type="text" id="verificationCode" name="verificationCode" required class="input-grand w-full text-center text-2xl font-bold tracking-wider" placeholder="000000" maxlength="6" pattern="[0-9]{6}" style="letter-spacing: .5rem;" />
+            <p class="text-sm text-gray-500 text-center mt-2">Code expires in 10 minutes</p>
+          </div>
+          <button type="submit" class="btn-grand w-full">Verify Email</button>
+          <div class="text-center space-y-3">
+            <button type="button" id="resendCode" class="text-purple-600 hover:text-purple-800 font-medium">Didn't receive code? Resend</button><br/>
+            <button type="button" id="backToRegistration" class="text-gray-600 hover:text-gray-800"><i class="fas fa-arrow-left mr-2"></i>Back to registration</button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Helpers
+    function getDefaultProfileImage(){
+      if (window.UniversalAuth && window.UniversalAuth.DEFAULT_PROFILE_IMAGE) return window.UniversalAuth.DEFAULT_PROFILE_IMAGE;
+      return 'data:image/svg+xml;base64,'+btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="#E5E7EB"/><path d="M50 45C56.075 45 61 40.075 61 34C61 27.925 56.075 23 50 23C43.925 23 39 27.925 39 34C39 40.075 43.925 45 50 45Z" fill="#9CA3AF"/><path d="M30 77C30 77 30 66.103 30 62C30 55.373 36.268 50 44 50H56C63.732 50 70 55.373 70 62C70 66.103 70 77 70 77" fill="#9CA3AF"/></svg>`);
+    }
+    const form = document.getElementById('authForm');
+    const formTitle = document.getElementById('formTitle');
+    const submitButton = document.getElementById('submitButton');
+    const toggleForm = document.getElementById('toggleForm');
+    const toggleText = document.getElementById('toggleText');
+    const nameFields = document.getElementById('nameFields');
+    const loginOptions = document.getElementById('loginOptions');
+    const passwordRequirements = document.getElementById('passwordRequirements');
+    const passwordInput = document.getElementById('password');
+    let isLogin = true;
 
-    <script>
-        // Wait for DOM to be fully loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Login page JavaScript initializing...');
-            
-            // Get default profile image from UniversalAuth or use fallback
-            function getDefaultProfileImage() {
-                if (window.UniversalAuth && window.UniversalAuth.DEFAULT_PROFILE_IMAGE) {
-                    return window.UniversalAuth.DEFAULT_PROFILE_IMAGE;
-                }
-                // Fallback SVG if UniversalAuth isn't loaded yet
-                return 'data:image/svg+xml;base64,' + btoa(`
-                    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-                        <rect width="100" height="100" rx="50" fill="#E5E7EB"/>
-                        <path d="M50 45C56.075 45 61 40.075 61 34C61 27.925 56.075 23 50 23C43.925 23 39 27.925 39 34C39 40.075 43.925 45 50 45Z" fill="#9CA3AF"/>
-                        <path d="M30 77C30 77 30 66.103 30 62C30 55.373 36.268 50 44 50H56C63.732 50 70 55.373 70 62C70 66.103 70 77 70 77" fill="#9CA3AF"/>
-                    </svg>
-                `.trim());
+    function validatePassword(p){ return p.length >= 8; }
+    function updatePasswordRequirements(isValid){
+      const icon = document.getElementById('length-icon');
+      if (!icon) return;
+      if (isValid){ icon.textContent='✓'; icon.className='mr-2 text-green-500'; }
+      else { icon.textContent='✗'; icon.className='mr-2 text-red-500'; }
+    }
+
+    if (passwordInput && passwordRequirements){
+      passwordInput.addEventListener('focus', () => { if(!isLogin) passwordRequirements.style.display='block'; });
+      passwordInput.addEventListener('blur', () => setTimeout(()=> passwordRequirements.style.display='none', 200));
+      passwordInput.addEventListener('input', e => { if(!isLogin) updatePasswordRequirements(validatePassword(e.target.value)); });
+    }
+
+    toggleForm.addEventListener('click', () => {
+      isLogin = !isLogin;
+      formTitle.textContent = isLogin ? 'Welcome Back' : 'Create Account';
+      submitButton.textContent = isLogin ? 'Sign In' : 'Create Account';
+      toggleText.textContent = isLogin ? "Don't have an account?" : 'Already have an account?';
+      toggleForm.textContent = isLogin ? 'Register now' : 'Sign in';
+      nameFields.classList.toggle('hidden', isLogin);
+      loginOptions.classList.toggle('hidden', !isLogin);
+      if (isLogin) passwordRequirements.style.display='none';
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const password = document.getElementById('password').value;
+
+      if (isLogin){
+        try{
+          const r = await fetch('/api/login',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password})});
+          const result = await r.json();
+          if (r.ok){
+            // lightweight client cache (do not store secrets)
+            let currentUser = null;
+            try{
+              const storedUser = localStorage.getItem('currentUser');
+              if (storedUser){
+                const parsed = JSON.parse(storedUser);
+                if (parsed?.email?.toLowerCase() === email) currentUser = {...parsed, email};
+              }
+            }catch{}
+            if (currentUser){
+              localStorage.setItem('currentUser', JSON.stringify(currentUser));
+              let users=[]; try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
+              const idx = users.findIndex(u=>u?.email?.toLowerCase()===email);
+              if (idx>=0) users[idx]=currentUser; else users.push(currentUser);
+              localStorage.setItem('users', JSON.stringify(users));
+            }else{
+              let users=[]; try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
+              const existing = users.find(u=>u?.email?.toLowerCase()===email);
+              if (existing){ existing.email=email; localStorage.setItem('currentUser', JSON.stringify(existing)); }
+              else{
+                const newUser = { firstName:'User', lastName:'Name', email, profileImage:getDefaultProfileImage(), aiChats:[], listings:[], emailVerified:true };
+                users.push(newUser);
+                localStorage.setItem('users', JSON.stringify(users));
+                localStorage.setItem('currentUser', JSON.stringify(newUser));
+              }
             }
-            
-            // Initialize form handling with error checking
-            console.log('🔍 Looking for form elements...');
-            const form = document.getElementById('authForm');
-            const formTitle = document.getElementById('formTitle');
-            const submitButton = document.getElementById('submitButton');
-            const toggleForm = document.getElementById('toggleForm');
-            const toggleText = document.getElementById('toggleText');
-            const nameFields = document.getElementById('nameFields');
-            const loginOptions = document.getElementById('loginOptions');
-            const passwordRequirements = document.getElementById('passwordRequirements');
-            const passwordInput = document.getElementById('password');
-            
-            // Debug: Check which elements were found
-            console.log('📋 Element check results:');
-            console.log('- form:', form ? '✅ Found' : '❌ Missing');
-            console.log('- formTitle:', formTitle ? '✅ Found' : '❌ Missing');
-            console.log('- submitButton:', submitButton ? '✅ Found' : '❌ Missing');
-            console.log('- toggleForm:', toggleForm ? '✅ Found' : '❌ Missing');
-            console.log('- toggleText:', toggleText ? '✅ Found' : '❌ Missing');
-            console.log('- nameFields:', nameFields ? '✅ Found' : '❌ Missing');
-            console.log('- loginOptions:', loginOptions ? '✅ Found' : '❌ Missing');
-            console.log('- passwordRequirements:', passwordRequirements ? '✅ Found' : '❌ Missing');
-            console.log('- passwordInput:', passwordInput ? '✅ Found' : '❌ Missing');
-            
-            // Check for critical missing elements
-            if (!form || !toggleForm || !nameFields) {
-                console.error('❌ Critical elements missing! Cannot initialize form.');
-                alert('Form initialization failed. Please refresh the page.');
-                return;
-            }
-            
-            let isLogin = true;
-
-        // Password validation functions
-        function validatePassword(password) {
-            return password.length >= 8;
+            window.location.href='verification-modal.html?redirect=index.html';
+          }else{
+            alert(result.error || 'Login failed');
+          }
+        }catch{
+          alert('Login failed. Please try again.');
         }
+      }else{
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        if (!firstName || !lastName){ alert('Please fill in all fields.'); return; }
+        if (!validatePassword(password)){ alert('Password must be at least 8 characters long.'); return; }
 
-        function updatePasswordRequirements(isValid) {
-            const icon = document.getElementById('length-icon');
-            if (icon) {
-                if (isValid) {
-                    icon.textContent = '✓';
-                    icon.className = 'mr-2 text-green-500';
-                } else {
-                    icon.textContent = '✗';
-                    icon.className = 'mr-2 text-red-500';
-                }
-            }
+        try{
+          submitButton.disabled=true; submitButton.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
+          const r = await fetch('/api/send-verification', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({ firstName, lastName, email, password })
+          });
+          const result = await r.json();
+          if (r.ok){
+            showVerificationSection(email, { firstName, lastName, email, password });
+          }else{
+            alert(result.error || 'Failed to send verification email');
+          }
+        }catch{
+          alert('Registration failed. Please try again.');
+        }finally{
+          submitButton.disabled=false; submitButton.textContent='Create Account';
         }
+      }
+    });
 
-        // Show password requirements only during registration
-        if (passwordInput && passwordRequirements) {
-            passwordInput.addEventListener('focus', function() {
-                if (!isLogin) { // Only show during registration
-                    passwordRequirements.style.display = 'block';
-                }
-            });
-            
-            passwordInput.addEventListener('blur', function() {
-                setTimeout(() => {
-                    passwordRequirements.style.display = 'none';
-                }, 200);
-            });
-
-            passwordInput.addEventListener('input', function(e) {
-                if (!isLogin) { // Only validate during registration
-                    const password = e.target.value;
-                    const isValid = validatePassword(password);
-                    updatePasswordRequirements(isValid);
-                }
-            });
+    // Verification
+    let pendingUserData = null;
+    function showVerificationSection(email, data){
+      pendingUserData = data;
+      document.getElementById('authFormContainer').classList.add('hidden');
+      document.getElementById('verificationSection').classList.remove('hidden');
+      document.getElementById('verificationEmail').textContent = email;
+    }
+    function hideVerificationSection(){
+      document.getElementById('authFormContainer').classList.remove('hidden');
+      document.getElementById('verificationSection').classList.add('hidden');
+      pendingUserData = null;
+    }
+    const verificationForm = document.getElementById('verificationForm');
+    verificationForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      if (!pendingUserData){ alert('No pending verification. Please try registering again.'); return; }
+      const code = document.getElementById('verificationCode').value.trim();
+      try{
+        const r = await fetch('/api/verify-email',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email: pendingUserData.email, code })});
+        const result = await r.json();
+        if (r.ok){
+          const user = { firstName:pendingUserData.firstName, lastName:pendingUserData.lastName, email:pendingUserData.email, profileImage:getDefaultProfileImage(), aiChats:[], listings:[], emailVerified:true };
+          let users=[]; try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
+          const idx = users.findIndex(u=>u?.email?.toLowerCase()===user.email.toLowerCase());
+          if (idx>=0) users[idx]=user; else users.push(user);
+          localStorage.setItem('users', JSON.stringify(users));
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          alert('Email verified successfully! Welcome to RoomFinder AI.');
+          window.location.href='verification-modal.html?redirect=index.html';
+        }else{
+          alert(result.error || 'Verification failed');
         }
+      }catch{
+        alert('Verification failed. Please try again.');
+      }
+    });
+    document.getElementById('resendCode').addEventListener('click', async ()=>{
+      if (!pendingUserData){ alert('No pending verification. Please try registering again.'); return; }
+      try{
+        const r = await fetch('/api/send-verification',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(pendingUserData)});
+        const result = await r.json();
+        if (r.ok){ alert('Verification code resent successfully!'); document.getElementById('verificationCode').value=''; }
+        else{ alert(result.error || 'Failed to resend verification code'); }
+      }catch{ alert('Failed to resend verification code. Please try again.'); }
+    });
+    document.getElementById('backToRegistration').addEventListener('click', hideVerificationSection);
+    const verificationCode = document.getElementById('verificationCode');
+    verificationCode.addEventListener('input', e=>{ e.target.value = e.target.value.replace(/[^0-9]/g, ''); });
 
-            // Add toggle form event listener with error handling
-            if (toggleForm) {
-                console.log('🔄 Setting up form toggle functionality...');
-                toggleForm.addEventListener('click', () => {
-                    console.log('🔄 Toggle button clicked! Current mode:', isLogin ? 'login' : 'registration');
-                    
-                    isLogin = !isLogin;
-                    
-                    // Update form elements with null checks
-                    if (formTitle) formTitle.textContent = isLogin ? 'Welcome Back' : 'Create Account';
-                    if (submitButton) submitButton.textContent = isLogin ? 'Sign In' : 'Create Account';
-                    if (toggleText) toggleText.textContent = isLogin ? "Don't have an account?" : 'Already have an account?';
-                    if (toggleForm) toggleForm.textContent = isLogin ? 'Register now' : 'Sign in';
-                    
-                    // Toggle visibility of form sections
-                    if (nameFields) {
-                        nameFields.classList.toggle('hidden', isLogin);
-                        console.log('👤 Name fields:', isLogin ? 'hidden' : 'visible');
-                    }
-                    if (loginOptions) {
-                        loginOptions.classList.toggle('hidden', !isLogin);
-                        console.log('🔐 Login options:', !isLogin ? 'hidden' : 'visible');
-                    }
-                    
-                    // Hide password requirements when switching to login
-                    if (isLogin && passwordRequirements) {
-                        passwordRequirements.style.display = 'none';
-                    }
-                    
-                    console.log('✅ Form switched to:', isLogin ? 'login' : 'registration');
-                });
-            } else {
-                console.error('❌ toggleForm element not found! Cannot set up form switching.');
-            }
-
-            // Add form submit event listener with error handling
-            if (form) {
-                console.log('📝 Setting up form submit handler...');
-                form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    console.log('📤 Form submitted! Mode:', isLogin ? 'login' : 'registration');
-            
-            // Basic form validation
-            
-            const email = document.getElementById('email').value.trim().toLowerCase();
-            const password = document.getElementById('password').value;
-
-            if (isLogin) {
-                // Login logic
-                try {
-                    const response = await fetch('/api/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            email, 
-                            password
-                        })
-                    });
-
-                    const result = await response.json();
-                    
-                    if (response.ok) {
-                        // First check if we have a currentUser that matches this email (case-insensitive)
-                        let currentUser = null;
-                        try {
-                            const storedUser = localStorage.getItem('currentUser');
-                            if (storedUser) {
-                                const parsedUser = JSON.parse(storedUser);
-                                if (parsedUser && parsedUser.email && parsedUser.email.toLowerCase() === email.toLowerCase()) {
-                                    currentUser = parsedUser;
-                                    // Normalize the email to lowercase
-                                    currentUser.email = email.toLowerCase();
-                                }
-                            }
-                        } catch (e) {
-                            console.error('Error parsing currentUser:', e);
-                        }
-                        
-                        // If we have a matching currentUser, use it
-                        if (currentUser) {
-                            // Preserve the existing user data including name
-                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                            
-                            // Also ensure this user is in the users array
-                            let users = [];
-                            try {
-                                users = JSON.parse(localStorage.getItem('users')) || [];
-                            } catch (e) {
-                                users = [];
-                            }
-                            
-                            // Update or add user to users array (case-insensitive lookup)
-                            const userIndex = users.findIndex(u => u && u.email && u.email.toLowerCase() === email.toLowerCase());
-                            if (userIndex >= 0) {
-                                users[userIndex] = currentUser;
-                            } else {
-                                users.push(currentUser);
-                            }
-                            localStorage.setItem('users', JSON.stringify(users));
-                        } else {
-                            // No currentUser match, check users array
-                            let users = [];
-                            try {
-                                users = JSON.parse(localStorage.getItem('users')) || [];
-                            } catch (e) {
-                                console.error('Error parsing users from localStorage:', e);
-                                users = [];
-                            }
-                            
-                            let existingUser = users.find(u => u && u.email && u.email.toLowerCase() === email.toLowerCase());
-                            
-                            // If user found, use their saved data; otherwise create basic user
-                            if (existingUser) {
-                                // Use existing user data (preserves name and profile picture)
-                                // Normalize the email to lowercase
-                                existingUser.email = email.toLowerCase();
-                                localStorage.setItem('currentUser', JSON.stringify(existingUser));
-                            } else {
-                                // Create basic user for backward compatibility
-                                const newUser = {
-                                    firstName: 'User',
-                                    lastName: 'Name',
-                                    email: email,
-                                    profileImage: getDefaultProfileImage(),
-                                    aiChats: [],
-                                    listings: [],
-                                    emailVerified: true
-                                };
-                                
-                                // Add to users array for future logins
-                                users.push(newUser);
-                                localStorage.setItem('users', JSON.stringify(users));
-                                localStorage.setItem('currentUser', JSON.stringify(newUser));
-                            }
-                        }
-                        
-                        // Redirect to verification modal before going to home page
-                        window.location.href = 'verification-modal.html?redirect=index.html';
-                    } else {
-                        alert(result.error || 'Login failed');
-                    }
-                } catch (error) {
-                    console.error('Login error:', error);
-                    alert('Login failed. Please try again.');
-                }
-            } else {
-                // Registration logic
-                const firstName = document.getElementById('firstName').value.trim();
-                const lastName = document.getElementById('lastName').value.trim();
-                
-                if (!firstName || !lastName) {
-                    alert('Please fill in all fields.');
-                    return;
-                }
-
-                // Validate password requirements
-                if (!validatePassword(password)) {
-                    alert('Password must be at least 8 characters long.');
-                    return;
-                }
-
-                try {
-                    submitButton.disabled = true;
-                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
-                    
-                    const response = await fetch('/api/send-verification', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            firstName, 
-                            lastName, 
-                            email, 
-                            password
-                        })
-                    });
-
-                    const result = await response.json();
-                    
-                    if (response.ok) {
-                        showVerificationSection(email, { firstName, lastName, email, password });
-                    } else {
-                        alert(result.error || 'Failed to send verification email');
-                    }
-                } catch (error) {
-                    console.error('Registration error:', error);
-                    alert('Registration failed. Please try again.');
-                } finally {
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = 'Create Account';
-                }
-            }
-                });
-            } else {
-                console.error('❌ form element not found! Cannot set up form submission.');
-            }
-
-            // Verification handling
-            let pendingUserData = null;
-
-        function showVerificationSection(email, userData) {
-            pendingUserData = userData;
-            document.getElementById('authFormContainer').classList.add('hidden');
-            document.getElementById('verificationSection').classList.remove('hidden');
-            document.getElementById('verificationEmail').textContent = email;
+    // Normalize stored emails (safety)
+    (function normalizeStoredEmails(){
+      try{
+        let users = JSON.parse(localStorage.getItem('users'))||[];
+        let updated=false;
+        users = users.map(u => (u?.email && u.email!==u.email.toLowerCase()) ? (updated=true, {...u, email:u.email.toLowerCase()}) : u);
+        if (updated) localStorage.setItem('users', JSON.stringify(users));
+        const cu = localStorage.getItem('currentUser');
+        if (cu){
+          const obj = JSON.parse(cu);
+          if (obj?.email && obj.email!==obj.email.toLowerCase()){
+            obj.email = obj.email.toLowerCase();
+            localStorage.setItem('currentUser', JSON.stringify(obj));
+          }
         }
+      }catch{}
+    })();
 
-        function hideVerificationSection() {
-            document.getElementById('authFormContainer').classList.remove('hidden');
-            document.getElementById('verificationSection').classList.add('hidden');
-            pendingUserData = null;
+    // Optional auth manager
+    if (typeof window.UniversalAuth !== 'undefined'){
+      window.UniversalAuth.init({ allowAnonymous:true, requireSupabase:false });
+    }
+
+    // ---- GOOGLE & APPLE SIGN-IN (robust) ----
+    const googleBtn = document.getElementById('googleSignInBtn');
+    const appleBtn = document.getElementById('appleSignInBtn');
+    let oauthConfig = null;
+    let googleInitialized = false;
+    let codeClient = null; // Google OAuth code client fallback
+
+    async function loadOAuthConfig(){
+      if (oauthConfig) return oauthConfig;
+      try{
+        const r = await fetch('/api/config'); // { GOOGLE_OAUTH_CLIENT_ID, APPLE_CLIENT_ID }
+        const cfg = await r.json();
+        oauthConfig = { googleClientId: cfg.GOOGLE_OAUTH_CLIENT_ID, appleClientId: cfg.APPLE_CLIENT_ID };
+      }catch(e){ console.error('Failed to load OAuth config', e); oauthConfig = {}; }
+      return oauthConfig;
+    }
+
+    function initializeGoogleSignIn(){
+      if (typeof google==='undefined' || googleInitialized || !oauthConfig?.googleClientId) return;
+      // One-Tap / ID token
+      google.accounts.id.initialize({
+        client_id: oauthConfig.googleClientId,
+        callback: handleGoogleIdToken,
+        auto_select:false,
+        cancel_on_tap_outside:true
+      });
+      // Popup OAuth (code exchange)
+      codeClient = google.accounts.oauth2.initCodeClient({
+        client_id: oauthConfig.googleClientId,
+        scope: 'openid email profile',
+        ux_mode: 'popup',
+        callback: handleGoogleAuthCode
+      });
+      googleInitialized = true;
+    }
+
+    // One-Tap ID token => backend verify
+    async function handleGoogleIdToken(resp){
+      try{
+        const r = await fetch('/api/auth/google',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ idToken: resp.credential })});
+        const result = await r.json();
+        if (r.ok){
+          localStorage.setItem('currentUser', JSON.stringify(result.user));
+          const users = JSON.parse(localStorage.getItem('users')||'[]');
+          const i = users.findIndex(u=>u?.email?.toLowerCase()===result.user.email?.toLowerCase());
+          if (i>=0) users[i]=result.user; else users.push(result.user);
+          localStorage.setItem('users', JSON.stringify(users));
+          window.location.href='verification-modal.html?redirect=index.html';
+        }else{
+          alert(result.error || 'Google Sign-In failed');
         }
+      }catch{ alert('Google Sign-In failed. Please try again.'); }
+    }
 
-            // Add verification form event listener with error handling  
-            const verificationForm = document.getElementById('verificationForm');
-            if (verificationForm) {
-                console.log('✉️ Setting up verification form handler...');
-                verificationForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!pendingUserData) {
-                alert('No pending verification. Please try registering again.');
-                return;
-            }
-
-            const code = document.getElementById('verificationCode').value.trim();
-            
-            try {
-                const response = await fetch('/api/verify-email', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: pendingUserData.email, code })
-                });
-
-                const result = await response.json();
-                
-                if (response.ok) {
-                    const user = {
-                        firstName: pendingUserData.firstName,
-                        lastName: pendingUserData.lastName,
-                        email: pendingUserData.email,
-                        profileImage: getDefaultProfileImage(),
-                        aiChats: [],
-                        listings: [],
-                        emailVerified: true
-                    };
-                    
-                    // Add user to users array in localStorage
-                    let users = [];
-                    try {
-                        users = JSON.parse(localStorage.getItem('users')) || [];
-                    } catch (e) {
-                        console.error('Error parsing users:', e);
-                        users = [];
-                    }
-                    
-                    // Check if user already exists to avoid duplicates (case-insensitive)
-                    const existingUserIndex = users.findIndex(u => u && u.email && u.email.toLowerCase() === user.email.toLowerCase());
-                    if (existingUserIndex >= 0) {
-                        // Update existing user
-                        users[existingUserIndex] = user;
-                    } else {
-                        // Add new user
-                        users.push(user);
-                    }
-                    
-                    localStorage.setItem('users', JSON.stringify(users));
-                    localStorage.setItem('currentUser', JSON.stringify(user));
-                    alert('Email verified successfully! Welcome to RoomFinder AI.');
-                    // Redirect to verification modal before going to home page
-                    window.location.href = 'verification-modal.html?redirect=index.html';
-                } else {
-                    alert(result.error || 'Verification failed');
-                }
-            } catch (error) {
-                console.error('Verification error:', error);
-                alert('Verification failed. Please try again.');
-            }
-                });
-            } else {
-                console.error('❌ verificationForm element not found! Cannot set up verification.');
-            }
-
-            // Add resend code event listener with error handling
-            const resendCode = document.getElementById('resendCode');
-            if (resendCode) {
-                console.log('🔄 Setting up resend code handler...');
-                resendCode.addEventListener('click', async () => {
-            if (!pendingUserData) {
-                alert('No pending verification. Please try registering again.');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/send-verification', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(pendingUserData)
-                });
-
-                const result = await response.json();
-                
-                if (response.ok) {
-                    alert('Verification code resent successfully!');
-                    document.getElementById('verificationCode').value = '';
-                } else {
-                    alert(result.error || 'Failed to resend verification code');
-                }
-            } catch (error) {
-                alert('Failed to resend verification code. Please try again.');
-            }
-                });
-            } else {
-                console.error('❌ resendCode element not found! Cannot set up resend functionality.');
-            }
-
-            // Add back to registration event listener with error handling
-            const backToRegistration = document.getElementById('backToRegistration');
-            if (backToRegistration) {
-                console.log('⬅️ Setting up back to registration handler...');
-                backToRegistration.addEventListener('click', hideVerificationSection);
-            } else {
-                console.error('❌ backToRegistration element not found! Cannot set up back navigation.');
-            }
-
-            // Format verification code input with error handling
-            const verificationCode = document.getElementById('verificationCode');
-            if (verificationCode) {
-                console.log('🔢 Setting up verification code formatting...');
-                verificationCode.addEventListener('input', (e) => {
-                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                });
-            } else {
-                console.error('❌ verificationCode element not found! Cannot set up formatting.');
-            }
-        
-        // Function to normalize existing emails to lowercase
-        function normalizeStoredEmails() {
-            try {
-                // Normalize users array
-                let users = JSON.parse(localStorage.getItem('users')) || [];
-                let usersUpdated = false;
-                
-                users = users.map(user => {
-                    if (user && user.email && user.email !== user.email.toLowerCase()) {
-                        usersUpdated = true;
-                        return { ...user, email: user.email.toLowerCase() };
-                    }
-                    return user;
-                });
-                
-                if (usersUpdated) {
-                    localStorage.setItem('users', JSON.stringify(users));
-                    console.log('✅ Normalized user emails in localStorage');
-                }
-                
-                // Normalize currentUser
-                const currentUserData = localStorage.getItem('currentUser');
-                if (currentUserData) {
-                    const currentUser = JSON.parse(currentUserData);
-                    if (currentUser && currentUser.email && currentUser.email !== currentUser.email.toLowerCase()) {
-                        currentUser.email = currentUser.email.toLowerCase();
-                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                        console.log('✅ Normalized currentUser email in localStorage');
-                    }
-                }
-            } catch (error) {
-                console.error('Error normalizing stored emails:', error);
-            }
+    // Popup OAuth code => backend exchange
+    async function handleGoogleAuthCode(resp){
+      try{
+        const r = await fetch('/api/auth/google/oauth-code',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ code: resp.code })});
+        const result = await r.json();
+        if (r.ok){
+          localStorage.setItem('currentUser', JSON.stringify(result.user));
+          const users = JSON.parse(localStorage.getItem('users')||'[]');
+          const i = users.findIndex(u=>u?.email?.toLowerCase()===result.user.email?.toLowerCase());
+          if (i>=0) users[i]=result.user; else users.push(result.user);
+          localStorage.setItem('users', JSON.stringify(users));
+          window.location.href='verification-modal.html?redirect=index.html';
+        }else{
+          alert(result.error || 'Google Sign-In failed');
         }
-        
-        // Normalize emails on page load
-        normalizeStoredEmails();
-        
-        // Setup secure event listeners for social login buttons
-        const googleBtn = document.getElementById('googleSignInBtn');
-        const appleBtn = document.getElementById('appleSignInBtn');
-        
-        if (googleBtn) {
-            googleBtn.addEventListener('click', handleGoogleSignIn);
-            console.log('✅ Google Sign-In button event listener attached');
-        } else {
-            console.error('❌ Google Sign-In button not found');
-        }
-        
-        if (appleBtn) {
-            appleBtn.addEventListener('click', handleAppleSignIn);
-            console.log('✅ Apple Sign-In button event listener attached');
-        } else {
-            console.error('❌ Apple Sign-In button not found');
-        }
-        
-        // Initialize Universal Authentication Manager
-        if (typeof window.UniversalAuth !== 'undefined') {
-            window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
-        }
+      }catch{ alert('Google Sign-In failed. Please try again.'); }
+    }
 
-        // OAuth Configuration
-        let googleInitialized = false;
-        let oauthConfig = null;
-        
-        // Load OAuth configuration from backend
-        async function loadOAuthConfig() {
-            try {
-                const response = await fetch('/api/config');
-                const config = await response.json();
-                oauthConfig = {
-                    googleClientId: config.GOOGLE_OAUTH_CLIENT_ID,
-                    appleClientId: config.APPLE_CLIENT_ID
-                };
-                console.log('✅ OAuth configuration loaded');
-                return true;
-            } catch (error) {
-                console.error('Failed to load OAuth configuration:', error);
-                return false;
-            }
-        }
-        
-        function initializeGoogleSignIn() {
-            if (typeof google !== 'undefined' && !googleInitialized && oauthConfig?.googleClientId) {
-                google.accounts.id.initialize({
-                    client_id: oauthConfig.googleClientId,
-                    callback: handleGoogleResponse,
-                    auto_select: false,
-                    cancel_on_tap_outside: true
-                });
-                googleInitialized = true;
-                console.log('✅ Google Sign-In initialized');
-            }
-        }
+    async function handleGoogleSignIn(){
+      if (!oauthConfig) await loadOAuthConfig();
+      if (!googleInitialized) initializeGoogleSignIn();
 
-        // Initialize OAuth when the page loads
-        window.addEventListener('load', async () => {
-            await loadOAuthConfig();
-            // Don't auto-initialize to prevent auto-rendering
-            // setTimeout(initializeGoogleSignIn, 1000);
+      try{
+        // Try One‑Tap first
+        google.accounts.id.prompt((note)=>{
+          const oneTapUnavailable = note.isNotDisplayed() || note.isSkippedMoment();
+          if (oneTapUnavailable){
+            // Fallback: guaranteed user-initiated popup
+            if (codeClient) codeClient.requestCode();
+            else alert('Google Sign-In unavailable. Try email/password.');
+          }
         });
+      }catch{
+        if (codeClient) codeClient.requestCode();
+        else alert('Google Sign-In unavailable. Try email/password.');
+      }
+    }
 
-        // Google Sign-In Handler - Improved with fallback
-        async function handleGoogleSignIn() {
-            if (!googleInitialized) {
-                initializeGoogleSignIn();
-                setTimeout(handleGoogleSignIn, 500);
-                return;
-            }
-            
-            try {
-                // Try One-Tap first as a quick option
-                google.accounts.id.prompt((notification) => {
-                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        console.log('One-Tap not available, trying alternative flow');
-                        // If One-Tap fails, try alternative OAuth flow
-                        initiateGoogleOAuthFlow();
-                    }
-                });
-            } catch (error) {
-                console.error('Google Sign-In error:', error);
-                // Fallback to alternative OAuth flow
-                initiateGoogleOAuthFlow();
-            }
+    async function handleAppleSignIn(){
+      if (!oauthConfig) await loadOAuthConfig();
+      if (typeof AppleID === 'undefined'){ alert('Apple Sign-In is currently unavailable.'); return; }
+      try{
+        if (!window.appleIdInitialized && oauthConfig?.appleClientId){
+          AppleID.auth.init({
+            clientId: oauthConfig.appleClientId,
+            scope: 'name email',
+            redirectURI: window.location.origin + '/auth/apple/callback',
+            state: 'roomfinder_auth',
+            usePopup: true
+          });
+          window.appleIdInitialized = true;
         }
-
-        // Alternative Google OAuth flow for when One-Tap fails
-        function initiateGoogleOAuthFlow() {
-            try {
-                // Create a temporary container for Google's rendered button
-                const tempContainer = document.createElement('div');
-                tempContainer.style.position = 'absolute';
-                tempContainer.style.left = '-9999px';
-                document.body.appendChild(tempContainer);
-                
-                // Render Google's official button programmatically
-                google.accounts.id.renderButton(tempContainer, {
-                    theme: 'outline',
-                    size: 'large',
-                    shape: 'pill',
-                    width: 250
-                });
-                
-                // Trigger click on the rendered button
-                setTimeout(() => {
-                    const googleBtn = tempContainer.querySelector('[role="button"]');
-                    if (googleBtn) {
-                        googleBtn.click();
-                    } else {
-                        alert('Google Sign-In is currently unavailable. Please try email/password login.');
-                    }
-                    // Clean up
-                    document.body.removeChild(tempContainer);
-                }, 100);
-                
-            } catch (error) {
-                console.error('Google OAuth fallback error:', error);
-                alert('Google Sign-In is currently unavailable. Please try email/password login.');
-            }
+        const response = await AppleID.auth.signIn();
+        const r = await fetch('/api/auth/apple',{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({ authorizationCode: response.authorization.code, identityToken: response.authorization.id_token, user: response.user })
+        });
+        const result = await r.json();
+        if (r.ok){
+          localStorage.setItem('currentUser', JSON.stringify(result.user));
+          const users = JSON.parse(localStorage.getItem('users')||'[]');
+          const i = users.findIndex(u=>u?.email?.toLowerCase()===result.user.email?.toLowerCase());
+          if (i>=0) users[i]=result.user; else users.push(result.user);
+          localStorage.setItem('users', JSON.stringify(users));
+          window.location.href='verification-modal.html?redirect=index.html';
+        }else{
+          alert(result.error || 'Apple Sign-In failed');
         }
+      }catch(error){
+        if (error?.error === 'popup_closed_by_user') return;
+        if (error?.error === 'popup_blocked_by_browser') alert('Apple popup was blocked. Please allow popups and try again.');
+        else alert('Apple Sign-In failed. Please try email/password.');
+      }
+    }
 
-        // Handle Google Sign-In Response
-        async function handleGoogleResponse(response) {
-            try {
-                console.log('Google ID Token received:', response.credential);
-                
-                // Send token to backend for verification
-                const backendResponse = await fetch('/api/auth/google', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        idToken: response.credential
-                    })
-                });
+    // Attach listeners
+    googleBtn.addEventListener('click', handleGoogleSignIn);
+    appleBtn.addEventListener('click', handleAppleSignIn);
 
-                const result = await backendResponse.json();
-                
-                if (backendResponse.ok) {
-                    // Store user data
-                    localStorage.setItem('currentUser', JSON.stringify(result.user));
-                    
-                    // Update users array
-                    let users = JSON.parse(localStorage.getItem('users') || '[]');
-                    const existingUserIndex = users.findIndex(u => u.email && u.email.toLowerCase() === result.user.email.toLowerCase());
-                    if (existingUserIndex >= 0) {
-                        users[existingUserIndex] = result.user;
-                    } else {
-                        users.push(result.user);
-                    }
-                    localStorage.setItem('users', JSON.stringify(users));
-                    
-                    // Redirect to verification modal
-                    window.location.href = 'verification-modal.html?redirect=index.html';
-                } else {
-                    alert(result.error || 'Google Sign-In failed');
-                }
-            } catch (error) {
-                console.error('Google Sign-In processing error:', error);
-                alert('Google Sign-In failed. Please try again.');
-            }
-        }
-
-        // Apple Sign-In Handler - Enhanced with better error handling
-        async function handleAppleSignIn() {
-            try {
-                if (typeof AppleID === 'undefined') {
-                    console.error('Apple Sign-In SDK not loaded');
-                    alert('Apple Sign-In is currently unavailable. Please try email/password login.');
-                    return;
-                }
-
-                // Initialize Apple ID if not already done
-                if (!window.appleIdInitialized && oauthConfig?.appleClientId) {
-                    try {
-                        AppleID.auth.init({
-                            clientId: oauthConfig.appleClientId,
-                            scope: 'name email',
-                            redirectURI: window.location.origin + '/auth/apple/callback',
-                            state: 'roomfinder_auth',
-                            usePopup: true
-                        });
-                        window.appleIdInitialized = true;
-                        console.log('✅ Apple Sign-In initialized successfully');
-                    } catch (initError) {
-                        console.error('Apple Sign-In initialization failed:', initError);
-                        alert('Apple Sign-In configuration error. Please try email/password login.');
-                        return;
-                    }
-                }
-
-                console.log('🍎 Starting Apple Sign-In flow...');
-                const response = await AppleID.auth.signIn();
-                console.log('Apple Sign-In response:', response);
-                
-                // Send authorization code to backend
-                const backendResponse = await fetch('/api/auth/apple', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        authorizationCode: response.authorization.code,
-                        identityToken: response.authorization.id_token,
-                        user: response.user
-                    })
-                });
-
-                const result = await backendResponse.json();
-                
-                if (backendResponse.ok) {
-                    // Store user data
-                    localStorage.setItem('currentUser', JSON.stringify(result.user));
-                    
-                    // Update users array
-                    let users = JSON.parse(localStorage.getItem('users') || '[]');
-                    const existingUserIndex = users.findIndex(u => u.email && u.email.toLowerCase() === result.user.email.toLowerCase());
-                    if (existingUserIndex >= 0) {
-                        users[existingUserIndex] = result.user;
-                    } else {
-                        users.push(result.user);
-                    }
-                    localStorage.setItem('users', JSON.stringify(users));
-                    
-                    // Redirect to verification modal
-                    window.location.href = 'verification-modal.html?redirect=index.html';
-                } else {
-                    alert(result.error || 'Apple Sign-In failed');
-                }
-            } catch (error) {
-                console.error('Apple Sign-In error:', error);
-                
-                // Handle specific Apple Sign-In errors
-                if (error.error === 'popup_closed_by_user') {
-                    console.log('User cancelled Apple Sign-In');
-                    return; // User cancelled, no need to show error
-                } else if (error.error === 'popup_blocked_by_browser') {
-                    alert('Apple Sign-In popup was blocked. Please allow popups and try again.');
-                } else if (error.error === 'invalid_client') {
-                    console.error('Apple Sign-In: Invalid client configuration');
-                    alert('Apple Sign-In configuration error. Please try email/password login.');
-                } else if (error.error === 'invalid_request') {
-                    console.error('Apple Sign-In: Invalid request parameters');
-                    alert('Apple Sign-In request error. Please try email/password login.');
-                } else {
-                    console.error('Apple Sign-In: Unknown error', error);
-                    alert('Apple Sign-In failed. Please try email/password login.');
-                }
-            }
-        }
-            
-            console.log('✅ Login page JavaScript initialization complete!');
-        }); // End of DOMContentLoaded event listener
-    </script>
+    // Load OAuth config early
+    loadOAuthConfig().then(()=> initializeGoogleSignIn());
+  });
+  </script>
 </body>
 </html>
