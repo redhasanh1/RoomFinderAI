@@ -501,14 +501,16 @@
                     const result = await response.json();
                     
                     if (response.ok) {
-                        // First check if we have a currentUser that matches this email
+                        // First check if we have a currentUser that matches this email (case-insensitive)
                         let currentUser = null;
                         try {
                             const storedUser = localStorage.getItem('currentUser');
                             if (storedUser) {
                                 const parsedUser = JSON.parse(storedUser);
-                                if (parsedUser && parsedUser.email === email) {
+                                if (parsedUser && parsedUser.email && parsedUser.email.toLowerCase() === email.toLowerCase()) {
                                     currentUser = parsedUser;
+                                    // Normalize the email to lowercase
+                                    currentUser.email = email.toLowerCase();
                                 }
                             }
                         } catch (e) {
@@ -528,8 +530,8 @@
                                 users = [];
                             }
                             
-                            // Update or add user to users array
-                            const userIndex = users.findIndex(u => u && u.email === email);
+                            // Update or add user to users array (case-insensitive lookup)
+                            const userIndex = users.findIndex(u => u && u.email && u.email.toLowerCase() === email.toLowerCase());
                             if (userIndex >= 0) {
                                 users[userIndex] = currentUser;
                             } else {
@@ -546,11 +548,13 @@
                                 users = [];
                             }
                             
-                            let existingUser = users.find(u => u && u.email === email);
+                            let existingUser = users.find(u => u && u.email && u.email.toLowerCase() === email.toLowerCase());
                             
                             // If user found, use their saved data; otherwise create basic user
                             if (existingUser) {
                                 // Use existing user data (preserves name and profile picture)
+                                // Normalize the email to lowercase
+                                existingUser.email = email.toLowerCase();
                                 localStorage.setItem('currentUser', JSON.stringify(existingUser));
                             } else {
                                 // Create basic user for backward compatibility
@@ -690,8 +694,8 @@
                         users = [];
                     }
                     
-                    // Check if user already exists to avoid duplicates
-                    const existingUserIndex = users.findIndex(u => u && u.email === user.email);
+                    // Check if user already exists to avoid duplicates (case-insensitive)
+                    const existingUserIndex = users.findIndex(u => u && u.email && u.email.toLowerCase() === user.email.toLowerCase());
                     if (existingUserIndex >= 0) {
                         // Update existing user
                         users[existingUserIndex] = user;
@@ -769,6 +773,44 @@
             } else {
                 console.error('❌ verificationCode element not found! Cannot set up formatting.');
             }
+        
+        // Function to normalize existing emails to lowercase
+        function normalizeStoredEmails() {
+            try {
+                // Normalize users array
+                let users = JSON.parse(localStorage.getItem('users')) || [];
+                let usersUpdated = false;
+                
+                users = users.map(user => {
+                    if (user && user.email && user.email !== user.email.toLowerCase()) {
+                        usersUpdated = true;
+                        return { ...user, email: user.email.toLowerCase() };
+                    }
+                    return user;
+                });
+                
+                if (usersUpdated) {
+                    localStorage.setItem('users', JSON.stringify(users));
+                    console.log('✅ Normalized user emails in localStorage');
+                }
+                
+                // Normalize currentUser
+                const currentUserData = localStorage.getItem('currentUser');
+                if (currentUserData) {
+                    const currentUser = JSON.parse(currentUserData);
+                    if (currentUser && currentUser.email && currentUser.email !== currentUser.email.toLowerCase()) {
+                        currentUser.email = currentUser.email.toLowerCase();
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        console.log('✅ Normalized currentUser email in localStorage');
+                    }
+                }
+            } catch (error) {
+                console.error('Error normalizing stored emails:', error);
+            }
+        }
+        
+        // Normalize emails on page load
+        normalizeStoredEmails();
         
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {
@@ -857,7 +899,7 @@
                     
                     // Update users array
                     let users = JSON.parse(localStorage.getItem('users') || '[]');
-                    const existingUserIndex = users.findIndex(u => u.email === result.user.email);
+                    const existingUserIndex = users.findIndex(u => u.email && u.email.toLowerCase() === result.user.email.toLowerCase());
                     if (existingUserIndex >= 0) {
                         users[existingUserIndex] = result.user;
                     } else {
@@ -920,7 +962,7 @@
                     
                     // Update users array
                     let users = JSON.parse(localStorage.getItem('users') || '[]');
-                    const existingUserIndex = users.findIndex(u => u.email === result.user.email);
+                    const existingUserIndex = users.findIndex(u => u.email && u.email.toLowerCase() === result.user.email.toLowerCase());
                     if (existingUserIndex >= 0) {
                         users[existingUserIndex] = result.user;
                     } else {
