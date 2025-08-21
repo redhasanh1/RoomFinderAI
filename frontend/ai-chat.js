@@ -839,7 +839,12 @@ Property Details:
         
         // Save to history and localStorage (skip typing indicators)
         if (!isTypingIndicator) {
-            this.conversationHistory.push({ role: sender.toLowerCase(), content: message });
+            // Map display names to OpenAI-compatible roles
+            let role = sender.toLowerCase();
+            if (role === 'you') role = 'user';
+            if (role === 'ai') role = 'assistant';
+            
+            this.conversationHistory.push({ role, content: message });
             this.saveConversationHistory();
         }
     }
