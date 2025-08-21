@@ -71,9 +71,29 @@
     <color name="heart_red_dim">#CC5555</color>
     <color name="heart_red_bright">#FF0000</color>
     
-    <!-- AI Chat Colors -->
+    <!-- AI Chat Colors - Modern Glassmorphism -->
     <color name="ai_chat_primary">#2196F3</color>
     <color name="ai_chat_secondary">#1976D2</color>
+    
+    <!-- Glassmorphism Chat Colors -->
+    <color name="glass_topbar_start">#E0667eea</color> <!-- 90% purple -->
+    <color name="glass_topbar_end">#E0764ba2</color>   <!-- 90% purple-blue -->
+    <color name="glass_topbar_overlay">#1A667eea</color> <!-- 10% overlay -->
+    
+    <!-- AI Message Bubble Gradient -->
+    <color name="ai_bubble_start">#F0667eea</color>  <!-- 96% purple -->
+    <color name="ai_bubble_end">#F04facfe</color>    <!-- 96% blue -->
+    <color name="ai_bubble_shadow">#26667eea</color> <!-- 15% shadow -->
+    
+    <!-- User Message Bubble -->
+    <color name="user_bubble_bg">#FEFFFFFF</color>     <!-- 99% white -->
+    <color name="user_bubble_border">#20667eea</color> <!-- 12% border -->
+    <color name="user_bubble_shadow">#1A000000</color> <!-- 10% black shadow -->
+    
+    <!-- Button Gradients -->
+    <color name="button_gradient_start">#667eea</color>
+    <color name="button_gradient_end">#764ba2</color>
+    <color name="button_glow">#40667eea</color> <!-- 25% glow effect -->
     
     <!-- Property Card Colors -->
     <color name="property_card_background">@color/white</color>
