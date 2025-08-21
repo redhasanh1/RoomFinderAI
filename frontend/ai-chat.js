@@ -727,7 +727,15 @@ Property Details:
                     message: `I'm interested in listing ${listing.id} - ${listing.title || 'Property'} in ${listing.city || listing.street}. Please help me negotiate a good deal.`,
                     conversationHistory: this.conversationHistory.slice(-5),
                     userEmail: this.currentUser?.email,
-                    listingData: listing
+                    listingData: {
+                        id: listing.id,
+                        title: listing.title,
+                        city: listing.city,
+                        street: listing.street,
+                        price: listing.price,
+                        house_type: listing.house_type,
+                        user_email: listing.user_email
+                    }
                 })
             });
 
