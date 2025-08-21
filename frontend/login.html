@@ -151,6 +151,33 @@
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
         }
 
+        /* Enhanced centering for social buttons - bulletproof across browsers */
+        .social-btn {
+            display: grid !important;
+            place-items: center;
+            width: 100%;
+            aspect-ratio: 6 / 2;
+            border-radius: 9999px;
+            text-align: center;
+        }
+
+        .social-btn i,
+        .social-btn svg {
+            display: block;
+            margin: 0;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        /* Brand-specific styling */
+        .social-btn.google { 
+            background: #fff; 
+        }
+        
+        .social-btn.apple { 
+            background: #fff; 
+        }
+
         /* Hide auto-generated Google and Apple sign-in elements */
         div[data-g-sign-in],
         .g_id_signin,
@@ -281,12 +308,25 @@
                     
                     <!-- Social Login Buttons -->
                     <div class="mt-6">
-                        <div class="mt-6 grid grid-cols-2 gap-4">
-                            <button type="button" id="googleSignInBtn" class="social-btn flex items-center justify-center" onclick="handleGoogleSignIn()">
-                                <i class="fab fa-google text-red-500 text-xl"></i>
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- Google -->
+                            <button
+                                type="button"
+                                id="googleSignInBtn"
+                                class="social-btn google"
+                                aria-label="Continue with Google"
+                                onclick="handleGoogleSignIn()">
+                                <i class="fab fa-google text-xl" style="color:#DB4437;"></i>
                             </button>
-                            <button type="button" id="appleSignInBtn" class="social-btn flex items-center justify-center" onclick="handleAppleSignIn()">
-                                <i class="fab fa-apple text-gray-800 text-xl"></i>
+
+                            <!-- Apple -->
+                            <button
+                                type="button"
+                                id="appleSignInBtn"
+                                class="social-btn apple"
+                                aria-label="Continue with Apple"
+                                onclick="handleAppleSignIn()">
+                                <i class="fab fa-apple text-xl" style="color:#000000;"></i>
                             </button>
                         </div>
                     </div>
