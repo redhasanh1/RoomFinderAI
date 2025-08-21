@@ -3194,19 +3194,14 @@ async function logUserActivity(userEmail, activityType, description, metadata = 
             return;
         }
 
-        // First check if user exists to avoid foreign key constraint violation
-        const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('email')
-            .eq('email', userEmail)
-            .single();
-
-        if (userError || !user) {
-            console.log(`⚠️ Cannot log activity - User ${userEmail} not found in users table`);
-            return;
+        // Skip user check - users table has complex auth constraints
+        // Just set the current user email for RLS if the function exists
+        try {
+            await supabase.rpc('set_current_user_email', { email: userEmail });
+        } catch (rpcError) {
+            // Function might not exist, continue anyway
+            console.log('⚠️ set_current_user_email function not found, continuing without it');
         }
-
-        await supabase.rpc('set_current_user_email', { email: userEmail });
         
         const { error } = await supabase
             .from('user_activities')
