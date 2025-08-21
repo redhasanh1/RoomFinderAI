@@ -767,19 +767,26 @@ Property Details:
     // Send message to landlord via chat system
     async sendMessageToLandlord(listing, aiResponse) {
         try {
+            console.log('🔍 [CHAT DEBUG] Listing object:', listing);
+            console.log('🔍 [CHAT DEBUG] Available functions:', {
+                openChatModal: typeof window.openChatModal,
+                globalChatSystem: !!window.globalChatSystem,
+                chatSystem: !!window.chatSystem
+            });
+            
             this.appendMessage('AI', `💬 Opening chat with landlord for ${listing.title}...`, 'left');
             
             // Try to use the existing chat system
             if (typeof window.openChatModal === 'function') {
-                // Use the real chat modal
+                console.log('🔍 [CHAT DEBUG] Using openChatModal with:', listing.id, listing.title, listing.user_email);
                 window.openChatModal(listing.id, listing.title || 'Property', listing.user_email);
                 this.appendMessage('AI', `✅ Chat opened with landlord for "${listing.title}". You can now message them directly in the chat window!`, 'left');
             } else if (window.globalChatSystem && window.globalChatSystem.startConversation) {
-                // Try global chat system
+                console.log('🔍 [CHAT DEBUG] Using globalChatSystem with:', listing.id, listing.title, listing.user_email);
                 await window.globalChatSystem.startConversation(listing.id, listing.title, listing.user_email);
                 this.appendMessage('AI', `✅ Chat conversation started for "${listing.title}"`, 'left');
             } else if (window.chatSystem && window.chatSystem.startConversation) {
-                // Try window.chatSystem
+                console.log('🔍 [CHAT DEBUG] Using chatSystem with full listing:', listing);
                 await window.chatSystem.startConversation(listing);
                 this.appendMessage('AI', `✅ Chat conversation started for "${listing.title}"`, 'left');
             } else {
