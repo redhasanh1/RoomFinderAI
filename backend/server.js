@@ -1193,7 +1193,7 @@ async function sendPasswordResetEmail(email, code, firstName) {
 }
 
 // Function to generate contact email HTML
-function generateContactEmailHTML(firstName, email, message) {
+function generateContactEmailHTML(firstName, email, message, lastName = null) {
     // Escape HTML to prevent injection and ensure proper display
     const escapeHtml = (text) => {
         if (!text) return '';
@@ -1206,6 +1206,8 @@ function generateContactEmailHTML(firstName, email, message) {
     };
 
     const safeFirstName = escapeHtml(firstName || 'Unknown');
+    const safeLastName = escapeHtml(lastName || '');
+    const safeFullName = safeLastName ? `${safeFirstName} ${safeLastName}` : safeFirstName;
     const safeEmail = escapeHtml(email || 'No email provided');
     const safeMessage = escapeHtml(message || 'No message provided');
 
@@ -1232,7 +1234,7 @@ function generateContactEmailHTML(firstName, email, message) {
         <div style="padding: 40px 30px;">
             <div style="background: #F8FAFC; padding: 20px; border-radius: 8px; border-left: 4px solid #3B82F6; margin-bottom: 20px;">
                 <h2 style="margin: 0 0 15px 0; color: #1F2937; font-size: 18px;">Contact Details</h2>
-                <p style="margin: 0 0 10px 0; color: #374151;"><strong>Name:</strong> ${safeFirstName}</p>
+                <p style="margin: 0 0 10px 0; color: #374151;"><strong>Name:</strong> ${safeFullName}</p>
                 <p style="margin: 0; color: #374151;"><strong>Email:</strong> ${safeEmail}</p>
             </div>
             
@@ -1262,16 +1264,28 @@ function generateContactEmailHTML(firstName, email, message) {
 }
 
 // Function to send contact form email
-async function sendContactEmail(firstName, email, message) {
+async function sendContactEmail(firstName, email, message, lastName = null) {
+    const emailStartTime = Date.now();
+    const emailId = Math.random().toString(36).substring(2, 15);
+    
     try {
-        console.log('📧 Sending contact form email from:', email);
+        console.log(`📧 [${emailId}] Starting contact form email send process`);
+        console.log(`📧 [${emailId}] From: ${firstName} ${lastName || ''} <${email}>`);
+        console.log(`📧 [${emailId}] Message length: ${message.length} characters`);
         
         // Check if API key is available
         if (!config.BREVO_API_KEY) {
-            console.error('❌ BREVO_API_KEY not configured');
+            console.error(`❌ [${emailId}] BREVO_API_KEY not configured`);
             return { success: false, error: 'Email service not configured' };
         }
         
+        // Validate Brevo API key format
+        if (!config.BREVO_API_KEY.startsWith('xkeysib-')) {
+            console.error(`❌ [${emailId}] Invalid BREVO_API_KEY format`);
+            return { success: false, error: 'Invalid email service configuration' };
+        }
+        
+        const fullName = lastName ? `${firstName} ${lastName}` : firstName;
         const emailData = {
             sender: {
                 name: "RoomFinderAI Contact Form",
@@ -1283,14 +1297,14 @@ async function sendContactEmail(firstName, email, message) {
             }],
             replyTo: {
                 email: email,
-                name: firstName
+                name: fullName
             },
-            subject: `New Contact Form Message from ${firstName}`,
-            htmlContent: generateContactEmailHTML(firstName, email, message),
+            subject: `New Contact Form Message from ${fullName}`,
+            htmlContent: generateContactEmailHTML(firstName, email, message, lastName),
             textContent: `
 New Contact Form Message
 
-From: ${firstName}
+From: ${fullName}
 Email: ${email}
 
 Message:
@@ -1298,12 +1312,26 @@ ${message}
 
 Please respond to this inquiry within 24 hours for best customer service.
 
----
+----
 RoomFinderAI Contact Form
+Sent at: ${new Date().toISOString()}
+Email ID: ${emailId}
             `.trim()
         };
 
-        console.log('📧 Sending contact form request to Brevo API...');
+        console.log(`📧 [${emailId}] Email payload prepared:`, {
+            to: emailData.to[0].email,
+            from: emailData.sender.email,
+            replyTo: emailData.replyTo.email,
+            subject: emailData.subject,
+            htmlContentLength: emailData.htmlContent.length,
+            textContentLength: emailData.textContent.length
+        });
+        
+        console.log(`📧 [${emailId}] Sending request to Brevo API...`);
+        console.log(`📧 [${emailId}] API URL: https://api.brevo.com/v3/smtp/email`);
+        console.log(`📧 [${emailId}] API Key: ${config.BREVO_API_KEY.substring(0, 12)}...`);
+        
         const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
             headers: {
                 'accept': 'application/json',
@@ -1313,17 +1341,42 @@ RoomFinderAI Contact Form
             timeout: 30000 // 30 second timeout
         });
 
-        console.log('✅ Contact form email sent successfully');
-        console.log('📧 Brevo response status:', response.status);
-        return { success: true, data: response.data };
+        const emailProcessingTime = Date.now() - emailStartTime;
+        console.log(`✅ [${emailId}] Contact form email sent successfully in ${emailProcessingTime}ms`);
+        console.log(`✅ [${emailId}] Brevo response status: ${response.status}`);
+        console.log(`✅ [${emailId}] Brevo response headers:`, response.headers);
+        console.log(`✅ [${emailId}] Brevo response data:`, response.data);
+        
+        return { success: true, data: response.data, emailId: emailId, processingTime: emailProcessingTime };
     } catch (error) {
-        console.error('❌ Error sending contact form email:');
-        console.error('  - Error message:', error.message);
-        console.error('  - Response status:', error.response?.status);
-        console.error('  - Response data:', error.response?.data);
+        const emailProcessingTime = Date.now() - emailStartTime;
+        console.error(`❌ [${emailId}] Error sending contact form email after ${emailProcessingTime}ms:`);
+        console.error(`❌ [${emailId}] Error type:`, error.constructor.name);
+        console.error(`❌ [${emailId}] Error message:`, error.message);
+        
+        if (error.response) {
+            console.error(`❌ [${emailId}] HTTP Error Response:`);
+            console.error(`❌ [${emailId}]   - Status: ${error.response.status}`);
+            console.error(`❌ [${emailId}]   - Status Text: ${error.response.statusText}`);
+            console.error(`❌ [${emailId}]   - Headers:`, error.response.headers);
+            console.error(`❌ [${emailId}]   - Data:`, JSON.stringify(error.response.data, null, 2));
+        } else if (error.request) {
+            console.error(`❌ [${emailId}] Network Error - No response received:`);
+            console.error(`❌ [${emailId}]   - Request:`, error.request);
+        } else {
+            console.error(`❌ [${emailId}] Setup Error:`, error.message);
+        }
+        
+        console.error(`❌ [${emailId}] Full error stack:`, error.stack);
         
         const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Unknown error';
-        return { success: false, error: errorMessage, details: error.response?.data };
+        return { 
+            success: false, 
+            error: errorMessage, 
+            details: error.response?.data,
+            emailId: emailId,
+            processingTime: emailProcessingTime
+        };
     }
 }
 
@@ -2028,72 +2081,214 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
-// API: Contact form submission
+// API: Contact form submission with enhanced logging and validation
 app.post('/api/contact', async (req, res) => {
+    const startTime = Date.now();
+    const requestId = Math.random().toString(36).substring(2, 15);
+    
     try {
-        console.log('📧 Received contact form submission:', req.body);
-        const { firstName, email, message } = req.body;
+        console.log(`📧 [${requestId}] Contact form submission received at ${new Date().toISOString()}`);
+        console.log(`📧 [${requestId}] Request body:`, JSON.stringify(req.body, null, 2));
+        console.log(`📧 [${requestId}] Request headers:`, {
+            'user-agent': req.headers['user-agent'],
+            'x-forwarded-for': req.headers['x-forwarded-for'],
+            'origin': req.headers['origin']
+        });
+        
+        const { firstName, lastName, email, message } = req.body;
 
-        // Validate required fields
-        if (!firstName || !email || !message) {
-            return res.status(400).json({ error: 'First name, email, and message are required' });
+        // Enhanced validation
+        console.log(`📧 [${requestId}] Validating fields...`);
+        const missingFields = [];
+        if (!firstName?.trim()) missingFields.push('firstName');
+        if (!email?.trim()) missingFields.push('email');
+        if (!message?.trim()) missingFields.push('message');
+        
+        if (missingFields.length > 0) {
+            console.log(`❌ [${requestId}] Missing required fields: ${missingFields.join(', ')}`);
+            return res.status(400).json({ 
+                error: `Missing required fields: ${missingFields.join(', ')}`,
+                missingFields: missingFields,
+                requestId: requestId
+            });
         }
 
-        // Basic email validation
+        // Enhanced email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ error: 'Please provide a valid email address' });
+        if (!emailRegex.test(email.trim())) {
+            console.log(`❌ [${requestId}] Invalid email format: ${email}`);
+            return res.status(400).json({ 
+                error: 'Please provide a valid email address',
+                requestId: requestId
+            });
         }
 
-        // Send contact email
-        const emailResult = await sendContactEmail(firstName, email, message);
+        // Length validation
+        if (message.trim().length > 5000) {
+            console.log(`❌ [${requestId}] Message too long: ${message.length} characters`);
+            return res.status(400).json({ 
+                error: 'Message is too long (maximum 5000 characters)',
+                requestId: requestId
+            });
+        }
+
+        // Rate limiting check (simple in-memory implementation)
+        const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        const rateKey = `contact_${clientIP}`;
+        const now = Date.now();
+        const rateLimitWindow = 60 * 1000; // 1 minute
+        const maxRequests = 3; // Max 3 requests per minute
+        
+        if (!global.rateLimitStore) global.rateLimitStore = new Map();
+        const requests = global.rateLimitStore.get(rateKey) || [];
+        const recentRequests = requests.filter(time => now - time < rateLimitWindow);
+        
+        if (recentRequests.length >= maxRequests) {
+            console.log(`❌ [${requestId}] Rate limit exceeded for IP: ${clientIP}`);
+            return res.status(429).json({ 
+                error: 'Too many requests. Please wait before sending another message.',
+                requestId: requestId
+            });
+        }
+        
+        recentRequests.push(now);
+        global.rateLimitStore.set(rateKey, recentRequests);
+        
+        console.log(`📧 [${requestId}] Validation passed. Sending email...`);
+        console.log(`📧 [${requestId}] Processed fields:`, {
+            firstName: firstName.trim(),
+            lastName: lastName?.trim() || 'Not provided',
+            email: email.trim(),
+            messageLength: message.trim().length,
+            clientIP: clientIP
+        });
+
+        // Send contact email with enhanced logging
+        const emailResult = await sendContactEmail(firstName.trim(), email.trim(), message.trim(), lastName?.trim());
+        
+        const processingTime = Date.now() - startTime;
         
         if (emailResult.success) {
-            console.log('✅ Contact form email sent successfully');
+            console.log(`✅ [${requestId}] Contact form email sent successfully in ${processingTime}ms`);
+            console.log(`✅ [${requestId}] Brevo response:`, emailResult.data);
+            
             res.json({ 
                 message: 'Message sent successfully! We will get back to you soon.',
-                success: true
+                success: true,
+                requestId: requestId,
+                processingTime: processingTime
             });
         } else {
-            console.log('❌ Failed to send contact form email:', emailResult.error);
+            console.log(`❌ [${requestId}] Failed to send contact form email in ${processingTime}ms`);
+            console.log(`❌ [${requestId}] Error details:`, emailResult.error);
+            console.log(`❌ [${requestId}] Full error response:`, JSON.stringify(emailResult.details, null, 2));
+            
             res.status(500).json({ 
                 error: 'Failed to send message. Please try again later.',
-                details: emailResult.error
+                details: emailResult.error,
+                requestId: requestId,
+                processingTime: processingTime
             });
         }
     } catch (error) {
-        console.error('❌ Error in /api/contact:', error.message);
-        res.status(500).json({ error: 'Server error occurred while sending message' });
+        const processingTime = Date.now() - startTime;
+        console.error(`❌ [${requestId}] Critical error in /api/contact after ${processingTime}ms:`, error.message);
+        console.error(`❌ [${requestId}] Error stack:`, error.stack);
+        
+        res.status(500).json({ 
+            error: 'Server error occurred while sending message',
+            requestId: requestId,
+            processingTime: processingTime
+        });
     }
 });
 
 // Test endpoint for email functionality (remove in production)
 app.post('/api/test-email', async (req, res) => {
     try {
-        const { email } = req.body;
+        const { email, type = 'password-reset' } = req.body;
         
         if (!email) {
             return res.status(400).json({ error: 'Email is required' });
         }
         
-        console.log('🧪 Testing email send to:', email);
-        const testCode = '123456';
-        const result = await sendPasswordResetEmail(email, testCode, 'Test User');
+        console.log('🧪 Testing email send to:', email, 'Type:', type);
+        
+        let result;
+        if (type === 'contact-form') {
+            // Test contact form email
+            result = await sendContactEmail(
+                'Test', 
+                email, 
+                'This is a test message from the contact form debugging system. If you receive this, the contact form email delivery is working correctly.',
+                'User'
+            );
+        } else {
+            // Test password reset email (default)
+            const testCode = '123456';
+            result = await sendPasswordResetEmail(email, testCode, 'Test User');
+        }
         
         if (result.success) {
             res.json({ 
-                message: 'Test email sent successfully',
-                details: result.data
+                message: `Test ${type} email sent successfully`,
+                details: result.data,
+                emailId: result.emailId,
+                processingTime: result.processingTime
             });
         } else {
             res.status(500).json({ 
-                error: 'Failed to send test email',
-                details: result.error
+                error: `Failed to send test ${type} email`,
+                details: result.error,
+                emailId: result.emailId,
+                processingTime: result.processingTime
             });
         }
     } catch (error) {
         console.error('Test email error:', error);
-        res.status(500).json({ error: 'Test email failed' });
+        res.status(500).json({ error: 'Server error during email test' });
+    }
+});
+
+// Brevo account status check endpoint  
+app.get('/api/brevo-status', async (req, res) => {
+    try {
+        console.log('🔍 Checking Brevo account status...');
+        
+        if (!config.BREVO_API_KEY) {
+            return res.status(500).json({ 
+                error: 'BREVO_API_KEY not configured',
+                configured: false
+            });
+        }
+        
+        // Check Brevo account info
+        const response = await axios.get('https://api.brevo.com/v3/account', {
+            headers: {
+                'accept': 'application/json',
+                'api-key': config.BREVO_API_KEY
+            },
+            timeout: 10000
+        });
+        
+        console.log('✅ Brevo account status check successful');
+        res.json({
+            configured: true,
+            accountInfo: response.data,
+            apiKeyFormat: config.BREVO_API_KEY.startsWith('xkeysib-') ? 'valid' : 'invalid'
+        });
+        
+    } catch (error) {
+        console.error('❌ Brevo status check failed:', error.message);
+        console.error('❌ Response status:', error.response?.status);
+        console.error('❌ Response data:', error.response?.data);
+        
+        res.status(500).json({
+            error: 'Failed to check Brevo status',
+            details: error.response?.data || error.message,
+            configured: !!config.BREVO_API_KEY,
+            apiKeyFormat: config.BREVO_API_KEY?.startsWith('xkeysib-') ? 'valid' : 'invalid'
+        });
     }
 });
 
