@@ -2380,8 +2380,8 @@ app.post('/api/ai-negotiate', async (req, res) => {
             body: JSON.stringify({
                 model: config.OPENAI_MODEL || 'gpt-3.5-turbo',
                 messages: messages,
-                max_tokens: 300,
-                temperature: 0.8,
+                max_tokens: 80,
+                temperature: 0.7,
                 presence_penalty: 0.1,
                 frequency_penalty: 0.1
             })
@@ -2579,13 +2579,12 @@ COACHING APPROACH:
 - Boost confidence while maintaining realism
 
 RESPONSE STYLE:
-- Be supportive and encouraging
-- Provide actionable, specific advice
+- CRITICAL: Keep responses under 50 words maximum
+- Use bullet points only
+- Be direct and actionable
+- Skip explanations and background
+- Focus on 2-3 key negotiation points only
 - Use local market context when property location is known
-- Give concrete examples and templates
-- Explain landlord perspectives to help users understand
-- Balance optimism with realistic expectations
-- Keep responses concise and focused (under 150 words)
 
 MARKET KNOWLEDGE TO SHARE:
 - Typical negotiation ranges (5-15% for good tenants)
