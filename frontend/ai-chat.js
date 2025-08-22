@@ -703,7 +703,7 @@ Property Details:
             return;
         }
 
-        this.appendMessage('AI', `📧 Contacting landlords for ${this.matchingListings.length} listing(s)...`, 'left');
+        this.appendMessage('AI', `🧠 Analyzing negotiation strategies for ${this.matchingListings.length} listing(s)...`, 'left');
 
         for (const listing of this.matchingListings) {
             if (listing.user_email && listing.user_email !== this.currentUser?.email) {
@@ -715,7 +715,7 @@ Property Details:
     // Start negotiation for a specific listing
     async startNegotiationForListing(listing) {
         try {
-            this.appendMessage('AI', `📤 Sending negotiation message for listing ${listing.id}...`, 'left');
+            this.appendMessage('AI', `🧠 Analyzing negotiation strategy for listing ${listing.id}...`, 'left');
             
             // Call the AI negotiation API
             const response = await fetch('/api/ai-negotiate', {
@@ -742,15 +742,15 @@ Property Details:
             if (response.ok) {
                 const data = await response.json();
                 console.log('🎯 Negotiation response received:', data);
-                this.appendMessage('AI', `✅ Negotiation initiated for listing ${listing.id}`, 'left');
+                this.appendMessage('AI', `✅ Analysis complete for listing ${listing.id}`, 'left');
                 
                 // Display the AI response
                 if (data.response) {
                     console.log('📝 Displaying AI response:', data.response);
                     this.appendMessage('AI', data.response, 'left');
                     
-                    // Now send the actual message to the landlord
-                    this.sendMessageToLandlord(listing, data.response);
+                    // Show completion message - AI provides advice only, no automatic messaging
+                    this.appendMessage('AI', `✅ Negotiation strategy prepared for listing ${listing.id}. Use this advice when contacting the landlord directly.`, 'left');
                 } else {
                     console.error('❌ No response in data:', data);
                     this.appendMessage('AI', 'AI response received but empty', 'left');
