@@ -95,18 +95,34 @@
     <color name="button_gradient_end">#764ba2</color>
     <color name="button_glow">#40667eea</color> <!-- 25% glow effect -->
     
-    <!-- Modern UI Colors (ChatGPT-inspired) -->
-    <color name="modern_background">#FAFAFA</color>
-    <color name="modern_surface">#FFFFFF</color>
-    <color name="modern_border">#E5E7EB</color>
-    <color name="modern_hover">#F3F4F6</color>
-    <color name="modern_primary">#10A37F</color>
-    <color name="modern_primary_hover">#0D8F6E</color>
-    <color name="modern_secondary">#6B7280</color>
-    <color name="modern_text_primary">#1F2937</color>
-    <color name="modern_text_secondary">#6B7280</color>
-    <color name="modern_accent">#3B82F6</color>
-    <color name="modern_shadow">#1A000000</color>
+    <!-- Enhanced Modern UI Colors -->
+    <color name="enhanced_background">#F8F9FA</color>
+    <color name="enhanced_surface">#FFFFFF</color>
+    <color name="enhanced_surface_elevated">#FDFDFD</color>
+    <color name="enhanced_border">#E9ECEF</color>
+    <color name="enhanced_border_light">#F1F3F4</color>
+    <color name="enhanced_hover">#F5F6F7</color>
+    <color name="enhanced_primary">#667EEA</color>
+    <color name="enhanced_primary_light">#8B9FEB</color>
+    <color name="enhanced_primary_dark">#5A67D8</color>
+    <color name="enhanced_accent">#4F46E5</color>
+    <color name="enhanced_text_primary">#1A202C</color>
+    <color name="enhanced_text_secondary">#718096</color>
+    <color name="enhanced_text_tertiary">#A0AEC0</color>
+    <color name="enhanced_shadow">#08000000</color>
+    <color name="enhanced_shadow_medium">#12000000</color>
+    <color name="enhanced_shadow_strong">#1A000000</color>
+    
+    <!-- Gradient Colors -->
+    <color name="gradient_start">#667EEA</color>
+    <color name="gradient_middle">#764BA2</color>
+    <color name="gradient_end">#8B9FEB</color>
+    
+    <!-- Status Colors -->
+    <color name="success_light">#D4F6D4</color>
+    <color name="success_main">#48BB78</color>
+    <color name="warning_light">#FFF4E6</color>
+    <color name="warning_main">#ED8936</color>
     
     
     <!-- Property Card Colors -->
