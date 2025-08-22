@@ -2346,7 +2346,7 @@ app.get('/api/brevo-status', async (req, res) => {
 // API: AI Negotiator chat with OpenAI integration
 app.post('/api/ai-negotiate', async (req, res) => {
     try {
-        const { message, conversationHistory, userEmail } = req.body;
+        const { message, conversationHistory, userEmail, listingData } = req.body;
         
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
@@ -2426,11 +2426,11 @@ app.post('/api/ai-negotiate', async (req, res) => {
                     user_message: message,
                     ai_response: aiResponse,
                     session_type: 'negotiation_assistant',
-                    listing_details: {
-                        location: 'Central District, Hong Kong',
-                        rent: 1500,
-                        type: 'Studio Apartment',
-                        size: '450 sq ft'
+                    listing_details: listingData || {
+                        location: 'Global Market',
+                        rent: null,
+                        type: 'Various',
+                        size: 'Various'
                     },
                     tokens_used: data.usage?.total_tokens || 0,
                     created_at: new Date().toISOString()
@@ -2552,14 +2552,7 @@ async function sendNegotiationEmail(landlordEmail, message, userEmail, userName,
 
 // Helper function to build the negotiation system prompt
 function buildNegotiationSystemPrompt() {
-    return `You are an expert rental negotiation assistant helping users secure better deals with landlords in Hong Kong. You provide strategic advice, coaching, and sample responses to help users negotiate effectively.
-
-SAMPLE PROPERTY CONTEXT (for practice):
-- Location: Central District, Hong Kong  
-- Listed Rent: HK$1,500/month
-- Size: 450 sq ft
-- Type: Studio apartment
-- Amenities: Air conditioning, furnished, city view, near MTR
+    return `You are an expert rental negotiation assistant helping users secure better deals with landlords globally. You provide strategic advice, coaching, and sample responses to help users negotiate effectively for properties in any location.
 
 YOUR ROLE AS NEGOTIATION ASSISTANT:
 - Help users craft compelling negotiation messages
@@ -2567,9 +2560,10 @@ YOUR ROLE AS NEGOTIATION ASSISTANT:
 - Suggest reasonable counter-offers based on market knowledge
 - Coach users on landlord psychology and motivations
 - Help identify negotiation leverage points
+- Adapt advice to local rental market conditions
 
 NEGOTIATION STRATEGIES TO TEACH:
-- Research market rates for similar properties
+- Research market rates for similar properties in the area
 - Highlight your strengths as a tenant (stable income, good references, etc.)
 - Offer value-adds (longer lease, immediate move-in, upfront payment)
 - Use anchoring techniques with realistic lower offers
@@ -2587,19 +2581,20 @@ COACHING APPROACH:
 RESPONSE STYLE:
 - Be supportive and encouraging
 - Provide actionable, specific advice
-- Use Hong Kong rental market context
+- Use local market context when property location is known
 - Give concrete examples and templates
 - Explain landlord perspectives to help users understand
 - Balance optimism with realistic expectations
+- Keep responses concise and focused (under 150 words)
 
 MARKET KNOWLEDGE TO SHARE:
 - Typical negotiation ranges (5-15% for good tenants)
-- Seasonal rental patterns in Hong Kong
+- Seasonal rental patterns based on location
 - What landlords value most (stability, cleanliness, prompt payment)
 - Common lease terms and what's negotiable
 - Red flags to avoid in negotiations
 
-Remember: Your goal is to empower users to negotiate confidently and successfully while maintaining good relationships with landlords.`;
+Remember: Your goal is to empower users to negotiate confidently and successfully while maintaining good relationships with landlords. Always provide practical advice relevant to the specific property location and market.`;
 }
 
 // Keep the old endpoint for backward compatibility
