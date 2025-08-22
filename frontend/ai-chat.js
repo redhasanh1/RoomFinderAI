@@ -703,7 +703,7 @@ Property Details:
             return;
         }
 
-        this.appendMessage('AI', `🧠 Analyzing negotiation strategies for ${this.matchingListings.length} listing(s)...`, 'left');
+        this.appendMessage('AI', `🎯 Generating negotiation strategies for ${this.matchingListings.length} properties...`, 'left');
 
         for (const listing of this.matchingListings) {
             if (listing.user_email && listing.user_email !== this.currentUser?.email) {
@@ -715,8 +715,6 @@ Property Details:
     // Start negotiation for a specific listing
     async startNegotiationForListing(listing) {
         try {
-            this.appendMessage('AI', `🧠 Analyzing negotiation strategy for listing ${listing.id}...`, 'left');
-            
             // Call the AI negotiation API
             const response = await fetch('/api/ai-negotiate', {
                 method: 'POST',
@@ -742,25 +740,21 @@ Property Details:
             if (response.ok) {
                 const data = await response.json();
                 console.log('🎯 Negotiation response received:', data);
-                this.appendMessage('AI', `✅ Analysis complete for listing ${listing.id}`, 'left');
                 
-                // Display the AI response
+                // Display the AI response only
                 if (data.response) {
                     console.log('📝 Displaying AI response:', data.response);
-                    this.appendMessage('AI', data.response, 'left');
-                    
-                    // Show completion message - AI provides advice only, no automatic messaging
-                    this.appendMessage('AI', `✅ Negotiation strategy prepared for listing ${listing.id}. Use this advice when contacting the landlord directly.`, 'left');
+                    this.appendMessage('AI', `**${listing.title}**: ${data.response}`, 'left');
                 } else {
                     console.error('❌ No response in data:', data);
-                    this.appendMessage('AI', 'AI response received but empty', 'left');
+                    this.appendMessage('AI', `❌ No strategy generated for ${listing.title}`, 'left');
                 }
             } else {
-                this.appendMessage('AI', `❌ Failed to initiate negotiation for listing ${listing.id}`, 'left');
+                this.appendMessage('AI', `❌ Failed to analyze ${listing.title}`, 'left');
             }
         } catch (error) {
             console.error('Negotiation error:', error);
-            this.appendMessage('AI', `❌ Error negotiating for listing ${listing.id}: ${error.message}`, 'left');
+            this.appendMessage('AI', `❌ Error analyzing ${listing.title}: ${error.message}`, 'left');
         }
     }
 
