@@ -261,7 +261,7 @@ class AINegotiator {
         let successCount = 0;
         for (const listing of listings.slice(0, 3)) { // Limit to first 3 to avoid spam
             try {
-                this.appendMessage('AI', `📧 Contacting landlord for: ${listing.title} ($${listing.price}/month)`, 'left');
+                // Silently contact landlord
                 
                 const success = await this.negotiateWithLandlord(listing);
                 if (success) {
@@ -861,18 +861,14 @@ class AINegotiator {
                 return;
             }
             
-            const negotiationStatus = this.negotiationEngine ? 
-                '📤 Contacting landlords with AI negotiation engine (market data + smart pricing)...' :
-                '📤 Contacting landlords with basic messages...';
-            this.appendMessage('AI', negotiationStatus, 'left');
+            this.appendMessage('AI', `📧 Contacting landlords for ${validListings.length} properties...`, 'left');
             
             let successCount = 0;
             for (const listing of validListings) {
                 const success = await this.sendMessage(listing);
                 if (success) {
                     successCount++;
-                    const negotiationType = this.negotiationEngine ? '🤖 AI Negotiation' : '📧 Basic Message';
-                    this.appendMessage('AI', `✓ ${negotiationType} sent to owner of "${listing.title}"`, 'left');
+                    this.appendMessage('AI', `✅ **${listing.bedrooms} bedroom ${listing.city}**: Message sent to landlord!`, 'left');
                 }
             }
             
