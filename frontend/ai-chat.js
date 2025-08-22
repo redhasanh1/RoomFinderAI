@@ -703,7 +703,7 @@ Property Details:
             return;
         }
 
-        this.appendMessage('AI', `🎯 Generating negotiation strategies for ${this.matchingListings.length} properties...`, 'left');
+        this.appendMessage('AI', `📧 Contacting landlords for ${this.matchingListings.length} properties...`, 'left');
 
         for (const listing of this.matchingListings) {
             if (listing.user_email && listing.user_email !== this.currentUser?.email) {
@@ -739,18 +739,18 @@ Property Details:
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('🎯 Negotiation response received:', data);
+                console.log('🎯 Negotiation message generated:', data);
                 
-                // Display the AI response only
+                // Send the AI-generated message to the landlord
                 if (data.response) {
-                    console.log('📝 Displaying AI response:', data.response);
-                    this.appendMessage('AI', `**${listing.title}**: ${data.response}`, 'left');
+                    console.log('📤 Sending negotiation message to landlord:', data.response);
+                    await this.sendMessageToLandlord(listing, data.response);
                 } else {
-                    console.error('❌ No response in data:', data);
-                    this.appendMessage('AI', `❌ No strategy generated for ${listing.title}`, 'left');
+                    console.error('❌ No message generated:', data);
+                    this.appendMessage('AI', `❌ Failed to generate message for ${listing.title}`, 'left');
                 }
             } else {
-                this.appendMessage('AI', `❌ Failed to analyze ${listing.title}`, 'left');
+                this.appendMessage('AI', `❌ Failed to contact ${listing.title}`, 'left');
             }
         } catch (error) {
             console.error('Negotiation error:', error);
@@ -759,58 +759,65 @@ Property Details:
     }
 
     // Send automatic negotiation message to landlord
-    async sendMessageToLandlord(listing, aiResponse) {
+    async sendMessageToLandlord(listing, aiGeneratedMessage) {
         try {
-            this.appendMessage('AI', `🤖 Sending automatic negotiation message to ${listing.user_email}...`, 'left');
+            console.log('📤 Sending negotiation message to landlord:', listing.user_email);
             
-            // Create professional negotiation message
-            const userName = `${this.currentUser?.firstName || 'User'} ${this.currentUser?.lastName || ''}`.trim();
-            const negotiationMessage = `Hello,
-
-I'm interested in your property "${listing.title}" (ID: ${listing.id}) in ${listing.city}.
-
-${aiResponse}
-
-I would appreciate the opportunity to discuss this property further. Please let me know your thoughts on the terms I've proposed and if you'd like to schedule a viewing.
-
-Thank you for your time.
-
-Best regards,
-${userName}`;
-
-            // Try to automatically send message through chat system
-            if (window.globalChatSystem && window.globalChatSystem.startConversation) {
-                console.log('🤖 Starting conversation and sending automatic message...');
-                
-                // Start conversation first
-                await window.globalChatSystem.startConversation(listing);
-                
-                // Wait a moment for conversation to be established
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Send the negotiation message automatically
-                if (window.globalChatSystem.sendTextMessage) {
-                    await window.globalChatSystem.sendTextMessage(
-                        negotiationMessage, 
-                        this.currentUser, 
-                        new Date().toISOString()
-                    );
-                    this.appendMessage('AI', `✅ Automatic negotiation message sent to ${listing.user_email}! The landlord will receive your professional offer.`, 'left');
-                } else {
-                    this.appendMessage('AI', `✅ Conversation started with ${listing.user_email}. You can now send the negotiation message manually.`, 'left');
+            // Try to send via chat system WITHOUT opening modal
+            if (window.globalChatSystem && window.globalChatSystem.findOrCreateConversation) {
+                try {
+                    // Create conversation silently (without opening UI)
+                    const conversation = await window.globalChatSystem.findOrCreateConversation(this.currentUser, listing);
+                    
+                    // Send the AI-generated message directly
+                    if (window.globalChatSystem.sendTextMessage && conversation) {
+                        await window.globalChatSystem.sendTextMessage(
+                            aiGeneratedMessage, 
+                            this.currentUser, 
+                            new Date().toISOString()
+                        );
+                        this.appendMessage('AI', `✅ **${listing.title}**: Message sent to landlord!`, 'left');
+                    } else {
+                        throw new Error('Unable to send message through chat system');
+                    }
+                } catch (chatError) {
+                    console.error('Chat system failed:', chatError);
+                    // Fallback to email if available
+                    await this.sendViaEmail(listing, aiGeneratedMessage);
                 }
             } else {
-                // Fallback to manual instructions
-                this.appendMessage('AI', `📝 Please send this negotiation message to the landlord:
-
-${negotiationMessage}
-
-Property: ${listing.title} (${listing.id})
-Landlord: ${listing.user_email}`, 'left');
+                // Fallback to email if chat system not available
+                await this.sendViaEmail(listing, aiGeneratedMessage);
             }
         } catch (error) {
-            console.error('Error sending automatic negotiation message:', error);
-            this.appendMessage('AI', `❌ Error sending automatic message: ${error.message}`, 'left');
+            console.error('Error sending message to landlord:', error);
+            this.appendMessage('AI', `❌ **${listing.title}**: Failed to send message - ${error.message}`, 'left');
+        }
+    }
+
+    // Fallback email sending
+    async sendViaEmail(listing, message) {
+        try {
+            const response = await fetch('/api/message-landlord', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    listingId: listing.id,
+                    landlordEmail: listing.user_email,
+                    message: message,
+                    userEmail: this.currentUser?.email,
+                    userName: `${this.currentUser?.firstName || 'User'} ${this.currentUser?.lastName || ''}`.trim()
+                })
+            });
+
+            if (response.ok) {
+                this.appendMessage('AI', `✅ **${listing.title}**: Email sent to landlord!`, 'left');
+            } else {
+                throw new Error('Email service unavailable');
+            }
+        } catch (emailError) {
+            console.error('Email sending failed:', emailError);
+            this.appendMessage('AI', `❌ **${listing.title}**: Unable to contact landlord`, 'left');
         }
     }
 
