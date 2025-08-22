@@ -251,7 +251,10 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
                 navigateToFragment(new AiChatFragment());
             });
             
-            // toolsCard removed in redesign
+            binding.toolsCard.setOnClickListener(v -> {
+                addCardClickAnimation(v);
+                navigateToFragment(new ToolsFragment());
+            });
             
             binding.settingsItem.setOnClickListener(v -> {
                 addRippleEffect(v);
@@ -293,8 +296,17 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
     }
     
     private void setupRecentListings() {
-        // recentListingsRecycler removed in redesign - listings now accessible via My Listings card
-        Log.d(TAG, "Recent listings moved to My Listings action card");
+        if (binding == null || binding.recentListingsRecycler == null) return;
+        
+        try {
+            recentListingsAdapter = new ListingsAdapter(recentListings, this);
+            binding.recentListingsRecycler.setLayoutManager(
+                new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+            binding.recentListingsRecycler.setAdapter(recentListingsAdapter);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting up recent listings: " + e.getMessage(), e);
+        }
     }
     
     private void loadRecentListings() {

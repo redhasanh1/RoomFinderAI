@@ -1,7 +1,7 @@
-// AI Chat functionality for the negotiator with Supabase database integration
-// This handles messaging, database search, and negotiation logic
+// AI Chat functionality for the negotiator
+// This handles all the messaging, search, and negotiation logic
 
-class AIChatHandler {
+class AINegotiator {
     constructor(supabase, config) {
         this.supabase = supabase;
         this.config = config;
@@ -20,10 +20,6 @@ class AIChatHandler {
         this.activeNegotiations = new Map();
         this.lastMessageTime = 0;
         this.negotiationEngine = null;
-        
-        // Track active conversation contexts
-        this.activeConversations = new Map();
-        this.pendingUserResponse = null;
     }
 
     // Initialize the chat system
@@ -41,7 +37,7 @@ class AIChatHandler {
         
         // Only show welcome message if no previous conversation
         if (this.conversationHistory.length === 0) {
-            this.appendMessage('AI', 'Hello! I\'m your AI assistant. Tell me what you\'re looking for (e.g., "I want a house in Hong Kong for $1500") and I\'ll search our database for matching listings and help you negotiate with landlords!', 'left');
+            this.appendMessage('AI', 'Hello! I\'m your AI Negotiator. Tell me what you\'re looking for (e.g., "I need a 2-bedroom apartment under $1500 in Toronto") and I\'ll find matching listings and negotiate with landlords for you automatically using market data!', 'left');
         }
     }
 
@@ -75,6 +71,7 @@ class AIChatHandler {
                     event: 'INSERT',
                     schema: 'public',
                     table: 'ai_chats'
+                    // Remove filter - listen to all updates and filter in code
                 }, (payload) => {
                     console.log('📬 Received real-time update:', payload);
                     try {
@@ -92,733 +89,205 @@ class AIChatHandler {
                             console.log('🎉 Negotiation success detected!');
                             this.displayNegotiationSuccess(newChat);
                         } else if (newChat.title && newChat.title.includes('Landlord Reply')) {
-                            console.log('📧 Landlord reply detected!');
+                            console.log('💬 Landlord reply detected!');
+                            this.displayLandlordReply(newChat);
+                        } else {
+                            console.log('📢 Other AI notification:', newChat.title);
+                            // Display any other AI notifications
                             this.displayLandlordReply(newChat);
                         }
                     } catch (error) {
                         console.error('Error processing real-time update:', error);
                     }
                 })
-                .subscribe();
+                .subscribe((status, err) => {
+                    console.log('📡 Subscription status:', status);
+                    if (err) {
+                        console.error('❌ Subscription error:', err);
+                        this.setupFallbackPolling();
+                    }
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ Real-time connection established');
+                        // Keep polling as backup even when real-time works
+                        this.setupFallbackPolling(); // More reliable to have both
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                        console.warn('⚠️ Real-time connection issues, using fallback');
+                        this.setupFallbackPolling();
+                    } else if (status === 'CLOSED') {
+                        console.warn('📡 Real-time connection closed, attempting to reconnect...');
+                        this.setupFallbackPolling();
+                        // Try to reconnect after a delay
+                        setTimeout(() => {
+                            console.log('🔄 Attempting to reconnect real-time subscription...');
+                            this.listenForNegotiationUpdates();
+                        }, 5000);
+                    }
+                });
 
-            console.log('✅ Real-time subscription established');
+            // Store channel reference for cleanup
+            this.subscriptionChannel = channel;
+            
         } catch (error) {
-            console.error('❌ Failed to setup real-time subscription:', error);
+            console.error('Error setting up real-time subscription:', error);
+            this.setupFallbackPolling();
         }
     }
 
-    // Setup AI user profile for messaging
-    async setupAIUser() {
-        if (!this.currentUser?.email || !this.supabase) {
-            return false;
-        }
-
-        // If user is logged in (not anonymous), assume they can message
-        if (this.currentUser.email !== 'anonymous@user.com') {
-            console.log('✅ User is logged in, messaging enabled:', this.currentUser.email);
-            return true;
-        }
-
+    // Display negotiation success message
+    displayNegotiationSuccess(chat) {
         try {
-            const { data: profile, error } = await this.supabase
-                .from('profiles')
-                .select('*')
-                .eq('email', this.currentUser.email)
-                .single();
-
-            if (error) {
-                console.log('⚠️ Profile not found for anonymous user');
-                return false;
-            }
-
-            console.log('✅ User profile found for messaging:', profile.first_name);
-            return true;
-        } catch (error) {
-            console.error('Error setting up AI user:', error);
-            return false;
-        }
-    }
-
-    // Process user message
-    async processMessage(message) {
-        console.log('🔄 Processing user message:', message);
-        
-        // Store user message
-        this.appendMessage('You', message, 'right');
-        this.conversationHistory.push({ role: 'user', content: message });
-        this.saveConversationHistory();
-        
-        // Reset negotiation state for new requests
-        this.negotiationState = 'idle';
-        
-        // Check if this is a negotiation response first
-        if (this.checkForNegotiationResponse(message)) {
-            return;
-        }
-        
-        try {
-            // Extract rental criteria from message
-            console.log('🔍 Extracting rental criteria...');
-            const extractedData = await this.extractRentalInfo(message);
-            console.log('📊 Extracted data:', extractedData);
-            
-            // Update user needs
-            this.updateUserNeeds(extractedData);
-            
-            // Check if we should search for listings
-            const shouldSearch = extractedData.intent === 'search' || 
-                                (extractedData.price && extractedData.city) ||
-                                (extractedData.house_type && (extractedData.price || extractedData.city));
-            
-            console.log('🎯 Should search for listings:', shouldSearch, {
-                hasIntent: extractedData.intent === 'search',
-                hasPrice: !!extractedData.price,
-                hasCity: !!extractedData.city,
-                hasType: !!extractedData.house_type,
-                shouldSearch
-            });
-            
-            if (shouldSearch) {
-                this.appendMessage('AI', 'I understand! Searching for matching listings in our database...', 'left');
-                setTimeout(() => this.searchAndMessage(), 1000);
+            console.log('📨 Processing negotiation success:', chat);
+            const conversationData = JSON.parse(chat.conversation_data);
+            if (conversationData && conversationData[0] && conversationData[0].content) {
+                const content = conversationData[0].content;
+                this.appendMessage('AI', content, 'left');
+                
+                // Add celebration effect
+                this.celebrateSuccess();
             } else {
-                this.appendMessage('AI', 'I understand your preferences. To search for listings, try saying something like "I need a 2-bedroom apartment under $1500 in Toronto"', 'left');
+                console.warn('⚠️ Invalid conversation data structure');
+                this.appendMessage('AI', '🎉 Negotiation completed successfully!', 'left');
             }
         } catch (error) {
-            console.error('Error processing message:', error);
-            this.appendMessage('AI', 'I\'m having trouble processing your request. Please try rephrasing your message.', 'left');
+            console.error('Error displaying negotiation success:', error);
+            this.appendMessage('AI', '🎉 Negotiation completed successfully!', 'left');
         }
     }
 
-    // Extract rental information using OpenAI
-    async extractRentalInfo(message) {
-        if (!this.config?.OPENAI_API_KEY) {
-            console.log('⚠️ OpenAI not configured, using manual extraction');
-            return this.extractManually(message);
-        }
-
+    // Display landlord reply message
+    displayLandlordReply(chat) {
         try {
-            console.log('🤖 Using OpenAI to extract rental criteria...');
-            
-            const prompt = `Extract rental criteria from this message. Return ONLY a JSON object with these exact fields:
-            {
-                "intent": "search" if looking for rentals, otherwise null,
-                "price": number (max budget) or null,
-                "city": city name in lowercase or null,
-                "house_type": "House", "Apartment", "Condo", "Studio", or "Basement" or null,
-                "bedrooms": number or null,
-                "utilities": "included", "separate", or null
-            }
-
-            Message: "${message}"
-            
-            JSON:`;
-
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
-                    messages: [{ role: 'user', content: prompt }],
-                    max_tokens: 150,
-                    temperature: 0.1
-                })
-            });
-
-            if (!response.ok) throw new Error('OpenAI API error');
-
-            const data = await response.json();
-            const extractedText = data.choices[0].message.content.trim();
-            
-            try {
-                const extracted = JSON.parse(extractedText);
-                console.log('✅ OpenAI extraction successful:', extracted);
-                return extracted;
-            } catch (parseError) {
-                console.log('⚠️ JSON parse failed, using manual extraction');
-                return this.extractManually(message);
+            console.log('📨 Processing landlord reply:', chat);
+            const conversationData = JSON.parse(chat.conversation_data);
+            if (conversationData && conversationData[0] && conversationData[0].content) {
+                const content = conversationData[0].content;
+                this.appendMessage('AI', content, 'left');
+                
+                // Add subtle animation to highlight new message
+                this.highlightNewMessage();
+            } else {
+                console.warn('⚠️ Invalid landlord reply data structure');
+                this.appendMessage('AI', '💬 Received reply from landlord', 'left');
             }
         } catch (error) {
-            console.log('⚠️ OpenAI extraction failed, using manual extraction:', error.message);
-            return this.extractManually(message);
+            console.error('Error displaying landlord reply:', error);
+            this.appendMessage('AI', '💬 Received reply from landlord', 'left');
         }
     }
 
-    // Manual extraction fallback
-    extractManually(message) {
-        console.log('Using manual extraction for:', message);
-        const result = {};
-        
-        // Extract price
-        const priceMatch = message.match(/(?:under|below|max|up to|for|at|around)?\s*\$?(\d{1,5})/i);
-        if (priceMatch) {
-            const extractedPrice = Number(priceMatch[1]);
-            if (extractedPrice > 100) {
-                result.price = extractedPrice;
-                console.log('💰 Extracted price:', extractedPrice);
+    // Highlight new message with subtle animation
+    highlightNewMessage() {
+        const messages = document.getElementById('chatMessages');
+        if (messages) {
+            const lastMessage = messages.lastElementChild;
+            if (lastMessage) {
+                lastMessage.style.backgroundColor = '#e3f2fd';
+                lastMessage.style.transition = 'background-color 2s ease';
+                setTimeout(() => {
+                    lastMessage.style.backgroundColor = '';
+                }, 2000);
             }
         }
-        
-        // Extract city - international cities
-        const cityMatch = message.match(/\b(hong kong|karachi|paris|tehran|toronto|moscow|sydney|vancouver|montreal|calgary|ottawa|edmonton|winnipeg|hamilton|quebec|saskatoon|regina|halifax|london|kitchener|waterloo|windsor|markham|mississauga|brampton|islamabad|lahore|rawalpindi|faisalabad|multan|hyderabad|peshawar|quetta|new york|los angeles|chicago|miami|boston)\b/i);
-        if (cityMatch) {
-            result.city = cityMatch[1].toLowerCase().trim();
-            console.log('🏙️ Extracted city:', result.city);
-        }
-        
-        // Additional location patterns for "in [city]"
-        const inCityMatch = message.match(/\bin\s+(hong kong|karachi|paris|tehran|toronto|moscow|sydney|vancouver|montreal|calgary|islamabad|lahore|rawalpindi)\b/i);
-        if (inCityMatch && !result.city) {
-            result.city = inCityMatch[1].toLowerCase().trim();
-            console.log('🏙️ Extracted city from "in" pattern:', result.city);
-        }
-        
-        // Extract house type
-        if (message.toLowerCase().includes('apartment')) {
-            result.house_type = 'Apartment';
-        } else if (message.toLowerCase().includes('condo')) {
-            result.house_type = 'Condo';
-        } else if (message.toLowerCase().includes('house')) {
-            result.house_type = 'House';
-        } else if (message.toLowerCase().includes('studio')) {
-            result.house_type = 'Studio';
-        } else if (message.toLowerCase().includes('basement')) {
-            result.house_type = 'Basement';
-        }
-        
-        // Extract bedrooms
-        const bedroomMatch = message.match(/(\d+)[\s-]?bedroom/i);
-        if (bedroomMatch) {
-            result.bedrooms = Number(bedroomMatch[1]);
-        }
-        
-        // Set intent
-        if (message.toLowerCase().includes('looking for') || 
-            message.toLowerCase().includes('need') || 
-            message.toLowerCase().includes('want') ||
-            message.toLowerCase().includes('find') ||
-            message.toLowerCase().includes('search')) {
-            result.intent = 'search';
-        }
-        
-        // Backup logic: if we extracted rental criteria, assume search intent
-        if ((result.price || result.city) && !result.intent) {
-            console.log('🎯 BACKUP LOGIC: Found rental criteria without intent, setting to search');
-            result.intent = 'search';
-        }
-        
-        return result;
     }
 
-    // Update user needs from extracted data
-    updateUserNeeds(extractedData) {
-        console.log('🎯 Updating user needs with:', extractedData);
-        
-        if (extractedData.price) {
-            this.userNeeds.maxPrice = extractedData.price;
-            console.log('✅ Set max price:', extractedData.price);
+    // Add celebration effect
+    celebrateSuccess() {
+        const chatContainer = document.querySelector('.chat-container');
+        if (chatContainer) {
+            chatContainer.style.animation = 'pulse 0.5s ease-in-out 3';
+            setTimeout(() => {
+                chatContainer.style.animation = '';
+            }, 1500);
         }
-        
-        if (extractedData.city) {
-            let cleanCity = extractedData.city.toString().trim().toLowerCase();
-            cleanCity = cleanCity.split(',')[0].trim();
-            cleanCity = cleanCity.replace(/\s+(fr|france|canada|ca|usa|us|australia|au)$/i, '');
-            this.userNeeds.preferredLocation = cleanCity;
-            console.log('✅ Set location:', cleanCity);
-        }
-        
-        if (extractedData.house_type) {
-            this.userNeeds.houseType = extractedData.house_type;
-            console.log('✅ Set house type:', extractedData.house_type);
-        }
-        
-        if (extractedData.bedrooms) {
-            this.userNeeds.bedrooms = extractedData.bedrooms;
-            console.log('✅ Set bedrooms:', extractedData.bedrooms);
-        }
-        
-        if (extractedData.utilities) {
-            this.userNeeds.utilities = extractedData.utilities;
-            console.log('✅ Set utilities:', extractedData.utilities);
-        }
-        
-        console.log('🔧 Final user needs:', this.userNeeds);
     }
 
-    // Search for matching listings in Supabase
-    async findMatchingListings() {
-        console.log('🔍 Starting search with criteria:', this.userNeeds);
+    // Setup fallback polling when real-time fails
+    setupFallbackPolling() {
+        if (this.pollingInterval) return; // Already polling
         
-        console.log('🔍 Building search query for your Supabase database...');
+        console.log('🔄 Setting up fallback polling for updates');
+        this.lastPollTime = new Date(Date.now() - 10000); // Check last 10 seconds
         
-        // Query all columns from your actual schema: id, title, price, city, street, postal_code, house_type, bedrooms, utilities, description, media, user_email, created_at, updated_at
-        let query = this.supabase
-            .from('listings')
-            .select('*');
-        
-        let appliedFilters = [];
-        let hasSpecificCriteria = false;
-        
-        // Step 1: Exclude user's own listings
-        if (this.currentUser?.email) {
-            query = query.neq('user_email', this.currentUser.email);
-            console.log('✅ Step 1: Excluded own listings');
-        }
-        
-        // Step 2: Apply location filter using 'city' and 'street' columns
-        if (this.userNeeds.preferredLocation) {
-            const location = this.userNeeds.preferredLocation.trim().toLowerCase();
-            // Search in city, street, and title columns
-            query = query.or(`city.ilike.*${location}*,street.ilike.*${location}*,title.ilike.*${location}*`);
-            appliedFilters.push(`location contains: ${location}`);
-            hasSpecificCriteria = true;
-            console.log(`✅ Step 2: Location filter applied - searching for "${location}" in city/street/title columns`);
-        }
-        
-        // Step 3: Apply house type filter
-        if (this.userNeeds.houseType) {
-            query = query.eq('house_type', this.userNeeds.houseType);
-            appliedFilters.push(`house type: ${this.userNeeds.houseType}`);
-            hasSpecificCriteria = true;
-            console.log(`✅ Step 3: House type filter applied - ${this.userNeeds.houseType}`);
-        }
-        
-        // Step 4: Apply price filter if max price is provided
-        if (this.userNeeds.maxPrice) {
+        this.pollingInterval = setInterval(async () => {
             try {
-                query = query.lte('price', this.userNeeds.maxPrice);
-                appliedFilters.push(`max price: $${this.userNeeds.maxPrice}`);
-                hasSpecificCriteria = true;
-                console.log(`✅ Step 4: Price filter applied - max $${this.userNeeds.maxPrice}`);
+                const { data: newChats, error } = await this.supabase
+                    .from('ai_chats')
+                    .select('*')
+                    .eq('user_email', this.currentUser?.email)
+                    .gte('created_at', this.lastPollTime.toISOString())
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    console.error('Polling error:', error);
+                    return;
+                }
+                
+                if (newChats && newChats.length > 0) {
+                    console.log(`🔄 Found ${newChats.length} new updates via polling`);
+                    for (const chat of newChats) {
+                        console.log('📨 Processing polled update:', chat.title);
+                        if (chat.title && chat.title.includes('Negotiation Success')) {
+                            this.displayNegotiationSuccess(chat);
+                        } else if (chat.title && chat.title.includes('Landlord Reply')) {
+                            this.displayLandlordReply(chat);
+                        } else {
+                            // Display any other AI notifications
+                            this.displayLandlordReply(chat);
+                        }
+                    }
+                    this.lastPollTime = new Date();
+                }
             } catch (error) {
-                console.log('⚠️ Price column not available in database schema, skipping price filter');
+                console.error('Error in fallback polling:', error);
             }
-        }
-        
-        if (!hasSpecificCriteria) {
-            throw new Error('Please provide specific criteria (location, price, etc.)');
-        }
-        
-        console.log('🔍 Applied filters:', appliedFilters.join(', '));
-        console.log('🔎 User needs for debugging:', this.userNeeds);
-        
-        // Execute the query with your actual database schema
-        console.log('🚀 Executing query with your database schema...');
-        
-        const { data: listings, error } = await query.order('updated_at', { ascending: false }).limit(20);
-        
-        if (error) {
-            throw new Error(`Database query failed: ${error.message}`);
-        }
-        
-        console.log('📊 Query results:', listings?.length || 0, 'listings found');
-        console.log('🔍 User requested location:', this.userNeeds.preferredLocation);
-        
-        // Process results with your actual database schema
-        if (listings && listings.length > 0) {
-            console.log('🏠 Found listings from your database:');
-            listings.forEach((listing, i) => {
-                console.log(`  ${i+1}. ID: ${listing.id}`);
-                console.log(`      Title: ${listing.title || 'Not specified'}`);
-                console.log(`      City: ${listing.city || 'Not specified'}`);
-                console.log(`      Street: ${listing.street || 'Not specified'}`);
-                console.log(`      Price: $${listing.price || 'Not specified'}`);
-                console.log(`      Type: ${listing.house_type || 'Not specified'}`);
-                console.log(`      Owner: ${listing.user_email || 'No contact'}`);
-                console.log(`      Updated: ${listing.updated_at || 'Unknown'}`);
-            });
-        } else {
-            console.log('❌ No listings found with current filters');
-            
-            // Debug: Check what's actually in your database
-            const { data: allListings } = await this.supabase
-                .from('listings')
-                .select('*')
-                .limit(10);
-            
-            console.log('🗃️ Sample listings from your database:');
-            allListings?.forEach((listing, i) => {
-                console.log(`  ${i+1}. ID: ${listing.id}`);
-                console.log(`      Title: ${listing.title || 'None'}`);
-                console.log(`      City: ${listing.city || 'None'}`);
-                console.log(`      Street: ${listing.street || 'None'}`);
-                console.log(`      Price: $${listing.price || 'None'}`);
-                console.log(`      Type: ${listing.house_type || 'None'}`);
-                console.log(`      Owner: ${listing.user_email || 'None'}`);
-            });
-        }
-        
-        return listings || [];
+        }, 2000); // Poll every 2 seconds for faster updates
     }
 
-    // Helper function to check if listing matches location (updated for your schema)
-    matchesLocation(listing, searchLocation) {
-        const location = searchLocation.toLowerCase();
-        const listingCity = (listing.city || '').toLowerCase();
-        const street = (listing.street || '').toLowerCase();
-        const title = (listing.title || '').toLowerCase();
-        
-        // Check city, street, and title columns from your schema
-        return listingCity.includes(location) || 
-               street.includes(location) || 
-               title.includes(location);
-    }
-
-    // Update left sidebar with matching listings
-    updateSidebarWithListings(listings) {
-        const activeNegotiations = document.getElementById('activeNegotiations');
-        if (!activeNegotiations) {
-            console.warn('⚠️ activeNegotiations element not found');
-            return;
-        }
-
-        if (!listings || listings.length === 0) {
-            activeNegotiations.innerHTML = '<p class="text-gray-500 text-sm">No matching listings found. Try adjusting your search criteria.</p>';
-            return;
-        }
-
-        // Create HTML for the listings
-        let listingsHTML = '<h4 class="text-sm font-semibold text-gray-700 mb-3">Matching Listings</h4>';
-        
-        listings.slice(0, 5).forEach((listing) => {
-            const titleText = listing.title || 'Untitled Property';
-            const cityText = listing.city || 'City not specified';
-            const streetText = listing.street ? ` - ${listing.street}` : '';
-            const priceText = listing.price ? `$${listing.price}` : 'Price not listed';
-            const typeText = listing.house_type || 'Type not specified';
-            
-            listingsHTML += `
-                <div class="bg-gray-50 rounded-lg p-3 mb-3 border border-gray-200 hover:bg-gray-100 transition-colors">
-                    <div class="flex items-start justify-between">
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-800">${titleText}</p>
-                            <p class="text-xs text-gray-600 mt-1">📍 ${cityText}${streetText}</p>
-                            <p class="text-xs text-blue-600 font-medium">💰 ${priceText} • ${typeText}</p>
-                            <p class="text-xs text-gray-400 mt-1">ID: ${listing.id}</p>
-                        </div>
-                        <button onclick="window.aiChat?.contactLandlord('${listing.id}')" 
-                                class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition-colors">
-                            Contact
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-
-        if (listings.length > 5) {
-            listingsHTML += `<p class="text-xs text-gray-500 mt-2">... and ${listings.length - 5} more listings</p>`;
-        }
-
-        activeNegotiations.innerHTML = listingsHTML;
-        console.log(`✅ Updated sidebar with ${listings.length} listings`);
-    }
-
-    // Handle contact landlord button clicks from sidebar
-    contactLandlord(listingId) {
-        const listing = this.matchingListings.find(l => l.id === listingId);
-        if (!listing) {
-            console.error('❌ Listing not found:', listingId);
-            return;
-        }
-
-        console.log('📧 Opening chat for listing:', listing);
-        
-        // Try to open real chat modal using the chat system
-        if (typeof window.openChatModal === 'function') {
-            // Use the real chat system
-            window.openChatModal(listing.id, listing.title || 'Property', listing.user_email);
-            this.appendMessage('AI', `✅ Opening chat for ${listing.title}. You can now message the landlord directly!`, 'left');
-        } else if (window.globalChatSystem && window.globalChatSystem.startConversation) {
-            // Try global chat system
-            window.globalChatSystem.startConversation(listing.id, listing.title, listing.user_email);
-            this.appendMessage('AI', `✅ Starting conversation for ${listing.title}`, 'left');
-        } else {
-            // Fallback: show a helpful message about setting up communication
-            this.appendMessage('AI', `📧 To contact the landlord for "${listing.title}", please:
-            
-1. Use the blue chat button (💬) in the bottom-right corner
-2. Start a new conversation 
-3. Reference listing ID: ${listing.id}
-
-Property Details:
-📍 ${listing.city || listing.street || listing.location}
-💰 $${listing.price}/month
-📧 Landlord: ${listing.user_email || 'Contact via platform'}`, 'left');
+    // Stop polling when real-time is working
+    stopFallbackPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+            console.log('🛑 Stopped fallback polling');
         }
     }
 
-    // Main search and messaging function
-    async searchAndMessage() {
-        try {
-            this.negotiationState = 'searching';
-            this.appendMessage('AI', 'Searching for matching listings...', 'left', true);
-            
-            this.matchingListings = await this.findMatchingListings();
-            this.removeTypingIndicator();
-            
-            if (this.matchingListings.length === 0) {
-                await this.handleNoMatches();
-                return;
-            }
-            
-            // Show found listings
-            this.appendMessage('AI', `Found ${this.matchingListings.length} matching listing(s)!`, 'left');
-            
-            // Update the left sidebar with matching listings
-            this.updateSidebarWithListings(this.matchingListings);
-            
-            for (const listing of this.matchingListings.slice(0, 3)) {
-                // Display listings based on your actual database schema
-                const titleText = listing.title || 'Untitled Property';
-                const cityText = listing.city || 'City not specified';
-                const streetText = listing.street ? ` - ${listing.street}` : '';
-                const priceText = listing.price ? ` - $${listing.price}` : '';
-                const typeText = listing.house_type ? ` (${listing.house_type})` : '';
-                this.appendMessage('AI', `${titleText} - ${cityText}${streetText}${priceText}${typeText}`, 'left');
-            }
-            
-            // Ask if user wants to negotiate
-            this.appendMessage('AI', 'Would you like me to help you negotiate with any of these landlords? I can send professional messages on your behalf using market data and negotiation strategies!', 'left');
-            
-            // Set pending response context so "yes" will trigger negotiations
-            this.pendingUserResponse = 'negotiate_offer';
-            
-        } catch (error) {
-            this.removeTypingIndicator();
-            console.error('Search error:', error);
-            this.appendMessage('AI', `Search failed: ${error.message}`, 'left');
-            this.negotiationState = 'idle';
-        }
-    }
-
-    // Handle when no matches are found
-    async handleNoMatches() {
-        const extracted = [];
-        if (this.userNeeds.preferredLocation) extracted.push(`Location: ${this.userNeeds.preferredLocation}`);
-        if (this.userNeeds.maxPrice) extracted.push(`Max Price: $${this.userNeeds.maxPrice}`);
-        if (this.userNeeds.houseType) extracted.push(`Type: ${this.userNeeds.houseType}`);
+    // Auto-negotiate on behalf of user when listings are found
+    async autoNegotiateListings(listings) {
+        if (!this.negotiationEngine || !listings?.length) return;
         
-        this.appendMessage('AI', `❌ No exact matches found. I searched for: ${extracted.join(', ')}`, 'left');
+        this.appendMessage('AI', `🤖 Found ${listings.length} matching properties! Starting automatic negotiations with landlords...`, 'left');
         
-        // Try to find similar listings with your actual database schema
-        let query = this.supabase
-            .from('listings')
-            .select('*')
-            .neq('user_email', this.currentUser?.email || '')
-            .limit(10);
-
-        // Show any available listings since we don't have all filtering options
-        const { data: similarListings } = await query.order('updated_at', { ascending: false });
-        
-        if (similarListings?.length > 0) {
-            const criteria = [];
-            if (this.userNeeds.houseType) criteria.push(this.userNeeds.houseType.toLowerCase());
-            if (this.userNeeds.preferredLocation) criteria.push(`in ${this.userNeeds.preferredLocation}`);
-            if (this.userNeeds.maxPrice) criteria.push(`under $${this.userNeeds.maxPrice}`);
-            
-            this.appendMessage('AI', `I searched for: ${criteria.join(' + ')}. Here are similar listings:`, 'left');
-            
-            let shownCount = 0;
-            for (const listing of similarListings.slice(0, 5)) {
-                // Display with your actual database schema
-                const titleText = listing.title || 'Untitled Property';
-                const cityText = listing.city || 'City not specified';
-                const streetText = listing.street ? ` - ${listing.street}` : '';
-                const priceText = listing.price ? ` - $${listing.price}` : '';
-                const typeText = listing.house_type ? ` (${listing.house_type})` : '';
-                this.appendMessage('AI', `📋 ${titleText} - ${cityText}${streetText}${priceText}${typeText}`, 'left');
-                shownCount++;
+        let successCount = 0;
+        for (const listing of listings.slice(0, 3)) { // Limit to first 3 to avoid spam
+            try {
+                this.appendMessage('AI', `📧 Contacting landlord for: ${listing.title} ($${listing.price}/month)`, 'left');
                 
-                if (shownCount >= 3) break;
-            }
-            
-            if (shownCount === 0) {
-                this.appendMessage('AI', 'No suitable listings found in the database. Try creating a listing or contact an administrator to add listings in your preferred location.', 'left');
-            } else {
-                const suggestions = [];
-                if (this.userNeeds.maxPrice) suggestions.push(`increase your budget above $${this.userNeeds.maxPrice}`);
-                if (this.userNeeds.preferredLocation) suggestions.push(`try nearby areas or add "${this.userNeeds.preferredLocation}" to listing titles`);
-                
-                if (suggestions.length > 0) {
-                    this.appendMessage('AI', `Suggestions: ${suggestions.join(' or ')}.`, 'left');
-                }
-            }
-        } else {
-            this.appendMessage('AI', 'No listings found in database. The database may be empty or all listings are from your account.', 'left');
-        }
-        
-        this.negotiationState = 'idle';
-    }
-
-    // Check if the message is a negotiation response (yes, sure, etc.)
-    checkForNegotiationResponse(message) {
-        console.log('🔍 [NEGOTIATION CHECK] Starting check for message:', message);
-        const cleanMessage = message.toLowerCase().trim();
-        
-        // First check: Do we have any active conversations waiting for user response?
-        const hasActiveContext = this.pendingUserResponse !== null || this.activeConversations.size > 0;
-        
-        if (hasActiveContext) {
-            console.log('🔍 [NEGOTIATION CHECK] Has active context, checking responses...');
-            
-            // Check for affirmative responses
-            const affirmativeResponses = ['yes', 'sure', 'ok', 'okay', 'please', 'go ahead', 'proceed', 'contact them', 'negotiate', 'send message'];
-            const isAffirmative = affirmativeResponses.some(response => cleanMessage.includes(response));
-            
-            if (isAffirmative && this.matchingListings.length > 0) {
-                console.log('✅ [NEGOTIATION CHECK] Affirmative response detected, starting negotiations');
-                this.appendMessage('AI', '🤖 Great! I\'ll contact the landlords for you using smart negotiation strategies...', 'left');
-                
-                // Clear pending response
-                this.pendingUserResponse = null;
-                
-                // Start negotiations for all matching listings
-                setTimeout(() => this.startNegotiationsForAllListings(), 1000);
-                return true;
-            }
-        }
-        
-        // Check for direct negotiation requests about specific listings
-        const negotiationKeywords = ['negotiate', 'contact', 'message', 'talk to landlord', 'reach out'];
-        const hasNegotiationKeyword = negotiationKeywords.some(keyword => cleanMessage.includes(keyword));
-        
-        if (hasNegotiationKeyword && this.matchingListings.length > 0) {
-            console.log('✅ [NEGOTIATION CHECK] Direct negotiation request detected');
-            this.appendMessage('AI', '🤖 I\'ll help you negotiate with the landlords. Starting contact now...', 'left');
-            setTimeout(() => this.startNegotiationsForAllListings(), 1000);
-            return true;
-        }
-        
-        console.log('❌ [NEGOTIATION CHECK] No negotiation response detected');
-        return false;
-    }
-
-    // Start negotiations for all matching listings
-    async startNegotiationsForAllListings() {
-        if (!this.matchingListings || this.matchingListings.length === 0) {
-            this.appendMessage('AI', 'No listings available for negotiation. Please search for properties first.', 'left');
-            return;
-        }
-
-        this.appendMessage('AI', `📧 Contacting landlords for ${this.matchingListings.length} properties...`, 'left');
-
-        for (const listing of this.matchingListings) {
-            if (listing.user_email && listing.user_email !== this.currentUser?.email) {
-                setTimeout(() => this.startNegotiationForListing(listing), 500);
-            }
-        }
-    }
-
-    // Start negotiation for a specific listing
-    async startNegotiationForListing(listing) {
-        try {
-            // Call the AI negotiation API
-            const response = await fetch('/api/ai-negotiate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: `I'm interested in listing ${listing.id} - ${listing.title || 'Property'} in ${listing.city || listing.street}. Please help me negotiate a good deal.`,
-                    conversationHistory: this.conversationHistory.slice(-5),
-                    userEmail: this.currentUser?.email,
-                    listingData: {
-                        id: listing.id,
-                        title: listing.title,
-                        city: listing.city,
-                        street: listing.street,
-                        price: listing.price,
-                        house_type: listing.house_type,
-                        user_email: listing.user_email
-                    }
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('🎯 Negotiation message generated:', data);
-                
-                // Send the AI-generated message to the landlord
-                if (data.response) {
-                    console.log('📤 Sending negotiation message to landlord:', data.response);
-                    await this.sendMessageToLandlord(listing, data.response);
+                const success = await this.negotiateWithLandlord(listing);
+                if (success) {
+                    successCount++;
+                    this.appendMessage('AI', `✅ Message sent successfully!`, 'left');
                 } else {
-                    console.error('❌ No message generated:', data);
-                    this.appendMessage('AI', `❌ Failed to generate message for ${listing.title}`, 'left');
+                    this.appendMessage('AI', `❌ Failed to contact landlord for this property.`, 'left');
                 }
-            } else {
-                this.appendMessage('AI', `❌ Failed to contact ${listing.title}`, 'left');
+                
+                // Wait a bit between messages to avoid spam
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+            } catch (error) {
+                console.error('Error in auto-negotiation:', error);
+                this.appendMessage('AI', `⚠️ Error contacting landlord for: ${listing.title}`, 'left');
             }
-        } catch (error) {
-            console.error('Negotiation error:', error);
-            this.appendMessage('AI', `❌ Error analyzing ${listing.title}: ${error.message}`, 'left');
+        }
+        
+        if (successCount > 0) {
+            this.appendMessage('AI', `🎯 Successfully contacted ${successCount} landlord(s)! I'll continue negotiating automatically when they reply. You'll be notified of any agreements reached.`, 'left');
         }
     }
 
-    // Send automatic negotiation message to landlord
-    async sendMessageToLandlord(listing, aiGeneratedMessage) {
-        try {
-            console.log('📤 Sending negotiation message to landlord:', listing.user_email);
-            
-            // Try to send via chat system WITHOUT opening modal
-            if (window.globalChatSystem && window.globalChatSystem.findOrCreateConversation) {
-                try {
-                    // Create conversation silently (without opening UI)
-                    const conversation = await window.globalChatSystem.findOrCreateConversation(this.currentUser, listing);
-                    
-                    // Send the AI-generated message directly
-                    if (window.globalChatSystem.sendTextMessage && conversation) {
-                        await window.globalChatSystem.sendTextMessage(
-                            aiGeneratedMessage, 
-                            this.currentUser, 
-                            new Date().toISOString()
-                        );
-                        this.appendMessage('AI', `✅ **${listing.title}**: Message sent to landlord!`, 'left');
-                    } else {
-                        throw new Error('Unable to send message through chat system');
-                    }
-                } catch (chatError) {
-                    console.error('Chat system failed:', chatError);
-                    // Fallback to email if available
-                    await this.sendViaEmail(listing, aiGeneratedMessage);
-                }
-            } else {
-                // Fallback to email if chat system not available
-                await this.sendViaEmail(listing, aiGeneratedMessage);
-            }
-        } catch (error) {
-            console.error('Error sending message to landlord:', error);
-            this.appendMessage('AI', `❌ **${listing.title}**: Failed to send message - ${error.message}`, 'left');
-        }
-    }
-
-    // Fallback email sending
-    async sendViaEmail(listing, message) {
-        try {
-            const response = await fetch('/api/message-landlord', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    listingId: listing.id,
-                    landlordEmail: listing.user_email,
-                    message: message,
-                    userEmail: this.currentUser?.email,
-                    userName: `${this.currentUser?.firstName || 'User'} ${this.currentUser?.lastName || ''}`.trim()
-                })
-            });
-
-            if (response.ok) {
-                this.appendMessage('AI', `✅ **${listing.title}**: Email sent to landlord!`, 'left');
-            } else {
-                throw new Error('Email service unavailable');
-            }
-        } catch (emailError) {
-            console.error('Email sending failed:', emailError);
-            this.appendMessage('AI', `❌ **${listing.title}**: Unable to contact landlord`, 'left');
-        }
+    // Helper function for auto-negotiation - maps to existing sendMessage function
+    async negotiateWithLandlord(listing) {
+        return await this.sendMessage(listing);
     }
 
     // Load conversation history from localStorage
@@ -834,7 +303,7 @@ Property Details:
                 // Restore messages to the chat interface
                 const messages = document.getElementById('chatMessages');
                 if (messages) {
-                    messages.innerHTML = '';
+                    messages.innerHTML = ''; // Clear default content
                     
                     for (const message of this.conversationHistory) {
                         const displayRole = message.role.charAt(0).toUpperCase() + message.role.slice(1);
@@ -874,30 +343,31 @@ Property Details:
         }
     }
 
-    // Display message to chat (without saving to history)
+    // Debug function to test negotiation success notification
+    testNegotiationSuccess() {
+        console.log('🧪 Testing negotiation success notification...');
+        const testChat = {
+            title: 'Negotiation Success: Test Property',
+            conversation_data: JSON.stringify([{
+                role: 'assistant',
+                content: '✅ **Negotiation Successful!**\n\nProperty: Test Property\nFinal Price: $950/month\nOriginal Price: $1000/month\nSavings: $50/month\n\nThe landlord has accepted your offer! Next steps: Contact the landlord to finalize the rental agreement.'
+            }])
+        };
+        this.displayNegotiationSuccess(testChat);
+    }
+
+    // Display message to chat (without saving to history - used for loading)
     displayMessage(sender, message, align, isTypingIndicator = false) {
         const messages = document.getElementById('chatMessages');
         if (!messages) {
             console.error('Error: #chatMessages element not found');
             return;
         }
-        
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `chat-bubble ${sender.toLowerCase()}`;
-        
-        if (sender.toLowerCase() === 'ai') {
-            messageDiv.innerHTML = `
-                <div class="font-semibold text-sm text-gray-500 mb-1">AI Assistant</div>
-                <p>${message}</p>
-            `;
-        } else {
-            messageDiv.innerHTML = `
-                <div class="font-semibold text-sm text-blue-200 mb-1">You</div>
-                <p>${message}</p>
-            `;
-        }
-        
-        messages.appendChild(messageDiv);
+        const messageElement = document.createElement('p');
+        messageElement.className = `text-${align} text-${sender === 'User' ? 'blue-600' : 'gray-600'} mt-2 ${isTypingIndicator ? 'typing-indicator' : ''}`;
+        messageElement.textContent = isTypingIndicator ? message : `${sender}: ${message}`;
+        messageElement.id = isTypingIndicator ? 'typing-indicator' : '';
+        messages.appendChild(messageElement);
         messages.scrollTop = messages.scrollHeight;
     }
 
@@ -908,12 +378,7 @@ Property Details:
         
         // Save to history and localStorage (skip typing indicators)
         if (!isTypingIndicator) {
-            // Map display names to OpenAI-compatible roles
-            let role = sender.toLowerCase();
-            if (role === 'you') role = 'user';
-            if (role === 'ai') role = 'assistant';
-            
-            this.conversationHistory.push({ role, content: message });
+            this.conversationHistory.push({ role: sender.toLowerCase(), content: message });
             this.saveConversationHistory();
         }
     }
@@ -923,7 +388,817 @@ Property Details:
         const typingIndicator = document.getElementById('typing-indicator');
         if (typingIndicator) typingIndicator.remove();
     }
+
+    // Extract rental information from message
+    async extractRentalInfo(message) {
+        console.log('🔍 Extracting rental info from:', message);
+        
+        try {
+            // Try OpenAI first
+            const openAIResult = await this.extractWithOpenAI(message);
+            console.log('🎯 OpenAI extracted:', openAIResult);
+            return openAIResult;
+        } catch (error) {
+            console.log('⚠️ OpenAI extraction failed:', error.message);
+            console.log('🔄 Falling back to manual extraction...');
+            const manualResult = this.extractManually(message);
+            console.log('🔧 Manual extraction result:', manualResult);
+            return manualResult;
+        }
+    }
+
+    // Extract using OpenAI
+    async extractWithOpenAI(message) {
+        const prompt = `
+        Extract rental property information from: "${message}"
+        
+        EXTRACTION TARGETS (matching database columns):
+        - price: Maximum budget (number only)
+        - city: City name (e.g., "paris", "tehran", "toronto", "moscow") 
+        - house_type: Property type ("Apartment", "Condo", "House", "Studio", "Basement")
+        - bedrooms: Number of bedrooms (1-5)
+        - utilities: "included" or "not included"
+        - intent: "search" or "general"
+        
+        RULES:
+        - For price: look for "under $1200", "max $2000", etc.
+        - For city: extract ANY city mentioned and return lowercase: "paris", "tehran", "toronto", "moscow"
+        - For house_type: use exact values from database
+        - Be conservative - only extract what's clearly mentioned
+        
+        Return JSON with only fields that have values:
+        `;
+        
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
+                'OpenAI-Organization': this.config.OPENAI_ORG_ID
+            },
+            body: JSON.stringify({
+                model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                messages: [{ role: 'system', content: prompt }],
+                max_tokens: 200,
+                temperature: 0.3
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`OpenAI API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const result = JSON.parse(data.choices[0].message.content.trim());
+        
+        // Clean city data if present
+        if (result.city) {
+            result.city = result.city.toString().trim().split(',')[0].trim();
+            result.city = result.city.replace(/\s+(fr|france|canada|ca|usa|us|australia|au)$/i, '');
+        }
+        
+        return result;
+    }
+
+    // Manual extraction fallback
+    extractManually(message) {
+        console.log('Using manual extraction for:', message);
+        const result = {};
+        
+        // Extract price - improved regex to catch more patterns
+        const priceMatch = message.match(/(?:under|below|max|up to|for|at|around)?\s*\$?(\d{1,5})/i);
+        if (priceMatch) {
+            const extractedPrice = Number(priceMatch[1]);
+            if (extractedPrice > 100) {
+                result.price = extractedPrice;
+                console.log('💰 Extracted price:', extractedPrice);
+            }
+        }
+        
+        // Extract city - UPDATED LIST based on actual database listings
+        const cityMatch = message.match(/\b(paris|tehran|toronto|moscow|sydney|vancouver|montreal|calgary|ottawa|edmonton|winnipeg|hamilton|quebec|saskatoon|regina|halifax|london|kitchener|waterloo|windsor|markham|mississauga|brampton|iran|australia|canada|france|new york|los angeles|chicago|miami|boston)\b/i);
+        if (cityMatch) {
+            result.city = cityMatch[1].toLowerCase().trim();
+            console.log('🏙️ Extracted city:', result.city);
+        }
+        
+        // Additional location patterns for "in [city]"
+        const inCityMatch = message.match(/\bin\s+(paris|tehran|toronto|moscow|sydney|vancouver|montreal|calgary)\b/i);
+        if (inCityMatch && !result.city) {
+            result.city = inCityMatch[1].toLowerCase().trim();
+            console.log('🏙️ Extracted city from "in" pattern:', result.city);
+        }
+        
+        // Extract house type
+        if (message.toLowerCase().includes('apartment')) {
+            result.house_type = 'Apartment';
+        } else if (message.toLowerCase().includes('condo')) {
+            result.house_type = 'Condo';
+        } else if (message.toLowerCase().includes('house')) {
+            result.house_type = 'House';
+        } else if (message.toLowerCase().includes('studio')) {
+            result.house_type = 'Studio';
+        } else if (message.toLowerCase().includes('basement')) {
+            result.house_type = 'Basement';
+        }
+        
+        // Extract bedrooms
+        const bedroomMatch = message.match(/(\d+)[\s-]?bedroom/i);
+        if (bedroomMatch) {
+            result.bedrooms = Number(bedroomMatch[1]);
+        }
+        
+        // Set intent
+        if (message.toLowerCase().includes('looking for') || 
+            message.toLowerCase().includes('need') || 
+            message.toLowerCase().includes('want')) {
+            result.intent = 'search';
+        }
+        
+        return result;
+    }
+
+    // Update user needs from extracted data
+    updateUserNeeds(extractedData) {
+        console.log('🎯 Updating user needs with:', extractedData);
+        
+        if (extractedData.price) {
+            this.userNeeds.maxPrice = extractedData.price;
+            console.log('✅ Set max price:', extractedData.price);
+        }
+        
+        if (extractedData.city) {
+            // Clean up the city name - remove country codes and extra info
+            let cleanCity = extractedData.city.toString().trim().toLowerCase();
+            cleanCity = cleanCity.split(',')[0].trim(); // Remove everything after comma
+            cleanCity = cleanCity.replace(/\s+(fr|france|canada|ca|usa|us|australia|au)$/i, ''); // Remove country codes
+            this.userNeeds.preferredLocation = cleanCity;
+            console.log('✅ Set location:', cleanCity, '(cleaned and lowercased from:', extractedData.city, ')');
+        }
+        
+        if (extractedData.house_type) {
+            this.userNeeds.houseType = extractedData.house_type;
+            console.log('✅ Set house type:', extractedData.house_type);
+        }
+        
+        if (extractedData.bedrooms) {
+            this.userNeeds.bedrooms = extractedData.bedrooms;
+            console.log('✅ Set bedrooms:', extractedData.bedrooms);
+        }
+        
+        if (extractedData.utilities) {
+            this.userNeeds.utilities = extractedData.utilities;
+            console.log('✅ Set utilities:', extractedData.utilities);
+        }
+        
+        console.log('🔧 Final user needs:', this.userNeeds);
+    }
+
+    // Search for matching listings
+    async findMatchingListings() {
+        console.log('🔍 Starting search with criteria:', this.userNeeds);
+        
+        console.log('🔍 Building search query step by step...');
+        
+        // Start with base query
+        let query = this.supabase
+            .from('listings')
+            .select('id, title, price, house_type, bedrooms, utilities, description, user_email, city, street');
+        
+        let appliedFilters = [];
+        let hasSpecificCriteria = false;
+        
+        // Step 1: Exclude user's own listings
+        if (this.currentUser?.email) {
+            query = query.neq('user_email', this.currentUser.email);
+            console.log('✅ Step 1: Excluded own listings');
+        }
+        
+        // Step 2: Apply price filter
+        if (this.userNeeds.maxPrice) {
+            query = query.lte('price', this.userNeeds.maxPrice);
+            appliedFilters.push(`price ≤ $${this.userNeeds.maxPrice}`);
+            hasSpecificCriteria = true;
+            console.log(`✅ Step 2: Price filter applied - price <= ${this.userNeeds.maxPrice}`);
+        }
+        
+        // Step 3: Apply house type filter
+        if (this.userNeeds.houseType) {
+            if (this.userNeeds.houseType === 'House') {
+                query = query.in('house_type', ['House', 'Townhouse']);
+                appliedFilters.push(`house type: ${this.userNeeds.houseType} (including Townhouse)`);
+                console.log('✅ Step 3: House type filter applied - House OR Townhouse');
+            } else {
+                query = query.eq('house_type', this.userNeeds.houseType);
+                appliedFilters.push(`house type: ${this.userNeeds.houseType}`);
+                console.log(`✅ Step 3: House type filter applied - ${this.userNeeds.houseType}`);
+            }
+            hasSpecificCriteria = true;
+        }
+        
+        // Step 4: Apply location filter
+        if (this.userNeeds.preferredLocation) {
+            const location = this.userNeeds.preferredLocation.trim();
+            query = query.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%`);
+            appliedFilters.push(`location contains: ${location}`);
+            hasSpecificCriteria = true;
+            console.log(`✅ Step 4: Location filter applied - searching for "${location}" in city/title/description/street`);
+        }
+        
+        // Step 5: Apply bedroom filter
+        if (this.userNeeds.bedrooms) {
+            query = query.eq('bedrooms', this.userNeeds.bedrooms);
+            appliedFilters.push(`bedrooms: ${this.userNeeds.bedrooms}`);
+            hasSpecificCriteria = true;
+            console.log(`✅ Step 5: Bedroom filter applied - ${this.userNeeds.bedrooms} bedrooms`);
+        }
+        
+        if (!hasSpecificCriteria) {
+            throw new Error('Please provide specific criteria (location, house type, price, etc.)');
+        }
+        
+        console.log('🔍 Applied filters:', appliedFilters.join(', '));
+        console.log('🔎 User needs for debugging:', this.userNeeds);
+        
+        // Try a simpler approach that matches our working test query
+        console.log('🚀 Executing final query...');
+        
+        let finalQuery = this.supabase
+            .from('listings')
+            .select('id, title, price, house_type, bedrooms, utilities, description, user_email, city, street');
+            
+        // Apply filters one by one like the working test
+        if (this.currentUser?.email) {
+            finalQuery = finalQuery.neq('user_email', this.currentUser.email);
+        }
+        
+        if (this.userNeeds.maxPrice) {
+            finalQuery = finalQuery.lte('price', this.userNeeds.maxPrice);
+        }
+        
+        if (this.userNeeds.houseType === 'House') {
+            finalQuery = finalQuery.in('house_type', ['House', 'Townhouse']);
+        } else if (this.userNeeds.houseType) {
+            finalQuery = finalQuery.eq('house_type', this.userNeeds.houseType);
+        }
+        
+        if (this.userNeeds.preferredLocation) {
+            const location = this.userNeeds.preferredLocation.trim();
+            finalQuery = finalQuery.or(`city.ilike.%${location}%,title.ilike.%${location}%,description.ilike.%${location}%,street.ilike.%${location}%`);
+        }
+        
+        if (this.userNeeds.bedrooms) {
+            finalQuery = finalQuery.eq('bedrooms', this.userNeeds.bedrooms);
+        }
+        
+        const { data: listings, error } = await finalQuery.order('created_at', { ascending: false }).limit(20);
+        
+        if (error) {
+            throw new Error(`Database query failed: ${error.message}`);
+        }
+        
+        console.log('📊 Query results:', listings?.length || 0, 'listings found');
+        
+        // Debug: Log what we actually found
+        if (listings && listings.length > 0) {
+            console.log('🏠 Found listings details:');
+            listings.forEach((listing, i) => {
+                console.log(`  ${i+1}. "${listing.title}" - $${listing.price} - ${listing.house_type} - City: "${listing.city || 'NO CITY'}" - ID: ${listing.id}`);
+            });
+        } else {
+            console.log('❌ No listings found with current filters');
+            
+            // Let's check what's actually in the database with detailed info
+            const { data: allListings } = await this.supabase
+                .from('listings')
+                .select('title, city, price, house_type, id, street, postalCode')
+                .limit(20);
+            
+            console.log('🗃️ ALL listings in database:');
+            allListings?.forEach((listing, i) => {
+                console.log(`  ${i+1}. "${listing.title}" - City: "${listing.city || 'NO CITY'}" - $${listing.price} - ${listing.house_type} - Address: "${listing.street || 'NO STREET'}" - Postal: "${listing.postalCode || 'NO POSTAL'}"`);
+            });
+            
+            // Test: Search for all houses under $1500 (no location filter)
+            console.log('\n🔍 Testing: All houses under $1500 (no location filter)');
+            const { data: houseTest } = await this.supabase
+                .from('listings')
+                .select('title, city, price, house_type, street')
+                .in('house_type', ['House', 'Townhouse'])
+                .lte('price', 1500)
+                .limit(10);
+            
+            console.log(`Found ${houseTest?.length || 0} houses under $1500:`);
+            houseTest?.forEach(listing => {
+                console.log(`  - "${listing.title}" in "${listing.city}" - $${listing.price} (${listing.house_type}) - Street: "${listing.street}"`);
+            });
+            
+            // Test the exact query that should find Calgary house
+            console.log('\n🔍 Testing exact Calgary query that should work:');
+            const { data: calgaryExactTest, error: calgaryError } = await this.supabase
+                .from('listings')
+                .select('title, city, price, house_type, street')
+                .lte('price', 1500)
+                .in('house_type', ['House', 'Townhouse'])
+                .or(`city.ilike.%calgary%,title.ilike.%calgary%,description.ilike.%calgary%,street.ilike.%calgary%`)
+                .limit(10);
+            
+            if (calgaryError) {
+                console.log(`❌ Calgary test query error: ${calgaryError.message}`);
+            } else {
+                console.log(`✅ Calgary test found ${calgaryExactTest?.length || 0} results:`);
+                calgaryExactTest?.forEach(listing => {
+                    console.log(`  - "${listing.title}" in "${listing.city}" - $${listing.price} (${listing.house_type})`);
+                });
+            }
+            
+            // Specifically look for Calgary-related listings
+            console.log('🔍 Looking specifically for Calgary-related listings...');
+            const calgaryListings = allListings?.filter(listing => 
+                listing.title?.toLowerCase().includes('calgary') ||
+                listing.city?.toLowerCase().includes('calgary') ||
+                listing.street?.toLowerCase().includes('calgary') ||
+                listing.postalCode?.toLowerCase().includes('calgary')
+            );
+            
+            if (calgaryListings && calgaryListings.length > 0) {
+                console.log('🏠 Found Calgary-related listings:');
+                calgaryListings.forEach(listing => {
+                    console.log(`  - "${listing.title}" in "${listing.city}" at $${listing.price} (${listing.house_type})`);
+                });
+            } else {
+                console.log('❌ No Calgary listings found in database');
+            }
+        }
+        
+        return listings || [];
+    }
+
+    // Test function to verify search works for known listings
+    async testSearchForKnownListings() {
+        console.log('🧪 TESTING SEARCH FOR KNOWN LISTINGS');
+        
+        const testCases = [
+            { message: "I want a house in Calgary under $1500", expectedCity: "calgary", expectedPrice: 1500, expectedType: "House" },
+            { message: "I want a house in Paris under $1300", expectedCity: "paris", expectedPrice: 1300, expectedType: "House" },
+            { message: "I need a condo in Moscow under $1000", expectedCity: "moscow", expectedPrice: 1000, expectedType: "Condo" },
+            { message: "Looking for a house in Tehran under $1200", expectedCity: "tehran", expectedPrice: 1200, expectedType: "House" },
+            { message: "I want a house in Toronto under $1000", expectedCity: "toronto", expectedPrice: 1000, expectedType: "House" }
+        ];
+        
+        for (const test of testCases) {
+            console.log(`\n--- Testing: "${test.message}" ---`);
+            
+            // Extract criteria
+            const extracted = await this.extractRentalInfo(test.message);
+            console.log('Extracted:', extracted);
+            
+            // Update user needs
+            this.updateUserNeeds(extracted);
+            console.log('User needs:', this.userNeeds);
+            
+            // Search
+            const results = await this.findMatchingListings();
+            console.log(`Found ${results.length} results`);
+            
+            // Reset for next test
+            this.userNeeds = { maxPrice: null, minPrice: null, preferredLocation: null, houseType: null, bedrooms: null, utilities: null };
+        }
+    }
+    
+    // Debug function to manually check Calgary
+    async debugCalgarySearch() {
+        console.log('🔍 DEBUGGING CALGARY SEARCH SPECIFICALLY');
+        
+        // First, let's see all listings
+        const { data: allListings } = await this.supabase
+            .from('listings')
+            .select('*')
+            .limit(20);
+        
+        console.log('📊 All listings in database:');
+        allListings?.forEach((listing, i) => {
+            console.log(`${i+1}. "${listing.title}" - City: "${listing.city}" - $${listing.price} - ${listing.house_type} - Street: "${listing.street}"`);
+        });
+        
+        // Now test different Calgary searches
+        const calgaryTests = [
+            `city.ilike.%calgary%`,
+            `title.ilike.%calgary%`, 
+            `street.ilike.%calgary%`,
+            `description.ilike.%calgary%`,
+            `house_type = 'Townhouse'`,
+            `price <= 1500`
+        ];
+        
+        for (const testQuery of calgaryTests) {
+            console.log(`\n🔍 Testing query: ${testQuery}`);
+            try {
+                const { data: results } = await this.supabase
+                    .from('listings')
+                    .select('title, city, price, house_type, street')
+                    .or(testQuery)
+                    .limit(10);
+                
+                console.log(`Found ${results?.length || 0} results`);
+                results?.forEach(listing => {
+                    console.log(`  - "${listing.title}" in "${listing.city}" - $${listing.price} (${listing.house_type})`);
+                });
+            } catch (error) {
+                console.log(`Error: ${error.message}`);
+            }
+        }
+    }
+
+    // Main search and messaging function
+    async searchAndMessage() {
+        try {
+            this.negotiationState = 'searching';
+            this.appendMessage('AI', 'Searching for matching listings...', 'left', true);
+            
+            this.matchingListings = await this.findMatchingListings();
+            this.removeTypingIndicator();
+            
+            if (this.matchingListings.length === 0) {
+                await this.handleNoMatches();
+                return;
+            }
+            
+            // Show found listings
+            this.appendMessage('AI', `Found ${this.matchingListings.length} matching listing(s)!`, 'left');
+            
+            for (const listing of this.matchingListings.slice(0, 3)) {
+                const bedText = listing.bedrooms ? `${listing.bedrooms} bed` : 'unknown bed';
+                const typeText = listing.house_type || 'property';
+                const utilitiesText = listing.utilities ? ` (utilities ${listing.utilities})` : '';
+                this.appendMessage('AI', `🏠 "${listing.title}" - $${listing.price}/month (${bedText} ${typeText})${utilitiesText}`, 'left');
+            }
+            
+            // Automatically start negotiations if negotiation engine is available
+            if (this.negotiationEngine && this.matchingListings.length > 0) {
+                await this.autoNegotiateListings(this.matchingListings);
+                return; // Exit early since auto-negotiation handles messaging
+            }
+            
+            // Filter valid listings and message owners
+            const validListings = this.matchingListings.filter(listing => {
+                if (!listing.user_email || !listing.id) {
+                    console.log(`⚠️ Skipping listing "${listing.title}" - missing email or ID`);
+                    return false;
+                }
+                if (listing.user_email === this.currentUser?.email) {
+                    console.log(`⚠️ Skipping listing "${listing.title}" - user's own listing`);
+                    return false;
+                }
+                return true;
+            });
+            
+            console.log(`📧 Found ${validListings.length} valid listings for messaging out of ${this.matchingListings.length} total`);
+            
+            if (validListings.length === 0) {
+                this.appendMessage('AI', 'Found listings, but none have valid owner emails for messaging (or they are your own listings).', 'left');
+                this.negotiationState = 'idle';
+                return;
+            }
+            
+            const negotiationStatus = this.negotiationEngine ? 
+                '📤 Contacting landlords with AI negotiation engine (market data + smart pricing)...' :
+                '📤 Contacting landlords with basic messages...';
+            this.appendMessage('AI', negotiationStatus, 'left');
+            
+            let successCount = 0;
+            for (const listing of validListings) {
+                const success = await this.sendMessage(listing);
+                if (success) {
+                    successCount++;
+                    const negotiationType = this.negotiationEngine ? '🤖 AI Negotiation' : '📧 Basic Message';
+                    this.appendMessage('AI', `✓ ${negotiationType} sent to owner of "${listing.title}"`, 'left');
+                }
+            }
+            
+            if (successCount > 0) {
+                const enhancedMsg = this.negotiationEngine ? 
+                    `✅ Sent ${successCount} intelligent negotiation message(s) with market data analysis! The AI will automatically handle replies and negotiate the best price for you. Check your profile page for updates.` :
+                    `✅ Sent ${successCount} message(s)! Check your profile page.`;
+                this.appendMessage('AI', enhancedMsg, 'left');
+            }
+            
+            this.negotiationState = 'idle';
+            
+        } catch (error) {
+            console.error('Search error:', error);
+            this.removeTypingIndicator();
+            this.appendMessage('AI', `Error: ${error.message}`, 'left');
+            this.negotiationState = 'idle';
+        }
+    }
+
+    // Handle no matches found
+    async handleNoMatches() {
+        // First, let's check if we extracted the criteria correctly
+        const extracted = [];
+        if (this.userNeeds.preferredLocation) extracted.push(`Location: "${this.userNeeds.preferredLocation}"`);
+        if (this.userNeeds.maxPrice) extracted.push(`Max Price: $${this.userNeeds.maxPrice}`);
+        if (this.userNeeds.houseType) extracted.push(`Type: ${this.userNeeds.houseType}`);
+        
+        this.appendMessage('AI', `❌ No exact matches found. I searched for: ${extracted.join(', ')}`, 'left');
+        
+        // Try to find similar listings with relaxed criteria
+        let query = this.supabase
+            .from('listings')
+            .select('id, title, price, house_type, bedrooms, description, city')
+            .neq('user_email', this.currentUser?.email || '')
+            .limit(10);
+
+        // First try: relax location requirement but keep other criteria
+        let hasValidFilters = false;
+        if (this.userNeeds.houseType || this.userNeeds.maxPrice) {
+            if (this.userNeeds.maxPrice) {
+                // Increase price range by 20%
+                const relaxedPrice = Math.floor(this.userNeeds.maxPrice * 1.2);
+                query = query.lte('price', relaxedPrice);
+                hasValidFilters = true;
+            }
+            if (this.userNeeds.houseType) {
+                if (this.userNeeds.houseType === 'House') {
+                    // When user wants "House", also include "Townhouse" as they're similar
+                    query = query.in('house_type', ['House', 'Townhouse']);
+                } else {
+                    query = query.eq('house_type', this.userNeeds.houseType);
+                }
+                hasValidFilters = true;
+            }
+        }
+        
+        // If we have a location preference, still try to prioritize it but don't make it required
+        if (this.userNeeds.preferredLocation && hasValidFilters) {
+            console.log(`🔍 Looking for similar listings, preferring location: ${this.userNeeds.preferredLocation}`);
+        }
+        
+        const { data: similarListings } = await query.order('price', { ascending: true });
+        
+        if (similarListings?.length > 0) {
+            const criteria = [];
+            if (this.userNeeds.houseType) criteria.push(this.userNeeds.houseType.toLowerCase());
+            if (this.userNeeds.preferredLocation) criteria.push(`in ${this.userNeeds.preferredLocation}`);
+            if (this.userNeeds.maxPrice) criteria.push(`under $${this.userNeeds.maxPrice}`);
+            
+            this.appendMessage('AI', `I searched for: ${criteria.join(' + ')}. Here are similar listings:`, 'left');
+            
+            let shownCount = 0;
+            for (const listing of similarListings.slice(0, 5)) {
+                // Skip obvious test/fake listings
+                if (listing.title.toLowerCase().includes('test') || 
+                    listing.title.toLowerCase().includes('hello') ||
+                    listing.title.toLowerCase().includes('eric')) {
+                    continue;
+                }
+                
+                const descText = listing.description ? listing.description.substring(0, 30) + '...' : 'No description';
+                const locationText = listing.city ? ` in ${listing.city}` : '';
+                this.appendMessage('AI', `📋 "${listing.title}" - $${listing.price}/month (${listing.bedrooms} bed ${listing.house_type})${locationText} - ${descText}`, 'left');
+                shownCount++;
+                
+                if (shownCount >= 3) break;
+            }
+            
+            if (shownCount === 0) {
+                this.appendMessage('AI', 'No suitable listings found in the database. Try creating a listing or contact an administrator to add listings in your preferred location.', 'left');
+            } else {
+                const suggestions = [];
+                if (this.userNeeds.maxPrice) suggestions.push(`increase your budget above $${this.userNeeds.maxPrice}`);
+                if (this.userNeeds.preferredLocation) suggestions.push(`try nearby areas or add "${this.userNeeds.preferredLocation}" to listing titles`);
+                
+                if (suggestions.length > 0) {
+                    this.appendMessage('AI', `💡 Suggestions: ${suggestions.join(' or ')}.`, 'left');
+                }
+            }
+        } else {
+            this.appendMessage('AI', 'No listings found in database. The database may be empty or all listings are from your account.', 'left');
+        }
+        
+        this.negotiationState = 'idle';
+    }
+
+    // Send negotiation message to listing owner
+    async sendMessage(listing) {
+        try {
+            console.log('🚀 Starting negotiation for:', listing.title);
+
+            if (!this.negotiationEngine) {
+                console.warn('⚠️ No negotiation engine available, using basic message');
+                return await this.sendBasicMessage(listing);
+            }
+
+            // Use the advanced negotiation engine
+            const negotiationResult = await this.negotiationEngine.startNegotiation(
+                listing, 
+                this.userNeeds.maxPrice, 
+                this.currentUser.email
+            );
+
+            // Create or get conversation
+            const conversation = await this.getOrCreateConversation(listing);
+            if (!conversation) {
+                console.error('Failed to create conversation');
+                return false;
+            }
+
+            // Send the negotiation message
+            const success = await this.negotiationEngine.sendNegotiationMessage(
+                conversation.id, 
+                negotiationResult.message, 
+                this.currentUser.email
+            );
+
+            if (success) {
+                console.log('✅ Advanced negotiation message sent');
+                console.log('📊 Market data used:', negotiationResult.marketData);
+            }
+
+            return success;
+
+        } catch (error) {
+            console.error('Negotiation send error:', error);
+            return await this.sendBasicMessage(listing);
+        }
+    }
+
+    // Fallback basic message
+    async sendBasicMessage(listing) {
+        try {
+            console.log('📧 Sending basic message for listing:', listing.title);
+            
+            const conversation = await this.getOrCreateConversation(listing);
+            if (!conversation) {
+                console.error('❌ Failed to get/create conversation');
+                return false;
+            }
+
+            const basicMessage = `Hi! I'm interested in your ${listing.house_type || 'property'} "${listing.title}". ${this.userNeeds.maxPrice ? `My budget is around $${this.userNeeds.maxPrice}.` : ''} I'm a qualified tenant ready to move quickly. Are you open to discussing the terms?`;
+
+            console.log('💬 Message content:', basicMessage);
+            console.log('📧 Sending to conversation:', conversation.id);
+
+            const { data, error } = await this.supabase
+                .from('messages')
+                .insert({
+                    conversation_id: conversation.id,
+                    sender_email: this.currentUser.email,
+                    content: basicMessage,
+                    created_at: new Date().toISOString()
+                })
+                .select();
+
+            if (error) {
+                console.error('❌ Error inserting message:', error);
+                return false;
+            }
+
+            console.log('✅ Message sent successfully:', data[0]?.id);
+            return true;
+        } catch (error) {
+            console.error('❌ Basic message send error:', error);
+            return false;
+        }
+    }
+
+    // Get or create conversation
+    async getOrCreateConversation(listing) {
+        try {
+            console.log('🔍 Looking for existing conversation for listing:', listing.id, 'user:', this.currentUser.email, 'owner:', listing.user_email);
+            
+            // Check if conversation already exists
+            const { data: existingConv, error: searchError } = await this.supabase
+                .from('conversations')
+                .select('*')
+                .eq('listing_id', listing.id)
+                .eq('sender_email', this.currentUser.email)
+                .eq('receiver_email', listing.user_email)
+                .single();
+
+            if (searchError && searchError.code !== 'PGRST116') {
+                console.error('Error searching for conversation:', searchError);
+            }
+
+            if (existingConv) {
+                console.log('✅ Found existing conversation:', existingConv.id);
+                return existingConv;
+            }
+
+            console.log('📝 Creating new conversation...');
+            
+            // Create new conversation with correct schema
+            const { data: newConv, error } = await this.supabase
+                .from('conversations')
+                .insert({
+                    listing_id: listing.id,
+                    sender_email: this.currentUser.email,
+                    receiver_email: listing.user_email,
+                    created_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+
+            if (error) {
+                console.error('❌ Error creating conversation:', error);
+                return null;
+            }
+
+            console.log('✅ Created new conversation:', newConv.id);
+            return newConv;
+        } catch (error) {
+            console.error('❌ Error in getOrCreateConversation:', error);
+            return null;
+        }
+    }
+
+    // Setup AI user account - ensure current user exists in profiles
+    async setupAIUser() {
+        if (!this.currentUser?.email) {
+            console.error('❌ No current user found for AI setup');
+            return false;
+        }
+
+        try {
+            // Check if user exists in profiles table
+            const { data: existingProfile, error: profileError } = await this.supabase
+                .from('profiles')
+                .select('email')
+                .eq('email', this.currentUser.email)
+                .single();
+
+            if (profileError && profileError.code !== 'PGRST116') {
+                console.error('❌ Error checking user profile:', profileError);
+                return false;
+            }
+
+            if (!existingProfile) {
+                console.log('📝 Creating user profile for messaging...');
+                
+                // Create profile for current user
+                const { error: createError } = await this.supabase
+                    .from('profiles')
+                    .insert({
+                        email: this.currentUser.email,
+                        first_name: this.currentUser.firstName || 'User',
+                        last_name: this.currentUser.lastName || '',
+                        created_at: new Date().toISOString()
+                    });
+
+                if (createError) {
+                    console.error('❌ Error creating user profile:', createError);
+                    return false;
+                }
+
+                console.log('✅ User profile created successfully');
+            } else {
+                console.log('✅ User profile already exists');
+            }
+
+            return true;
+        } catch (error) {
+            console.error('❌ Error in setupAIUser:', error);
+            return false;
+        }
+    }
+
+    // Process user message
+    async processMessage(message) {
+        console.log('🔍 Processing message:', message);
+        
+        // Debounce
+        const now = Date.now();
+        if (now - this.lastMessageTime < 3000) {
+            this.appendMessage('AI', 'Please wait 3 seconds between messages.', 'left');
+            return;
+        }
+        this.lastMessageTime = now;
+        
+        this.appendMessage('User', message, 'right');
+        this.appendMessage('AI', 'Analyzing your request...', 'left', true);
+        
+        // Extract requirements
+        const extractedData = await this.extractRentalInfo(message);
+        console.log('📊 Raw extracted data:', extractedData);
+        this.updateUserNeeds(extractedData);
+        console.log('🎯 Final user needs after update:', this.userNeeds);
+        console.log('🔍 Location that will be used in search:', this.userNeeds.preferredLocation);
+        
+        this.removeTypingIndicator();
+        
+        // Check if user is expressing needs
+        const needsKeywords = ['looking for', 'need', 'want', 'searching for', 'find me'];
+        const isSearchRequest = needsKeywords.some(keyword => message.toLowerCase().includes(keyword));
+        
+        if (isSearchRequest && extractedData.intent === 'search') {
+            this.appendMessage('AI', 'I understand! Searching for matching listings and contacting landlords...', 'left');
+            setTimeout(() => this.searchAndMessage(), 1000);
+        } else {
+            this.appendMessage('AI', 'I understand your preferences. To search for listings, try saying something like "I need a 2-bedroom apartment under $1500 in Toronto"', 'left');
+        }
+    }
 }
 
-// Make the class globally available
-window.AIChatHandler = AIChatHandler;
+// Export for use in HTML
+window.AINegotiator = AINegotiator;
