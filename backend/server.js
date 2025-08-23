@@ -1967,10 +1967,21 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
 
         // Exchange authorization code for tokens
         // The redirect_uri must match EXACTLY what the frontend used
-        const origin = req.headers.origin || `${req.protocol}://${req.get('host')}`;
+        // Force HTTPS for production
+        const host = req.get('host');
+        const protocol = host.includes('localhost') ? req.protocol : 'https';
+        const origin = req.headers.origin || `${protocol}://${host}`;
+        
+        // Make sure we use the exact same redirect URI that frontend used
         const redirectUri = `${origin}/api/auth/google/callback`;
         
         console.log('Redirect URI being used:', redirectUri);
+        console.log('Request headers:', {
+            origin: req.headers.origin,
+            host: req.get('host'),
+            protocol: req.protocol,
+            'x-forwarded-proto': req.headers['x-forwarded-proto']
+        });
         
         // Use URLSearchParams for proper form encoding
         const params = new URLSearchParams();
