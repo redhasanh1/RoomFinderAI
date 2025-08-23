@@ -66,7 +66,8 @@ config = {
     AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
     AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim() || config.AZURE_FACE_KEY,
     AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim() || config.AZURE_FACE_ENDPOINT,
-    GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID?.trim() || config.GOOGLE_OAUTH_CLIENT_ID,
+    GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID?.trim() || config.GOOGLE_OAUTH_CLIENT_ID || '476202400446-kkchao7sigg4csvm7j17bmt81gqnliqq.apps.googleusercontent.com',
+    GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim() || config.GOOGLE_OAUTH_CLIENT_SECRET || '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',
     APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID?.trim() || config.APPLE_CLIENT_ID
 };
 
@@ -1965,34 +1966,94 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         }
 
         // Exchange authorization code for tokens
-        // Note: In production, you'd need GOOGLE_OAUTH_CLIENT_SECRET for this exchange
-        // For now, we'll use the code as a mock token since we're in popup mode
-        
-        // In a real implementation, you would:
-        // 1. Exchange the code for an access token
-        // 2. Use the access token to get user info from Google
-        // For demo purposes, we'll create a mock user
-        
+        const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
+            code,
+            client_id: config.GOOGLE_OAUTH_CLIENT_ID,
+            client_secret: config.GOOGLE_OAUTH_CLIENT_SECRET,
+            redirect_uri: `${req.protocol}://${req.get('host')}/api/auth/google/callback`,
+            grant_type: 'authorization_code'
+        });
+
+        const { access_token, id_token } = tokenResponse.data;
+
+        // Get user info from Google
+        const userResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: {
+                Authorization: `Bearer ${access_token}`
+            }
+        });
+
+        const googleUser = userResponse.data;
+
+        // Create user data
         const userData = {
             id: uuidv4(),
-            firstName: 'Google',
-            lastName: 'User',
-            email: `user_${Date.now()}@gmail.com`,
-            profileImage: 'https://via.placeholder.com/40',
-            emailVerified: true,
+            firstName: googleUser.given_name || 'User',
+            lastName: googleUser.family_name || 'Name',
+            email: googleUser.email,
+            profileImage: googleUser.picture || 'https://via.placeholder.com/40',
+            emailVerified: googleUser.verified_email || false,
             provider: 'google',
-            providerId: `google_${Date.now()}`,
+            providerId: googleUser.id,
             aiChats: [],
             listings: []
         };
 
-        // In production, you'd get real user data from Google
-        // For now, add the mock user
-        users.push(userData);
+        // Check if user already exists
+        let existingUser = users.find(u => u.email === userData.email);
+        
+        if (existingUser) {
+            // Update existing user with Google data
+            existingUser.profileImage = userData.profileImage;
+            existingUser.emailVerified = true;
+            if (!existingUser.provider) {
+                existingUser.provider = 'google';
+                existingUser.providerId = userData.providerId;
+            }
+        } else {
+            // Create new user
+            users.push(userData);
+            existingUser = userData;
+        }
+
+        // Try to create/update user in Supabase if available
+        if (supabase) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        email: existingUser.email,
+                        first_name: existingUser.firstName,
+                        last_name: existingUser.lastName,
+                        profile_image: existingUser.profileImage,
+                        provider: 'google',
+                        provider_id: userData.providerId,
+                        email_verified: true,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'email'
+                    });
+
+                if (error) {
+                    console.error('Supabase profile upsert error:', error);
+                }
+            } catch (dbError) {
+                console.error('Database error during Google auth:', dbError);
+                // Continue with in-memory auth even if DB fails
+            }
+        }
 
         res.json({ 
             message: 'Google Sign-In successful',
-            user: userData
+            user: {
+                firstName: existingUser.firstName,
+                lastName: existingUser.lastName,
+                email: existingUser.email,
+                profileImage: existingUser.profileImage,
+                emailVerified: existingUser.emailVerified,
+                aiChats: existingUser.aiChats || [],
+                listings: existingUser.listings || []
+            }
         });
 
     } catch (error) {
