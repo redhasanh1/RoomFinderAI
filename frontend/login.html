@@ -474,12 +474,12 @@
         cancel_on_tap_outside:true
       });
       // Popup OAuth (code exchange)
-      const frontendRedirectUri = window.location.origin + '/api/auth/google/callback';
-      console.log('Frontend redirect URI:', frontendRedirectUri);
+      // Try using postmessage as redirect_uri for popup mode
+      console.log('Initializing Google OAuth popup mode');
       codeClient = google.accounts.oauth2.initCodeClient({
         client_id: oauthConfig.googleClientId,
         scope: 'openid email profile',
-        redirect_uri: frontendRedirectUri,
+        redirect_uri: 'postmessage',
         ux_mode: 'popup',
         callback: handleGoogleAuthCode
       });

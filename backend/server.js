@@ -1966,14 +1966,9 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         }
 
         // Exchange authorization code for tokens
-        // The redirect_uri must match EXACTLY what the frontend used
-        // Force HTTPS for production
-        const host = req.get('host');
-        const protocol = host.includes('localhost') ? req.protocol : 'https';
-        const origin = req.headers.origin || `${protocol}://${host}`;
-        
-        // Make sure we use the exact same redirect URI that frontend used
-        const redirectUri = `${origin}/api/auth/google/callback`;
+        // For popup mode with initCodeClient, Google expects 'postmessage' as redirect_uri
+        // This is a special value for the popup OAuth flow
+        const redirectUri = 'postmessage';
         
         console.log('Redirect URI being used:', redirectUri);
         console.log('Request headers:', {
