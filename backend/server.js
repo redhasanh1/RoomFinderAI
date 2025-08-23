@@ -1991,6 +1991,13 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         params.append('redirect_uri', redirectUri);
         params.append('grant_type', 'authorization_code');
         
+        console.log('Token exchange parameters:', {
+            client_id: config.GOOGLE_OAUTH_CLIENT_ID,
+            redirect_uri: redirectUri,
+            code_length: code.length,
+            params_string: params.toString()
+        });
+        
         const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', params, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
