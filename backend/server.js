@@ -66,8 +66,8 @@ config = {
     AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
     AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim() || config.AZURE_FACE_KEY,
     AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim() || config.AZURE_FACE_ENDPOINT,
-    GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID?.trim() || config.GOOGLE_OAUTH_CLIENT_ID || '476202400446-kkchao7sigg4csvm7j17bmt81gqnliqq.apps.googleusercontent.com',
-    GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim() || config.GOOGLE_OAUTH_CLIENT_SECRET || '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',
+    GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID?.trim() || config.GOOGLE_OAUTH_CLIENT_ID,
+    GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim() || config.GOOGLE_OAUTH_CLIENT_SECRET,
     APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID?.trim() || config.APPLE_CLIENT_ID
 };
 
@@ -1970,16 +1970,6 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         const origin = req.headers.origin || `${req.protocol}://${req.get('host')}`;
         const redirectUri = `${origin}/api/auth/google/callback`;
         
-        // TEMPORARY DEBUG - Remove after fixing
-        console.log('=== GOOGLE OAUTH DEBUG ===');
-        console.log('Client ID:', config.GOOGLE_OAUTH_CLIENT_ID);
-        console.log('Client Secret:', config.GOOGLE_OAUTH_CLIENT_SECRET);
-        console.log('Redirect URI:', redirectUri);
-        console.log('Code length:', code?.length);
-        console.log('Origin header:', req.headers.origin);
-        console.log('Host header:', req.get('host'));
-        console.log('==========================');
-        
         // Use URLSearchParams for proper form encoding
         const params = new URLSearchParams();
         params.append('code', code);
@@ -1987,8 +1977,6 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         params.append('client_secret', config.GOOGLE_OAUTH_CLIENT_SECRET);
         params.append('redirect_uri', redirectUri);
         params.append('grant_type', 'authorization_code');
-        
-        console.log('Sending params:', params.toString());
         
         const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', params, {
             headers: {
