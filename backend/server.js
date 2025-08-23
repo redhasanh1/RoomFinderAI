@@ -1972,16 +1972,24 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         
         console.log('Google OAuth code exchange:', {
             client_id: config.GOOGLE_OAUTH_CLIENT_ID,
+            client_secret_length: config.GOOGLE_OAUTH_CLIENT_SECRET?.length,
             redirect_uri: redirectUri,
-            code_length: code?.length
+            code_length: code?.length,
+            code_prefix: code?.substring(0, 10)
         });
         
-        const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
-            code,
-            client_id: config.GOOGLE_OAUTH_CLIENT_ID,
-            client_secret: config.GOOGLE_OAUTH_CLIENT_SECRET,
-            redirect_uri: redirectUri,
-            grant_type: 'authorization_code'
+        // Use URLSearchParams for proper form encoding
+        const params = new URLSearchParams();
+        params.append('code', code);
+        params.append('client_id', config.GOOGLE_OAUTH_CLIENT_ID);
+        params.append('client_secret', config.GOOGLE_OAUTH_CLIENT_SECRET);
+        params.append('redirect_uri', redirectUri);
+        params.append('grant_type', 'authorization_code');
+        
+        const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', params, {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
         });
 
         const { access_token, id_token } = tokenResponse.data;
