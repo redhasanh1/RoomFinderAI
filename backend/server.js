@@ -1966,11 +1966,21 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         }
 
         // Exchange authorization code for tokens
+        // The redirect_uri must match EXACTLY what the frontend used
+        const origin = req.headers.origin || `${req.protocol}://${req.get('host')}`;
+        const redirectUri = `${origin}/api/auth/google/callback`;
+        
+        console.log('Google OAuth code exchange:', {
+            client_id: config.GOOGLE_OAUTH_CLIENT_ID,
+            redirect_uri: redirectUri,
+            code_length: code?.length
+        });
+        
         const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
             code,
             client_id: config.GOOGLE_OAUTH_CLIENT_ID,
             client_secret: config.GOOGLE_OAUTH_CLIENT_SECRET,
-            redirect_uri: `${req.protocol}://${req.get('host')}/api/auth/google/callback`,
+            redirect_uri: redirectUri,
             grant_type: 'authorization_code'
         });
 
@@ -2058,7 +2068,21 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
 
     } catch (error) {
         console.error('Google OAuth code exchange error:', error);
-        res.status(500).json({ error: 'Google Sign-In failed' });
+        console.error('Error details:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status
+        });
+        
+        // Return more specific error for debugging
+        if (error.response?.data?.error) {
+            return res.status(400).json({ 
+                error: `Google OAuth failed: ${error.response.data.error}`,
+                description: error.response.data.error_description 
+            });
+        }
+        
+        res.status(500).json({ error: 'Google Sign-In failed', details: error.message });
     }
 });
 
