@@ -90,9 +90,7 @@ public class AiChatFragment extends Fragment {
         setupClickListeners();
         setupSendButtonAnimations();
         loadConversationHistory(); // Load previous conversation like web version
-        if (conversationHistory.isEmpty()) {
-            loadWelcomeMessage(); // Only show welcome if no previous conversation
-        }
+        // Welcome message is now handled by AiNegotiationService
         checkNetworkConnection();
     }
     
@@ -156,13 +154,12 @@ public class AiChatFragment extends Fragment {
     }
     
     private void setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener(v -> {
+        binding.backButton.setOnClickListener(v -> {
             requireActivity().onBackPressed();
         });
         
-        // Inflate menu for the toolbar
-        binding.toolbar.inflateMenu(R.menu.ai_chat_menu);
-        binding.toolbar.setOnMenuItemClickListener(this::onOptionsItemSelected);
+        // Note: Menu functionality can be added later if needed
+        // For now, we have a clean glassmorphism header without menu
     }
     
     private void initializeAnimations() {
@@ -251,20 +248,7 @@ public class AiChatFragment extends Fragment {
         });
     }
     
-    private void loadWelcomeMessage() {
-        ChatMessage welcomeMessage = ChatMessage.createAiMessage(
-            "Hello! I'm your AI Negotiation Assistant. I can help you:\n\n" +
-            "🏠 Find rental properties based on your criteria\n" +
-            "💰 Negotiate better rental deals with landlords\n" +
-            "📝 Write professional messages to property owners\n" +
-            "📊 Get market insights and rental advice\n\n" +
-            "Try saying: \"Find me a 2-bedroom apartment in [city] under $2000\" or \"Help me negotiate rent\""
-        );
-        
-        messages.add(welcomeMessage);
-        chatAdapter.notifyItemInserted(messages.size() - 1);
-        scrollToBottom();
-    }
+    // Welcome message is now handled by AiNegotiationService to avoid duplicates
     
     // Check if user response matches conversation context (matching web ai-chat.js exactly)
     private boolean checkForNegotiationResponse(String message) {
@@ -1047,8 +1031,24 @@ public class AiChatFragment extends Fragment {
             messages.clear();
             chatAdapter.notifyDataSetChanged();
             
-            // Show welcome message after clearing
-            loadWelcomeMessage();
+            // Show ChatGPT-style welcome message after clearing (exact match to image)
+            ChatMessage welcomeMessage = ChatMessage.createAiMessage(
+                "Hello! I'm your AI\n" +
+                "Negotiation Assistant. I\n" +
+                "can help you:\n\n" +
+                "[ICON:home] Find rental properties\n" +
+                "       based on your criteria\n\n" +
+                "[ICON:handshake] based on your criteria\n\n" +
+                "[ICON:document] Write professional\n" +
+                "         messages to property\n" +
+                "         owners\n\n" +
+                "Try saying: \"Find me a 2-bedroom\n" +
+                "apartment in [city] under $2000\"\n" +
+                "or \"Help me negotiate rent\""
+            );
+            messages.add(welcomeMessage);
+            chatAdapter.notifyItemInserted(messages.size() - 1);
+            scrollToBottom();
             
         } catch (Exception e) {
             Log.e(TAG, "Error clearing conversation history: " + e.getMessage());

@@ -222,6 +222,21 @@ try {
     console.log('❌ Stripe initialization failed:', error.message);
 }
 
+// Initialize OpenAI service status
+try {
+    if (config.OPENAI_API_KEY && config.OPENAI_API_KEY.startsWith('sk-')) {
+        serviceStatus.openai = true;
+        console.log('✅ OpenAI initialized');
+    } else {
+        console.log('⚠️ OpenAI not initialized - missing or invalid API key');
+        if (DEMO_MODE) {
+            console.log('📝 Demo mode enabled - OpenAI features will use mock responses');
+        }
+    }
+} catch (error) {
+    console.log('❌ OpenAI initialization failed:', error.message);
+}
+
 // Initialize Supabase client with error handling
 let supabase;
 try {
@@ -2491,7 +2506,7 @@ app.get('/api/brevo-status', async (req, res) => {
 // API: AI Negotiator chat with OpenAI integration
 app.post('/api/ai-negotiate', async (req, res) => {
     try {
-        const { message, conversationHistory, userEmail } = req.body;
+        const { message, conversationHistory, userEmail, listingData } = req.body;
         
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
@@ -2525,8 +2540,8 @@ app.post('/api/ai-negotiate', async (req, res) => {
             body: JSON.stringify({
                 model: config.OPENAI_MODEL || 'gpt-3.5-turbo',
                 messages: messages,
-                max_tokens: 300,
-                temperature: 0.8,
+                max_tokens: 150,
+                temperature: 0.7,
                 presence_penalty: 0.1,
                 frequency_penalty: 0.1
             })
@@ -2535,7 +2550,14 @@ app.post('/api/ai-negotiate', async (req, res) => {
         if (!openaiResponse.ok) {
             const errorData = await openaiResponse.json().catch(() => ({}));
             console.error('❌ OpenAI API error:', errorData);
-            throw new Error(`OpenAI API error: ${openaiResponse.status}`);
+            console.error('OpenAI error details:', {
+                status: openaiResponse.status,
+                error: errorData.error,
+                message: errorData.error?.message,
+                type: errorData.error?.type,
+                code: errorData.error?.code
+            });
+            throw new Error(`OpenAI API error: ${openaiResponse.status} - ${errorData.error?.message || JSON.stringify(errorData)}`);
         }
 
         const data = await openaiResponse.json();
@@ -2564,11 +2586,11 @@ app.post('/api/ai-negotiate', async (req, res) => {
                     user_message: message,
                     ai_response: aiResponse,
                     session_type: 'negotiation_assistant',
-                    listing_details: {
-                        location: 'Central District, Hong Kong',
-                        rent: 1500,
-                        type: 'Studio Apartment',
-                        size: '450 sq ft'
+                    listing_details: listingData || {
+                        location: 'Global Market',
+                        rent: null,
+                        type: 'Various',
+                        size: 'Various'
                     },
                     tokens_used: data.usage?.total_tokens || 0,
                     created_at: new Date().toISOString()
@@ -2586,60 +2608,142 @@ app.post('/api/ai-negotiate', async (req, res) => {
         
     } catch (error) {
         console.error('❌ Error in /api/ai-negotiate:', error.message);
-        res.status(500).json({ error: 'Failed to process AI negotiation request' });
+        console.error('Full error:', error);
+        res.status(500).json({ 
+            error: 'Failed to process AI negotiation request',
+            details: error.message,
+            stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+        });
     }
 });
 
+// API: Send actual message to landlord
+app.post('/api/message-landlord', async (req, res) => {
+    try {
+        const { listingId, landlordEmail, message, userEmail, userName } = req.body;
+        
+        if (!landlordEmail || !message || !userEmail) {
+            return res.status(400).json({ error: 'Landlord email, message, and user email are required' });
+        }
+
+        // Check if Brevo is configured for email sending
+        if (!config.BREVO_API_KEY) {
+            return res.status(503).json({ error: 'Email service not configured' });
+        }
+
+        console.log(`📧 Sending negotiation message to landlord ${landlordEmail} for listing ${listingId}`);
+
+        // Send email to landlord
+        const emailResult = await sendNegotiationEmail(landlordEmail, message, userEmail, userName, listingId);
+        
+        if (emailResult.success) {
+            console.log('✅ Negotiation email sent successfully to landlord');
+            res.json({ 
+                success: true,
+                message: 'Message sent to landlord successfully',
+                emailId: emailResult.emailId
+            });
+        } else {
+            console.error('❌ Failed to send negotiation email:', emailResult.error);
+            res.status(500).json({ 
+                error: 'Failed to send message to landlord',
+                details: emailResult.error
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error in /api/message-landlord:', error.message);
+        res.status(500).json({ error: 'Failed to send message to landlord' });
+    }
+});
+
+// Helper function to send negotiation email to landlord
+async function sendNegotiationEmail(landlordEmail, message, userEmail, userName, listingId) {
+    try {
+        const emailData = {
+            sender: {
+                name: EMAIL_CONFIG.SENDER_NAME,
+                email: EMAIL_CONFIG.SENDER_EMAIL
+            },
+            to: [{
+                email: landlordEmail,
+                name: 'Property Owner'
+            }],
+            replyTo: {
+                email: userEmail,
+                name: userName || 'Interested Renter'
+            },
+            subject: `Interest in Your Property - Listing ${listingId}`,
+            htmlContent: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #2563eb;">New Inquiry About Your Property</h2>
+                    
+                    <p><strong>From:</strong> ${userName || 'Interested Renter'} (${userEmail})</p>
+                    <p><strong>Listing ID:</strong> ${listingId}</p>
+                    
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="margin-top: 0;">Message:</h3>
+                        <p style="white-space: pre-line;">${message}</p>
+                    </div>
+                    
+                    <p style="color: #64748b; font-size: 14px;">
+                        This message was sent through RoomFinderAI. You can reply directly to this email to respond to the inquirer.
+                    </p>
+                </div>
+            `
+        };
+
+        console.log('📧 Sending negotiation email via Brevo...');
+        const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+            headers: {
+                'accept': 'application/json',
+                'api-key': config.BREVO_API_KEY,
+                'content-type': 'application/json'
+            },
+            timeout: 30000
+        });
+
+        console.log('✅ Negotiation email sent successfully');
+        return { success: true, emailId: response.data.messageId };
+    } catch (error) {
+        console.error('❌ Error sending negotiation email:', error.message);
+        return { success: false, error: error.message };
+    }
+}
+
 // Helper function to build the negotiation system prompt
 function buildNegotiationSystemPrompt() {
-    return `You are an expert rental negotiation assistant helping users secure better deals with landlords in Hong Kong. You provide strategic advice, coaching, and sample responses to help users negotiate effectively.
+    return `You are an AI negotiation agent that writes professional rental negotiation messages directly to landlords on behalf of tenants. Your job is to compose actual messages that will be sent to property owners.
 
-SAMPLE PROPERTY CONTEXT (for practice):
-- Location: Central District, Hong Kong  
-- Listed Rent: HK$1,500/month
-- Size: 450 sq ft
-- Type: Studio apartment
-- Amenities: Air conditioning, furnished, city view, near MTR
+YOUR ROLE:
+- Write professional negotiation messages directly to landlords
+- Represent the tenant in rental negotiations
+- Craft persuasive but respectful communication
+- Focus on mutual benefits and win-win scenarios
 
-YOUR ROLE AS NEGOTIATION ASSISTANT:
-- Help users craft compelling negotiation messages
-- Provide strategic advice on timing and approach
-- Suggest reasonable counter-offers based on market knowledge
-- Coach users on landlord psychology and motivations
-- Help identify negotiation leverage points
+MESSAGE REQUIREMENTS:
+- Write as if you are the tenant contacting the landlord directly
+- Keep messages under 100 words maximum
+- Be professional, polite, and respectful
+- Include specific negotiation points (price, terms, move-in date)
+- Highlight tenant strengths (income stability, references, etc.)
+- Suggest reasonable counter-offers based on market conditions
 
-NEGOTIATION STRATEGIES TO TEACH:
-- Research market rates for similar properties
-- Highlight your strengths as a tenant (stable income, good references, etc.)
-- Offer value-adds (longer lease, immediate move-in, upfront payment)
-- Use anchoring techniques with realistic lower offers
-- Create win-win scenarios for both parties
-- Show genuine interest while maintaining leverage
+MESSAGE STRUCTURE:
+1. Professional greeting
+2. Express genuine interest in the property
+3. Present tenant qualifications briefly
+4. Make specific negotiation request (lower rent, better terms, etc.)
+5. Offer value-adds (longer lease, prompt payment, etc.)
+6. Professional closing with contact information
 
-COACHING APPROACH:
-- Ask clarifying questions about their situation
-- Provide 2-3 strategic options for each scenario
-- Explain the reasoning behind each recommendation
-- Help craft specific message templates
-- Warn about common negotiation mistakes
-- Boost confidence while maintaining realism
+TONE:
+- Professional and respectful
+- Confident but not demanding
+- Collaborative, not confrontational
+- Show appreciation for landlord's time
+- Express genuine interest in the property
 
-RESPONSE STYLE:
-- Be supportive and encouraging
-- Provide actionable, specific advice
-- Use Hong Kong rental market context
-- Give concrete examples and templates
-- Explain landlord perspectives to help users understand
-- Balance optimism with realistic expectations
-
-MARKET KNOWLEDGE TO SHARE:
-- Typical negotiation ranges (5-15% for good tenants)
-- Seasonal rental patterns in Hong Kong
-- What landlords value most (stability, cleanliness, prompt payment)
-- Common lease terms and what's negotiable
-- Red flags to avoid in negotiations
-
-Remember: Your goal is to empower users to negotiate confidently and successfully while maintaining good relationships with landlords.`;
+IMPORTANT: Generate actual messages TO landlords, not advice FOR tenants. The message will be sent directly to the property owner.`;
 }
 
 // Keep the old endpoint for backward compatibility
@@ -3339,19 +3443,14 @@ async function logUserActivity(userEmail, activityType, description, metadata = 
             return;
         }
 
-        // First check if user exists to avoid foreign key constraint violation
-        const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('email')
-            .eq('email', userEmail)
-            .single();
-
-        if (userError || !user) {
-            console.log(`⚠️ Cannot log activity - User ${userEmail} not found in users table`);
-            return;
+        // Skip user check - users table has complex auth constraints
+        // Just set the current user email for RLS if the function exists
+        try {
+            await supabase.rpc('set_current_user_email', { email: userEmail });
+        } catch (rpcError) {
+            // Function might not exist, continue anyway
+            console.log('⚠️ set_current_user_email function not found, continuing without it');
         }
-
-        await supabase.rpc('set_current_user_email', { email: userEmail });
         
         const { error } = await supabase
             .from('user_activities')

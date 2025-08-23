@@ -2,15 +2,19 @@ package com.roomfinder.android.adapters;
 
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
+import android.content.Context;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.ImageSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import androidx.core.content.ContextCompat;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.roomfinder.android.R;
@@ -302,20 +306,24 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             String text = message.getContent();
             SpannableString spannableString = new SpannableString(text);
             
+            // Replace icon placeholders with drawable icons first
+            spannableString = replaceIconsWithDrawables(text, spannableString);
+            
             // Highlight property names and prices
-            if (text.contains("$")) {
-                int start = text.indexOf("$");
+            String finalText = spannableString.toString();
+            if (finalText.contains("$")) {
+                int start = finalText.indexOf("$");
                 while (start != -1) {
-                    int end = text.indexOf(" ", start);
-                    if (end == -1) end = text.indexOf("\n", start);
-                    if (end == -1) end = text.length();
+                    int end = finalText.indexOf(" ", start);
+                    if (end == -1) end = finalText.indexOf("\n", start);
+                    if (end == -1) end = finalText.length();
                     
                     spannableString.setSpan(
                         new ForegroundColorSpan(Color.parseColor("#4CAF50")), 
                         start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                     );
                     
-                    start = text.indexOf("$", end);
+                    start = finalText.indexOf("$", end);
                 }
             }
             
@@ -326,6 +334,43 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             if (aiAvatar != null) {
                 animateAvatarGlow(aiAvatar);
             }
+        }
+        
+        private SpannableString replaceIconsWithDrawables(String text, SpannableString spannable) {
+            Context context = messageText.getContext();
+            
+            // Create a new SpannableString to work with
+            SpannableString newSpannable = new SpannableString(text);
+            
+            // Replace all icon placeholders with the AI Negotiator Assistant logo
+            newSpannable = replaceIconWithDrawable(newSpannable, "[ICON:home]", R.drawable.ai_negotiator_logo, context);
+            newSpannable = replaceIconWithDrawable(newSpannable, "[ICON:handshake]", R.drawable.ai_negotiator_logo, context);
+            newSpannable = replaceIconWithDrawable(newSpannable, "[ICON:document]", R.drawable.ai_negotiator_logo, context);
+            
+            return newSpannable;
+        }
+        
+        private SpannableString replaceIconWithDrawable(SpannableString spannable, String placeholder, int drawableRes, Context context) {
+            String text = spannable.toString();
+            int index = text.indexOf(placeholder);
+            
+            while (index != -1) {
+                // Get the drawable and set its bounds
+                Drawable drawable = ContextCompat.getDrawable(context, drawableRes);
+                if (drawable != null) {
+                    int size = (int) (messageText.getTextSize() * 1.2f); // Make icon slightly larger than text
+                    drawable.setBounds(0, 0, size, size);
+                    
+                    // Create ImageSpan and replace the placeholder
+                    ImageSpan imageSpan = new ImageSpan(drawable, ImageSpan.ALIGN_BASELINE);
+                    spannable.setSpan(imageSpan, index, index + placeholder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+                
+                // Find next occurrence
+                index = text.indexOf(placeholder, index + 1);
+            }
+            
+            return spannable;
         }
         
         private void animateAvatarGlow(View avatar) {
