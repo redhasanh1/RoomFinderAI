@@ -1970,13 +1970,15 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         const origin = req.headers.origin || `${req.protocol}://${req.get('host')}`;
         const redirectUri = `${origin}/api/auth/google/callback`;
         
-        console.log('Google OAuth code exchange:', {
-            client_id: config.GOOGLE_OAUTH_CLIENT_ID,
-            client_secret_length: config.GOOGLE_OAUTH_CLIENT_SECRET?.length,
-            redirect_uri: redirectUri,
-            code_length: code?.length,
-            code_prefix: code?.substring(0, 20) + '...'
-        });
+        // TEMPORARY DEBUG - Remove after fixing
+        console.log('=== GOOGLE OAUTH DEBUG ===');
+        console.log('Client ID:', config.GOOGLE_OAUTH_CLIENT_ID);
+        console.log('Client Secret:', config.GOOGLE_OAUTH_CLIENT_SECRET);
+        console.log('Redirect URI:', redirectUri);
+        console.log('Code length:', code?.length);
+        console.log('Origin header:', req.headers.origin);
+        console.log('Host header:', req.get('host'));
+        console.log('==========================');
         
         // Use URLSearchParams for proper form encoding
         const params = new URLSearchParams();
@@ -1985,6 +1987,8 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         params.append('client_secret', config.GOOGLE_OAUTH_CLIENT_SECRET);
         params.append('redirect_uri', redirectUri);
         params.append('grant_type', 'authorization_code');
+        
+        console.log('Sending params:', params.toString());
         
         const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', params, {
             headers: {
