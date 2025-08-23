@@ -1975,7 +1975,7 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
             client_secret_length: config.GOOGLE_OAUTH_CLIENT_SECRET?.length,
             redirect_uri: redirectUri,
             code_length: code?.length,
-            code_prefix: code?.substring(0, 10)
+            code_prefix: code?.substring(0, 20) + '...'
         });
         
         // Use URLSearchParams for proper form encoding
