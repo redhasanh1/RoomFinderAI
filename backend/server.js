@@ -1846,6 +1846,166 @@ app.post('/api/auth/verify-code', async (req, res) => {
     }
 });
 
+// API: Google OAuth Sign-In (ID Token)
+app.post('/api/auth/google', async (req, res) => {
+    try {
+        const { idToken } = req.body;
+        
+        if (!idToken) {
+            return res.status(400).json({ error: 'Google ID token is required' });
+        }
+
+        // Verify Google ID token
+        const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+        const googleUser = await response.json();
+        
+        if (!response.ok || googleUser.error) {
+            return res.status(401).json({ error: 'Invalid Google token' });
+        }
+
+        // Extract user information
+        const userData = {
+            id: uuidv4(),
+            firstName: googleUser.given_name || 'User',
+            lastName: googleUser.family_name || 'Name',
+            email: googleUser.email,
+            profileImage: googleUser.picture || 'https://via.placeholder.com/40',
+            emailVerified: googleUser.email_verified === 'true',
+            provider: 'google',
+            providerId: googleUser.sub,
+            aiChats: [],
+            listings: []
+        };
+
+        // Check if user already exists
+        let existingUser = users.find(u => u.email === userData.email);
+        
+        if (existingUser) {
+            // Update existing user with Google data
+            existingUser.profileImage = userData.profileImage;
+            existingUser.emailVerified = true;
+            if (!existingUser.provider) {
+                existingUser.provider = 'google';
+                existingUser.providerId = userData.providerId;
+            }
+        } else {
+            // Create new user
+            users.push(userData);
+            existingUser = userData;
+        }
+
+        // Try to create/update user in Supabase if available
+        if (supabase) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        email: existingUser.email,
+                        first_name: existingUser.firstName,
+                        last_name: existingUser.lastName,
+                        profile_image: existingUser.profileImage,
+                        provider: 'google',
+                        provider_id: userData.providerId,
+                        email_verified: true,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'email'
+                    });
+
+                if (error) {
+                    console.error('Supabase profile upsert error:', error);
+                }
+            } catch (dbError) {
+                console.error('Database error during Google auth:', dbError);
+                // Continue with in-memory auth even if DB fails
+            }
+        }
+
+        res.json({ 
+            message: 'Google Sign-In successful',
+            user: {
+                firstName: existingUser.firstName,
+                lastName: existingUser.lastName,
+                email: existingUser.email,
+                profileImage: existingUser.profileImage,
+                emailVerified: existingUser.emailVerified,
+                aiChats: existingUser.aiChats || [],
+                listings: existingUser.listings || []
+            }
+        });
+
+    } catch (error) {
+        console.error('Google OAuth error:', error);
+        res.status(500).json({ error: 'Google Sign-In failed' });
+    }
+});
+
+// API: Google OAuth Code Exchange (OAuth 2.0 flow)
+app.post('/api/auth/google/oauth-code', async (req, res) => {
+    try {
+        const { code } = req.body;
+        
+        if (!code) {
+            return res.status(400).json({ error: 'Authorization code is required' });
+        }
+
+        // Exchange authorization code for tokens
+        // Note: In production, you'd need GOOGLE_OAUTH_CLIENT_SECRET for this exchange
+        // For now, we'll use the code as a mock token since we're in popup mode
+        
+        // In a real implementation, you would:
+        // 1. Exchange the code for an access token
+        // 2. Use the access token to get user info from Google
+        // For demo purposes, we'll create a mock user
+        
+        const userData = {
+            id: uuidv4(),
+            firstName: 'Google',
+            lastName: 'User',
+            email: `user_${Date.now()}@gmail.com`,
+            profileImage: 'https://via.placeholder.com/40',
+            emailVerified: true,
+            provider: 'google',
+            providerId: `google_${Date.now()}`,
+            aiChats: [],
+            listings: []
+        };
+
+        // In production, you'd get real user data from Google
+        // For now, add the mock user
+        users.push(userData);
+
+        res.json({ 
+            message: 'Google Sign-In successful',
+            user: userData
+        });
+
+    } catch (error) {
+        console.error('Google OAuth code exchange error:', error);
+        res.status(500).json({ error: 'Google Sign-In failed' });
+    }
+});
+
+// API: Google OAuth Callback (for redirect flow)
+app.get('/api/auth/google/callback', (req, res) => {
+    // This endpoint handles the OAuth redirect
+    // In production, you'd process the authorization code here
+    // For now, we'll redirect to the frontend with a success message
+    const { code, error } = req.query;
+    
+    if (error) {
+        return res.redirect('/login.html?error=' + encodeURIComponent(error));
+    }
+    
+    if (code) {
+        // In production, exchange code for tokens here
+        // Then redirect to frontend with session or token
+        return res.redirect('/verification-modal.html?redirect=index.html');
+    }
+    
+    res.redirect('/login.html');
+});
+
 // API: Apple OAuth Sign-In
 app.post('/api/auth/apple', async (req, res) => {
     try {
