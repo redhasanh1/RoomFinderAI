@@ -1970,6 +1970,8 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         const origin = req.headers.origin || `${req.protocol}://${req.get('host')}`;
         const redirectUri = `${origin}/api/auth/google/callback`;
         
+        console.log('Redirect URI being used:', redirectUri);
+        
         // Use URLSearchParams for proper form encoding
         const params = new URLSearchParams();
         params.append('code', code);
