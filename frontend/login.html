@@ -474,10 +474,12 @@
         cancel_on_tap_outside:true
       });
       // Popup OAuth (code exchange)
+      const frontendRedirectUri = window.location.origin + '/api/auth/google/callback';
+      console.log('Frontend redirect URI:', frontendRedirectUri);
       codeClient = google.accounts.oauth2.initCodeClient({
         client_id: oauthConfig.googleClientId,
         scope: 'openid email profile',
-        redirect_uri: window.location.origin + '/api/auth/google/callback',
+        redirect_uri: frontendRedirectUri,
         ux_mode: 'popup',
         callback: handleGoogleAuthCode
       });
@@ -504,6 +506,8 @@
 
     // Popup OAuth code => backend exchange
     async function handleGoogleAuthCode(resp){
+      console.log('Google auth response:', resp);
+      console.log('Authorization code received, length:', resp.code?.length);
       try{
         const r = await fetch('/api/auth/google/oauth-code',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ code: resp.code })});
         const result = await r.json();
