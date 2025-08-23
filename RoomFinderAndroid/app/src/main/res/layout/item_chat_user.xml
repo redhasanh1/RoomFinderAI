@@ -26,8 +26,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
-            android:background="@drawable/chat_bubble_user_premium"
-            android:elevation="4dp">
+            android:background="@drawable/user_bubble_modern"
+            android:elevation="2dp">
 
             <TextView
                 android:id="@+id/messageText"
@@ -35,16 +35,12 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="18dp"
                 android:text="Hello, I'm looking for a 2 bedroom apartment"
-                android:textColor="@color/white"
+                android:textColor="@color/text_primary"
                 android:textSize="16sp"
                 android:lineSpacingExtra="2dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="sans-serif"
                 android:maxWidth="300dp"
-                android:textIsSelectable="true"
-                android:shadowColor="#20000000"
-                android:shadowDx="0"
-                android:shadowDy="1"
-                android:shadowRadius="1" />
+                android:textIsSelectable="true" />
 
         </FrameLayout>
 

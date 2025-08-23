@@ -38,7 +38,8 @@
       "Bash(pgrep:*)",
       "Bash(git restore:*)",
       "Bash(git remote set-head:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
