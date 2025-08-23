@@ -2084,13 +2084,18 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         
         // Return more specific error for debugging
         if (error.response?.data?.error) {
+            console.error('Google OAuth error response:', error.response.data);
             return res.status(400).json({ 
                 error: `Google OAuth failed: ${error.response.data.error}`,
-                description: error.response.data.error_description 
+                description: error.response.data.error_description || 'Check server logs for details'
             });
         }
         
-        res.status(500).json({ error: 'Google Sign-In failed', details: error.message });
+        res.status(500).json({ 
+            error: 'Google Sign-In failed', 
+            details: error.message,
+            hint: 'Check if OAuth client is configured correctly in Google Cloud Console'
+        });
     }
 });
 
