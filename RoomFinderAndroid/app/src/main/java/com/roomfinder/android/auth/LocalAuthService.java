@@ -35,12 +35,13 @@ public class LocalAuthService {
     private static final String KEY_REGISTERED_USERS = "registeredUsers";
     private static final String KEY_VERIFICATION_CODES = "verificationCodes";
     
-    // Demo accounts for testing
+    // Demo accounts for testing (generic test accounts only - no real user credentials)
     private static final Map<String, String> DEMO_ACCOUNTS = new HashMap<>();
     static {
         DEMO_ACCOUNTS.put("demo@roomfinder.com", "demo123");
         DEMO_ACCOUNTS.put("test@roomfinder.com", "test123");
         DEMO_ACCOUNTS.put("user@example.com", "password123");
+        // Real user accounts like humblewoslayer@gmail.com are stored in Supabase database, NOT here!
     }
     
     private LocalAuthService(Context context) {
@@ -49,8 +50,8 @@ public class LocalAuthService {
         authManager = AuthManager.getInstance(context);
         emailService = EmailService.getInstance(context);
         
-        // Initialize demo accounts
-        initializeDemoAccounts();
+        // Demo accounts will only be initialized if no real users exist
+        // This is handled automatically when needed
     }
     
     public static synchronized LocalAuthService getInstance(Context context) {
@@ -61,41 +62,144 @@ public class LocalAuthService {
     }
     
     /**
-     * Initialize demo accounts for testing
+     * Force reinitialize demo accounts (for debugging)
      */
-    private void initializeDemoAccounts() {
+    public void forceReinitializeDemoAccounts() {
+        Log.d(TAG, "Force reinitializing demo accounts...");
         List<User> registeredUsers = getRegisteredUsers();
+        
+        // Remove any existing demo accounts first
+        registeredUsers.removeIf(user -> DEMO_ACCOUNTS.containsKey(user.getEmail()));
+        
+        // Clear password hashes for demo accounts
+        SharedPreferences.Editor editor = prefs.edit();
+        for (String email : DEMO_ACCOUNTS.keySet()) {
+            editor.remove("pwd_" + email);
+        }
+        editor.apply();
+        
+        // Re-add all demo accounts
+        for (Map.Entry<String, String> demoAccount : DEMO_ACCOUNTS.entrySet()) {
+            String email = demoAccount.getKey();
+            String password = demoAccount.getValue();
+            
+            // Create demo user
+            User demoUser = new User();
+            demoUser.setEmail(email);
+            if (email.equals("humblewoslayer@gmail.com")) {
+                demoUser.setFirstName("User"); // Using generic name for privacy
+                demoUser.setLastName("Account");
+            } else {
+                demoUser.setFirstName("Demo");
+                demoUser.setLastName("User");
+            }
+            demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+            demoUser.setEmailVerified(true);
+            
+            // Hash password
+            String hashedPassword = hashPassword(password);
+            
+            // Store user with hashed password
+            registeredUsers.add(demoUser);
+            
+            // Store password hash separately
+            prefs.edit().putString("pwd_" + email, hashedPassword).apply();
+            
+            Log.d(TAG, "Force created demo account: " + email);
+        }
+        
+        saveRegisteredUsers(registeredUsers);
+        Log.d(TAG, "Demo accounts reinitialization complete");
+    }
+    
+    /**
+     * Initialize real user account that was created on website
+     * This matches the website's localStorage approach
+     */
+    public void initializeRealUserAccount(String email, String password) {
+        Log.d(TAG, "Initializing real user account: " + email);
+        
+        List<User> registeredUsers = getRegisteredUsers();
+        
+        // Check if user already exists
+        boolean exists = registeredUsers.stream()
+                .anyMatch(user -> user.getEmail().equals(email));
+        
+        if (exists) {
+            Log.d(TAG, "Real user account already exists: " + email);
+            return;
+        }
+        
+        // Create real user account (matching website structure)
+        User realUser = new User();
+        realUser.setEmail(email);
+        realUser.setFirstName("User");
+        realUser.setLastName("Account");
+        realUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+        realUser.setEmailVerified(true);
+        realUser.setAiChats(new java.util.ArrayList<>());
+        realUser.setListings(new java.util.ArrayList<>());
+        
+        // Hash password
+        String hashedPassword = hashPassword(password);
+        
+        // Store user with hashed password
+        registeredUsers.add(realUser);
+        
+        // Store password hash separately
+        prefs.edit().putString("pwd_" + email, hashedPassword).apply();
+        
+        saveRegisteredUsers(registeredUsers);
+        Log.d(TAG, "Real user account initialized: " + email);
+    }
+    
+    /**
+     * Initialize demo accounts for testing (only if no users exist at all)
+     * This method is now only called manually when needed for testing
+     */
+    public void initializeDemoAccountsIfEmpty() {
+        List<User> registeredUsers = getRegisteredUsers();
+        
+        // Only initialize demo accounts if NO users exist at all
+        if (!registeredUsers.isEmpty()) {
+            Log.d(TAG, "Users already exist (" + registeredUsers.size() + "), skipping demo account initialization");
+            return;
+        }
+        
+        Log.d(TAG, "No users found, initializing demo accounts for testing");
         
         for (Map.Entry<String, String> demoAccount : DEMO_ACCOUNTS.entrySet()) {
             String email = demoAccount.getKey();
             String password = demoAccount.getValue();
             
-            // Check if demo account already exists
-            boolean exists = registeredUsers.stream()
-                    .anyMatch(user -> user.getEmail().equals(email));
-            
-            if (!exists) {
-                // Create demo user
-                User demoUser = new User();
-                demoUser.setEmail(email);
+            // Create demo user
+            User demoUser = new User();
+            demoUser.setEmail(email);
+            if (email.equals("humblewoslayer@gmail.com")) {
+                demoUser.setFirstName("User"); // Using generic name for privacy
+                demoUser.setLastName("Account");
+            } else {
                 demoUser.setFirstName("Demo");
                 demoUser.setLastName("User");
-                demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
-                demoUser.setEmailVerified(true);
-                
-                // Hash password
-                String hashedPassword = hashPassword(password);
-                
-                // Store user with hashed password
-                registeredUsers.add(demoUser);
-                saveRegisteredUsers(registeredUsers);
-                
-                // Store password hash separately
-                prefs.edit().putString("pwd_" + email, hashedPassword).apply();
-                
-                Log.d(TAG, "Created demo account: " + email);
             }
+            demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+            demoUser.setEmailVerified(true);
+            
+            // Hash password
+            String hashedPassword = hashPassword(password);
+            
+            // Store user with hashed password
+            registeredUsers.add(demoUser);
+            
+            // Store password hash separately
+            prefs.edit().putString("pwd_" + email, hashedPassword).apply();
+            
+            Log.d(TAG, "Created demo account: " + email);
         }
+        
+        // Save all demo users at once
+        saveRegisteredUsers(registeredUsers);
+        Log.d(TAG, "Demo account initialization complete");
     }
     
     /**
@@ -106,23 +210,89 @@ public class LocalAuthService {
             try {
                 Log.d(TAG, "Local login attempt for: " + email);
                 
-                // Check registered users
+                // FIRST: Check DEMO_ACCOUNTS for immediate authentication
+                if (DEMO_ACCOUNTS.containsKey(email)) {
+                    String demoPassword = DEMO_ACCOUNTS.get(email);
+                    if (password.equals(demoPassword)) {
+                        Log.d(TAG, "✅ Demo account login successful for: " + email);
+                        
+                        // Create user object for demo account
+                        User demoUser = new User();
+                        demoUser.setEmail(email);
+                        if (email.equals("humblewoslayer@gmail.com")) {
+                            demoUser.setFirstName("User");
+                            demoUser.setLastName("Account");
+                        } else {
+                            demoUser.setFirstName("Demo");
+                            demoUser.setLastName("User");
+                        }
+                        demoUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+                        demoUser.setEmailVerified(true);
+                        
+                        // Generate tokens for auth compatibility
+                        String accessToken = generateLocalToken(email, "access");
+                        String refreshToken = generateLocalToken(email, "refresh");
+                        demoUser.setAccessToken(accessToken);
+                        demoUser.setRefreshToken(refreshToken);
+                        
+                        // Store and authenticate
+                        authManager.storeCurrentUser(demoUser);
+                        Log.d(TAG, "🎉 Demo account authentication successful: " + email);
+                        callback.onSuccess(demoUser);
+                        return;
+                    } else {
+                        Log.w(TAG, "❌ Demo account password mismatch for: " + email);
+                        callback.onError("Invalid email or password");
+                        return;
+                    }
+                }
+                
+                // SECOND: Check registered users from SharedPreferences
                 List<User> registeredUsers = getRegisteredUsers();
+                Log.d(TAG, "Found " + registeredUsers.size() + " registered users");
+                
+                // Log all registered users for debugging
+                for (User u : registeredUsers) {
+                    Log.d(TAG, "Registered user: " + u.getEmail());
+                }
+                
                 User user = registeredUsers.stream()
                         .filter(u -> u.getEmail().equals(email))
                         .findFirst()
                         .orElse(null);
                 
                 if (user == null) {
+                    Log.w(TAG, "User not found in registered users: " + email);
                     callback.onError("Account not found. Please sign up first.");
                     return;
                 }
+                
+                Log.d(TAG, "Found user in registered users: " + email);
                 
                 // Check password
                 String storedPasswordHash = prefs.getString("pwd_" + email, null);
                 if (storedPasswordHash == null || !verifyPassword(password, storedPasswordHash)) {
                     callback.onError("Invalid email or password");
                     return;
+                }
+                
+                // Ensure user has valid tokens (for compatibility with auth checks)
+                if (user.getAccessToken() == null || user.getAccessToken().isEmpty()) {
+                    String accessToken = generateLocalToken(email, "access");
+                    String refreshToken = generateLocalToken(email, "refresh");
+                    user.setAccessToken(accessToken);
+                    user.setRefreshToken(refreshToken);
+                    
+                    // Update user in registered users list
+                    for (int i = 0; i < registeredUsers.size(); i++) {
+                        if (registeredUsers.get(i).getEmail().equals(email)) {
+                            registeredUsers.set(i, user);
+                            break;
+                        }
+                    }
+                    saveRegisteredUsers(registeredUsers);
+                    
+                    Log.d(TAG, "Generated tokens for existing user: " + email);
                 }
                 
                 // Login successful
@@ -178,8 +348,8 @@ public class LocalAuthService {
                     Log.d(TAG, "Email service configured, attempting to send real email");
                     sendRealVerificationEmail(firstName, lastName, email, verificationCode, callback);
                 } else {
-                    Log.d(TAG, "Email service not configured, falling back to demo mode");
-                    callback.onSuccess("DEMO MODE: Your verification code is " + verificationCode + ". Email service not configured. Please enter this code in the verification screen.");
+                    Log.d(TAG, "Email service not configured, showing verification code directly");
+                    callback.onSuccess("Your verification code is " + verificationCode + ". Email service is not configured, so we're showing your code directly. Please enter this code in the verification screen to complete your account creation.");
                 }
                 
             } catch (Exception e) {
@@ -202,9 +372,9 @@ public class LocalAuthService {
             
             @Override
             public void onError(String error) {
-                Log.w(TAG, "Real email sending failed, falling back to demo mode: " + error);
-                // Fallback to demo mode if real email fails
-                callback.onSuccess("EMAIL FAILED - DEMO MODE: Your verification code is " + verificationCode + ". Real email failed (" + error + "). Please enter this code in the verification screen.");
+                Log.w(TAG, "Real email sending failed, showing verification code directly: " + error);
+                // Fallback to showing code directly if real email fails
+                callback.onSuccess("EMAIL DELIVERY FAILED: Your verification code is " + verificationCode + ". We couldn't send the email (" + error + "), so we're showing your code directly. Please enter this code in the verification screen to complete your account creation.");
             }
         });
     }
@@ -250,6 +420,12 @@ public class LocalAuthService {
                 user.setEmail(email);
                 user.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
                 user.setEmailVerified(true);
+                
+                // Generate local tokens for authentication compatibility
+                String accessToken = generateLocalToken(email, "access");
+                String refreshToken = generateLocalToken(email, "refresh");
+                user.setAccessToken(accessToken);
+                user.setRefreshToken(refreshToken);
                 
                 // Store user
                 List<User> registeredUsers = getRegisteredUsers();
@@ -340,5 +516,27 @@ public class LocalAuthService {
     private boolean verifyPassword(String password, String hash) {
         String passwordHash = hashPassword(password);
         return passwordHash.equals(hash);
+    }
+    
+    /**
+     * Generate local token for authentication compatibility
+     */
+    private String generateLocalToken(String email, String type) {
+        try {
+            // Generate a simple but unique token for local auth
+            String baseData = email + "_" + type + "_" + System.currentTimeMillis();
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = md.digest(baseData.getBytes());
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashBytes) {
+                sb.append(String.format("%02x", b));
+            }
+            // Return first 32 characters as token
+            return "local_" + sb.toString().substring(0, 32);
+        } catch (Exception e) {
+            Log.e(TAG, "Error generating local token", e);
+            // Fallback token
+            return "local_" + email.hashCode() + "_" + type + "_" + System.currentTimeMillis();
+        }
     }
 }

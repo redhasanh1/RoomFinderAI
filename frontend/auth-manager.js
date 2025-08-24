@@ -181,6 +181,12 @@ function createUserBackup() {
  * @returns {boolean} True if user was restored
  */
 function restoreUserIfNeeded() {
+    // Check if this is a legitimate logout - if so, don't restore
+    if (sessionStorage.getItem('legitimateLogout') === 'true') {
+        console.log('✅ Legitimate logout detected, skipping restore');
+        return false;
+    }
+    
     const currentUserData = localStorage.getItem('currentUser');
     const backup = localStorage.getItem('currentUser_backup');
     

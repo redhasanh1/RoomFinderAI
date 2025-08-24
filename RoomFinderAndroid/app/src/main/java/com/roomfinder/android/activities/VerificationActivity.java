@@ -117,27 +117,33 @@ public class VerificationActivity extends AppCompatActivity {
     }
     
     /**
-     * Show demo mode UI if demo code is available
+     * Show verification code display if available
      */
     private void showDemoModeIfNeeded() {
         if (demoVerificationCode != null && !demoVerificationCode.isEmpty()) {
-            // Show demo mode card
+            // Show verification code card
             binding.demoCodeCard.setVisibility(View.VISIBLE);
             binding.demoCodeDisplay.setText(demoVerificationCode);
             
-            // Update description text
-            binding.verificationDescription.setText("DEMO MODE: No email was sent. Use the code below:");
+            // Check if this is a real demo account or just email delivery failure
+            boolean isActualDemoAccount = isEmailInDemoAccounts(email);
             
-            // Show skip verification button
-            binding.skipVerificationButton.setVisibility(View.VISIBLE);
-            
-            // Show debug info
-            showDebugInfo("Demo mode active. Code: " + demoVerificationCode + " | Email: " + email);
+            if (isActualDemoAccount) {
+                // Actual demo account
+                binding.verificationDescription.setText("DEMO ACCOUNT: Your verification code is displayed below:");
+                binding.skipVerificationButton.setVisibility(View.VISIBLE);
+                showDebugInfo("Demo account mode. Code: " + demoVerificationCode + " | Email: " + email);
+            } else {
+                // Real account, just showing code because email failed
+                binding.verificationDescription.setText("EMAIL UNAVAILABLE: Your verification code is displayed below:");
+                binding.skipVerificationButton.setVisibility(View.GONE); // No skip for real accounts
+                showDebugInfo("Real account - email delivery failed. Code: " + demoVerificationCode + " | Email: " + email);
+            }
             
             // Setup auto-fill and copy functionality
             setupDemoCodeInteractions();
         } else {
-            // Regular mode
+            // Regular mode - waiting for email
             binding.demoCodeCard.setVisibility(View.GONE);
             binding.skipVerificationButton.setVisibility(View.GONE);
             binding.verificationDescription.setText("We've sent a 6-digit verification code to:");
@@ -145,6 +151,18 @@ public class VerificationActivity extends AppCompatActivity {
             // Show debug info for troubleshooting
             showDebugInfo("Regular mode. Waiting for email verification for: " + email);
         }
+    }
+    
+    /**
+     * Check if email is in the demo accounts list
+     */
+    private boolean isEmailInDemoAccounts(String email) {
+        if (email == null) return false;
+        
+        // Demo account emails (matching LocalAuthService DEMO_ACCOUNTS)
+        return email.equals("demo@roomfinder.com") || 
+               email.equals("test@roomfinder.com") || 
+               email.equals("user@example.com");
     }
     
     /**

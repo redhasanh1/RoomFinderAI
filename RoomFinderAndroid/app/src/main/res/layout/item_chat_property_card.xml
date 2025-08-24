@@ -22,9 +22,8 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="@drawable/glassmorphism_card"
-            android:src="@drawable/ic_computer"
-            android:padding="10dp"
-            android:tint="@color/white"
+            android:src="@drawable/ai_negotiator_logo"
+            android:padding="8dp"
             android:elevation="4dp"
             android:contentDescription="AI Assistant Avatar" />
             

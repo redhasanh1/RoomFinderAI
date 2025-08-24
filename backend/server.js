@@ -27,6 +27,18 @@ const serviceStatus = {
 const DEMO_MODE = process.env.ENABLE_DEMO_MODE === 'true' || false;
 const ANONYMOUS_BROWSING = process.env.ENABLE_ANONYMOUS_BROWSING === 'true' || true;
 
+// Email configuration - Centralized for easy management
+const EMAIL_CONFIG = {
+    // Use wilmahenning01@gmail.com as it's authorized in Brevo
+    // This prevents delivery issues due to SPF/DKIM/DMARC checks
+    SENDER_EMAIL: "wilmahenning01@gmail.com",
+    SENDER_NAME: "RoomFinderAI",
+    PRIMARY_RECIPIENT: "roomfinderai@gmail.com",
+    BACKUP_RECIPIENT: "wilmahenning01@gmail.com",  // Backup to ensure delivery
+    // Set to true to send to both recipients, false for primary only
+    USE_BACKUP_RECIPIENT: false  // Disabled to avoid spam folder issues
+};
+
 // Load config with error handling
 // Load configuration with environment variables taking priority
 let config = {};
@@ -55,6 +67,7 @@ config = {
     AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim() || config.AZURE_FACE_KEY,
     AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim() || config.AZURE_FACE_ENDPOINT,
     GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID?.trim() || config.GOOGLE_OAUTH_CLIENT_ID,
+    GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim() || config.GOOGLE_OAUTH_CLIENT_SECRET,
     APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID?.trim() || config.APPLE_CLIENT_ID
 };
 
@@ -210,6 +223,21 @@ try {
     console.log('❌ Stripe initialization failed:', error.message);
 }
 
+// Initialize OpenAI service status
+try {
+    if (config.OPENAI_API_KEY && config.OPENAI_API_KEY.startsWith('sk-')) {
+        serviceStatus.openai = true;
+        console.log('✅ OpenAI initialized');
+    } else {
+        console.log('⚠️ OpenAI not initialized - missing or invalid API key');
+        if (DEMO_MODE) {
+            console.log('📝 Demo mode enabled - OpenAI features will use mock responses');
+        }
+    }
+} catch (error) {
+    console.log('❌ OpenAI initialization failed:', error.message);
+}
+
 // Initialize Supabase client with error handling
 let supabase;
 try {
@@ -344,6 +372,9 @@ const listings = [];
 const users = [];
 const emailVerificationCodes = new Map(); // Store verification codes with expiration
 const passwordResetCodes = new Map(); // Store password reset codes with expiration
+
+// Note: Removed hardcoded user initialization - users should register through proper signup flow
+// Real user accounts will be stored in Supabase database, not in-memory arrays
 
 // Password validation function
 function validatePassword(password) {
@@ -1004,8 +1035,8 @@ async function sendVerificationEmail(email, code, firstName) {
     try {
         const emailData = {
             sender: {
-                name: "RoomFinderAI",
-                email: "wilmahenning01@gmail.com"
+                name: EMAIL_CONFIG.SENDER_NAME,
+                email: EMAIL_CONFIG.SENDER_EMAIL
             },
             to: [{
                 email: email,
@@ -1098,8 +1129,8 @@ async function sendPasswordResetEmail(email, code, firstName) {
         
         const emailData = {
             sender: {
-                name: "RoomFinderAI",
-                email: "wilmahenning01@gmail.com"
+                name: EMAIL_CONFIG.SENDER_NAME,
+                email: EMAIL_CONFIG.SENDER_EMAIL
             },
             to: [{
                 email: email,
@@ -1189,86 +1220,170 @@ async function sendPasswordResetEmail(email, code, firstName) {
     }
 }
 
+// Function to generate contact email HTML
+function generateContactEmailHTML(firstName, email, message, lastName = null) {
+    // Escape HTML to prevent injection and ensure proper display
+    const escapeHtml = (text) => {
+        if (!text) return '';
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    };
+
+    const safeFirstName = escapeHtml(firstName || 'Unknown');
+    const safeLastName = escapeHtml(lastName || '');
+    const safeFullName = safeLastName ? `${safeFirstName} ${safeLastName}` : safeFirstName;
+    const safeEmail = escapeHtml(email || 'No email provided');
+    const safeMessage = escapeHtml(message || 'No message provided');
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Contact Form Message</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    <div style="max-width: 600px; margin: 0 auto; background: #ffffff;">
+        <!-- Header -->
+        <div style="background: #4F46E5; padding: 30px; text-align: center;">
+            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: normal;">
+                RoomFinderAI
+            </h1>
+            <p style="margin: 8px 0 0 0; color: #E0E7FF; font-size: 14px;">
+                Customer Inquiry
+            </p>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 40px 30px;">
+            <div style="background: #F8FAFC; padding: 20px; border-radius: 8px; border-left: 4px solid #3B82F6; margin-bottom: 20px;">
+                <h2 style="margin: 0 0 15px 0; color: #1F2937; font-size: 18px;">Customer Information</h2>
+                <p style="margin: 0 0 10px 0; color: #374151;"><strong>Name:</strong> ${safeFullName}</p>
+                <p style="margin: 0; color: #374151;"><strong>Email:</strong> ${safeEmail}</p>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <h2 style="margin: 0 0 15px 0; color: #1F2937; font-size: 18px;">Message</h2>
+                <div style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px;">
+                    <p style="margin: 0; color: #374151; line-height: 1.6; white-space: pre-wrap;">${safeMessage}</p>
+                </div>
+            </div>
+            
+            <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 15px;">
+                <p style="margin: 0; color: #92400E; font-size: 14px;">
+                    <strong>Action Required:</strong> Please respond to this inquiry within 24 hours for best customer service.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+            <p style="margin: 0; color: #64748b; font-size: 14px;">
+                © 2025 RoomFinderAI. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>`;
+}
+
 // Function to send contact form email
-async function sendContactEmail(firstName, email, message) {
+async function sendContactEmail(firstName, email, message, lastName = null) {
+    const emailStartTime = Date.now();
+    const emailId = Math.random().toString(36).substring(2, 15);
+    
     try {
-        console.log('📧 Sending contact form email from:', email);
+        console.log(`📧 [${emailId}] Starting contact form email send process`);
+        console.log(`📧 [${emailId}] From: ${firstName} ${lastName || ''} <${email}>`);
+        console.log(`📧 [${emailId}] Message length: ${message.length} characters`);
         
         // Check if API key is available
         if (!config.BREVO_API_KEY) {
-            console.error('❌ BREVO_API_KEY not configured');
+            console.error(`❌ [${emailId}] BREVO_API_KEY not configured`);
             return { success: false, error: 'Email service not configured' };
+        }
+        
+        // Validate Brevo API key format
+        if (!config.BREVO_API_KEY.startsWith('xkeysib-')) {
+            console.error(`❌ [${emailId}] Invalid BREVO_API_KEY format`);
+            return { success: false, error: 'Invalid email service configuration' };
+        }
+        
+        const fullName = lastName ? `${firstName} ${lastName}` : firstName;
+        
+        // Build recipient list based on configuration
+        const recipients = [
+            {
+                email: EMAIL_CONFIG.PRIMARY_RECIPIENT,
+                name: "RoomFinderAI Support"
+            }
+        ];
+        
+        // Add backup recipient if configured
+        if (EMAIL_CONFIG.USE_BACKUP_RECIPIENT) {
+            recipients.push({
+                email: EMAIL_CONFIG.BACKUP_RECIPIENT,
+                name: "RoomFinderAI Support (Backup)"
+            });
         }
         
         const emailData = {
             sender: {
-                name: "RoomFinderAI Contact Form",
-                email: "roomfinderai@gmail.com"
+                name: `${EMAIL_CONFIG.SENDER_NAME}`,  // Remove "Contact Form" to avoid spam triggers
+                email: EMAIL_CONFIG.SENDER_EMAIL
             },
-            to: [{
-                email: "roomfinderai@gmail.com",
-                name: "RoomFinderAI Support"
-            }],
+            to: recipients,
             replyTo: {
                 email: email,
-                name: firstName
+                name: fullName
             },
-            subject: `New Contact Form Message from ${firstName}`,
-            htmlContent: `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1">
-                    <title>Contact Form Message</title>
-                </head>
-                <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-                    <div style="max-width: 600px; margin: 0 auto; background: #ffffff;">
-                        <!-- Header -->
-                        <div style="background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%); padding: 40px 30px; text-align: center;">
-                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
-                                Contact Form Message
-                            </h1>
-                            <p style="margin: 10px 0 0 0; color: #E5E7EB; font-size: 16px;">
-                                New inquiry from RoomFinderAI website
-                            </p>
-                        </div>
-                        
-                        <!-- Content -->
-                        <div style="padding: 40px 30px;">
-                            <div style="background: #F8FAFC; padding: 20px; border-radius: 8px; border-left: 4px solid #3B82F6; margin-bottom: 20px;">
-                                <h2 style="margin: 0 0 15px 0; color: #1F2937; font-size: 18px;">Contact Details</h2>
-                                <p style="margin: 0 0 10px 0; color: #374151;"><strong>Name:</strong> ${firstName}</p>
-                                <p style="margin: 0; color: #374151;"><strong>Email:</strong> ${email}</p>
-                            </div>
-                            
-                            <div style="margin-bottom: 30px;">
-                                <h2 style="margin: 0 0 15px 0; color: #1F2937; font-size: 18px;">Message</h2>
-                                <div style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px;">
-                                    <p style="margin: 0; color: #374151; line-height: 1.6; white-space: pre-wrap;">${message}</p>
-                                </div>
-                            </div>
-                            
-                            <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 15px;">
-                                <p style="margin: 0; color: #92400E; font-size: 14px;">
-                                    <strong>Action Required:</strong> Please respond to this inquiry within 24 hours for best customer service.
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <!-- Footer -->
-                        <div style="background: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
-                            <p style="margin: 0; color: #64748b; font-size: 14px;">
-                                © 2025 RoomFinderAI. All rights reserved.
-                            </p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-            `
+            // More professional subject line to avoid spam filters
+            subject: `Customer Inquiry from ${fullName}`,
+            // Add headers to improve deliverability and avoid spam filters
+            headers: {
+                'X-Priority': '3',
+                'X-Mailer': 'RoomFinderAI-Contact-System',
+                'Message-ID': `<${emailId}@roomfinderai.com>`,
+                'Reply-To': `${email}`,
+                'X-Auto-Response-Suppress': 'All'
+            },
+            htmlContent: generateContactEmailHTML(firstName, email, message, lastName),
+            textContent: `
+Customer Inquiry - RoomFinderAI
+
+Contact Information:
+Name: ${fullName}
+Email: ${email}
+
+Message:
+${message}
+
+---
+This message was sent through the RoomFinderAI contact form.
+Please respond directly to the customer's email address.
+
+Reference ID: ${emailId}
+Date: ${new Date().toISOString()}
+            `.trim()
         };
 
-        console.log('📧 Sending contact form request to Brevo API...');
+        console.log(`📧 [${emailId}] Email payload prepared:`, {
+            to: emailData.to[0].email,
+            from: emailData.sender.email,
+            replyTo: emailData.replyTo.email,
+            subject: emailData.subject,
+            htmlContentLength: emailData.htmlContent.length,
+            textContentLength: emailData.textContent.length
+        });
+        
+        console.log(`📧 [${emailId}] Sending request to Brevo API...`);
+        console.log(`📧 [${emailId}] API URL: https://api.brevo.com/v3/smtp/email`);
+        console.log(`📧 [${emailId}] API Key: ${config.BREVO_API_KEY.substring(0, 12)}...`);
+        
         const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
             headers: {
                 'accept': 'application/json',
@@ -1278,17 +1393,42 @@ async function sendContactEmail(firstName, email, message) {
             timeout: 30000 // 30 second timeout
         });
 
-        console.log('✅ Contact form email sent successfully');
-        console.log('📧 Brevo response status:', response.status);
-        return { success: true, data: response.data };
+        const emailProcessingTime = Date.now() - emailStartTime;
+        console.log(`✅ [${emailId}] Contact form email sent successfully in ${emailProcessingTime}ms`);
+        console.log(`✅ [${emailId}] Brevo response status: ${response.status}`);
+        console.log(`✅ [${emailId}] Brevo response headers:`, response.headers);
+        console.log(`✅ [${emailId}] Brevo response data:`, response.data);
+        
+        return { success: true, data: response.data, emailId: emailId, processingTime: emailProcessingTime };
     } catch (error) {
-        console.error('❌ Error sending contact form email:');
-        console.error('  - Error message:', error.message);
-        console.error('  - Response status:', error.response?.status);
-        console.error('  - Response data:', error.response?.data);
+        const emailProcessingTime = Date.now() - emailStartTime;
+        console.error(`❌ [${emailId}] Error sending contact form email after ${emailProcessingTime}ms:`);
+        console.error(`❌ [${emailId}] Error type:`, error.constructor.name);
+        console.error(`❌ [${emailId}] Error message:`, error.message);
+        
+        if (error.response) {
+            console.error(`❌ [${emailId}] HTTP Error Response:`);
+            console.error(`❌ [${emailId}]   - Status: ${error.response.status}`);
+            console.error(`❌ [${emailId}]   - Status Text: ${error.response.statusText}`);
+            console.error(`❌ [${emailId}]   - Headers:`, error.response.headers);
+            console.error(`❌ [${emailId}]   - Data:`, JSON.stringify(error.response.data, null, 2));
+        } else if (error.request) {
+            console.error(`❌ [${emailId}] Network Error - No response received:`);
+            console.error(`❌ [${emailId}]   - Request:`, error.request);
+        } else {
+            console.error(`❌ [${emailId}] Setup Error:`, error.message);
+        }
+        
+        console.error(`❌ [${emailId}] Full error stack:`, error.stack);
         
         const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Unknown error';
-        return { success: false, error: errorMessage, details: error.response?.data };
+        return { 
+            success: false, 
+            error: errorMessage, 
+            details: error.response?.data,
+            emailId: emailId,
+            processingTime: emailProcessingTime
+        };
     }
 }
 
@@ -1449,7 +1589,7 @@ app.post('/api/verify-email', async (req, res) => {
     }
 });
 
-// API: User login
+// API: User login with Supabase authentication
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -1457,6 +1597,46 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
+        // Try Supabase authentication first
+        if (supabase) {
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    console.log('Supabase login failed:', error.message);
+                    // Fall through to in-memory check for demo accounts
+                } else if (data.user) {
+                    // Get user profile from database
+                    const { data: profile, error: profileError } = await supabase
+                        .from('users')
+                        .select('firstName, lastName, email, profileImage')
+                        .eq('email', email)
+                        .single();
+
+                    const userData = {
+                        firstName: profile?.firstName || 'User',
+                        lastName: profile?.lastName || 'Name', 
+                        email: data.user.email,
+                        profileImage: profile?.profileImage
+                    };
+
+                    return res.json({
+                        message: 'Login successful',
+                        access_token: data.session.access_token,
+                        userId: data.user.id,
+                        user: userData
+                    });
+                }
+            } catch (supabaseError) {
+                console.log('Supabase authentication error:', supabaseError.message);
+                // Fall through to demo account check
+            }
+        }
+
+        // Fallback to in-memory users for demo accounts only
         const user = users.find(u => u.email === email);
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
@@ -1680,6 +1860,270 @@ app.post('/api/auth/verify-code', async (req, res) => {
         console.error('Verification error:', error);
         res.status(500).json({ error: 'Failed to verify code' });
     }
+});
+
+// API: Google OAuth Sign-In (ID Token)
+app.post('/api/auth/google', async (req, res) => {
+    try {
+        const { idToken } = req.body;
+        
+        if (!idToken) {
+            return res.status(400).json({ error: 'Google ID token is required' });
+        }
+
+        // Verify Google ID token
+        const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+        const googleUser = await response.json();
+        
+        if (!response.ok || googleUser.error) {
+            return res.status(401).json({ error: 'Invalid Google token' });
+        }
+
+        // Extract user information
+        const userData = {
+            id: uuidv4(),
+            firstName: googleUser.given_name || 'User',
+            lastName: googleUser.family_name || 'Name',
+            email: googleUser.email,
+            profileImage: googleUser.picture || 'https://via.placeholder.com/40',
+            emailVerified: googleUser.email_verified === 'true',
+            provider: 'google',
+            providerId: googleUser.sub,
+            aiChats: [],
+            listings: []
+        };
+
+        // Check if user already exists
+        let existingUser = users.find(u => u.email === userData.email);
+        
+        if (existingUser) {
+            // Update existing user with Google data
+            existingUser.profileImage = userData.profileImage;
+            existingUser.emailVerified = true;
+            if (!existingUser.provider) {
+                existingUser.provider = 'google';
+                existingUser.providerId = userData.providerId;
+            }
+        } else {
+            // Create new user
+            users.push(userData);
+            existingUser = userData;
+        }
+
+        // Try to create/update user in Supabase if available
+        if (supabase) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        email: existingUser.email,
+                        first_name: existingUser.firstName,
+                        last_name: existingUser.lastName,
+                        profile_image: existingUser.profileImage,
+                        provider: 'google',
+                        provider_id: userData.providerId,
+                        email_verified: true,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'email'
+                    });
+
+                if (error) {
+                    console.error('Supabase profile upsert error:', error);
+                }
+            } catch (dbError) {
+                console.error('Database error during Google auth:', dbError);
+                // Continue with in-memory auth even if DB fails
+            }
+        }
+
+        res.json({ 
+            message: 'Google Sign-In successful',
+            user: {
+                firstName: existingUser.firstName,
+                lastName: existingUser.lastName,
+                email: existingUser.email,
+                profileImage: existingUser.profileImage,
+                emailVerified: existingUser.emailVerified,
+                aiChats: existingUser.aiChats || [],
+                listings: existingUser.listings || []
+            }
+        });
+
+    } catch (error) {
+        console.error('Google OAuth error:', error);
+        res.status(500).json({ error: 'Google Sign-In failed' });
+    }
+});
+
+// API: Google OAuth Code Exchange (OAuth 2.0 flow)
+app.post('/api/auth/google/oauth-code', async (req, res) => {
+    try {
+        const { code } = req.body;
+        
+        if (!code) {
+            return res.status(400).json({ error: 'Authorization code is required' });
+        }
+
+        // Exchange authorization code for tokens
+        // For popup mode with initCodeClient, Google expects 'postmessage' as redirect_uri
+        // This is a special value for the popup OAuth flow
+        const redirectUri = 'postmessage';
+        
+        console.log('Redirect URI being used:', redirectUri);
+        console.log('Request headers:', {
+            origin: req.headers.origin,
+            host: req.get('host'),
+            protocol: req.protocol,
+            'x-forwarded-proto': req.headers['x-forwarded-proto']
+        });
+        
+        // Use URLSearchParams for proper form encoding
+        const params = new URLSearchParams();
+        params.append('code', code);
+        params.append('client_id', config.GOOGLE_OAUTH_CLIENT_ID);
+        params.append('client_secret', config.GOOGLE_OAUTH_CLIENT_SECRET);
+        params.append('redirect_uri', redirectUri);
+        params.append('grant_type', 'authorization_code');
+        
+        console.log('Token exchange parameters:', {
+            client_id: config.GOOGLE_OAUTH_CLIENT_ID,
+            redirect_uri: redirectUri,
+            code_length: code.length,
+            params_string: params.toString()
+        });
+        
+        const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', params, {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+
+        const { access_token, id_token } = tokenResponse.data;
+
+        // Get user info from Google
+        const userResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: {
+                Authorization: `Bearer ${access_token}`
+            }
+        });
+
+        const googleUser = userResponse.data;
+
+        // Create user data
+        const userData = {
+            id: uuidv4(),
+            firstName: googleUser.given_name || 'User',
+            lastName: googleUser.family_name || 'Name',
+            email: googleUser.email,
+            profileImage: googleUser.picture || 'https://via.placeholder.com/40',
+            emailVerified: googleUser.verified_email || false,
+            provider: 'google',
+            providerId: googleUser.id,
+            aiChats: [],
+            listings: []
+        };
+
+        // Check if user already exists
+        let existingUser = users.find(u => u.email === userData.email);
+        
+        if (existingUser) {
+            // Update existing user with Google data
+            existingUser.profileImage = userData.profileImage;
+            existingUser.emailVerified = true;
+            if (!existingUser.provider) {
+                existingUser.provider = 'google';
+                existingUser.providerId = userData.providerId;
+            }
+        } else {
+            // Create new user
+            users.push(userData);
+            existingUser = userData;
+        }
+
+        // Try to create/update user in Supabase if available
+        if (supabase) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        email: existingUser.email,
+                        first_name: existingUser.firstName,
+                        last_name: existingUser.lastName,
+                        profile_image: existingUser.profileImage,
+                        provider: 'google',
+                        provider_id: userData.providerId,
+                        email_verified: true,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'email'
+                    });
+
+                if (error) {
+                    console.error('Supabase profile upsert error:', error);
+                }
+            } catch (dbError) {
+                console.error('Database error during Google auth:', dbError);
+                // Continue with in-memory auth even if DB fails
+            }
+        }
+
+        res.json({ 
+            message: 'Google Sign-In successful',
+            user: {
+                firstName: existingUser.firstName,
+                lastName: existingUser.lastName,
+                email: existingUser.email,
+                profileImage: existingUser.profileImage,
+                emailVerified: existingUser.emailVerified,
+                aiChats: existingUser.aiChats || [],
+                listings: existingUser.listings || []
+            }
+        });
+
+    } catch (error) {
+        console.error('Google OAuth code exchange error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status
+        });
+        
+        // Return more specific error for debugging
+        if (error.response?.data?.error) {
+            console.error('Google OAuth error response:', error.response.data);
+            return res.status(400).json({ 
+                error: `Google OAuth failed: ${error.response.data.error}`,
+                description: error.response.data.error_description || 'Check server logs for details'
+            });
+        }
+        
+        res.status(500).json({ 
+            error: 'Google Sign-In failed', 
+            details: error.message,
+            hint: 'Check if OAuth client is configured correctly in Google Cloud Console'
+        });
+    }
+});
+
+// API: Google OAuth Callback (for redirect flow)
+app.get('/api/auth/google/callback', (req, res) => {
+    // This endpoint handles the OAuth redirect
+    // In production, you'd process the authorization code here
+    // For now, we'll redirect to the frontend with a success message
+    const { code, error } = req.query;
+    
+    if (error) {
+        return res.redirect('/login.html?error=' + encodeURIComponent(error));
+    }
+    
+    if (code) {
+        // In production, exchange code for tokens here
+        // Then redirect to frontend with session or token
+        return res.redirect('/verification-modal.html?redirect=index.html');
+    }
+    
+    res.redirect('/login.html');
 });
 
 // API: Apple OAuth Sign-In
@@ -1953,79 +2397,221 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
-// API: Contact form submission
+// API: Contact form submission with enhanced logging and validation
 app.post('/api/contact', async (req, res) => {
+    const startTime = Date.now();
+    const requestId = Math.random().toString(36).substring(2, 15);
+    
     try {
-        console.log('📧 Received contact form submission:', req.body);
-        const { firstName, email, message } = req.body;
+        console.log(`📧 [${requestId}] Contact form submission received at ${new Date().toISOString()}`);
+        console.log(`📧 [${requestId}] Request body:`, JSON.stringify(req.body, null, 2));
+        console.log(`📧 [${requestId}] Request headers:`, {
+            'user-agent': req.headers['user-agent'],
+            'x-forwarded-for': req.headers['x-forwarded-for'],
+            'origin': req.headers['origin']
+        });
+        
+        const { firstName, lastName, email, message } = req.body;
 
-        // Validate required fields
-        if (!firstName || !email || !message) {
-            return res.status(400).json({ error: 'First name, email, and message are required' });
+        // Enhanced validation
+        console.log(`📧 [${requestId}] Validating fields...`);
+        const missingFields = [];
+        if (!firstName?.trim()) missingFields.push('firstName');
+        if (!email?.trim()) missingFields.push('email');
+        if (!message?.trim()) missingFields.push('message');
+        
+        if (missingFields.length > 0) {
+            console.log(`❌ [${requestId}] Missing required fields: ${missingFields.join(', ')}`);
+            return res.status(400).json({ 
+                error: `Missing required fields: ${missingFields.join(', ')}`,
+                missingFields: missingFields,
+                requestId: requestId
+            });
         }
 
-        // Basic email validation
+        // Enhanced email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ error: 'Please provide a valid email address' });
+        if (!emailRegex.test(email.trim())) {
+            console.log(`❌ [${requestId}] Invalid email format: ${email}`);
+            return res.status(400).json({ 
+                error: 'Please provide a valid email address',
+                requestId: requestId
+            });
         }
 
-        // Send contact email
-        const emailResult = await sendContactEmail(firstName, email, message);
+        // Length validation
+        if (message.trim().length > 5000) {
+            console.log(`❌ [${requestId}] Message too long: ${message.length} characters`);
+            return res.status(400).json({ 
+                error: 'Message is too long (maximum 5000 characters)',
+                requestId: requestId
+            });
+        }
+
+        // Rate limiting check (simple in-memory implementation)
+        const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        const rateKey = `contact_${clientIP}`;
+        const now = Date.now();
+        const rateLimitWindow = 60 * 1000; // 1 minute
+        const maxRequests = 3; // Max 3 requests per minute
+        
+        if (!global.rateLimitStore) global.rateLimitStore = new Map();
+        const requests = global.rateLimitStore.get(rateKey) || [];
+        const recentRequests = requests.filter(time => now - time < rateLimitWindow);
+        
+        if (recentRequests.length >= maxRequests) {
+            console.log(`❌ [${requestId}] Rate limit exceeded for IP: ${clientIP}`);
+            return res.status(429).json({ 
+                error: 'Too many requests. Please wait before sending another message.',
+                requestId: requestId
+            });
+        }
+        
+        recentRequests.push(now);
+        global.rateLimitStore.set(rateKey, recentRequests);
+        
+        console.log(`📧 [${requestId}] Validation passed. Sending email...`);
+        console.log(`📧 [${requestId}] Processed fields:`, {
+            firstName: firstName.trim(),
+            lastName: lastName?.trim() || 'Not provided',
+            email: email.trim(),
+            messageLength: message.trim().length,
+            clientIP: clientIP
+        });
+
+        // Send contact email with enhanced logging
+        const emailResult = await sendContactEmail(firstName.trim(), email.trim(), message.trim(), lastName?.trim());
+        
+        const processingTime = Date.now() - startTime;
         
         if (emailResult.success) {
-            console.log('✅ Contact form email sent successfully');
+            console.log(`✅ [${requestId}] Contact form email sent successfully in ${processingTime}ms`);
+            console.log(`✅ [${requestId}] Brevo response:`, emailResult.data);
+            
             res.json({ 
                 message: 'Message sent successfully! We will get back to you soon.',
-                success: true
+                success: true,
+                requestId: requestId,
+                processingTime: processingTime
             });
         } else {
-            console.log('❌ Failed to send contact form email:', emailResult.error);
+            console.log(`❌ [${requestId}] Failed to send contact form email in ${processingTime}ms`);
+            console.log(`❌ [${requestId}] Error details:`, emailResult.error);
+            console.log(`❌ [${requestId}] Full error response:`, JSON.stringify(emailResult.details, null, 2));
+            
             res.status(500).json({ 
                 error: 'Failed to send message. Please try again later.',
-                details: emailResult.error
+                details: emailResult.error,
+                requestId: requestId,
+                processingTime: processingTime
             });
         }
     } catch (error) {
-        console.error('❌ Error in /api/contact:', error.message);
-        res.status(500).json({ error: 'Server error occurred while sending message' });
+        const processingTime = Date.now() - startTime;
+        console.error(`❌ [${requestId}] Critical error in /api/contact after ${processingTime}ms:`, error.message);
+        console.error(`❌ [${requestId}] Error stack:`, error.stack);
+        
+        res.status(500).json({ 
+            error: 'Server error occurred while sending message',
+            requestId: requestId,
+            processingTime: processingTime
+        });
     }
 });
 
 // Test endpoint for email functionality (remove in production)
 app.post('/api/test-email', async (req, res) => {
     try {
-        const { email } = req.body;
+        const { email, type = 'password-reset' } = req.body;
         
         if (!email) {
             return res.status(400).json({ error: 'Email is required' });
         }
         
-        console.log('🧪 Testing email send to:', email);
-        const testCode = '123456';
-        const result = await sendPasswordResetEmail(email, testCode, 'Test User');
+        console.log('🧪 Testing email send to:', email, 'Type:', type);
+        
+        let result;
+        if (type === 'contact-form') {
+            // Test contact form email
+            result = await sendContactEmail(
+                'Test', 
+                email, 
+                'This is a test message from the contact form debugging system. If you receive this, the contact form email delivery is working correctly.',
+                'User'
+            );
+        } else {
+            // Test password reset email (default)
+            const testCode = '123456';
+            result = await sendPasswordResetEmail(email, testCode, 'Test User');
+        }
         
         if (result.success) {
             res.json({ 
-                message: 'Test email sent successfully',
-                details: result.data
+                message: `Test ${type} email sent successfully`,
+                details: result.data,
+                emailId: result.emailId,
+                processingTime: result.processingTime
             });
         } else {
             res.status(500).json({ 
-                error: 'Failed to send test email',
-                details: result.error
+                error: `Failed to send test ${type} email`,
+                details: result.error,
+                emailId: result.emailId,
+                processingTime: result.processingTime
             });
         }
     } catch (error) {
         console.error('Test email error:', error);
-        res.status(500).json({ error: 'Test email failed' });
+        res.status(500).json({ error: 'Server error during email test' });
+    }
+});
+
+// Brevo account status check endpoint  
+app.get('/api/brevo-status', async (req, res) => {
+    try {
+        console.log('🔍 Checking Brevo account status...');
+        
+        if (!config.BREVO_API_KEY) {
+            return res.status(500).json({ 
+                error: 'BREVO_API_KEY not configured',
+                configured: false
+            });
+        }
+        
+        // Check Brevo account info
+        const response = await axios.get('https://api.brevo.com/v3/account', {
+            headers: {
+                'accept': 'application/json',
+                'api-key': config.BREVO_API_KEY
+            },
+            timeout: 10000
+        });
+        
+        console.log('✅ Brevo account status check successful');
+        res.json({
+            configured: true,
+            accountInfo: response.data,
+            apiKeyFormat: config.BREVO_API_KEY.startsWith('xkeysib-') ? 'valid' : 'invalid'
+        });
+        
+    } catch (error) {
+        console.error('❌ Brevo status check failed:', error.message);
+        console.error('❌ Response status:', error.response?.status);
+        console.error('❌ Response data:', error.response?.data);
+        
+        res.status(500).json({
+            error: 'Failed to check Brevo status',
+            details: error.response?.data || error.message,
+            configured: !!config.BREVO_API_KEY,
+            apiKeyFormat: config.BREVO_API_KEY?.startsWith('xkeysib-') ? 'valid' : 'invalid'
+        });
     }
 });
 
 // API: AI Negotiator chat with OpenAI integration
 app.post('/api/ai-negotiate', async (req, res) => {
     try {
-        const { message, conversationHistory, userEmail } = req.body;
+        const { message, conversationHistory, userEmail, listingData } = req.body;
         
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
@@ -2059,8 +2645,8 @@ app.post('/api/ai-negotiate', async (req, res) => {
             body: JSON.stringify({
                 model: config.OPENAI_MODEL || 'gpt-3.5-turbo',
                 messages: messages,
-                max_tokens: 300,
-                temperature: 0.8,
+                max_tokens: 150,
+                temperature: 0.7,
                 presence_penalty: 0.1,
                 frequency_penalty: 0.1
             })
@@ -2069,7 +2655,14 @@ app.post('/api/ai-negotiate', async (req, res) => {
         if (!openaiResponse.ok) {
             const errorData = await openaiResponse.json().catch(() => ({}));
             console.error('❌ OpenAI API error:', errorData);
-            throw new Error(`OpenAI API error: ${openaiResponse.status}`);
+            console.error('OpenAI error details:', {
+                status: openaiResponse.status,
+                error: errorData.error,
+                message: errorData.error?.message,
+                type: errorData.error?.type,
+                code: errorData.error?.code
+            });
+            throw new Error(`OpenAI API error: ${openaiResponse.status} - ${errorData.error?.message || JSON.stringify(errorData)}`);
         }
 
         const data = await openaiResponse.json();
@@ -2098,11 +2691,11 @@ app.post('/api/ai-negotiate', async (req, res) => {
                     user_message: message,
                     ai_response: aiResponse,
                     session_type: 'negotiation_assistant',
-                    listing_details: {
-                        location: 'Central District, Hong Kong',
-                        rent: 1500,
-                        type: 'Studio Apartment',
-                        size: '450 sq ft'
+                    listing_details: listingData || {
+                        location: 'Global Market',
+                        rent: null,
+                        type: 'Various',
+                        size: 'Various'
                     },
                     tokens_used: data.usage?.total_tokens || 0,
                     created_at: new Date().toISOString()
@@ -2120,60 +2713,142 @@ app.post('/api/ai-negotiate', async (req, res) => {
         
     } catch (error) {
         console.error('❌ Error in /api/ai-negotiate:', error.message);
-        res.status(500).json({ error: 'Failed to process AI negotiation request' });
+        console.error('Full error:', error);
+        res.status(500).json({ 
+            error: 'Failed to process AI negotiation request',
+            details: error.message,
+            stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+        });
     }
 });
 
+// API: Send actual message to landlord
+app.post('/api/message-landlord', async (req, res) => {
+    try {
+        const { listingId, landlordEmail, message, userEmail, userName } = req.body;
+        
+        if (!landlordEmail || !message || !userEmail) {
+            return res.status(400).json({ error: 'Landlord email, message, and user email are required' });
+        }
+
+        // Check if Brevo is configured for email sending
+        if (!config.BREVO_API_KEY) {
+            return res.status(503).json({ error: 'Email service not configured' });
+        }
+
+        console.log(`📧 Sending negotiation message to landlord ${landlordEmail} for listing ${listingId}`);
+
+        // Send email to landlord
+        const emailResult = await sendNegotiationEmail(landlordEmail, message, userEmail, userName, listingId);
+        
+        if (emailResult.success) {
+            console.log('✅ Negotiation email sent successfully to landlord');
+            res.json({ 
+                success: true,
+                message: 'Message sent to landlord successfully',
+                emailId: emailResult.emailId
+            });
+        } else {
+            console.error('❌ Failed to send negotiation email:', emailResult.error);
+            res.status(500).json({ 
+                error: 'Failed to send message to landlord',
+                details: emailResult.error
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error in /api/message-landlord:', error.message);
+        res.status(500).json({ error: 'Failed to send message to landlord' });
+    }
+});
+
+// Helper function to send negotiation email to landlord
+async function sendNegotiationEmail(landlordEmail, message, userEmail, userName, listingId) {
+    try {
+        const emailData = {
+            sender: {
+                name: EMAIL_CONFIG.SENDER_NAME,
+                email: EMAIL_CONFIG.SENDER_EMAIL
+            },
+            to: [{
+                email: landlordEmail,
+                name: 'Property Owner'
+            }],
+            replyTo: {
+                email: userEmail,
+                name: userName || 'Interested Renter'
+            },
+            subject: `Interest in Your Property - Listing ${listingId}`,
+            htmlContent: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #2563eb;">New Inquiry About Your Property</h2>
+                    
+                    <p><strong>From:</strong> ${userName || 'Interested Renter'} (${userEmail})</p>
+                    <p><strong>Listing ID:</strong> ${listingId}</p>
+                    
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="margin-top: 0;">Message:</h3>
+                        <p style="white-space: pre-line;">${message}</p>
+                    </div>
+                    
+                    <p style="color: #64748b; font-size: 14px;">
+                        This message was sent through RoomFinderAI. You can reply directly to this email to respond to the inquirer.
+                    </p>
+                </div>
+            `
+        };
+
+        console.log('📧 Sending negotiation email via Brevo...');
+        const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+            headers: {
+                'accept': 'application/json',
+                'api-key': config.BREVO_API_KEY,
+                'content-type': 'application/json'
+            },
+            timeout: 30000
+        });
+
+        console.log('✅ Negotiation email sent successfully');
+        return { success: true, emailId: response.data.messageId };
+    } catch (error) {
+        console.error('❌ Error sending negotiation email:', error.message);
+        return { success: false, error: error.message };
+    }
+}
+
 // Helper function to build the negotiation system prompt
 function buildNegotiationSystemPrompt() {
-    return `You are an expert rental negotiation assistant helping users secure better deals with landlords in Hong Kong. You provide strategic advice, coaching, and sample responses to help users negotiate effectively.
+    return `You are an AI negotiation agent that writes professional rental negotiation messages directly to landlords on behalf of tenants. Your job is to compose actual messages that will be sent to property owners.
 
-SAMPLE PROPERTY CONTEXT (for practice):
-- Location: Central District, Hong Kong  
-- Listed Rent: HK$1,500/month
-- Size: 450 sq ft
-- Type: Studio apartment
-- Amenities: Air conditioning, furnished, city view, near MTR
+YOUR ROLE:
+- Write professional negotiation messages directly to landlords
+- Represent the tenant in rental negotiations
+- Craft persuasive but respectful communication
+- Focus on mutual benefits and win-win scenarios
 
-YOUR ROLE AS NEGOTIATION ASSISTANT:
-- Help users craft compelling negotiation messages
-- Provide strategic advice on timing and approach
-- Suggest reasonable counter-offers based on market knowledge
-- Coach users on landlord psychology and motivations
-- Help identify negotiation leverage points
+MESSAGE REQUIREMENTS:
+- Write as if you are the tenant contacting the landlord directly
+- Keep messages under 100 words maximum
+- Be professional, polite, and respectful
+- Include specific negotiation points (price, terms, move-in date)
+- Highlight tenant strengths (income stability, references, etc.)
+- Suggest reasonable counter-offers based on market conditions
 
-NEGOTIATION STRATEGIES TO TEACH:
-- Research market rates for similar properties
-- Highlight your strengths as a tenant (stable income, good references, etc.)
-- Offer value-adds (longer lease, immediate move-in, upfront payment)
-- Use anchoring techniques with realistic lower offers
-- Create win-win scenarios for both parties
-- Show genuine interest while maintaining leverage
+MESSAGE STRUCTURE:
+1. Professional greeting
+2. Express genuine interest in the property
+3. Present tenant qualifications briefly
+4. Make specific negotiation request (lower rent, better terms, etc.)
+5. Offer value-adds (longer lease, prompt payment, etc.)
+6. Professional closing with contact information
 
-COACHING APPROACH:
-- Ask clarifying questions about their situation
-- Provide 2-3 strategic options for each scenario
-- Explain the reasoning behind each recommendation
-- Help craft specific message templates
-- Warn about common negotiation mistakes
-- Boost confidence while maintaining realism
+TONE:
+- Professional and respectful
+- Confident but not demanding
+- Collaborative, not confrontational
+- Show appreciation for landlord's time
+- Express genuine interest in the property
 
-RESPONSE STYLE:
-- Be supportive and encouraging
-- Provide actionable, specific advice
-- Use Hong Kong rental market context
-- Give concrete examples and templates
-- Explain landlord perspectives to help users understand
-- Balance optimism with realistic expectations
-
-MARKET KNOWLEDGE TO SHARE:
-- Typical negotiation ranges (5-15% for good tenants)
-- Seasonal rental patterns in Hong Kong
-- What landlords value most (stability, cleanliness, prompt payment)
-- Common lease terms and what's negotiable
-- Red flags to avoid in negotiations
-
-Remember: Your goal is to empower users to negotiate confidently and successfully while maintaining good relationships with landlords.`;
+IMPORTANT: Generate actual messages TO landlords, not advice FOR tenants. The message will be sent directly to the property owner.`;
 }
 
 // Keep the old endpoint for backward compatibility
@@ -2873,19 +3548,14 @@ async function logUserActivity(userEmail, activityType, description, metadata = 
             return;
         }
 
-        // First check if user exists to avoid foreign key constraint violation
-        const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('email')
-            .eq('email', userEmail)
-            .single();
-
-        if (userError || !user) {
-            console.log(`⚠️ Cannot log activity - User ${userEmail} not found in users table`);
-            return;
+        // Skip user check - users table has complex auth constraints
+        // Just set the current user email for RLS if the function exists
+        try {
+            await supabase.rpc('set_current_user_email', { email: userEmail });
+        } catch (rpcError) {
+            // Function might not exist, continue anyway
+            console.log('⚠️ set_current_user_email function not found, continuing without it');
         }
-
-        await supabase.rpc('set_current_user_email', { email: userEmail });
         
         const { error } = await supabase
             .from('user_activities')

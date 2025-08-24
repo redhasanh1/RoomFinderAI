@@ -2302,6 +2302,7 @@
                     
                     const formData = new FormData(contactForm);
                     const firstName = formData.get('first-name');
+                    const lastName = formData.get('last-name');
                     const email = formData.get('email');  
                     const message = formData.get('message');
                     
@@ -2328,6 +2329,7 @@
                             },
                             body: JSON.stringify({
                                 firstName: firstName,
+                                lastName: lastName,
                                 email: email,
                                 message: message
                             })

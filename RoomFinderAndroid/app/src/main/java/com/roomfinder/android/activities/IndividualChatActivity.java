@@ -131,17 +131,17 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
         negotiationId = intent.getStringExtra("AI_NEGOTIATION_ID");
         negotiationStrategy = intent.getStringExtra("NEGOTIATION_STRATEGY");
         
-        // If coming from AI negotiation, set up for real negotiation
-        if ("AI_NEGOTIATION".equals(conversationType) && landlordEmail != null) {
+        // If coming from AI negotiation, set up for real negotiation (only if we have negotiation ID)
+        if ("AI_NEGOTIATION".equals(conversationType) && landlordEmail != null && negotiationId != null) {
             otherUserEmail = landlordEmail;
             listingTitle = propertyTitle != null ? propertyTitle : "Property Negotiation";
             isAiNegotiationActive = true;
             
-            // Create a virtual listing for AI negotiation conversations
-            listingId = "ai_negotiation_" + System.currentTimeMillis();
+            // Keep the real listing ID that was passed - don't override it
+            // listingId is already set from line 120 above
             listingOwnerEmail = landlordEmail;
             
-            Log.d(TAG, "AI Negotiation setup - landlord: " + landlordEmail + ", property: " + propertyTitle + ", negotiationId: " + negotiationId);
+            Log.d(TAG, "AI Negotiation setup - landlord: " + landlordEmail + ", property: " + propertyTitle + ", listingId: " + listingId + ", negotiationId: " + negotiationId);
             
             // Pre-populate message input with AI-generated message
             if (aiGeneratedMessage != null && !aiGeneratedMessage.isEmpty()) {
@@ -153,7 +153,7 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
         else if ("LANDLORD_CONTACT".equals(conversationType) && landlordEmail != null) {
             otherUserEmail = landlordEmail;
             listingTitle = propertyTitle != null ? propertyTitle : "Property Inquiry";
-            listingId = "ai_property_" + System.currentTimeMillis();
+            // Keep the real listing ID - don't create a virtual one
             listingOwnerEmail = landlordEmail;
             
             String aiMessageTemplate = intent.getStringExtra("AI_MESSAGE_TEMPLATE");
@@ -174,12 +174,10 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
             currentListing.setTitle(listingTitle);
             currentListing.setUserEmail(listingOwnerEmail != null ? listingOwnerEmail : otherUserEmail);
             
-            // For AI negotiation conversations, set basic property details
+            // For AI negotiation conversations, use the real listing data that was passed
             if ("AI_NEGOTIATION".equals(conversationType) || "LANDLORD_CONTACT".equals(conversationType)) {
-                currentListing.setPrice(0.0); // Will be set later if needed
-                currentListing.setHouseType("Property"); // Generic type
-                currentListing.setCity("TBD"); // To be determined
-                Log.d(TAG, "Created virtual listing for AI conversation: " + listingId);
+                // The listing data is already set from the intent extras
+                Log.d(TAG, "Using real listing for AI conversation: " + listingId);
             }
         }
         

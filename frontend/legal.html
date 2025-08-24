@@ -3,632 +3,1274 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Get Help Fast - RoomFinderAI</title>
-    
-    <!-- UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
-    <script src="universal-auth-protection.js"></script>
-    
-    <!-- UNIVERSAL AUTHENTICATION MANAGER -->
-    <script src="universal-auth-manager.js"></script>
-    
+    <title>Legal Center - RoomFinderAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --transition-smooth: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
-        }
-        
-        .brand-logo {
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 800;
-            font-size: 1.75rem;
-            transition: var(--transition-smooth);
-        }
-        
-        .brand-logo:hover {
-            transform: scale(1.05);
-            filter: brightness(1.1);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --warning-gradient: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+            --legal-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #8b5cf6 100%);
+            
+            --border-radius-sm: 12px;
+            --border-radius-md: 20px;
+            --border-radius-lg: 28px;
+            
+            --shadow-sm: 0 8px 25px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 20px 40px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.15);
+            
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             min-height: 100vh;
         }
         
-        .chat-container {
-            background: white;
+        .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        
+        /* Gradient backgrounds */
+        .gradient-bg {
+            background: var(--primary-gradient);
+        }
+        
+        .gradient-bg-legal {
+            background: var(--legal-gradient);
+        }
+        
+        .gradient-bg-success {
+            background: var(--success-gradient);
+        }
+        
+        /* Gradient text */
+        .gradient-text {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .gradient-text-legal {
+            background: var(--legal-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Glass cards */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        /* Premium Header */
+        .premium-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+        
+        .nav-link {
+            position: relative;
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+            transition: var(--transition);
+        }
+        
+        .nav-link:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Legal feature cards */
+        .legal-feature-card {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
             border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            overflow: hidden;
-            max-width: 800px;
-            margin: 2rem auto;
-            animation: slideUp 0.6s ease-out;
-        }
-        
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .problem-card {
-            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-            border: 2px solid #e2e8f0;
-            border-radius: 20px;
             padding: 2rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             position: relative;
             overflow: hidden;
         }
         
-        .problem-card:hover {
+        .legal-feature-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15);
-            border-color: #667eea;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
         }
         
-        .problem-card::before {
+        .legal-feature-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            height: 6px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 100%;
+            height: 4px;
+            background: var(--legal-gradient);
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: var(--transition);
         }
         
-        .problem-card:hover::before {
+        .legal-feature-card:hover::before {
             opacity: 1;
         }
         
-        .problem-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            display: block;
-        }
-        
-        .progress-bar {
-            background: #e2e8f0;
-            height: 8px;
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 1rem 0;
-        }
-        
-        .progress-fill {
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.8s ease;
-        }
-        
-        .chat-message {
-            background: #f8fafc;
-            border-radius: 18px;
+        /* Tab buttons */
+        .tab-button {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
             padding: 1rem 1.5rem;
-            margin: 1rem 0;
-            border-left: 4px solid #667eea;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        
-        .success-badge {
-            background: linear-gradient(135deg, #10b981, #34d399);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-size: 0.875rem;
             font-weight: 600;
-        }
-        
-        .urgency-urgent {
-            background: linear-gradient(135deg, #ef4444, #f87171);
-        }
-        
-        .urgency-important {
-            background: linear-gradient(135deg, #f59e0b, #fbbf24);
-        }
-        
-        .urgency-normal {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        }
-        
-        .big-button {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            border-radius: 16px;
-            padding: 1.25rem 2rem;
-            font-size: 1.125rem;
-            font-weight: 600;
+            transition: var(--transition);
             cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
-            margin-top: 1rem;
         }
         
-        .big-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.3);
+        .tab-button.active {
+            background: var(--legal-gradient);
+            color: white;
+            border-color: transparent;
         }
         
-        .step-hidden {
+        .tab-button:not(.active):hover {
+            border-color: #8b5cf6;
+            background: #f8fafc;
+        }
+        
+        /* Tab content */
+        .tab-content {
             display: none;
         }
         
-        .typing-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #6b7280;
-            font-style: italic;
+        .tab-content.active {
+            display: block;
         }
         
-        .typing-dots {
-            display: flex;
-            gap: 4px;
+        /* Stats cards */
+        .stats-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+            transition: var(--transition);
+            border: 1px solid #f1f5f9;
         }
         
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: #6b7280;
-            border-radius: 50%;
-            animation: typingDot 1.4s infinite;
+        .stats-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
         }
         
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        
-        @keyframes typingDot {
-            0%, 60%, 100% { transform: scale(1); opacity: 0.5; }
-            30% { transform: scale(1.2); opacity: 1; }
+        /* Form inputs */
+        input, select, textarea {
+            transition: var(--transition);
         }
         
-        .mobile-optimized {
-            padding: 1rem;
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
         }
         
-        @media (max-width: 768px) {
-            .chat-container {
-                margin: 1rem;
-                border-radius: 16px;
-            }
-            
-            .problem-card {
-                padding: 1.5rem;
-                text-align: center;
-            }
-            
-            .problem-icon {
-                font-size: 2.5rem;
-            }
+        /* Reveal animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease;
+        }
+        
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Legal theme colors */
+        .legal-colors {
+            background: linear-gradient(45deg, #1e3a8a, #3730a3, #7c3aed, #be185d);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Recommendation option styling */
+        .recommendation-option {
+            transition: var(--transition);
+        }
+        
+        .recommendation-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        }
+        
+        .recommendation-option.selected {
+            border-color: #10b981;
+            background: #f0fdf4;
         }
     </style>
 </head>
-<body>
-    <!-- Navigation (simplified) -->
-    <nav class="bg-white/10 backdrop-blur-md border-b border-white/20">
-        <div class="max-w-6xl mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <a href="index.html" class="text-xl md:text-2xl font-bold brand-logo font-display">RoomFinderAI</a>
+<body class="bg-gray-50">
+    <!-- Premium Header -->
+    <header class="fixed top-0 w-full premium-header z-50">
+        <nav class="w-[85%] max-w-7xl mx-auto px-6 lg:px-8 py-6 flex justify-between items-center">
+            <div class="flex items-center space-x-8">
+                <a href="index.html" class="text-2xl font-bold gradient-text font-display">RoomFinderAI</a>
+                <div class="hidden lg:flex items-center space-x-1">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="student-housing.html" class="nav-link">Student Housing</a>
+                    <a href="legal.html" class="nav-link">Legal Center</a>
+                    <a href="mortgage.html" class="nav-link">Mortgage</a>
+                    <a href="sublease.html" class="nav-link">Sublease</a>
+                    <a href="ai-negotiator.html" class="nav-link">AI Negotiator</a>
+                    <a href="listings.html" class="nav-link">Listings</a>
+                    <a href="pricing.html" class="nav-link">Pricing</a>
                 </div>
-                <div class="text-white/80 text-sm">
-                    Get help in under 2 minutes
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="login.html" class="nav-link">Login</a>
+                <a href="dashboard.html" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all duration-300">Dashboard</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 gradient-bg-legal text-white relative overflow-hidden">
+        <div class="absolute inset-0 bg-black opacity-10"></div>
+        <div class="w-[90%] max-w-7xl mx-auto px-4 relative z-10">
+            <div class="text-center mb-12">
+                <h1 class="text-5xl md:text-6xl font-bold mb-6 font-display">Legal Center</h1>
+                <p class="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">
+                    AI-powered legal guidance for all your housing needs. Know your rights, create documents, and resolve issues with confidence.
+                </p>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="grid md:grid-cols-4 gap-6 mt-16">
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
+                    <div class="text-4xl font-bold mb-2">50K+</div>
+                    <div class="text-white/80">Documents Generated</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
+                    <div class="text-4xl font-bold mb-2">95%</div>
+                    <div class="text-white/80">Success Rate</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
+                    <div class="text-4xl font-bold mb-2">24/7</div>
+                    <div class="text-white/80">AI Legal Assistant</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center">
+                    <div class="text-4xl font-bold mb-2">Free</div>
+                    <div class="text-white/80">Legal Resources</div>
                 </div>
             </div>
         </div>
-    </nav>
+    </section>
 
-    <!-- Main Chat Interface -->
-    <div class="min-h-screen py-8 mobile-optimized">
-        <div class="chat-container">
-            <!-- Step 1: Welcome & Problem Selection -->
-            <div id="step1" class="step">
-                <div class="p-8">
-                    <!-- Progress -->
-                    <div class="mb-6">
-                        <div class="flex justify-between text-sm text-gray-600 mb-2">
-                            <span>Step 1 of 3</span>
-                            <span>2 minutes left</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 33%"></div>
-                        </div>
+    <!-- Getting Started Section -->
+    <section class="py-16 bg-gradient-to-b from-blue-50 to-indigo-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold text-gray-900 mb-6 font-display">New to Legal Issues?</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Don't worry! We'll guide you through everything step by step. Most housing legal issues can be resolved with the right information and documents.
+                </p>
+            </div>
+            
+            <!-- 3-Step Process -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span class="text-white font-bold text-2xl">1</span>
                     </div>
-                    
-                    <!-- Welcome Message -->
-                    <div class="chat-message">
-                        <h1 class="text-2xl font-bold text-gray-900 mb-2">Hey! What's going on? 👋</h1>
-                        <p class="text-gray-600">We're here to help you figure out your housing situation. Just pick what's happening and we'll get you sorted out quickly.</p>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Describe Your Situation</h3>
+                    <p class="text-gray-600">Tell us what's happening in plain English</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span class="text-white font-bold text-2xl">2</span>
                     </div>
-                    
-                    <!-- Problem Cards -->
-                    <div class="grid md:grid-cols-2 gap-4 mt-6">
-                        <div class="problem-card" onclick="selectProblem('deposit', 'urgent')">
-                            <div class="problem-icon">💰</div>
-                            <h3 class="text-lg font-bold text-gray-900 mb-2">They kept my deposit</h3>
-                            <p class="text-gray-600 text-sm">Landlord won't give back your security deposit</p>
-                            <div class="success-badge mt-3">Avg recovery: $2,100</div>
-                        </div>
-                        
-                        <div class="problem-card" onclick="selectProblem('repairs', 'important')">
-                            <div class="problem-icon">🏠</div>
-                            <h3 class="text-lg font-bold text-gray-900 mb-2">Stuff's broken & they won't fix it</h3>
-                            <p class="text-gray-600 text-sm">No heat, broken plumbing, or other repairs needed</p>
-                            <div class="success-badge mt-3">Fixed in 2-3 weeks</div>
-                        </div>
-                        
-                        <div class="problem-card" onclick="selectProblem('eviction', 'urgent')">
-                            <div class="problem-icon">📋</div>
-                            <h3 class="text-lg font-bold text-gray-900 mb-2">Got kicked out / eviction notice</h3>
-                            <p class="text-gray-600 text-sm">Received eviction papers or being forced to leave</p>
-                            <div class="success-badge mt-3">Act fast - time sensitive!</div>
-                        </div>
-                        
-                        <div class="problem-card" onclick="selectProblem('rent', 'important')">
-                            <div class="problem-icon">💸</div>
-                            <h3 class="text-lg font-bold text-gray-900 mb-2">Rent went up way too much</h3>
-                            <p class="text-gray-600 text-sm">Huge rent increase that seems unfair or illegal</p>
-                            <div class="success-badge mt-3">Often reversible</div>
-                        </div>
-                        
-                        <div class="problem-card" onclick="selectProblem('harassment', 'important')">
-                            <div class="problem-icon">😠</div>
-                            <h3 class="text-lg font-bold text-gray-900 mb-2">Landlord won't leave me alone</h3>
-                            <p class="text-gray-600 text-sm">Entering without permission, harassment, threats</p>
-                            <div class="success-badge mt-3">We can stop this</div>
-                        </div>
-                        
-                        <div class="problem-card" onclick="selectProblem('lease', 'normal')">
-                            <div class="problem-icon">📄</div>
-                            <h3 class="text-lg font-bold text-gray-900 mb-2">Need to break my lease early</h3>
-                            <p class="text-gray-600 text-sm">Want out of lease before it ends</p>
-                            <div class="success-badge mt-3">Options available</div>
-                        </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Get Personalized Guidance</h3>
+                    <p class="text-gray-600">Receive tailored advice for your specific situation</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span class="text-white font-bold text-2xl">3</span>
                     </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Take Action with Tools</h3>
+                    <p class="text-gray-600">Use our tools to resolve your issue</p>
                 </div>
             </div>
             
-            <!-- Step 2: Tell Us More -->
-            <div id="step2" class="step step-hidden">
-                <div class="p-8">
-                    <!-- Progress -->
-                    <div class="mb-6">
-                        <div class="flex justify-between text-sm text-gray-600 mb-2">
-                            <span>Step 2 of 3</span>
-                            <span>1 minute left</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 66%"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="chat-message">
-                        <h2 class="text-xl font-bold text-gray-900 mb-2">Tell us a bit more</h2>
-                        <p class="text-gray-600" id="followUpQuestion">Loading your personalized questions...</p>
-                    </div>
-                    
-                    <div id="questionArea" class="mt-6">
-                        <!-- Dynamic questions will appear here -->
-                    </div>
-                    
-                    <button class="big-button" onclick="nextStep()" id="continueBtn" disabled>
-                        Continue →
+            <!-- Quick Start Buttons -->
+            <div class="bg-white p-6 rounded-2xl border border-blue-200 shadow-lg">
+                <h3 class="text-xl font-semibold text-gray-800 mb-6 text-center">🚀 Quick Start - Common Situations</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <button onclick="quickStartScenario('security-deposit')" class="p-4 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors">
+                        <div class="font-medium text-red-800 mb-1">Security Deposit Issue</div>
+                        <div class="text-red-600 text-sm">Landlord won't return deposit</div>
+                    </button>
+                    <button onclick="quickStartScenario('rent-increase')" class="p-4 bg-orange-50 border border-orange-200 rounded-xl hover:bg-orange-100 transition-colors">
+                        <div class="font-medium text-orange-800 mb-1">Rent Increase</div>
+                        <div class="text-orange-600 text-sm">Unexpected rent hike</div>
+                    </button>
+                    <button onclick="quickStartScenario('repairs')" class="p-4 bg-yellow-50 border border-yellow-200 rounded-xl hover:bg-yellow-100 transition-colors">
+                        <div class="font-medium text-yellow-800 mb-1">Repair Issues</div>
+                        <div class="text-yellow-600 text-sm">Landlord won't fix problems</div>
+                    </button>
+                    <button onclick="quickStartScenario('eviction')" class="p-4 bg-purple-50 border border-purple-200 rounded-xl hover:bg-purple-100 transition-colors">
+                        <div class="font-medium text-purple-800 mb-1">Eviction Notice</div>
+                        <div class="text-purple-600 text-sm">Received eviction notice</div>
                     </button>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- Main Navigation Tabs -->
+    <section class="py-8 bg-white shadow-sm sticky top-24 z-40">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <div class="flex space-x-4 overflow-x-auto">
+                <button onclick="showTab('recommendation')" class="tab-button active" data-tab="recommendation">
+                    AI Recommendation
+                </button>
+                <button onclick="showTab('documents')" class="tab-button" data-tab="documents">
+                    Document Generator
+                </button>
+                <button onclick="showTab('rights')" class="tab-button" data-tab="rights">
+                    Know Your Rights
+                </button>
+                <button onclick="showTab('resources')" class="tab-button" data-tab="resources">
+                    Legal Resources
+                </button>
+                <button onclick="showTab('calculator')" class="tab-button" data-tab="calculator">
+                    Legal Calculator
+                </button>
+                <button onclick="showTab('attorney')" class="tab-button" data-tab="attorney">
+                    Find Attorney
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tab Content -->
+    <section class="py-16">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
             
-            <!-- Step 3: Your Action Plan -->
-            <div id="step3" class="step step-hidden">
-                <div class="p-8">
-                    <!-- Progress -->
-                    <div class="mb-6">
-                        <div class="flex justify-between text-sm text-gray-600 mb-2">
-                            <span>Step 3 of 3</span>
-                            <span>Done! 🎉</span>
+            <!-- AI Recommendation Tab -->
+            <div id="recommendation-tab" class="tab-content active">
+                <div class="glass-card p-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">🤖 Not Sure Where to Start?</h2>
+                    <p class="text-xl text-gray-600 mb-8 text-center max-w-3xl mx-auto">
+                        Answer a few quick questions and we'll recommend the best tool for your situation
+                    </p>
+                    
+                    <div id="recommendationQuiz" class="space-y-8">
+                        <div class="question-container">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-6 text-center">What best describes your situation?</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <button onclick="selectRecommendation('problem')" class="recommendation-option p-6 bg-white border-2 border-gray-200 rounded-2xl hover:border-green-500 transition-colors text-left">
+                                    <div class="font-semibold text-gray-800 mb-2">🚨 I have a problem that needs solving</div>
+                                    <div class="text-gray-600">Something has gone wrong and I need help</div>
+                                </button>
+                                <button onclick="selectRecommendation('document')" class="recommendation-option p-6 bg-white border-2 border-gray-200 rounded-2xl hover:border-green-500 transition-colors text-left">
+                                    <div class="font-semibold text-gray-800 mb-2">📄 I need to create a document</div>
+                                    <div class="text-gray-600">I need forms, agreements, or notices</div>
+                                </button>
+                                <button onclick="selectRecommendation('rights')" class="recommendation-option p-6 bg-white border-2 border-gray-200 rounded-2xl hover:border-green-500 transition-colors text-left">
+                                    <div class="font-semibold text-gray-800 mb-2">📚 I want to learn my rights</div>
+                                    <div class="text-gray-600">I need to understand what I'm entitled to</div>
+                                </button>
+                                <button onclick="selectRecommendation('prevention')" class="recommendation-option p-6 bg-white border-2 border-gray-200 rounded-2xl hover:border-green-500 transition-colors text-left">
+                                    <div class="font-semibold text-gray-800 mb-2">🛡️ I want to prevent problems</div>
+                                    <div class="text-gray-600">I want to be prepared and avoid issues</div>
+                                </button>
+                            </div>
                         </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 100%"></div>
+                    </div>
+                    
+                    <!-- Recommendation Results -->
+                    <div id="recommendationResult" class="hidden mt-8 p-6 bg-green-50 rounded-2xl border border-green-200">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center mr-4">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                            <h4 class="text-xl font-semibold text-gray-800">Perfect! Here's what we recommend:</h4>
+                        </div>
+                        <div id="recommendationContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Generator Tab -->
+            <div id="documents-tab" class="tab-content">
+                <div class="glass-card p-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">📄 AI Legal Document Generator</h2>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Document Type</label>
+                                <select id="documentType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                    <option value="">Select Document Type</option>
+                                    <option value="lease">Lease Agreement</option>
+                                    <option value="rental-application">Rental Application</option>
+                                    <option value="security-deposit-receipt">Security Deposit Receipt</option>
+                                    <option value="notice-to-quit">Notice to Quit</option>
+                                    <option value="sublease">Sublease Agreement</option>
+                                    <option value="rent-increase-notice">Rent Increase Notice</option>
+                                    <option value="move-out-checklist">Move-Out Checklist</option>
+                                    <option value="demand-letter">Demand Letter</option>
+                                    <option value="complaint-letter">Complaint Letter</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">State/Jurisdiction</label>
+                                <select id="jurisdictionSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                    <option value="">Select State</option>
+                                    <option value="CA">California</option>
+                                    <option value="NY">New York</option>
+                                    <option value="TX">Texas</option>
+                                    <option value="FL">Florida</option>
+                                    <option value="IL">Illinois</option>
+                                    <option value="PA">Pennsylvania</option>
+                                    <option value="OH">Ohio</option>
+                                    <option value="GA">Georgia</option>
+                                    <!-- Add more states as needed -->
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Describe Your Situation</label>
+                                <textarea id="situationDescription" rows="4" placeholder="Provide details about your situation..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"></textarea>
+                            </div>
+                            
+                            <button onclick="generateDocument()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all">
+                                ✨ Generate Document
+                            </button>
+                        </div>
+                        
+                        <div>
+                            <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 min-h-96">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-800">Document Preview</h3>
+                                    <div class="space-x-2">
+                                        <button onclick="copyDocument()" class="text-sm bg-gray-200 text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-300 transition-colors">
+                                            📋 Copy
+                                        </button>
+                                        <button onclick="downloadDocument()" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors">
+                                            📥 Download PDF
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="documentPreview" class="prose prose-sm max-w-none">
+                                    <p class="text-gray-500 italic">Generate a document to see the preview here...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Know Your Rights Tab -->
+            <div id="rights-tab" class="tab-content">
+                <div class="glass-card p-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">🛡️ Know Your Rights</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                        <div class="legal-feature-card text-center">
+                            <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">Security Deposits</h3>
+                            <p class="text-gray-600 mb-6">Learn about security deposit laws and your rights to get your deposit back</p>
+                            <button onclick="learnRights('security-deposit')" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                Learn More
+                            </button>
+                        </div>
+                        
+                        <div class="legal-feature-card text-center">
+                            <div class="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">Rent Increases</h3>
+                            <p class="text-gray-600 mb-6">Understand rent control laws and limits on rent increases in your area</p>
+                            <button onclick="learnRights('rent-increase')" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                                Learn More
+                            </button>
+                        </div>
+                        
+                        <div class="legal-feature-card text-center">
+                            <div class="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">Eviction Rights</h3>
+                            <p class="text-gray-600 mb-6">Know your rights when facing eviction and how to protect yourself</p>
+                            <button onclick="learnRights('eviction')" class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                                Learn More
+                            </button>
+                        </div>
+                        
+                        <div class="legal-feature-card text-center">
+                            <div class="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 011-1h1a2 2 0 100-4H7a1 1 0 01-1-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">Repairs & Maintenance</h3>
+                            <p class="text-gray-600 mb-6">Learn about landlord responsibilities for property maintenance and repairs</p>
+                            <button onclick="learnRights('repairs')" class="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium">
+                                Learn More
+                            </button>
+                        </div>
+                        
+                        <div class="legal-feature-card text-center">
+                            <div class="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">Privacy Rights</h3>
+                            <p class="text-gray-600 mb-6">Understand your right to privacy and when landlords can enter your unit</p>
+                            <button onclick="learnRights('privacy')" class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium">
+                                Learn More
+                            </button>
+                        </div>
+                        
+                        <div class="legal-feature-card text-center">
+                            <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">Discrimination Protection</h3>
+                            <p class="text-gray-600 mb-6">Know your rights against housing discrimination and fair housing laws</p>
+                            <button onclick="learnRights('discrimination')" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium">
+                                Learn More
+                            </button>
                         </div>
                     </div>
                     
-                    <div class="chat-message">
-                        <h2 class="text-xl font-bold text-gray-900 mb-2">Here's your action plan! 🚀</h2>
-                        <p class="text-gray-600">We've created a step-by-step plan just for you. You've got this!</p>
+                    <!-- Rights Details Section -->
+                    <div id="rightsDetails" class="hidden mt-8 p-6 bg-blue-50 rounded-2xl border border-blue-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 id="rightsTitle" class="text-xl font-semibold text-gray-800"></h3>
+                            <button onclick="closeRightsDetails()" class="text-gray-500 hover:text-gray-700">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="rightsContent"></div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Legal Resources Tab -->
+            <div id="resources-tab" class="tab-content">
+                <div class="glass-card p-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">📚 Legal Resources</h2>
                     
-                    <div id="actionPlan" class="mt-6">
-                        <!-- Dynamic action plan will appear here -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Free Legal Forms -->
+                        <div class="legal-feature-card">
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">📄 Free Legal Forms</h3>
+                            <ul class="space-y-2 text-gray-600 mb-6">
+                                <li>• Lease Agreement Templates</li>
+                                <li>• Security Deposit Receipts</li>
+                                <li>• Notice Forms</li>
+                                <li>• Complaint Letters</li>
+                                <li>• Move-in/Move-out Checklists</li>
+                            </ul>
+                            <button onclick="browseForms()" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                Browse Forms
+                            </button>
+                        </div>
+                        
+                        <!-- State Law Guides -->
+                        <div class="legal-feature-card">
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">🏛️ State Law Guides</h3>
+                            <ul class="space-y-2 text-gray-600 mb-6">
+                                <li>• Tenant Rights by State</li>
+                                <li>• Security Deposit Laws</li>
+                                <li>• Eviction Procedures</li>
+                                <li>• Rent Control Information</li>
+                                <li>• Fair Housing Laws</li>
+                            </ul>
+                            <button onclick="browseStateLaws()" class="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                                Browse Laws
+                            </button>
+                        </div>
+                        
+                        <!-- Legal Calculators -->
+                        <div class="legal-feature-card">
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">🧮 Legal Calculators</h3>
+                            <ul class="space-y-2 text-gray-600 mb-6">
+                                <li>• Security Deposit Calculator</li>
+                                <li>• Prorated Rent Calculator</li>
+                                <li>• Late Fee Calculator</li>
+                                <li>• Damages Calculator</li>
+                                <li>• Interest Calculator</li>
+                            </ul>
+                            <button onclick="useCalculators()" class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                                Use Calculators
+                            </button>
+                        </div>
+                        
+                        <!-- Attorney Directory -->
+                        <div class="legal-feature-card">
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">👨‍⚖️ Attorney Directory</h3>
+                            <ul class="space-y-2 text-gray-600 mb-6">
+                                <li>• Tenant Rights Attorneys</li>
+                                <li>• Housing Law Specialists</li>
+                                <li>• Legal Aid Organizations</li>
+                                <li>• Pro Bono Services</li>
+                                <li>• Consultation Services</li>
+                            </ul>
+                            <button onclick="findAttorney()" class="w-full bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium">
+                                Find Attorney
+                            </button>
+                        </div>
+                        
+                        <!-- Legal News -->
+                        <div class="legal-feature-card">
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">📰 Legal News</h3>
+                            <ul class="space-y-2 text-gray-600 mb-6">
+                                <li>• New Housing Laws</li>
+                                <li>• Court Decisions</li>
+                                <li>• Policy Changes</li>
+                                <li>• Legal Updates</li>
+                                <li>• Trend Analysis</li>
+                            </ul>
+                            <button onclick="readLegalNews()" class="w-full bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium">
+                                Read News
+                            </button>
+                        </div>
+                        
+                        <!-- FAQ Section -->
+                        <div class="legal-feature-card">
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">❓ FAQ</h3>
+                            <ul class="space-y-2 text-gray-600 mb-6">
+                                <li>• Common Questions</li>
+                                <li>• Quick Answers</li>
+                                <li>• Expert Advice</li>
+                                <li>• Step-by-Step Guides</li>
+                                <li>• Video Tutorials</li>
+                            </ul>
+                            <button onclick="browseFAQ()" class="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium">
+                                Browse FAQ
+                            </button>
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Legal Calculator Tab -->
+            <div id="calculator-tab" class="tab-content">
+                <div class="glass-card p-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">🧮 Legal Calculator</h2>
                     
-                    <div class="flex gap-3 mt-6">
-                        <button class="big-button" onclick="getStarted()">
-                            Get Started Now!
-                        </button>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div>
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Calculator Type</label>
+                                    <select id="calculatorType" onchange="switchCalculator()" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <option value="security-deposit">Security Deposit Calculator</option>
+                                        <option value="prorated-rent">Prorated Rent Calculator</option>
+                                        <option value="late-fees">Late Fee Calculator</option>
+                                        <option value="damages">Damages Calculator</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Security Deposit Calculator -->
+                                <div id="securityDepositInputs" class="calculator-inputs">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rent</label>
+                                        <input type="number" id="monthlyRent" placeholder="1500" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">State</label>
+                                        <select id="depositState" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                            <option value="CA">California (2 months max)</option>
+                                            <option value="NY">New York (1 month max)</option>
+                                            <option value="TX">Texas (No limit)</option>
+                                            <option value="FL">Florida (No limit)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <button onclick="calculateLegal()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all">
+                                    📊 Calculate
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 min-h-96">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Calculation Results</h3>
+                                <div id="calculationResults">
+                                    <p class="text-gray-500 italic">Select calculation type and enter values to see results here...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Find Attorney Tab -->
+            <div id="attorney-tab" class="tab-content">
+                <div class="glass-card p-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">👨‍⚖️ Find an Attorney</h2>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div>
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Your Location</label>
+                                    <input type="text" id="attorneyLocation" placeholder="City, State or ZIP" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Legal Issue</label>
+                                    <select id="legalIssue" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <option value="">Select Issue Type</option>
+                                        <option value="eviction">Eviction Defense</option>
+                                        <option value="security-deposit">Security Deposit Dispute</option>
+                                        <option value="rent-increase">Rent Increase Challenge</option>
+                                        <option value="repairs">Repair & Maintenance Issues</option>
+                                        <option value="discrimination">Housing Discrimination</option>
+                                        <option value="lease-dispute">Lease Disputes</option>
+                                        <option value="landlord-harassment">Landlord Harassment</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Budget Range</label>
+                                    <select id="budgetRange" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <option value="pro-bono">Pro Bono/Free</option>
+                                        <option value="low-cost">Low Cost ($100-300)</option>
+                                        <option value="moderate">Moderate ($300-500)</option>
+                                        <option value="standard">Standard ($500+)</option>
+                                    </select>
+                                </div>
+                                
+                                <button onclick="searchAttorneys()" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all">
+                                    🔍 Find Attorneys
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 min-h-96">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Attorney Search Results</h3>
+                                <div id="attorneyResults">
+                                    <p class="text-gray-500 italic">Enter your search criteria to find qualified attorneys in your area...</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
+
+    <!-- Success Stories Section -->
+    <section class="py-16 bg-gradient-to-r from-yellow-50 to-amber-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-gray-800 mb-12 text-center">🌟 Success Stories</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-2xl border border-yellow-200 shadow-lg">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-3 h-3 bg-green-500 rounded-full mt-2"></div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800 mb-2">Maria S. - Los Angeles</h3>
+                            <p class="text-gray-600 mb-3">"The document generator helped me create a professional demand letter. Got my $2,400 security deposit back within 2 weeks!"</p>
+                            <span class="text-sm text-green-600 font-medium">💰 $2,400 recovered</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-2xl border border-yellow-200 shadow-lg">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full mt-2"></div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800 mb-2">James R. - New York</h3>
+                            <p class="text-gray-600 mb-3">"The rights checker showed me my landlord's rent increase was illegal. Saved me $300/month with their guidance!"</p>
+                            <span class="text-sm text-blue-600 font-medium">💰 $3,600/year saved</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-2xl border border-yellow-200 shadow-lg">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-3 h-3 bg-purple-500 rounded-full mt-2"></div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800 mb-2">Sarah K. - Chicago</h3>
+                            <p class="text-gray-600 mb-3">"Found an affordable attorney through their directory. Successfully fought an unfair eviction and stayed in my home!"</p>
+                            <span class="text-sm text-purple-600 font-medium">🏠 Housing secured</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-12 text-center">
+                <p class="text-gray-600 mb-4">Over 100,000+ tenants have resolved their legal issues using our platform</p>
+                <div class="flex justify-center space-x-6">
+                    <span class="text-sm bg-white px-4 py-2 rounded-full border border-yellow-300">⭐⭐⭐⭐⭐ 4.9/5 Rating</span>
+                    <span class="text-sm bg-white px-4 py-2 rounded-full border border-yellow-300">🔒 Confidential & Secure</span>
+                    <span class="text-sm bg-white px-4 py-2 rounded-full border border-yellow-300">📞 Expert Support</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer CTA -->
+    <section class="py-16 bg-gray-900 text-white">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 text-center">
+            <h2 class="text-3xl font-bold mb-6">Ready to Protect Your Rights?</h2>
+            <p class="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+                Don't let legal issues overwhelm you. Get the guidance and tools you need to resolve housing disputes with confidence.
+            </p>
+            <div class="space-x-4">
+                <button onclick="showTab('recommendation')" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-all">
+                    Get Started Free
+                </button>
+                <a href="dashboard.html" class="bg-white text-gray-900 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all inline-block">
+                    View Dashboard
+                </a>
+            </div>
+        </div>
+    </section>
 
     <script>
-        let currentStep = 1;
-        let selectedProblem = null;
-        let urgencyLevel = null;
-        let userAnswers = {};
-        
-        function selectProblem(problemType, urgency) {
-            selectedProblem = problemType;
-            urgencyLevel = urgency;
+        // Tab Management
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(tab => {
+                tab.classList.remove('active');
+            });
             
-            // Show typing indicator
-            showTypingIndicator();
+            // Remove active class from all tab buttons
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+            });
             
-            setTimeout(() => {
-                nextStep();
-            }, 1000);
-        }
-        
-        function showTypingIndicator() {
-            const step1 = document.getElementById('step1');
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'chat-message typing-indicator';
-            typingDiv.innerHTML = `
-                <span>Getting your personalized questions ready</span>
-                <div class="typing-dots">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                </div>
-            `;
-            step1.querySelector('.p-8').appendChild(typingDiv);
-        }
-        
-        function nextStep() {
-            if (currentStep === 1) {
-                document.getElementById('step1').classList.add('step-hidden');
-                document.getElementById('step2').classList.remove('step-hidden');
-                loadQuestions();
-                currentStep = 2;
-            } else if (currentStep === 2) {
-                document.getElementById('step2').classList.add('step-hidden');
-                document.getElementById('step3').classList.remove('step-hidden');
-                generateActionPlan();
-                currentStep = 3;
+            // Show selected tab
+            const selectedTab = document.getElementById(tabName + '-tab');
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+            
+            // Add active class to clicked button
+            const selectedButton = document.querySelector(`[data-tab="${tabName}"]`);
+            if (selectedButton) {
+                selectedButton.classList.add('active');
             }
         }
-        
-        function loadQuestions() {
-            const questions = {
-                deposit: {
-                    question: "When did you move out and how much was your deposit?",
-                    inputs: [
-                        { type: "text", placeholder: "Move out date (e.g., 2 months ago)", id: "moveOutDate" },
-                        { type: "number", placeholder: "Deposit amount ($)", id: "depositAmount" },
-                        { type: "select", options: ["Still waiting", "Got some back", "Got nothing back"], id: "depositStatus" }
-                    ]
-                },
-                repairs: {
-                    question: "What's broken and how long has it been like this?",
-                    inputs: [
-                        { type: "textarea", placeholder: "Describe what's broken (heating, plumbing, etc.)", id: "repairIssue" },
-                        { type: "select", options: ["Less than a week", "1-2 weeks", "1 month", "2+ months"], id: "duration" },
-                        { type: "select", options: ["Yes, multiple times", "Yes, once", "No"], id: "notifiedLandlord" }
-                    ]
-                },
-                eviction: {
-                    question: "When did you get the notice and what's the reason?",
-                    inputs: [
-                        { type: "select", options: ["Today", "This week", "1-2 weeks ago", "More than 2 weeks"], id: "noticeDate" },
-                        { type: "select", options: ["Non-payment of rent", "Lease violation", "No reason given", "Other"], id: "evictionReason" },
-                        { type: "select", options: ["Yes", "No", "Not sure"], id: "canAffordRent" }
-                    ]
-                },
-                rent: {
-                    question: "How much did your rent go up and when?",
-                    inputs: [
-                        { type: "number", placeholder: "Old rent amount ($)", id: "oldRent" },
-                        { type: "number", placeholder: "New rent amount ($)", id: "newRent" },
-                        { type: "select", options: ["This month", "Next month", "In 2-3 months"], id: "increaseDate" }
-                    ]
-                },
-                harassment: {
-                    question: "What's your landlord doing that's bothering you?",
-                    inputs: [
-                        { type: "checkbox", options: ["Entering without permission", "Threatening eviction", "Verbal threats", "Other harassment"], id: "harassmentType" },
-                        { type: "select", options: ["Daily", "Weekly", "Few times a month", "Occasionally"], id: "frequency" },
-                        { type: "textarea", placeholder: "Any specific incidents you want to mention?", id: "incidents" }
-                    ]
-                },
-                lease: {
-                    question: "Why do you need to break your lease?",
-                    inputs: [
-                        { type: "select", options: ["Job relocation", "Family emergency", "Unsafe conditions", "Financial hardship", "Other"], id: "reason" },
-                        { type: "text", placeholder: "How much time is left on lease?", id: "timeLeft" },
-                        { type: "select", options: ["Already talked to them", "Planning to talk to them", "Don't want to talk to them"], id: "landlordContact" }
-                    ]
-                }
-            };
-            
-            const problemData = questions[selectedProblem];
-            document.getElementById('followUpQuestion').textContent = problemData.question;
-            
-            const questionArea = document.getElementById('questionArea');
-            questionArea.innerHTML = '';
-            
-            problemData.inputs.forEach(input => {
-                const div = document.createElement('div');
-                div.className = 'mb-4';
-                
-                if (input.type === 'textarea') {
-                    div.innerHTML = `
-                        <textarea id="${input.id}" placeholder="${input.placeholder}" 
-                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                                rows="3" oninput="checkAnswers()"></textarea>
-                    `;
-                } else if (input.type === 'select') {
-                    div.innerHTML = `
-                        <select id="${input.id}" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" onchange="checkAnswers()">
-                            <option value="">Choose an option...</option>
-                            ${input.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
-                        </select>
-                    `;
-                } else if (input.type === 'checkbox') {
-                    div.innerHTML = `
-                        <div class="space-y-2">
-                            ${input.options.map(opt => `
-                                <label class="flex items-center space-x-2">
-                                    <input type="checkbox" value="${opt}" name="${input.id}" onchange="checkAnswers()" class="rounded">
-                                    <span>${opt}</span>
-                                </label>
-                            `).join('')}
-                        </div>
-                    `;
-                } else {
-                    div.innerHTML = `
-                        <input type="${input.type}" id="${input.id}" placeholder="${input.placeholder}" 
-                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                               oninput="checkAnswers()">
-                    `;
-                }
-                
-                questionArea.appendChild(div);
-            });
-        }
-        
-        function checkAnswers() {
-            const inputs = document.querySelectorAll('#questionArea input, #questionArea select, #questionArea textarea');
-            let hasAnswers = false;
-            
-            inputs.forEach(input => {
-                if (input.type === 'checkbox') {
-                    const checkboxes = document.querySelectorAll(`input[name="${input.name}"]`);
-                    const checked = Array.from(checkboxes).some(cb => cb.checked);
-                    if (checked) hasAnswers = true;
-                } else if (input.value.trim()) {
-                    hasAnswers = true;
-                }
+
+        // Recommendation System
+        function selectRecommendation(type) {
+            // Remove previous selections
+            document.querySelectorAll('.recommendation-option').forEach(option => {
+                option.classList.remove('selected');
             });
             
-            document.getElementById('continueBtn').disabled = !hasAnswers;
-        }
-        
-        function generateActionPlan() {
-            const plans = {
-                deposit: {
-                    urgency: "urgent",
-                    timeline: "2-4 weeks",
-                    steps: [
-                        { icon: "📝", title: "Send demand letter", desc: "We'll create a professional letter demanding your deposit back", time: "Today" },
-                        { icon: "⏰", title: "Wait for response", desc: "Give them 14 days to respond (required by law)", time: "Next 2 weeks" },
-                        { icon: "⚖️", title: "File in court if needed", desc: "Small claims court - we'll help with paperwork", time: "Week 3-4" }
-                    ],
-                    successRate: "89%",
-                    avgRecovery: "$2,100"
-                },
-                repairs: {
-                    urgency: "important", 
-                    timeline: "1-3 weeks",
-                    steps: [
-                        { icon: "📸", title: "Document everything", desc: "Take photos/videos of all problems", time: "Today" },
-                        { icon: "📧", title: "Written notice to landlord", desc: "Official repair request with deadlines", time: "Tomorrow" },
-                        { icon: "🔧", title: "Know your options", desc: "Rent withholding or repair & deduct if they don't act", time: "Week 2-3" }
-                    ],
-                    successRate: "92%",
-                    avgRecovery: "Repairs completed"
-                },
-                eviction: {
-                    urgency: "urgent",
-                    timeline: "5-10 days",
-                    steps: [
-                        { icon: "🚨", title: "Act immediately", desc: "You typically have 5-10 days to respond", time: "RIGHT NOW" },
-                        { icon: "📋", title: "File response", desc: "Contest the eviction in court", time: "Within 5 days" },
-                        { icon: "💬", title: "Negotiate or fight", desc: "Work out payment plan or challenge the eviction", time: "Next week" }
-                    ],
-                    successRate: "73%",
-                    avgRecovery: "Eviction stopped"
-                },
-                rent: {
-                    urgency: "important",
-                    timeline: "2-3 weeks", 
-                    steps: [
-                        { icon: "📊", title: "Check if it's legal", desc: "Research local rent control laws", time: "Today" },
-                        { icon: "📝", title: "Challenge if illegal", desc: "File complaint with housing authority", time: "This week" },
-                        { icon: "💰", title: "Get money back", desc: "You might be owed overpaid rent", time: "Week 2-3" }
-                    ],
-                    successRate: "67%",
-                    avgRecovery: "$800 refund"
-                },
-                harassment: {
-                    urgency: "important",
-                    timeline: "1-2 weeks",
-                    steps: [
-                        { icon: "📝", title: "Document incidents", desc: "Keep detailed records of harassment", time: "Ongoing" },
-                        { icon: "⚠️", title: "Send cease & desist", desc: "Official warning to stop harassment", time: "This week" },
-                        { icon: "🛡️", title: "File complaint", desc: "Report to housing authority if it continues", time: "Week 2" }
-                    ],
-                    successRate: "85%",
-                    avgRecovery: "Harassment stopped"
-                },
-                lease: {
-                    urgency: "normal",
-                    timeline: "2-4 weeks",
-                    steps: [
-                        { icon: "📄", title: "Review your lease", desc: "Look for early termination clauses", time: "Today" },
-                        { icon: "💬", title: "Talk to landlord", desc: "Negotiate early exit or subletting", time: "This week" },
-                        { icon: "🏃", title: "Legal exit strategies", desc: "Use legal protections if available", time: "Week 2-4" }
-                    ],
-                    successRate: "78%",
-                    avgRecovery: "Clean exit"
-                }
-            };
+            // Add selection to clicked option
+            event.target.closest('.recommendation-option').classList.add('selected');
             
-            const plan = plans[selectedProblem];
-            const actionPlan = document.getElementById('actionPlan');
+            // Show recommendation result
+            const resultDiv = document.getElementById('recommendationResult');
+            const contentDiv = document.getElementById('recommendationContent');
             
-            actionPlan.innerHTML = `
-                <div class="mb-6 p-4 rounded-lg urgency-${plan.urgency}">
-                    <div class="text-white font-bold mb-2">Success Rate: ${plan.successRate} | Timeline: ${plan.timeline}</div>
-                    <div class="text-white/90">${plan.avgRecovery}</div>
-                </div>
-                
-                <div class="space-y-4">
-                    ${plan.steps.map((step, index) => `
-                        <div class="flex items-start space-x-4 p-4 border border-gray-200 rounded-lg">
-                            <div class="text-2xl">${step.icon}</div>
-                            <div class="flex-1">
-                                <h3 class="font-bold text-gray-900">${step.title}</h3>
-                                <p class="text-gray-600 text-sm">${step.desc}</p>
-                                <div class="text-xs text-blue-600 font-medium mt-1">${step.time}</div>
+            let recommendation = '';
+            
+            switch(type) {
+                case 'problem':
+                    recommendation = `
+                        <div class="space-y-4">
+                            <h5 class="font-semibold text-gray-800">We recommend starting with:</h5>
+                            <div class="bg-white p-4 rounded-lg border border-green-200">
+                                <h6 class="font-medium text-gray-800 mb-2">🚨 Problem Solver Tool</h6>
+                                <p class="text-sm text-gray-600 mb-3">Get step-by-step guidance for your specific issue</p>
+                                <button onclick="showTab('recommendation')" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm">
+                                    Start Problem Solver
+                                </button>
                             </div>
                         </div>
-                    `).join('')}
+                    `;
+                    break;
+                case 'document':
+                    recommendation = `
+                        <div class="space-y-4">
+                            <h5 class="font-semibold text-gray-800">We recommend:</h5>
+                            <div class="bg-white p-4 rounded-lg border border-green-200">
+                                <h6 class="font-medium text-gray-800 mb-2">📄 Document Generator</h6>
+                                <p class="text-sm text-gray-600 mb-3">Create professional legal documents instantly</p>
+                                <button onclick="showTab('documents')" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm">
+                                    Generate Documents
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'rights':
+                    recommendation = `
+                        <div class="space-y-4">
+                            <h5 class="font-semibold text-gray-800">Perfect! You should explore:</h5>
+                            <div class="bg-white p-4 rounded-lg border border-green-200">
+                                <h6 class="font-medium text-gray-800 mb-2">🛡️ Rights Center</h6>
+                                <p class="text-sm text-gray-600 mb-3">Learn about your tenant rights by topic</p>
+                                <button onclick="showTab('rights')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                                    Know Your Rights
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'prevention':
+                    recommendation = `
+                        <div class="space-y-4">
+                            <h5 class="font-semibold text-gray-800">Great thinking! Check out:</h5>
+                            <div class="bg-white p-4 rounded-lg border border-green-200">
+                                <h6 class="font-medium text-gray-800 mb-2">📚 Legal Resources</h6>
+                                <p class="text-sm text-gray-600 mb-3">Preventive guides, forms, and tools</p>
+                                <button onclick="showTab('resources')" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                    Browse Resources
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            contentDiv.innerHTML = recommendation;
+            resultDiv.classList.remove('hidden');
+        }
+
+        // Quick Start Scenarios
+        function quickStartScenario(scenario) {
+            // Implementation for quick start scenarios
+            console.log('Quick start for:', scenario);
+            // Could redirect to specific tools or show guided workflows
+        }
+
+        // Document Generation
+        function generateDocument() {
+            const docType = document.getElementById('documentType').value;
+            const jurisdiction = document.getElementById('jurisdictionSelect').value;
+            const situation = document.getElementById('situationDescription').value;
+            
+            if (!docType || !jurisdiction) {
+                alert('Please select document type and jurisdiction');
+                return;
+            }
+            
+            // Simulate document generation
+            const preview = document.getElementById('documentPreview');
+            preview.innerHTML = `
+                <div class="space-y-4">
+                    <h4 class="font-bold text-lg">${docType.replace('-', ' ').toUpperCase()}</h4>
+                    <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                    <p><strong>Jurisdiction:</strong> ${jurisdiction}</p>
+                    <div class="mt-4">
+                        <p>This is a preview of your generated legal document. The actual document would contain:</p>
+                        <ul class="list-disc ml-6 mt-2">
+                            <li>Legally compliant language for ${jurisdiction}</li>
+                            <li>Your specific situation details</li>
+                            <li>Proper formatting and structure</li>
+                            <li>Relevant legal citations</li>
+                        </ul>
+                    </div>
+                    <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                        <p class="text-sm text-yellow-800">💡 <strong>Tip:</strong> This preview shows the document structure. The full document would be available after generation.</p>
+                    </div>
                 </div>
             `;
         }
-        
-        function getStarted() {
-            alert("Let's get started! We'll help you with each step.");
+
+        // Rights Learning
+        function learnRights(topic) {
+            const detailsDiv = document.getElementById('rightsDetails');
+            const titleDiv = document.getElementById('rightsTitle');
+            const contentDiv = document.getElementById('rightsContent');
+            
+            const rightsInfo = {
+                'security-deposit': {
+                    title: 'Security Deposit Rights',
+                    content: `
+                        <div class="space-y-4">
+                            <h4 class="font-semibold text-gray-800">Key Rights:</h4>
+                            <ul class="list-disc ml-6 space-y-2 text-gray-600">
+                                <li>Right to receive deposit back within legal timeframe (usually 14-30 days)</li>
+                                <li>Right to itemized list of deductions</li>
+                                <li>Right to challenge unfair deductions</li>
+                                <li>Right to interest on deposit in some states</li>
+                            </ul>
+                            <h4 class="font-semibold text-gray-800">Common Violations:</h4>
+                            <ul class="list-disc ml-6 space-y-2 text-gray-600">
+                                <li>Withholding deposit for normal wear and tear</li>
+                                <li>Not returning deposit within legal timeframe</li>
+                                <li>Charging for pre-existing damage</li>
+                                <li>Not providing itemized deduction list</li>
+                            </ul>
+                        </div>
+                    `
+                },
+                'rent-increase': {
+                    title: 'Rent Increase Rights',
+                    content: `
+                        <div class="space-y-4">
+                            <h4 class="font-semibold text-gray-800">Your Rights:</h4>
+                            <ul class="list-disc ml-6 space-y-2 text-gray-600">
+                                <li>Right to proper notice (usually 30-60 days)</li>
+                                <li>Protection from excessive increases in rent-controlled areas</li>
+                                <li>Right to challenge discriminatory increases</li>
+                                <li>Right to terminate lease in some circumstances</li>
+                            </ul>
+                            <h4 class="font-semibold text-gray-800">Red Flags:</h4>
+                            <ul class="list-disc ml-6 space-y-2 text-gray-600">
+                                <li>Increase during lease term without cause clause</li>
+                                <li>Retaliatory increases after complaints</li>
+                                <li>Increases above legal limits</li>
+                                <li>Insufficient notice period</li>
+                            </ul>
+                        </div>
+                    `
+                }
+                // Add more topics as needed
+            };
+            
+            const info = rightsInfo[topic] || {
+                title: 'Legal Rights Information',
+                content: '<p>Detailed information about this topic is being prepared.</p>'
+            };
+            
+            titleDiv.textContent = info.title;
+            contentDiv.innerHTML = info.content;
+            detailsDiv.classList.remove('hidden');
         }
+
+        function closeRightsDetails() {
+            document.getElementById('rightsDetails').classList.add('hidden');
+        }
+
+        // Legal Calculator
+        function calculateLegal() {
+            const calculatorType = document.getElementById('calculatorType').value;
+            const resultsDiv = document.getElementById('calculationResults');
+            
+            if (calculatorType === 'security-deposit') {
+                const monthlyRent = parseFloat(document.getElementById('monthlyRent').value);
+                const state = document.getElementById('depositState').value;
+                
+                if (!monthlyRent) {
+                    resultsDiv.innerHTML = '<p class="text-red-600">Please enter monthly rent amount.</p>';
+                    return;
+                }
+                
+                let maxDeposit, timeframe, interestRequired;
+                
+                switch(state) {
+                    case 'CA':
+                        maxDeposit = monthlyRent * 2;
+                        timeframe = '21 days';
+                        interestRequired = false;
+                        break;
+                    case 'NY':
+                        maxDeposit = monthlyRent * 1;
+                        timeframe = '14 days';
+                        interestRequired = true;
+                        break;
+                    default:
+                        maxDeposit = 'No legal limit';
+                        timeframe = '30 days';
+                        interestRequired = false;
+                }
+                
+                resultsDiv.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <h4 class="font-semibold text-green-800 mb-2">Security Deposit Analysis</h4>
+                            <div class="space-y-2 text-sm">
+                                <p><strong>Monthly Rent:</strong> $${monthlyRent.toLocaleString()}</p>
+                                <p><strong>Maximum Legal Deposit:</strong> ${typeof maxDeposit === 'number' ? '$' + maxDeposit.toLocaleString() : maxDeposit}</p>
+                                <p><strong>Return Timeframe:</strong> ${timeframe}</p>
+                                <p><strong>Interest Required:</strong> ${interestRequired ? 'Yes' : 'No'}</p>
+                            </div>
+                        </div>
+                        ${typeof maxDeposit === 'number' ? `
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <h5 class="font-medium text-blue-800 mb-2">💡 Know Your Rights</h5>
+                            <p class="text-sm text-blue-700">If your landlord charged more than $${maxDeposit.toLocaleString()}, this may be illegal in ${state}.</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+        }
+
+        // Attorney Search
+        function searchAttorneys() {
+            const location = document.getElementById('attorneyLocation').value;
+            const issue = document.getElementById('legalIssue').value;
+            const budget = document.getElementById('budgetRange').value;
+            
+            if (!location || !issue) {
+                alert('Please enter location and select legal issue');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('attorneyResults');
+            
+            // Simulate attorney search results
+            resultsDiv.innerHTML = `
+                <div class="space-y-4">
+                    <h4 class="font-semibold text-gray-800 mb-4">Found 3 attorneys in ${location}</h4>
+                    
+                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                        <div class="flex justify-between items-start mb-2">
+                            <h5 class="font-medium text-gray-800">Sarah Johnson, Esq.</h5>
+                            <span class="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">⭐ 4.9</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-2">Tenant Rights Specialist • 8 years experience</p>
+                        <p class="text-sm text-gray-600 mb-3">Specializes in ${issue.replace('-', ' ')} cases</p>
+                        <div class="flex space-x-2">
+                            <button class="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Contact</button>
+                            <button class="text-xs bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300">View Profile</button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                        <div class="flex justify-between items-start mb-2">
+                            <h5 class="font-medium text-gray-800">Legal Aid Society</h5>
+                            <span class="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">Pro Bono</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-2">Free legal services for qualifying tenants</p>
+                        <p class="text-sm text-gray-600 mb-3">Income restrictions may apply</p>
+                        <div class="flex space-x-2">
+                            <button class="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Apply</button>
+                            <button class="text-xs bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300">Learn More</button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                        <div class="flex justify-between items-start mb-2">
+                            <h5 class="font-medium text-gray-800">Michael Chen, Esq.</h5>
+                            <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">⭐ 4.7</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-2">Housing Law Attorney • 12 years experience</p>
+                        <p class="text-sm text-gray-600 mb-3">Free consultation available</p>
+                        <div class="flex space-x-2">
+                            <button class="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Schedule</button>
+                            <button class="text-xs bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300">View Profile</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Utility Functions
+        function copyDocument() {
+            // Implementation for copying document
+            console.log('Copy document');
+        }
+
+        function downloadDocument() {
+            // Implementation for downloading document as PDF
+            console.log('Download document');
+        }
+
+        function browseForms() {
+            // Implementation for browsing forms
+            console.log('Browse forms');
+        }
+
+        function browseStateLaws() {
+            // Implementation for browsing state laws
+            console.log('Browse state laws');
+        }
+
+        function useCalculators() {
+            showTab('calculator');
+        }
+
+        function findAttorney() {
+            showTab('attorney');
+        }
+
+        function readLegalNews() {
+            // Implementation for reading legal news
+            console.log('Read legal news');
+        }
+
+        function browseFAQ() {
+            // Implementation for browsing FAQ
+            console.log('Browse FAQ');
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Any initialization code
+            console.log('Legal Center loaded');
+        });
+
+        // Scroll animations
+        function revealOnScroll() {
+            const reveals = document.querySelectorAll('.reveal');
+            
+            for (let i = 0; i < reveals.length; i++) {
+                const windowHeight = window.innerHeight;
+                const elementTop = reveals[i].getBoundingClientRect().top;
+                const elementVisible = 150;
+                
+                if (elementTop < windowHeight - elementVisible) {
+                    reveals[i].classList.add('active');
+                }
+            }
+        }
+
+        window.addEventListener('scroll', revealOnScroll);
     </script>
 </body>
 </html>

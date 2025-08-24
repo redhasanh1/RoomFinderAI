@@ -12,9 +12,9 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="/frontend/ai-chat.js?v=10"></script>
+    <script src="/frontend/ai-chat.js?v=22"></script>
     <script src="/frontend/ai-negotiation.js?v=2"></script>
-    <script src="/frontend/chat-system.js"></script>
+    <script type="module" src="/frontend/chat-system.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Chat System Styles -->
@@ -642,48 +642,6 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Left Sidebar - Instructions & Found Listings -->
             <div class="lg:col-span-1 space-y-6">
-                <!-- How to Use Instructions Panel -->
-                <div class="bg-white rounded-xl shadow-lg p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-bold text-gray-800 flex items-center">
-                            How to Use
-                        </h3>
-                        <button onclick="toggleInstructions()" id="instructionsToggle" class="text-gray-500 hover:text-gray-700 text-sm">
-                            Hide
-                        </button>
-                    </div>
-                    <div id="instructionsContent" class="space-y-3">
-                        <div class="flex items-start space-x-3">
-                            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">1</span>
-                            <p class="text-sm text-gray-600"><strong>Tell me what you want:</strong> "I need a 2-bedroom apartment in downtown for $2000/month"</p>
-                        </div>
-                        <div class="flex items-start space-x-3">
-                            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">2</span>
-                            <p class="text-sm text-gray-600"><strong>I'll find properties</strong> that match your criteria and show them on the right</p>
-                        </div>
-                        <div class="flex items-start space-x-3">
-                            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">3</span>
-                            <p class="text-sm text-gray-600"><strong>Ask for help:</strong> "Help me negotiate the rent" or "Write a message to the landlord"</p>
-                        </div>
-                        <div class="flex items-start space-x-3">
-                            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">4</span>
-                            <p class="text-sm text-gray-600"><strong>Get expert advice</strong> and ready-to-send messages for negotiations</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Quick Start Examples -->
-                    <div class="mt-4 pt-4 border-t border-gray-100">
-                        <p class="text-xs font-semibold text-gray-500 mb-2">QUICK START EXAMPLES:</p>
-                        <div class="space-y-1">
-                            <button onclick="sendQuickMessage('I want a studio apartment in San Francisco under $3000')" class="w-full text-left text-xs text-blue-600 hover:text-blue-800 p-2 rounded bg-blue-50 hover:bg-blue-100 transition-colors">
-                                "Studio in San Francisco under $3000"
-                            </button>
-                            <button onclick="sendQuickMessage('Help me negotiate lower rent for a property')" class="w-full text-left text-xs text-blue-600 hover:text-blue-800 p-2 rounded bg-blue-50 hover:bg-blue-100 transition-colors">
-                                "Help me negotiate lower rent"
-                            </button>
-                        </div>
-                    </div>
-                </div>
                 
                 <!-- Found Listings Panel -->
                 <div class="bg-white rounded-xl shadow-lg p-6">
@@ -1105,6 +1063,7 @@
                 }
                 
                 supabase = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
+                window.supabase = supabase; // Make globally available for chat system
                 console.log('Supabase client initialized');
                 
                 // Get current user first (with backup restore)
@@ -1321,15 +1280,55 @@
             setupPeriodicProtection();
             
             // Check for pre-filled search query from index page
-            const aiSearchQuery = localStorage.getItem('aiSearchQuery');
-            if (aiSearchQuery) {
+            let searchQuery = null;
+            
+            // First check URL parameters (from home page search)
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryParam = urlParams.get('query');
+            if (queryParam) {
+                searchQuery = decodeURIComponent(queryParam);
+                // Clean up URL to prevent repeat sends on page refresh
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+            
+            // Fallback to localStorage (existing functionality)
+            if (!searchQuery) {
+                const aiSearchQuery = localStorage.getItem('aiSearchQuery');
+                if (aiSearchQuery) {
+                    searchQuery = aiSearchQuery;
+                    localStorage.removeItem('aiSearchQuery'); // Clean up
+                }
+            }
+            
+            // Auto-start conversation if we have a query
+            if (searchQuery) {
                 const messageInput = document.getElementById('messageInput');
                 if (messageInput) {
-                    messageInput.value = aiSearchQuery;
+                    messageInput.value = searchQuery;
                     messageInput.focus();
+                    
+                    // Show that we're auto-starting the conversation
+                    const autoStartNotice = document.createElement('div');
+                    autoStartNotice.className = 'chat-bubble ai';
+                    autoStartNotice.innerHTML = `
+                        <div class="font-semibold text-sm text-gray-500 mb-1">System</div>
+                        <p class="text-sm text-blue-600">🚀 Auto-starting conversation with your search: "${searchQuery}"</p>
+                    `;
+                    document.getElementById('chatMessages').appendChild(autoStartNotice);
+                    
+                    // Auto-send the message with better reliability
+                    const autoSend = () => {
+                        if (aiNegotiator && typeof sendMessage === 'function') {
+                            sendMessage();
+                        } else {
+                            // Retry if AI not ready yet
+                            setTimeout(autoSend, 500);
+                        }
+                    };
+                    
+                    setTimeout(autoSend, 2000); // Give more time for AI to initialize
                 }
-                // Clear the stored query after using it
-                localStorage.removeItem('aiSearchQuery');
             }
         });
         
@@ -1488,29 +1487,6 @@
         </div>
     </div>
 
-    <!-- Messaging Panel -->
-    <div id="messagingPanel" class="fixed bottom-4 right-4 z-50">
-        <!-- Message Toggle Button -->
-        <button id="messageToggleBtn" class="bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition flex items-center justify-center w-16 h-16 relative">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-            </svg>
-            <span id="messageNotificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center hidden">0</span>
-        </button>
-        
-        <!-- Message Panel -->
-        <div id="messagePanel" class="hidden absolute bottom-20 right-0 w-80 bg-white rounded-lg shadow-xl border">
-            <div class="p-4 border-b bg-blue-600 text-white rounded-t-lg flex justify-between items-center">
-                <h3 class="font-semibold">Messages</h3>
-                <button id="forceHideNotifications" class="text-xs bg-red-600 hover:bg-red-700 px-2 py-1 rounded" title="Force hide notifications">🔥</button>
-            </div>
-            <div id="conversationTabs" class="max-h-96 overflow-y-auto">
-                <div id="noConversations" class="p-4 text-gray-500 text-center">
-                    No conversations yet
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script>
         // Initialize Universal Authentication Manager

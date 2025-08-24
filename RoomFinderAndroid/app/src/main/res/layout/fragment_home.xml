@@ -333,13 +333,25 @@
                             android:textSize="20sp"
                             android:textStyle="bold" />
 
-                        <TextView
+                        <Button
+                            android:id="@+id/sortButton"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="View All"
+                            android:text="Sort ▼"
                             android:textColor="@color/purple_primary"
                             android:textSize="14sp"
-                            android:textStyle="bold" />
+                            android:layout_marginEnd="8dp" />
+
+                        <Button
+                            android:id="@+id/clearAllFiltersButton"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Clear Filters"
+                            android:textColor="@color/purple_primary"
+                            android:textSize="14sp"
+                            android:visibility="gone" />
 
                     </LinearLayout>
 
@@ -350,6 +362,24 @@
                         android:layout_height="wrap_content"
                         android:nestedScrollingEnabled="false"
                         android:clipToPadding="false" />
+
+                    <!-- Skeleton Loading Container -->
+                    <ScrollView
+                        android:id="@+id/skeletonScrollView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone">
+                        
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/skeletonRecyclerView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:nestedScrollingEnabled="false"
+                            android:clipToPadding="false"
+                            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                            app:spanCount="2" />
+                        
+                    </ScrollView>
 
                 </LinearLayout>
 

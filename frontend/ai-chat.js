@@ -481,7 +481,7 @@ class AIChatHandler {
         }
 
         // Create HTML for the listings
-        let listingsHTML = '<h4 class="text-sm font-semibold text-gray-700 mb-3">Matching Listings</h4>';
+        let listingsHTML = '<h4 class="text-sm font-semibold text-gray-700 mb-3">🏠 Matching Listings</h4>';
         
         listings.slice(0, 5).forEach((listing) => {
             const titleText = listing.title || 'Untitled Property';
@@ -494,7 +494,7 @@ class AIChatHandler {
                 <div class="bg-gray-50 rounded-lg p-3 mb-3 border border-gray-200 hover:bg-gray-100 transition-colors">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-800">${titleText}</p>
+                            <p class="text-sm font-medium text-gray-800">🏠 ${titleText}</p>
                             <p class="text-xs text-gray-600 mt-1">📍 ${cityText}${streetText}</p>
                             <p class="text-xs text-blue-600 font-medium">💰 ${priceText} • ${typeText}</p>
                             <p class="text-xs text-gray-400 mt-1">ID: ${listing.id}</p>
@@ -524,29 +524,12 @@ class AIChatHandler {
             return;
         }
 
-        console.log('📧 Opening chat for listing:', listing);
+        this.appendMessage('AI', `📧 Initiating contact with landlord for listing ${listingId}...`, 'left');
         
-        // Try to open real chat modal using the chat system
-        if (typeof window.openChatModal === 'function') {
-            // Use the real chat system
-            window.openChatModal(listing.id, listing.title || 'Property', listing.user_email);
-            this.appendMessage('AI', `✅ Opening chat for ${listing.title}. You can now message the landlord directly!`, 'left');
-        } else if (window.globalChatSystem && window.globalChatSystem.startConversation) {
-            // Try global chat system
-            window.globalChatSystem.startConversation(listing.id, listing.title, listing.user_email);
-            this.appendMessage('AI', `✅ Starting conversation for ${listing.title}`, 'left');
+        if (this.negotiationEngine) {
+            this.sendMessage(listing);
         } else {
-            // Fallback: show a helpful message about setting up communication
-            this.appendMessage('AI', `📧 To contact the landlord for "${listing.title}", please:
-            
-1. Use the blue chat button (💬) in the bottom-right corner
-2. Start a new conversation 
-3. Reference listing ID: ${listing.id}
-
-Property Details:
-📍 ${listing.city || listing.street || listing.location}
-💰 $${listing.price}/month
-📧 Landlord: ${listing.user_email || 'Contact via platform'}`, 'left');
+            this.sendBasicMessage(listing);
         }
     }
 
@@ -577,7 +560,7 @@ Property Details:
                 const streetText = listing.street ? ` - ${listing.street}` : '';
                 const priceText = listing.price ? ` - $${listing.price}` : '';
                 const typeText = listing.house_type ? ` (${listing.house_type})` : '';
-                this.appendMessage('AI', `${titleText} - ${cityText}${streetText}${priceText}${typeText}`, 'left');
+                this.appendMessage('AI', `🏠 ${titleText} - ${cityText}${streetText}${priceText}${typeText}`, 'left');
             }
             
             // Ask if user wants to negotiate
@@ -643,7 +626,7 @@ Property Details:
                 if (this.userNeeds.preferredLocation) suggestions.push(`try nearby areas or add "${this.userNeeds.preferredLocation}" to listing titles`);
                 
                 if (suggestions.length > 0) {
-                    this.appendMessage('AI', `Suggestions: ${suggestions.join(' or ')}.`, 'left');
+                    this.appendMessage('AI', `💡 Suggestions: ${suggestions.join(' or ')}.`, 'left');
                 }
             }
         } else {

@@ -23,6 +23,7 @@ import com.roomfinder.android.adapters.ListingsAdapter;
 import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.databinding.FragmentProfileBinding;
 import com.roomfinder.android.models.Listing;
+import com.roomfinder.android.models.User;
 import com.roomfinder.android.network.SupabaseService;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +56,9 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
             setupViews();
             setupRecentListings();
             
+            // Always try to set up delete account button regardless of login state
+            setupDeleteAccountButton();
+            
             if (!isLoggedIn) {
                 loadRecentListings();
             }
@@ -67,9 +71,24 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
     
     private void checkLoginStatus() {
         try {
+            // Use AuthManager for proper authentication check
+            AuthManager authManager = AuthManager.getInstance(requireContext());
+            boolean authManagerAuthenticated = authManager.isUserAuthenticated();
+            
+            // Also check SharedPreferences as fallback
             String userEmail = prefs.getString("user_email", null);
-            isLoggedIn = userEmail != null;
-            Log.d(TAG, "Login status: " + (isLoggedIn ? "Logged in" : "Guest"));
+            boolean hasUserEmail = userEmail != null;
+            
+            // Set login state based on authentication
+            isLoggedIn = authManagerAuthenticated;
+            
+            // If AuthManager says not authenticated but we have email, clear it
+            if (!authManagerAuthenticated && hasUserEmail) {
+                prefs.edit().remove("user_email").remove("user_name").remove("auth_token").apply();
+            }
+            
+            Log.d(TAG, "Login status: " + (isLoggedIn ? "Logged in" : "Guest") + 
+                      " (AuthManager: " + authManagerAuthenticated + ", SharedPrefs: " + hasUserEmail + ")");
         } catch (Exception e) {
             Log.e(TAG, "Error checking login status: " + e.getMessage(), e);
             isLoggedIn = false;
@@ -179,9 +198,21 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
         if (binding == null) return;
         
         try {
-            // Load user profile data
-            String userName = prefs.getString("user_name", "User");
-            String userEmail = prefs.getString("user_email", "user@example.com");
+            // Load user profile data from AuthManager
+            AuthManager authManager = AuthManager.getInstance(requireContext());
+            User currentUser = authManager.getCurrentUser();
+            
+            String userName = "User";
+            String userEmail = "user@example.com";
+            
+            if (currentUser != null) {
+                userName = currentUser.getFirstName() + " " + currentUser.getLastName();
+                userEmail = currentUser.getEmail();
+            } else {
+                // Fallback to SharedPreferences for backward compatibility
+                userName = prefs.getString("user_name", "User");
+                userEmail = prefs.getString("user_email", "user@example.com");
+            }
             
             binding.userName.setText(userName);
             binding.userEmail.setText(userEmail);
@@ -220,6 +251,11 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
                 navigateToFragment(new AiChatFragment());
             });
             
+            binding.toolsCard.setOnClickListener(v -> {
+                addCardClickAnimation(v);
+                navigateToFragment(new ToolsFragment());
+            });
+            
             binding.settingsItem.setOnClickListener(v -> {
                 addRippleEffect(v);
                 Toast.makeText(requireContext(), "Settings - Coming Soon", Toast.LENGTH_SHORT).show();
@@ -235,8 +271,27 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
                 performLogout();
             });
             
+            // Set up delete account button
+            setupDeleteAccountButton();
+            
         } catch (Exception e) {
             Log.e(TAG, "Error setting up user view clicks: " + e.getMessage(), e);
+        }
+    }
+    
+    private void setupDeleteAccountButton() {
+        try {
+            if (binding.deleteAccountItem != null) {
+                Log.d(TAG, "Delete account button found, setting up click listener");
+                binding.deleteAccountItem.setOnClickListener(v -> {
+                    addRippleEffect(v);
+                    showDeleteAccountDialog();
+                });
+            } else {
+                Log.w(TAG, "Delete account button not found in layout - this might be a binding issue");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting up delete account button: " + e.getMessage(), e);
         }
     }
     
@@ -300,7 +355,12 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
     
     private void performLogout() {
         try {
-            // Clear saved user data
+            // Clear ALL authentication data using AuthManager
+            AuthManager authManager = AuthManager.getInstance(requireContext());
+            authManager.completeLogout();
+            authManager.clearAllAuthData();
+            
+            // Clear saved user data from SharedPreferences
             prefs.edit()
                 .remove("user_email")
                 .remove("user_name")
@@ -309,9 +369,12 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
             
             Toast.makeText(requireContext(), "Signed out successfully", Toast.LENGTH_SHORT).show();
             
-            // Update login status and refresh view
+            // Update login status and show guest view (stay on profile page)
             isLoggedIn = false;
             showGuestViewWithAnimation();
+            
+            // Also navigate to home fragment to show logged out state
+            navigateToFragment(new HomeFragment());
             
         } catch (Exception e) {
             Log.e(TAG, "Error during logout: " + e.getMessage(), e);
@@ -399,6 +462,55 @@ public class ProfileFragment extends Fragment implements ListingsAdapter.OnListi
             }
         } catch (Exception e) {
             Log.e(TAG, "Error showing error message: " + e.getMessage(), e);
+        }
+    }
+    
+    private void showDeleteAccountDialog() {
+        try {
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Delete Account")
+                    .setMessage("Are you sure you want to delete your account? This action cannot be undone. All your data, listings, and chat history will be permanently deleted.")
+                    .setPositiveButton("Delete Account", (dialog, which) -> {
+                        performDeleteAccount();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .setIcon(android.R.drawable.ic_menu_delete)
+                    .show();
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing delete account dialog: " + e.getMessage(), e);
+            showErrorMessage("Error showing delete dialog");
+        }
+    }
+    
+    private void performDeleteAccount() {
+        try {
+            AuthManager authManager = AuthManager.getInstance(requireContext());
+            User currentUser = authManager.getCurrentUser();
+            
+            if (currentUser == null) {
+                showErrorMessage("No user found to delete");
+                return;
+            }
+            
+            // Clear ALL authentication data
+            authManager.completeLogout();
+            authManager.clearAllAuthData();
+            
+            // Clear saved user data from SharedPreferences
+            prefs.edit().clear().apply();
+            
+            Toast.makeText(requireContext(), "Account deleted successfully", Toast.LENGTH_LONG).show();
+            
+            // Update login status and show guest view (stay on profile page)
+            isLoggedIn = false;
+            showGuestViewWithAnimation();
+            
+            // Navigate to home fragment to show logged out state
+            navigateToFragment(new HomeFragment());
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error deleting account: " + e.getMessage(), e);
+            showErrorMessage("Error deleting account");
         }
     }
     

@@ -26,9 +26,10 @@ public class SupabaseClient {
     
     private SupabaseClient() {
         this.httpClient = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
+                .connectTimeout(5, TimeUnit.SECONDS)  // Faster connection
+                .readTimeout(10, TimeUnit.SECONDS)    // Faster read
+                .writeTimeout(10, TimeUnit.SECONDS)   // Faster write
+                .connectionPool(new okhttp3.ConnectionPool(5, 5, TimeUnit.MINUTES))
                 .build();
         this.gson = new Gson();
         this.baseUrl = ApiKeys.SUPABASE_URL + "rest/v1/";
@@ -42,12 +43,13 @@ public class SupabaseClient {
     }
     
     /**
-     * Fetch all listings from Supabase database
-     * Equivalent to: supabase.from('listings').select('*').order('created_at', { ascending: false })
+     * Fetch all listings from Supabase database with pagination
+     * Equivalent to: supabase.from('listings').select('*').order('created_at', { ascending: false }).limit(50)
      */
     public List<Listing> getAllListings() {
         try {
-            String url = baseUrl + "listings?select=*&order=created_at.desc";
+            // Limit to first 50 listings for reliable initial load
+            String url = baseUrl + "listings?select=*&order=created_at.desc&limit=50";
             
             Request request = new Request.Builder()
                     .url(url)
@@ -69,23 +71,29 @@ public class SupabaseClient {
                 }
                 
                 String responseBody = response.body().string();
-                Log.d(TAG, "Response body: " + responseBody);
+                Log.d(TAG, "Response body length: " + responseBody.length());
+                
+                // Check for empty or invalid response
+                if (responseBody == null || responseBody.trim().isEmpty()) {
+                    Log.e(TAG, "Empty response from server");
+                    return new ArrayList<>();
+                }
+                
+                // Log first 200 characters for debugging
+                Log.d(TAG, "Response preview: " + (responseBody.length() > 200 ? responseBody.substring(0, 200) + "..." : responseBody));
                 
                 Type listType = new TypeToken<List<Listing>>(){}.getType();
                 List<Listing> listings;
                 
                 try {
-                    // Add debug logging for JSON parsing
-                    Log.d(TAG, "📊 JSON Response sample: " + (responseBody.length() > 200 ? responseBody.substring(0, 200) + "..." : responseBody));
                     listings = gson.fromJson(responseBody, listType);
                     Log.d(TAG, "✅ JSON parsing successful, parsed " + (listings != null ? listings.size() : 0) + " listings");
                 } catch (com.google.gson.JsonSyntaxException e) {
-                    Log.e(TAG, "❌ JSON syntax error - likely data type mismatch: " + e.getMessage(), e);
-                    Log.e(TAG, "📄 Problematic JSON: " + responseBody);
+                    Log.e(TAG, "❌ JSON syntax error: " + e.getMessage(), e);
+                    Log.e(TAG, "📄 Response length: " + responseBody.length());
                     return new ArrayList<>();
                 } catch (Exception e) {
                     Log.e(TAG, "❌ JSON parsing error: " + e.getMessage(), e);
-                    Log.e(TAG, "📄 Problematic JSON: " + responseBody);
                     return new ArrayList<>();
                 }
                 
@@ -102,6 +110,101 @@ public class SupabaseClient {
             return new ArrayList<>();
         } catch (Exception e) {
             Log.e(TAG, "Error parsing listings: " + e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Get listings with offset and limit for progressive loading
+     */
+    public List<Listing> getListings(int offset, int limit) {
+        try {
+            String url = baseUrl + "listings?select=*&order=created_at.desc&limit=" + limit + "&offset=" + offset;
+            
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("Prefer", "return=representation")
+                    .build();
+            
+            Log.d(TAG, "Fetching listings with offset: " + offset + ", limit: " + limit);
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "HTTP error: " + response.code() + " - " + response.message());
+                    return new ArrayList<>();
+                }
+                
+                String responseBody = response.body().string();
+                
+                // Check for empty response
+                if (responseBody == null || responseBody.trim().isEmpty()) {
+                    Log.e(TAG, "Empty response from server");
+                    return new ArrayList<>();
+                }
+                
+                Type listType = new TypeToken<List<Listing>>(){}.getType();
+                List<Listing> listings;
+                
+                try {
+                    listings = gson.fromJson(responseBody, listType);
+                    Log.d(TAG, "✅ Parsed " + (listings != null ? listings.size() : 0) + " listings from offset " + offset);
+                } catch (Exception e) {
+                    Log.e(TAG, "❌ JSON parsing error: " + e.getMessage());
+                    return new ArrayList<>();
+                }
+                
+                if (listings == null) {
+                    listings = new ArrayList<>();
+                }
+                
+                return listings;
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error fetching listings: " + e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Fetch additional listings with pagination for infinite scroll
+     */
+    public List<Listing> getMoreListings(int offset, int limit) {
+        try {
+            String url = baseUrl + "listings?select=*&order=created_at.desc&limit=" + limit + "&offset=" + offset;
+            
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Content-Type", "application/json")
+                    .build();
+            
+            Log.d(TAG, "Fetching more listings from offset: " + offset + ", limit: " + limit);
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Pagination error: " + response.code() + " - " + response.message());
+                    return new ArrayList<>();
+                }
+                
+                String responseBody = response.body().string();
+                Type listType = new TypeToken<List<Listing>>(){}.getType();
+                List<Listing> listings = gson.fromJson(responseBody, listType);
+                
+                if (listings == null) {
+                    listings = new ArrayList<>();
+                }
+                
+                Log.d(TAG, "Pagination returned " + listings.size() + " additional listings");
+                return listings;
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error fetching more listings: " + e.getMessage(), e);
             return new ArrayList<>();
         }
     }
