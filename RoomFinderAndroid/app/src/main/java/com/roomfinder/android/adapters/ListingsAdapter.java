@@ -105,7 +105,7 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
             // Get appropriate placeholder based on property type
             int placeholderRes = getPlaceholderForPropertyType(listing.getHouseType());
             
-            // Load image
+            // Load image with optimized Glide settings
             String imageUrl = listing.getFirstImageUrl();
             if (imageUrl != null && !imageUrl.isEmpty()) {
                 Glide.with(binding.listingImage.getContext())
@@ -113,6 +113,10 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
                     .placeholder(placeholderRes)
                     .error(placeholderRes)
                     .centerCrop()
+                    .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL) // Cache both original and resized
+                    .skipMemoryCache(false) // Enable memory cache
+                    .thumbnail(0.25f) // Load low-res thumbnail first
+                    .override(400, 300) // Resize for faster loading
                     .into(binding.listingImage);
             } else {
                 binding.listingImage.setImageResource(placeholderRes);
@@ -137,14 +141,12 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
             // Hide availability status
             binding.availableStatus.setVisibility(View.GONE);
             
-            // Set property type badge
+            // Set property type text in description area
             String propertyType = listing.getHouseType();
             if (propertyType != null && !propertyType.isEmpty()) {
-                binding.propertyTypeBadge.setText(propertyType);
-                binding.propertyTypeBadge.setVisibility(View.VISIBLE);
+                binding.propertyTypeText.setText(propertyType);
             } else {
-                binding.propertyTypeBadge.setText("Property");
-                binding.propertyTypeBadge.setVisibility(View.VISIBLE);
+                binding.propertyTypeText.setText("Property");
             }
             
             // Click listeners
@@ -160,11 +162,7 @@ public class ListingsAdapter extends RecyclerView.Adapter<ListingsAdapter.Listin
                 }
             });
             
-            binding.chatButton.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onChatClick(listing);
-                }
-            });
+            // Chat button removed - users will access chat from listing detail page
         }
     }
 }

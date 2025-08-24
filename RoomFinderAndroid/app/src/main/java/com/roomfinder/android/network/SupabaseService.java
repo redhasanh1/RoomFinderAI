@@ -1,12 +1,18 @@
 package com.roomfinder.android.network;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.roomfinder.android.database.SupabaseClient;
 import com.roomfinder.android.models.Listing;
 import com.roomfinder.android.services.AiNegotiatorService.PropertyCriteria;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -14,13 +20,21 @@ import java.util.concurrent.Executors;
 
 public class SupabaseService {
     private static final String TAG = "SupabaseService";
+    private static final String CACHE_PREFS = "listings_cache";
+    private static final String CACHE_KEY_LISTINGS = "cached_listings";
+    private static final String CACHE_KEY_TIMESTAMP = "cache_timestamp";
+    private static final long CACHE_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes for better performance
+    
     private static SupabaseService instance;
     private final SupabaseClient supabaseClient;
     private final ExecutorService executorService;
+    private final Gson gson;
+    private Context context;
     
     private SupabaseService() {
         this.supabaseClient = SupabaseClient.getInstance();
         this.executorService = Executors.newCachedThreadPool();
+        this.gson = new Gson();
     }
     
     public static synchronized SupabaseService getInstance() {
@@ -30,10 +44,23 @@ public class SupabaseService {
         return instance;
     }
     
+    /**
+     * Initialize with context for caching
+     */
+    public void init(Context context) {
+        this.context = context.getApplicationContext();
+    }
+    
     // Callback interfaces
     public interface ListingsCallback {
         void onSuccess(List<Listing> listings);
         void onError(String error);
+    }
+    
+    // Progressive loading callback for appending content
+    public interface ProgressiveLoadingCallback extends ListingsCallback {
+        void onInitialLoad(List<Listing> listings);   // First batch - replaces content
+        void onMoreLoaded(List<Listing> listings);    // Additional batches - appends content
     }
     
     public interface ListingCallback {
@@ -42,13 +69,152 @@ public class SupabaseService {
     }
     
     /**
-     * Fetch all listings asynchronously
+     * Cache helper methods
+     */
+    private SharedPreferences getCachePrefs() {
+        if (context == null) return null;
+        return context.getSharedPreferences(CACHE_PREFS, Context.MODE_PRIVATE);
+    }
+    
+    private void cacheListings(List<Listing> listings) {
+        SharedPreferences prefs = getCachePrefs();
+        if (prefs != null) {
+            try {
+                String json = gson.toJson(listings);
+                long timestamp = System.currentTimeMillis();
+                prefs.edit()
+                        .putString(CACHE_KEY_LISTINGS, json)
+                        .putLong(CACHE_KEY_TIMESTAMP, timestamp)
+                        .apply();
+                Log.d(TAG, "💾 Cached " + listings.size() + " listings");
+            } catch (Exception e) {
+                Log.e(TAG, "❌ Failed to cache listings: " + e.getMessage());
+                // Continue without caching rather than crashing
+            }
+        }
+    }
+    
+    private List<Listing> getCachedListings() {
+        SharedPreferences prefs = getCachePrefs();
+        if (prefs == null) return null;
+        
+        long timestamp = prefs.getLong(CACHE_KEY_TIMESTAMP, 0);
+        long age = System.currentTimeMillis() - timestamp;
+        
+        if (age > CACHE_EXPIRY_MS) {
+            Log.d(TAG, "🕒 Cache expired (age: " + (age / 1000) + "s)");
+            return null;
+        }
+        
+        String json = prefs.getString(CACHE_KEY_LISTINGS, null);
+        if (json != null) {
+            try {
+                Type listType = new TypeToken<List<Listing>>(){}.getType();
+                List<Listing> listings = gson.fromJson(json, listType);
+                Log.d(TAG, "⚡ Loaded " + (listings != null ? listings.size() : 0) + " listings from cache");
+                return listings;
+            } catch (Exception e) {
+                Log.e(TAG, "❌ Error parsing cached listings: " + e.getMessage());
+                // Clear corrupted cache
+                prefs.edit().remove(CACHE_KEY_LISTINGS).remove(CACHE_KEY_TIMESTAMP).apply();
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Progressive loading strategy: Load small batch first, then more in background
      */
     public void getAllListings(ListingsCallback callback) {
+        // First, try to load from cache immediately
+        List<Listing> cachedListings = getCachedListings();
+        if (cachedListings != null && !cachedListings.isEmpty()) {
+            Log.d(TAG, "⚡ Returning cached listings immediately");
+            callback.onSuccess(cachedListings);
+            
+            // Always refresh in background for fresh data
+            refreshListingsInBackground();
+            return;
+        }
+        
+        // No cache - fetch all at once (fallback)
+        Log.d(TAG, "🌐 No cache available, fetching from network...");
+        fetchListingsFromNetwork(callback);
+    }
+    
+    /**
+     * Progressive loading with proper append callbacks
+     */
+    public void getAllListingsProgressively(ProgressiveLoadingCallback callback) {
+        // First, try to load from cache immediately
+        List<Listing> cachedListings = getCachedListings();
+        if (cachedListings != null && !cachedListings.isEmpty()) {
+            Log.d(TAG, "⚡ Returning cached listings immediately");
+            callback.onInitialLoad(cachedListings);
+            
+            // Always refresh in background for fresh data
+            refreshListingsInBackground();
+            return;
+        }
+        
+        // No cache - use progressive loading
+        Log.d(TAG, "🌐 Starting progressive loading...");
+        fetchListingsProgressively(callback);
+    }
+    
+    /**
+     * Force refresh listings (bypasses cache)
+     */
+    public void refreshListings(ListingsCallback callback) {
+        Log.d(TAG, "🔄 Force refreshing listings...");
+        fetchListingsFromNetwork(callback);
+    }
+    
+    /**
+     * Progressive loading: First load 5 listings immediately, then load more in chunks
+     */
+    private void fetchListingsProgressively(ProgressiveLoadingCallback callback) {
+        executorService.execute(() -> {
+            try {
+                // Step 1: Load first 5 listings immediately
+                Log.d(TAG, "📱 Loading first 5 listings for instant display...");
+                List<Listing> initialListings = supabaseClient.getListings(0, 5);
+                
+                if (initialListings != null && !initialListings.isEmpty()) {
+                    android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+                    mainHandler.post(() -> {
+                        Log.d(TAG, "⚡ Showing first " + initialListings.size() + " listings immediately");
+                        callback.onInitialLoad(initialListings);  // Use onInitialLoad for first batch
+                    });
+                    
+                    // Step 2: Load next 15 listings in background
+                    loadMoreListingsInBackground(5, 15, callback);
+                    
+                    // Step 3: Load remaining 30 listings in background
+                    loadMoreListingsInBackground(20, 30, callback);
+                } else {
+                    // Fallback to full load if progressive fails
+                    fetchListingsFromNetwork(callback);
+                }
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Progressive loading failed: " + e.getMessage(), e);
+                // Fallback to full load
+                fetchListingsFromNetwork(callback);
+            }
+        });
+    }
+    
+    private void fetchListingsFromNetwork(ListingsCallback callback) {
         executorService.execute(() -> {
             try {
                 Log.d(TAG, "Fetching all listings from Supabase...");
                 List<Listing> listings = supabaseClient.getAllListings();
+                
+                // Cache the results
+                if (listings != null && !listings.isEmpty()) {
+                    cacheListings(listings);
+                }
                 
                 // Post result back to main thread
                 android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
@@ -66,6 +232,47 @@ public class SupabaseService {
                 Log.e(TAG, "Error fetching listings: " + e.getMessage(), e);
                 android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
                 mainHandler.post(() -> callback.onError("Network error: " + e.getMessage()));
+            }
+        });
+    }
+    
+    /**
+     * Load more listings in background and update the UI
+     */
+    private void loadMoreListingsInBackground(int offset, int limit, ProgressiveLoadingCallback callback) {
+        executorService.execute(() -> {
+            try {
+                // Add a small delay to let the first batch render
+                Thread.sleep(500);
+                
+                Log.d(TAG, "📚 Loading more listings (offset: " + offset + ", limit: " + limit + ")...");
+                List<Listing> moreListings = supabaseClient.getListings(offset, limit);
+                
+                if (moreListings != null && !moreListings.isEmpty()) {
+                    android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+                    mainHandler.post(() -> {
+                        Log.d(TAG, "➕ Adding " + moreListings.size() + " more listings");
+                        // Use onMoreLoaded for additional batches
+                        callback.onMoreLoaded(moreListings);
+                    });
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Background loading failed: " + e.getMessage());
+            }
+        });
+    }
+    
+    private void refreshListingsInBackground() {
+        executorService.execute(() -> {
+            try {
+                Log.d(TAG, "🔄 Background refresh starting...");
+                List<Listing> listings = supabaseClient.getAllListings();
+                if (listings != null && !listings.isEmpty()) {
+                    cacheListings(listings);
+                    Log.d(TAG, "🔄 Background refresh completed");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Background refresh failed: " + e.getMessage());
             }
         });
     }

@@ -41,8 +41,23 @@ public class LoginActivity extends AppCompatActivity {
         authService = AuthService.getInstance(this);
         authManager = AuthManager.getInstance(this);
         
-        // Check if user is already authenticated (matching website)
-        if (authManager.isUserAuthenticated()) {
+        // Upgrade existing users by generating tokens if they don't have them
+        User currentUser = authManager.getCurrentUser();
+        if (currentUser != null && (currentUser.getAccessToken() == null || currentUser.getAccessToken().isEmpty())) {
+            Log.w(TAG, "Found user without valid access token, generating tokens to upgrade account");
+            if (!authManager.generateTokensForUser(currentUser)) {
+                Log.e(TAG, "Failed to generate tokens, clearing invalid authentication data");
+                authManager.clearAllAuthData();
+            } else {
+                Log.d(TAG, "Successfully upgraded user account with tokens");
+            }
+        }
+        
+        // Demo accounts will only be used if no real users exist - handled automatically
+        
+        // Only redirect to main if user is already authenticated AND we came from main activity
+        boolean fromMain = getIntent().getBooleanExtra("from_main", false);
+        if (authManager.isUserAuthenticated() && fromMain) {
             navigateToMainActivity();
             return;
         }
@@ -329,6 +344,9 @@ public class LoginActivity extends AppCompatActivity {
      * Navigate to main activity
      */
     private void navigateToMainActivity() {
+        // Set result to indicate successful login
+        setResult(RESULT_OK);
+        
         Intent intent = new Intent(this, com.roomfinder.android.MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);

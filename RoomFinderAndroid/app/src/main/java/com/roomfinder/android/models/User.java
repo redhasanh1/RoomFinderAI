@@ -30,6 +30,13 @@ public class User {
     @SerializedName("emailVerified")
     private boolean emailVerified;
     
+    // Authentication tokens
+    @SerializedName("accessToken")
+    private String accessToken;
+    
+    @SerializedName("refreshToken")
+    private String refreshToken;
+    
     // Additional fields matching website user structure
     @SerializedName("aiChats")
     private java.util.List<Object> aiChats;
@@ -128,6 +135,22 @@ public class User {
     
     public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
+    }
+    
+    public String getAccessToken() {
+        return accessToken;
+    }
+    
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
+    
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+    
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
     
     public java.util.List<Object> getAiChats() {

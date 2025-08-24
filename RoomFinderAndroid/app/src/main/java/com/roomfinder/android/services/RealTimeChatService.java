@@ -56,6 +56,10 @@ public class RealTimeChatService {
     private ConcurrentHashMap<String, Long> lastMessageTimestamps = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, String> lastMessageIds = new ConcurrentHashMap<>();
     
+    // Health check tracking
+    private ConcurrentHashMap<String, Long> lastSuccessfulPoll = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Integer> consecutiveFailures = new ConcurrentHashMap<>();
+    
     // Conversation cache
     private List<Conversation> cachedConversations = new ArrayList<>();
     private String currentUserEmail;
@@ -120,6 +124,13 @@ public class RealTimeChatService {
         }
         
         setupRealtimeConnection();
+        
+        // Auto-debug conversations immediately
+        Log.w(TAG, "🔍 AUTO-DEBUG: Running conversation debug immediately after initialization");
+        debugAllUserConversations();
+        
+        // Also scan for recent messages containing common test words
+        scanForRecentMessages();
     }
     
     /**
@@ -256,8 +267,11 @@ public class RealTimeChatService {
         executorService.scheduleWithFixedDelay(() -> {
             if (currentUserEmail != null) {
                 checkForNewMessages();
+                
+                // Also check for ANY conversations involving current user (website compatibility)
+                checkForAllUserConversations();
             }
-        }, 0, 3, TimeUnit.SECONDS);
+        }, 0, 15, TimeUnit.SECONDS); // Reduced from 1s to 15s to calm down excessive polling
     }
     
     /**
@@ -265,14 +279,77 @@ public class RealTimeChatService {
      */
     private void checkForNewMessages() {
         if (messageListeners.isEmpty()) {
+            Log.v(TAG, "🔍 [POLLING] No active message listeners - skipping poll");
             return; // No active conversations to check
         }
         
-        Log.d(TAG, "Polling for new messages in " + messageListeners.size() + " conversations");
+        Log.v(TAG, "🔍 [POLLING] ===== POLLING CYCLE START =====");
+        Log.v(TAG, "🔍 [POLLING] Active conversations: " + messageListeners.size());
+        Log.v(TAG, "🔍 [POLLING] Conversation IDs: " + messageListeners.keySet());
+        Log.v(TAG, "🔍 [POLLING] Current user: " + currentUserEmail);
         
         // Check each conversation that has an active listener
         for (String conversationId : messageListeners.keySet()) {
+            Log.v(TAG, "🔍 [POLLING] Checking conversation: " + conversationId);
             checkMessagesForConversation(conversationId);
+        }
+        
+        Log.v(TAG, "🔍 [POLLING] ===== POLLING CYCLE END =====");
+    }
+    
+    /**
+     * Check for conversations involving current user that we might not be monitoring
+     * This helps catch messages from website or other platforms
+     */
+    private void checkForAllUserConversations() {
+        if (currentUserEmail == null) {
+            return;
+        }
+        
+        // Run this check much less frequently to reduce API calls
+        if (System.currentTimeMillis() % 60000 < 15000) { // Roughly every 60 seconds
+            Log.v(TAG, "🌐 [GLOBAL_CHECK] Checking for any conversations involving user: " + currentUserEmail);
+            
+            executorService.execute(() -> {
+                try {
+                    // Get all conversations involving current user (both as sender and receiver)
+                    String url = ApiKeys.SUPABASE_URL + "rest/v1/conversations?select=*" +
+                            "&or=(sender_email.eq." + currentUserEmail + ",receiver_email.eq." + currentUserEmail + ")" +
+                            "&order=created_at.desc&limit=20";
+                    
+                    Log.v(TAG, "🌐 [GLOBAL_CHECK] URL: " + url);
+                    
+                    Request request = new Request.Builder()
+                            .url(url)
+                            .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                            .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                            .addHeader("Content-Type", "application/json")
+                            .build();
+                    
+                    try (Response response = httpClient.newCall(request).execute()) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            String responseBody = response.body().string();
+                            Log.v(TAG, "🌐 [GLOBAL_CHECK] Found conversations: " + responseBody);
+                            
+                            JSONArray conversations = new JSONArray(responseBody);
+                            for (int i = 0; i < conversations.length(); i++) {
+                                JSONObject conv = conversations.getJSONObject(i);
+                                String conversationId = conv.optString("id");
+                                
+                                // If we're not already monitoring this conversation, check it for new messages
+                                if (!messageListeners.containsKey(conversationId)) {
+                                    Log.d(TAG, "🌐 [GLOBAL_CHECK] Found unmonitored conversation: " + conversationId);
+                                    
+                                    // Check for recent messages in this conversation
+                                    checkMessagesForConversation(conversationId);
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "🌐 [GLOBAL_CHECK] Error checking all user conversations", e);
+                }
+            });
         }
     }
     
@@ -280,10 +357,17 @@ public class RealTimeChatService {
      * Check for new messages in a specific conversation
      */
     private void checkMessagesForConversation(String conversationId) {
+        Log.v(TAG, "🔍 [POLL_CONV] ===== CHECKING CONVERSATION =====");
+        Log.v(TAG, "🔍 [POLL_CONV] ConversationId: " + conversationId);
+        Log.v(TAG, "🔍 [POLL_CONV] Current user email: " + currentUserEmail);
+        
         try {
             // Get the last message timestamp for this conversation
             Long lastTimestamp = lastMessageTimestamps.get(conversationId);
             String lastMessageId = lastMessageIds.get(conversationId);
+            
+            Log.v(TAG, "🔍 [POLL_CONV] Last timestamp: " + lastTimestamp);
+            Log.v(TAG, "🔍 [POLL_CONV] Last message ID: " + lastMessageId);
             
             // Build URL to get messages newer than last known
             StringBuilder urlBuilder = new StringBuilder();
@@ -301,6 +385,8 @@ public class RealTimeChatService {
             
             String url = urlBuilder.toString();
             
+            Log.v(TAG, "🔍 [POLL_CONV] Request URL: " + url);
+            
             Request request = new Request.Builder()
                     .url(url)
                     .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
@@ -308,35 +394,80 @@ public class RealTimeChatService {
                     .addHeader("Content-Type", "application/json")
                     .build();
             
+            Log.v(TAG, "🔍 [POLL_CONV] Making HTTP request...");
+            
             // Execute request asynchronously
             httpClient.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {
-                    Log.e(TAG, "Failed to poll messages for conversation " + conversationId, e);
+                    Log.e(TAG, "🔍 [POLLING] ❌ Failed to poll messages for conversation " + conversationId + ": " + e.getMessage());
+                    
+                    // Track consecutive failures
+                    int failures = consecutiveFailures.getOrDefault(conversationId, 0) + 1;
+                    consecutiveFailures.put(conversationId, failures);
+                    Log.w(TAG, "🔍 [POLLING] ⚠️ Consecutive failures for " + conversationId + ": " + failures);
+                    
+                    // Retry mechanism with exponential backoff
+                    long retryDelay = Math.min(5 * failures, 30); // 5s, 10s, 15s, up to 30s max
+                    Log.d(TAG, "🔍 [POLLING] 🔄 Scheduling retry for conversation " + conversationId + " in " + retryDelay + " seconds...");
+                    executorService.schedule(() -> {
+                        Log.d(TAG, "🔍 [POLLING] 🔄 Retrying message check for conversation " + conversationId + " (attempt " + (failures + 1) + ")");
+                        checkMessagesForConversation(conversationId);
+                    }, retryDelay, TimeUnit.SECONDS);
                 }
                 
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
                     if (response.isSuccessful() && response.body() != null) {
+                        // Reset failure tracking on successful response
+                        consecutiveFailures.put(conversationId, 0);
+                        lastSuccessfulPoll.put(conversationId, System.currentTimeMillis());
+                        
                         try {
                             String responseBody = response.body().string();
+                            Log.v(TAG, "🔍 [POLL_CONV] Response body length: " + responseBody.length());
+                            Log.v(TAG, "🔍 [POLL_CONV] Response body: " + responseBody);
+                            
                             JSONArray messagesArray = new JSONArray(responseBody);
+                            Log.v(TAG, "🔍 [POLL_CONV] Found " + messagesArray.length() + " messages in response");
                             
                             List<ChatMessage> newMessages = new ArrayList<>();
                             for (int i = 0; i < messagesArray.length(); i++) {
                                 JSONObject messageJson = messagesArray.getJSONObject(i);
                                 ChatMessage message = parseMessageFromJson(messageJson);
                                 
+                                Log.d(TAG, "🔍 [POLLING] Processing message: " + message.getId() + " from " + message.getSenderEmail());
+                                Log.d(TAG, "🔍 [POLLING] Message content: '" + message.getContent() + "'");
+                                Log.d(TAG, "🔍 [POLLING] Current user email: '" + currentUserEmail + "'");
+                                Log.d(TAG, "🔍 [POLLING] Message conversation ID: " + message.getConversationId());
+                                Log.d(TAG, "🔍 [POLLING] Expected conversation ID: " + conversationId);
+                                
                                 // Skip if this is the last message we already have
                                 if (lastMessageId != null && lastMessageId.equals(message.getId())) {
+                                    Log.v(TAG, "🔍 [POLLING] ⏭️ Skipping already processed message: " + message.getId());
                                     continue;
                                 }
                                 
                                 // Skip messages from current user (they're already shown when sent)
-                                if (currentUserEmail != null && currentUserEmail.equals(message.getSenderEmail())) {
-                                    continue;
+                                // Add comprehensive email normalization and comparison
+                                String messageSender = normalizeEmail(message.getSenderEmail());
+                                String normalizedCurrentUser = normalizeEmail(currentUserEmail);
+                                
+                                Log.d(TAG, "🔍 [POLLING] Email comparison - Current: '" + normalizedCurrentUser + "' vs Message: '" + messageSender + "'");
+                                
+                                if (normalizedCurrentUser != null && messageSender != null) {
+                                    if (normalizedCurrentUser.equals(messageSender)) {
+                                        Log.d(TAG, "🔍 [POLLING] ⏭️ Skipping own message from: " + messageSender);
+                                        continue;
+                                    }
+                                } else {
+                                    Log.w(TAG, "🔍 [POLLING] ⚠️ Null email detected - currentUser: " + normalizedCurrentUser + ", messageSender: " + messageSender);
+                                    if (normalizedCurrentUser == null) {
+                                        Log.e(TAG, "🔍 [POLLING] ❌ CRITICAL: Current user email is null - message detection will fail!");
+                                    }
                                 }
                                 
+                                Log.d(TAG, "🔍 [POLLING] ✅ NEW MESSAGE DETECTED: '" + message.getContent() + "' from " + message.getSenderEmail());
                                 newMessages.add(message);
                                 
                                 // Update tracking
@@ -346,10 +477,16 @@ public class RealTimeChatService {
                             
                             // Notify listeners of new messages
                             if (!newMessages.isEmpty()) {
-                                Log.d(TAG, "Found " + newMessages.size() + " new messages for conversation " + conversationId);
+                                Log.d(TAG, "🔍 [POLLING] 📬 Found " + newMessages.size() + " new messages for conversation " + conversationId);
                                 for (ChatMessage message : newMessages) {
+                                    Log.d(TAG, "🔍 [POLLING] 📨 Notifying listeners about message: '" + message.getContent() + "'");
                                     notifyMessageListeners(message);
+                                    
+                                    // NOTE: Removed checkForAiNegotiationTrigger to prevent duplicate responses
+                                    // AI negotiation is already handled through the message listeners
                                 }
+                            } else {
+                                Log.d(TAG, "🔍 [POLLING] 📭 No new messages found for conversation " + conversationId);
                             }
                             
                         } catch (JSONException e) {
@@ -466,7 +603,7 @@ public class RealTimeChatService {
             return;
         }
         
-        if (currentUserEmail.equals(receiverEmail)) {
+        if (normalizeEmail(currentUserEmail).equals(normalizeEmail(receiverEmail))) {
             callback.onError("Cannot start conversation with yourself");
             return;
         }
@@ -497,16 +634,72 @@ public class RealTimeChatService {
     }
     
     /**
-     * Find existing conversation
+     * Find existing conversation - BIDIRECTIONAL LOOKUP for website-Android compatibility
      */
     private Conversation findExistingConversation(String listingId, String receiverEmail) {
+        Log.d(TAG, "🔍 [FIND_CONV] ===== BIDIRECTIONAL CONVERSATION SEARCH =====");
+        Log.d(TAG, "🔍 [FIND_CONV] Listing ID: " + listingId);
+        Log.d(TAG, "🔍 [FIND_CONV] Current user: " + currentUserEmail);
+        Log.d(TAG, "🔍 [FIND_CONV] Target email: " + receiverEmail);
+        
         try {
-            String url = ApiKeys.SUPABASE_URL + "rest/v1/conversations?select=*" +
+            // Try direction 1: Android user as sender (original logic)
+            Log.d(TAG, "🔍 [FIND_CONV] Checking direction 1: Android->Landlord");
+            String url1 = ApiKeys.SUPABASE_URL + "rest/v1/conversations?select=*" +
                     "&listing_id=eq." + listingId +
                     "&sender_email=eq." + currentUserEmail +
                     "&receiver_email=eq." + receiverEmail +
                     "&limit=1";
             
+            Log.d(TAG, "🔍 [FIND_CONV] URL1: " + url1);
+            Conversation conv1 = checkConversationUrl(url1);
+            if (conv1 != null) {
+                Log.d(TAG, "🔍 [FIND_CONV] ✅ Found conversation (direction 1): " + conv1.getId());
+                return conv1;
+            }
+            
+            // Try direction 2: Android user as receiver (for website replies)
+            Log.d(TAG, "🔍 [FIND_CONV] Checking direction 2: Landlord->Android");
+            String url2 = ApiKeys.SUPABASE_URL + "rest/v1/conversations?select=*" +
+                    "&listing_id=eq." + listingId +
+                    "&sender_email=eq." + receiverEmail +
+                    "&receiver_email=eq." + currentUserEmail +
+                    "&limit=1";
+            
+            Log.d(TAG, "🔍 [FIND_CONV] URL2: " + url2);
+            Conversation conv2 = checkConversationUrl(url2);
+            if (conv2 != null) {
+                Log.d(TAG, "🔍 [FIND_CONV] ✅ Found conversation (direction 2): " + conv2.getId());
+                return conv2;
+            }
+            
+            // Try fallback: Any conversation for this listing involving both users
+            Log.d(TAG, "🔍 [FIND_CONV] Checking fallback: Any conversation for listing");
+            String url3 = ApiKeys.SUPABASE_URL + "rest/v1/conversations?select=*" +
+                    "&listing_id=eq." + listingId +
+                    "&limit=10"; // Get up to 10 to find the right one
+            
+            Log.d(TAG, "🔍 [FIND_CONV] URL3: " + url3);
+            Conversation conv3 = findConversationInResults(url3, currentUserEmail, receiverEmail);
+            if (conv3 != null) {
+                Log.d(TAG, "🔍 [FIND_CONV] ✅ Found conversation (fallback): " + conv3.getId());
+                return conv3;
+            }
+            
+            Log.w(TAG, "🔍 [FIND_CONV] ❌ No conversation found in any direction");
+            return null;
+            
+        } catch (Exception e) {
+            Log.e(TAG, "🔍 [FIND_CONV] ❌ Error finding existing conversation", e);
+        }
+        return null;
+    }
+    
+    /**
+     * Helper method to check a conversation URL
+     */
+    private Conversation checkConversationUrl(String url) {
+        try {
             Request request = new Request.Builder()
                     .url(url)
                     .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
@@ -517,8 +710,9 @@ public class RealTimeChatService {
             try (Response response = httpClient.newCall(request).execute()) {
                 if (response.isSuccessful() && response.body() != null) {
                     String responseBody = response.body().string();
-                    JSONArray conversations = new JSONArray(responseBody);
+                    Log.d(TAG, "🔍 [FIND_CONV] Response: " + responseBody);
                     
+                    JSONArray conversations = new JSONArray(responseBody);
                     if (conversations.length() > 0) {
                         JSONObject conversationJson = conversations.getJSONObject(0);
                         return parseConversationFromJson(conversationJson);
@@ -526,7 +720,51 @@ public class RealTimeChatService {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error finding existing conversation", e);
+            Log.e(TAG, "🔍 [FIND_CONV] Error checking conversation URL", e);
+        }
+        return null;
+    }
+    
+    /**
+     * Helper method to find conversation involving both users in results
+     */
+    private Conversation findConversationInResults(String url, String user1, String user2) {
+        try {
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Content-Type", "application/json")
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String responseBody = response.body().string();
+                    Log.d(TAG, "🔍 [FIND_CONV] Fallback response: " + responseBody);
+                    
+                    JSONArray conversations = new JSONArray(responseBody);
+                    for (int i = 0; i < conversations.length(); i++) {
+                        JSONObject conv = conversations.getJSONObject(i);
+                        String sender = conv.optString("sender_email");
+                        String receiver = conv.optString("receiver_email");
+                        
+                        // Check if this conversation involves both users (with normalized email comparison)
+                        String normalizedSender = normalizeEmail(sender);
+                        String normalizedReceiver = normalizeEmail(receiver);
+                        String normalizedUser1 = normalizeEmail(user1);
+                        String normalizedUser2 = normalizeEmail(user2);
+                        
+                        if ((normalizedSender.equals(normalizedUser1) && normalizedReceiver.equals(normalizedUser2)) ||
+                            (normalizedSender.equals(normalizedUser2) && normalizedReceiver.equals(normalizedUser1))) {
+                            Log.d(TAG, "🔍 [FIND_CONV] Found matching conversation: " + conv.optString("id"));
+                            Log.d(TAG, "🔍 [FIND_CONV] Conversation participants: " + normalizedSender + " <-> " + normalizedReceiver);
+                            return parseConversationFromJson(conv);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "🔍 [FIND_CONV] Error checking fallback conversations", e);
         }
         return null;
     }
@@ -792,6 +1030,17 @@ public class RealTimeChatService {
      * Register message listener for a conversation
      */
     public void registerMessageListener(String conversationId, MessageListener listener) {
+        // Ensure we have current user email
+        if (currentUserEmail == null) {
+            AuthManager authManager = AuthManager.getInstance(context);
+            if (authManager.isUserAuthenticated()) {
+                this.currentUserEmail = authManager.getCurrentUser().getEmail();
+                Log.d(TAG, "📱 [REGISTER] ✅ Updated current user email: " + currentUserEmail);
+            } else {
+                Log.e(TAG, "📱 [REGISTER] ❌ User not authenticated - message detection may fail!");
+            }
+        }
+        
         messageListeners.put(conversationId, listener);
         
         // Initialize timestamp tracking for this conversation
@@ -804,7 +1053,14 @@ public class RealTimeChatService {
             subscribeToConversation(conversationId);
         }
         
-        Log.d(TAG, "📱 Registered listener for conversation: " + conversationId);
+        Log.d(TAG, "📱 [REGISTER] Registered listener for conversation: " + conversationId);
+        Log.d(TAG, "📱 [REGISTER] Current user: " + currentUserEmail);
+        Log.d(TAG, "📱 [REGISTER] Total active listeners: " + messageListeners.size());
+        Log.d(TAG, "📱 [REGISTER] Polling will check this conversation every 15 seconds");
+        
+        // Immediate check for existing messages (catch-up mechanism)
+        Log.d(TAG, "📱 [REGISTER] Performing immediate catch-up check...");
+        checkMessagesForConversation(conversationId);
     }
     
     /**
@@ -813,12 +1069,26 @@ public class RealTimeChatService {
     public void unregisterMessageListener(String conversationId) {
         messageListeners.remove(conversationId);
         
-        // Clean up tracking data for this conversation
+        // Clean up all tracking data for this conversation
         lastMessageTimestamps.remove(conversationId);
         lastMessageIds.remove(conversationId);
+        lastSuccessfulPoll.remove(conversationId);
+        consecutiveFailures.remove(conversationId);
         
-        Log.d(TAG, "🗑️ Unregistered listener for conversation: " + conversationId);
+        Log.d(TAG, "🗑️ [UNREGISTER] Unregistered listener and cleaned up tracking for conversation: " + conversationId);
+        Log.d(TAG, "🗑️ [UNREGISTER] Remaining active listeners: " + messageListeners.size());
     }
+    
+    /**
+     * Normalize email for consistent comparison across platforms
+     */
+    private String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        return email.trim().toLowerCase();
+    }
+    
     
     /**
      * Notify message listeners
@@ -827,8 +1097,17 @@ public class RealTimeChatService {
         String conversationId = message.getConversationId();
         MessageListener listener = messageListeners.get(conversationId);
         
+        Log.d(TAG, "🔔 [NOTIFY] Message listener for conversation " + conversationId + ": " + (listener != null ? "FOUND" : "NOT FOUND"));
+        
         if (listener != null) {
-            mainHandler.post(() -> listener.onMessageReceived(message));
+            Log.d(TAG, "🔔 [NOTIFY] ✅ Calling onMessageReceived for: '" + message.getContent() + "'");
+            mainHandler.post(() -> {
+                Log.d(TAG, "🔔 [NOTIFY] 📨 Executing onMessageReceived callback on main thread");
+                listener.onMessageReceived(message);
+            });
+        } else {
+            Log.w(TAG, "🔔 [NOTIFY] ❌ No listener registered for conversation: " + conversationId);
+            Log.d(TAG, "🔔 [NOTIFY] Available listeners: " + messageListeners.keySet());
         }
     }
     
@@ -862,5 +1141,178 @@ public class RealTimeChatService {
      */
     public String getCurrentUserEmail() {
         return currentUserEmail;
+    }
+    
+    /**
+     * DIAGNOSTIC: Manually check all conversations for current user
+     * Call this to debug website-Android conversation sync issues
+     */
+    public void debugAllUserConversations() {
+        if (currentUserEmail == null) {
+            Log.e(TAG, "🔍 [DEBUG] Cannot debug - current user email is null");
+            return;
+        }
+        
+        Log.w(TAG, "🔍 [DEBUG] ===== MANUAL CONVERSATION DEBUG =====");
+        Log.w(TAG, "🔍 [DEBUG] Current user: " + currentUserEmail);
+        Log.w(TAG, "🔍 [DEBUG] Normalized user: " + normalizeEmail(currentUserEmail));
+        
+        executorService.execute(() -> {
+            try {
+                // Get ALL conversations involving this user  
+                String url = ApiKeys.SUPABASE_URL + "rest/v1/conversations?select=*" +
+                        "&or=(sender_email.eq." + currentUserEmail + ",receiver_email.eq." + currentUserEmail + ")" +
+                        "&order=created_at.desc&limit=50";
+                
+                Log.w(TAG, "🔍 [DEBUG] Query URL: " + url);
+                
+                Request request = new Request.Builder()
+                        .url(url)
+                        .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                
+                try (Response response = httpClient.newCall(request).execute()) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        String responseBody = response.body().string();
+                        Log.w(TAG, "🔍 [DEBUG] Raw response: " + responseBody);
+                        
+                        JSONArray conversations = new JSONArray(responseBody);
+                        Log.w(TAG, "🔍 [DEBUG] Found " + conversations.length() + " total conversations");
+                        
+                        for (int i = 0; i < conversations.length(); i++) {
+                            JSONObject conv = conversations.getJSONObject(i);
+                            String id = conv.optString("id");
+                            String sender = conv.optString("sender_email");
+                            String receiver = conv.optString("receiver_email");
+                            String listingId = conv.optString("listing_id");
+                            String createdAt = conv.optString("created_at");
+                            
+                            Log.w(TAG, "🔍 [DEBUG] Conversation " + (i+1) + ":");
+                            Log.w(TAG, "🔍 [DEBUG]   ID: " + id);
+                            Log.w(TAG, "🔍 [DEBUG]   Sender: " + sender);
+                            Log.w(TAG, "🔍 [DEBUG]   Receiver: " + receiver);
+                            Log.w(TAG, "🔍 [DEBUG]   Listing: " + listingId);
+                            Log.w(TAG, "🔍 [DEBUG]   Created: " + createdAt);
+                            Log.w(TAG, "🔍 [DEBUG]   Monitored: " + messageListeners.containsKey(id));
+                            
+                            // Check for recent messages in this conversation
+                            checkRecentMessagesInConversation(id);
+                        }
+                    } else {
+                        Log.e(TAG, "🔍 [DEBUG] Failed to get conversations: " + response.code());
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "🔍 [DEBUG] Error debugging conversations", e);
+            }
+        });
+    }
+    
+    /**
+     * DIAGNOSTIC: Check recent messages in a conversation
+     */
+    private void checkRecentMessagesInConversation(String conversationId) {
+        try {
+            String url = ApiKeys.SUPABASE_URL + "rest/v1/messages?select=*" +
+                    "&conversation_id=eq." + conversationId +
+                    "&order=created_at.desc&limit=5";
+            
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Content-Type", "application/json")
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String responseBody = response.body().string();
+                    JSONArray messages = new JSONArray(responseBody);
+                    
+                    Log.w(TAG, "🔍 [DEBUG]   Recent messages (" + messages.length() + "):");
+                    for (int j = 0; j < Math.min(3, messages.length()); j++) {
+                        JSONObject msg = messages.getJSONObject(j);
+                        String content = msg.optString("content");
+                        String sender = msg.optString("sender_email");
+                        String createdAt = msg.optString("created_at");
+                        
+                        Log.w(TAG, "🔍 [DEBUG]     " + (j+1) + ". '" + content.substring(0, Math.min(50, content.length())) + "...' from " + sender + " at " + createdAt);
+                    }
+                } else {
+                    Log.w(TAG, "🔍 [DEBUG]   Failed to get messages for conversation " + conversationId);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "🔍 [DEBUG] Error checking messages for conversation " + conversationId, e);
+        }
+    }
+    
+    /**
+     * Scan for recent messages containing test keywords to find hidden conversations
+     */
+    private void scanForRecentMessages() {
+        if (currentUserEmail == null) {
+            Log.e(TAG, "🔍 [SCAN] Cannot scan - current user email is null");
+            return;
+        }
+        
+        Log.w(TAG, "🔍 [SCAN] ===== SCANNING FOR RECENT MESSAGES =====");
+        Log.w(TAG, "🔍 [SCAN] Looking for messages with: hi, lower, abit");
+        
+        executorService.execute(() -> {
+            try {
+                // Get recent messages across ALL conversations
+                String url = ApiKeys.SUPABASE_URL + "rest/v1/messages?select=*,conversations(*)" +
+                        "&order=created_at.desc&limit=20";
+                
+                Log.w(TAG, "🔍 [SCAN] Query URL: " + url);
+                
+                Request request = new Request.Builder()
+                        .url(url)
+                        .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                
+                try (Response response = httpClient.newCall(request).execute()) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        String responseBody = response.body().string();
+                        Log.w(TAG, "🔍 [SCAN] Raw response: " + responseBody.substring(0, Math.min(500, responseBody.length())) + "...");
+                        
+                        JSONArray messages = new JSONArray(responseBody);
+                        Log.w(TAG, "🔍 [SCAN] Found " + messages.length() + " recent messages");
+                        
+                        for (int i = 0; i < messages.length(); i++) {
+                            JSONObject msg = messages.getJSONObject(i);
+                            String content = msg.optString("content").toLowerCase();
+                            String sender = msg.optString("sender_email");
+                            String conversationId = msg.optString("conversation_id");
+                            String createdAt = msg.optString("created_at");
+                            
+                            // Look for test messages
+                            if (content.contains("hi") || content.contains("lower") || content.contains("abit")) {
+                                Log.w(TAG, "🔍 [SCAN] ⚡ FOUND POTENTIAL MESSAGE!");
+                                Log.w(TAG, "🔍 [SCAN]   Content: '" + content + "'");
+                                Log.w(TAG, "🔍 [SCAN]   From: " + sender);
+                                Log.w(TAG, "🔍 [SCAN]   Conversation ID: " + conversationId);
+                                Log.w(TAG, "🔍 [SCAN]   Created: " + createdAt);
+                                Log.w(TAG, "🔍 [SCAN]   Currently monitored: " + messageListeners.containsKey(conversationId));
+                                
+                                // Check if this involves current user
+                                if (!normalizeEmail(currentUserEmail).equals(normalizeEmail(sender))) {
+                                    Log.w(TAG, "🔍 [SCAN] 🎯 THIS IS A LANDLORD MESSAGE WE'RE MISSING!");
+                                }
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "🔍 [SCAN] Failed to get recent messages: " + response.code());
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "🔍 [SCAN] Error scanning recent messages", e);
+            }
+        });
     }
 }

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="1dp"
+    app:strokeWidth="0dp"
+    android:backgroundTint="#FAFAFA">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Skeleton Image Container -->
+        <View
+            android:id="@+id/skeletonImage"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/skeleton_shimmer"
+            app:layout_constraintDimensionRatio="16:10"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Skeleton Property Type Badge -->
+        <View
+            android:id="@+id/skeletonBadge"
+            android:layout_width="60dp"
+            android:layout_height="20dp"
+            android:layout_margin="12dp"
+            android:background="@drawable/skeleton_shimmer"
+            app:layout_constraintTop_toTopOf="@id/skeletonImage"
+            app:layout_constraintStart_toStartOf="@id/skeletonImage" />
+
+        <!-- Skeleton Favorite Button -->
+        <View
+            android:id="@+id/skeletonFavorite"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_margin="12dp"
+            android:background="@drawable/skeleton_shimmer"
+            app:layout_constraintTop_toTopOf="@id/skeletonImage"
+            app:layout_constraintEnd_toEndOf="@id/skeletonImage" />
+
+        <!-- Skeleton Chat Button -->
+        <View
+            android:id="@+id/skeletonChat"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/skeleton_shimmer"
+            app:layout_constraintTop_toBottomOf="@id/skeletonFavorite"
+            app:layout_constraintEnd_toEndOf="@id/skeletonImage" />
+
+        <!-- Content Section -->
+        <LinearLayout
+            android:id="@+id/contentLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp"
+            app:layout_constraintTop_toBottomOf="@id/skeletonImage"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <!-- Title and Price Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <!-- Skeleton Title -->
+                <View
+                    android:id="@+id/skeletonTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="16dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="12dp"
+                    android:background="@drawable/skeleton_shimmer" />
+
+                <!-- Skeleton Price -->
+                <View
+                    android:id="@+id/skeletonPrice"
+                    android:layout_width="60dp"
+                    android:layout_height="18dp"
+                    android:background="@drawable/skeleton_shimmer" />
+
+            </LinearLayout>
+
+            <!-- Skeleton Location -->
+            <View
+                android:id="@+id/skeletonLocation"
+                android:layout_width="120dp"
+                android:layout_height="12dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/skeleton_shimmer" />
+
+            <!-- Skeleton Features -->
+            <View
+                android:id="@+id/skeletonFeatures"
+                android:layout_width="80dp"
+                android:layout_height="12dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/skeleton_shimmer" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

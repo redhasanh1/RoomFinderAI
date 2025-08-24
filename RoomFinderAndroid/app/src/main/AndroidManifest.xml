@@ -55,6 +55,17 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
             
+        <activity
+            android:name=".activities.ListingDetailActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+            
+        <activity
+            android:name=".activities.FullscreenImageActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Fullscreen"
+            android:screenOrientation="portrait" />
+            
         <!-- FileProvider for camera photos -->
         <provider
             android:name="androidx.core.content.FileProvider"

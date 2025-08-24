@@ -466,7 +466,7 @@
             
             const firstName = document.getElementById('firstName').value;
             const lastName = document.getElementById('lastName').value;
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.toLowerCase();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             const terms = document.getElementById('terms').checked;
@@ -498,8 +498,8 @@
             // Store in localStorage (for demo purposes)
             let users = JSON.parse(localStorage.getItem('users')) || [];
             
-            // Check if user already exists
-            if (users.find(u => u.email === email)) {
+            // Check if user already exists (case-insensitive)
+            if (users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase())) {
                 showError('An account with this email address already exists. Please use a different email or try signing in.');
                 return;
             }
@@ -522,6 +522,44 @@
         });
         
         }); // End DOMContentLoaded
+        
+        // Function to normalize existing emails to lowercase
+        function normalizeStoredEmails() {
+            try {
+                // Normalize users array
+                let users = JSON.parse(localStorage.getItem('users')) || [];
+                let usersUpdated = false;
+                
+                users = users.map(user => {
+                    if (user && user.email && user.email !== user.email.toLowerCase()) {
+                        usersUpdated = true;
+                        return { ...user, email: user.email.toLowerCase() };
+                    }
+                    return user;
+                });
+                
+                if (usersUpdated) {
+                    localStorage.setItem('users', JSON.stringify(users));
+                    console.log('✅ Normalized user emails in localStorage');
+                }
+                
+                // Normalize currentUser
+                const currentUserData = localStorage.getItem('currentUser');
+                if (currentUserData) {
+                    const currentUser = JSON.parse(currentUserData);
+                    if (currentUser && currentUser.email && currentUser.email !== currentUser.email.toLowerCase()) {
+                        currentUser.email = currentUser.email.toLowerCase();
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        console.log('✅ Normalized currentUser email in localStorage');
+                    }
+                }
+            } catch (error) {
+                console.error('Error normalizing stored emails:', error);
+            }
+        }
+        
+        // Normalize emails on page load
+        normalizeStoredEmails();
         
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {
