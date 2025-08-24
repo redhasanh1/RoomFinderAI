@@ -550,24 +550,50 @@
 
     async function handleAppleSignIn(){
       if (!oauthConfig) await loadOAuthConfig();
-      if (typeof AppleID === 'undefined'){ alert('Apple Sign-In is currently unavailable.'); return; }
+      
+      // Check if Apple ID is available
+      if (typeof AppleID === 'undefined'){ 
+        console.error('Apple ID SDK not loaded');
+        alert('Apple Sign-In is currently unavailable.'); 
+        return; 
+      }
+      
       try{
-        if (!window.appleIdInitialized && oauthConfig?.appleClientId){
+        // Initialize Apple ID if not done and we have config
+        if (!window.appleIdInitialized){
+          // Use a default service ID if none configured
+          const clientId = oauthConfig?.appleClientId || 'com.roomfinderai.web';
+          
+          console.log('Initializing Apple ID with client:', clientId);
+          
           AppleID.auth.init({
-            clientId: oauthConfig.appleClientId,
+            clientId: clientId,
             scope: 'name email',
-            redirectURI: window.location.origin + '/auth/apple/callback',
+            redirectURI: window.location.origin + '/login.html',
             state: 'roomfinder_auth',
             usePopup: true
           });
           window.appleIdInitialized = true;
         }
+        
+        console.log('Starting Apple Sign-In...');
         const response = await AppleID.auth.signIn();
+        console.log('Apple Sign-In response:', response);
+        
+        // Send to backend - backend expects 'identityToken'
         const r = await fetch('/api/auth/apple',{
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({ authorizationCode: response.authorization.code, identityToken: response.authorization.id_token, user: response.user })
+          method:'POST', 
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({ 
+            identityToken: response.authorization.id_token,
+            authorizationCode: response.authorization.code,
+            user: response.user 
+          })
         });
+        
         const result = await r.json();
+        console.log('Backend response:', result);
+        
         if (r.ok){
           localStorage.setItem('currentUser', JSON.stringify(result.user));
           const users = JSON.parse(localStorage.getItem('users')||'[]');
@@ -576,9 +602,11 @@
           localStorage.setItem('users', JSON.stringify(users));
           window.location.href='verification-modal.html?redirect=index.html';
         }else{
+          console.error('Apple auth backend error:', result);
           alert(result.error || 'Apple Sign-In failed');
         }
       }catch(error){
+        console.error('Apple Sign-In error:', error);
         if (error?.error === 'popup_closed_by_user') return;
         if (error?.error === 'popup_blocked_by_browser') alert('Apple popup was blocked. Please allow popups and try again.');
         else alert('Apple Sign-In failed. Please try email/password.');
