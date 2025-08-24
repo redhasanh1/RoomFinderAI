@@ -94,14 +94,20 @@ struct Listing: Codable, Identifiable, Equatable {
     let bedrooms: Int?
     let description: String?
     let street: String?
-    let images: [String]?
+    let media: [String]? // Database uses 'media' not 'images'
     let isFavorited: Bool?
     let utilities: String?
     let userEmail: String?
+    let postalCode: String?
+    let updatedAt: Date?
     
     enum CodingKeys: String, CodingKey { 
         case id, title, price, city, created_at, cover_image, category
-        case houseType = "house_type", bedrooms, description, street, images, isFavorited, utilities, userEmail
+        case houseType = "house_type", bedrooms, description, street
+        case media, isFavorited, utilities
+        case userEmail = "user_email"
+        case postalCode = "postal_code"
+        case updatedAt = "updated_at"
     }
 
     init(from decoder: Decoder) throws {
@@ -121,15 +127,28 @@ struct Listing: Codable, Identifiable, Equatable {
         bedrooms = try? c.decode(Int.self, forKey: .bedrooms)
         description = try? c.decode(String.self, forKey: .description)
         street = try? c.decode(String.self, forKey: .street)
-        images = try? c.decode([String].self, forKey: .images)
+        media = try? c.decode([String].self, forKey: .media)
         isFavorited = try? c.decode(Bool.self, forKey: .isFavorited)
         utilities = try? c.decode(String.self, forKey: .utilities)
         userEmail = try? c.decode(String.self, forKey: .userEmail)
+        postalCode = try? c.decode(String.self, forKey: .postalCode)
+        
+        // Handle date parsing for updated_at
+        if let updatedAtString = try? c.decode(String.self, forKey: .updatedAt) {
+            let formatter = ISO8601DateFormatter()
+            updatedAt = formatter.date(from: updatedAtString)
+        } else {
+            updatedAt = nil
+        }
     }
     
     // Computed properties for backwards compatibility
     var propertyType: PropertyType {
         PropertyType(rawValue: houseType?.capitalized ?? "") ?? .apartment
+    }
+    
+    var images: [String]? {
+        return media // Backwards compatibility - media is the actual database field
     }
     
     var createdAt: Date {
