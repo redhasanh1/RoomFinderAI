@@ -561,17 +561,13 @@
       try{
         // Initialize Apple ID if not done and we have config
         if (!window.appleIdInitialized){
-          // Check if we have a valid Apple client ID
-          if (!oauthConfig?.appleClientId) {
-            console.warn('No Apple Client ID configured');
-            alert('Apple Sign-In is not configured yet. Please use email/password or Google Sign-In.');
-            return;
-          }
+          // Use a default service ID if none configured
+          const clientId = oauthConfig?.appleClientId || 'com.roomfinderai.web';
           
-          console.log('Initializing Apple ID with client:', oauthConfig.appleClientId);
+          console.log('Initializing Apple ID with client:', clientId);
           
           AppleID.auth.init({
-            clientId: oauthConfig.appleClientId,
+            clientId: clientId,
             scope: 'name email',
             redirectURI: window.location.origin + '/login.html',
             state: 'roomfinder_auth',
@@ -611,32 +607,9 @@
         }
       }catch(error){
         console.error('Apple Sign-In error:', error);
-        
-        // Handle specific Apple Sign-In errors
-        if (error?.error === 'popup_closed_by_user') {
-          console.log('User closed Apple Sign-In popup');
-          return;
-        }
-        
-        if (error?.error === 'popup_blocked_by_browser') {
-          alert('Apple popup was blocked. Please allow popups and try again.');
-          return;
-        }
-        
-        // Handle common Apple authentication issues
-        if (error?.message?.includes('invalid_client')) {
-          alert('Apple Sign-In is not properly configured. Please use email/password or Google Sign-In.');
-          return;
-        }
-        
-        if (error?.message?.includes('invalid_request')) {
-          alert('Apple Sign-In request failed. This service may not be properly set up for your domain.');
-          return;
-        }
-        
-        // Generic error
-        console.error('Detailed Apple error:', error);
-        alert('Apple Sign-In is currently unavailable. Please try:\n• Email/password login\n• Google Sign-In\n• Try again later');
+        if (error?.error === 'popup_closed_by_user') return;
+        if (error?.error === 'popup_blocked_by_browser') alert('Apple popup was blocked. Please allow popups and try again.');
+        else alert('Apple Sign-In failed. Please try email/password.');
       }
     }
 
