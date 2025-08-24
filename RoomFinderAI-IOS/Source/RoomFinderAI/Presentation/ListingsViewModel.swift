@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 
 @MainActor
 final class ListingsViewModel: ObservableObject {
@@ -10,21 +11,40 @@ final class ListingsViewModel: ObservableObject {
     @Published var filters = ListingsFilter()
     @Published var hasMorePages = true
     
+    // Real-time connection status
+    @Published var realtimeStatus: RealtimeConnectionStatus = .disconnected
+    @Published var lastRealtimeUpdate: Date?
+    @Published var realtimeUpdateCount: Int = 0
+    
     private let listingsService = ListingsService()
     private let realtimeService = ListingsRealtime()
     private var currentPage = 0
     private let pageSize = 20
     
     private var debounceTimer: Timer?
+    private var cancellables = Set<AnyCancellable>()
     
     init() {
         startRealtime()
+        setupRealtimeStatusBinding()
     }
     
     deinit {
-        Task { @MainActor in
-            stopRealtime()
-        }
+        stopRealtime()
+        cancellables.removeAll()
+    }
+    
+    private func setupRealtimeStatusBinding() {
+        // Bind real-time service status to our published properties
+        realtimeService.$connectionStatus
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.realtimeStatus, on: self)
+            .store(in: &cancellables)
+        
+        realtimeService.$lastUpdateTime
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.lastRealtimeUpdate, on: self)
+            .store(in: &cancellables)
     }
     
     func loadInitial() async {
@@ -126,28 +146,70 @@ final class ListingsViewModel: ObservableObject {
     }
     
     private func handleRealtimeChange(_ change: RealtimeChange<Listing>) {
+        print("🔄 Processing real-time change: \(change)")
+        
+        // Update counter for UI feedback
+        realtimeUpdateCount += 1
+        
         switch change {
         case .insert(let listing):
+            print("📥 Processing INSERT for listing: \(listing.title ?? "Untitled")")
+            
+            // Check if already exists to avoid duplicates
             if !listings.contains(where: { $0.id == listing.id }) {
                 if matchesCurrentFilters(listing) {
+                    print("✅ INSERT matches filters, adding to top of list")
                     listings.insert(listing, at: 0)
+                    
+                    // Show user feedback for new listings
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        // The UI will automatically update due to @Published
+                    }
+                } else {
+                    print("⚠️ INSERT doesn't match current filters, skipping")
                 }
+            } else {
+                print("⚠️ INSERT: Listing already exists, skipping duplicate")
             }
             
         case .update(let listing):
+            print("📝 Processing UPDATE for listing: \(listing.title ?? "Untitled")")
+            
             if let index = listings.firstIndex(where: { $0.id == listing.id }) {
                 if matchesCurrentFilters(listing) {
-                    listings[index] = listing
+                    print("✅ UPDATE matches filters, updating existing listing")
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        listings[index] = listing
+                    }
                 } else {
-                    listings.remove(at: index)
+                    print("⚠️ UPDATE no longer matches filters, removing from list")
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        listings.remove(at: index)
+                    }
                 }
             } else if matchesCurrentFilters(listing) {
-                listings.insert(listing, at: 0)
+                print("✅ UPDATE for new listing that matches filters, adding to top")
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    listings.insert(listing, at: 0)
+                }
+            } else {
+                print("⚠️ UPDATE for listing not in current view and doesn't match filters")
             }
             
         case .delete(let listing):
-            listings.removeAll { $0.id == listing.id }
+            print("🗑️ Processing DELETE for listing: \(listing.title ?? "Untitled")")
+            let initialCount = listings.count
+            withAnimation(.easeOut(duration: 0.3)) {
+                listings.removeAll { $0.id == listing.id }
+            }
+            let removedCount = initialCount - listings.count
+            print("✅ DELETE removed \(removedCount) listing(s)")
         }
+        
+        // Update last update time
+        lastRealtimeUpdate = Date()
+        
+        print("📊 Current listings count: \(listings.count)")
     }
     
     private func matchesCurrentFilters(_ listing: Listing) -> Bool {
@@ -188,5 +250,62 @@ final class ListingsViewModel: ObservableObject {
         }
         
         return true
+    }
+    
+    // MARK: - Real-time Management
+    
+    /// Force reconnect the real-time subscription
+    func reconnectRealtime() {
+        print("🔄 Manual real-time reconnection requested")
+        realtimeService.forceReconnect()
+    }
+    
+    /// Get real-time connection status for UI display
+    func getConnectionStatusText() -> String {
+        switch realtimeStatus {
+        case .disconnected:
+            return "Disconnected"
+        case .connecting:
+            return "Connecting..."
+        case .connected:
+            return "Live Updates Active"
+        case .reconnecting:
+            return "Reconnecting..."
+        case .error(let message):
+            return "Error: \(message)"
+        }
+    }
+    
+    /// Get connection status color for UI
+    func getConnectionStatusColor() -> Color {
+        switch realtimeStatus {
+        case .connected:
+            return .green
+        case .connecting, .reconnecting:
+            return .orange
+        case .disconnected, .error:
+            return .red
+        }
+    }
+    
+    /// Check if real-time is working properly
+    var isRealtimeHealthy: Bool {
+        switch realtimeStatus {
+        case .connected:
+            return true
+        default:
+            return false
+        }
+    }
+    
+    /// Get formatted last update time
+    func getLastUpdateText() -> String {
+        guard let lastUpdate = lastRealtimeUpdate else {
+            return "No updates yet"
+        }
+        
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return "Updated \(formatter.localizedString(for: lastUpdate, relativeTo: Date()))"
     }
 }
