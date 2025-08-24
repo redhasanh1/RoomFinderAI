@@ -470,17 +470,33 @@ class RealSupabaseService: ObservableObject {
         var finalStatusCode = 0
         var finalHeaders = "No headers"
         
-        debugMessages.append("🚀 Starting UI-visible debug session...")
+        debugMessages.append("🚀 Starting enhanced debug session...")
         debugMessages.append("🔗 URL: \(SupabaseConfig.url)")
         debugMessages.append("🔑 Key: \(SupabaseConfig.anonKey.prefix(15))...")
         
-        // Test 1: Simple query to get raw response
+        // Test 1: Check if table exists and get count
         do {
-            debugMessages.append("📡 Making simple query to listings table...")
+            debugMessages.append("📊 Step 1: Checking table existence and count...")
+            let countResponse = try await client
+                .from("listings")
+                .select("*", head: true)
+                .execute()
+            
+            let count = countResponse.count ?? 0
+            debugMessages.append("✅ Table exists with \(count) total rows")
+            finalStatusCode = countResponse.response.statusCode
+            
+        } catch {
+            debugMessages.append("❌ Table check failed: \(error)")
+        }
+        
+        // Test 2: Try to get just basic fields that should exist
+        do {
+            debugMessages.append("📡 Step 2: Testing basic fields query...")
             let response = try await client
                 .from("listings")
-                .select("id, title, price")
-                .limit(3)
+                .select("id, title, price, city")
+                .limit(5)
                 .execute()
             
             finalStatusCode = response.response.statusCode
@@ -488,13 +504,51 @@ class RealSupabaseService: ObservableObject {
             
             if let jsonString = String(data: response.data, encoding: .utf8) {
                 finalResponse = jsonString
-                debugMessages.append("✅ Got response: \(jsonString.count) characters")
+                debugMessages.append("✅ Basic fields response: \(jsonString.count) characters")
                 
                 let trimmed = jsonString.trimmingCharacters(in: .whitespacesAndNewlines)
                 if trimmed == "[]" {
-                    debugMessages.append("⚠️ EMPTY ARRAY - This suggests RLS policy issue!")
+                    debugMessages.append("⚠️ EMPTY ARRAY - Database has no data or RLS blocking access")
+                    
+                    // Try to understand why
+                    debugMessages.append("🔍 Investigating empty response...")
+                    
+                    // Check if RLS is the issue
+                    do {
+                        debugMessages.append("🔐 Testing with user context...")
+                        let _ = try await client.rpc("set_current_user_email", params: ["email": "test@roomfinder.ai"]).execute()
+                        
+                        let contextResponse = try await client
+                            .from("listings")
+                            .select("id, title")
+                            .limit(2)
+                            .execute()
+                        
+                        if let contextJsonString = String(data: contextResponse.data, encoding: .utf8) {
+                            let contextTrimmed = contextJsonString.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if contextTrimmed == "[]" {
+                                debugMessages.append("❌ Still empty with user context - No data in database")
+                            } else {
+                                debugMessages.append("✅ RLS was blocking! Data exists: \(contextJsonString)")
+                                finalResponse = contextJsonString
+                            }
+                        }
+                    } catch {
+                        debugMessages.append("❌ User context test failed: \(error)")
+                    }
+                    
                 } else {
-                    debugMessages.append("✅ Got actual data!")
+                    debugMessages.append("✅ Got data! Parsing...")
+                    // Try to parse as JSON to understand structure
+                    if let data = jsonString.data(using: .utf8),
+                       let jsonArray = try? JSONSerialization.jsonObject(with: data) as? [Any] {
+                        debugMessages.append("📋 Found \(jsonArray.count) records")
+                        
+                        if let first = jsonArray.first as? [String: Any] {
+                            let keys = Array(first.keys).sorted()
+                            debugMessages.append("🔑 Available fields: \(keys.joined(separator: ", "))")
+                        }
+                    }
                 }
             } else {
                 debugMessages.append("❌ Could not convert response to string")
@@ -502,7 +556,7 @@ class RealSupabaseService: ObservableObject {
             }
             
         } catch {
-            debugMessages.append("❌ Query failed: \(error)")
+            debugMessages.append("❌ Basic fields query failed: \(error)")
             finalResponse = "Error: \(error.localizedDescription)"
         }
         
@@ -786,30 +840,50 @@ class RealSupabaseService: ObservableObject {
     /// Handle incoming real-time events and convert to app events
     private func handleRealtimeEvent(_ eventType: String, message: Any) {
         print("📨 Real-time event received: \(eventType)")
+        print("📋 Raw message: \(message)")
         
         Task { @MainActor in
             self.lastEventTime = Date()
             
-            // For now, create a mock listing for testing purposes
-            // This will be replaced with proper message parsing once the correct API structure is determined
-            switch eventType {
-            case "INSERT":
-                print("📨 INSERT event received (mock implementation)")
-                let mockListing = createMockListing()
-                realtimeEventsSubject.send(.insert(mockListing))
+            do {
+                switch eventType {
+                case "INSERT":
+                    if let insertAction = message as? InsertAction {
+                        let listing = try insertAction.decodeRecord(as: Listing.self, decoder: createRealtimeDecoder())
+                        print("✅ INSERT: Successfully parsed listing: \(listing.title)")
+                        realtimeEventsSubject.send(.insert(listing))
+                    } else {
+                        throw NSError(domain: "RealtimeError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid INSERT action type"])
+                    }
+                    
+                case "UPDATE":
+                    if let updateAction = message as? UpdateAction {
+                        let listing = try updateAction.decodeRecord(as: Listing.self, decoder: createRealtimeDecoder())
+                        print("✅ UPDATE: Successfully parsed listing: \(listing.title)")
+                        realtimeEventsSubject.send(.update(listing))
+                    } else {
+                        throw NSError(domain: "RealtimeError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid UPDATE action type"])
+                    }
+                    
+                case "DELETE":
+                    if let deleteAction = message as? DeleteAction {
+                        let listing = try deleteAction.decodeOldRecord(as: Listing.self, decoder: createRealtimeDecoder())
+                        print("✅ DELETE: Successfully parsed listing: \(listing.title)")
+                        realtimeEventsSubject.send(.delete(listing.id))
+                    } else {
+                        throw NSError(domain: "RealtimeError", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid DELETE action type"])
+                    }
+                    
+                default:
+                    print("❓ Unknown event type: \(eventType)")
+                    handleParsingError("Unknown real-time event type: \(eventType)")
+                }
                 
-            case "UPDATE":
-                print("📝 UPDATE event received (mock implementation)")
-                let mockListing = createMockListing()
-                realtimeEventsSubject.send(.update(mockListing))
-                
-            case "DELETE":
-                print("🗑️ DELETE event received (mock implementation)")
-                realtimeEventsSubject.send(.delete("mock-id"))
-                
-            default:
-                print("❓ Unknown event type: \(eventType)")
-                handleParsingError("Unknown real-time event type: \(eventType)")
+            } catch {
+                print("❌ Failed to parse real-time event: \(error)")
+                print("   Event type: \(eventType)")
+                print("   Message: \(message)")
+                handleParsingError("Failed to parse \(eventType) event: \(error.localizedDescription)")
             }
         }
     }
@@ -823,28 +897,47 @@ class RealSupabaseService: ObservableObject {
         // The connection may still be working for other events
     }
     
-    /// Create a mock listing for testing real-time events
-    private func createMockListing() -> Listing {
-        let listingDict: [String: Any] = [
-            "id": UUID().uuidString,
-            "title": "Real-time Test Listing",
-            "price": 1500.0,
-            "city": "Toronto",
-            "created_at": ISO8601DateFormatter().string(from: Date()),
-            "description": "This is a test listing created for real-time functionality",
-            "street": "Test Street",
-            "postal_code": "M5H 1J8",
-            "house_type": "Apartment",
-            "bedrooms": 2,
-            "utilities": "Included",
-            "media": [],
-            "user_email": "test@roomfinder.ai",
-            "updated_at": ISO8601DateFormatter().string(from: Date())
-        ]
+    /// Create a properly configured JSON decoder for real-time events
+    private func createRealtimeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
         
-        // Convert to JSON data and decode
-        let jsonData = try! JSONSerialization.data(withJSONObject: listingDict)
-        return try! JSONDecoder().decode(Listing.self, from: jsonData)
+        // Use the same date decoding strategy as the main queries
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            
+            // Try multiple date formats common in PostgreSQL real-time events
+            let formats = [
+                "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ",
+                "yyyy-MM-dd'T'HH:mm:ss.SSSSSZ",
+                "yyyy-MM-dd'T'HH:mm:ss.SSSSZ",
+                "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
+                "yyyy-MM-dd'T'HH:mm:ss.SSZ",
+                "yyyy-MM-dd'T'HH:mm:ss.SZ",
+                "yyyy-MM-dd'T'HH:mm:ssZ",
+                "yyyy-MM-dd'T'HH:mm:ss"
+            ]
+            
+            let dateFormatter = DateFormatter()
+            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+            dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+            
+            for format in formats {
+                dateFormatter.dateFormat = format
+                if let date = dateFormatter.date(from: dateString) {
+                    return date
+                }
+            }
+            
+            // Fallback to ISO8601
+            if let date = ISO8601DateFormatter().date(from: dateString) {
+                return date
+            }
+            
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date string \(dateString)")
+        }
+        
+        return decoder
     }
     
     /// Parse a single listing from JSON data
