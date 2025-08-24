@@ -30,7 +30,9 @@ final class ListingsViewModel: ObservableObject {
     }
     
     deinit {
-        stopRealtime()
+        Task { @MainActor in
+            stopRealtime()
+        }
         cancellables.removeAll()
     }
     
@@ -161,10 +163,7 @@ final class ListingsViewModel: ObservableObject {
                     print("✅ INSERT matches filters, adding to top of list")
                     listings.insert(listing, at: 0)
                     
-                    // Show user feedback for new listings
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        // The UI will automatically update due to @Published
-                    }
+                    // Show user feedback for new listings - UI updates automatically due to @Published
                 } else {
                     print("⚠️ INSERT doesn't match current filters, skipping")
                 }
@@ -178,20 +177,14 @@ final class ListingsViewModel: ObservableObject {
             if let index = listings.firstIndex(where: { $0.id == listing.id }) {
                 if matchesCurrentFilters(listing) {
                     print("✅ UPDATE matches filters, updating existing listing")
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        listings[index] = listing
-                    }
+                    listings[index] = listing
                 } else {
                     print("⚠️ UPDATE no longer matches filters, removing from list")
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        listings.remove(at: index)
-                    }
+                    listings.remove(at: index)
                 }
             } else if matchesCurrentFilters(listing) {
                 print("✅ UPDATE for new listing that matches filters, adding to top")
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    listings.insert(listing, at: 0)
-                }
+                listings.insert(listing, at: 0)
             } else {
                 print("⚠️ UPDATE for listing not in current view and doesn't match filters")
             }
@@ -199,9 +192,7 @@ final class ListingsViewModel: ObservableObject {
         case .delete(let listing):
             print("🗑️ Processing DELETE for listing: \(listing.title ?? "Untitled")")
             let initialCount = listings.count
-            withAnimation(.easeOut(duration: 0.3)) {
-                listings.removeAll { $0.id == listing.id }
-            }
+            listings.removeAll { $0.id == listing.id }
             let removedCount = initialCount - listings.count
             print("✅ DELETE removed \(removedCount) listing(s)")
         }
