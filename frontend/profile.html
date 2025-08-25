@@ -1306,6 +1306,30 @@
             }, 10000); // 10 seconds should be enough for the redirect and page load
         }
 
+        // Function to save profile image to backend database
+        async function saveProfileImageToBackend(email, imageData) {
+            try {
+                const response = await fetch('/api/update-profile-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        profileImage: imageData
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Profile image saved to database for user:', email);
+                } else {
+                    console.error('❌ Failed to save profile image to database');
+                }
+            } catch (error) {
+                console.error('❌ Error saving profile image to database:', error);
+            }
+        }
+
         function uploadProfileImage(event) {
             const file = event.target.files[0];
             if (file) {
@@ -1329,7 +1353,10 @@
                         localStorage.setItem('users', JSON.stringify(users));
                     }
                     
-                    console.log('✅ Profile image saved for user:', currentUser.email);
+                    console.log('✅ Profile image saved locally for user:', currentUser.email);
+                    
+                    // Also save to backend database
+                    saveProfileImageToBackend(currentUser.email, imageData);
                 };
                 reader.readAsDataURL(file);
             }
