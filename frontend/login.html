@@ -486,16 +486,41 @@
       googleInitialized = true;
     }
 
+    // Helper function to preserve custom profile images
+    function preserveCustomProfileImage(backendUser) {
+      // Check existing user data
+      const existingUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const users = JSON.parse(localStorage.getItem('users')||'[]');
+      const existingInUsers = users.find(u=>u?.email?.toLowerCase()===backendUser.email?.toLowerCase());
+      
+      // Check if user has a custom profile image
+      const hasCustomPfp = (existingUser.hasCustomProfileImage && existingUser.profileImage?.startsWith('data:image/')) ||
+                           (existingInUsers?.hasCustomProfileImage && existingInUsers?.profileImage?.startsWith('data:image/'));
+      
+      if (hasCustomPfp) {
+        // Preserve the custom profile image
+        const customImage = existingUser.profileImage?.startsWith('data:image/') ? existingUser.profileImage : existingInUsers.profileImage;
+        backendUser.profileImage = customImage;
+        backendUser.hasCustomProfileImage = true;
+        console.log('✅ Preserved custom profile image for:', backendUser.email);
+      }
+      
+      return backendUser;
+    }
+
     // One-Tap ID token => backend verify
     async function handleGoogleIdToken(resp){
       try{
         const r = await fetch('/api/auth/google',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ idToken: resp.credential })});
         const result = await r.json();
         if (r.ok){
-          localStorage.setItem('currentUser', JSON.stringify(result.user));
+          // Preserve custom profile image before saving
+          const userWithCustomPfp = preserveCustomProfileImage(result.user);
+          
+          localStorage.setItem('currentUser', JSON.stringify(userWithCustomPfp));
           const users = JSON.parse(localStorage.getItem('users')||'[]');
-          const i = users.findIndex(u=>u?.email?.toLowerCase()===result.user.email?.toLowerCase());
-          if (i>=0) users[i]=result.user; else users.push(result.user);
+          const i = users.findIndex(u=>u?.email?.toLowerCase()===userWithCustomPfp.email?.toLowerCase());
+          if (i>=0) users[i]=userWithCustomPfp; else users.push(userWithCustomPfp);
           localStorage.setItem('users', JSON.stringify(users));
           window.location.href='verification-modal.html?redirect=index.html';
         }else{
@@ -512,10 +537,13 @@
         const r = await fetch('/api/auth/google/oauth-code',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ code: resp.code })});
         const result = await r.json();
         if (r.ok){
-          localStorage.setItem('currentUser', JSON.stringify(result.user));
+          // Preserve custom profile image before saving
+          const userWithCustomPfp = preserveCustomProfileImage(result.user);
+          
+          localStorage.setItem('currentUser', JSON.stringify(userWithCustomPfp));
           const users = JSON.parse(localStorage.getItem('users')||'[]');
-          const i = users.findIndex(u=>u?.email?.toLowerCase()===result.user.email?.toLowerCase());
-          if (i>=0) users[i]=result.user; else users.push(result.user);
+          const i = users.findIndex(u=>u?.email?.toLowerCase()===userWithCustomPfp.email?.toLowerCase());
+          if (i>=0) users[i]=userWithCustomPfp; else users.push(userWithCustomPfp);
           localStorage.setItem('users', JSON.stringify(users));
           window.location.href='verification-modal.html?redirect=index.html';
         }else{
