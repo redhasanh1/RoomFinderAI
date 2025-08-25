@@ -545,7 +545,7 @@
         <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
             <!-- Mobile Layout -->
             <div class="flex items-center justify-between w-full md:w-auto">
-                <a href="index.html" class="text-xl md:text-2xl font-bold brand-logo font-display" style="text-decoration: none; color: inherit;">RoomFinderAI</a>
+                <a href="index.html" class="text-xl md:text-2xl font-bold gradient-text font-display" style="text-decoration: none;">RoomFinderAI</a>
                 
                 <!-- Mobile Menu Button -->
                 <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
@@ -615,7 +615,7 @@
             <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
             <div class="mobile-menu-content">
                 <div class="mobile-menu-header">
-                    <a href="index.html" class="text-lg font-bold brand-logo font-display" style="text-decoration: none; color: inherit;">RoomFinderAI</a>
+                    <a href="index.html" class="text-lg font-bold gradient-text font-display" style="text-decoration: none;">RoomFinderAI</a>
                     <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
                 </div>
                 
@@ -701,7 +701,6 @@
                     <p id="userEmail" class="text-gray-600 mb-2">john.doe@example.com</p>
                     <p id="userPhone" class="text-gray-600 mb-4">+1 (555) 123-4567</p>
                     <div class="flex gap-4">
-                        <button onclick="editProfile()" class="btn-primary">Edit Profile</button>
                         <button onclick="openVerificationModal()" class="btn-secondary">Verify Account</button>
                     </div>
                 </div>
@@ -719,19 +718,6 @@
                 </div>
             </div>
 
-            <!-- Profile Completion -->
-            <div class="mt-8">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-gray-700">Profile Completion</span>
-                    <span class="text-sm font-bold text-purple-600" id="completionPercent">60%</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill" style="width: 60%"></div>
-                </div>
-                <div class="mt-2 text-sm text-gray-600">
-                    Complete your profile to unlock all features
-                </div>
-            </div>
         </div>
 
         <!-- AI Chat History -->
@@ -1001,14 +987,6 @@
                 `;
             }
 
-            // Calculate profile completion
-            let completion = 25; // Base
-            if (user.email) completion += 25;
-            if (user.phone) completion += 25;
-            if (user.verified) completion += 25;
-            
-            document.getElementById('completionPercent').textContent = completion + '%';
-            document.getElementById('progressFill').style.width = completion + '%';
         }
 
         async function loadUserListings(user) {
@@ -1246,9 +1224,6 @@
         });
 
         // Placeholder functions
-        function editProfile() {
-            alert('Edit profile functionality coming soon!');
-        }
 
         function editListing(id) {
             alert('Edit listing functionality coming soon!');
