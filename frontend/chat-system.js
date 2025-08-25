@@ -275,7 +275,9 @@ class ChatSystem {
         selectedFilesContainer.innerHTML = files.map((file, index) => `
             <div class="flex items-center justify-between bg-gray-100 p-2 rounded">
                 <div class="flex items-center space-x-2">
-                    <span class="text-sm">📎</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600">
+                        <path d="M7.5 18A5.5 5.5 0 0 1 2 12.5A5.5 5.5 0 0 1 7.5 7H18A4 4 0 0 1 22 11A4 4 0 0 1 18 15H9.5A2.5 2.5 0 0 1 7 12.5A2.5 2.5 0 0 1 9.5 10H17V11.5H9.5A1 1 0 0 0 8.5 12.5A1 1 0 0 0 9.5 13.5H18A2.5 2.5 0 0 0 20.5 11A2.5 2.5 0 0 0 18 8.5H7.5A4 4 0 0 0 3.5 12.5A4 4 0 0 0 7.5 16.5H17V18H7.5Z"/>
+                    </svg>
                     <span class="text-sm text-gray-700">${file.name}</span>
                     <span class="text-xs text-gray-500">(${this.formatFileSize(file.size)})</span>
                 </div>
@@ -389,7 +391,9 @@ class ChatSystem {
         messageElement.innerHTML = `
             <div class="file-message bg-blue-50 p-3 rounded">
                 <div class="flex items-center space-x-2">
-                    <span class="text-lg">📎</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600">
+                        <path d="M7.5 18A5.5 5.5 0 0 1 2 12.5A5.5 5.5 0 0 1 7.5 7H18A4 4 0 0 1 22 11A4 4 0 0 1 18 15H9.5A2.5 2.5 0 0 1 7 12.5A2.5 2.5 0 0 1 9.5 10H17V11.5H9.5A1 1 0 0 0 8.5 12.5A1 1 0 0 0 9.5 13.5H18A2.5 2.5 0 0 0 20.5 11A2.5 2.5 0 0 0 18 8.5H7.5A4 4 0 0 0 3.5 12.5A4 4 0 0 0 7.5 16.5H17V18H7.5Z"/>
+                    </svg>
                     <div>
                         <p class="font-medium text-blue-900">${file.name}</p>
                         <p class="text-sm text-blue-600">Uploading... (${this.formatFileSize(file.size)})</p>
@@ -445,11 +449,20 @@ class ChatSystem {
             messageElement.innerHTML = `
                 <div class="file-message bg-blue-50 p-3 rounded">
                     <div class="flex items-center space-x-2">
-                        <span class="text-lg">📎</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600">
+                            <path d="M7.5 18A5.5 5.5 0 0 1 2 12.5A5.5 5.5 0 0 1 7.5 7H18A4 4 0 0 1 22 11A4 4 0 0 1 18 15H9.5A2.5 2.5 0 0 1 7 12.5A2.5 2.5 0 0 1 9.5 10H17V11.5H9.5A1 1 0 0 0 8.5 12.5A1 1 0 0 0 9.5 13.5H18A2.5 2.5 0 0 0 20.5 11A2.5 2.5 0 0 0 18 8.5H7.5A4 4 0 0 0 3.5 12.5A4 4 0 0 0 7.5 16.5H17V18H7.5Z"/>
+                        </svg>
                         <div>
                             <p class="font-medium text-blue-900">${file.name}</p>
                             <p class="text-sm text-blue-600">${this.formatFileSize(file.size)}</p>
-                            <a href="${urlData.publicUrl}" target="_blank" class="text-blue-800 hover:text-blue-900 text-sm font-medium">📥 Download</a>
+                            <a href="${urlData.publicUrl}" target="_blank" class="text-blue-800 hover:text-blue-900 text-sm font-medium inline-flex items-center space-x-1">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7,10 12,15 17,10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                <span>Download</span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -502,11 +515,20 @@ class ChatSystem {
                     messageContent = `
                         <div class="file-message ${isOwner ? 'bg-blue-50' : 'bg-gray-50'} p-3 rounded">
                             <div class="flex items-center space-x-2">
-                                <span class="text-lg">📎</span>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${isOwner ? 'text-blue-600' : 'text-gray-600'}">
+                                    <path d="M7.5 18A5.5 5.5 0 0 1 2 12.5A5.5 5.5 0 0 1 7.5 7H18A4 4 0 0 1 22 11A4 4 0 0 1 18 15H9.5A2.5 2.5 0 0 1 7 12.5A2.5 2.5 0 0 1 9.5 10H17V11.5H9.5A1 1 0 0 0 8.5 12.5A1 1 0 0 0 9.5 13.5H18A2.5 2.5 0 0 0 20.5 11A2.5 2.5 0 0 0 18 8.5H7.5A4 4 0 0 0 3.5 12.5A4 4 0 0 0 7.5 16.5H17V18H7.5Z"/>
+                                </svg>
                                 <div>
                                     <p class="font-medium ${isOwner ? 'text-blue-900' : 'text-gray-900'}">${this.sanitizeInput(message.file_name || 'File')}</p>
                                     <p class="text-sm ${isOwner ? 'text-blue-600' : 'text-gray-600'}">${message.file_size ? this.formatFileSize(message.file_size) : ''}</p>
-                                    <a href="${message.file_url}" target="_blank" class="${isOwner ? 'text-blue-800 hover:text-blue-900' : 'text-gray-800 hover:text-gray-900'} text-sm font-medium">📥 Download</a>
+                                    <a href="${message.file_url}" target="_blank" class="${isOwner ? 'text-blue-800 hover:text-blue-900' : 'text-gray-800 hover:text-gray-900'} text-sm font-medium inline-flex items-center space-x-1">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                            <polyline points="7,10 12,15 17,10"/>
+                                            <line x1="12" y1="15" x2="12" y2="3"/>
+                                        </svg>
+                                        <span>Download</span>
+                                    </a>
                                 </div>
                             </div>
                         </div>
