@@ -698,8 +698,7 @@
                             Unverified
                         </span>
                     </div>
-                    <p id="userEmail" class="text-gray-600 mb-2">john.doe@example.com</p>
-                    <p id="userPhone" class="text-gray-600 mb-4">+1 (555) 123-4567</p>
+                    <p id="userEmail" class="text-gray-600 mb-4">john.doe@example.com</p>
                     <div class="flex gap-4">
                         <button onclick="openVerificationModal()" class="btn-secondary">Verify Account</button>
                     </div>
@@ -973,7 +972,6 @@
             document.getElementById('userName').textContent = 
                 `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User Name';
             document.getElementById('userEmail').textContent = user.email || 'No email';
-            document.getElementById('userPhone').textContent = user.phone || '+1 (555) 123-4567';
 
             // Update verification badge
             if (user.verified) {
