@@ -17,7 +17,7 @@ enum RealtimeConnectionStatus {
 }
 
 final class ListingsRealtime: ObservableObject {
-    private let client = SupabaseClientProvider.shared
+    private let client: SupabaseClient
     private var channel: RealtimeChannelV2?
     private var onChange: ((RealtimeChange<Listing>) -> Void)?
     private var reconnectionTimer: Timer?
@@ -26,6 +26,10 @@ final class ListingsRealtime: ObservableObject {
     
     @Published var connectionStatus: RealtimeConnectionStatus = .disconnected
     @Published var lastUpdateTime: Date?
+    
+    init(supabaseClient: SupabaseClient) {
+        self.client = supabaseClient
+    }
     
     deinit {
         stop()

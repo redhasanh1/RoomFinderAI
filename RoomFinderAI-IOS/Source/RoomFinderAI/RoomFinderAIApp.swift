@@ -2,17 +2,22 @@ import SwiftUI
 
 @main
 struct RoomFinderAIApp: App {
-    @StateObject private var authService = AuthService()
+    private let supabase: SupabaseClient
+    @StateObject private var authService: AuthService
     @StateObject private var authViewModel = SimpleAuthViewModel()
-    @StateObject private var listingsViewModel = SimpleListingsViewModel()
+    @StateObject private var listingsViewModel: SimpleListingsViewModel
     
     init() {
-        // Debug schema probe temporarily removed to fix build
+        let client = SupabaseFactory.makeClient()
+        self.supabase = client
+        _authService = StateObject(wrappedValue: AuthService(supabaseClient: client))
+        _listingsViewModel = StateObject(wrappedValue: SimpleListingsViewModel(supabaseClient: client))
     }
     
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(\.supabase, supabase)
                 .environmentObject(authService)
                 .environmentObject(authViewModel)
                 .environmentObject(listingsViewModel)

@@ -58,16 +58,15 @@ struct UserProfile: Codable {
 // MARK: - Authentication Service
 @MainActor
 class AuthenticationService: ObservableObject {
-    static let shared = AuthenticationService()
-    
     @Published var currentUser: Auth.User?
     @Published var userProfile: UserProfile?
     @Published var isAuthenticated = false
     @Published var isLoading = false
     
-    private let client = SupabaseClientProvider.shared
+    private let client: SupabaseClient
     
-    private init() {
+    init(supabaseClient: SupabaseClient) {
+        self.client = supabaseClient
         Task {
             await checkAuthStatus()
         }

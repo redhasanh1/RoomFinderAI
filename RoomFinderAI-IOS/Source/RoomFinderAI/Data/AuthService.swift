@@ -9,12 +9,13 @@ final class AuthService: ObservableObject {
     @Published var isAuthenticated = false
     @Published var currentUser: AppUser?
     
-    private let client = SupabaseClientProvider.shared
+    private let client: SupabaseClient
     
     private let keychainService = "com.roomfinderai.auth"
     private let sessionKey = "supabase_session"
     
-    init() {
+    init(supabaseClient: SupabaseClient) {
+        self.client = supabaseClient
         checkAuthStatus()
     }
     

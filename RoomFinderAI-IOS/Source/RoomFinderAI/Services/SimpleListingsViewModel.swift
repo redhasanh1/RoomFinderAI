@@ -44,13 +44,14 @@ class SimpleListingsViewModel: ObservableObject {
     private var currentOffset = 0
     private let pageSize = 20
     
-    let supabaseService = RealSupabaseService()
+    let supabaseService: RealSupabaseService
     private var favoriteListingIds: Set<String> = []
     
     // Combine subscriptions for real-time updates
     private var cancellables = Set<AnyCancellable>()
     
-    init() {
+    init(supabaseClient: SupabaseClient) {
+        self.supabaseService = RealSupabaseService(supabaseClient: supabaseClient)
         print("📱 SimpleListingsViewModel initialized with real-time support")
         setupRealtimeSubscriptions()
         loadInitialData()
