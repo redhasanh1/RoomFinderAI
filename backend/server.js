@@ -2511,14 +2511,21 @@ app.post('/api/reset-password', async (req, res) => {
 // API: Update profile image
 app.post('/api/update-profile-image', async (req, res) => {
     try {
+        console.log('🔄 Profile image update request received');
         const { email, profileImage } = req.body;
         
+        console.log('📧 Email:', email);
+        console.log('📸 Profile image length:', profileImage ? profileImage.length : 'undefined');
+        console.log('🗄️ Supabase available:', !!supabase);
+        
         if (!email || !profileImage) {
+            console.log('❌ Missing email or profileImage');
             return res.status(400).json({ error: 'Email and profile image are required' });
         }
         
         // Validate that profile image is a data URL
         if (!profileImage.startsWith('data:image/')) {
+            console.log('❌ Invalid profile image format');
             return res.status(400).json({ error: 'Invalid profile image format' });
         }
         
@@ -2532,6 +2539,7 @@ app.post('/api/update-profile-image', async (req, res) => {
         // Update in Supabase database if available
         if (supabase) {
             try {
+                console.log('🗄️ Attempting to save to Supabase...');
                 const { error } = await supabase
                     .from('profiles')
                     .upsert({
@@ -2544,13 +2552,17 @@ app.post('/api/update-profile-image', async (req, res) => {
                     });
                 
                 if (error) {
-                    console.error('Error updating profile image in database:', error);
+                    console.error('❌ Error updating profile image in database:', error);
                     // Don't fail the request - in-memory update succeeded
+                } else {
+                    console.log('✅ Profile image saved to Supabase successfully');
                 }
             } catch (supabaseError) {
-                console.error('Supabase error updating profile image:', supabaseError);
+                console.error('❌ Supabase error updating profile image:', supabaseError);
                 // Don't fail the request - in-memory update succeeded
             }
+        } else {
+            console.log('⚠️ Supabase not available, only saved to memory');
         }
         
         console.log('✅ Profile image updated for user:', email);

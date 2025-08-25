@@ -1339,6 +1339,9 @@
         // Function to save profile image to backend database
         async function saveProfileImageToBackend(email, imageData) {
             try {
+                console.log('🔄 Attempting to save profile image to backend for:', email);
+                console.log('📸 Image data length:', imageData.length);
+                
                 const response = await fetch('/api/update-profile-image', {
                     method: 'POST',
                     headers: {
@@ -1350,10 +1353,14 @@
                     })
                 });
                 
+                console.log('📡 Backend response status:', response.status);
+                const responseText = await response.text();
+                console.log('📡 Backend response:', responseText);
+                
                 if (response.ok) {
                     console.log('✅ Profile image saved to database for user:', email);
                 } else {
-                    console.error('❌ Failed to save profile image to database');
+                    console.error('❌ Failed to save profile image to database. Status:', response.status, 'Response:', responseText);
                 }
             } catch (error) {
                 console.error('❌ Error saving profile image to database:', error);
