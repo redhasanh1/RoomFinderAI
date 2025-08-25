@@ -2574,6 +2574,57 @@ app.post('/api/update-profile-image', async (req, res) => {
     }
 });
 
+// API: Debug - Check what's actually stored for a user
+app.get('/api/debug-profile/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        
+        const debugInfo = {
+            email: email,
+            memoryUser: null,
+            supabaseProfile: null,
+            localStorage: 'Check browser console'
+        };
+        
+        // Check in-memory user
+        const memoryUser = users.find(u => u.email === email);
+        if (memoryUser) {
+            debugInfo.memoryUser = {
+                profileImage: memoryUser.profileImage ? `${memoryUser.profileImage.substring(0, 50)}...` : null,
+                hasCustomProfileImage: memoryUser.hasCustomProfileImage
+            };
+        }
+        
+        // Check Supabase
+        if (supabase) {
+            try {
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('profile_image, has_custom_profile_image, email, first_name, last_name, created_at, updated_at')
+                    .eq('email', email)
+                    .single();
+                
+                if (!error && profile) {
+                    debugInfo.supabaseProfile = {
+                        ...profile,
+                        profile_image: profile.profile_image ? `${profile.profile_image.substring(0, 50)}...` : null
+                    };
+                } else {
+                    debugInfo.supabaseProfile = { error: error?.message || 'No profile found' };
+                }
+            } catch (supabaseError) {
+                debugInfo.supabaseProfile = { error: supabaseError.message };
+            }
+        } else {
+            debugInfo.supabaseProfile = { error: 'Supabase not available' };
+        }
+        
+        res.json(debugInfo);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // API: Get user profile data including custom profile image
 app.get('/api/user-profile/:email', async (req, res) => {
     try {
