@@ -1034,7 +1034,7 @@ async function hasCustomProfileImageInDatabase(userEmail) {
     try {
         const { data: profile, error } = await supabase
             .from('profiles')
-            .select('profile_image, has_custom_profile_image')
+            .select('profile_image')
             .eq('email', userEmail)
             .single();
         
@@ -1042,12 +1042,7 @@ async function hasCustomProfileImageInDatabase(userEmail) {
             return false;
         }
         
-        // Check if user has explicitly set a custom profile image
-        if (profile.has_custom_profile_image === true) {
-            return true;
-        }
-        
-        // Also check if the profile image is a base64 data URL (custom upload)
+        // Check if the profile image is a base64 data URL (custom upload)
         if (profile.profile_image && profile.profile_image.startsWith('data:image/')) {
             return true;
         }
@@ -1068,7 +1063,7 @@ async function getCustomProfileImageFromDatabase(userEmail) {
     try {
         const { data: profile, error } = await supabase
             .from('profiles')
-            .select('profile_image, has_custom_profile_image')
+            .select('profile_image')
             .eq('email', userEmail)
             .single();
         
@@ -1076,8 +1071,8 @@ async function getCustomProfileImageFromDatabase(userEmail) {
             return null;
         }
         
-        // Return custom profile image if it exists
-        if ((profile.has_custom_profile_image === true || profile.profile_image?.startsWith('data:image/')) && profile.profile_image) {
+        // Return custom profile image if it exists (base64 data URL = custom upload)
+        if (profile.profile_image && profile.profile_image.startsWith('data:image/')) {
             return profile.profile_image;
         }
         
@@ -1799,7 +1794,6 @@ app.post('/api/auth/google-signin', async (req, res) => {
                         first_name: existingUser.firstName,
                         last_name: existingUser.lastName,
                         profile_image: existingUser.profileImage,
-                        has_custom_profile_image: existingUser.hasCustomProfileImage === true,
                         provider: 'google',
                         provider_id: userData.providerId,
                         email_verified: true,
@@ -2014,7 +2008,6 @@ app.post('/api/auth/google', async (req, res) => {
                         first_name: existingUser.firstName,
                         last_name: existingUser.lastName,
                         profile_image: existingUser.profileImage,
-                        has_custom_profile_image: existingUser.hasCustomProfileImage === true,
                         provider: 'google',
                         provider_id: userData.providerId,
                         email_verified: true,
@@ -2161,7 +2154,6 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
                         first_name: existingUser.firstName,
                         last_name: existingUser.lastName,
                         profile_image: existingUser.profileImage,
-                        has_custom_profile_image: existingUser.hasCustomProfileImage === true,
                         provider: 'google',
                         provider_id: userData.providerId,
                         email_verified: true,
@@ -2545,7 +2537,6 @@ app.post('/api/update-profile-image', async (req, res) => {
                     .upsert({
                         email: email,
                         profile_image: profileImage,
-                        has_custom_profile_image: true,
                         updated_at: new Date().toISOString()
                     }, {
                         onConflict: 'email'
@@ -2600,7 +2591,7 @@ app.get('/api/debug-profile/:email', async (req, res) => {
             try {
                 const { data: profile, error } = await supabase
                     .from('profiles')
-                    .select('profile_image, has_custom_profile_image, email, first_name, last_name, created_at, updated_at')
+                    .select('profile_image, email, first_name, last_name, created_at, updated_at')
                     .eq('email', email)
                     .single();
                 
@@ -2643,14 +2634,14 @@ app.get('/api/user-profile/:email', async (req, res) => {
             try {
                 const { data: profile, error } = await supabase
                     .from('profiles')
-                    .select('profile_image, has_custom_profile_image, first_name, last_name')
+                    .select('profile_image, first_name, last_name')
                     .eq('email', email)
                     .single();
                 
                 if (!error && profile) {
                     profileData = {
                         profileImage: profile.profile_image,
-                        hasCustomProfileImage: profile.has_custom_profile_image,
+                        hasCustomProfileImage: profile.profile_image?.startsWith('data:image/') || false,
                         firstName: profile.first_name,
                         lastName: profile.last_name
                     };
