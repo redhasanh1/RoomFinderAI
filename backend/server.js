@@ -1083,6 +1083,39 @@ async function getCustomProfileImageFromDatabase(userEmail) {
     }
 }
 
+// Helper function to get user names from database
+async function getUserNamesFromDatabase(userEmail) {
+    if (!supabase) {
+        return null;
+    }
+    
+    try {
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('email', userEmail)
+            .single();
+        
+        if (error || !profile) {
+            return null;
+        }
+        
+        // Return names if they exist and are not default values
+        if (profile.first_name && profile.last_name && 
+            profile.first_name !== 'User' && profile.last_name !== 'Name') {
+            return {
+                firstName: profile.first_name,
+                lastName: profile.last_name
+            };
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Error getting user names from database:', error);
+        return null;
+    }
+}
+
 // Helper: Generate 6-digit verification code
 function generateVerificationCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -1669,17 +1702,23 @@ app.post('/api/login', async (req, res) => {
                 } else if (data.user) {
                     // Get user profile from database
                     const { data: profile, error: profileError } = await supabase
-                        .from('users')
-                        .select('firstName, lastName, email, profileImage')
+                        .from('profiles')
+                        .select('first_name, last_name, email, profile_image')
                         .eq('email', email)
                         .single();
 
                     const userData = {
-                        firstName: profile?.firstName || 'User',
-                        lastName: profile?.lastName || 'Name', 
+                        firstName: profile?.first_name || 'User',
+                        lastName: profile?.last_name || 'Name', 
                         email: data.user.email,
-                        profileImage: profile?.profileImage
+                        profileImage: profile?.profile_image
                     };
+                    
+                    if (profileError) {
+                        console.log('Warning: Could not fetch profile data:', profileError.message);
+                    } else {
+                        console.log('✅ Login: Retrieved names from database:', profile.first_name, profile.last_name);
+                    }
 
                     return res.json({
                         message: 'Login successful',
@@ -1773,6 +1812,21 @@ app.post('/api/auth/google-signin', async (req, res) => {
                     existingUser.hasCustomProfileImage = true;
                 }
             }
+            
+            // NEVER overwrite registered names with Google names
+            // Check if user has registered names in database
+            const registeredNames = await getUserNamesFromDatabase(userData.email);
+            if (registeredNames) {
+                existingUser.firstName = registeredNames.firstName;
+                existingUser.lastName = registeredNames.lastName;
+                console.log('✅ Preserved registered names for:', userData.email, 'Names:', registeredNames.firstName, registeredNames.lastName);
+            } else {
+                // Only use Google names if no registered names exist
+                existingUser.firstName = userData.firstName;
+                existingUser.lastName = userData.lastName;
+                console.log('ℹ️ Using Google names for:', userData.email, 'Names:', userData.firstName, userData.lastName);
+            }
+            
             existingUser.emailVerified = true;
             if (!existingUser.provider) {
                 existingUser.provider = 'google';
@@ -1987,6 +2041,21 @@ app.post('/api/auth/google', async (req, res) => {
                     existingUser.hasCustomProfileImage = true;
                 }
             }
+            
+            // NEVER overwrite registered names with Google names
+            // Check if user has registered names in database
+            const registeredNames = await getUserNamesFromDatabase(userData.email);
+            if (registeredNames) {
+                existingUser.firstName = registeredNames.firstName;
+                existingUser.lastName = registeredNames.lastName;
+                console.log('✅ Preserved registered names for:', userData.email, 'Names:', registeredNames.firstName, registeredNames.lastName);
+            } else {
+                // Only use Google names if no registered names exist
+                existingUser.firstName = userData.firstName;
+                existingUser.lastName = userData.lastName;
+                console.log('ℹ️ Using Google names for:', userData.email, 'Names:', userData.firstName, userData.lastName);
+            }
+            
             existingUser.emailVerified = true;
             if (!existingUser.provider) {
                 existingUser.provider = 'google';
@@ -2133,6 +2202,21 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
                     existingUser.hasCustomProfileImage = true;
                 }
             }
+            
+            // NEVER overwrite registered names with Google names
+            // Check if user has registered names in database
+            const registeredNames = await getUserNamesFromDatabase(userData.email);
+            if (registeredNames) {
+                existingUser.firstName = registeredNames.firstName;
+                existingUser.lastName = registeredNames.lastName;
+                console.log('✅ Preserved registered names for:', userData.email, 'Names:', registeredNames.firstName, registeredNames.lastName);
+            } else {
+                // Only use Google names if no registered names exist
+                existingUser.firstName = userData.firstName;
+                existingUser.lastName = userData.lastName;
+                console.log('ℹ️ Using Google names for:', userData.email, 'Names:', userData.firstName, userData.lastName);
+            }
+            
             existingUser.emailVerified = true;
             if (!existingUser.provider) {
                 existingUser.provider = 'google';
@@ -2562,6 +2646,71 @@ app.post('/api/update-profile-image', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/update-profile-image:', error.message);
         res.status(500).json({ error: 'Failed to update profile image' });
+    }
+});
+
+// API: Update user names
+app.post('/api/update-profile-names', async (req, res) => {
+    try {
+        const { email, firstName, lastName } = req.body;
+        
+        if (!email || !firstName || !lastName) {
+            return res.status(400).json({ error: 'Email, first name, and last name are required' });
+        }
+        
+        // Validate names (no special characters, reasonable length)
+        const nameRegex = /^[a-zA-Z\s\-']{1,50}$/;
+        if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
+            return res.status(400).json({ error: 'Names can only contain letters, spaces, hyphens, and apostrophes' });
+        }
+        
+        console.log('🔄 Name update request received for:', email, 'Names:', firstName, lastName);
+        
+        // Update in-memory user
+        const existingUser = users.find(u => u.email === email);
+        if (existingUser) {
+            existingUser.firstName = firstName;
+            existingUser.lastName = lastName;
+            console.log('✅ Updated names in memory for:', email);
+        }
+        
+        // Update in Supabase database if available
+        if (supabase) {
+            try {
+                console.log('🗄️ Attempting to update names in Supabase...');
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({
+                        first_name: firstName,
+                        last_name: lastName,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('email', email);
+                
+                if (error) {
+                    console.error('❌ Error updating names in database:', error);
+                    return res.status(500).json({ error: 'Failed to update names in database' });
+                } else {
+                    console.log('✅ Names updated in Supabase successfully');
+                }
+            } catch (supabaseError) {
+                console.error('❌ Supabase error updating names:', supabaseError);
+                return res.status(500).json({ error: 'Database error while updating names' });
+            }
+        } else {
+            console.log('⚠️ Supabase not available, only updated in memory');
+        }
+        
+        console.log('✅ Names updated successfully for user:', email);
+        res.json({ 
+            message: 'Names updated successfully',
+            firstName: firstName,
+            lastName: lastName
+        });
+        
+    } catch (error) {
+        console.error('Error in /api/update-profile-names:', error.message);
+        res.status(500).json({ error: 'Failed to update names' });
     }
 });
 
