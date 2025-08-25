@@ -1699,7 +1699,15 @@ app.post('/api/auth/google-signin', async (req, res) => {
         
         if (existingUser) {
             // Update existing user with Google data
-            existingUser.profileImage = userData.profileImage;
+            // Only update profile image if user doesn't have a custom one
+            const hasCustomProfileImage = existingUser.profileImage && 
+                !existingUser.profileImage.includes('via.placeholder.com') &&
+                !existingUser.profileImage.includes('googleusercontent.com') &&
+                existingUser.profileImage.startsWith('data:image/');
+            
+            if (!hasCustomProfileImage) {
+                existingUser.profileImage = userData.profileImage;
+            }
             existingUser.emailVerified = true;
             if (!existingUser.provider) {
                 existingUser.provider = 'google';
@@ -1898,7 +1906,15 @@ app.post('/api/auth/google', async (req, res) => {
         
         if (existingUser) {
             // Update existing user with Google data
-            existingUser.profileImage = userData.profileImage;
+            // Only update profile image if user doesn't have a custom one
+            const hasCustomProfileImage = existingUser.profileImage && 
+                !existingUser.profileImage.includes('via.placeholder.com') &&
+                !existingUser.profileImage.includes('googleusercontent.com') &&
+                existingUser.profileImage.startsWith('data:image/');
+            
+            if (!hasCustomProfileImage) {
+                existingUser.profileImage = userData.profileImage;
+            }
             existingUser.emailVerified = true;
             if (!existingUser.provider) {
                 existingUser.provider = 'google';
@@ -2029,7 +2045,15 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         
         if (existingUser) {
             // Update existing user with Google data
-            existingUser.profileImage = userData.profileImage;
+            // Only update profile image if user doesn't have a custom one
+            const hasCustomProfileImage = existingUser.profileImage && 
+                !existingUser.profileImage.includes('via.placeholder.com') &&
+                !existingUser.profileImage.includes('googleusercontent.com') &&
+                existingUser.profileImage.startsWith('data:image/');
+            
+            if (!hasCustomProfileImage) {
+                existingUser.profileImage = userData.profileImage;
+            }
             existingUser.emailVerified = true;
             if (!existingUser.provider) {
                 existingUser.provider = 'google';
