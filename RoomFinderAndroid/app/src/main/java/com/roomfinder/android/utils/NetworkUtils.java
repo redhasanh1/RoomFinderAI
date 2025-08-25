@@ -51,7 +51,8 @@ public class NetworkUtils {
             @Override
             public void onFailure(Call call, IOException e) {
                 Log.e(TAG, "GET request failed: " + url, e);
-                callback.onError("Network error: " + e.getMessage());
+                String errorMessage = getDetailedErrorMessage(e);
+                callback.onError(errorMessage);
             }
             
             @Override
@@ -97,7 +98,8 @@ public class NetworkUtils {
             @Override
             public void onFailure(Call call, IOException e) {
                 Log.e(TAG, "POST request failed: " + url, e);
-                callback.onError("Network error: " + e.getMessage());
+                String errorMessage = getDetailedErrorMessage(e);
+                callback.onError(errorMessage);
             }
             
             @Override
@@ -203,5 +205,26 @@ public class NetworkUtils {
                 .readTimeout(timeoutSeconds, TimeUnit.SECONDS)
                 .writeTimeout(timeoutSeconds, TimeUnit.SECONDS)
                 .build();
+    }
+    
+    // Get detailed error message based on exception type
+    private static String getDetailedErrorMessage(IOException e) {
+        if (e instanceof java.net.UnknownHostException) {
+            return "Cannot connect to server. Please check your internet connection.";
+        } else if (e instanceof java.net.SocketTimeoutException) {
+            return "Connection timed out. Please try again.";
+        } else if (e instanceof java.net.ConnectException) {
+            return "Failed to connect to server. Please check your network settings.";
+        } else if (e instanceof javax.net.ssl.SSLException) {
+            return "Secure connection failed. Please check your network security settings.";
+        } else if (e instanceof java.net.ProtocolException) {
+            return "Network protocol error. Please try again.";
+        } else if (e.getMessage() != null && e.getMessage().contains("Canceled")) {
+            return "Request was cancelled.";
+        } else if (e.getMessage() != null) {
+            return "Network error: " + e.getMessage();
+        } else {
+            return "Network error occurred. Please check your connection and try again.";
+        }
     }
 }

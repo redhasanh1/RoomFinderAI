@@ -26,9 +26,12 @@ import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.databinding.ActivityListingDetailBinding;
 import com.roomfinder.android.models.Listing;
 import com.roomfinder.android.network.SupabaseService;
+import com.roomfinder.android.database.SupabaseClient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ListingDetailActivity extends AppCompatActivity {
     
@@ -41,6 +44,7 @@ public class ListingDetailActivity extends AppCompatActivity {
     private ImageCarouselAdapter imageAdapter;
     private boolean isDescriptionExpanded = false;
     private boolean isFavorite = false;
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
     
     // Static method to start this activity
     public static void start(AppCompatActivity context, Listing listing) {
@@ -97,13 +101,46 @@ public class ListingDetailActivity extends AppCompatActivity {
         if (intent.hasExtra(EXTRA_LISTING)) {
             listing = (Listing) intent.getSerializableExtra(EXTRA_LISTING);
         }
-        // Fallback: load by ID (you could implement this to fetch from API)
+        // Fallback: load by ID from database
         else if (intent.hasExtra(EXTRA_LISTING_ID)) {
             String listingId = intent.getStringExtra(EXTRA_LISTING_ID);
-            // TODO: Implement loading listing by ID from SupabaseService
-            Toast.makeText(this, "Loading listing by ID not yet implemented", Toast.LENGTH_SHORT).show();
-            finish();
+            loadListingById(listingId);
+            return; // Exit early, will continue in callback
         }
+    }
+    
+    private void loadListingById(String listingId) {
+        // Show loading state
+        Toast.makeText(this, "Loading listing...", Toast.LENGTH_SHORT).show();
+        
+        // Load listing from database in background
+        executorService.execute(() -> {
+            try {
+                SupabaseClient client = SupabaseClient.getInstance();
+                Listing loadedListing = client.getListingById(listingId);
+                
+                // Switch back to main thread to update UI
+                runOnUiThread(() -> {
+                    if (loadedListing != null) {
+                        listing = loadedListing;
+                        // Setup UI with loaded listing
+                        setupUI();
+                        setupImageCarousel();
+                        setupClickListeners();
+                        populateData();
+                        animateEnter();
+                    } else {
+                        Toast.makeText(this, "Listing not found", Toast.LENGTH_LONG).show();
+                        finish();
+                    }
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Error loading listing: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    finish();
+                });
+            }
+        });
     }
     
     private void setupUI() {
@@ -486,5 +523,14 @@ public class ListingDetailActivity extends AppCompatActivity {
         // Simplified exit - removed complex animation
         super.onBackPressed();
         overridePendingTransition(0, 0); // No transition
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Clean up executor service
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+        }
     }
 }
