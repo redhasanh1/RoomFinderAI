@@ -1025,6 +1025,69 @@ async function ensureUserFavoritesTable() {
     }
 }
 
+// Helper function to check if user has custom profile image in Supabase
+async function hasCustomProfileImageInDatabase(userEmail) {
+    if (!supabase) {
+        return false;
+    }
+    
+    try {
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('profile_image, has_custom_profile_image')
+            .eq('email', userEmail)
+            .single();
+        
+        if (error || !profile) {
+            return false;
+        }
+        
+        // Check if user has explicitly set a custom profile image
+        if (profile.has_custom_profile_image === true) {
+            return true;
+        }
+        
+        // Also check if the profile image is a base64 data URL (custom upload)
+        if (profile.profile_image && profile.profile_image.startsWith('data:image/')) {
+            return true;
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('Error checking custom profile image in database:', error);
+        return false;
+    }
+}
+
+// Helper function to get custom profile image from database
+async function getCustomProfileImageFromDatabase(userEmail) {
+    if (!supabase) {
+        return null;
+    }
+    
+    try {
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('profile_image, has_custom_profile_image')
+            .eq('email', userEmail)
+            .single();
+        
+        if (error || !profile) {
+            return null;
+        }
+        
+        // Return custom profile image if it exists
+        if ((profile.has_custom_profile_image === true || profile.profile_image?.startsWith('data:image/')) && profile.profile_image) {
+            return profile.profile_image;
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Error getting custom profile image from database:', error);
+        return null;
+    }
+}
+
 // Helper: Generate 6-digit verification code
 function generateVerificationCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -1700,12 +1763,20 @@ app.post('/api/auth/google-signin', async (req, res) => {
         if (existingUser) {
             // Update existing user with Google data
             // NEVER overwrite profile image if user has uploaded a custom one
-            // Check for custom uploaded image (base64 data URLs) or explicit custom flag
-            const hasCustomProfileImage = existingUser.hasCustomProfileImage === true || 
+            // Check both in-memory and database for custom profile images
+            const hasCustomInMemory = existingUser.hasCustomProfileImage === true || 
                 (existingUser.profileImage && existingUser.profileImage.startsWith('data:image/'));
+            const hasCustomInDatabase = await hasCustomProfileImageInDatabase(userData.email);
             
-            if (!hasCustomProfileImage) {
+            if (!hasCustomInMemory && !hasCustomInDatabase) {
                 existingUser.profileImage = userData.profileImage;
+            } else if (hasCustomInDatabase) {
+                // If database has custom image, use it
+                const customImage = await getCustomProfileImageFromDatabase(userData.email);
+                if (customImage) {
+                    existingUser.profileImage = customImage;
+                    existingUser.hasCustomProfileImage = true;
+                }
             }
             existingUser.emailVerified = true;
             if (!existingUser.provider) {
@@ -1728,6 +1799,7 @@ app.post('/api/auth/google-signin', async (req, res) => {
                         first_name: existingUser.firstName,
                         last_name: existingUser.lastName,
                         profile_image: existingUser.profileImage,
+                        has_custom_profile_image: existingUser.hasCustomProfileImage === true,
                         provider: 'google',
                         provider_id: userData.providerId,
                         email_verified: true,
@@ -1906,12 +1978,20 @@ app.post('/api/auth/google', async (req, res) => {
         if (existingUser) {
             // Update existing user with Google data
             // NEVER overwrite profile image if user has uploaded a custom one
-            // Check for custom uploaded image (base64 data URLs) or explicit custom flag
-            const hasCustomProfileImage = existingUser.hasCustomProfileImage === true || 
+            // Check both in-memory and database for custom profile images
+            const hasCustomInMemory = existingUser.hasCustomProfileImage === true || 
                 (existingUser.profileImage && existingUser.profileImage.startsWith('data:image/'));
+            const hasCustomInDatabase = await hasCustomProfileImageInDatabase(userData.email);
             
-            if (!hasCustomProfileImage) {
+            if (!hasCustomInMemory && !hasCustomInDatabase) {
                 existingUser.profileImage = userData.profileImage;
+            } else if (hasCustomInDatabase) {
+                // If database has custom image, use it
+                const customImage = await getCustomProfileImageFromDatabase(userData.email);
+                if (customImage) {
+                    existingUser.profileImage = customImage;
+                    existingUser.hasCustomProfileImage = true;
+                }
             }
             existingUser.emailVerified = true;
             if (!existingUser.provider) {
@@ -1934,6 +2014,7 @@ app.post('/api/auth/google', async (req, res) => {
                         first_name: existingUser.firstName,
                         last_name: existingUser.lastName,
                         profile_image: existingUser.profileImage,
+                        has_custom_profile_image: existingUser.hasCustomProfileImage === true,
                         provider: 'google',
                         provider_id: userData.providerId,
                         email_verified: true,
@@ -2044,12 +2125,20 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         if (existingUser) {
             // Update existing user with Google data
             // NEVER overwrite profile image if user has uploaded a custom one
-            // Check for custom uploaded image (base64 data URLs) or explicit custom flag
-            const hasCustomProfileImage = existingUser.hasCustomProfileImage === true || 
+            // Check both in-memory and database for custom profile images
+            const hasCustomInMemory = existingUser.hasCustomProfileImage === true || 
                 (existingUser.profileImage && existingUser.profileImage.startsWith('data:image/'));
+            const hasCustomInDatabase = await hasCustomProfileImageInDatabase(userData.email);
             
-            if (!hasCustomProfileImage) {
+            if (!hasCustomInMemory && !hasCustomInDatabase) {
                 existingUser.profileImage = userData.profileImage;
+            } else if (hasCustomInDatabase) {
+                // If database has custom image, use it
+                const customImage = await getCustomProfileImageFromDatabase(userData.email);
+                if (customImage) {
+                    existingUser.profileImage = customImage;
+                    existingUser.hasCustomProfileImage = true;
+                }
             }
             existingUser.emailVerified = true;
             if (!existingUser.provider) {
@@ -2072,6 +2161,7 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
                         first_name: existingUser.firstName,
                         last_name: existingUser.lastName,
                         profile_image: existingUser.profileImage,
+                        has_custom_profile_image: existingUser.hasCustomProfileImage === true,
                         provider: 'google',
                         provider_id: userData.providerId,
                         email_verified: true,
@@ -2415,6 +2505,60 @@ app.post('/api/reset-password', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/reset-password:', error.message);
         res.status(500).json({ error: 'Failed to reset password' });
+    }
+});
+
+// API: Update profile image
+app.post('/api/update-profile-image', async (req, res) => {
+    try {
+        const { email, profileImage } = req.body;
+        
+        if (!email || !profileImage) {
+            return res.status(400).json({ error: 'Email and profile image are required' });
+        }
+        
+        // Validate that profile image is a data URL
+        if (!profileImage.startsWith('data:image/')) {
+            return res.status(400).json({ error: 'Invalid profile image format' });
+        }
+        
+        // Update in-memory user
+        const existingUser = users.find(u => u.email === email);
+        if (existingUser) {
+            existingUser.profileImage = profileImage;
+            existingUser.hasCustomProfileImage = true;
+        }
+        
+        // Update in Supabase database if available
+        if (supabase) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        email: email,
+                        profile_image: profileImage,
+                        has_custom_profile_image: true,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'email'
+                    });
+                
+                if (error) {
+                    console.error('Error updating profile image in database:', error);
+                    // Don't fail the request - in-memory update succeeded
+                }
+            } catch (supabaseError) {
+                console.error('Supabase error updating profile image:', supabaseError);
+                // Don't fail the request - in-memory update succeeded
+            }
+        }
+        
+        console.log('✅ Profile image updated for user:', email);
+        res.json({ message: 'Profile image updated successfully' });
+        
+    } catch (error) {
+        console.error('Error in /api/update-profile-image:', error.message);
+        res.status(500).json({ error: 'Failed to update profile image' });
     }
 });
 
