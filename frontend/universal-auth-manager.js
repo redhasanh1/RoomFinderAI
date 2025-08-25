@@ -117,16 +117,23 @@ async function updateAuthSection() {
             const response = await fetch(`/api/user-profile/${encodeURIComponent(currentUser.email)}`);
             if (response.ok) {
                 const profileData = await response.json();
+                
+                // Update profile image if exists
                 if (profileData.profileImage) {
                     profileImage = profileData.profileImage;
-                    
-                    // Update localStorage with latest profile data
                     currentUser.profileImage = profileData.profileImage;
                     currentUser.hasCustomProfileImage = profileData.hasCustomProfileImage;
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                    
                     console.log('✅ Updated profile image from backend in auth section');
                 }
+                
+                // Update names from database (prioritize database over localStorage)
+                if (profileData.firstName || profileData.lastName) {
+                    currentUser.firstName = profileData.firstName || '';
+                    currentUser.lastName = profileData.lastName || '';
+                    console.log('✅ Updated names from backend in auth section:', profileData.firstName, profileData.lastName);
+                }
+                
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
             }
         } catch (error) {
             console.error('Error fetching profile data in auth section:', error);
