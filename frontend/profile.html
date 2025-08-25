@@ -972,6 +972,12 @@
             document.getElementById('userName').textContent = 
                 `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User Name';
             document.getElementById('userEmail').textContent = user.email || 'No email';
+            
+            // Load saved profile image if exists
+            if (user.profileImage) {
+                document.getElementById('profileImage').src = user.profileImage;
+                console.log('✅ Loaded saved profile image for:', user.email);
+            }
 
             // Update verification badge
             if (user.verified) {
@@ -1305,7 +1311,23 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    document.getElementById('profileImage').src = e.target.result;
+                    const imageData = e.target.result;
+                    document.getElementById('profileImage').src = imageData;
+                    
+                    // Save profile image to localStorage for the current user
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                    currentUser.profileImage = imageData;
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    
+                    // Also update in the users array if it exists
+                    const users = JSON.parse(localStorage.getItem('users')) || [];
+                    const userIndex = users.findIndex(u => u.email === currentUser.email);
+                    if (userIndex !== -1) {
+                        users[userIndex].profileImage = imageData;
+                        localStorage.setItem('users', JSON.stringify(users));
+                    }
+                    
+                    console.log('✅ Profile image saved for user:', currentUser.email);
                 };
                 reader.readAsDataURL(file);
             }
