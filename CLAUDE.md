@@ -105,3 +105,4 @@ Use `gemini -p` when:
 - please push every time you edit code and use the name EricT2003 and only a very short summary
 - im only editing the website, not the android app. just the website
 - after every code you edited please push with the name EricT2003 and a short summary. dont use text like claude generated or anything. just a short summary (like 5 words)
+- always push with EricT2003 and a short summary
