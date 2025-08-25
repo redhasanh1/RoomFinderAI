@@ -1699,11 +1699,10 @@ app.post('/api/auth/google-signin', async (req, res) => {
         
         if (existingUser) {
             // Update existing user with Google data
-            // Only update profile image if user doesn't have a custom one
-            const hasCustomProfileImage = existingUser.profileImage && 
-                !existingUser.profileImage.includes('via.placeholder.com') &&
-                !existingUser.profileImage.includes('googleusercontent.com') &&
-                existingUser.profileImage.startsWith('data:image/');
+            // NEVER overwrite profile image if user has uploaded a custom one
+            // Check for custom uploaded image (base64 data URLs) or explicit custom flag
+            const hasCustomProfileImage = existingUser.hasCustomProfileImage === true || 
+                (existingUser.profileImage && existingUser.profileImage.startsWith('data:image/'));
             
             if (!hasCustomProfileImage) {
                 existingUser.profileImage = userData.profileImage;
@@ -1906,11 +1905,10 @@ app.post('/api/auth/google', async (req, res) => {
         
         if (existingUser) {
             // Update existing user with Google data
-            // Only update profile image if user doesn't have a custom one
-            const hasCustomProfileImage = existingUser.profileImage && 
-                !existingUser.profileImage.includes('via.placeholder.com') &&
-                !existingUser.profileImage.includes('googleusercontent.com') &&
-                existingUser.profileImage.startsWith('data:image/');
+            // NEVER overwrite profile image if user has uploaded a custom one
+            // Check for custom uploaded image (base64 data URLs) or explicit custom flag
+            const hasCustomProfileImage = existingUser.hasCustomProfileImage === true || 
+                (existingUser.profileImage && existingUser.profileImage.startsWith('data:image/'));
             
             if (!hasCustomProfileImage) {
                 existingUser.profileImage = userData.profileImage;
@@ -2045,11 +2043,10 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         
         if (existingUser) {
             // Update existing user with Google data
-            // Only update profile image if user doesn't have a custom one
-            const hasCustomProfileImage = existingUser.profileImage && 
-                !existingUser.profileImage.includes('via.placeholder.com') &&
-                !existingUser.profileImage.includes('googleusercontent.com') &&
-                existingUser.profileImage.startsWith('data:image/');
+            // NEVER overwrite profile image if user has uploaded a custom one
+            // Check for custom uploaded image (base64 data URLs) or explicit custom flag
+            const hasCustomProfileImage = existingUser.hasCustomProfileImage === true || 
+                (existingUser.profileImage && existingUser.profileImage.startsWith('data:image/'));
             
             if (!hasCustomProfileImage) {
                 existingUser.profileImage = userData.profileImage;

@@ -118,19 +118,24 @@ function updateAuthSection() {
             profileImage = currentUser.profileImage;
         }
         
-        // Force update to new default profile icon if user has old placeholder images
-        const oldPlaceholderPatterns = [
-            'https://via.placeholder.com/',
-            'https://ui-avatars.com/api/',
-            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA',
-            'PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA'
-        ];
-        
-        const needsUpdate = !profileImage || 
-            oldPlaceholderPatterns.some(pattern => profileImage.includes(pattern));
-        
-        if (needsUpdate) {
-            profileImage = DEFAULT_PROFILE_IMAGE;
+        // If user has uploaded a custom profile image, ALWAYS use it
+        if (currentUser.hasCustomProfileImage && currentUser.profileImage && currentUser.profileImage.startsWith('data:image/')) {
+            profileImage = currentUser.profileImage;
+        } else {
+            // Force update to new default profile icon if user has old placeholder images
+            const oldPlaceholderPatterns = [
+                'https://via.placeholder.com/',
+                'https://ui-avatars.com/api/',
+                'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA',
+                'PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA'
+            ];
+            
+            const needsUpdate = !profileImage || 
+                oldPlaceholderPatterns.some(pattern => profileImage.includes(pattern));
+            
+            if (needsUpdate && !currentUser.hasCustomProfileImage) {
+                profileImage = DEFAULT_PROFILE_IMAGE;
+            }
         }
         
         // Update currentUser with the correct image

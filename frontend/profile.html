@@ -1317,6 +1317,7 @@
                     // Save profile image to localStorage for the current user
                     const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
                     currentUser.profileImage = imageData;
+                    currentUser.hasCustomProfileImage = true; // Flag to indicate custom upload
                     localStorage.setItem('currentUser', JSON.stringify(currentUser));
                     
                     // Also update in the users array if it exists
@@ -1324,6 +1325,7 @@
                     const userIndex = users.findIndex(u => u.email === currentUser.email);
                     if (userIndex !== -1) {
                         users[userIndex].profileImage = imageData;
+                        users[userIndex].hasCustomProfileImage = true;
                         localStorage.setItem('users', JSON.stringify(users));
                     }
                     
