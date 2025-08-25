@@ -957,7 +957,7 @@
             console.log('✅ Profile initialization started for:', currentUser.email);
 
             // Update the profile UI
-            updateProfileUI(currentUser);
+            await updateProfileUI(currentUser);
             
             // Load user data
             await loadUserListings(currentUser);
@@ -967,16 +967,46 @@
             console.log('✅ Profile page loaded successfully');
         }
 
-        function updateProfileUI(user) {
+        async function updateProfileUI(user) {
             // Update profile information
             document.getElementById('userName').textContent = 
                 `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User Name';
             document.getElementById('userEmail').textContent = user.email || 'No email';
             
-            // Load saved profile image if exists
-            if (user.profileImage) {
-                document.getElementById('profileImage').src = user.profileImage;
-                console.log('✅ Loaded saved profile image for:', user.email);
+            // Fetch the latest profile data from backend (including custom profile image)
+            try {
+                const response = await fetch(`/api/user-profile/${encodeURIComponent(user.email)}`);
+                if (response.ok) {
+                    const profileData = await response.json();
+                    
+                    // Update profile image if custom image exists
+                    if (profileData.profileImage) {
+                        document.getElementById('profileImage').src = profileData.profileImage;
+                        console.log('✅ Loaded profile image from backend for:', user.email);
+                        
+                        // Also update localStorage with the latest profile image
+                        const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                        currentUser.profileImage = profileData.profileImage;
+                        currentUser.hasCustomProfileImage = profileData.hasCustomProfileImage;
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    } else {
+                        console.log('ℹ️ No custom profile image found for:', user.email);
+                    }
+                } else {
+                    console.log('ℹ️ Could not fetch profile data, using local data');
+                    // Fallback to local profile image
+                    if (user.profileImage) {
+                        document.getElementById('profileImage').src = user.profileImage;
+                        console.log('✅ Loaded local profile image for:', user.email);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching profile data:', error);
+                // Fallback to local profile image
+                if (user.profileImage) {
+                    document.getElementById('profileImage').src = user.profileImage;
+                    console.log('✅ Loaded local profile image (fallback) for:', user.email);
+                }
             }
 
             // Update verification badge

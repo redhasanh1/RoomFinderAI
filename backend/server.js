@@ -2562,6 +2562,64 @@ app.post('/api/update-profile-image', async (req, res) => {
     }
 });
 
+// API: Get user profile data including custom profile image
+app.get('/api/user-profile/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+        
+        // First check in-memory users array
+        const memoryUser = users.find(u => u.email === email);
+        let profileData = null;
+        
+        // Then check Supabase database if available
+        if (supabase) {
+            try {
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('profile_image, has_custom_profile_image, first_name, last_name')
+                    .eq('email', email)
+                    .single();
+                
+                if (!error && profile) {
+                    profileData = {
+                        profileImage: profile.profile_image,
+                        hasCustomProfileImage: profile.has_custom_profile_image,
+                        firstName: profile.first_name,
+                        lastName: profile.last_name
+                    };
+                }
+            } catch (supabaseError) {
+                console.error('Supabase error fetching profile:', supabaseError);
+            }
+        }
+        
+        // Fallback to in-memory data if database unavailable
+        if (!profileData && memoryUser) {
+            profileData = {
+                profileImage: memoryUser.profileImage,
+                hasCustomProfileImage: memoryUser.hasCustomProfileImage,
+                firstName: memoryUser.firstName,
+                lastName: memoryUser.lastName
+            };
+        }
+        
+        if (profileData) {
+            console.log('✅ Profile data retrieved for:', email);
+            res.json(profileData);
+        } else {
+            res.status(404).json({ error: 'User profile not found' });
+        }
+        
+    } catch (error) {
+        console.error('Error in /api/user-profile:', error.message);
+        res.status(500).json({ error: 'Failed to retrieve user profile' });
+    }
+});
+
 // API: Contact form submission with enhanced logging and validation
 app.post('/api/contact', async (req, res) => {
     const startTime = Date.now();
