@@ -1391,6 +1391,8 @@
                     }
                     
                     console.log('✅ Profile image saved locally for user:', currentUser.email);
+                    console.log('💾 localStorage currentUser:', JSON.stringify(currentUser, null, 2));
+                    console.log('💾 localStorage users array:', localStorage.getItem('users'));
                     
                     // Also save to backend database
                     saveProfileImageToBackend(currentUser.email, imageData);
