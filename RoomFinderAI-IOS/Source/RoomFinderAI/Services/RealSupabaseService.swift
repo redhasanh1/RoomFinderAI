@@ -31,7 +31,7 @@ enum ListingRealtimeEvent {
 }
 
 class RealSupabaseService: ObservableObject {
-    private let client = SupabaseClientProvider.shared
+    private let client: SupabaseClient
     private var realtimeChannel: RealtimeChannelV2?
     
     // Publishers for real-time events
@@ -49,10 +49,9 @@ class RealSupabaseService: ObservableObject {
     private let retryDelay: TimeInterval = 5.0
     private var reconnectionTimer: Timer?
     
-    init() {
+    init(supabaseClient: SupabaseClient) {
+        self.client = supabaseClient
         print("🔧 RealSupabaseService initialized")
-        print("   - URL: \(SupabaseConfig.url)")
-        print("   - Key: \(SupabaseConfig.anonKey.prefix(20))...")
     }
     
     deinit {
@@ -64,7 +63,6 @@ class RealSupabaseService: ObservableObject {
     
     func testConnection() async throws -> Bool {
         print("🧪 Testing Supabase connection...")
-        print("   - URL: \(SupabaseConfig.url)")
         print("   - Table: listings")
         
         do {
@@ -428,11 +426,8 @@ class RealSupabaseService: ObservableObject {
         print("🌐 DEBUG: Testing web app style query...")
         
         do {
-            // Create a new client with explicit anonymous settings like web app
-            let webStyleClient = SupabaseClient(
-                supabaseURL: SupabaseConfig.url,
-                supabaseKey: SupabaseConfig.anonKey
-            )
+            // Use the injected client instead of creating a new one
+            let webStyleClient = self.client
             
             print("📡 DEBUG: Making web-style request...")
             let response = try await webStyleClient

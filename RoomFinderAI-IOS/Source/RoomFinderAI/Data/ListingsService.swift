@@ -1,7 +1,11 @@
 import Supabase
 
 struct ListingsService {
-    let client = SupabaseClientProvider.shared
+    let client: SupabaseClient
+    
+    init(supabaseClient: SupabaseClient) {
+        self.client = supabaseClient
+    }
 
     func fetchListings(page: Int, pageSize: Int = 20, filters: ListingsFilter = .empty) async throws -> [Listing] {
         let offset = page * pageSize

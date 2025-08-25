@@ -79,3 +79,10 @@ android/captures/
 android/gradlew
 android/gradlew.bat
 android/gradle/wrapper/gradle-wrapper.jar
+
+# iOS specific
+RoomFinderAI-IOS/Source/RoomFinderAI/Config/Secrets.swift
+*.xcconfig
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
