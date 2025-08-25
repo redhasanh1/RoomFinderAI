@@ -470,8 +470,9 @@
       google.accounts.id.initialize({
         client_id: oauthConfig.googleClientId,
         callback: handleGoogleIdToken,
-        auto_select:false,
-        cancel_on_tap_outside:true
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        use_fedcm_for_prompt: false  // Disable FedCM to avoid conflicts
       });
       // Popup OAuth (code exchange)
       // Try using postmessage as redirect_uri for popup mode
@@ -557,22 +558,23 @@
     }
 
     async function handleGoogleSignIn(){
-      if (!oauthConfig) await loadOAuthConfig();
-      if (!googleInitialized) initializeGoogleSignIn();
-
-      try{
-        // Try One‑Tap first
-        google.accounts.id.prompt((note)=>{
-          const oneTapUnavailable = note.isNotDisplayed() || note.isSkippedMoment();
-          if (oneTapUnavailable){
-            // Fallback: guaranteed user-initiated popup
-            if (codeClient) codeClient.requestCode();
-            else alert('Google Sign-In unavailable. Try email/password.');
-          }
-        });
-      }catch{
-        if (codeClient) codeClient.requestCode();
-        else alert('Google Sign-In unavailable. Try email/password.');
+      try {
+        if (!oauthConfig) await loadOAuthConfig();
+        if (!googleInitialized) initializeGoogleSignIn();
+        
+        if (!codeClient) {
+          console.error('Google OAuth client not initialized');
+          alert('Google Sign-In is not available. Please try again later.');
+          return;
+        }
+        
+        console.log('Initiating Google OAuth popup...');
+        // Use popup OAuth directly to avoid FedCM issues
+        codeClient.requestCode();
+        
+      } catch(e) { 
+        console.error('Google Sign-In error:', e); 
+        alert('Google Sign-In failed. Please try again.'); 
       }
     }
 
