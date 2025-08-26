@@ -100,8 +100,8 @@ Use `gemini -p` when:
 - No need for --yolo flag for read-only analysis
 - Gemini's context window can handle entire codebases that would overflow Claude's context
 - When checking implementations, be specific about what you're looking for to get accurate results
-- please always push with the name EricT2003 and a very short summary. no coauthor, no claude generated, just EricT2003
-- before pushing please pull latest code if there is a new one and merge it successfully. also only push with EricT2003 and only a short summary
-- please push every time you edit code and use the name EricT2003 and only a very short summary
+- please always push with only a very short summary. no coauthor, no claude generated
+- before pushing please pull latest code if there is a new one and merge it successfully
+- please push every time you edit code with only a very short summary
 - im only editing the website, not the android app. just the website
-- after every code you edited please push with the name EricT2003 and a short summary. dont use text like claude generated or anything. just a short summary (like 5 words)
+- after every code you edited please push with a short summary. dont use text like claude generated or anything. just a short summary (like 5 words)
