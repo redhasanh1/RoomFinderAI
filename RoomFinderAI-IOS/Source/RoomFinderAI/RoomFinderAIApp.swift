@@ -38,22 +38,24 @@ extension EnvironmentValues {
 }
 
 // MARK: - Models
+struct MediaItem: Decodable, Equatable {
+  let url: String?
+}
+
 struct CardListing: Identifiable, Decodable, Equatable {
   let id: UUID
   let title: String?
   let price: Int?
   let house_type: String?
   let bedrooms: Int?
+  let utilities: String?
   let description: String?
   let created_at: String?
-  
-  // Media field - array of storage paths or URLs
-  let media: [String]?
-  
-  // Computed property to get first image path/URL
-  var coverImagePath: String? {
-    media?.first
-  }
+
+  // media is jsonb: [] | [{"url":"…"}] | null
+  let media: [MediaItem]?
+
+  var coverURLString: String? { media?.first?.url }
 }
 
 // MARK: - Storage URL Helper
@@ -91,103 +93,56 @@ enum StorageURL {
 
 // MARK: - Views
 struct ListingCardView: View {
-  @Environment(\.supabase) private var supabase
   let listing: CardListing
-
-  // CONFIGURE THESE to match your project:
-  private let bucket = "listings-media"   // adjust if your bucket has a different name
-  private let isBucketPublic = true       // set false to use signed URLs
-
   @State private var imageURL: URL?
 
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
-      // Image
       ZStack {
         Rectangle().fill(Color.gray.opacity(0.12))
         if let imageURL {
           AsyncImage(url: imageURL) { phase in
             switch phase {
-            case .empty: 
-              ProgressView()
-                .scaleEffect(0.9)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .success(let img): 
-              img
-                .resizable()
-                .scaledToFill()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .failure: 
-              Image(systemName: "photo")
-                .font(.largeTitle)
-                .foregroundColor(.gray.opacity(0.5))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            @unknown default: 
-              EmptyView()
+            case .empty: ProgressView().scaleEffect(0.9)
+            case .success(let img): img.resizable().scaledToFill()
+            case .failure: Image(systemName: "photo").font(.largeTitle)
+            @unknown default: EmptyView()
             }
           }
         } else {
-          Image(systemName: "photo")
-            .font(.largeTitle)
-            .foregroundColor(.gray.opacity(0.5))
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+          Image(systemName: "photo").font(.largeTitle)
         }
       }
       .frame(height: 180)
       .clipShape(RoundedRectangle(cornerRadius: 16))
 
-      // Text content
       VStack(alignment: .leading, spacing: 4) {
         Text(listing.title?.isEmpty == false ? listing.title! : "Untitled")
           .font(.headline)
           .lineLimit(2)
 
         HStack(spacing: 8) {
-          if let price = listing.price { 
-            Text("$\(price)")
-              .fontWeight(.semibold)
-              .foregroundColor(.primary)
-          }
-          if let type = listing.house_type { 
-            Text("· \(type)")
-              .foregroundStyle(.secondary)
-          }
-          if let bd = listing.bedrooms { 
-            Text("· \(bd) bd")
-              .foregroundStyle(.secondary)
-          }
+          if let price = listing.price { Text("$\(price)") }
+          if let type = listing.house_type { Text("· \(type)") }
+          if let bd = listing.bedrooms { Text("· \(bd) bd") }
         }
         .font(.subheadline)
+        .foregroundStyle(.secondary)
 
         if let desc = listing.description, !desc.isEmpty {
-          Text(desc)
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            .lineLimit(2)
+          Text(desc).font(.footnote).foregroundStyle(.secondary).lineLimit(2)
         }
       }
     }
     .padding(12)
-    .background(
-      RoundedRectangle(cornerRadius: 18)
-        .fill(Color(.secondarySystemBackground))
-    )
-    .overlay(
-      RoundedRectangle(cornerRadius: 18)
-        .strokeBorder(Color.black.opacity(0.05))
-    )
-    .task { await resolveMediaURL() }
-  }
-
-  private func resolveMediaURL() async {
-    // Check if we have any media path
-    guard let path = listing.coverImagePath, !path.isEmpty else { return }
-    
-    // Use the storage URL helper to get the proper URL
-    if isBucketPublic {
-      imageURL = StorageURL.publicURL(supabase: supabase, bucket: bucket, path: path)
-    } else {
-      imageURL = await StorageURL.signedURL(supabase: supabase, bucket: bucket, path: path)
+    .background(RoundedRectangle(cornerRadius: 18).fill(Color(.secondarySystemBackground)))
+    .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.black.opacity(0.06)))
+    .task {
+      if let s = listing.coverURLString, let u = URL(string: s) {
+        imageURL = u
+      } else {
+        imageURL = nil
+      }
     }
   }
 }
@@ -198,7 +153,6 @@ struct ListingsScreen: View {
   @State private var items: [CardListing] = []
   @State private var errorText: String?
   @State private var isLoading = false
-  @State private var isRefreshing = false
   @State private var page = 0
   private let pageSize = 20
 
@@ -207,14 +161,13 @@ struct ListingsScreen: View {
       Group {
         if isLoading && items.isEmpty {
           ProgressView("Loading…")
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let err = errorText, items.isEmpty {
-          VStack(spacing: 12) {
+          VStack(spacing: 10) {
             Text("Error").font(.title3.bold()).foregroundStyle(.red)
-            Text(err).font(.footnote).foregroundStyle(.secondary)
+            Text(err).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
             Button("Retry") { Task { await reload() } }.buttonStyle(.borderedProminent)
           }
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .padding()
         } else {
           ScrollView {
             LazyVStack(spacing: 12) {
@@ -226,37 +179,23 @@ struct ListingsScreen: View {
                     }
                   }
               }
-              if isLoading { 
-                ProgressView()
-                  .padding(.vertical, 12) 
-              }
+              if isLoading { ProgressView().padding(.vertical, 12) }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
+            .refreshable { await reload() }
           }
-          .refreshable { await refresh() }
         }
       }
       .navigationTitle("Listings")
-      .task { 
-        if items.isEmpty { 
-          await reload() 
-        } 
-      }
+      .task { if items.isEmpty { await reload() } }
     }
   }
 
-  // MARK: Data
   private func reload() async {
     page = 0
     items.removeAll()
     await loadMore()
-  }
-
-  private func refresh() async {
-    isRefreshing = true
-    defer { isRefreshing = false }
-    await reload()
   }
 
   private func loadMore() async {
@@ -265,12 +204,11 @@ struct ListingsScreen: View {
     defer { isLoading = false }
 
     do {
-      // Select only columns we need including media
       let resp = try await supabase.database
         .from("listings")
-        .select("id,title,price,house_type,bedrooms,description,created_at,media")
-        .order("id", ascending: true)
-        .range(from: page * pageSize, to: (page + 1) * pageSize - 1)
+        .select("id,title,price,house_type,bedrooms,utilities,description,created_at,media") // <- includes media
+        .order("id", ascending: true)                                                         // cheap order
+        .range(from: page * pageSize, to: page * pageSize + (pageSize - 1))
         .execute()
 
       let pageItems = try JSONDecoder().decode([CardListing].self, from: resp.data)
