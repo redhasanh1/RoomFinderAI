@@ -93,15 +93,15 @@ struct ListingsScreen: View {
         guard headStatus == "Reachable ✅" else { return }
 
         do {
-            let rows = try await supabase.database
+            let response = try await supabase.database
                 .from("listings")
-                .select("id,title,price,house_type,bedrooms,description,created_at") // pick needed cols
-                .order("id", ascending: true)   // order by PK (fast)
-                .limit(200)                     // keep result small; paginate later if needed
+                .select("id,title,price,house_type,bedrooms,description") // only needed columns
+                .order("id", ascending: true)                              // cheap order by PK
+                .range(from: 0, to: 99)                                    // first 100 rows
                 .execute()
 
-            let data = rows.data
-            rawJSON = String(data: data, encoding: .utf8) ?? "<binary JSON>"
+            let data = response.data
+            rawJSON = String(data: data, encoding: .utf8) ?? "[]"
         } catch {
             errorText = "\(error)"
             rawJSON = "[]"
