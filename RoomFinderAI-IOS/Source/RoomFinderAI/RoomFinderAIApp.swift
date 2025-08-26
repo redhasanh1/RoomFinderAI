@@ -175,7 +175,7 @@ struct ListingsScreen: View {
     guard !isLoading else { return }
     isLoading = true; defer { isLoading = false }
     do {
-      let resp = try await supabase.database
+      let resp = try await supabase
         .from("listings")
         .select("id,title,price,house_type,bedrooms,description,created_at,media")
         .order("id", ascending: true)
@@ -226,10 +226,10 @@ struct HomeScreen: View {
   
   private var quickActionsGrid: some View {
     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
-      QuickActionCard(icon: "brain", title: "AI Assistant", color: .blue)
-      QuickActionCard(icon: "magnifyingglass", title: "Search Rooms", color: .green)
-      QuickActionCard(icon: "message", title: "Messages", color: .orange)
-      QuickActionCard(icon: "heart", title: "Favorites", color: .red)
+      QuickActionCard(title: "AI Assistant", subtitle: "Get smart recommendations", icon: "brain", color: .blue) {}
+      QuickActionCard(title: "Search Rooms", subtitle: "Find your perfect match", icon: "magnifyingglass", color: .green) {}
+      QuickActionCard(title: "Messages", subtitle: "Chat with hosts", icon: "message", color: .orange) {}
+      QuickActionCard(title: "Favorites", subtitle: "Your saved listings", icon: "heart", color: .red) {}
     }
   }
   
@@ -289,7 +289,7 @@ struct HomeScreen: View {
     defer { isLoading = false }
     
     do {
-      let resp = try await supabase.database
+      let resp = try await supabase
         .from("listings")
         .select("id,title,price,house_type,bedrooms,description,created_at,media")
         .order("created_at", ascending: false)
@@ -299,28 +299,6 @@ struct HomeScreen: View {
     } catch {
       print("Featured listings error:", error)
     }
-  }
-}
-
-struct QuickActionCard: View {
-  let icon: String
-  let title: String
-  let color: Color
-  
-  var body: some View {
-    VStack(spacing: 8) {
-      Image(systemName: icon)
-        .font(.title2)
-        .foregroundStyle(color)
-      Text(title)
-        .font(.caption.weight(.medium))
-        .multilineTextAlignment(.center)
-    }
-    .frame(height: 80)
-    .frame(maxWidth: .infinity)
-    .background(Color(.secondarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 12))
-    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.black.opacity(0.05)))
   }
 }
 
