@@ -70,13 +70,14 @@ struct ContentView: View {
         }
         .preferredColorScheme(nil)
         .onAppear {
-            Task {
-                authViewModel.checkAuthStatus()
-            }
+            authViewModel.checkAuthStatus()
         }
     }
 }
 
 #Preview {
     ContentView()
+        .environmentObject(AuthService(supabaseClient: SupabaseClient.preview))
+        .environmentObject(SimpleAuthViewModel())
+        .environmentObject(SimpleListingsViewModel.preview)
 }
