@@ -96,7 +96,7 @@ struct ListingsScreen: View {
             let response = try await supabase.database
                 .from("listings")
                 .select("id,title,price,house_type,bedrooms,description") // only needed columns
-                .order("id", ascending: true)                              // cheap order by PK
+                .order("created_at", ascending: false)
                 .range(from: 0, to: 99)                                    // first 100 rows
                 .execute()
 
