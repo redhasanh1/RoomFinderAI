@@ -20,7 +20,6 @@
 		629F47B83B24F248E4A7DC5E /* PropertyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789035 /* PropertyDetailView.swift */; };
 		89380E4204D00D32CC776045 /* ListingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789033 /* ListingsView.swift */; };
 		899B163A338260E99A2432A4 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789039 /* ProfileView.swift */; };
-		8CF38621B3E7C7195F2671E3 /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8DCEDAE66231AFA1523C2B /* SupabaseConfig.swift */; };
 		8D7D44837EA37736676CA516 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789049 /* Constants.swift */; };
 		8E716072C88589D2BEB8DAFE /* RealSupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9092F683FF134DD8DC2C243 /* RealSupabaseService.swift */; };
 		A01234567890123456789016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789015 /* Assets.xcassets */; };
@@ -29,7 +28,6 @@
 		D5DBA5CF706C1084FE6D2C40 /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789029 /* SignUpView.swift */; };
 		DCE6FB7466DCFB4DAE183DD9 /* SimpleAuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1574BBFE50B4AAE210BE0EA3 /* SimpleAuthViewModel.swift */; };
 		EA20B2DD7F61B4B2E78FDCAB /* Listing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789043 /* Listing.swift */; };
-		F1234567890123456789001 /* SupabaseClientProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789101 /* SupabaseClientProvider.swift */; };
 		F1234567890123456789002 /* ListingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789102 /* ListingsService.swift */; };
 		F1234567890123456789003 /* ListingsFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789103 /* ListingsFilter.swift */; };
 		F1234567890123456789004 /* ListingsRealtime.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789104 /* ListingsRealtime.swift */; };
@@ -45,7 +43,6 @@
 		6C1F874F608B396521435D67 /* SubleaseView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SubleaseView.swift; path = ../Source/RoomFinderAI/Views/SubleaseView.swift; sourceTree = "<group>"; };
 		73490D0B6F586AC9EFB7939D /* MockDataService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MockDataService.swift; path = ../Source/RoomFinderAI/Services/MockDataService.swift; sourceTree = "<group>"; };
 		79D3FBDBA34C4343741F6B78 /* SharedComponents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SharedComponents.swift; path = ../Source/RoomFinderAI/Components/SharedComponents.swift; sourceTree = "<group>"; };
-		9F8DCEDAE66231AFA1523C2B /* SupabaseConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseConfig.swift; path = ../Source/RoomFinderAI/Utils/SupabaseConfig.swift; sourceTree = "<group>"; };
 		A01234567890123456789011 /* RoomFinderAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RoomFinderAIApp.swift; path = ../Source/RoomFinderAI/RoomFinderAIApp.swift; sourceTree = "<group>"; };
 		A01234567890123456789012 /* RoomFinderAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoomFinderAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A01234567890123456789013 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = ../Source/RoomFinderAI/ContentView.swift; sourceTree = "<group>"; };
@@ -63,7 +60,6 @@
 		A01234567890123456789053 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = ../Source/RoomFinderAI/Resources/Info.plist; sourceTree = "<group>"; };
 		B9092F683FF134DD8DC2C243 /* RealSupabaseService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RealSupabaseService.swift; path = ../Source/RoomFinderAI/Services/RealSupabaseService.swift; sourceTree = "<group>"; };
 		C5D8C9DC10D12ADFB6BE2EFD /* SimpleListingsViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SimpleListingsViewModel.swift; path = ../Source/RoomFinderAI/Services/SimpleListingsViewModel.swift; sourceTree = "<group>"; };
-		F1234567890123456789101 /* SupabaseClientProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SupabaseClientProvider.swift; path = ../Source/RoomFinderAI/Data/SupabaseClientProvider.swift; sourceTree = "<group>"; };
 		F1234567890123456789102 /* ListingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsService.swift; path = ../Source/RoomFinderAI/Data/ListingsService.swift; sourceTree = "<group>"; };
 		F1234567890123456789103 /* ListingsFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsFilter.swift; path = ../Source/RoomFinderAI/Data/ListingsFilter.swift; sourceTree = "<group>"; };
 		F1234567890123456789104 /* ListingsRealtime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsRealtime.swift; path = ../Source/RoomFinderAI/Data/ListingsRealtime.swift; sourceTree = "<group>"; };
@@ -190,7 +186,6 @@
 			children = (
 				A01234567890123456789049 /* Constants.swift */,
 				A01234567890123456789051 /* Extensions.swift */,
-				9F8DCEDAE66231AFA1523C2B /* SupabaseConfig.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -230,7 +225,6 @@
 		F1234567890123456789201 /* Data */ = {
 			isa = PBXGroup;
 			children = (
-				F1234567890123456789101 /* SupabaseClientProvider.swift */,
 				F1234567890123456789102 /* ListingsService.swift */,
 				F1234567890123456789103 /* ListingsFilter.swift */,
 				F1234567890123456789104 /* ListingsRealtime.swift */,
@@ -340,9 +334,7 @@
 				5F00531F2AA76E176EAEC986 /* SimpleListingsViewModel.swift in Sources */,
 				495FD9DC8BE1AA749FCFC64E /* MockDataService.swift in Sources */,
 				35288DC5877070BE28D5FD39 /* SharedComponents.swift in Sources */,
-				8CF38621B3E7C7195F2671E3 /* SupabaseConfig.swift in Sources */,
 				8E716072C88589D2BEB8DAFE /* RealSupabaseService.swift in Sources */,
-				F1234567890123456789001 /* SupabaseClientProvider.swift in Sources */,
 				F1234567890123456789002 /* ListingsService.swift in Sources */,
 				F1234567890123456789003 /* ListingsFilter.swift in Sources */,
 				F1234567890123456789004 /* ListingsRealtime.swift in Sources */,
