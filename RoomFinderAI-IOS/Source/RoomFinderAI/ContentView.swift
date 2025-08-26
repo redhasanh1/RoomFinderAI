@@ -1,7 +1,9 @@
 import SwiftUI
+import Supabase
 
 struct ContentView: View {
     @StateObject private var authService = SimpleAuthViewModel()
+    @Environment(\.supabase) private var supabase: SupabaseClient
     @State private var selectedTab = 0
     @State private var showingLogin = false
     
@@ -18,7 +20,7 @@ struct ContentView: View {
                         }
                         .tag(0)
                     
-                    NewListingsView()
+                    NewListingsView(supabaseClient: supabase)
                         .tabItem {
                             Image(systemName: "magnifyingglass")
                             Text("Search")
@@ -43,7 +45,7 @@ struct ContentView: View {
                         }
                         .tag(0)
                     
-                    NewListingsView()
+                    NewListingsView(supabaseClient: supabase)
                         .tabItem {
                             Image(systemName: "magnifyingglass")
                             Text("Search")

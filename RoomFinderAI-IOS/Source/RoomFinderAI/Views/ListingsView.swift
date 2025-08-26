@@ -1,4 +1,5 @@
 import SwiftUI
+import Supabase
 
 struct ListingsView: View {
     @EnvironmentObject var listingsViewModel: SimpleListingsViewModel
@@ -799,5 +800,5 @@ struct RangeSlider: View {
 
 #Preview {
     ListingsView()
-        .environmentObject(SimpleListingsViewModel())
+        .environmentObject(SimpleListingsViewModel.preview)
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import Supabase
 // StatCard is now in SharedComponents
 
 struct SubleaseView: View {
@@ -624,5 +625,5 @@ enum SubleaseType: String, CaseIterable {
 
 #Preview {
     SubleaseView()
-        .environmentObject(SimpleListingsViewModel())
+        .environmentObject(SimpleListingsViewModel.preview)
 }
