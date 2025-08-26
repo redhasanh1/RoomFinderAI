@@ -326,6 +326,8 @@ struct ActivityRow: View {
 
 // MARK: - Tab View
 struct AppTabs: View {
+  @Environment(\.supabase) private var supabase
+  
   var body: some View {
     TabView {
       HomeScreen()
@@ -336,6 +338,11 @@ struct AppTabs: View {
       ListingsScreen()
         .tabItem { 
           Label("Listings", systemImage: "list.bullet") 
+        }
+      
+      Text("AI Negotiator - Coming Soon!")
+        .tabItem { 
+          Label("AI Negotiator", systemImage: "brain") 
         }
       
       Text("Messages")
