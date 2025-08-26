@@ -46,6 +46,7 @@ struct HomePageListing: Identifiable, Decodable, Equatable {
   let id: UUID
   let title: String?
   let price: Int?
+  let city: String?
   let house_type: String?
   let bedrooms: Int?
   let description: String?
@@ -656,32 +657,57 @@ struct AINegotiatorScreen: View {
     // Parse search query
     let searchParams = parseSearchQuery(query)
     
-    // Build Supabase query
-    var supabaseQuery = supabase
+    // For now, let's use a simple approach and get all listings, then filter in code
+    // This ensures compatibility with the current Supabase version
+    let resp = try await supabase
       .from("listings")
       .select("id,title,price,city,bedrooms,house_type,description,created_at,media")
-      .not("price", operator: "is", value: "null")
-      .limit(10)
+      .order("created_at", ascending: false)
+      .limit(50)  // Get more results to filter from
+      .execute()
     
-    // Apply filters
-    if let location = searchParams.location {
-      supabaseQuery = supabaseQuery.or("city.ilike.%\(location)%,title.ilike.%\(location)%")
+    let allListings = try JSONDecoder().decode([HomePageListing].self, from: resp.data)
+    
+    // Filter results in code based on search parameters
+    var filteredListings = allListings
+    
+    // Filter out listings without price
+    filteredListings = filteredListings.filter { $0.price != nil && $0.price! > 0 }
+    
+    // Apply location filter
+    if let location = searchParams.location?.lowercased() {
+      filteredListings = filteredListings.filter { listing in
+        let titleMatch = listing.title?.lowercased().contains(location) ?? false
+        let cityMatch = listing.city?.lowercased().contains(location) ?? false
+        return titleMatch || cityMatch
+      }
     }
     
+    // Apply price filter
     if let maxPrice = searchParams.maxPrice {
-      supabaseQuery = supabaseQuery.lte("price", value: maxPrice)
+      filteredListings = filteredListings.filter { listing in
+        if let price = listing.price {
+          return price <= maxPrice
+        }
+        return false
+      }
     }
     
-    if let houseType = searchParams.houseType {
-      supabaseQuery = supabaseQuery.eq("house_type", value: houseType)
+    // Apply house type filter
+    if let houseType = searchParams.houseType?.lowercased() {
+      filteredListings = filteredListings.filter { listing in
+        listing.house_type?.lowercased() == houseType
+      }
     }
     
+    // Apply bedroom filter
     if let bedrooms = searchParams.bedrooms {
-      supabaseQuery = supabaseQuery.eq("bedrooms", value: bedrooms)
+      filteredListings = filteredListings.filter { listing in
+        listing.bedrooms == bedrooms
+      }
     }
     
-    let response = try await supabaseQuery.execute()
-    return try JSONDecoder().decode([HomePageListing].self, from: response.data)
+    return Array(filteredListings.prefix(10))  // Return max 10 results
   }
   
   private func parseSearchQuery(_ query: String) -> (location: String?, maxPrice: Int?, houseType: String?, bedrooms: Int?) {
