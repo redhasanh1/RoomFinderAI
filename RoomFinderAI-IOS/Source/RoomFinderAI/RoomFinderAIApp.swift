@@ -8,12 +8,12 @@ struct RoomFinderAIApp: App {
     @StateObject private var listingsViewModel: SimpleListingsViewModel
     
     init() {
-        let client = SupabaseFactory.makeClient()
+        let url = URL(string: Secrets.supabaseURL)!
+        let client = SupabaseClient(supabaseURL: url, supabaseKey: Secrets.supabaseAnonKey)
         self.supabase = client
         _authService = StateObject(wrappedValue: AuthService(supabaseClient: client))
         _listingsViewModel = StateObject(wrappedValue: SimpleListingsViewModel(supabaseClient: client))
     }
-    /Users/arsalanamirali/Downloads/Arsalan's Career Vault/Development and CodeBase/Code Projects Portfolio/RoomFinderAI/RoomFinderAI-IOS/Project/Source/RoomFinderAI/RoomFinderAIApp.swift:12:22 Cannot find 'SupabaseFactory' in scope
 
     var body: some Scene {
         WindowGroup {
