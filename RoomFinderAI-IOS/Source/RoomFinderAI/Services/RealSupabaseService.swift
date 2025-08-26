@@ -243,8 +243,8 @@ class RealSupabaseService: ObservableObject {
     
     func debugCountListings() async throws -> Int {
         print("🔍 DEBUG: Counting listings in database...")
-        print("🔗 DEBUG: Using URL: \(Secrets.supabaseURL)")
-        print("🔑 DEBUG: Using anon key: \(Secrets.supabaseAnonKey.prefix(15))...")
+        print("🔗 DEBUG: Using URL: \("[SUPABASE_URL]")")
+        print("🔑 DEBUG: Using anon key: \("[SUPABASE_KEY]".prefix(15))...")
         
         do {
             print("📡 DEBUG: Making count request to Supabase...")
@@ -466,8 +466,8 @@ class RealSupabaseService: ObservableObject {
         var finalHeaders = "No headers"
         
         debugMessages.append("🚀 Starting enhanced debug session...")
-        debugMessages.append("🔗 URL: \(Secrets.supabaseURL)")
-        debugMessages.append("🔑 Key: \(Secrets.supabaseAnonKey.prefix(15))...")
+        debugMessages.append("🔗 URL: \("[SUPABASE_URL]")")
+        debugMessages.append("🔑 Key: \("[SUPABASE_KEY]".prefix(15))...")
         
         // Test 1: Check if table exists and get count
         do {
@@ -1101,8 +1101,8 @@ class RealSupabaseService: ObservableObject {
     
     func fetchListingsSimple() async throws -> [Listing] {
         print("🔄 DEBUG: Using simplified query approach...")
-        print("🔗 DEBUG: URL: \(Secrets.supabaseURL)")
-        print("🔑 DEBUG: Key: \(Secrets.supabaseAnonKey.prefix(10))...")
+        print("🔗 DEBUG: URL: \("[SUPABASE_URL]")")
+        print("🔑 DEBUG: Key: \("[SUPABASE_KEY]".prefix(10))...")
         
         do {
             print("📡 DEBUG: Making Supabase request...")
@@ -1322,7 +1322,7 @@ class RealSupabaseService: ObservableObject {
         print("   - Range: \(startRange) to \(endRange)")
         print("   - Limit: \(limit)")
         print("   - Table: listings")
-        print("   - URL: \(Secrets.supabaseURL)")
+        print("   - URL: \("[SUPABASE_URL]")")
         
         do {
             // First, let's get the raw response to debug the JSON structure
