@@ -1,5 +1,4 @@
 import SwiftUI
-import Supabase
 
 @main
 struct RoomFinderAIApp: App {
@@ -14,7 +13,8 @@ struct RoomFinderAIApp: App {
         _authService = StateObject(wrappedValue: AuthService(supabaseClient: client))
         _listingsViewModel = StateObject(wrappedValue: SimpleListingsViewModel(supabaseClient: client))
     }
-    
+    /Users/arsalanamirali/Downloads/Arsalan's Career Vault/Development and CodeBase/Code Projects Portfolio/RoomFinderAI/RoomFinderAI-IOS/Project/Source/RoomFinderAI/RoomFinderAIApp.swift:12:22 Cannot find 'SupabaseFactory' in scope
+
     var body: some Scene {
         WindowGroup {
             ContentView()
