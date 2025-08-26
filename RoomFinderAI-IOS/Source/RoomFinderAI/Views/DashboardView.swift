@@ -1,4 +1,5 @@
 import SwiftUI
+import Supabase
 
 struct DashboardView: View {
     @EnvironmentObject var authViewModel: SimpleAuthViewModel
@@ -420,5 +421,5 @@ struct SimpleFeatureView: View {
 #Preview {
     DashboardView()
         .environmentObject(SimpleAuthViewModel())
-        .environmentObject(SimpleListingsViewModel())
+        .environmentObject(SimpleListingsViewModel.preview)
 }

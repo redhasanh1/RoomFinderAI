@@ -1,11 +1,16 @@
 import SwiftUI
+import Supabase
 
 struct NewListingsView: View {
-    @StateObject private var viewModel = ListingsViewModel()
+    @StateObject private var viewModel: ListingsViewModel
     @State private var showingFilters = false
     @State private var selectedListing: Listing?
     @State private var showingPropertyDetail = false
     @State private var searchText = ""
+    
+    init(supabaseClient: SupabaseClient) {
+        _viewModel = StateObject(wrappedValue: ListingsViewModel(supabaseClient: supabaseClient))
+    }
     
     var body: some View {
         NavigationView {
@@ -422,5 +427,5 @@ struct FilterChip: View {
 }
 
 #Preview {
-    NewListingsView()
+    NewListingsView(supabaseClient: .preview)
 }

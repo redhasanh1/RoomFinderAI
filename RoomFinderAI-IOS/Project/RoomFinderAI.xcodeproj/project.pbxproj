@@ -18,6 +18,7 @@
 		4B38A02398CB4863BF54FC04 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789031 /* DashboardView.swift */; };
 		5F00531F2AA76E176EAEC986 /* SimpleListingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D8C9DC10D12ADFB6BE2EFD /* SimpleListingsViewModel.swift */; };
 		629F47B83B24F248E4A7DC5E /* PropertyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789035 /* PropertyDetailView.swift */; };
+		86FF148C3C1BB48BA69C220B /* PreviewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B380553FF890F153784B453 /* PreviewHelpers.swift */; };
 		89380E4204D00D32CC776045 /* ListingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789033 /* ListingsView.swift */; };
 		899B163A338260E99A2432A4 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789039 /* ProfileView.swift */; };
 		8D7D44837EA37736676CA516 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789049 /* Constants.swift */; };
@@ -39,6 +40,7 @@
 /* Begin PBXFileReference section */
 		1194E0404AC0884FC2B02CFC /* DebugEnv.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DebugEnv.swift; path = RoomFinderAI/Source/RoomFinderAI/Debug/DebugEnv.swift; sourceTree = "<group>"; };
 		1574BBFE50B4AAE210BE0EA3 /* SimpleAuthViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SimpleAuthViewModel.swift; path = ../Source/RoomFinderAI/Services/SimpleAuthViewModel.swift; sourceTree = "<group>"; };
+		4B380553FF890F153784B453 /* PreviewHelpers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PreviewHelpers.swift; path = Source/RoomFinderAI/Config/PreviewHelpers.swift; sourceTree = "<group>"; };
 		66692679B7E485B07C32BCCB /* ParityProbe.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ParityProbe.swift; path = RoomFinderAI/Source/RoomFinderAI/Debug/ParityProbe.swift; sourceTree = "<group>"; };
 		6C1F874F608B396521435D67 /* SubleaseView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SubleaseView.swift; path = ../Source/RoomFinderAI/Views/SubleaseView.swift; sourceTree = "<group>"; };
 		73490D0B6F586AC9EFB7939D /* MockDataService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MockDataService.swift; path = ../Source/RoomFinderAI/Services/MockDataService.swift; sourceTree = "<group>"; };
@@ -122,6 +124,7 @@
 				A6FB950B67BCA4C883E040D5 /* Components */,
 				1194E0404AC0884FC2B02CFC /* DebugEnv.swift */,
 				66692679B7E485B07C32BCCB /* ParityProbe.swift */,
+				4B380553FF890F153784B453 /* PreviewHelpers.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -343,6 +346,7 @@
 				F1234567890123456789007 /* NewListingsView.swift in Sources */,
 				4A38D1827D90B5A91AA60B83 /* DebugEnv.swift in Sources */,
 				BE0E697CCF9C78A9ED9337AB /* ParityProbe.swift in Sources */,
+				86FF148C3C1BB48BA69C220B /* PreviewHelpers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
