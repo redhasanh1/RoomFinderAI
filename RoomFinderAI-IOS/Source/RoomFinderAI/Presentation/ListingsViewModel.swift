@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import Supabase
 
 @MainActor
 final class ListingsViewModel: ObservableObject {
@@ -16,15 +17,17 @@ final class ListingsViewModel: ObservableObject {
     @Published var lastRealtimeUpdate: Date?
     @Published var realtimeUpdateCount: Int = 0
     
-    private let listingsService = ListingsService()
-    private let realtimeService = ListingsRealtime()
+    private let listingsService: ListingsService
+    private let realtimeService: ListingsRealtime
     private var currentPage = 0
     private let pageSize = 20
     
     private var debounceTimer: Timer?
     private var cancellables = Set<AnyCancellable>()
     
-    init() {
+    init(supabaseClient: SupabaseClient) {
+        self.listingsService = ListingsService(supabaseClient: supabaseClient)
+        self.realtimeService = ListingsRealtime(supabaseClient: supabaseClient)
         startRealtime()
         setupRealtimeStatusBinding()
     }
