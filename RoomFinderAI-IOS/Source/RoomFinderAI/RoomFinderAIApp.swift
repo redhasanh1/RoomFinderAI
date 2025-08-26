@@ -324,6 +324,574 @@ struct ActivityRow: View {
   }
 }
 
+// MARK: - AI Negotiator Screen
+struct AINegotiatorScreen: View {
+  @Environment(\.supabase) private var supabase
+  @State private var messages: [AIMessage] = []
+  @State private var messageText = ""
+  @State private var isTyping = false
+  @State private var foundListings: [HomePageListing] = []
+  
+  struct AIMessage: Identifiable, Equatable {
+    let id = UUID()
+    let content: String
+    let isFromUser: Bool
+    let timestamp = Date()
+  }
+  
+  var body: some View {
+    NavigationView {
+      HStack(spacing: 0) {
+        // Left Sidebar - Found Listings
+        VStack(alignment: .leading, spacing: 16) {
+          VStack(alignment: .leading, spacing: 8) {
+            Text("Found Listings")
+              .font(.headline)
+              .fontWeight(.semibold)
+            
+            if foundListings.isEmpty {
+              Text("Use the AI chat to search for properties!")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.leading)
+            } else {
+              Text("\(foundListings.count) properties found")
+                .font(.caption)
+                .foregroundColor(.blue)
+            }
+          }
+          .padding(.horizontal, 16)
+          .padding(.top, 16)
+          
+          ScrollView {
+            LazyVStack(spacing: 12) {
+              ForEach(foundListings) { listing in
+                AIListingCard(listing: listing)
+              }
+            }
+            .padding(.horizontal, 16)
+          }
+          
+          Spacer()
+        }
+        .frame(width: 280)
+        .background(Color(.systemGray6))
+        
+        Divider()
+        
+        // Main Chat Interface
+        VStack(spacing: 0) {
+          // Chat Header
+          HStack {
+            VStack(alignment: .leading, spacing: 4) {
+              Text("AI Negotiation Assistant")
+                .font(.headline)
+                .fontWeight(.semibold)
+              
+              HStack(spacing: 4) {
+                Circle()
+                  .fill(Color.green)
+                  .frame(width: 8, height: 8)
+                Text("Ready to Help")
+                  .font(.caption)
+                  .foregroundColor(.green)
+              }
+            }
+            
+            Spacer()
+            
+            Button("Clear Chat") {
+              clearChat()
+            }
+            .foregroundColor(.secondary)
+          }
+          .padding(.horizontal, 16)
+          .padding(.vertical, 12)
+          .background(Color(.systemBackground))
+          
+          Divider()
+          
+          // Chat Messages
+          ScrollViewReader { proxy in
+            ScrollView {
+              LazyVStack(spacing: 12) {
+                ForEach(messages) { message in
+                  AIChatBubble(message: message)
+                    .id(message.id)
+                }
+                
+                if isTyping {
+                  AITypingIndicator()
+                }
+              }
+              .padding(.horizontal, 16)
+              .padding(.vertical, 8)
+            }
+            .onChange(of: messages.count) { _ in
+              if let lastMessage = messages.last {
+                withAnimation(.easeOut(duration: 0.3)) {
+                  proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                }
+              }
+            }
+          }
+          
+          Divider()
+          
+          // Message Input
+          VStack(spacing: 8) {
+            HStack(spacing: 12) {
+              TextField("Type your message here...", text: $messageText, axis: .vertical)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .lineLimit(1...4)
+                .onSubmit {
+                  sendMessage()
+                }
+              
+              Button {
+                sendMessage()
+              } label: {
+                Image(systemName: "paperplane.fill")
+                  .font(.system(size: 16, weight: .semibold))
+                  .foregroundColor(.white)
+                  .frame(width: 36, height: 36)
+                  .background(
+                    messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray : Color.blue,
+                    in: RoundedRectangle(cornerRadius: 8)
+                  )
+              }
+              .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+            
+            HStack {
+              Text("Press Enter to send • Try: \"Find me a 1BR apartment in NYC under $2000\"")
+                .font(.caption)
+                .foregroundColor(.secondary)
+              Spacer()
+            }
+          }
+          .padding(.horizontal, 16)
+          .padding(.vertical, 12)
+          .background(Color(.systemGray6))
+        }
+      }
+    }
+    .navigationTitle("AI Negotiator")
+    .onAppear {
+      setupWelcomeMessage()
+    }
+  }
+  
+  private func setupWelcomeMessage() {
+    if messages.isEmpty {
+      let welcomeMessage = AIMessage(
+        content: """
+        Welcome to AI Negotiation Assistant! 🏠
+        
+        I can help you:
+        • Find great properties and negotiate better deals
+        • Write professional messages to landlords  
+        • Analyze market data for your area
+        • Provide negotiation strategy and tips
+        
+        Try saying: "Find me a 1-bedroom apartment in [city] under $[budget]" or "Help me negotiate with my landlord"
+        """,
+        isFromUser: false
+      )
+      messages.append(welcomeMessage)
+    }
+  }
+  
+  private func sendMessage() {
+    let trimmedText = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmedText.isEmpty else { return }
+    
+    // Add user message
+    let userMessage = AIMessage(content: trimmedText, isFromUser: true)
+    messages.append(userMessage)
+    
+    // Clear input
+    messageText = ""
+    
+    // Show typing indicator
+    isTyping = true
+    
+    // Simulate AI processing and response
+    Task {
+      await processUserMessage(trimmedText)
+    }
+  }
+  
+  private func processUserMessage(_ message: String) async {
+    let lowercased = message.lowercased()
+    
+    // Simulate processing delay
+    try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
+    
+    await MainActor.run {
+      isTyping = false
+      
+      if lowercased.contains("find") && (lowercased.contains("apartment") || lowercased.contains("house") || lowercased.contains("room")) {
+        handlePropertySearch(message)
+      } else if lowercased.contains("negotiate") || lowercased.contains("landlord") {
+        handleNegotiationHelp()
+      } else if lowercased.contains("market") || lowercased.contains("price") {
+        handleMarketAnalysis()
+      } else {
+        handleGeneralQuery()
+      }
+    }
+  }
+  
+  private func handlePropertySearch(_ query: String) {
+    // Simulate property search and add mock listings
+    Task {
+      do {
+        // Search real listings from database
+        let searchResults = try await searchProperties(query: query)
+        
+        await MainActor.run {
+          foundListings = searchResults
+          
+          if !searchResults.isEmpty {
+            let response = AIMessage(
+              content: "🔍 Great! I found \(searchResults.count) properties matching your criteria. Check the \"Found Listings\" section on the left.\n\nWould you like me to help you write a negotiation message for any of these properties?",
+              isFromUser: false
+            )
+            messages.append(response)
+          } else {
+            let response = AIMessage(
+              content: "I searched our database but couldn't find properties matching those exact criteria. Try adjusting your search terms or budget.\n\nFor example: \"Find me a 1BR apartment in Manhattan under $3000\"",
+              isFromUser: false
+            )
+            messages.append(response)
+          }
+        }
+      } catch {
+        await MainActor.run {
+          let response = AIMessage(
+            content: "I'm having trouble searching properties right now. Please try again in a moment.",
+            isFromUser: false
+          )
+          messages.append(response)
+        }
+      }
+    }
+  }
+  
+  private func handleNegotiationHelp() {
+    let response = AIMessage(
+      content: """
+      💼 I'd be happy to help you negotiate with your landlord!
+      
+      Here are some proven strategies:
+      
+      **Research First:**
+      • Check local rental prices for similar properties
+      • Note any property issues or needed repairs
+      • Consider your rental history and payment record
+      
+      **Negotiation Tips:**
+      • Be polite and professional
+      • Present market data to justify your request
+      • Offer something in return (longer lease, property improvements)
+      • Time your request well (before lease renewal)
+      
+      Would you like me to help you write a specific negotiation message? Just tell me about your situation!
+      """,
+      isFromUser: false
+    )
+    messages.append(response)
+  }
+  
+  private func handleMarketAnalysis() {
+    let response = AIMessage(
+      content: """
+      📊 I can provide market analysis for any area!
+      
+      **What I can analyze:**
+      • Average rental prices by neighborhood
+      • Price trends over time  
+      • Comparison with similar properties
+      • Market competitiveness
+      
+      Just tell me the area and property type you're interested in. For example:
+      "Analyze the market for 1-bedroom apartments in Brooklyn"
+      """,
+      isFromUser: false
+    )
+    messages.append(response)
+  }
+  
+  private func handleGeneralQuery() {
+    let responses = [
+      """
+      🤖 I'm here to help with rental negotiations and property searches!
+      
+      **Popular commands:**
+      • "Find me apartments in [city] under $[budget]"
+      • "Help me negotiate my rent"
+      • "Write a message to my landlord"
+      • "Analyze the market in [area]"
+      
+      What would you like help with today?
+      """,
+      """
+      💡 Here are some ways I can assist you:
+      
+      **Property Search:** I'll find listings matching your criteria
+      **Negotiation Strategy:** Expert advice for better deals
+      **Market Research:** Data-driven insights for your area
+      **Message Writing:** Professional communications with landlords
+      
+      Try being specific about what you need!
+      """
+    ]
+    
+    let response = AIMessage(content: responses.randomElement()!, isFromUser: false)
+    messages.append(response)
+  }
+  
+  private func searchProperties(query: String) async throws -> [HomePageListing] {
+    // Parse search query
+    let searchParams = parseSearchQuery(query)
+    
+    // Build Supabase query
+    var supabaseQuery = supabase
+      .from("listings")
+      .select("id,title,price,city,bedrooms,house_type,description,created_at,media")
+      .not("price", operator: "is", value: "null")
+      .limit(10)
+    
+    // Apply filters
+    if let location = searchParams.location {
+      supabaseQuery = supabaseQuery.or("city.ilike.%\(location)%,title.ilike.%\(location)%")
+    }
+    
+    if let maxPrice = searchParams.maxPrice {
+      supabaseQuery = supabaseQuery.lte("price", value: maxPrice)
+    }
+    
+    if let houseType = searchParams.houseType {
+      supabaseQuery = supabaseQuery.eq("house_type", value: houseType)
+    }
+    
+    if let bedrooms = searchParams.bedrooms {
+      supabaseQuery = supabaseQuery.eq("bedrooms", value: bedrooms)
+    }
+    
+    let response = try await supabaseQuery.execute()
+    return try JSONDecoder().decode([HomePageListing].self, from: response.data)
+  }
+  
+  private func parseSearchQuery(_ query: String) -> (location: String?, maxPrice: Int?, houseType: String?, bedrooms: Int?) {
+    let lowercased = query.lowercased()
+    
+    // Extract location
+    var location: String?
+    if let inRange = lowercased.range(of: " in ") {
+      let afterIn = String(lowercased[inRange.upperBound...])
+      let locationEnd = afterIn.range(of: " under")?.lowerBound ?? 
+                       afterIn.range(of: " for")?.lowerBound ?? 
+                       afterIn.range(of: " apartment")?.lowerBound ??
+                       afterIn.range(of: " house")?.lowerBound ??
+                       afterIn.endIndex
+      location = String(afterIn[..<locationEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
+    // Extract price
+    var maxPrice: Int?
+    let priceRegex = try? NSRegularExpression(pattern: "under \\$?([0-9,]+)", options: [.caseInsensitive])
+    if let match = priceRegex?.firstMatch(in: query, range: NSRange(query.startIndex..., in: query)),
+       let range = Range(match.range(at: 1), in: query) {
+      let priceString = String(query[range]).replacingOccurrences(of: ",", with: "")
+      maxPrice = Int(priceString)
+    }
+    
+    // Extract house type
+    var houseType: String?
+    if lowercased.contains("apartment") { houseType = "apartment" }
+    else if lowercased.contains("house") { houseType = "house" }
+    else if lowercased.contains("condo") { houseType = "condo" }
+    else if lowercased.contains("studio") { houseType = "studio" }
+    
+    // Extract bedrooms
+    var bedrooms: Int?
+    let bedroomRegex = try? NSRegularExpression(pattern: "([0-9]+)[- ]bedroom", options: [.caseInsensitive])
+    if let match = bedroomRegex?.firstMatch(in: query, range: NSRange(query.startIndex..., in: query)),
+       let range = Range(match.range(at: 1), in: query) {
+      bedrooms = Int(String(query[range]))
+    }
+    
+    return (location: location, maxPrice: maxPrice, houseType: houseType, bedrooms: bedrooms)
+  }
+  
+  private func clearChat() {
+    messages.removeAll()
+    foundListings.removeAll()
+    setupWelcomeMessage()
+  }
+}
+
+// MARK: - AI Chat Components
+struct AIChatBubble: View {
+  let message: AINegotiatorScreen.AIMessage
+  
+  var body: some View {
+    HStack {
+      if message.isFromUser {
+        Spacer()
+        userBubble
+      } else {
+        aiBubble
+        Spacer()
+      }
+    }
+  }
+  
+  private var userBubble: some View {
+    VStack(alignment: .trailing, spacing: 4) {
+      Text(message.content)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+          LinearGradient(
+            gradient: Gradient(colors: [Color.blue, Color.blue.opacity(0.8)]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+        .foregroundColor(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .clipShape(
+          .rect(
+            topLeadingRadius: 18,
+            bottomLeadingRadius: 18,
+            bottomTrailingRadius: 6,
+            topTrailingRadius: 18
+          )
+        )
+      
+      Text(message.timestamp, style: .time)
+        .font(.caption2)
+        .foregroundColor(.secondary)
+    }
+    .frame(maxWidth: 300, alignment: .trailing)
+  }
+  
+  private var aiBubble: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Text("AI Assistant")
+        .font(.caption)
+        .fontWeight(.medium)
+        .foregroundColor(.secondary)
+      
+      Text(message.content)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color(.systemGray5))
+        .foregroundColor(.primary)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .clipShape(
+          .rect(
+            topLeadingRadius: 6,
+            bottomLeadingRadius: 18,
+            bottomTrailingRadius: 18,
+            topTrailingRadius: 18
+          )
+        )
+      
+      Text(message.timestamp, style: .time)
+        .font(.caption2)
+        .foregroundColor(.secondary)
+    }
+    .frame(maxWidth: 300, alignment: .leading)
+  }
+}
+
+struct AITypingIndicator: View {
+  @State private var typingScale: CGFloat = 0.8
+  
+  var body: some View {
+    HStack {
+      HStack(spacing: 8) {
+        Text("Assistant is typing")
+          .font(.caption)
+          .foregroundColor(.secondary)
+        
+        HStack(spacing: 4) {
+          ForEach(0..<3) { index in
+            Circle()
+              .fill(Color.secondary)
+              .frame(width: 6, height: 6)
+              .scaleEffect(typingScale)
+              .animation(
+                Animation.easeInOut(duration: 0.6)
+                  .repeatForever()
+                  .delay(Double(index) * 0.2),
+                value: typingScale
+              )
+          }
+        }
+      }
+      .padding(.horizontal, 16)
+      .padding(.vertical, 12)
+      .background(Color(.systemGray5))
+      .clipShape(RoundedRectangle(cornerRadius: 18))
+      .onAppear {
+        withAnimation {
+          typingScale = 1.2
+        }
+      }
+      
+      Spacer()
+    }
+  }
+}
+
+struct AIListingCard: View {
+  let listing: HomePageListing
+  
+  var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Text(listing.title ?? "Untitled")
+        .font(.subheadline)
+        .fontWeight(.medium)
+        .lineLimit(2)
+      
+      HStack {
+        if let price = listing.price {
+          Text("$\(price)")
+            .font(.caption)
+            .fontWeight(.semibold)
+            .foregroundColor(.blue)
+        }
+        
+        Spacer()
+        
+        if let city = listing.city {
+          Text(city)
+            .font(.caption)
+            .foregroundColor(.secondary)
+        }
+      }
+      
+      if let bedrooms = listing.bedrooms, let houseType = listing.house_type {
+        Text("\(bedrooms) bed • \(houseType)")
+          .font(.caption2)
+          .foregroundColor(.secondary)
+      }
+    }
+    .padding(12)
+    .background(Color(.systemBackground))
+    .cornerRadius(12)
+    .overlay(
+      RoundedRectangle(cornerRadius: 12)
+        .stroke(Color.blue.opacity(0.2), lineWidth: 1)
+    )
+  }
+}
+
 // MARK: - Tab View
 struct AppTabs: View {
   @Environment(\.supabase) private var supabase
@@ -340,7 +908,7 @@ struct AppTabs: View {
           Label("Listings", systemImage: "list.bullet") 
         }
       
-      Text("AI Negotiator - Coming Soon!")
+      AINegotiatorScreen()
         .tabItem { 
           Label("AI Negotiator", systemImage: "brain") 
         }
