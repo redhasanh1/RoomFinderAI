@@ -385,10 +385,9 @@ class SimpleListingsViewModel: ObservableObject {
     // Load featured listings using the SAME real query as main listings
     func loadFeaturedListings() async {
         do {
-            let fetchedListings = try await supabaseService.fetchListingsPaginated(
+            let fetchedListings = try await supabaseService.fetchListingsWithPagination(
                 page: 0,
-                pageSize: 3,
-                filters: ListingsFilter.empty // Use empty filters for featured listings
+                limit: 3
             )
             
             await MainActor.run {
