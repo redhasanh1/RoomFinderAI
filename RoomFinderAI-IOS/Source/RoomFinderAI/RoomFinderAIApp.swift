@@ -42,18 +42,15 @@ struct MediaItem: Decodable, Equatable {
   let url: String?
 }
 
-struct CardListing: Identifiable, Decodable, Equatable {
+struct HomePageListing: Identifiable, Decodable, Equatable {
   let id: UUID
   let title: String?
   let price: Int?
   let house_type: String?
   let bedrooms: Int?
-  let utilities: String?
   let description: String?
   let created_at: String?
-
-  // media is jsonb: [] | [{"url":"…"}] | null
-  let media: [MediaItem]?
+  let media: [MediaItem]?     // jsonb array
 
   var coverURLString: String? { media?.first?.url }
 }
@@ -91,135 +88,261 @@ enum StorageURL {
   }
 }
 
-// MARK: - Views
+// MARK: - Shared UI Components
 struct ListingCardView: View {
-  let listing: CardListing
+  let listing: HomePageListing
   @State private var imageURL: URL?
 
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
       ZStack {
-        Rectangle().fill(Color.gray.opacity(0.12))
+        RoundedRectangle(cornerRadius: 16).fill(Color.gray.opacity(0.12))
         if let imageURL {
           AsyncImage(url: imageURL) { phase in
             switch phase {
             case .empty: ProgressView().scaleEffect(0.9)
             case .success(let img): img.resizable().scaledToFill()
-            case .failure: Image(systemName: "photo").font(.largeTitle)
-            @unknown default: EmptyView()
+            case .failure: placeholder
+            @unknown default: placeholder
             }
           }
-        } else {
-          Image(systemName: "photo").font(.largeTitle)
-        }
+        } else { placeholder }
       }
-      .frame(height: 180)
+      .frame(height: 160)
       .clipShape(RoundedRectangle(cornerRadius: 16))
 
-      VStack(alignment: .leading, spacing: 4) {
-        Text(listing.title?.isEmpty == false ? listing.title! : "Untitled")
-          .font(.headline)
-          .lineLimit(2)
+      Text(listing.title ?? "Untitled")
+        .font(.headline)
+        .lineLimit(2)
 
-        HStack(spacing: 8) {
-          if let price = listing.price { Text("$\(price)") }
-          if let type = listing.house_type { Text("· \(type)") }
-          if let bd = listing.bedrooms { Text("· \(bd) bd") }
-        }
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
-
-        if let desc = listing.description, !desc.isEmpty {
-          Text(desc).font(.footnote).foregroundStyle(.secondary).lineLimit(2)
-        }
+      HStack(spacing: 8) {
+        if let price = listing.price { Text("$\(price)") }
+        if let type = listing.house_type { Text("· \(type)") }
+        if let bd = listing.bedrooms { Text("· \(bd) bd") }
       }
+      .font(.subheadline)
+      .foregroundStyle(.secondary)
     }
     .padding(12)
     .background(RoundedRectangle(cornerRadius: 18).fill(Color(.secondarySystemBackground)))
     .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.black.opacity(0.06)))
     .task {
-      if let s = listing.coverURLString, let u = URL(string: s) {
-        imageURL = u
-      } else {
-        imageURL = nil
-      }
+      if let s = listing.coverURLString, let u = URL(string: s) { imageURL = u }
     }
+  }
+
+  private var placeholder: some View { 
+    Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary) 
   }
 }
 
 struct ListingsScreen: View {
   @Environment(\.supabase) private var supabase
-
-  @State private var items: [CardListing] = []
+  @State private var items: [HomePageListing] = []
   @State private var errorText: String?
   @State private var isLoading = false
   @State private var page = 0
   private let pageSize = 20
 
   var body: some View {
-    NavigationView {
-      Group {
-        if isLoading && items.isEmpty {
-          ProgressView("Loading…")
-        } else if let err = errorText, items.isEmpty {
-          VStack(spacing: 10) {
-            Text("Error").font(.title3.bold()).foregroundStyle(.red)
-            Text(err).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-            Button("Retry") { Task { await reload() } }.buttonStyle(.borderedProminent)
-          }
-          .padding()
-        } else {
-          ScrollView {
-            LazyVStack(spacing: 12) {
-              ForEach(items) { listing in
-                ListingCardView(listing: listing)
-                  .onAppear {
-                    if listing.id == items.last?.id {
-                      Task { await loadMore() }
-                    }
-                  }
-              }
-              if isLoading { ProgressView().padding(.vertical, 12) }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .refreshable { await reload() }
-          }
+    Group {
+      if isLoading && items.isEmpty { ProgressView("Loading…") }
+      else if let err = errorText, items.isEmpty {
+        VStack(spacing: 8) {
+          Text("Error").font(.title3.bold()).foregroundStyle(.red)
+          Text(err).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+          Button("Retry") { Task { await reload() } }.buttonStyle(.borderedProminent)
+        }.padding()
+      } else {
+        List {
+          ForEach(items) { ListingCardView(listing: $0) }
+          if isLoading { HStack { Spacer(); ProgressView(); Spacer() } }
         }
+        .listStyle(.plain)
+        .refreshable { await reload() }
+        .onAppear { Task { await loadMoreIfNeeded() } }
       }
-      .navigationTitle("Listings")
-      .task { if items.isEmpty { await reload() } }
     }
+    .navigationTitle("Listings")
+    .task { if items.isEmpty { await reload() } }
   }
 
   private func reload() async {
-    page = 0
-    items.removeAll()
-    await loadMore()
+    page = 0; items.removeAll(); await loadMoreIfNeeded()
   }
 
-  private func loadMore() async {
+  private func loadMoreIfNeeded() async {
     guard !isLoading else { return }
-    isLoading = true
-    defer { isLoading = false }
-
+    isLoading = true; defer { isLoading = false }
     do {
       let resp = try await supabase.database
         .from("listings")
-        .select("id,title,price,house_type,bedrooms,utilities,description,created_at,media") // <- includes media
-        .order("id", ascending: true)                                                         // cheap order
+        .select("id,title,price,house_type,bedrooms,description,created_at,media")
+        .order("id", ascending: true)
         .range(from: page * pageSize, to: page * pageSize + (pageSize - 1))
         .execute()
-
-      let pageItems = try JSONDecoder().decode([CardListing].self, from: resp.data)
-      if !pageItems.isEmpty {
-        items.append(contentsOf: pageItems)
-        page += 1
-      }
+      let pageItems = try JSONDecoder().decode([HomePageListing].self, from: resp.data)
+      if !pageItems.isEmpty { items += pageItems; page += 1 }
       errorText = nil
-    } catch {
-      errorText = String(describing: error)
+    } catch { errorText = String(describing: error) }
+  }
+}
+
+// MARK: - Home Screen
+struct HomeScreen: View {
+  @Environment(\.supabase) private var supabase
+  @State private var featuredListings: [HomePageListing] = []
+  @State private var isLoading = false
+  
+  var body: some View {
+    NavigationView {
+      ScrollView {
+        VStack(spacing: 24) {
+          welcomeHeader
+          quickActionsGrid
+          recentActivitySection
+          featuredListingsSection
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+      }
+      .navigationTitle("Home")
+      .task { await loadFeaturedListings() }
     }
+  }
+  
+  private var welcomeHeader: some View {
+    HStack {
+      VStack(alignment: .leading, spacing: 4) {
+        Text("Welcome, Guest")
+          .font(.title2.bold())
+        Text("Find your perfect room")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+      }
+      Spacer()
+    }
+  }
+  
+  private var quickActionsGrid: some View {
+    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
+      QuickActionCard(icon: "brain", title: "AI Assistant", color: .blue)
+      QuickActionCard(icon: "magnifyingglass", title: "Search Rooms", color: .green)
+      QuickActionCard(icon: "message", title: "Messages", color: .orange)
+      QuickActionCard(icon: "heart", title: "Favorites", color: .red)
+    }
+  }
+  
+  private var recentActivitySection: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      HStack {
+        Text("Recent Activity")
+          .font(.headline)
+        Spacer()
+      }
+      
+      VStack(spacing: 8) {
+        ActivityRow(icon: "eye", text: "Viewed 3 listings today", time: "2h ago")
+        ActivityRow(icon: "heart", text: "Saved 2 favorites", time: "1d ago")
+        ActivityRow(icon: "message", text: "New message from host", time: "2d ago")
+      }
+    }
+  }
+  
+  private var featuredListingsSection: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      HStack {
+        Text("Featured Listings")
+          .font(.headline)
+        Spacer()
+        Button("See All") {}
+          .font(.subheadline)
+          .foregroundStyle(.blue)
+      }
+      
+      if isLoading {
+        ProgressView()
+          .frame(height: 200)
+      } else if featuredListings.isEmpty {
+        Text("No featured listings available")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+          .frame(height: 100)
+      } else {
+        ScrollView(.horizontal, showsIndicators: false) {
+          LazyHStack(spacing: 16) {
+            ForEach(featuredListings.prefix(10)) { listing in
+              ListingCardView(listing: listing)
+                .frame(width: 280)
+            }
+          }
+          .padding(.horizontal, 16)
+        }
+        .padding(.horizontal, -16)
+      }
+    }
+  }
+  
+  private func loadFeaturedListings() async {
+    guard !isLoading else { return }
+    isLoading = true
+    defer { isLoading = false }
+    
+    do {
+      let resp = try await supabase.database
+        .from("listings")
+        .select("id,title,price,house_type,bedrooms,description,created_at,media")
+        .order("created_at", ascending: false)
+        .limit(10)
+        .execute()
+      featuredListings = try JSONDecoder().decode([HomePageListing].self, from: resp.data)
+    } catch {
+      print("Featured listings error:", error)
+    }
+  }
+}
+
+struct QuickActionCard: View {
+  let icon: String
+  let title: String
+  let color: Color
+  
+  var body: some View {
+    VStack(spacing: 8) {
+      Image(systemName: icon)
+        .font(.title2)
+        .foregroundStyle(color)
+      Text(title)
+        .font(.caption.weight(.medium))
+        .multilineTextAlignment(.center)
+    }
+    .frame(height: 80)
+    .frame(maxWidth: .infinity)
+    .background(Color(.secondarySystemBackground))
+    .clipShape(RoundedRectangle(cornerRadius: 12))
+    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.black.opacity(0.05)))
+  }
+}
+
+struct ActivityRow: View {
+  let icon: String
+  let text: String
+  let time: String
+  
+  var body: some View {
+    HStack(spacing: 12) {
+      Image(systemName: icon)
+        .font(.subheadline)
+        .foregroundStyle(.blue)
+        .frame(width: 20)
+      Text(text)
+        .font(.subheadline)
+      Spacer()
+      Text(time)
+        .font(.caption)
+        .foregroundStyle(.secondary)
+    }
+    .padding(.vertical, 4)
   }
 }
 
@@ -227,9 +350,19 @@ struct ListingsScreen: View {
 struct AppTabs: View {
   var body: some View {
     TabView {
+      HomeScreen()
+        .tabItem { 
+          Label("Home", systemImage: "house.fill") 
+        }
+      
       ListingsScreen()
         .tabItem { 
-          Label("Listings", systemImage: "house.fill") 
+          Label("Listings", systemImage: "list.bullet") 
+        }
+      
+      Text("Messages")
+        .tabItem { 
+          Label("Messages", systemImage: "message.fill") 
         }
       
       Text("Profile")
