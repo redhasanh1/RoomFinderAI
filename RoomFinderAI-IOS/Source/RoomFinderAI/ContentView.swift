@@ -8,6 +8,10 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var showingLogin = false
     
+    private var supabaseClient: SupabaseClient {
+        authService.supabaseClient
+    }
+    
     var body: some View {
         Group {
             // Check authentication status
@@ -21,7 +25,7 @@ struct ContentView: View {
                         }
                         .tag(0)
                     
-                    NewListingsView(supabaseClient: listingsViewModel.supabaseService.client)
+                    NewListingsView(supabaseClient: supabaseClient)
                         .tabItem {
                             Image(systemName: "magnifyingglass")
                             Text("Search")
@@ -46,7 +50,7 @@ struct ContentView: View {
                         }
                         .tag(0)
                     
-                    NewListingsView(supabaseClient: listingsViewModel.supabaseService.client)
+                    NewListingsView(supabaseClient: supabaseClient)
                         .tabItem {
                             Image(systemName: "magnifyingglass")
                             Text("Search")
