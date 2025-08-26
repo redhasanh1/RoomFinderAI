@@ -52,7 +52,8 @@
       "Bash(git log:*)",
       "Bash(git stash:*)",
       "Bash(chmod:*)",
-      "Bash(rsync:*)"
+      "Bash(rsync:*)",
+      "Bash(gem list:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

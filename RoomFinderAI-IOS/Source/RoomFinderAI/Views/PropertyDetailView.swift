@@ -54,11 +54,11 @@ struct PropertyDetailView: View {
                             Spacer()
                             
                             Button(action: {
-                                listingsViewModel.toggleFavorite(listing: listing)
+                                // Favorite functionality not implemented
                             }) {
-                                Image(systemName: (listing.isFavorited ?? false) ? "heart.fill" : "heart")
+                                Image(systemName: "heart")
                                     .font(.title2)
-                                    .foregroundColor((listing.isFavorited ?? false) ? .red : .white)
+                                    .foregroundColor(.white)
                                     .padding(8)
                                     .background(Color.black.opacity(0.5))
                                     .clipShape(Circle())
