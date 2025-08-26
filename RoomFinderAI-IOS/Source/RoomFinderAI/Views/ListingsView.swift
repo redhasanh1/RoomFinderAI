@@ -521,8 +521,8 @@ struct ListingCard: View {
                     
                     // Favorite Button
                     Button(action: onFavorite) {
-                        Image(systemName: (listing.isFavorited ?? false) ? "heart.fill" : "heart")
-                            .foregroundColor((listing.isFavorited ?? false) ? .red : .white)
+                        Image(systemName: "heart")
+                            .foregroundColor(.white)
                             .font(.title2)
                             .padding(8)
                             .background(Color.black.opacity(0.5))

@@ -259,7 +259,7 @@ class SimpleListingsViewModel: ObservableObject {
         // Search query filter
         if !searchQuery.isEmpty {
             let searchLower = searchQuery.lowercased()
-            let matchesTitle = listing.title?.lowercased().contains(searchLower) ?? false
+            let matchesTitle = listing.title.lowercased().contains(searchLower)
             let matchesDescription = listing.description?.lowercased().contains(searchLower) ?? false
             if !matchesTitle && !matchesDescription {
                 return false
@@ -269,7 +269,7 @@ class SimpleListingsViewModel: ObservableObject {
         // Location filter
         if !selectedLocation.isEmpty {
             let locationLower = selectedLocation.lowercased()
-            if !(listing.city?.lowercased().contains(locationLower) ?? false) {
+            if !listing.city.lowercased().contains(locationLower) {
                 return false
             }
         }

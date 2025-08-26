@@ -2,9 +2,8 @@ import SwiftUI
 import Supabase
 
 struct ContentView: View {
-    @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var authViewModel: SimpleAuthViewModel
-    @EnvironmentObject private var listingsViewModel: ListingsViewModel
+    @EnvironmentObject private var listingsViewModel: SimpleListingsViewModel
     @State private var selectedTab = 0
     @State private var showingLogin = false
     
@@ -21,7 +20,7 @@ struct ContentView: View {
                         }
                         .tag(0)
                     
-                    ListingsTabView()
+                    ListingsView()
                         .tabItem {
                             Image(systemName: "magnifyingglass")
                             Text("Search")
@@ -46,7 +45,7 @@ struct ContentView: View {
                         }
                         .tag(0)
                     
-                    ListingsTabView()
+                    ListingsView()
                         .tabItem {
                             Image(systemName: "magnifyingglass")
                             Text("Search")
@@ -72,8 +71,12 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
-        .environmentObject(AuthService(supabaseClient: SupabaseClient.preview))
+    let supabaseClient = SupabaseClient(
+        supabaseURL: URL(string: "https://qzxoyzqoknywffwewrxi.supabase.co")!,
+        supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6eG95enFva255d2Zmd2V3cnhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjE1OTM5NDcsImV4cCI6MjAzNzE2OTk0N30.lO-6aKnAVaZSQYkiw6_gFJN2g48PEXK4N5h1mYqvHy4"
+    )
+    
+    return ContentView()
         .environmentObject(SimpleAuthViewModel())
-        .environmentObject(SimpleListingsViewModel.preview)
+        .environmentObject(SimpleListingsViewModel(supabaseClient: supabaseClient))
 }

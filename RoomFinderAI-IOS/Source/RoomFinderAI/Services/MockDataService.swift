@@ -163,21 +163,21 @@ class MockDataService {
         return listings.filter { listing in
             // Search query filter
             let matchesSearch = searchQuery.isEmpty ||
-                (listing.title?.localizedCaseInsensitiveContains(searchQuery) == true) ||
+                listing.title.localizedCaseInsensitiveContains(searchQuery) ||
                 (listing.description?.localizedCaseInsensitiveContains(searchQuery) == true) ||
-                (listing.city?.localizedCaseInsensitiveContains(searchQuery) == true)
+                listing.city.localizedCaseInsensitiveContains(searchQuery)
             
             // Location filter
             let matchesLocation = location.isEmpty ||
-                (listing.city?.localizedCaseInsensitiveContains(location) == true) ||
-                (listing.street?.localizedCaseInsensitiveContains(location) == true)
+                listing.city.localizedCaseInsensitiveContains(location) ||
+                listing.street.localizedCaseInsensitiveContains(location)
             
             // Property type filter
             let matchesPropertyType = propertyType == nil ||
                 listing.propertyType == propertyType
             
             // Price range filter
-            let listingPrice = listing.price ?? 0
+            let listingPrice = listing.price
             let matchesPrice = listingPrice >= minPrice && listingPrice <= maxPrice
             
             // Bedrooms filter
@@ -190,15 +190,15 @@ class MockDataService {
     func sortListings(_ listings: [Listing], by sortOption: SortOption) -> [Listing] {
         switch sortOption {
         case .date:
-            return listings.sorted { ($0.created_at ?? "") > ($1.created_at ?? "") }
+            return listings.sorted { $0.createdAt > $1.createdAt }
         case .price:
-            return listings.sorted { ($0.price ?? 0) < ($1.price ?? 0) }
+            return listings.sorted { $0.price < $1.price }
         case .priceHigh:
-            return listings.sorted { ($0.price ?? 0) > ($1.price ?? 0) }
+            return listings.sorted { $0.price > $1.price }
         case .bedrooms:
-            return listings.sorted { ($0.bedrooms ?? 0) > ($1.bedrooms ?? 0) }
+            return listings.sorted { $0.bedrooms > $1.bedrooms }
         case .location:
-            return listings.sorted { ($0.city ?? "") < ($1.city ?? "") }
+            return listings.sorted { $0.city < $1.city }
         case .distance:
             // For now, just return as-is since we don't have location services
             return listings

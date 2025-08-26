@@ -4,27 +4,22 @@ import Foundation
 
 @main
 struct RoomFinderAIApp: App {
-    @StateObject private var listingsViewModel: ListingsViewModel
-    @StateObject private var authService: AuthService
+    @StateObject private var listingsViewModel: SimpleListingsViewModel
     @StateObject private var authViewModel = SimpleAuthViewModel()
     
     init() {
-        let client = SupabaseClientFactory.makeClient()
-        _listingsViewModel = StateObject(wrappedValue: ListingsViewModel(supabaseClient: client))
-        _authService = StateObject(wrappedValue: AuthService(supabaseClient: client))
+        let supabaseClient = SupabaseClient(
+            supabaseURL: URL(string: "https://qzxoyzqoknywffwewrxi.supabase.co")!,
+            supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6eG95enFva255d2Zmd2V3cnhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjE1OTM5NDcsImV4cCI6MjAzNzE2OTk0N30.lO-6aKnAVaZSQYkiw6_gFJN2g48PEXK4N5h1mYqvHy4"
+        )
+        _listingsViewModel = StateObject(wrappedValue: SimpleListingsViewModel(supabaseClient: supabaseClient))
     }
-
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(authService)
                 .environmentObject(authViewModel) 
                 .environmentObject(listingsViewModel)
-                .task {
-                    await listingsViewModel.testConnection()
-                    await listingsViewModel.loadListings()
-                    await listingsViewModel.connectRealtime()
-                }
         }
     }
 }
