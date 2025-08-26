@@ -50,7 +50,8 @@
       "Bash(git remote set-head:*)",
       "WebSearch",
       "Bash(git log:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
