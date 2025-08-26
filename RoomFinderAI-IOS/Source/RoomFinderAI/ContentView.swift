@@ -4,13 +4,9 @@ import Supabase
 struct ContentView: View {
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var authViewModel: SimpleAuthViewModel
-    @EnvironmentObject private var listingsViewModel: SimpleListingsViewModel
+    @EnvironmentObject private var listingsViewModel: ListingsViewModel
     @State private var selectedTab = 0
     @State private var showingLogin = false
-    
-    private var supabaseClient: SupabaseClient {
-        authService.supabaseClient
-    }
     
     var body: some View {
         Group {
@@ -25,7 +21,7 @@ struct ContentView: View {
                         }
                         .tag(0)
                     
-                    NewListingsView(supabaseClient: supabaseClient)
+                    ListingsTabView()
                         .tabItem {
                             Image(systemName: "magnifyingglass")
                             Text("Search")
@@ -50,7 +46,7 @@ struct ContentView: View {
                         }
                         .tag(0)
                     
-                    NewListingsView(supabaseClient: supabaseClient)
+                    ListingsTabView()
                         .tabItem {
                             Image(systemName: "magnifyingglass")
                             Text("Search")
