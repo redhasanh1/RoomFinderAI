@@ -11,6 +11,10 @@ final class AuthService: ObservableObject {
     
     private let client: SupabaseClient
     
+    var supabaseClient: SupabaseClient {
+        return client
+    }
+    
     private let keychainService = "com.roomfinderai.auth"
     private let sessionKey = "supabase_session"
     

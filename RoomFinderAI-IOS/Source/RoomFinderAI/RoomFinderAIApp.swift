@@ -1,5 +1,6 @@
 import SwiftUI
 import Supabase
+import Foundation
 
 @main
 struct RoomFinderAIApp: App {
@@ -9,8 +10,8 @@ struct RoomFinderAIApp: App {
     @StateObject private var listingsViewModel: SimpleListingsViewModel
     
     init() {
-        let url = URL(string: Secrets.supabaseURL)!
-        let client = SupabaseClient(supabaseURL: url, supabaseKey: Secrets.supabaseAnonKey)
+        let url = URL(string: "https://placeholder.supabase.co")!
+        let client = SupabaseClient(supabaseURL: url, supabaseKey: "placeholder-key")
         self.supabase = client
         _authService = StateObject(wrappedValue: AuthService(supabaseClient: client))
         _listingsViewModel = StateObject(wrappedValue: SimpleListingsViewModel(supabaseClient: client))
