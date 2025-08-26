@@ -1,85 +1,98 @@
 import SwiftUI
 import Supabase
 
-struct ContentView: View {
-    @EnvironmentObject private var authViewModel: SimpleAuthViewModel
-    @EnvironmentObject private var listingsViewModel: SimpleListingsViewModel
-    @State private var selectedTab = 0
-    @State private var showingLogin = false
-    
+struct ListingsScreen: View {
+    let supabaseClient: SupabaseClient
+
+    @State private var headStatus: String = "Not checked"
+    @State private var rawJSON: String = "[]"
+    @State private var errorText: String?
+
     var body: some View {
-        Group {
-            // Check authentication status
-            if authViewModel.isAuthenticated {
-                // Main app interface for authenticated users
-                TabView(selection: $selectedTab) {
-                    DashboardView()
-                        .tabItem {
-                            Image(systemName: "house.fill")
-                            Text("Home")
-                        }
-                        .tag(0)
-                    
-                    ListingsView()
-                        .tabItem {
-                            Image(systemName: "magnifyingglass")
-                            Text("Search")
-                        }
-                        .tag(1)
-                    
-                    ProfileView()
-                        .tabItem {
-                            Image(systemName: "person.fill")
-                            Text("Profile")
-                        }
-                        .tag(2)
-                    
-                    SimpleConnectivityTestView()
-                        .tabItem {
-                            Image(systemName: "antenna.radiowaves.left.and.right")
-                            Text("Debug")
-                        }
-                        .tag(3)
+        NavigationView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Connectivity: \(headStatus)")
+                    .foregroundStyle(headStatus.hasPrefix("ERROR") ? .red : .secondary)
+
+                Divider()
+
+                Text("Listings (raw JSON)")
+                    .font(.headline)
+
+                ScrollView {
+                    Text(rawJSON)
+                        .font(.system(.footnote, design: .monospaced))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
                 }
-                .accentColor(.blue)
-            } else {
-                // Guest mode - show main app with login prompt
-                TabView(selection: $selectedTab) {
-                    DashboardView()
-                        .tabItem {
-                            Image(systemName: "house.fill")
-                            Text("Home")
-                        }
-                        .tag(0)
-                    
-                    ListingsView()
-                        .tabItem {
-                            Image(systemName: "magnifyingglass")
-                            Text("Search")
-                        }
-                        .tag(1)
-                    
-                    // Profile tab shows login when not authenticated
-                    LoginView()
-                        .tabItem {
-                            Image(systemName: "person.fill")
-                            Text("Profile")
-                        }
-                        .tag(2)
-                    
-                    SimpleConnectivityTestView()
-                        .tabItem {
-                            Image(systemName: "antenna.radiowaves.left.and.right")
-                            Text("Debug")
-                        }
-                        .tag(3)
+
+                if let err = errorText {
+                    Text("Error: \(err)").foregroundStyle(.red)
                 }
-                .accentColor(.blue)
+
+                HStack {
+                    Button("Reload") { Task { await load() } }
+                        .buttonStyle(.borderedProminent)
+                    Button("Try Decoding Example") { Task { await tryDecodingExample() } }
+                }
             }
+            .padding()
+            .navigationTitle("Listings")
+            .task { await load() }
         }
-        .preferredColorScheme(nil)
-        .onAppear {
-            authViewModel.checkAuthStatus()
+    }
+
+    private func headProbe() async {
+        do {
+            let supabaseURL = URL(string: "https://qzxoyzqoknywffwewrxi.supabase.co")!
+            var req = URLRequest(url: supabaseURL)
+            req.httpMethod = "HEAD"
+            _ = try await URLSession.shared.data(for: req)
+            headStatus = "Reachable ✅"
+        } catch {
+            headStatus = "ERROR: \(error)"
+        }
+    }
+
+    private func load() async {
+        errorText = nil
+        await headProbe()
+        guard headStatus == "Reachable ✅" else { return }
+
+        do {
+            // Fetch ALL rows, no filters
+            let response = try await supabaseClient
+                .from("listings")
+                .select("*")
+                .execute()
+
+            // Render raw JSON so schema mismatches can't hide data
+            let data = response.data
+            rawJSON = String(data: data, encoding: .utf8) ?? "<binary JSON>"
+        } catch {
+            errorText = "\(error)"
+            rawJSON = "[]"
+        }
+    }
+
+    private func tryDecodingExample() async {
+        struct Listing: Codable, Identifiable {
+            let id: String
+            let title: String?
+            let created_at: String?
+        }
+        do {
+            let listings: [Listing] = try await supabaseClient
+                .from("listings")
+                .select("*")
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            let blob = try JSONEncoder().encode(listings)
+            rawJSON = String(data: blob, encoding: .utf8) ?? "[]"
+            errorText = nil
+        } catch {
+            errorText = "Decoding error (not fatal): \(error)"
         }
     }
 }
@@ -184,13 +197,12 @@ private struct TestListing: Codable {
     let title: String?
 }
 
+struct ContentView: View {
+    var body: some View {
+        Text("This ContentView is not used - app shows ListingsScreen directly")
+    }
+}
+
 #Preview {
-    let supabaseClient = SupabaseClient(
-        supabaseURL: URL(string: "https://qzxoyzqoknywffwewrxi.supabase.co")!,
-        supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6eG95enFva255d2Zmd2V3cnhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjE5MzY0NzEsImV4cCI6MjAzNzUxMjQ3MX0.d2VDnCKX-8oJG3riFGCWLv8f5Pd8WcvgIWzjJnfKFn4"
-    )
-    
-    return ContentView()
-        .environmentObject(SimpleAuthViewModel())
-        .environmentObject(SimpleListingsViewModel(supabaseClient: supabaseClient))
+    ContentView()
 }
