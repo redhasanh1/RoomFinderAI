@@ -1,5 +1,6 @@
 import SwiftUI
 import Supabase
+import CoreFoundation
 
 struct ListingsScreen: View {
     let supabaseClient: SupabaseClient
@@ -7,12 +8,27 @@ struct ListingsScreen: View {
     @State private var headStatus: String = "Not checked"
     @State private var rawJSON: String = "[]"
     @State private var errorText: String?
+    @State private var debugLogs: String = ""
 
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Connectivity: \(headStatus)")
                     .foregroundStyle(headStatus.hasPrefix("ERROR") ? .red : .secondary)
+
+                Divider()
+
+                Text("Debug Logs")
+                    .font(.headline)
+                
+                ScrollView {
+                    Text(debugLogs)
+                        .font(.system(.caption, design: .monospaced))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                }
+                .frame(height: 200)
+                .background(Color(.systemGray6))
 
                 Divider()
 
@@ -31,68 +47,140 @@ struct ListingsScreen: View {
                 }
 
                 HStack {
-                    Button("Reload") { Task { await load() } }
+                    Button("Full Debug") { Task { await fullDebugSequence() } }
                         .buttonStyle(.borderedProminent)
-                    Button("Try Decoding Example") { Task { await tryDecodingExample() } }
+                    Button("Load Listings") { Task { await loadListings() } }
+                        .buttonStyle(.bordered)
                 }
             }
             .padding()
-            .navigationTitle("Listings")
-            .task { await load() }
+            .navigationTitle("Debug & Listings")
+            .task { await fullDebugSequence() }
         }
     }
 
-    private func headProbe() async {
-        do {
-            let supabaseURL = URL(string: "https://qzxoyzqoknywffwewrxi.supabase.co")!
-            var req = URLRequest(url: supabaseURL)
+    // STEP 1: Dump raw URL string bytes to reveal hidden characters
+    private func dumpURLStringBytes(_ s: String) -> String {
+        var log = "▶ RAW URL STRING: [\(s)]  len=\(s.count)\n"
+        for (i, u) in s.unicodeScalars.enumerated() {
+            log += String(format: "  %03d: U+%04X (%@)\n", i, u.value, String(u))
+        }
+        if let url = URL(string: s) {
+            log += "▶ Parsed URL: scheme=\(url.scheme ?? "nil") host=\(url.host ?? "nil") path=\(url.path)\n"
+        } else {
+            log += "▶ URL(string:) FAILED to parse\n"
+        }
+        return log
+    }
+    
+    // STEP 2: Test known-good hosts
+    private func testKnownGoodHosts() async -> String {
+        var log = "=== Testing Known-Good Hosts ===\n"
+        for test in ["https://google.com", "https://supabase.com"] {
+            var req = URLRequest(url: URL(string: test)!)
             req.httpMethod = "HEAD"
-            _ = try await URLSession.shared.data(for: req)
+            do {
+                _ = try await URLSession.shared.data(for: req)
+                log += "HEAD OK → \(test)\n"
+            } catch {
+                log += "HEAD FAIL → \(test) error: \(error)\n"
+            }
+        }
+        return log
+    }
+    
+    // STEP 3: DNS resolve the Supabase host directly  
+    private func resolveHost(_ host: String) -> String {
+        var log = ""
+        guard let cfHost = CFHostCreateWithName(nil, host as CFString).takeRetainedValue() as CFHost? else { 
+            log += "❌ CFHostCreateWithName failed for \(host)\n"
+            return log
+        }
+        
+        var resolved: DarwinBoolean = false
+        if let addresses = CFHostGetAddressing(cfHost, &resolved)?.takeUnretainedValue() as NSArray?,
+           resolved.boolValue, addresses.count > 0 {
+            log += "✅ DNS resolved \(host) to \(addresses.count) addr(s)\n"
+        } else {
+            log += "❌ DNS could NOT resolve \(host)\n"
+        }
+        return log
+    }
+    
+    // Full debug sequence
+    private func fullDebugSequence() async {
+        var log = "=== COMPREHENSIVE SUPABASE DEBUG ===\n\n"
+        
+        // STEP 1: Dump URL bytes
+        log += "STEP 1 - URL Byte Analysis:\n"
+        log += dumpURLStringBytes(Secrets.supabaseURL)
+        log += "\n"
+        
+        // STEP 2: Test known-good hosts
+        log += "STEP 2 - Known-Good Host Tests:\n"
+        log += await testKnownGoodHosts()
+        log += "\n"
+        
+        // STEP 3: DNS resolution
+        log += "STEP 3 - DNS Resolution:\n"
+        if let host = URL(string: Secrets.supabaseURL)?.host {
+            log += resolveHost(host)
+        } else {
+            log += "❌ URL has no host\n"
+        }
+        log += "\n"
+        
+        // STEP 4: HEAD probe to Supabase
+        log += "STEP 4 - Supabase HEAD Probe:\n"
+        do {
+            let url = URL(string: Secrets.supabaseURL)!
+            var req = URLRequest(url: url)
+            req.httpMethod = "HEAD"
+            let (_, response) = try await URLSession.shared.data(for: req)
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+            log += "✅ HEAD successful - Status: \(statusCode)\n"
             headStatus = "Reachable ✅"
         } catch {
+            log += "❌ HEAD failed: \(error)\n"
             headStatus = "ERROR: \(error)"
         }
+        
+        await MainActor.run {
+            debugLogs = log
+        }
     }
-
-    private func load() async {
+    
+    // STEP 6: Load listings with SELECT
+    private func loadListings() async {
         errorText = nil
-        await headProbe()
-        guard headStatus == "Reachable ✅" else { return }
-
+        
         do {
-            // Fetch ALL rows, no filters
             let response = try await supabaseClient
                 .from("listings")
                 .select("*")
                 .execute()
-
-            // Render raw JSON so schema mismatches can't hide data
+            
             let data = response.data
             rawJSON = String(data: data, encoding: .utf8) ?? "<binary JSON>"
+            
+            var log = debugLogs
+            log += "\nSTEP 6 - SELECT Query Results:\n"
+            log += "✅ SELECT successful - Data length: \(data.count) bytes\n"
+            
+            await MainActor.run {
+                debugLogs = log
+            }
         } catch {
             errorText = "\(error)"
             rawJSON = "[]"
-        }
-    }
-
-    private func tryDecodingExample() async {
-        struct Listing: Codable, Identifiable {
-            let id: String
-            let title: String?
-            let created_at: String?
-        }
-        do {
-            let listings: [Listing] = try await supabaseClient
-                .from("listings")
-                .select("*")
-                .order("created_at", ascending: false)
-                .execute()
-                .value
-            let blob = try JSONEncoder().encode(listings)
-            rawJSON = String(data: blob, encoding: .utf8) ?? "[]"
-            errorText = nil
-        } catch {
-            errorText = "Decoding error (not fatal): \(error)"
+            
+            var log = debugLogs
+            log += "\nSTEP 6 - SELECT Query Results:\n"
+            log += "❌ SELECT failed: \(error)\n"
+            
+            await MainActor.run {
+                debugLogs = log
+            }
         }
     }
 }
