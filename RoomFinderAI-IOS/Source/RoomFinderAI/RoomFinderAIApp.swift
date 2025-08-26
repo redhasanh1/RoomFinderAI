@@ -341,44 +341,46 @@ struct AINegotiatorScreen: View {
   }
   
   var body: some View {
-    NavigationView {
+    GeometryReader { geometry in
       HStack(spacing: 0) {
-        // Left Sidebar - Found Listings
-        VStack(alignment: .leading, spacing: 16) {
-          VStack(alignment: .leading, spacing: 8) {
-            Text("Found Listings")
-              .font(.headline)
-              .fontWeight(.semibold)
-            
-            if foundListings.isEmpty {
-              Text("Use the AI chat to search for properties!")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.leading)
-            } else {
-              Text("\(foundListings.count) properties found")
-                .font(.caption)
-                .foregroundColor(.blue)
-            }
-          }
-          .padding(.horizontal, 16)
-          .padding(.top, 16)
-          
-          ScrollView {
-            LazyVStack(spacing: 12) {
-              ForEach(foundListings) { listing in
-                AIListingCard(listing: listing)
+        // Left Sidebar - Found Listings (collapsed on small screens)
+        if geometry.size.width > 600 {
+          VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+              Text("Found Listings")
+                .font(.headline)
+                .fontWeight(.semibold)
+              
+              if foundListings.isEmpty {
+                Text("Use the AI chat to search for properties!")
+                  .font(.caption)
+                  .foregroundColor(.secondary)
+                  .multilineTextAlignment(.leading)
+              } else {
+                Text("\(foundListings.count) properties found")
+                  .font(.caption)
+                  .foregroundColor(.blue)
               }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 12)
+            .padding(.top, 16)
+            
+            ScrollView {
+              LazyVStack(spacing: 8) {
+                ForEach(foundListings) { listing in
+                  AIListingCard(listing: listing)
+                }
+              }
+              .padding(.horizontal, 12)
+            }
+            
+            Spacer()
           }
+          .frame(width: min(250, geometry.size.width * 0.35))
+          .background(Color(.systemGray6))
           
-          Spacer()
+          Divider()
         }
-        .frame(width: 280)
-        .background(Color(.systemGray6))
-        
-        Divider()
         
         // Main Chat Interface
         VStack(spacing: 0) {
@@ -400,6 +402,14 @@ struct AINegotiatorScreen: View {
             }
             
             Spacer()
+            
+            // Show found listings count on small screens
+            if geometry.size.width <= 600 && !foundListings.isEmpty {
+              Text("\(foundListings.count) found")
+                .font(.caption)
+                .foregroundColor(.blue)
+                .padding(.trailing, 8)
+            }
             
             Button("Clear Chat") {
               clearChat()
@@ -879,16 +889,17 @@ struct AIListingCard: View {
   let listing: HomePageListing
   
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
+    VStack(alignment: .leading, spacing: 6) {
       Text(listing.title ?? "Untitled")
-        .font(.subheadline)
+        .font(.caption)
         .fontWeight(.medium)
         .lineLimit(2)
+        .multilineTextAlignment(.leading)
       
       HStack {
         if let price = listing.price {
           Text("$\(price)")
-            .font(.caption)
+            .font(.caption2)
             .fontWeight(.semibold)
             .foregroundColor(.blue)
         }
@@ -897,8 +908,9 @@ struct AIListingCard: View {
         
         if let city = listing.city {
           Text(city)
-            .font(.caption)
+            .font(.caption2)
             .foregroundColor(.secondary)
+            .lineLimit(1)
         }
       }
       
@@ -908,12 +920,12 @@ struct AIListingCard: View {
           .foregroundColor(.secondary)
       }
     }
-    .padding(12)
+    .padding(8)
     .background(Color(.systemBackground))
-    .cornerRadius(12)
+    .cornerRadius(8)
     .overlay(
-      RoundedRectangle(cornerRadius: 12)
-        .stroke(Color.blue.opacity(0.2), lineWidth: 1)
+      RoundedRectangle(cornerRadius: 8)
+        .stroke(Color.blue.opacity(0.2), lineWidth: 0.5)
     )
   }
 }
