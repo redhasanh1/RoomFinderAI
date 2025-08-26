@@ -385,11 +385,10 @@ class SimpleListingsViewModel: ObservableObject {
     // Load featured listings using the SAME real query as main listings
     func loadFeaturedListings() async {
         do {
-            let listingsService = ListingsService()
-            let fetchedListings = try await listingsService.fetchListings(
+            let fetchedListings = try await supabaseService.fetchListingsPaginated(
                 page: 0,
                 pageSize: 3,
-                filters: .empty // Use empty filters for featured listings
+                filters: ListingsFilter.empty // Use empty filters for featured listings
             )
             
             await MainActor.run {

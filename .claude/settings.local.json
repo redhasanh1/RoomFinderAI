@@ -51,7 +51,8 @@
       "WebSearch",
       "Bash(git log:*)",
       "Bash(git stash:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(rsync:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

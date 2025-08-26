@@ -2,15 +2,16 @@ import SwiftUI
 import Supabase
 
 struct ContentView: View {
-    @StateObject private var authService = SimpleAuthViewModel()
-    @Environment(\.supabase) private var supabase: SupabaseClient
+    @EnvironmentObject private var authService: AuthService
+    @EnvironmentObject private var authViewModel: SimpleAuthViewModel
+    @EnvironmentObject private var listingsViewModel: SimpleListingsViewModel
     @State private var selectedTab = 0
     @State private var showingLogin = false
     
     var body: some View {
         Group {
             // Check authentication status
-            if authService.isAuthenticated {
+            if authViewModel.isAuthenticated {
                 // Main app interface for authenticated users
                 TabView(selection: $selectedTab) {
                     DashboardView()
@@ -20,7 +21,7 @@ struct ContentView: View {
                         }
                         .tag(0)
                     
-                    NewListingsView(supabaseClient: supabase)
+                    NewListingsView(supabaseClient: listingsViewModel.supabaseService.client)
                         .tabItem {
                             Image(systemName: "magnifyingglass")
                             Text("Search")
@@ -45,7 +46,7 @@ struct ContentView: View {
                         }
                         .tag(0)
                     
-                    NewListingsView(supabaseClient: supabase)
+                    NewListingsView(supabaseClient: listingsViewModel.supabaseService.client)
                         .tabItem {
                             Image(systemName: "magnifyingglass")
                             Text("Search")
@@ -66,7 +67,7 @@ struct ContentView: View {
         .preferredColorScheme(nil)
         .onAppear {
             Task {
-                await authService.checkAuthStatus()
+                authViewModel.checkAuthStatus()
             }
         }
     }
