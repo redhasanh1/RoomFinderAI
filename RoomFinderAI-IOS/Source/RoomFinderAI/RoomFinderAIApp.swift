@@ -19,7 +19,6 @@ struct RoomFinderAIApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(\.supabase, supabase)
                 .environmentObject(authService)
                 .environmentObject(authViewModel)
                 .environmentObject(listingsViewModel)
@@ -29,6 +28,3 @@ struct RoomFinderAIApp: App {
         }
     }
 }
-
-
-
