@@ -38,91 +38,266 @@ extension EnvironmentValues {
 }
 
 // MARK: - Models
-struct SimpleListing: Identifiable, Decodable {
+struct CardListing: Identifiable, Decodable, Equatable {
   let id: UUID
   let title: String?
   let price: Int?
   let house_type: String?
   let bedrooms: Int?
-  let utilities: String?
   let description: String?
+  let created_at: String?
+  
+  // Media field - array of storage paths or URLs
+  let media: [String]?
+  
+  // Computed property to get first image path/URL
+  var coverImagePath: String? {
+    media?.first
+  }
+}
+
+// MARK: - Storage URL Helper
+enum StorageURL {
+  static func publicURL(supabase: SupabaseClient, bucket: String, path: String) -> URL? {
+    // If path is already a full URL, return it
+    if path.hasPrefix("http://") || path.hasPrefix("https://") {
+      return URL(string: path)
+    }
+    
+    do {
+      let publicURL = try supabase.storage.from(bucket).getPublicURL(path: path)
+      return publicURL
+    } catch {
+      print("PublicURL error:", error)
+      return nil
+    }
+  }
+
+  static func signedURL(supabase: SupabaseClient, bucket: String, path: String) async -> URL? {
+    // If path is already a full URL, return it
+    if path.hasPrefix("http://") || path.hasPrefix("https://") {
+      return URL(string: path)
+    }
+    
+    do {
+      let signedURL = try await supabase.storage.from(bucket).createSignedURL(path: path, expiresIn: 3600)
+      return signedURL
+    } catch {
+      print("SignedURL error:", error)
+      return nil
+    }
+  }
 }
 
 // MARK: - Views
+struct ListingCardView: View {
+  @Environment(\.supabase) private var supabase
+  let listing: CardListing
+
+  // CONFIGURE THESE to match your project:
+  private let bucket = "listings-media"   // adjust if your bucket has a different name
+  private let isBucketPublic = true       // set false to use signed URLs
+
+  @State private var imageURL: URL?
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      // Image
+      ZStack {
+        Rectangle().fill(Color.gray.opacity(0.12))
+        if let imageURL {
+          AsyncImage(url: imageURL) { phase in
+            switch phase {
+            case .empty: 
+              ProgressView()
+                .scaleEffect(0.9)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .success(let img): 
+              img
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .failure: 
+              Image(systemName: "photo")
+                .font(.largeTitle)
+                .foregroundColor(.gray.opacity(0.5))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            @unknown default: 
+              EmptyView()
+            }
+          }
+        } else {
+          Image(systemName: "photo")
+            .font(.largeTitle)
+            .foregroundColor(.gray.opacity(0.5))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+      }
+      .frame(height: 180)
+      .clipShape(RoundedRectangle(cornerRadius: 16))
+
+      // Text content
+      VStack(alignment: .leading, spacing: 4) {
+        Text(listing.title?.isEmpty == false ? listing.title! : "Untitled")
+          .font(.headline)
+          .lineLimit(2)
+
+        HStack(spacing: 8) {
+          if let price = listing.price { 
+            Text("$\(price)")
+              .fontWeight(.semibold)
+              .foregroundColor(.primary)
+          }
+          if let type = listing.house_type { 
+            Text("· \(type)")
+              .foregroundStyle(.secondary)
+          }
+          if let bd = listing.bedrooms { 
+            Text("· \(bd) bd")
+              .foregroundStyle(.secondary)
+          }
+        }
+        .font(.subheadline)
+
+        if let desc = listing.description, !desc.isEmpty {
+          Text(desc)
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .lineLimit(2)
+        }
+      }
+    }
+    .padding(12)
+    .background(
+      RoundedRectangle(cornerRadius: 18)
+        .fill(Color(.secondarySystemBackground))
+    )
+    .overlay(
+      RoundedRectangle(cornerRadius: 18)
+        .strokeBorder(Color.black.opacity(0.05))
+    )
+    .task { await resolveMediaURL() }
+  }
+
+  private func resolveMediaURL() async {
+    // Check if we have any media path
+    guard let path = listing.coverImagePath, !path.isEmpty else { return }
+    
+    // Use the storage URL helper to get the proper URL
+    if isBucketPublic {
+      imageURL = StorageURL.publicURL(supabase: supabase, bucket: bucket, path: path)
+    } else {
+      imageURL = await StorageURL.signedURL(supabase: supabase, bucket: bucket, path: path)
+    }
+  }
+}
+
 struct ListingsScreen: View {
   @Environment(\.supabase) private var supabase
-  @State private var listings: [SimpleListing] = []
-  @State private var isLoading = false
+
+  @State private var items: [CardListing] = []
   @State private var errorText: String?
+  @State private var isLoading = false
+  @State private var isRefreshing = false
+  @State private var page = 0
+  private let pageSize = 20
 
   var body: some View {
     NavigationView {
       Group {
-        if isLoading {
+        if isLoading && items.isEmpty {
           ProgressView("Loading…")
-        } else if let errorText {
-          VStack {
-            Text("Error").font(.title).foregroundColor(.red)
-            Text(errorText).font(.footnote).foregroundColor(.secondary)
-            Button("Retry") { Task { await load() } }
-              .buttonStyle(.borderedProminent)
-              .padding(.top, 8)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if let err = errorText, items.isEmpty {
+          VStack(spacing: 12) {
+            Text("Error").font(.title3.bold()).foregroundStyle(.red)
+            Text(err).font(.footnote).foregroundStyle(.secondary)
+            Button("Retry") { Task { await reload() } }.buttonStyle(.borderedProminent)
           }
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-          List(listings) { listing in
-            VStack(alignment: .leading, spacing: 6) {
-              Text(listing.title ?? "Untitled")
-                .font(.headline)
-
-              HStack {
-                if let price = listing.price {
-                  Text("$\(price)")
-                }
-                if let type = listing.house_type {
-                  Text("· \(type)")
-                }
-                if let beds = listing.bedrooms {
-                  Text("· \(beds) bd")
-                }
+          ScrollView {
+            LazyVStack(spacing: 12) {
+              ForEach(items) { listing in
+                ListingCardView(listing: listing)
+                  .onAppear {
+                    if listing.id == items.last?.id {
+                      Task { await loadMore() }
+                    }
+                  }
               }
-              .font(.subheadline)
-              .foregroundColor(.secondary)
-
-              if let desc = listing.description, !desc.isEmpty {
-                Text(desc)
-                  .font(.footnote)
-                  .foregroundColor(.secondary)
-                  .lineLimit(2)
+              if isLoading { 
+                ProgressView()
+                  .padding(.vertical, 12) 
               }
             }
-            .padding(.vertical, 6)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
           }
-          .listStyle(.insetGrouped)
+          .refreshable { await refresh() }
         }
       }
       .navigationTitle("Listings")
-      .task { await load() }
+      .task { 
+        if items.isEmpty { 
+          await reload() 
+        } 
+      }
     }
   }
 
-  private func load() async {
+  // MARK: Data
+  private func reload() async {
+    page = 0
+    items.removeAll()
+    await loadMore()
+  }
+
+  private func refresh() async {
+    isRefreshing = true
+    defer { isRefreshing = false }
+    await reload()
+  }
+
+  private func loadMore() async {
+    guard !isLoading else { return }
     isLoading = true
-    errorText = nil
     defer { isLoading = false }
 
     do {
-      let response = try await supabase.database
+      // Select only columns we need including media
+      let resp = try await supabase.database
         .from("listings")
-        .select("id,title,price,house_type,bedrooms,utilities,description")
+        .select("id,title,price,house_type,bedrooms,description,created_at,media")
         .order("id", ascending: true)
-        .range(from: 0, to: 50)
+        .range(from: page * pageSize, to: (page + 1) * pageSize - 1)
         .execute()
 
-      let decoded = try JSONDecoder().decode([SimpleListing].self, from: response.data)
-      listings = decoded
+      let pageItems = try JSONDecoder().decode([CardListing].self, from: resp.data)
+      if !pageItems.isEmpty {
+        items.append(contentsOf: pageItems)
+        page += 1
+      }
+      errorText = nil
     } catch {
-      errorText = "\(error)"
-      listings = []
+      errorText = String(describing: error)
+    }
+  }
+}
+
+// MARK: - Tab View
+struct AppTabs: View {
+  var body: some View {
+    TabView {
+      ListingsScreen()
+        .tabItem { 
+          Label("Listings", systemImage: "house.fill") 
+        }
+      
+      Text("Profile")
+        .tabItem { 
+          Label("Profile", systemImage: "person.fill") 
+        }
     }
   }
 }
@@ -134,7 +309,7 @@ struct MyApp: App {
   
   var body: some Scene {
     WindowGroup {
-      ListingsScreen()
+      AppTabs()
         .environment(\.supabase, supabase)
     }
   }
