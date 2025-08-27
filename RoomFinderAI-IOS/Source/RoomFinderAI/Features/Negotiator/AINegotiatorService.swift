@@ -115,7 +115,7 @@ class AINegotiatorService: ObservableObject {
         let prompt = buildMarketDataPrompt(query: query)
         let response = try await callOpenAI(messages: [
             OpenAIMessage(role: "system", content: prompt)
-        ])
+        ], temperature: 0.3) // Match web: lower temperature for market data
         
         guard let content = response.choices.first?.message.content else {
             throw NegotiationError.parsingError("No content in OpenAI response")
@@ -131,34 +131,24 @@ class AINegotiatorService: ObservableObject {
     }
     
     private func buildMarketDataPrompt(query: MarketDataQuery) -> String {
-        var prompt = """
-        Generate realistic rental market statistics in JSON format for:
-        """
-        
-        if let location = query.location {
-            prompt += "\nLocation: \(location)"
-        }
-        if let houseType = query.houseType {
-            prompt += "\nProperty Type: \(houseType)"
-        }
-        if let bedrooms = query.bedrooms {
-            prompt += "\nBedrooms: \(bedrooms)"
-        }
-        
-        prompt += """
-        
-        Return ONLY valid JSON with this exact structure:
+        // Match web version prompt structure
+        let prompt = """
+        You are a real estate market analyst. Provide realistic rental market data for:
+        - Location: \(query.location ?? "General area")
+        - Property Type: \(query.houseType ?? "Any")
+        - Bedrooms: \(query.bedrooms.map { String($0) } ?? "Any")
+
+        Based on current market conditions, provide realistic estimates in this JSON format:
         {
-          "average": 1500.0,
-          "median": 1450.0,
-          "min": 1000.0,
-          "max": 2500.0,
-          "count": 25,
-          "analysis": "Brief market analysis",
-          "negotiationTips": ["tip1", "tip2", "tip3"]
+            "average": 1200,
+            "median": 1150,
+            "min": 900,
+            "max": 1500,
+            "analysis": "Brief market analysis explaining the pricing",
+            "negotiationTips": "Tips for negotiating in this market"
         }
-        
-        Base estimates on realistic market data. Include 3-5 practical negotiation tips.
+
+        Focus on realistic prices for the specified location and property type.
         """
         
         return prompt
@@ -180,40 +170,41 @@ class AINegotiatorService: ObservableObject {
     }
     
     private func buildNegotiationPrompt(listing: NegotiationListing, userBudget: Double?, marketData: MarketStats) -> String {
-        var prompt = """
-        Write a professional negotiation message for this rental listing:
-        
-        Property: \(listing.displayTitle)
-        Listed Price: \(listing.displayPrice)
-        Location: \(listing.displayLocation)
-        """
-        
-        if let budget = userBudget {
-            prompt += "\nBudget: $\(Int(budget))"
-        }
-        
-        if let bedrooms = listing.bedrooms {
-            prompt += "\nBedrooms: \(bedrooms)"
-        }
-        
-        prompt += "\n\nMarket Data:"
-        if let avg = marketData.average {
-            prompt += "\n- Average rent: $\(Int(avg))"
-        }
-        if let median = marketData.median {
-            prompt += "\n- Median rent: $\(Int(median))"
-        }
-        prompt += "\n- Sample size: \(marketData.count) listings"
-        
-        if let analysis = marketData.analysis {
-            prompt += "\n- Market analysis: \(analysis)"
-        }
-        
-        prompt += """
-        
-        Write a persuasive but respectful negotiation message (2-3 sentences max).
-        Use market data to justify a fair offer. Be professional and polite.
-        DO NOT include subject lines, signatures, or formatting - just the message content.
+        // Match web version prompt structure
+        let prompt = """
+        You are an expert rental negotiator. Generate a professional negotiation message for this rental:
+
+        LISTING DETAILS:
+        - Title: \(listing.displayTitle)
+        - Current Price: $\(listing.price ?? 0)/month
+        - Type: \(listing.house_type ?? "Not specified")
+        - Bedrooms: \(listing.bedrooms ?? 0)
+        - Location: \(listing.city ?? "Not specified")
+
+        USER REQUIREMENTS:
+        - Budget: $\(Int(userBudget ?? 0))
+        - Looking for: \(listing.house_type ?? "Property")
+
+        MARKET DATA:
+        - Average market price: $\(Int(marketData.average ?? 0))
+        - Market range: $\(Int(marketData.min ?? 0)) - $\(Int(marketData.max ?? 0))
+        - Data source: \(marketData.source)
+        - Analysis: \(marketData.analysis ?? "Standard market conditions")
+
+        NEGOTIATION STRATEGY:
+        1. Be professional and respectful
+        2. Express genuine interest in the property
+        3. Mention you're a qualified tenant ready to move quickly
+        4. If listing price is above market average or user budget, suggest a lower price with justification
+        5. Offer quick decision-making and reliable tenancy
+        6. Keep message concise (2-3 sentences max)
+
+        PRICING LOGIC:
+        - If listing price > market average: Suggest price closer to market average
+        - If listing price > user budget: Suggest price within budget
+        - If listing price is fair: Express interest and ask about flexibility
+
+        Generate ONLY the message content (no "Dear" or signatures):
         """
         
         return prompt
@@ -298,7 +289,7 @@ class AINegotiatorService: ObservableObject {
         
         let response = try await callOpenAI(messages: [
             OpenAIMessage(role: "system", content: prompt)
-        ])
+        ], temperature: 0.1) // Match web: very low temperature for analysis
         
         guard let content = response.choices.first?.message.content,
               let data = content.data(using: .utf8),
@@ -310,30 +301,42 @@ class AINegotiatorService: ObservableObject {
     }
     
     private func buildAnalysisPrompt(replyContent: String, context: NegotiationContext) -> String {
+        // Match web version's detailed analysis prompt
+        let lastAIOffer = context.lastOffer ?? context.userBudget ?? 0
+        
         return """
-        Analyze this landlord reply and return ONLY valid JSON:
+        Analyze this landlord's reply in a rental negotiation:
+
+        LANDLORD REPLY: "\(replyContent)"
         
-        Reply: "\(replyContent)"
-        
-        Property: \(context.listing.displayTitle)
-        Listed Price: \(context.listing.displayPrice)
-        Current Negotiation State: \(context.currentState.displayName)
-        
-        Return this exact JSON structure:
+        NEGOTIATION CONTEXT:
+        - Original listing price: $\(context.listing.price ?? 0)
+        - Last AI offer/message: $\(Int(lastAIOffer))
+        - User budget: $\(Int(context.userBudget ?? 0))
+        - Current negotiation status: \(context.currentState.rawValue)
+
+        Analyze the reply and return JSON:
         {
-          "sentiment": "positive/neutral/negative",
-          "price_offered": 1400.0,
-          "accepts_offer": false,
-          "makes_counter_offer": true,
-          "should_respond": true,
-          "is_finalized": false,
-          "agreed_price": null,
-          "response_strategy": "counter/acceptance/clarification",
-          "suggested_response": "Professional response message",
-          "negotiation_phase": "negotiating/counter_offer/finalized"
+            "sentiment": "positive/neutral/negative",
+            "priceOffered": null or number,
+            "acceptsOffer": true/false,
+            "makesCounterOffer": true/false,
+            "shouldRespond": true/false,
+            "isFinalized": true/false,
+            "agreedPrice": null or number,
+            "responseStrategy": "accept/counter/negotiate/thank/clarify",
+            "suggestedResponse": "brief response if shouldRespond is true",
+            "negotiationPhase": "initial/bargaining/closing/rejected"
         }
-        
-        Extract any prices mentioned. Determine if landlord accepts, counters, or rejects.
+
+        ANALYSIS RULES:
+        - "sure", "yes", "ok", "sounds good" = acceptance of last offer
+        - If they accept: isFinalized=true, agreedPrice=last offered price
+        - If they counter with price: extract exact number, shouldRespond=true
+        - If they say "market price isn't $X": shouldRespond=true with market data
+        - If outright rejection: shouldRespond=true for one final attempt
+        - Simple positive words like "sure" mean agreement to last proposal
+        - Extract prices carefully: look for $XXX or XXX/month patterns
         """
     }
     
@@ -477,7 +480,7 @@ class AINegotiatorService: ObservableObject {
     }
     
     // MARK: - OpenAI API
-    private func callOpenAI(messages: [OpenAIMessage]) async throws -> OpenAIResponse {
+    private func callOpenAI(messages: [OpenAIMessage], temperature: Float? = nil) async throws -> OpenAIResponse {
         guard !config.apiKey.isEmpty else {
             throw NegotiationError.missingAPIKey
         }
@@ -486,7 +489,7 @@ class AINegotiatorService: ObservableObject {
             model: config.model,
             messages: messages,
             maxTokens: config.maxTokens,
-            temperature: config.temperature
+            temperature: temperature ?? config.temperature
         )
         
         var urlRequest = URLRequest(url: URL(string: "\(NegotiatorConfig.openAIBaseURL)/chat/completions")!)
