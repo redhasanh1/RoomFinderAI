@@ -18,6 +18,6 @@
         <domain includeSubdomains="true">js.stripe.com</domain>
         <domain includeSubdomains="true">maps.googleapis.com</domain>
         <domain includeSubdomains="true">openai.com</domain>
-        <domain includeSubdomains="true">api.openai.com</domain>
+        <domain includeSubdomains="true">api..com</domain>
     </domain-config>
 </network-security-config>

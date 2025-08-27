@@ -123,16 +123,18 @@ struct ListingCardView: View {
   
   private func createNegotiatorView() -> AINegotiatorView {
     // Convert CardListing to the expected Listing type for AINegotiatorView
+    let mediaItems = listing.media?.map { MediaItem(url: $0) } ?? []
+    
     let negotiatorListing = Listing(
       id: listing.id,
       title: listing.title,
       price: listing.price,
-      city: listing.city,
       house_type: listing.house_type,
       bedrooms: listing.bedrooms,
+      utilities: nil,
       description: listing.description,
-      created_at: nil,
-      media: nil // Will be loaded separately in negotiator if needed
+      created_at: listing.created_at,
+      media: mediaItems
     )
     
     return AINegotiatorView(
