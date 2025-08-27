@@ -122,19 +122,25 @@ struct ListingCardView: View {
   }
   
   private func createNegotiatorView() -> AINegotiatorView {
-    // Convert CardListing to the expected Listing type for AINegotiatorView
-    let mediaItems = listing.media?.map { MediaItem(url: $0) } ?? []
+    // Convert CardListing to Models/Listing format
+    let dateFormatter = ISO8601DateFormatter()
+    let createdAtDate = listing.created_at.flatMap { dateFormatter.date(from: $0) } ?? Date()
     
     let negotiatorListing = Listing(
-      id: listing.id,
-      title: listing.title,
-      price: listing.price,
-      house_type: listing.house_type,
-      bedrooms: listing.bedrooms,
-      utilities: nil,
+      id: listing.id.uuidString,
+      title: listing.title ?? "Untitled",
+      price: Double(listing.price ?? 0),
+      city: "", // CardListing doesn't have city
+      street: "", // CardListing doesn't have street
+      postalCode: "", // CardListing doesn't have postal code
+      houseType: listing.house_type ?? "apartment",
+      bedrooms: listing.bedrooms ?? 0,
+      utilities: "", // CardListing doesn't have utilities
       description: listing.description,
-      created_at: listing.created_at,
-      media: mediaItems
+      media: listing.media, // CardListing.media is already [String]?
+      userEmail: "landlord@example.com",
+      createdAt: createdAtDate,
+      updatedAt: createdAtDate
     )
     
     return AINegotiatorView(
