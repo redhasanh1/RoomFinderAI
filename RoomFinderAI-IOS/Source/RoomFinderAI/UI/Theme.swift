@@ -15,3 +15,11 @@ extension View {
       .shadow(color: .black.opacity(UI.cardShadow), radius: 8, x: 0, y: 2)
   }
 }
+
+extension Color {
+  static let primaryBlue = Color.blue
+  static let secondaryPurple = Color.purple
+  static let accentGreen = Color.green
+  static let backgroundGray = Color(.systemGray6)
+  static let textGray = Color(.systemGray)
+}
