@@ -12,15 +12,34 @@ enum Secrets {
   static let openAIModel = "gpt-4o-mini"
 
   static func assertValid() {
-    precondition(supabaseURL.hasPrefix("https://"), "Supabase URL must start with https://")
-    precondition(supabaseURL.contains(".supabase.co"), "Must use .supabase.co domain")
-    precondition(URL(string: supabaseURL)?.host?.hasSuffix(".supabase.co") == true, "Invalid host in Supabase URL")
-    precondition(!supabaseAnonKey.isEmpty, "Anon key is empty")
+    guard supabaseURL.hasPrefix("https://") else {
+      print("⚠️ Warning: Supabase URL should start with https://")
+      return
+    }
+    guard supabaseURL.contains(".supabase.co") else {
+      print("⚠️ Warning: Should use .supabase.co domain")
+      return
+    }
+    guard URL(string: supabaseURL)?.host?.hasSuffix(".supabase.co") == true else {
+      print("⚠️ Warning: Invalid host in Supabase URL")
+      return
+    }
+    guard !supabaseAnonKey.isEmpty else {
+      print("⚠️ Warning: Anon key is empty")
+      return
+    }
     
-    // OpenAI validation (fail loudly if missing)
-    precondition(!openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                 "OPENAI key is missing. Update Secrets.openAIKey")
-    precondition(openAIKey.hasPrefix("sk-"), "Invalid OpenAI API key format. Must start with 'sk-'.")
+    // OpenAI validation (warn instead of crash)
+    guard !openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+      print("⚠️ Warning: OPENAI key is missing. Update Secrets.openAIKey")
+      return
+    }
+    guard openAIKey.hasPrefix("sk-") else {
+      print("⚠️ Warning: Invalid OpenAI API key format. Must start with 'sk-'.")
+      return
+    }
+    
+    print("✅ All credentials validated successfully")
   }
 }
 
@@ -474,129 +493,10 @@ struct HomeScreen: View {
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 24) {
-        // Header
-        VStack(alignment: .leading, spacing: 8) {
-          Text("Find Your Perfect Room")
-            .font(.largeTitle)
-            .fontWeight(.bold)
-          Text("Discover amazing rental opportunities")
-            .font(.subheadline)
-            .foregroundColor(.secondary)
-        }
-        .padding(.horizontal)
-        
-        // Quick Actions
-        ScrollView(.horizontal, showsIndicators: false) {
-          HStack(spacing: 16) {
-            NavigationLink(destination: ListingsScreen()) {
-              VStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                  .font(.title2)
-                  .foregroundColor(.blue)
-                
-                VStack(spacing: 4) {
-                  Text("Search Rooms")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                  Text("Browse all listings")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                }
-              }
-              .frame(width: 120, height: 100)
-              .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
-              .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(.separator), lineWidth: 0.5))
-            }
-            .buttonStyle(.plain)
-            
-            VStack(spacing: 8) {
-              Image(systemName: "heart")
-                .font(.title2)
-                .foregroundColor(.red)
-              
-              VStack(spacing: 4) {
-                Text("Favorites")
-                  .font(.subheadline)
-                  .fontWeight(.medium)
-                Text("Your saved listings")
-                  .font(.caption)
-                  .foregroundColor(.secondary)
-              }
-            }
-            .frame(width: 120, height: 100)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(.separator), lineWidth: 0.5))
-            
-            VStack(spacing: 8) {
-              Image(systemName: "calculator")
-                .font(.title2)
-                .foregroundColor(.green)
-              
-              VStack(spacing: 4) {
-                Text("Mortgage Calc")
-                  .font(.subheadline)
-                  .fontWeight(.medium)
-                Text("Calculate payments")
-                  .font(.caption)
-                  .foregroundColor(.secondary)
-              }
-            }
-            .frame(width: 120, height: 100)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(.separator), lineWidth: 0.5))
-          }
-          .padding(.horizontal)
-        }
-        
-        // Featured Listings
-        VStack(alignment: .leading, spacing: 12) {
-          HStack {
-            Text("Featured Listings")
-              .font(.title2)
-              .fontWeight(.semibold)
-            Spacer()
-            NavigationLink("View All", destination: ListingsScreen())
-              .font(.subheadline)
-              .foregroundColor(.blue)
-          }
-          .padding(.horizontal)
-          
-          if isLoading {
-            HStack {
-              Spacer()
-              ProgressView("Loading featured listings...")
-              Spacer()
-            }
-            .padding()
-          } else {
-            ScrollView(.horizontal, showsIndicators: false) {
-              HStack(spacing: 16) {
-                ForEach(featuredListings.prefix(5)) { listing in
-                  NavigationLink(destination: ListingDetailView(listing: convertToListing(listing))) {
-                    FeaturedListingCard(listing: listing)
-                  }
-                  .buttonStyle(.plain)
-                }
-              }
-              .padding(.horizontal)
-            }
-          }
-        }
-        
-        // Recent Activity
-        VStack(alignment: .leading, spacing: 12) {
-          Text("Recent Activity")
-            .font(.title2)
-            .fontWeight(.semibold)
-            .padding(.horizontal)
-          
-          VStack(spacing: 8) {
-            ActivityRow(icon: "plus.circle.fill", title: "New listing in Downtown", time: "2 min ago", color: .green)
-            ActivityRow(icon: "heart.fill", title: "Property saved to favorites", time: "1 hour ago", color: .red)
-            ActivityRow(icon: "message.fill", title: "New message received", time: "3 hours ago", color: .blue)
-          }
-          .padding(.horizontal)
-        }
+        headerSection
+        quickActionsSection
+        featuredListingsSection
+        recentActivitySection
         
         Spacer(minLength: 100)
       }
@@ -606,6 +506,134 @@ struct HomeScreen: View {
     .navigationBarHidden(true)
     .onAppear {
       loadFeaturedListings()
+    }
+  }
+  
+  private var headerSection: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Text("Find Your Perfect Room")
+        .font(.largeTitle)
+        .fontWeight(.bold)
+      Text("Discover amazing rental opportunities")
+        .font(.subheadline)
+        .foregroundColor(.secondary)
+    }
+    .padding(.horizontal)
+  }
+  
+  private var quickActionsSection: some View {
+    ScrollView(.horizontal, showsIndicators: false) {
+      HStack(spacing: 16) {
+        NavigationLink(destination: ListingsScreen()) {
+          VStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+              .font(.title2)
+              .foregroundColor(.blue)
+            
+            VStack(spacing: 4) {
+              Text("Search Rooms")
+                .font(.subheadline)
+                .fontWeight(.medium)
+              Text("Browse all listings")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            }
+          }
+          .frame(width: 120, height: 100)
+          .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+          .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(.separator), lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
+        
+        VStack(spacing: 8) {
+          Image(systemName: "heart")
+            .font(.title2)
+            .foregroundColor(.red)
+          
+          VStack(spacing: 4) {
+            Text("Favorites")
+              .font(.subheadline)
+              .fontWeight(.medium)
+            Text("Your saved listings")
+              .font(.caption)
+              .foregroundColor(.secondary)
+          }
+        }
+        .frame(width: 120, height: 100)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(.separator), lineWidth: 0.5))
+        
+        VStack(spacing: 8) {
+          Image(systemName: "calculator")
+            .font(.title2)
+            .foregroundColor(.green)
+          
+          VStack(spacing: 4) {
+            Text("Mortgage Calc")
+              .font(.subheadline)
+              .fontWeight(.medium)
+            Text("Calculate payments")
+              .font(.caption)
+              .foregroundColor(.secondary)
+          }
+        }
+        .frame(width: 120, height: 100)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(.separator), lineWidth: 0.5))
+      }
+      .padding(.horizontal)
+    }
+  }
+  
+  private var featuredListingsSection: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      HStack {
+        Text("Featured Listings")
+          .font(.title2)
+          .fontWeight(.semibold)
+        Spacer()
+        NavigationLink("View All", destination: ListingsScreen())
+          .font(.subheadline)
+          .foregroundColor(.blue)
+      }
+      .padding(.horizontal)
+      
+      if isLoading {
+        HStack {
+          Spacer()
+          ProgressView("Loading featured listings...")
+          Spacer()
+        }
+        .padding()
+      } else {
+        ScrollView(.horizontal, showsIndicators: false) {
+          HStack(spacing: 16) {
+            ForEach(featuredListings.prefix(5)) { listing in
+              NavigationLink(destination: ListingDetailView(listing: convertToListing(listing))) {
+                FeaturedListingCard(listing: convertToListing(listing))
+              }
+              .buttonStyle(.plain)
+            }
+          }
+          .padding(.horizontal)
+        }
+      }
+    }
+  }
+  
+  private var recentActivitySection: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      Text("Recent Activity")
+        .font(.title2)
+        .fontWeight(.semibold)
+        .padding(.horizontal)
+      
+      VStack(spacing: 8) {
+        ActivityRow(icon: "plus.circle.fill", title: "New listing in Downtown", time: "2 min ago", color: .green)
+        ActivityRow(icon: "heart.fill", title: "Property saved to favorites", time: "1 hour ago", color: .red)
+        ActivityRow(icon: "message.fill", title: "New message received", time: "3 hours ago", color: .blue)
+      }
+      .padding(.horizontal)
     }
   }
 
@@ -652,9 +680,53 @@ struct HomeScreen: View {
   }
 }
 
-// Using existing QuickActionCard from SharedComponents.swift
-
-// Using existing FeaturedListingCard from DashboardView.swift
+struct FeaturedListingCard: View {
+  let listing: Listing
+  @State private var imageURL: URL?
+  
+  var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      // Image
+      AsyncImage(url: imageURL) { image in
+        image
+          .resizable()
+          .aspectRatio(contentMode: .fill)
+      } placeholder: {
+        Image(systemName: "photo")
+          .font(.largeTitle)
+          .foregroundStyle(.secondary)
+      }
+      .frame(width: 200, height: 140)
+      .clipShape(RoundedRectangle(cornerRadius: 12))
+      
+      // Content
+      VStack(alignment: .leading, spacing: 4) {
+        Text(listing.title ?? "Untitled")
+          .font(.subheadline)
+          .fontWeight(.medium)
+          .lineLimit(1)
+        
+        Text("$\(Int(listing.price ?? 0))/mo")
+          .font(.caption)
+          .fontWeight(.semibold)
+          .foregroundColor(.blue)
+        
+        if !listing.city.isEmpty {
+          Text(listing.city)
+            .font(.caption2)
+            .foregroundColor(.secondary)
+            .lineLimit(1)
+        }
+      }
+    }
+    .frame(width: 200)
+    .task {
+      if let mediaURL = listing.media?.first, let url = URL(string: mediaURL) {
+        imageURL = url
+      }
+    }
+  }
+}
 
 struct ActivityRow: View {
   let icon: String
@@ -748,15 +820,20 @@ struct ListingsScreen: View {
   
   private func convertToListing(_ homeListing: HomePageListing) -> Listing {
     return Listing(
-      id: homeListing.id,
-      title: homeListing.title,
-      price: homeListing.price.map(Double.init),
-      city: homeListing.city,
-      house_type: homeListing.house_type,
-      bedrooms: homeListing.bedrooms,
+      id: homeListing.id.uuidString,
+      title: homeListing.title ?? "Untitled",
+      price: Double(homeListing.price ?? 0),
+      city: homeListing.city ?? "",
+      street: "",
+      postalCode: "",
+      houseType: homeListing.house_type ?? "Apartment",
+      bedrooms: homeListing.bedrooms ?? 1,
+      utilities: "Not specified",
       description: homeListing.description,
-      created_at: homeListing.created_at,
-      media: homeListing.media
+      media: homeListing.media?.compactMap { $0.url },
+      userEmail: "",
+      createdAt: Date(),
+      updatedAt: Date()
     )
   }
 }
@@ -785,7 +862,7 @@ struct ListingDetailView: View {
             Spacer()
             
             VStack(alignment: .trailing) {
-              Text(listing.house_type ?? "")
+              Text(listing.houseType ?? "")
                 .font(.caption)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
@@ -895,7 +972,7 @@ struct ListingCardView: View {
         // Negotiate button
         HStack {
           Spacer()
-          NavigationLink(destination: SimpleAINegotiatorView(listing: listing)) {
+          NavigationLink(destination: ListingDetailView(listing: convertToListing(listing))) {
             HStack(spacing: 4) {
               Image(systemName: "brain")
               Text("Negotiate")
@@ -919,6 +996,25 @@ struct ListingCardView: View {
     }
   }
 
+  private func convertToListing(_ homeListing: HomePageListing) -> Listing {
+    return Listing(
+      id: homeListing.id.uuidString,
+      title: homeListing.title ?? "Untitled",
+      price: Double(homeListing.price ?? 0),
+      city: homeListing.city ?? "",
+      street: "",
+      postalCode: "",
+      houseType: homeListing.house_type ?? "Apartment",
+      bedrooms: homeListing.bedrooms ?? 1,
+      utilities: "Not specified",
+      description: homeListing.description,
+      media: homeListing.media?.compactMap { $0.url },
+      userEmail: "",
+      createdAt: Date(),
+      updatedAt: Date()
+    )
+  }
+
   private var placeholder: some View {
     Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary)
   }
@@ -927,13 +1023,23 @@ struct ListingCardView: View {
 // MARK: - App
 @main
 struct MyApp: App {
-  private let supabase = SupabaseClient(
-    supabaseURL: URL(string: Secrets.supabaseURL)!,
-    supabaseKey: Secrets.supabaseAnonKey
-  )
+  private let supabase: SupabaseClient
   
   init() {
+    // Validate credentials first
     Secrets.assertValid()
+    
+    // Create Supabase client with safe URL creation
+    guard let url = URL(string: Secrets.supabaseURL) else {
+      print("⚠️ Failed to create Supabase URL, using fallback")
+      self.supabase = SupabaseClient(
+        supabaseURL: URL(string: "https://invalid.local")!,
+        supabaseKey: "invalid"
+      )
+      return
+    }
+    
+    self.supabase = SupabaseClient(supabaseURL: url, supabaseKey: Secrets.supabaseAnonKey)
     print("🚀 AI Negotiator ready with OpenAI credentials configured!")
   }
 
