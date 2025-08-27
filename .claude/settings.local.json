@@ -54,7 +54,8 @@
       "Bash(chmod:*)",
       "Bash(rsync:*)",
       "Bash(gem list:*)",
-      "Bash(osascript:*)"
+      "Bash(osascript:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
