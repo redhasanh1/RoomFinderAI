@@ -2,14 +2,24 @@ import Foundation
 
 // MARK: - AI Negotiator Configuration
 enum NegotiatorConfig {
-    // OpenAI Configuration - Read from environment/secrets
+    // OpenAI Configuration - Read from Secrets
     static let openAIAPIKey: String = {
-        // In production, this should come from .xcconfig or Secrets.plist
-        // For now, using the existing Secrets enum pattern
-        return "sk-your-openai-api-key" // TODO: Move to secure config
+        // First try environment variable (for CI/CD)
+        if let envKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !envKey.isEmpty {
+            return envKey
+        }
+        // Fall back to Secrets enum
+        return Secrets.openAIKey
     }()
     
-    static let openAIOrganizationID: String? = nil // Optional organization ID
+    static let openAIOrganizationID: String? = {
+        // First try environment variable
+        if let envOrgID = ProcessInfo.processInfo.environment["OPENAI_ORG_ID"], !envOrgID.isEmpty {
+            return envOrgID
+        }
+        // Fall back to Secrets enum
+        return Secrets.openAIOrgID
+    }()
     static let openAIModel: String = "gpt-4o-mini" // Default model
     static let openAIBaseURL: String = "https://api.openai.com/v1"
     
@@ -34,7 +44,7 @@ enum NegotiatorConfig {
     static let maxRetryDelay: TimeInterval = 10.0
     
     // AI User Settings
-    static let aiUserEmail = "ai-negotiator@roomfinderai.com"
+    static let aiUserEmail = "ai-negotiator@roomfinder.com" // Match web version
     static let aiUserName = "AI Negotiation Assistant"
     
     // Validation
