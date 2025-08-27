@@ -68,18 +68,31 @@ struct HomePageListing: Identifiable, Decodable, Equatable {
   var coverURLString: String? { media?.first?.url }
 }
 
-// MARK: - AI Negotiator Models
-struct Listing: Identifiable, Decodable, Equatable {
-  let id: UUID
-  let title: String?
-  let price: Int?
-  let house_type: String?
-  let bedrooms: Int?
-  let utilities: String?
-  let description: String?
-  let created_at: String?
-  let media: [MediaItem]?
-  var coverURLString: String? { media?.first?.url }
+// MARK: - AI Negotiator Models (Using Models/Listing.swift)
+// Note: Listing struct is defined in Models/Listing.swift to avoid conflicts
+
+// MARK: - Compatibility Extensions for AI Negotiator
+extension Listing {
+  // Convert Models/Listing to be compatible with AI Negotiator expectations
+  var house_type: String? { houseType }
+  var created_at: String? { 
+    let formatter = ISO8601DateFormatter()
+    return formatter.string(from: createdAt)
+  }
+  
+  // Convert media [String]? to [MediaItem]? for compatibility
+  var mediaItems: [MediaItem]? {
+    media?.map { MediaItem(url: $0) }
+  }
+  
+  // Price as Int for compatibility with some existing code
+  var priceInt: Int? { Int(price) }
+  
+  // Create UUID from String id for compatibility
+  var uuidId: UUID { UUID(uuidString: id) ?? UUID() }
+  
+  // Cover URL compatibility
+  var coverURLString: String? { media?.first }
 }
 
 struct MarketStats: Codable {
@@ -274,16 +287,25 @@ struct ListingCardView: View {
   }
   
   private func createNegotiatorView() -> AINegotiatorView {
+    // Convert HomePageListing to Models/Listing format
+    let dateFormatter = ISO8601DateFormatter()
+    let createdAtDate = listing.created_at.flatMap { dateFormatter.date(from: $0) } ?? Date()
+    
     let negotiatorListing = Listing(
-      id: listing.id,
-      title: listing.title,
-      price: listing.price,
-      house_type: listing.house_type,
-      bedrooms: listing.bedrooms,
-      utilities: nil,
+      id: listing.id.uuidString,
+      title: listing.title ?? "Untitled",
+      price: Double(listing.price ?? 0),
+      city: listing.city ?? "",
+      street: "",  // HomePageListing doesn't have street
+      postalCode: "", // HomePageListing doesn't have postal code  
+      houseType: listing.house_type ?? "apartment",
+      bedrooms: listing.bedrooms ?? 0,
+      utilities: "",  // HomePageListing doesn't have utilities
       description: listing.description,
-      created_at: listing.created_at,
-      media: listing.media
+      media: listing.media?.map { $0.url }.compactMap { $0 }, // Convert MediaItem to [String]
+      userEmail: "landlord@example.com",
+      createdAt: createdAtDate,
+      updatedAt: createdAtDate
     )
     return AINegotiatorView(
       conversationId: UUID(),
@@ -1155,10 +1177,10 @@ class AINegotiatorService: ObservableObject {
     You are an expert rental negotiator. Generate a professional negotiation message for this rental:
 
     LISTING DETAILS:
-    - Title: \(listing.title ?? "Listing")
-    - Current Price: $\(listing.price ?? 0)/month
-    - Type: \(listing.house_type ?? "Not specified")
-    - Bedrooms: \(listing.bedrooms ?? 0)
+    - Title: \(listing.title)
+    - Current Price: $\(Int(listing.price))/month
+    - Type: \(listing.houseType)
+    - Bedrooms: \(listing.bedrooms)
 
     USER REQUIREMENTS:
     - Budget: $\(Int(budget ?? 0))
@@ -1216,8 +1238,8 @@ class AINegotiatorViewModel: ObservableObject {
   func start(conversationId: UUID, listing: Listing, budget: Double?) async {
     // Get market data
     marketStats = try? await service.getMarketData(
-      location: listing.house_type, 
-      houseType: listing.house_type, 
+      location: listing.city, 
+      houseType: listing.houseType, 
       bedrooms: listing.bedrooms
     )
     
@@ -1264,11 +1286,11 @@ struct AINegotiatorView: View {
           Text("Negotiating:")
             .font(.caption)
             .foregroundStyle(.secondary)
-          Text(listing.title ?? "Property")
+          Text(listing.title)
             .font(.headline)
         }
         Spacer()
-        Text("$\(listing.price ?? 0)/mo")
+        Text("$\(Int(listing.price))/mo")
           .font(.title3)
           .fontWeight(.semibold)
       }
