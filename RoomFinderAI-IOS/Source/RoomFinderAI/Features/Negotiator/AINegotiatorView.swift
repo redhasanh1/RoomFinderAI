@@ -8,8 +8,48 @@ struct AINegotiatorView: View {
     @State private var showingExportSheet = false
     @State private var exportedText = ""
     
+    // Parameters for automatic negotiation start
+    private let autoStartParams: AutoStartParams?
+    
+    private struct AutoStartParams {
+        let conversationId: UUID
+        let listing: NegotiationListing
+        let budget: Double
+        let userEmail: String
+    }
+    
     init(supabase: SupabaseClient) {
         self._viewModel = StateObject(wrappedValue: AINegotiatorViewModel(supabase: supabase))
+        self.autoStartParams = nil
+    }
+    
+    init(conversationId: UUID, listing: Listing, budget: Double, userEmail: String) {
+        // Convert Listing to NegotiationListing
+        let negotiationListing = NegotiationListing(
+            id: UUID(uuidString: listing.id) ?? UUID(),
+            title: listing.title,
+            price: Int(listing.price),
+            city: listing.city,
+            bedrooms: listing.bedrooms,
+            houseType: listing.houseType,
+            description: listing.description,
+            media: nil, // Will be loaded separately if needed
+            createdAt: nil
+        )
+        
+        // Create a mock Supabase client (this will be replaced by the environment)
+        let mockSupabase = SupabaseClient(
+            supabaseURL: URL(string: "https://placeholder.supabase.co")!,
+            supabaseKey: "placeholder-key"
+        )
+        
+        self._viewModel = StateObject(wrappedValue: AINegotiatorViewModel(supabase: mockSupabase))
+        self.autoStartParams = AutoStartParams(
+            conversationId: conversationId,
+            listing: negotiationListing,
+            budget: budget,
+            userEmail: userEmail
+        )
     }
     
     var body: some View {
@@ -29,6 +69,22 @@ struct AINegotiatorView: View {
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showingExportSheet) {
             exportView
+        }
+        .onAppear {
+            // Use the environment supabase client
+            viewModel.updateSupabaseClient(supabase)
+            
+            // Auto-start negotiation if parameters were provided
+            if let params = autoStartParams {
+                Task {
+                    await viewModel.start(
+                        conversationId: params.conversationId,
+                        listing: params.listing,
+                        budget: params.budget,
+                        userEmail: params.userEmail
+                    )
+                }
+            }
         }
     }
     

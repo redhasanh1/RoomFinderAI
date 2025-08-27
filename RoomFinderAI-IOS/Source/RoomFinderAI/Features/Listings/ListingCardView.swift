@@ -76,6 +76,25 @@ struct ListingCardView: View {
             .foregroundStyle(.secondary)
             .lineLimit(2)
         }
+        
+        // Negotiate button
+        HStack {
+          Spacer()
+          NavigationLink(destination: createNegotiatorView()) {
+            HStack(spacing: 6) {
+              Image(systemName: "brain")
+                .font(.caption)
+              Text("Negotiate")
+                .font(.caption)
+                .fontWeight(.medium)
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.blue)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+          }
+        }
       }
     }
     .padding(12)
@@ -100,5 +119,27 @@ struct ListingCardView: View {
     } else {
       imageURL = await StorageURL.signedURL(supabase: supabase, bucket: bucket, path: path)
     }
+  }
+  
+  private func createNegotiatorView() -> AINegotiatorView {
+    // Convert CardListing to the expected Listing type for AINegotiatorView
+    let negotiatorListing = Listing(
+      id: listing.id,
+      title: listing.title,
+      price: listing.price,
+      city: listing.city,
+      house_type: listing.house_type,
+      bedrooms: listing.bedrooms,
+      description: listing.description,
+      created_at: nil,
+      media: nil // Will be loaded separately in negotiator if needed
+    )
+    
+    return AINegotiatorView(
+      conversationId: UUID(), // Generate new conversation
+      listing: negotiatorListing,
+      budget: 1200, // Default budget - can be made configurable
+      userEmail: "test-user@example.com" // Stub for now
+    )
   }
 }

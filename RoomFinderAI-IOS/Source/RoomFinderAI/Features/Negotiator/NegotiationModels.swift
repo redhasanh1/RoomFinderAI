@@ -138,17 +138,54 @@ struct AnalysisResult: Codable, Equatable {
     let suggestedResponse: String?
     let negotiationPhase: String?
     
+    // Support both camelCase (web format) and snake_case
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Try camelCase first, then snake_case
+        self.sentiment = try container.decodeIfPresent(String.self, forKey: .sentiment)
+        self.priceOffered = try container.decodeIfPresent(Double.self, forKey: .priceOffered) 
+            ?? try container.decodeIfPresent(Double.self, forKey: .priceOfferedSnake)
+        self.acceptsOffer = try container.decodeIfPresent(Bool.self, forKey: .acceptsOffer) 
+            ?? try container.decodeIfPresent(Bool.self, forKey: .acceptsOfferSnake) ?? false
+        self.makesCounterOffer = try container.decodeIfPresent(Bool.self, forKey: .makesCounterOffer) 
+            ?? try container.decodeIfPresent(Bool.self, forKey: .makesCounterOfferSnake) ?? false
+        self.shouldRespond = try container.decodeIfPresent(Bool.self, forKey: .shouldRespond) 
+            ?? try container.decodeIfPresent(Bool.self, forKey: .shouldRespondSnake) ?? false
+        self.isFinalized = try container.decodeIfPresent(Bool.self, forKey: .isFinalized) 
+            ?? try container.decodeIfPresent(Bool.self, forKey: .isFinalizedSnake) ?? false
+        self.agreedPrice = try container.decodeIfPresent(Double.self, forKey: .agreedPrice) 
+            ?? try container.decodeIfPresent(Double.self, forKey: .agreedPriceSnake)
+        self.responseStrategy = try container.decodeIfPresent(String.self, forKey: .responseStrategy) 
+            ?? try container.decodeIfPresent(String.self, forKey: .responseStrategySnake)
+        self.suggestedResponse = try container.decodeIfPresent(String.self, forKey: .suggestedResponse) 
+            ?? try container.decodeIfPresent(String.self, forKey: .suggestedResponseSnake)
+        self.negotiationPhase = try container.decodeIfPresent(String.self, forKey: .negotiationPhase) 
+            ?? try container.decodeIfPresent(String.self, forKey: .negotiationPhaseSnake)
+    }
+    
     private enum CodingKeys: String, CodingKey {
         case sentiment
-        case priceOffered = "price_offered"
-        case acceptsOffer = "accepts_offer"
-        case makesCounterOffer = "makes_counter_offer"
-        case shouldRespond = "should_respond"
-        case isFinalized = "is_finalized"
-        case agreedPrice = "agreed_price"
-        case responseStrategy = "response_strategy"
-        case suggestedResponse = "suggested_response"
-        case negotiationPhase = "negotiation_phase"
+        // CamelCase keys (web format)
+        case priceOffered
+        case acceptsOffer
+        case makesCounterOffer
+        case shouldRespond
+        case isFinalized
+        case agreedPrice
+        case responseStrategy
+        case suggestedResponse
+        case negotiationPhase
+        // Snake_case keys (alternate format)
+        case priceOfferedSnake = "price_offered"
+        case acceptsOfferSnake = "accepts_offer"
+        case makesCounterOfferSnake = "makes_counter_offer"
+        case shouldRespondSnake = "should_respond"
+        case isFinalizedSnake = "is_finalized"
+        case agreedPriceSnake = "agreed_price"
+        case responseStrategySnake = "response_strategy"
+        case suggestedResponseSnake = "suggested_response"
+        case negotiationPhaseSnake = "negotiation_phase"
     }
 }
 
@@ -161,10 +198,12 @@ struct NegotiationContext: Codable, Equatable {
     let currentState: NegotiationState
     let marketStats: MarketStats?
     let messageHistory: [NegotiationMessage]
+    let lastOffer: Double? // Track last AI offer for better context
     
     init(listing: NegotiationListing, userBudget: Double?, userEmail: String, 
          conversationId: UUID, currentState: NegotiationState = .initial,
-         marketStats: MarketStats? = nil, messageHistory: [NegotiationMessage] = []) {
+         marketStats: MarketStats? = nil, messageHistory: [NegotiationMessage] = [],
+         lastOffer: Double? = nil) {
         self.listing = listing
         self.userBudget = userBudget
         self.userEmail = userEmail
@@ -172,6 +211,7 @@ struct NegotiationContext: Codable, Equatable {
         self.currentState = currentState
         self.marketStats = marketStats
         self.messageHistory = messageHistory
+        self.lastOffer = lastOffer
     }
 }
 

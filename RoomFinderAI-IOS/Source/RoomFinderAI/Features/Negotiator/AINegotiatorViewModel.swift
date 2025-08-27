@@ -19,7 +19,7 @@ class AINegotiatorViewModel: ObservableObject {
     @Published var userBudget: Double?
     
     // MARK: - Private Properties
-    private let negotiatorService: AINegotiatorService
+    private var negotiatorService: AINegotiatorService
     private let safeAuth: SafeAuthAdapter
     private var conversationId: UUID?
     private var listing: NegotiationListing?
@@ -52,6 +52,10 @@ class AINegotiatorViewModel: ObservableObject {
     }
     
     // MARK: - Public Interface
+    func updateSupabaseClient(_ supabase: SupabaseClient) {
+        self.negotiatorService = AINegotiatorService(supabase: supabase)
+    }
+    
     func start(conversationId: UUID, listing: NegotiationListing, budget: Double?, userEmail: String) async {
         self.conversationId = conversationId
         self.listing = listing
