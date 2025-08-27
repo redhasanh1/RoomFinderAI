@@ -2,6 +2,9 @@ import Foundation
 import Supabase
 import Combine
 
+// Use the Models/Listing.swift definition to avoid ambiguity
+typealias DatabaseListing = Listing
+
 enum RealtimeChange<T> {
     case insert(T)
     case update(T)
@@ -19,7 +22,7 @@ enum RealtimeConnectionStatus {
 final class ListingsRealtime: ObservableObject {
     private let client: SupabaseClient
     private var channel: RealtimeChannelV2?
-    private var onChange: ((RealtimeChange<Listing>) -> Void)?
+    private var onChange: ((RealtimeChange<DatabaseListing>) -> Void)?
     private var reconnectionTimer: Timer?
     private let maxReconnectAttempts = 5
     private var reconnectAttempts = 0
@@ -35,7 +38,7 @@ final class ListingsRealtime: ObservableObject {
         stop()
     }
     
-    func start(onChange: @escaping (RealtimeChange<Listing>) -> Void) {
+    func start(onChange: @escaping (RealtimeChange<DatabaseListing>) -> Void) {
         self.onChange = onChange
         
         print("🔄 Starting real-time listings subscription...")
@@ -144,25 +147,25 @@ final class ListingsRealtime: ObservableObject {
     private func handleDatabaseChange<T>(action: T, type: RealtimeChangeType, decoder: JSONDecoder) {
         Task { @MainActor in
             do {
-                let listing: Listing
+                let listing: DatabaseListing
                 
                 switch type {
                 case .insert:
                     if let insertAction = action as? InsertAction {
-                        listing = try insertAction.decodeRecord(as: Listing.self, decoder: decoder)
-                        print("✅ Decoded INSERT: \(listing.title ?? "Untitled")")
+                        listing = try insertAction.decodeRecord(as: DatabaseListing.self, decoder: decoder)
+                        print("✅ Decoded INSERT: \(listing.title)")
                         self.onChange?(.insert(listing))
                     }
                 case .update:
                     if let updateAction = action as? UpdateAction {
-                        listing = try updateAction.decodeRecord(as: Listing.self, decoder: decoder)
-                        print("✅ Decoded UPDATE: \(listing.title ?? "Untitled")")
+                        listing = try updateAction.decodeRecord(as: DatabaseListing.self, decoder: decoder)
+                        print("✅ Decoded UPDATE: \(listing.title)")
                         self.onChange?(.update(listing))
                     }
                 case .delete:
                     if let deleteAction = action as? DeleteAction {
-                        listing = try deleteAction.decodeOldRecord(as: Listing.self, decoder: decoder)
-                        print("✅ Decoded DELETE: \(listing.title ?? "Untitled")")
+                        listing = try deleteAction.decodeOldRecord(as: DatabaseListing.self, decoder: decoder)
+                        print("✅ Decoded DELETE: \(listing.title)")
                         self.onChange?(.delete(listing))
                     }
                 }

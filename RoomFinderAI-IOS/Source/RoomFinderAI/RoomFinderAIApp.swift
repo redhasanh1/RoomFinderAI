@@ -141,6 +141,15 @@ struct NegotiationMessage: Identifiable, Codable {
   var isFromAI: Bool { sender_email.contains("ai-negotiator") }
 }
 
+// MARK: - OpenAI Response Models
+private struct OpenAIResponse: Decodable {
+  struct Choice: Decodable {
+    struct Message: Decodable { let content: String }
+    let message: Message
+  }
+  let choices: [Choice]
+}
+
 // MARK: - OpenAI Client
 final class OpenAIClient {
   static let shared = OpenAIClient()
@@ -163,27 +172,15 @@ final class OpenAIClient {
   func textChat(model: String = NegotiatorConfig.openAIModel, system: String, user: String) async throws -> String {
     let body: [String:Any] = ["model": model, "messages": [["role":"system","content":system],["role":"user","content":user]], "temperature": 0.7]
     let data = try await request(body)
-    struct R: Decodable { 
-      struct Choice: Decodable { 
-        struct Msg: Decodable { let content: String }
-        let message: Msg 
-      }
-      let choices: [Choice] 
-    }
-    return try JSONDecoder().decode(R.self, from: data).choices.first?.message.content ?? ""
+    let response = try JSONDecoder().decode(OpenAIResponse.self, from: data)
+    return response.choices.first?.message.content ?? ""
   }
   
   func jsonChat<T: Decodable>(model: String = NegotiatorConfig.openAIModel, system: String, user: String, schema: T.Type) async throws -> T {
     let body: [String:Any] = ["model": model, "response_format": ["type": "json_object"], "messages": [["role":"system","content":system],["role":"user","content":user]], "temperature": 0.2]
     let data = try await request(body)
-    struct R: Decodable { 
-      struct Choice: Decodable { 
-        struct Msg: Decodable { let content: String }
-        let message: Msg 
-      }
-      let choices: [Choice] 
-    }
-    let text = try JSONDecoder().decode(R.self, from: data).choices.first?.message.content ?? "{}"
+    let response = try JSONDecoder().decode(OpenAIResponse.self, from: data)
+    let text = response.choices.first?.message.content ?? "{}"
     return try JSONDecoder().decode(T.self, from: Data(text.utf8))
   }
 }
