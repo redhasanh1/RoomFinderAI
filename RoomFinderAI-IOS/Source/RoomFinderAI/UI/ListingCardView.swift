@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 struct ListingCardView: View {
   let listing: Listing

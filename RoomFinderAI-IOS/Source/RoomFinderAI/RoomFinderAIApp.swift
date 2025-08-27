@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 import Supabase
 
 // MARK: - Secrets Configuration
@@ -714,12 +715,12 @@ struct FeaturedListingCard: View {
       
       // Content
       VStack(alignment: .leading, spacing: 4) {
-        Text(listing.title)
+        Text(listing.title ?? "Untitled")
           .font(.subheadline)
           .fontWeight(.medium)
           .lineLimit(1)
         
-        Text("$\(Int(listing.price))/mo")
+        Text("$\(Int(listing.price ?? 0))/mo")
           .font(.caption)
           .fontWeight(.semibold)
           .foregroundColor(.blue)
