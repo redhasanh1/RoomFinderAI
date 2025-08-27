@@ -103,6 +103,14 @@ struct Message: Identifiable, Decodable, Equatable {
   let created_at: String
 }
 
+struct Conversation: Identifiable, Decodable, Equatable {
+  let id: UUID
+  let listing_id: UUID?
+  let buyer_email: String?
+  let seller_email: String?
+  let created_at: String?
+}
+
 struct MarketStats: Decodable {
   let averagePrice: Double
   let totalListings: Int
@@ -237,7 +245,7 @@ class AINegotiatorService {
   func firstMessage(listing: Listing, stats: MarketStats, budget: Double?) async throws -> String {
     let budgetText = budget.map { "Your budget is $\(Int($0))" } ?? "No specific budget mentioned"
     let prompt = """
-    Property: \(listing.title ?? "Unknown") at $\(Int(listing.price ?? 0))/month
+    Property: \(listing.title) at $\(Int(listing.price))/month
     Market average: $\(Int(stats.averagePrice))
     \(budgetText)
     
@@ -309,10 +317,10 @@ struct AINegotiatorView: View {
     VStack {
       // Header with property info
       VStack(alignment: .leading, spacing: 4) {
-        Text(listing.title ?? "Property")
+        Text(listing.title)
           .font(.headline)
         HStack {
-          Text("$\(Int(listing.price ?? 0))/mo")
+          Text("$\(Int(listing.price))/mo")
             .font(.title3)
             .fontWeight(.semibold)
           Spacer()
@@ -356,6 +364,7 @@ struct AINegotiatorView: View {
     }
     .navigationTitle("AI Negotiator")
     .navigationBarTitleDisplayMode(.inline)
+    .scrollContentBackground(.hidden)
     .toolbar {
       ToolbarItem(placement: .navigationBarTrailing) {
         NavigationLink(destination: DebugInfoView()) {
@@ -412,7 +421,7 @@ struct AINegotiatorView: View {
         
         // Generate AI response
         let aiPrompt = """
-        Conversation about \(listing.title ?? "property") at $\(Int(listing.price ?? 0))/month.
+        Conversation about \(listing.title) at $\(Int(listing.price))/month.
         Market average: $\(Int(market?.averagePrice ?? 1000))
         User just said: \(text)
         
@@ -475,10 +484,13 @@ struct AppTabs: View {
       NavigationView { ListingsScreen() }
         .tabItem { Label("Search", systemImage: "magnifyingglass") }
 
-      NavigationView { Text("Messages (coming soon)").font(.title2).foregroundColor(.secondary) }
+      NavigationView { AINegotiatorHub() }
+        .tabItem { Label("AI", systemImage: "brain.head.profile") }
+
+      NavigationView { Text("Messages").font(.title2).foregroundColor(.secondary) }
         .tabItem { Label("Messages", systemImage: "bubble.left.and.bubble.right") }
 
-      NavigationView { Text("Profile (coming soon)").font(.title2).foregroundColor(.secondary) }
+      NavigationView { Text("Profile").font(.title2).foregroundColor(.secondary) }
         .tabItem { Label("Profile", systemImage: "person") }
     }
   }
@@ -504,6 +516,7 @@ struct HomeScreen: View {
     }
     .navigationTitle("")
     .navigationBarHidden(true)
+    .scrollContentBackground(.hidden)
     .onAppear {
       loadFeaturedListings()
     }
@@ -701,12 +714,12 @@ struct FeaturedListingCard: View {
       
       // Content
       VStack(alignment: .leading, spacing: 4) {
-        Text(listing.title ?? "Untitled")
+        Text(listing.title)
           .font(.subheadline)
           .fontWeight(.medium)
           .lineLimit(1)
         
-        Text("$\(Int(listing.price ?? 0))/mo")
+        Text("$\(Int(listing.price))/mo")
           .font(.caption)
           .fontWeight(.semibold)
           .foregroundColor(.blue)
@@ -762,34 +775,44 @@ struct ListingsScreen: View {
   @Environment(\.supabase) private var supabase
 
   var body: some View {
-    VStack {
-      if isLoading {
-        ProgressView("Loading listings...")
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-      } else if let error = error {
-        VStack {
-          Text("Error: \(error)")
-            .foregroundColor(.red)
-          Button("Retry") {
-            loadListings()
-          }
-        }
+    if isLoading {
+      ProgressView("Loading listings...")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-      } else {
-        List(listings) { listing in
-          NavigationLink(destination: ListingDetailView(listing: convertToListing(listing))) {
-            ListingCardView(listing: listing)
-          }
-          .buttonStyle(.plain)
-          .listRowSeparator(.hidden)
-          .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+    } else if let error = error {
+      VStack {
+        Text("Error: \(error)")
+          .foregroundColor(.red)
+        Button("Retry") {
+          loadListings()
         }
-        .listStyle(PlainListStyle())
       }
-    }
-    .navigationTitle("Search Listings")
-    .onAppear {
-      loadListings()
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+    } else {
+      ScrollView {
+        LazyVStack(spacing: 14) {
+          ForEach(listings) { listing in
+            NavigationLink { 
+              ListingDetailView(listing: convertToListing(listing)) 
+            } label: {
+              ListingCardView(listing: convertToListing(listing))
+            }
+            .buttonStyle(.plain)
+            .onAppear { 
+              if listing.id == listings.last?.id { 
+                Task { await loadMore() } 
+              } 
+            }
+          }
+          if isLoading { 
+            ProgressView().padding(.vertical, 12) 
+          }
+        }
+        .padding(.horizontal, UI.hPad)
+        .padding(.top, 8)
+      }
+      .navigationTitle("Search Listings")
+      .navigationBarTitleDisplayMode(.inline)
+      .scrollContentBackground(.hidden)
     }
   }
 
@@ -816,6 +839,10 @@ struct ListingsScreen: View {
         }
       }
     }
+  }
+  
+  private func loadMore() async {
+    // Placeholder for pagination if needed
   }
   
   private func convertToListing(_ homeListing: HomePageListing) -> Listing {
@@ -846,12 +873,11 @@ struct ListingDetailView: View {
 
   var body: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: 16) {
+      VStack(alignment: .leading, spacing: 14) {
         // Property image and basic info
         VStack(alignment: .leading, spacing: 12) {
           Text(listing.title ?? "Untitled Property")
-            .font(.title2)
-            .fontWeight(.bold)
+            .font(.headline)
           
           HStack {
             Text("$\(Int(listing.price ?? 0))/month")
@@ -878,18 +904,18 @@ struct ListingDetailView: View {
             }
           }
           
-          if let city = listing.city {
+          if !listing.city.isEmpty {
             HStack {
               Image(systemName: "location")
                 .foregroundColor(.secondary)
-              Text(city)
+              Text(listing.city)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             }
           }
         }
-        
-        Divider()
+        .padding(UI.vPad)
+        .cardBackground()
         
         // Description
         VStack(alignment: .leading, spacing: 8) {
@@ -899,8 +925,8 @@ struct ListingDetailView: View {
             .font(.body)
             .foregroundStyle(.secondary)
         }
-        
-        Divider()
+        .padding(UI.vPad)
+        .cardBackground()
         
         // Budget input
         VStack(alignment: .leading, spacing: 8) {
@@ -910,6 +936,8 @@ struct ListingDetailView: View {
             .keyboardType(.numberPad)
             .textFieldStyle(.roundedBorder)
         }
+        .padding(UI.vPad)
+        .cardBackground()
         
         // Negotiate button
         NavigationLink(destination: AINegotiatorBootstrap(
@@ -917,108 +945,23 @@ struct ListingDetailView: View {
           buyerEmail: userEmail,
           buyerBudget: Double(budgetText)
         )) {
-          HStack {
-            Image(systemName: "brain")
-            Text("Start Negotiation with AI")
-          }
-          .frame(maxWidth: .infinity)
-          .padding()
-          .background(Color.blue)
-          .foregroundColor(.white)
-          .cornerRadius(12)
+          Label("Start Negotiation with AI", systemImage: "brain.head.profile")
         }
+        .buttonStyle(.borderedProminent)
+        .padding(.top, 4)
         
         Spacer(minLength: 100)
       }
-      .padding()
+      .padding(.horizontal, UI.hPad)
+      .padding(.top, 8)
     }
     .navigationTitle("Property Details")
     .navigationBarTitleDisplayMode(.inline)
+    .scrollContentBackground(.hidden)
   }
 }
 
-struct ListingCardView: View {
-  let listing: HomePageListing
-  @State private var imageURL: URL?
-  @Environment(\.supabase) private var supabase
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      // Image
-      AsyncImage(url: imageURL) { image in
-        image
-          .resizable()
-          .aspectRatio(contentMode: .fill)
-      } placeholder: {
-        placeholder
-      }
-      .frame(height: 200)
-      .clipShape(RoundedRectangle(cornerRadius: 12))
-
-      // Content
-      VStack(alignment: .leading, spacing: 6) {
-        Text(listing.title ?? "Untitled")
-          .font(.headline)
-          .lineLimit(2)
-
-        HStack(spacing: 8) {
-          if let price = listing.price { Text("$\(price)") }
-          if let type = listing.house_type { Text("· \(type)") }
-          if let bd = listing.bedrooms { Text("· \(bd) bd") }
-        }
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
-
-        // Negotiate button
-        HStack {
-          Spacer()
-          NavigationLink(destination: ListingDetailView(listing: convertToListing(listing))) {
-            HStack(spacing: 4) {
-              Image(systemName: "brain")
-              Text("Negotiate")
-            }
-            .font(.caption)
-            .fontWeight(.medium)
-            .foregroundColor(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Color.blue)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-          }
-        }
-      }
-    }
-    .padding(12)
-    .background(RoundedRectangle(cornerRadius: 18).fill(Color(.secondarySystemBackground)))
-    .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.black.opacity(0.06)))
-    .task {
-      if let s = listing.coverURLString, let u = URL(string: s) { imageURL = u }
-    }
-  }
-
-  private func convertToListing(_ homeListing: HomePageListing) -> Listing {
-    return Listing(
-      id: homeListing.id.uuidString,
-      title: homeListing.title ?? "Untitled",
-      price: Double(homeListing.price ?? 0),
-      city: homeListing.city ?? "",
-      street: "",
-      postalCode: "",
-      houseType: homeListing.house_type ?? "Apartment",
-      bedrooms: homeListing.bedrooms ?? 1,
-      utilities: "Not specified",
-      description: homeListing.description,
-      media: homeListing.media?.compactMap { $0.url },
-      userEmail: "",
-      createdAt: Date(),
-      updatedAt: Date()
-    )
-  }
-
-  private var placeholder: some View {
-    Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary)
-  }
-}
+// ListingCardView moved to UI/ListingCardView.swift for better organization
 
 // MARK: - App
 @main
