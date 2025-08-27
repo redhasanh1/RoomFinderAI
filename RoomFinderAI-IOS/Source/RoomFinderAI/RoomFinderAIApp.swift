@@ -3,15 +3,27 @@ import Supabase
 
 // MARK: - Secrets Configuration
 enum Secrets {
+  // Supabase (already verified)
   static let supabaseURL = "https://fkktwhjybuflxqzopaex.supabase.co"
   static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs"
 
+  // OpenAI (provided)
+  static let openAIKey   = "sk-proj-CbQtehx5UM0V9mXWrdZnM-hP3l98a0ZVguNWb51K7G63M0dfChAziWYeIO_AOPE2cEnVGOcwyT3BlbkFJliQDGy85OmZ3UGhQS7RSltE9YKO_5qrdLaLEweqkbxs-dDtMy3FMf6Msuot00O58p9L9XQBucA"
+  static let openAIOrgID: String? = "org-EPHQ1A3u0XIUZml6JABMgZzg"
+  static let openAIModel = "gpt-4o-mini"
+
   static func assertValid() {
-    precondition(supabaseURL.hasPrefix("https://"), "Supabase URL must start with https://")
-    precondition(supabaseURL.contains(".supabase.co"), "Must use .supabase.co domain")
-    precondition(URL(string: supabaseURL)?.host?.hasSuffix(".supabase.co") == true, "Invalid host in Supabase URL")
-    precondition(!supabaseAnonKey.isEmpty, "Anon key is empty")
+    precondition(supabaseURL.hasPrefix("https://") && supabaseURL.contains(".supabase.co"))
+    precondition(!supabaseAnonKey.isEmpty, "Missing Supabase anon key")
+    precondition(!openAIKey.isEmpty, "Missing OpenAI key")
   }
+}
+
+// MARK: - Negotiator Configuration
+enum NegotiatorConfig {
+  static let openAIKey   = Secrets.openAIKey
+  static let openAIOrg   = Secrets.openAIOrgID
+  static let openAIModel = Secrets.openAIModel
 }
 
 enum SupabaseFactory {
@@ -54,6 +66,113 @@ struct HomePageListing: Identifiable, Decodable, Equatable {
   let media: [MediaItem]?     // jsonb array
 
   var coverURLString: String? { media?.first?.url }
+}
+
+// MARK: - AI Negotiator Models
+struct Listing: Identifiable, Decodable, Equatable {
+  let id: UUID
+  let title: String?
+  let price: Int?
+  let house_type: String?
+  let bedrooms: Int?
+  let utilities: String?
+  let description: String?
+  let created_at: String?
+  let media: [MediaItem]?
+  var coverURLString: String? { media?.first?.url }
+}
+
+struct MarketStats: Codable {
+  let average: Double?
+  let median: Double?
+  let min: Double?
+  let max: Double?
+  let count: Int
+  let analysis: String?
+  let source: String
+  
+  static func calculate(from prices: [Double]) -> MarketStats {
+    guard !prices.isEmpty else {
+      return MarketStats(average: nil, median: nil, min: nil, max: nil, count: 0, analysis: nil, source: "none")
+    }
+    let sorted = prices.sorted()
+    let avg = prices.reduce(0, +) / Double(prices.count)
+    let median = sorted.count % 2 == 0 ? (sorted[sorted.count/2-1] + sorted[sorted.count/2])/2 : sorted[sorted.count/2]
+    return MarketStats(
+      average: avg, median: median, min: sorted.first, max: sorted.last,
+      count: prices.count, analysis: nil, source: "database"
+    )
+  }
+}
+
+struct AnalysisResult: Codable {
+  let sentiment: String?
+  let priceOffered: Double?
+  let acceptsOffer: Bool
+  let makesCounterOffer: Bool
+  let shouldRespond: Bool
+  let isFinalized: Bool
+  let agreedPrice: Double?
+  let responseStrategy: String?
+  let suggestedResponse: String?
+  let negotiationPhase: String?
+}
+
+struct NegotiationMessage: Identifiable, Codable {
+  let id: UUID
+  let conversation_id: UUID
+  let sender_email: String
+  let content: String
+  let created_at: String
+  
+  var isFromAI: Bool { sender_email.contains("ai-negotiator") }
+}
+
+// MARK: - OpenAI Client
+final class OpenAIClient {
+  static let shared = OpenAIClient()
+  private init() {}
+  
+  private func request(_ body: [String:Any]) async throws -> Data {
+    var req = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
+    req.httpMethod = "POST"
+    req.addValue("application/json", forHTTPHeaderField: "Content-Type")
+    req.addValue("Bearer \(NegotiatorConfig.openAIKey)", forHTTPHeaderField: "Authorization")
+    if let org = NegotiatorConfig.openAIOrg { req.addValue(org, forHTTPHeaderField: "OpenAI-Organization") }
+    req.httpBody = try JSONSerialization.data(withJSONObject: body)
+    let (data, resp) = try await URLSession.shared.data(for: req)
+    guard (resp as? HTTPURLResponse)?.statusCode == 200 else {
+      throw NSError(domain: "OpenAI", code: (resp as? HTTPURLResponse)?.statusCode ?? -1)
+    }
+    return data
+  }
+  
+  func textChat(model: String = NegotiatorConfig.openAIModel, system: String, user: String) async throws -> String {
+    let body: [String:Any] = ["model": model, "messages": [["role":"system","content":system],["role":"user","content":user]], "temperature": 0.7]
+    let data = try await request(body)
+    struct R: Decodable { 
+      struct Choice: Decodable { 
+        struct Msg: Decodable { let content: String }
+        let message: Msg 
+      }
+      let choices: [Choice] 
+    }
+    return try JSONDecoder().decode(R.self, from: data).choices.first?.message.content ?? ""
+  }
+  
+  func jsonChat<T: Decodable>(model: String = NegotiatorConfig.openAIModel, system: String, user: String, schema: T.Type) async throws -> T {
+    let body: [String:Any] = ["model": model, "response_format": ["type": "json_object"], "messages": [["role":"system","content":system],["role":"user","content":user]], "temperature": 0.2]
+    let data = try await request(body)
+    struct R: Decodable { 
+      struct Choice: Decodable { 
+        struct Msg: Decodable { let content: String }
+        let message: Msg 
+      }
+      let choices: [Choice] 
+    }
+    let text = try JSONDecoder().decode(R.self, from: data).choices.first?.message.content ?? "{}"
+    return try JSONDecoder().decode(T.self, from: Data(text.utf8))
+  }
 }
 
 // MARK: - Storage URL Helper
@@ -123,6 +242,24 @@ struct ListingCardView: View {
       }
       .font(.subheadline)
       .foregroundStyle(.secondary)
+      
+      // Negotiate button
+      HStack {
+        Spacer()
+        NavigationLink(destination: createNegotiatorView()) {
+          HStack(spacing: 4) {
+            Image(systemName: "brain")
+            Text("Negotiate")
+          }
+          .font(.caption)
+          .fontWeight(.medium)
+          .foregroundColor(.white)
+          .padding(.horizontal, 12)
+          .padding(.vertical, 6)
+          .background(Color.blue)
+          .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+      }
     }
     .padding(12)
     .background(RoundedRectangle(cornerRadius: 18).fill(Color(.secondarySystemBackground)))
@@ -134,6 +271,26 @@ struct ListingCardView: View {
 
   private var placeholder: some View { 
     Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary) 
+  }
+  
+  private func createNegotiatorView() -> AINegotiatorView {
+    let negotiatorListing = Listing(
+      id: listing.id,
+      title: listing.title,
+      price: listing.price,
+      house_type: listing.house_type,
+      bedrooms: listing.bedrooms,
+      utilities: nil,
+      description: listing.description,
+      created_at: listing.created_at,
+      media: listing.media
+    )
+    return AINegotiatorView(
+      conversationId: UUID(),
+      listing: negotiatorListing,
+      budget: Double(listing.price ?? 1200),
+      userEmail: "test-user@example.com"
+    )
   }
 }
 
@@ -930,6 +1087,315 @@ struct AIListingCard: View {
   }
 }
 
+// MARK: - AI Negotiator Service
+@MainActor
+class AINegotiatorService: ObservableObject {
+  private let supabase: SupabaseClient
+  
+  init(supabase: SupabaseClient) {
+    self.supabase = supabase
+  }
+  
+  // Get market data from database
+  func getMarketData(location: String?, houseType: String?, bedrooms: Int?) async throws -> MarketStats {
+    var query = supabase.from("listings").select("price,city,house_type,bedrooms").limit(50)
+    
+    if let location, !location.isEmpty {
+      query = query.ilike("city", "%\(location)%")
+    }
+    if let houseType, !houseType.isEmpty {
+      query = query.eq("house_type", value: houseType)
+    }
+    if let bedrooms {
+      query = query.eq("bedrooms", value: bedrooms)
+    }
+    
+    let response = try await query.execute()
+    let data = try JSONDecoder().decode([[String: AnyCodable]].self, from: response.data)
+    let prices = data.compactMap { row -> Double? in
+      guard let price = row["price"]?.value as? Int else { return nil }
+      return Double(price)
+    }
+    
+    guard !prices.isEmpty else {
+      return try await getAIMarketData(location: location, houseType: houseType, bedrooms: bedrooms)
+    }
+    
+    return MarketStats.calculate(from: prices)
+  }
+  
+  // AI fallback for market data
+  private func getAIMarketData(location: String?, houseType: String?, bedrooms: Int?) async throws -> MarketStats {
+    let prompt = """
+    You are a real estate market analyst. Provide realistic rental market data for:
+    - Location: \(location ?? "General area")
+    - Property Type: \(houseType ?? "Any")
+    - Bedrooms: \(bedrooms.map { String($0) } ?? "Any")
+
+    Based on current market conditions, provide realistic estimates in this JSON format:
+    {
+        "average": 1200,
+        "median": 1150,
+        "min": 900,
+        "max": 1500,
+        "analysis": "Brief market analysis explaining the pricing",
+        "source": "ai_estimate"
+    }
+
+    Focus on realistic prices for the specified location and property type.
+    """
+    
+    let response = try await OpenAIClient.shared.jsonChat(system: prompt, user: "", schema: MarketStats.self)
+    return response
+  }
+  
+  // Generate first negotiation message
+  func firstMessage(listing: Listing, stats: MarketStats, budget: Double?) async throws -> String {
+    let prompt = """
+    You are an expert rental negotiator. Generate a professional negotiation message for this rental:
+
+    LISTING DETAILS:
+    - Title: \(listing.title ?? "Listing")
+    - Current Price: $\(listing.price ?? 0)/month
+    - Type: \(listing.house_type ?? "Not specified")
+    - Bedrooms: \(listing.bedrooms ?? 0)
+
+    USER REQUIREMENTS:
+    - Budget: $\(Int(budget ?? 0))
+
+    MARKET DATA:
+    - Average market price: $\(Int(stats.average ?? 0))
+    - Market range: $\(Int(stats.min ?? 0)) - $\(Int(stats.max ?? 0))
+    - Data source: \(stats.source)
+
+    NEGOTIATION STRATEGY:
+    1. Be professional and respectful
+    2. Express genuine interest in the property
+    3. Mention you're a qualified tenant ready to move quickly
+    4. If listing price is above market average or user budget, suggest a lower price with justification
+    5. Offer quick decision-making and reliable tenancy
+    6. Keep message concise (2-3 sentences max)
+
+    Generate ONLY the message content (no "Dear" or signatures):
+    """
+    
+    return try await OpenAIClient.shared.textChat(system: prompt, user: "")
+  }
+  
+  // Send message to database
+  func sendMessage(conversationId: UUID, senderEmail: String, content: String) async throws {
+    let messageData: [String: Any] = [
+      "conversation_id": conversationId.uuidString,
+      "sender_email": senderEmail,
+      "content": content,
+      "created_at": ISO8601DateFormatter().string(from: Date())
+    ]
+    
+    try await supabase.from("messages").insert(messageData).execute()
+  }
+}
+
+// MARK: - AI Negotiator View Model
+@MainActor
+class AINegotiatorViewModel: ObservableObject {
+  @Published var messages: [NegotiationMessage] = []
+  @Published var isTyping = false
+  @Published var marketStats: MarketStats?
+  
+  private var service: AINegotiatorService
+  private let aiEmail = "ai-negotiator@roomfinder.com"
+  
+  init(supabase: SupabaseClient) {
+    self.service = AINegotiatorService(supabase: supabase)
+  }
+  
+  func updateService(supabase: SupabaseClient) {
+    self.service = AINegotiatorService(supabase: supabase)
+  }
+  
+  func start(conversationId: UUID, listing: Listing, budget: Double?) async {
+    // Get market data
+    marketStats = try? await service.getMarketData(
+      location: listing.house_type, 
+      houseType: listing.house_type, 
+      bedrooms: listing.bedrooms
+    )
+    
+    // Send first AI message
+    if let stats = marketStats {
+      isTyping = true
+      defer { isTyping = false }
+      
+      if let message = try? await service.firstMessage(listing: listing, stats: stats, budget: budget) {
+        try? await service.sendMessage(conversationId: conversationId, senderEmail: aiEmail, content: message)
+      }
+    }
+  }
+  
+  func sendUserMessage(conversationId: UUID, userEmail: String, content: String) async {
+    try? await service.sendMessage(conversationId: conversationId, senderEmail: userEmail, content: content)
+  }
+}
+
+// MARK: - AI Negotiator View
+struct AINegotiatorView: View {
+  let conversationId: UUID
+  let listing: Listing
+  let budget: Double?
+  let userEmail: String
+  
+  @StateObject private var viewModel: AINegotiatorViewModel
+  @Environment(\.supabase) private var supabase
+  @State private var messageText = ""
+  
+  init(conversationId: UUID, listing: Listing, budget: Double?, userEmail: String) {
+    self.conversationId = conversationId
+    self.listing = listing
+    self.budget = budget
+    self.userEmail = userEmail
+    self._viewModel = StateObject(wrappedValue: AINegotiatorViewModel(supabase: SupabaseClient(supabaseURL: URL(string: "https://invalid")!, supabaseKey: "")))
+  }
+  
+  var body: some View {
+    VStack(spacing: 0) {
+      // Header
+      HStack {
+        VStack(alignment: .leading) {
+          Text("Negotiating:")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+          Text(listing.title ?? "Property")
+            .font(.headline)
+        }
+        Spacer()
+        Text("$\(listing.price ?? 0)/mo")
+          .font(.title3)
+          .fontWeight(.semibold)
+      }
+      .padding()
+      
+      // Market Stats
+      if let stats = viewModel.marketStats {
+        VStack(alignment: .leading, spacing: 4) {
+          Text("Market Analysis")
+            .font(.subheadline.bold())
+          Text("avg $\(Int(stats.average ?? 0)) • median $\(Int(stats.median ?? 0)) • range $\(Int(stats.min ?? 0))–$\(Int(stats.max ?? 0))")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal)
+      }
+      
+      // Chat Messages
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: 12) {
+          ForEach(viewModel.messages) { message in
+            chatBubble(message)
+          }
+          
+          if viewModel.isTyping {
+            HStack {
+              ProgressView()
+                .scaleEffect(0.8)
+              Text("AI is typing...")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal)
+          }
+        }
+        .padding(.vertical)
+      }
+      
+      // Input
+      HStack {
+        TextField("Type a message...", text: $messageText)
+          .textFieldStyle(.roundedBorder)
+        
+        Button("Send") {
+          let text = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+          guard !text.isEmpty else { return }
+          
+          Task {
+            await viewModel.sendUserMessage(conversationId: conversationId, userEmail: userEmail, content: text)
+            messageText = ""
+          }
+        }
+        .buttonStyle(.borderedProminent)
+      }
+      .padding()
+    }
+    .navigationTitle("AI Negotiator")
+    .navigationBarTitleDisplayMode(.inline)
+    .task {
+      // Update viewModel with environment supabase client
+      viewModel.updateService(supabase: supabase)
+      await viewModel.start(conversationId: conversationId, listing: listing, budget: budget)
+    }
+  }
+  
+  private func chatBubble(_ message: NegotiationMessage) -> some View {
+    HStack {
+      if message.isFromAI {
+        Text(message.content)
+          .padding(10)
+          .background(Color(.systemGray5))
+          .clipShape(RoundedRectangle(cornerRadius: 14))
+          .frame(maxWidth: .infinity, alignment: .leading)
+      } else {
+        Text(message.content)
+          .padding(10)
+          .background(Color.blue)
+          .foregroundStyle(.white)
+          .clipShape(RoundedRectangle(cornerRadius: 14))
+          .frame(maxWidth: .infinity, alignment: .trailing)
+      }
+    }
+    .padding(.horizontal)
+  }
+}
+
+// Helper for AnyCodable
+struct AnyCodable: Codable {
+  let value: Any
+  
+  init(_ value: Any) {
+    self.value = value
+  }
+  
+  init(from decoder: Decoder) throws {
+    let container = try decoder.singleValueContainer()
+    if let intValue = try? container.decode(Int.self) {
+      value = intValue
+    } else if let stringValue = try? container.decode(String.self) {
+      value = stringValue
+    } else if let doubleValue = try? container.decode(Double.self) {
+      value = doubleValue
+    } else if let boolValue = try? container.decode(Bool.self) {
+      value = boolValue
+    } else {
+      value = NSNull()
+    }
+  }
+  
+  func encode(to encoder: Encoder) throws {
+    var container = encoder.singleValueContainer()
+    if let intValue = value as? Int {
+      try container.encode(intValue)
+    } else if let stringValue = value as? String {
+      try container.encode(stringValue)
+    } else if let doubleValue = value as? Double {
+      try container.encode(doubleValue)
+    } else if let boolValue = value as? Bool {
+      try container.encode(boolValue)
+    } else {
+      try container.encodeNil()
+    }
+  }
+}
+
+
 // MARK: - Tab View
 struct AppTabs: View {
   @Environment(\.supabase) private var supabase
@@ -968,6 +1434,14 @@ struct AppTabs: View {
 @main
 struct MyApp: App {
   private let supabase = SupabaseFactory.makeClient()
+  
+  init() {
+    // Assert OpenAI credentials are configured at startup (fail fast)
+    Secrets.assertValid()
+    
+    // Debug: Confirm OpenAI integration is ready
+    print("🚀 AI Negotiator ready with OpenAI credentials configured!")
+  }
   
   var body: some Scene {
     WindowGroup {

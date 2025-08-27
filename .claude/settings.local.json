@@ -53,7 +53,8 @@
       "Bash(git stash:*)",
       "Bash(chmod:*)",
       "Bash(rsync:*)",
-      "Bash(gem list:*)"
+      "Bash(gem list:*)",
+      "Bash(osascript:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

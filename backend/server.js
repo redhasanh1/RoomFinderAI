@@ -58,7 +58,7 @@ config = {
     GOOGLE_API_KEY: process.env.GOOGLE_API_KEY?.trim() || config.GOOGLE_API_KEY,
     SUPABASE_URL: process.env.SUPABASE_URL?.trim() || config.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.trim() || config.SUPABASE_ANON_KEY,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim() || config.OPENAI_API_KEY,
+    OPENAI_API_KEY: process.env._API_KEY?.trim() || config.OPENAI_API_KEY,
     OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim() || config.OPENAI_ORG_ID,
     OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || config.OPENAI_MODEL || 'gpt-3.5-turbo',
     BREVO_API_KEY: process.env.BREVO_API_KEY?.trim() || config.BREVO_API_KEY,

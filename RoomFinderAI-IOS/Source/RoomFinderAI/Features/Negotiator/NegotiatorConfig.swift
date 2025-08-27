@@ -2,25 +2,10 @@ import Foundation
 
 // MARK: - AI Negotiator Configuration
 enum NegotiatorConfig {
-    // OpenAI Configuration - Read from Secrets
-    static let openAIAPIKey: String = {
-        // First try environment variable (for CI/CD)
-        if let envKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !envKey.isEmpty {
-            return envKey
-        }
-        // Fall back to Secrets enum
-        return Secrets.openAIKey
-    }()
-    
-    static let openAIOrganizationID: String? = {
-        // First try environment variable
-        if let envOrgID = ProcessInfo.processInfo.environment["OPENAI_ORG_ID"], !envOrgID.isEmpty {
-            return envOrgID
-        }
-        // Fall back to Secrets enum
-        return Secrets.openAIOrgID
-    }()
-    static let openAIModel: String = "gpt-4o-mini" // Default model
+    // OpenAI Configuration - Direct from Secrets
+    static let openAIKey: String = Secrets.openAIKey
+    static let openAIOrg: String? = Secrets.openAIOrgID
+    static let openAIModel: String = Secrets.openAIModel
     static let openAIBaseURL: String = "https://api.openai.com/v1"
     
     // OpenAI Request Settings
@@ -49,11 +34,19 @@ enum NegotiatorConfig {
     
     // Validation
     static func validateConfiguration() -> Bool {
-        guard !openAIAPIKey.isEmpty && openAIAPIKey != "sk-your-openai-api-key" else {
+        guard !openAIKey.isEmpty && openAIKey.hasPrefix("sk-") else {
             print("ERROR: OpenAI API Key not configured")
             return false
         }
         return true
+    }
+    
+    // Debug helper to verify credentials are loaded
+    static func debugCredentials() {
+        print("🚀 OpenAI Configuration:")
+        print("  - API Key: \(openAIKey.prefix(20))... (length: \(openAIKey.count))")
+        print("  - Org ID: \(openAIOrg ?? "nil")")
+        print("  - Model: \(openAIModel)")
     }
 }
 
@@ -67,8 +60,8 @@ struct OpenAIRequestConfig {
     let timeout: TimeInterval
     
     static let `default` = OpenAIRequestConfig(
-        apiKey: NegotiatorConfig.openAIAPIKey,
-        organizationID: NegotiatorConfig.openAIOrganizationID,
+        apiKey: NegotiatorConfig.openAIKey,
+        organizationID: NegotiatorConfig.openAIOrg,
         model: NegotiatorConfig.openAIModel,
         maxTokens: NegotiatorConfig.maxTokens,
         temperature: NegotiatorConfig.temperature,
