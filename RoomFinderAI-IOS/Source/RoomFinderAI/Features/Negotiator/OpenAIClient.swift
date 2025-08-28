@@ -12,22 +12,24 @@ final class OpenAIClient {
     req.httpMethod = "POST"
     req.addValue("application/json", forHTTPHeaderField: "Content-Type")
     req.addValue("Bearer \(Secrets.openAIKey)", forHTTPHeaderField: "Authorization")
-    req.addValue("keys/v1", forHTTPHeaderField: "OpenAI-Beta") // project-key routing
-    // Only attach org for classic keys
+    req.addValue("keys/v1", forHTTPHeaderField: "OpenAI-Beta") // required for project keys routing
+
+    // ✅ Only attach org for classic keys (NOT for sk-proj)
     if !isProjectKey, let org = Secrets.openAIOrgID, !org.isEmpty {
       req.addValue(org, forHTTPHeaderField: "OpenAI-Organization")
     }
+
     req.httpBody = try JSONSerialization.data(withJSONObject: body)
 
     let (data, resp) = try await URLSession.shared.data(for: req)
     guard let http = resp as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+      let txt = String(data: data, encoding: .utf8) ?? ""
       let code = (resp as? HTTPURLResponse)?.statusCode ?? -1
-      let bodyText = String(data: data, encoding: .utf8) ?? ""
       let hint = (code == 401)
-        ? "401 Unauthorized. With sk-proj keys, org must be nil and the key must be valid/fresh."
+        ? "401 Unauthorized: with sk-proj keys the org header must be omitted and the key must be valid/fresh."
         : "OpenAI HTTP \(code)"
       throw NSError(domain: "OpenAI", code: code,
-                    userInfo: [NSLocalizedDescriptionKey: "\(hint)\n\(bodyText)"])
+                    userInfo: [NSLocalizedDescriptionKey: "\(hint)\n\(txt)"])
     }
     return data
   }
@@ -63,9 +65,9 @@ final class OpenAIClient {
     return try JSONDecoder().decode(T.self, from: Data(json.utf8))
   }
 
-  // Used by Debug screen
+  // In-app self-test for the ⓘ screen
   func health() async -> String {
-    do { _ = try await textChat(system: "Reply 'pong'.", user: "ping"); return "OpenAI: OK" }
+    do { _ = try await textChat(system: "Reply 'pong'.", user: "ping"); return "OpenAI: OK (\(Secrets.openAIModel))" }
     catch { return "OpenAI: \(error.localizedDescription)" }
   }
 }
