@@ -2,45 +2,45 @@ import SwiftUI
 import Foundation
 import Supabase
 
+// MARK: - UI Constants
+enum UI {
+  static let cardRadius: CGFloat = 16
+  static let cardShadow: CGFloat = 0.08
+  static let hPad: CGFloat = 16
+  static let vPad: CGFloat = 12
+}
+
+extension View {
+  func cardBackground() -> some View {
+    self
+      .background(RoundedRectangle(cornerRadius: UI.cardRadius).fill(Color(.secondarySystemBackground)))
+      .overlay(RoundedRectangle(cornerRadius: UI.cardRadius).stroke(Color.black.opacity(0.06)))
+      .shadow(color: .black.opacity(UI.cardShadow), radius: 8, x: 0, y: 2)
+  }
+}
+
 // MARK: - Secrets Configuration
 enum Secrets {
+  // ✅ PASTE THE REAL KEY EXACTLY, no spaces/newlines:
+  private static let _rawKey = "sk-proj-CbQtehx5UM0V9mXWrdZnM-hP3l98a0ZVguNWb51K7G63M0dfChAziWYeIO_AOPE2cEnVGOcwyT3BlbkFJliQDGy85OmZ3UGhQS7RSltE9YKO_5qrdLaLEweqkbxs-dDtMy3FMf6Msuot00O58p9L9XQBucA"
+
+  static var openAIKey: String {
+    _rawKey
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+      .replacingOccurrences(of: " ", with: "")
+  }
+
+  // Optional for classic keys only; keep nil for project keys
+  static let openAIOrgID: String? = nil
+
+  // KEEP your existing Supabase values as they are
   static let supabaseURL = "https://fkktwhjybuflxqzopaex.supabase.co"
   static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs"
 
-  // 🚀 OpenAI (inserted credentials)
-  static let openAIKey = "sk-proj-CbQtehx5UM0V9mXWrdZnM-hP3l98a0ZVguNWb51K7G63M0dfChAziWYeIO_AOPE2cEnVGOcwyT3BlbkFJliQDGy85OmZ3UGhQS7RSltE9YKO_5qrdLaLEweqkbxs-dDtMy3FMf6Msuot00O58p9L9XQBucA"
-  static let openAIOrgID: String? = "org-EPHQ1A3u0XIUZml6JABMgZzg"
   static let openAIModel = "gpt-4o-mini"
 
   static func assertValid() {
-    guard supabaseURL.hasPrefix("https://") else {
-      print("⚠️ Warning: Supabase URL should start with https://")
-      return
-    }
-    guard supabaseURL.contains(".supabase.co") else {
-      print("⚠️ Warning: Should use .supabase.co domain")
-      return
-    }
-    guard URL(string: supabaseURL)?.host?.hasSuffix(".supabase.co") == true else {
-      print("⚠️ Warning: Invalid host in Supabase URL")
-      return
-    }
-    guard !supabaseAnonKey.isEmpty else {
-      print("⚠️ Warning: Anon key is empty")
-      return
-    }
-    
-    // OpenAI validation (warn instead of crash)
-    guard !openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-      print("⚠️ Warning: OPENAI key is missing. Update Secrets.openAIKey")
-      return
-    }
-    guard openAIKey.hasPrefix("sk-") else {
-      print("⚠️ Warning: Invalid OpenAI API key format. Must start with 'sk-'.")
-      return
-    }
-    
-    print("✅ All credentials validated successfully")
+    precondition(openAIKey.hasPrefix("sk-"), "OpenAI key missing/malformed.")
   }
 }
 
@@ -118,68 +118,76 @@ struct MarketStats: Decodable {
   let priceRange: String
 }
 
-// MARK: - OpenAI Client
-class OpenAIClient {
-  static let shared = OpenAIClient()
-  
-  func textChat(model: String, system: String, user: String) async throws -> String {
-    let url = URL(string: "https://api.openai.com/v1/chat/completions")!
-    var request = URLRequest(url: url)
-    request.httpMethod = "POST"
-    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    request.setValue("Bearer \(Secrets.openAIKey)", forHTTPHeaderField: "Authorization")
-    if let orgID = Secrets.openAIOrgID {
-      request.setValue(orgID, forHTTPHeaderField: "OpenAI-Organization")
+// MARK: - OpenAI Response Types
+struct OpenAIResponse: Decodable {
+  struct Choice: Decodable {
+    struct Message: Decodable {
+      let content: String
     }
-    
-    let body = [
-      "model": model,
-      "messages": [
-        ["role": "system", "content": system],
-        ["role": "user", "content": user]
-      ],
-      "max_tokens": 200
-    ] as [String: Any]
-    
-    request.httpBody = try JSONSerialization.data(withJSONObject: body)
-    
-    let (data, response) = try await URLSession.shared.data(for: request)
-    
-    guard let http = response as? HTTPURLResponse else {
-      throw NSError(domain: "OpenAI", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
-    }
-    
-    guard (200...299).contains(http.statusCode) else {
-      let body = String(data: data, encoding: .utf8) ?? ""
-      let hint: String
-      switch http.statusCode {
-      case 401: hint = "Invalid OpenAI key or org id."
-      case 429: hint = "Rate limited. Try again shortly."
-      default: hint = "OpenAI HTTP \(http.statusCode)"
-      }
-      throw NSError(domain: "OpenAI", code: http.statusCode,
-        userInfo: [NSLocalizedDescriptionKey: "\(hint)\n\(body)"])
-    }
-    
-    struct OpenAIResponse: Decodable {
-      struct Choice: Decodable {
-        struct Message: Decodable { let content: String }
-        let message: Message
-      }
-      let choices: [Choice]
-    }
-    
-    let decoded = try JSONDecoder().decode(OpenAIResponse.self, from: data)
-    return decoded.choices.first?.message.content ?? "No response"
+    let message: Message
   }
-  
-  func healthPing() async -> String {
-    do {
-      _ = try await textChat(model: NegotiatorConfig.openAIModel,
-                             system: "You are health check. Reply with 'pong'.",
-                             user: "ping")
-      return "OpenAI: OK"
-    } catch { return "OpenAI: \(error.localizedDescription)" }
+  let choices: [Choice]
+}
+
+// MARK: - OpenAI Client
+final class OpenAIClient {
+  static let shared = OpenAIClient(); private init() {}
+
+  private var isProjectKey: Bool { Secrets.openAIKey.hasPrefix("sk-proj-") }
+
+  private func request(_ body: [String:Any]) async throws -> Data {
+    Secrets.assertValid()
+
+    var req = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
+    req.httpMethod = "POST"
+    req.addValue("application/json", forHTTPHeaderField: "Content-Type")
+    req.addValue("Bearer \(Secrets.openAIKey)", forHTTPHeaderField: "Authorization")
+    req.addValue("keys/v1", forHTTPHeaderField: "OpenAI-Beta") // helps with project keys
+
+    // Send org only for classic keys
+    if !isProjectKey, let org = Secrets.openAIOrgID, !org.isEmpty {
+      req.addValue(org, forHTTPHeaderField: "OpenAI-Organization")
+    }
+
+    req.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+    let (data, resp) = try await URLSession.shared.data(for: req)
+    guard let http = resp as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+      let body = String(data: data, encoding: .utf8) ?? ""
+      let code = (resp as? HTTPURLResponse)?.statusCode ?? -1
+      let hint: String = (code == 401)
+        ? "401 Unauthorized. If this persists, the key is revoked/invalid. Generate a fresh key and paste into Secrets._rawKey."
+        : "OpenAI HTTP \(code)"
+      throw NSError(domain: "OpenAI", code: code, userInfo: [NSLocalizedDescriptionKey: "\(hint)\n\(body)"])
+    }
+    return data
+  }
+
+  func textChat(model: String = Secrets.openAIModel, system: String, user: String) async throws -> String {
+    let body: [String:Any] = ["model": model,
+                              "messages": [["role":"system","content":system],
+                                           ["role":"user","content":user]],
+                              "temperature": 0.3]
+    let data = try await request(body)
+    return try JSONDecoder().decode(OpenAIResponse.self, from: data).choices.first?.message.content ?? ""
+  }
+
+  func jsonChat<T:Decodable>(model: String = Secrets.openAIModel, system: String, user: String, schema: T.Type) async throws -> T {
+    let body: [String:Any] = ["model": model,
+                              "response_format": ["type":"json_object"],
+                              "messages": [["role":"system","content":system],
+                                           ["role":"user","content":user]],
+                              "temperature": 0.2]
+    let data = try await request(body)
+    let wrap = try JSONDecoder().decode(OpenAIResponse.self, from: data)
+    let json = wrap.choices.first?.message.content ?? "{}"
+    return try JSONDecoder().decode(T.self, from: Data(json.utf8))
+  }
+
+  // In-app self-test
+  func health() async -> String {
+    do { _ = try await textChat(system: "Reply pong", user: "ping"); return "OpenAI: OK" }
+    catch { return "OpenAI: \(error.localizedDescription)" }
   }
 }
 
@@ -193,13 +201,14 @@ struct DebugInfoView: View {
       Section("Config") {
         Text("Supabase URL: \(Secrets.supabaseURL)")
         Text("OpenAI Model: \(NegotiatorConfig.openAIModel)")
+        Text("Key type: \(Secrets.openAIKey.hasPrefix("sk-proj-") ? "project" : "classic")")
       }
       Section("Status") {
         Text(openAIStatus)
       }
     }
     .task {
-      openAIStatus = await OpenAIClient.shared.healthPing()
+      openAIStatus = await OpenAIClient.shared.health()
     }
     .navigationTitle("Debug")
   }
@@ -230,7 +239,6 @@ class AINegotiatorService {
     let prompt = "Provide realistic market data for \(city ?? "unknown city") \(houseType ?? "properties") with \(bedrooms ?? 1) bedrooms. Budget: $\(budget ?? 1000). Return: average_price,total_listings,price_range"
     
     let response = try await openAI.textChat(
-      model: NegotiatorConfig.openAIModel,
       system: "You are a real estate market analyst. Provide realistic rental market data.",
       user: prompt
     )
@@ -254,7 +262,6 @@ class AINegotiatorService {
     """
     
     return try await openAI.textChat(
-      model: NegotiatorConfig.openAIModel,
       system: "You are a professional AI negotiator helping with rental properties. Be helpful and strategic.",
       user: prompt
     )
@@ -430,7 +437,6 @@ struct AINegotiatorView: View {
         """
         
         let aiResponse = try await OpenAIClient.shared.textChat(
-          model: NegotiatorConfig.openAIModel,
           system: "You are an expert rental negotiator. Help find the best deal while being respectful.",
           user: aiPrompt
         )
@@ -471,6 +477,117 @@ struct MessageBubble: View {
       }
       
       if !isUser { Spacer() }
+    }
+  }
+}
+
+// MARK: - AI Negotiator Hub
+struct AINegotiatorHub: View {
+  @Environment(\.supabase) private var supabase
+  @State private var recent: [Conversation] = []
+  @State private var featured: [Listing] = []
+  @State private var errorText: String?
+
+  var body: some View {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 16) {
+        Text("AI Negotiator").font(.largeTitle.bold()).padding(.top, 4)
+
+        // Quick Start from a listing
+        Group {
+          Text("Quick Start").font(.headline)
+          if featured.isEmpty { 
+            ProgressView().padding(.vertical, 6) 
+          } else {
+            ScrollView(.horizontal, showsIndicators: false) {
+              HStack(spacing: 12) {
+                ForEach(featured) { listing in
+                  NavigationLink {
+                    AINegotiatorBootstrap(listing: listing, buyerEmail: "test-user@example.com", buyerBudget: listing.price)
+                  } label: {
+                    ListingCardView(listing: listing).frame(width: 260)
+                  }
+                }
+              }
+              .padding(.horizontal, UI.hPad)
+            }
+          }
+        }
+
+        // Recent Conversations
+        Group {
+          HStack {
+            Text("Recent").font(.headline)
+            Spacer()
+          }
+          if recent.isEmpty {
+            Text("No recent conversations").foregroundStyle(.secondary)
+          } else {
+            ForEach(recent) { c in
+              NavigationLink(destination:
+                AINegotiatorView(conversationId: c.id,
+                                  listing: Listing(id: c.listing_id?.uuidString ?? UUID().uuidString, 
+                                                 title: "Listing", 
+                                                 price: 1000, 
+                                                 city: "",
+                                                 street: "",
+                                                 postalCode: "",
+                                                 houseType: "Apartment", 
+                                                 bedrooms: 1, 
+                                                 utilities: "Not specified", 
+                                                 description: nil, 
+                                                 media: nil,
+                                                 userEmail: "",
+                                                 createdAt: Date(),
+                                                 updatedAt: Date()),
+                                  budget: nil,
+                                  userEmail: c.buyer_email ?? "test-user@example.com")
+              ) {
+                HStack {
+                  Image(systemName: "message")
+                  VStack(alignment: .leading) {
+                    Text(c.buyer_email ?? "—").font(.subheadline)
+                    Text(c.id.uuidString.prefix(12) + "…").font(.caption).foregroundStyle(.secondary)
+                  }
+                  Spacer()
+                  Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                }
+                .padding()
+                .cardBackground()
+              }
+              .buttonStyle(.plain)
+            }
+          }
+        }
+      }
+      .padding(.horizontal, UI.hPad)
+    }
+    .navigationTitle("AI")
+    .navigationBarTitleDisplayMode(.inline)
+    .task { await load() }
+  }
+
+  private func load() async {
+    do {
+      // Featured listings (first 10)
+      let lr: [Listing] = try await supabase
+        .from("listings")
+        .select("id,title,price,city,street,postal_code,house_type,bedrooms,utilities,description,media,user_email,created_at,updated_at")
+        .order("created_at", ascending: false)
+        .limit(10)
+        .execute().value
+      featured = lr
+
+      // Recently created conversations (last 20)
+      let cr: [Conversation] = try await supabase
+        .from("conversations")
+        .select("id,listing_id,buyer_email,seller_email,created_at")
+        .order("created_at", ascending: false)
+        .limit(20)
+        .execute().value
+      recent = cr
+    } catch {
+      errorText = String(describing: error)
     }
   }
 }
@@ -715,12 +832,12 @@ struct FeaturedListingCard: View {
       
       // Content
       VStack(alignment: .leading, spacing: 4) {
-        Text(listing.title ?? "Untitled")
+        Text(listing.title)
           .font(.subheadline)
           .fontWeight(.medium)
           .lineLimit(1)
         
-        Text("$\(Int(listing.price ?? 0))/mo")
+        Text("$\(Int(listing.price))/mo")
           .font(.caption)
           .fontWeight(.semibold)
           .foregroundColor(.blue)
@@ -768,6 +885,73 @@ struct ActivityRow: View {
   }
 }
 
+// MARK: - Listing Card View
+struct ListingCardView: View {
+  let listing: Listing
+  @State private var imageURL: URL?
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      ZStack {
+        RoundedRectangle(cornerRadius: UI.cardRadius).fill(Color.gray.opacity(0.12))
+        if let imageURL {
+          AsyncImage(url: imageURL) { phase in
+            switch phase {
+            case .empty: ProgressView()
+            case .success(let img):
+              img
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+            case .failure: placeholder
+            @unknown default: placeholder
+            }
+          }
+        } else { placeholder }
+      }
+      .frame(height: 180)
+      .clipShape(RoundedRectangle(cornerRadius: UI.cardRadius))
+
+      Text(listing.title)
+        .font(.headline)
+        .lineLimit(2)
+
+      HStack(spacing: 8) {
+        Text("$\(Int(listing.price))").fontWeight(.semibold)
+        Text("· \(listing.houseType)")
+        Text("· \(listing.bedrooms) bd")
+        Spacer(minLength: 0)
+        Image(systemName: "chevron.right").font(.footnote).foregroundStyle(.tertiary)
+      }
+      .font(.subheadline)
+      .foregroundStyle(.secondary)
+
+      Button {
+        // handled by parent via NavigationLink
+      } label: {
+        Label("Negotiate", systemImage: "brain.head.profile")
+      }
+      .buttonStyle(.borderedProminent)
+    }
+    .padding(UI.vPad)
+    .cardBackground()
+    .task {
+      if let mediaArray = listing.media, let firstMedia = mediaArray.first, 
+         let u = URL(string: firstMedia), firstMedia.lowercased().hasPrefix("http") {
+        imageURL = u
+      }
+    }
+  }
+
+  private var placeholder: some View {
+    VStack(spacing: 6) {
+      Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary)
+      Text("No image").font(.caption).foregroundStyle(.secondary)
+    }
+  }
+}
+
 // MARK: - Listings Screen
 struct ListingsScreen: View {
   @State private var listings: [HomePageListing] = []
@@ -776,44 +960,51 @@ struct ListingsScreen: View {
   @Environment(\.supabase) private var supabase
 
   var body: some View {
-    if isLoading {
-      ProgressView("Loading listings...")
+    Group {
+      if isLoading {
+        ProgressView("Loading listings...")
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+      } else if let error = error {
+        VStack {
+          Text("Error: \(error)")
+            .foregroundColor(.red)
+          Button("Retry") {
+            loadListings()
+          }
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    } else if let error = error {
-      VStack {
-        Text("Error: \(error)")
-          .foregroundColor(.red)
-        Button("Retry") {
-          loadListings()
-        }
+      } else {
+        listingsContent
       }
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-    } else {
-      ScrollView {
-        LazyVStack(spacing: 14) {
-          ForEach(listings) { listing in
-            NavigationLink { 
-              ListingDetailView(listing: convertToListing(listing)) 
-            } label: {
-              ListingCardView(listing: convertToListing(listing))
-            }
-            .buttonStyle(.plain)
-            .onAppear { 
-              if listing.id == listings.last?.id { 
-                Task { await loadMore() } 
-              } 
-            }
+    }
+    .navigationTitle("Search Listings")
+    .navigationBarTitleDisplayMode(.inline)
+    .scrollContentBackground(.hidden)
+    .onAppear { loadListings() }
+  }
+  
+  private var listingsContent: some View {
+    ScrollView {
+      LazyVStack(spacing: 14) {
+        ForEach(listings) { listing in
+          NavigationLink { 
+            ListingDetailView(listing: convertToListing(listing)) 
+          } label: {
+            ListingCardView(listing: convertToListing(listing))
           }
-          if isLoading { 
-            ProgressView().padding(.vertical, 12) 
+          .buttonStyle(.plain)
+          .onAppear { 
+            if listing.id == listings.last?.id { 
+              Task { await loadMore() } 
+            } 
           }
         }
-        .padding(.horizontal, UI.hPad)
-        .padding(.top, 8)
+        if isLoading { 
+          ProgressView().padding(.vertical, 12) 
+        }
       }
-      .navigationTitle("Search Listings")
-      .navigationBarTitleDisplayMode(.inline)
-      .scrollContentBackground(.hidden)
+      .padding(.horizontal, UI.hPad)
+      .padding(.top, 8)
     }
   }
 
@@ -877,11 +1068,11 @@ struct ListingDetailView: View {
       VStack(alignment: .leading, spacing: 14) {
         // Property image and basic info
         VStack(alignment: .leading, spacing: 12) {
-          Text(listing.title ?? "Untitled Property")
+          Text(listing.title)
             .font(.headline)
           
           HStack {
-            Text("$\(Int(listing.price ?? 0))/month")
+            Text("$\(Int(listing.price))/month")
               .font(.title)
               .fontWeight(.semibold)
               .foregroundColor(.blue)
@@ -889,7 +1080,7 @@ struct ListingDetailView: View {
             Spacer()
             
             VStack(alignment: .trailing) {
-              Text(listing.houseType ?? "")
+              Text(listing.houseType)
                 .font(.caption)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
@@ -897,11 +1088,9 @@ struct ListingDetailView: View {
                 .foregroundColor(.blue)
                 .cornerRadius(8)
               
-              if let bedrooms = listing.bedrooms {
-                Text("\(bedrooms) bedroom\(bedrooms == 1 ? "" : "s")")
-                  .font(.caption)
-                  .foregroundColor(.secondary)
-              }
+              Text("\(listing.bedrooms) bedroom\(listing.bedrooms == 1 ? "" : "s")")
+                .font(.caption)
+                .foregroundColor(.secondary)
             }
           }
           
