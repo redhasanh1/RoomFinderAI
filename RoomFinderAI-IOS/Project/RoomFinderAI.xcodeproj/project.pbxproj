@@ -7,54 +7,32 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A01234567890123456789012 /* RoomFinderAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789011 /* RoomFinderAIApp.swift */; };
-		A01234567890123456789014 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789013 /* ContentView.swift */; };
-		A01234567890123456789016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789015 /* Assets.xcassets */; };
-		A01234567890123456789018 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789017 /* SupabaseService.swift */; };
-		A01234567890123456789020 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789019 /* AuthViewModel.swift */; };
-		A01234567890123456789022 /* ListingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789021 /* ListingsViewModel.swift */; };
-		A01234567890123456789024 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789023 /* ChatViewModel.swift */; };
-		A01234567890123456789026 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789025 /* NetworkManager.swift */; };
-		A01234567890123456789028 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789027 /* LoginView.swift */; };
-		A01234567890123456789030 /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789029 /* SignUpView.swift */; };
-		A01234567890123456789032 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789031 /* DashboardView.swift */; };
-		A01234567890123456789034 /* ListingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789033 /* ListingsView.swift */; };
-		A01234567890123456789036 /* PropertyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789035 /* PropertyDetailView.swift */; };
-		A01234567890123456789038 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789037 /* ChatView.swift */; };
-		A01234567890123456789040 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789039 /* ProfileView.swift */; };
-		A01234567890123456789042 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789041 /* User.swift */; };
-		A01234567890123456789044 /* Listing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789043 /* Listing.swift */; };
-		A01234567890123456789046 /* Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789045 /* Chat.swift */; };
-		A01234567890123456789048 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789047 /* Message.swift */; };
-		A01234567890123456789050 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789049 /* Constants.swift */; };
-		A01234567890123456789052 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789051 /* Extensions.swift */; };
+		16F345039CA8DA6C409AD51F /* Listing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01C01CA53B780CBFCDD4B66E /* Listing.swift */; };
+		2360B02540D8B1BE624DABED /* RoomFinderAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22995CEA89EBF31610089812 /* RoomFinderAIApp.swift */; };
+		3FAEF3BCD663EBDAC3842213 /* ListingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EAB20EDCBBF22DFA1C01871 /* ListingsView.swift */; };
+		5707E8AB311094A594845488 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ED49B83FDFF13B0B76FF1A3 /* User.swift */; };
+		59A3E1F365F4465CCA630913 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A67EC73733506928C68E796 /* Assets.xcassets */; };
+		76CA71396E60F8C6FB025D8F /* PropertyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28919928FB388EE6BEE44606 /* PropertyDetailView.swift */; };
+		8A30EFC81F97DA58005E01DF /* SupabaseEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4634B8EBFC3D2E54206BCFD1 /* SupabaseEnvironment.swift */; };
 		A01234567890123456789080 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A01234567890123456789079 /* Supabase */; };
+		A6E475893B332761562C15DB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E52349F4144BD888A0E7B9 /* ContentView.swift */; };
+		ADE360A288C540CDB98DBE06 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C008F1202AE8A00F8CA2FE3 /* Constants.swift */; };
+		D1BB6C97A4E995B0B76A1997 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD2ADBAF9473B5E3F243A85 /* Secrets.swift */; };
+		FC783835C72ED9FEBDEAB3DD /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DB0C2D78279002CBCFAF01C /* Extensions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A01234567890123456789000 /* RoomFinderAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoomFinderAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A01234567890123456789011 /* RoomFinderAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomFinderAIApp.swift; sourceTree = "<group>"; };
-		A01234567890123456789013 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		A01234567890123456789015 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		A01234567890123456789017 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
-		A01234567890123456789019 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
-		A01234567890123456789021 /* ListingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListingsViewModel.swift; sourceTree = "<group>"; };
-		A01234567890123456789023 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
-		A01234567890123456789025 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
-		A01234567890123456789027 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
-		A01234567890123456789029 /* SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpView.swift; sourceTree = "<group>"; };
-		A01234567890123456789031 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
-		A01234567890123456789033 /* ListingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListingsView.swift; sourceTree = "<group>"; };
-		A01234567890123456789035 /* PropertyDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PropertyDetailView.swift; sourceTree = "<group>"; };
-		A01234567890123456789037 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
-		A01234567890123456789039 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
-		A01234567890123456789041 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
-		A01234567890123456789043 /* Listing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Listing.swift; sourceTree = "<group>"; };
-		A01234567890123456789045 /* Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chat.swift; sourceTree = "<group>"; };
-		A01234567890123456789047 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
-		A01234567890123456789049 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
-		A01234567890123456789051 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
-		A01234567890123456789053 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		01C01CA53B780CBFCDD4B66E /* Listing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Listing.swift; path = RoomFinderAI/Models/Listing.swift; sourceTree = "<group>"; };
+		0C008F1202AE8A00F8CA2FE3 /* Constants.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Constants.swift; path = RoomFinderAI/Utils/Constants.swift; sourceTree = "<group>"; };
+		1A67EC73733506928C68E796 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Resources/Assets.xcassets; sourceTree = "<group>"; };
+		1DB0C2D78279002CBCFAF01C /* Extensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Extensions.swift; path = RoomFinderAI/Utils/Extensions.swift; sourceTree = "<group>"; };
+		22995CEA89EBF31610089812 /* RoomFinderAIApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RoomFinderAIApp.swift; path = RoomFinderAI/RoomFinderAIApp.swift; sourceTree = "<group>"; };
+		28919928FB388EE6BEE44606 /* PropertyDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PropertyDetailView.swift; path = RoomFinderAI/Views/PropertyDetailView.swift; sourceTree = "<group>"; };
+		3AD2ADBAF9473B5E3F243A85 /* Secrets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Secrets.swift; path = RoomFinderAI/Secrets.swift; sourceTree = "<group>"; };
+		4634B8EBFC3D2E54206BCFD1 /* SupabaseEnvironment.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseEnvironment.swift; path = RoomFinderAI/SupabaseEnvironment.swift; sourceTree = "<group>"; };
+		4ED49B83FDFF13B0B76FF1A3 /* User.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = User.swift; path = RoomFinderAI/Models/User.swift; sourceTree = "<group>"; };
+		8EAB20EDCBBF22DFA1C01871 /* ListingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ListingsView.swift; path = RoomFinderAI/Views/ListingsView.swift; sourceTree = "<group>"; };
+		93E52349F4144BD888A0E7B9 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = RoomFinderAI/ContentView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,24 +47,43 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		015EDBBB18D35B76C919D4EA /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Utils;
+			sourceTree = "<group>";
+		};
+		931370B2C0250449741C5A02 /* RoomFinderAI */ = {
+			isa = PBXGroup;
+			children = (
+				015EDBBB18D35B76C919D4EA /* Utils */,
+				ED5D3E0DB145B9C6EDF128E6 /* Services */,
+			);
+			name = RoomFinderAI;
+			sourceTree = "<group>";
+		};
 		A01234567890123456789055 = {
 			isa = PBXGroup;
 			children = (
 				A01234567890123456789056 /* RoomFinderAI */,
 				A01234567890123456789057 /* Products */,
+				22995CEA89EBF31610089812 /* RoomFinderAIApp.swift */,
+				93E52349F4144BD888A0E7B9 /* ContentView.swift */,
+				3AD2ADBAF9473B5E3F243A85 /* Secrets.swift */,
+				4634B8EBFC3D2E54206BCFD1 /* SupabaseEnvironment.swift */,
 			);
 			sourceTree = "<group>";
 		};
 		A01234567890123456789056 /* RoomFinderAI */ = {
 			isa = PBXGroup;
 			children = (
-				A01234567890123456789011 /* RoomFinderAIApp.swift */,
-				A01234567890123456789013 /* ContentView.swift */,
 				A01234567890123456789058 /* Views */,
 				A01234567890123456789059 /* Services */,
 				A01234567890123456789060 /* Models */,
 				A01234567890123456789061 /* Utils */,
 				A01234567890123456789062 /* Resources */,
+				AC0C017B4A905BFF2A545860 /* Source */,
 			);
 			path = RoomFinderAI;
 			sourceTree = "<group>";
@@ -94,7 +91,6 @@
 		A01234567890123456789057 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A01234567890123456789000 /* RoomFinderAI.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -102,13 +98,8 @@
 		A01234567890123456789058 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				A01234567890123456789027 /* LoginView.swift */,
-				A01234567890123456789029 /* SignUpView.swift */,
-				A01234567890123456789031 /* DashboardView.swift */,
-				A01234567890123456789033 /* ListingsView.swift */,
-				A01234567890123456789035 /* PropertyDetailView.swift */,
-				A01234567890123456789037 /* ChatView.swift */,
-				A01234567890123456789039 /* ProfileView.swift */,
+				8EAB20EDCBBF22DFA1C01871 /* ListingsView.swift */,
+				28919928FB388EE6BEE44606 /* PropertyDetailView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -116,11 +107,6 @@
 		A01234567890123456789059 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				A01234567890123456789017 /* SupabaseService.swift */,
-				A01234567890123456789019 /* AuthViewModel.swift */,
-				A01234567890123456789021 /* ListingsViewModel.swift */,
-				A01234567890123456789023 /* ChatViewModel.swift */,
-				A01234567890123456789025 /* NetworkManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -128,10 +114,8 @@
 		A01234567890123456789060 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				A01234567890123456789041 /* User.swift */,
-				A01234567890123456789043 /* Listing.swift */,
-				A01234567890123456789045 /* Chat.swift */,
-				A01234567890123456789047 /* Message.swift */,
+				4ED49B83FDFF13B0B76FF1A3 /* User.swift */,
+				01C01CA53B780CBFCDD4B66E /* Listing.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -139,8 +123,8 @@
 		A01234567890123456789061 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
-				A01234567890123456789049 /* Constants.swift */,
-				A01234567890123456789051 /* Extensions.swift */,
+				0C008F1202AE8A00F8CA2FE3 /* Constants.swift */,
+				1DB0C2D78279002CBCFAF01C /* Extensions.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -148,10 +132,24 @@
 		A01234567890123456789062 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				A01234567890123456789015 /* Assets.xcassets */,
-				A01234567890123456789053 /* Info.plist */,
+				1A67EC73733506928C68E796 /* Assets.xcassets */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		AC0C017B4A905BFF2A545860 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				931370B2C0250449741C5A02 /* RoomFinderAI */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		ED5D3E0DB145B9C6EDF128E6 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -174,7 +172,6 @@
 				A01234567890123456789079 /* Supabase */,
 			);
 			productName = RoomFinderAI;
-			productReference = A01234567890123456789000 /* RoomFinderAI.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -218,7 +215,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A01234567890123456789016 /* Assets.xcassets in Resources */,
+				59A3E1F365F4465CCA630913 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -229,26 +226,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A01234567890123456789012 /* RoomFinderAIApp.swift in Sources */,
-				A01234567890123456789014 /* ContentView.swift in Sources */,
-				A01234567890123456789018 /* SupabaseService.swift in Sources */,
-				A01234567890123456789020 /* AuthViewModel.swift in Sources */,
-				A01234567890123456789022 /* ListingsViewModel.swift in Sources */,
-				A01234567890123456789024 /* ChatViewModel.swift in Sources */,
-				A01234567890123456789026 /* NetworkManager.swift in Sources */,
-				A01234567890123456789028 /* LoginView.swift in Sources */,
-				A01234567890123456789030 /* SignUpView.swift in Sources */,
-				A01234567890123456789032 /* DashboardView.swift in Sources */,
-				A01234567890123456789034 /* ListingsView.swift in Sources */,
-				A01234567890123456789036 /* PropertyDetailView.swift in Sources */,
-				A01234567890123456789038 /* ChatView.swift in Sources */,
-				A01234567890123456789040 /* ProfileView.swift in Sources */,
-				A01234567890123456789042 /* User.swift in Sources */,
-				A01234567890123456789044 /* Listing.swift in Sources */,
-				A01234567890123456789046 /* Chat.swift in Sources */,
-				A01234567890123456789048 /* Message.swift in Sources */,
-				A01234567890123456789050 /* Constants.swift in Sources */,
-				A01234567890123456789052 /* Extensions.swift in Sources */,
+				2360B02540D8B1BE624DABED /* RoomFinderAIApp.swift in Sources */,
+				A6E475893B332761562C15DB /* ContentView.swift in Sources */,
+				D1BB6C97A4E995B0B76A1997 /* Secrets.swift in Sources */,
+				8A30EFC81F97DA58005E01DF /* SupabaseEnvironment.swift in Sources */,
+				5707E8AB311094A594845488 /* User.swift in Sources */,
+				16F345039CA8DA6C409AD51F /* Listing.swift in Sources */,
+				3FAEF3BCD663EBDAC3842213 /* ListingsView.swift in Sources */,
+				76CA71396E60F8C6FB025D8F /* PropertyDetailView.swift in Sources */,
+				ADE360A288C540CDB98DBE06 /* Constants.swift in Sources */,
+				FC783835C72ED9FEBDEAB3DD /* Extensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
