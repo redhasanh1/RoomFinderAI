@@ -142,9 +142,9 @@ final class OpenAIClient {
     req.httpMethod = "POST"
     req.addValue("application/json", forHTTPHeaderField: "Content-Type")
     req.addValue("Bearer \(Secrets.openAIKey)", forHTTPHeaderField: "Authorization")
-    req.addValue("keys/v1", forHTTPHeaderField: "OpenAI-Beta") // helps with project keys
+    req.addValue("keys/v1", forHTTPHeaderField: "OpenAI-Beta") // project-key routing
 
-    // Send org only for classic keys
+    // Only attach org for classic keys (NOT for sk-proj-)
     if !isProjectKey, let org = Secrets.openAIOrgID, !org.isEmpty {
       req.addValue(org, forHTTPHeaderField: "OpenAI-Organization")
     }
@@ -153,40 +153,49 @@ final class OpenAIClient {
 
     let (data, resp) = try await URLSession.shared.data(for: req)
     guard let http = resp as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-      let body = String(data: data, encoding: .utf8) ?? ""
+      let bodyText = String(data: data, encoding: .utf8) ?? ""
       let code = (resp as? HTTPURLResponse)?.statusCode ?? -1
-      let hint: String = (code == 401)
-        ? "401 Unauthorized. If this persists, the key is revoked/invalid. Generate a fresh key and paste into Secrets._rawKey."
+      let hint = (code == 401)
+        ? "401 Unauthorized. With sk-proj keys, org must be nil and key must be fresh."
         : "OpenAI HTTP \(code)"
-      throw NSError(domain: "OpenAI", code: code, userInfo: [NSLocalizedDescriptionKey: "\(hint)\n\(body)"])
+      throw NSError(domain: "OpenAI", code: code,
+                    userInfo: [NSLocalizedDescriptionKey: "\(hint)\n\(bodyText)"])
     }
     return data
   }
 
   func textChat(model: String = Secrets.openAIModel, system: String, user: String) async throws -> String {
-    let body: [String:Any] = ["model": model,
-                              "messages": [["role":"system","content":system],
-                                           ["role":"user","content":user]],
-                              "temperature": 0.3]
+    let body: [String:Any] = [
+      "model": model,
+      "messages": [
+        ["role":"system","content":system],
+        ["role":"user","content":user]
+      ],
+      "temperature": 0.3
+    ]
     let data = try await request(body)
     return try JSONDecoder().decode(OpenAIResponse.self, from: data).choices.first?.message.content ?? ""
   }
 
-  func jsonChat<T:Decodable>(model: String = Secrets.openAIModel, system: String, user: String, schema: T.Type) async throws -> T {
-    let body: [String:Any] = ["model": model,
-                              "response_format": ["type":"json_object"],
-                              "messages": [["role":"system","content":system],
-                                           ["role":"user","content":user]],
-                              "temperature": 0.2]
+  func jsonChat<T: Decodable>(model: String = Secrets.openAIModel, system: String, user: String, schema: T.Type) async throws -> T {
+    let body: [String:Any] = [
+      "model": model,
+      "response_format": ["type": "json_object"],
+      "messages": [
+        ["role":"system","content":system],
+        ["role":"user","content":user]
+      ],
+      "temperature": 0.2
+    ]
     let data = try await request(body)
     let wrap = try JSONDecoder().decode(OpenAIResponse.self, from: data)
     let json = wrap.choices.first?.message.content ?? "{}"
     return try JSONDecoder().decode(T.self, from: Data(json.utf8))
   }
 
-  // In-app self-test
+  // Debug screen uses this
   func health() async -> String {
-    do { _ = try await textChat(system: "Reply pong", user: "ping"); return "OpenAI: OK" }
+    do { _ = try await textChat(system: "Reply 'pong'.", user: "ping"); return "OpenAI: OK" }
     catch { return "OpenAI: \(error.localizedDescription)" }
   }
 }

@@ -55,7 +55,8 @@
       "Bash(rsync:*)",
       "Bash(gem list:*)",
       "Bash(osascript:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
