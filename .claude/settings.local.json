@@ -65,7 +65,8 @@
       "Bash(# Copy main app files from the correct location\ncp \"RoomFinderAI-IOS/Project/Source/RoomFinderAI/RoomFinderAIApp.swift\" \"RoomFinderAI-IOS/Project/RoomFinderAI/\" 2>/dev/null || echo \"Main app file not found, will create\"\n\n# Copy the corrected files I created earlier\ncp \"RoomFinderAI-IOS/Project/Source/RoomFinderAI/Config/Secrets.swift\" \"RoomFinderAI-IOS/Project/RoomFinderAI/Services/\"\ncp \"RoomFinderAI-IOS/Project/Source/RoomFinderAI/Config/SupabaseEnvironment.swift\" \"RoomFinderAI-IOS/Project/RoomFinderAI/Services/\" 2>/dev/null || echo \"SupabaseEnvironment not needed\")",
       "Bash(mv:*)",
       "Bash(for:*)",
-      "Bash(do mv \"$file\" \"$file.backup\")"
+      "Bash(do mv \"$file\" \"$file.backup\")",
+      "Bash(export PATH=\"$PATH:/Users/arsalanamirali/.gem/ruby/2.6.0/bin\")"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
