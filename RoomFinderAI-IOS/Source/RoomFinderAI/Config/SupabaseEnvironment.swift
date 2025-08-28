@@ -14,11 +14,3 @@ extension EnvironmentValues {
         set { self[SupabaseClientKey.self] = newValue }
     }
 }
-
-enum SupabaseFactory {
-    static func makeClient() -> SupabaseClient {
-        Secrets.assertValid()
-        let url = URL(string: Secrets.supabaseURL)!
-        return SupabaseClient(supabaseURL: url, supabaseKey: Secrets.supabaseAnonKey)
-    }
-}
