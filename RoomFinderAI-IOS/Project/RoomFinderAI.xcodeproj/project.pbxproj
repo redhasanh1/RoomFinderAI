@@ -7,67 +7,54 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1D109ADD81A867B28AC0AF96 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789041 /* User.swift */; };
-		23E6668819441A2BD8257B96 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789013 /* ContentView.swift */; };
-		2440D0907AA22BC04BD24871 /* RoomFinderAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789011 /* RoomFinderAIApp.swift */; };
-		35288DC5877070BE28D5FD39 /* SharedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D3FBDBA34C4343741F6B78 /* SharedComponents.swift */; };
-		353BDA71F77AE7E966494D08 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789051 /* Extensions.swift */; };
-		3A64B729512ECD47A436D7D6 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789027 /* LoginView.swift */; };
-		495FD9DC8BE1AA749FCFC64E /* MockDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73490D0B6F586AC9EFB7939D /* MockDataService.swift */; };
-		4A38D1827D90B5A91AA60B83 /* DebugEnv.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1194E0404AC0884FC2B02CFC /* DebugEnv.swift */; };
-		4B38A02398CB4863BF54FC04 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789031 /* DashboardView.swift */; };
-		5F00531F2AA76E176EAEC986 /* SimpleListingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D8C9DC10D12ADFB6BE2EFD /* SimpleListingsViewModel.swift */; };
-		629F47B83B24F248E4A7DC5E /* PropertyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789035 /* PropertyDetailView.swift */; };
-		86FF148C3C1BB48BA69C220B /* PreviewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B380553FF890F153784B453 /* PreviewHelpers.swift */; };
-		89380E4204D00D32CC776045 /* ListingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789033 /* ListingsView.swift */; };
-		899B163A338260E99A2432A4 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789039 /* ProfileView.swift */; };
-		8D7D44837EA37736676CA516 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789049 /* Constants.swift */; };
-		8E716072C88589D2BEB8DAFE /* RealSupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9092F683FF134DD8DC2C243 /* RealSupabaseService.swift */; };
+		A01234567890123456789012 /* RoomFinderAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789011 /* RoomFinderAIApp.swift */; };
+		A01234567890123456789014 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789013 /* ContentView.swift */; };
 		A01234567890123456789016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789015 /* Assets.xcassets */; };
-		B1ADFC25FD9E2DC2EA0C9961 /* SubleaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1F874F608B396521435D67 /* SubleaseView.swift */; };
-		BE0E697CCF9C78A9ED9337AB /* ParityProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66692679B7E485B07C32BCCB /* ParityProbe.swift */; };
-		D5DBA5CF706C1084FE6D2C40 /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789029 /* SignUpView.swift */; };
-		DCE6FB7466DCFB4DAE183DD9 /* SimpleAuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1574BBFE50B4AAE210BE0EA3 /* SimpleAuthViewModel.swift */; };
-		EA20B2DD7F61B4B2E78FDCAB /* Listing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789043 /* Listing.swift */; };
-		F1234567890123456789002 /* ListingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789102 /* ListingsService.swift */; };
-		F1234567890123456789003 /* ListingsFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789103 /* ListingsFilter.swift */; };
-		F1234567890123456789004 /* ListingsRealtime.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789104 /* ListingsRealtime.swift */; };
-		F1234567890123456789005 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789105 /* AuthService.swift */; };
-		F1234567890123456789006 /* ListingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789106 /* ListingsViewModel.swift */; };
-		F1234567890123456789007 /* NewListingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789107 /* NewListingsView.swift */; };
+		A01234567890123456789018 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789017 /* SupabaseService.swift */; };
+		A01234567890123456789020 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789019 /* AuthViewModel.swift */; };
+		A01234567890123456789022 /* ListingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789021 /* ListingsViewModel.swift */; };
+		A01234567890123456789024 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789023 /* ChatViewModel.swift */; };
+		A01234567890123456789026 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789025 /* NetworkManager.swift */; };
+		A01234567890123456789028 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789027 /* LoginView.swift */; };
+		A01234567890123456789030 /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789029 /* SignUpView.swift */; };
+		A01234567890123456789032 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789031 /* DashboardView.swift */; };
+		A01234567890123456789034 /* ListingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789033 /* ListingsView.swift */; };
+		A01234567890123456789036 /* PropertyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789035 /* PropertyDetailView.swift */; };
+		A01234567890123456789038 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789037 /* ChatView.swift */; };
+		A01234567890123456789040 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789039 /* ProfileView.swift */; };
+		A01234567890123456789042 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789041 /* User.swift */; };
+		A01234567890123456789044 /* Listing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789043 /* Listing.swift */; };
+		A01234567890123456789046 /* Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789045 /* Chat.swift */; };
+		A01234567890123456789048 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789047 /* Message.swift */; };
+		A01234567890123456789050 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789049 /* Constants.swift */; };
+		A01234567890123456789052 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01234567890123456789051 /* Extensions.swift */; };
+		A01234567890123456789080 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A01234567890123456789079 /* Supabase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1194E0404AC0884FC2B02CFC /* DebugEnv.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DebugEnv.swift; path = RoomFinderAI/Source/RoomFinderAI/Debug/DebugEnv.swift; sourceTree = "<group>"; };
-		1574BBFE50B4AAE210BE0EA3 /* SimpleAuthViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SimpleAuthViewModel.swift; path = ../Source/RoomFinderAI/Services/SimpleAuthViewModel.swift; sourceTree = "<group>"; };
-		4B380553FF890F153784B453 /* PreviewHelpers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PreviewHelpers.swift; path = Source/RoomFinderAI/Config/PreviewHelpers.swift; sourceTree = "<group>"; };
-		66692679B7E485B07C32BCCB /* ParityProbe.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ParityProbe.swift; path = RoomFinderAI/Source/RoomFinderAI/Debug/ParityProbe.swift; sourceTree = "<group>"; };
-		6C1F874F608B396521435D67 /* SubleaseView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SubleaseView.swift; path = ../Source/RoomFinderAI/Views/SubleaseView.swift; sourceTree = "<group>"; };
-		73490D0B6F586AC9EFB7939D /* MockDataService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MockDataService.swift; path = ../Source/RoomFinderAI/Services/MockDataService.swift; sourceTree = "<group>"; };
-		79D3FBDBA34C4343741F6B78 /* SharedComponents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SharedComponents.swift; path = ../Source/RoomFinderAI/Components/SharedComponents.swift; sourceTree = "<group>"; };
-		A01234567890123456789011 /* RoomFinderAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RoomFinderAIApp.swift; path = ../Source/RoomFinderAI/RoomFinderAIApp.swift; sourceTree = "<group>"; };
-		A01234567890123456789012 /* RoomFinderAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoomFinderAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A01234567890123456789013 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = ../Source/RoomFinderAI/ContentView.swift; sourceTree = "<group>"; };
-		A01234567890123456789015 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = ../Source/RoomFinderAI/Resources/Assets.xcassets; sourceTree = "<group>"; };
-		A01234567890123456789027 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LoginView.swift; path = ../Source/RoomFinderAI/Views/LoginView.swift; sourceTree = "<group>"; };
-		A01234567890123456789029 /* SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SignUpView.swift; path = ../Source/RoomFinderAI/Views/SignUpView.swift; sourceTree = "<group>"; };
-		A01234567890123456789031 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DashboardView.swift; path = ../Source/RoomFinderAI/Views/DashboardView.swift; sourceTree = "<group>"; };
-		A01234567890123456789033 /* ListingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsView.swift; path = ../Source/RoomFinderAI/Views/ListingsView.swift; sourceTree = "<group>"; };
-		A01234567890123456789035 /* PropertyDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PropertyDetailView.swift; path = ../Source/RoomFinderAI/Views/PropertyDetailView.swift; sourceTree = "<group>"; };
-		A01234567890123456789039 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProfileView.swift; path = ../Source/RoomFinderAI/Views/ProfileView.swift; sourceTree = "<group>"; };
-		A01234567890123456789041 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = User.swift; path = ../Source/RoomFinderAI/Models/User.swift; sourceTree = "<group>"; };
-		A01234567890123456789043 /* Listing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Listing.swift; path = ../Source/RoomFinderAI/Models/Listing.swift; sourceTree = "<group>"; };
-		A01234567890123456789049 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Constants.swift; path = ../Source/RoomFinderAI/Utils/Constants.swift; sourceTree = "<group>"; };
-		A01234567890123456789051 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Extensions.swift; path = ../Source/RoomFinderAI/Utils/Extensions.swift; sourceTree = "<group>"; };
-		A01234567890123456789053 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = ../Source/RoomFinderAI/Resources/Info.plist; sourceTree = "<group>"; };
-		B9092F683FF134DD8DC2C243 /* RealSupabaseService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RealSupabaseService.swift; path = ../Source/RoomFinderAI/Services/RealSupabaseService.swift; sourceTree = "<group>"; };
-		C5D8C9DC10D12ADFB6BE2EFD /* SimpleListingsViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SimpleListingsViewModel.swift; path = ../Source/RoomFinderAI/Services/SimpleListingsViewModel.swift; sourceTree = "<group>"; };
-		F1234567890123456789102 /* ListingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsService.swift; path = ../Source/RoomFinderAI/Data/ListingsService.swift; sourceTree = "<group>"; };
-		F1234567890123456789103 /* ListingsFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsFilter.swift; path = ../Source/RoomFinderAI/Data/ListingsFilter.swift; sourceTree = "<group>"; };
-		F1234567890123456789104 /* ListingsRealtime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsRealtime.swift; path = ../Source/RoomFinderAI/Data/ListingsRealtime.swift; sourceTree = "<group>"; };
-		F1234567890123456789105 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AuthService.swift; path = ../Source/RoomFinderAI/Data/AuthService.swift; sourceTree = "<group>"; };
-		F1234567890123456789106 /* ListingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsViewModel.swift; path = ../Source/RoomFinderAI/Presentation/ListingsViewModel.swift; sourceTree = "<group>"; };
-		F1234567890123456789107 /* NewListingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NewListingsView.swift; path = ../Source/RoomFinderAI/Presentation/NewListingsView.swift; sourceTree = "<group>"; };
+		A01234567890123456789000 /* RoomFinderAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoomFinderAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A01234567890123456789011 /* RoomFinderAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomFinderAIApp.swift; sourceTree = "<group>"; };
+		A01234567890123456789013 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A01234567890123456789015 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A01234567890123456789017 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
+		A01234567890123456789019 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		A01234567890123456789021 /* ListingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListingsViewModel.swift; sourceTree = "<group>"; };
+		A01234567890123456789023 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
+		A01234567890123456789025 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
+		A01234567890123456789027 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		A01234567890123456789029 /* SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpView.swift; sourceTree = "<group>"; };
+		A01234567890123456789031 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		A01234567890123456789033 /* ListingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListingsView.swift; sourceTree = "<group>"; };
+		A01234567890123456789035 /* PropertyDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PropertyDetailView.swift; sourceTree = "<group>"; };
+		A01234567890123456789037 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		A01234567890123456789039 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		A01234567890123456789041 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		A01234567890123456789043 /* Listing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Listing.swift; sourceTree = "<group>"; };
+		A01234567890123456789045 /* Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chat.swift; sourceTree = "<group>"; };
+		A01234567890123456789047 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		A01234567890123456789049 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		A01234567890123456789051 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		A01234567890123456789053 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,56 +62,18 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A01234567890123456789080 /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		02337FE959B1493F9A632935 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				73490D0B6F586AC9EFB7939D /* MockDataService.swift */,
-			);
-			name = Services;
-			sourceTree = "<group>";
-		};
-		4F256AA422F7BE9ADB51DFF1 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				1574BBFE50B4AAE210BE0EA3 /* SimpleAuthViewModel.swift */,
-				C5D8C9DC10D12ADFB6BE2EFD /* SimpleListingsViewModel.swift */,
-			);
-			name = Services;
-			sourceTree = "<group>";
-		};
-		70E8D37F2E2BEEDD00188FC1 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = "Recovered References";
-			sourceTree = "<group>";
-		};
-		79F6B6F12B546EBCC970D3EA /* RoomFinderAI */ = {
-			isa = PBXGroup;
-			children = (
-				B7418EA17E3F9049AF9548AB /* Utils */,
-				4F256AA422F7BE9ADB51DFF1 /* Services */,
-			);
-			name = RoomFinderAI;
-			sourceTree = "<group>";
-		};
 		A01234567890123456789055 = {
 			isa = PBXGroup;
 			children = (
 				A01234567890123456789056 /* RoomFinderAI */,
 				A01234567890123456789057 /* Products */,
-				70E8D37F2E2BEEDD00188FC1 /* Recovered References */,
-				02337FE959B1493F9A632935 /* Services */,
-				A6FB950B67BCA4C883E040D5 /* Components */,
-				1194E0404AC0884FC2B02CFC /* DebugEnv.swift */,
-				66692679B7E485B07C32BCCB /* ParityProbe.swift */,
-				4B380553FF890F153784B453 /* PreviewHelpers.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -135,12 +84,9 @@
 				A01234567890123456789013 /* ContentView.swift */,
 				A01234567890123456789058 /* Views */,
 				A01234567890123456789059 /* Services */,
-				F1234567890123456789201 /* Data */,
-				F1234567890123456789202 /* Presentation */,
 				A01234567890123456789060 /* Models */,
 				A01234567890123456789061 /* Utils */,
 				A01234567890123456789062 /* Resources */,
-				CE0B223F8CE3E22BC88F8A5B /* Source */,
 			);
 			path = RoomFinderAI;
 			sourceTree = "<group>";
@@ -148,7 +94,7 @@
 		A01234567890123456789057 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A01234567890123456789012 /* RoomFinderAI.app */,
+				A01234567890123456789000 /* RoomFinderAI.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -161,8 +107,8 @@
 				A01234567890123456789031 /* DashboardView.swift */,
 				A01234567890123456789033 /* ListingsView.swift */,
 				A01234567890123456789035 /* PropertyDetailView.swift */,
+				A01234567890123456789037 /* ChatView.swift */,
 				A01234567890123456789039 /* ProfileView.swift */,
-				6C1F874F608B396521435D67 /* SubleaseView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -170,7 +116,11 @@
 		A01234567890123456789059 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				B9092F683FF134DD8DC2C243 /* RealSupabaseService.swift */,
+				A01234567890123456789017 /* SupabaseService.swift */,
+				A01234567890123456789019 /* AuthViewModel.swift */,
+				A01234567890123456789021 /* ListingsViewModel.swift */,
+				A01234567890123456789023 /* ChatViewModel.swift */,
+				A01234567890123456789025 /* NetworkManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -180,6 +130,8 @@
 			children = (
 				A01234567890123456789041 /* User.swift */,
 				A01234567890123456789043 /* Listing.swift */,
+				A01234567890123456789045 /* Chat.swift */,
+				A01234567890123456789047 /* Message.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -202,49 +154,6 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
-		A6FB950B67BCA4C883E040D5 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				79D3FBDBA34C4343741F6B78 /* SharedComponents.swift */,
-			);
-			name = Components;
-			sourceTree = "<group>";
-		};
-		B7418EA17E3F9049AF9548AB /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Utils;
-			sourceTree = "<group>";
-		};
-		CE0B223F8CE3E22BC88F8A5B /* Source */ = {
-			isa = PBXGroup;
-			children = (
-				79F6B6F12B546EBCC970D3EA /* RoomFinderAI */,
-			);
-			name = Source;
-			sourceTree = "<group>";
-		};
-		F1234567890123456789201 /* Data */ = {
-			isa = PBXGroup;
-			children = (
-				F1234567890123456789102 /* ListingsService.swift */,
-				F1234567890123456789103 /* ListingsFilter.swift */,
-				F1234567890123456789104 /* ListingsRealtime.swift */,
-				F1234567890123456789105 /* AuthService.swift */,
-			);
-			path = Data;
-			sourceTree = "<group>";
-		};
-		F1234567890123456789202 /* Presentation */ = {
-			isa = PBXGroup;
-			children = (
-				F1234567890123456789106 /* ListingsViewModel.swift */,
-				F1234567890123456789107 /* NewListingsView.swift */,
-			);
-			path = Presentation;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -262,10 +171,10 @@
 			);
 			name = RoomFinderAI;
 			packageProductDependencies = (
-				0D67B50174B5916812DE96D9 /* Supabase */,
+				A01234567890123456789079 /* Supabase */,
 			);
 			productName = RoomFinderAI;
-			productReference = A01234567890123456789012 /* RoomFinderAI.app */;
+			productReference = A01234567890123456789000 /* RoomFinderAI.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -293,7 +202,7 @@
 			);
 			mainGroup = A01234567890123456789055;
 			packageReferences = (
-				31CEAF39151D2026F56D776B /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				A01234567890123456789078 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			productRefGroup = A01234567890123456789057 /* Products */;
 			projectDirPath = "";
@@ -320,33 +229,26 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2440D0907AA22BC04BD24871 /* RoomFinderAIApp.swift in Sources */,
-				23E6668819441A2BD8257B96 /* ContentView.swift in Sources */,
-				3A64B729512ECD47A436D7D6 /* LoginView.swift in Sources */,
-				D5DBA5CF706C1084FE6D2C40 /* SignUpView.swift in Sources */,
-				4B38A02398CB4863BF54FC04 /* DashboardView.swift in Sources */,
-				89380E4204D00D32CC776045 /* ListingsView.swift in Sources */,
-				629F47B83B24F248E4A7DC5E /* PropertyDetailView.swift in Sources */,
-				899B163A338260E99A2432A4 /* ProfileView.swift in Sources */,
-				B1ADFC25FD9E2DC2EA0C9961 /* SubleaseView.swift in Sources */,
-				1D109ADD81A867B28AC0AF96 /* User.swift in Sources */,
-				EA20B2DD7F61B4B2E78FDCAB /* Listing.swift in Sources */,
-				8D7D44837EA37736676CA516 /* Constants.swift in Sources */,
-				353BDA71F77AE7E966494D08 /* Extensions.swift in Sources */,
-				DCE6FB7466DCFB4DAE183DD9 /* SimpleAuthViewModel.swift in Sources */,
-				5F00531F2AA76E176EAEC986 /* SimpleListingsViewModel.swift in Sources */,
-				495FD9DC8BE1AA749FCFC64E /* MockDataService.swift in Sources */,
-				35288DC5877070BE28D5FD39 /* SharedComponents.swift in Sources */,
-				8E716072C88589D2BEB8DAFE /* RealSupabaseService.swift in Sources */,
-				F1234567890123456789002 /* ListingsService.swift in Sources */,
-				F1234567890123456789003 /* ListingsFilter.swift in Sources */,
-				F1234567890123456789004 /* ListingsRealtime.swift in Sources */,
-				F1234567890123456789005 /* AuthService.swift in Sources */,
-				F1234567890123456789006 /* ListingsViewModel.swift in Sources */,
-				F1234567890123456789007 /* NewListingsView.swift in Sources */,
-				4A38D1827D90B5A91AA60B83 /* DebugEnv.swift in Sources */,
-				BE0E697CCF9C78A9ED9337AB /* ParityProbe.swift in Sources */,
-				86FF148C3C1BB48BA69C220B /* PreviewHelpers.swift in Sources */,
+				A01234567890123456789012 /* RoomFinderAIApp.swift in Sources */,
+				A01234567890123456789014 /* ContentView.swift in Sources */,
+				A01234567890123456789018 /* SupabaseService.swift in Sources */,
+				A01234567890123456789020 /* AuthViewModel.swift in Sources */,
+				A01234567890123456789022 /* ListingsViewModel.swift in Sources */,
+				A01234567890123456789024 /* ChatViewModel.swift in Sources */,
+				A01234567890123456789026 /* NetworkManager.swift in Sources */,
+				A01234567890123456789028 /* LoginView.swift in Sources */,
+				A01234567890123456789030 /* SignUpView.swift in Sources */,
+				A01234567890123456789032 /* DashboardView.swift in Sources */,
+				A01234567890123456789034 /* ListingsView.swift in Sources */,
+				A01234567890123456789036 /* PropertyDetailView.swift in Sources */,
+				A01234567890123456789038 /* ChatView.swift in Sources */,
+				A01234567890123456789040 /* ProfileView.swift in Sources */,
+				A01234567890123456789042 /* User.swift in Sources */,
+				A01234567890123456789044 /* Listing.swift in Sources */,
+				A01234567890123456789046 /* Chat.swift in Sources */,
+				A01234567890123456789048 /* Message.swift in Sources */,
+				A01234567890123456789050 /* Constants.swift in Sources */,
+				A01234567890123456789052 /* Extensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -556,7 +458,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		31CEAF39151D2026F56D776B /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+		A01234567890123456789078 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift.git";
 			requirement = {
@@ -567,9 +469,9 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		0D67B50174B5916812DE96D9 /* Supabase */ = {
+		A01234567890123456789079 /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 31CEAF39151D2026F56D776B /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = A01234567890123456789078 /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
 		};
 /* End XCSwiftPackageProductDependency section */
