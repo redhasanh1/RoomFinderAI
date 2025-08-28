@@ -573,6 +573,13 @@ struct AINegotiatorHub: View {
     }
     .navigationTitle("AI")
     .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .navigationBarTrailing) {
+        NavigationLink(destination: DebugInfoView()) {
+          Image(systemName: "info.circle")
+        }
+      }
+    }
     .task { await load() }
   }
 
