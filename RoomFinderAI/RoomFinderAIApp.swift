@@ -6,6 +6,12 @@ struct RoomFinderAIApp: App {
     @StateObject private var listingsViewModel = ListingsViewModel()
     @StateObject private var chatViewModel = ChatViewModel()
     
+    init() {
+        // Runtime startup log to confirm correct OpenAI key is loaded
+        print("🔐 OpenAI key loaded: \(Secrets.openAIKey.hasPrefix("sk-proj-") ? "project key" : "classic key") (\(Secrets.openAIModel))")
+        Secrets.assertValid()
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
