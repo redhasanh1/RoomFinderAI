@@ -1,55 +1,20 @@
 import Foundation
-import SwiftUI
+import Supabase
 
-class ListingsViewModel: ObservableObject {
-    @Published var listings: [RoomListing] = []
-    @Published var isLoading = false
-    @Published var errorMessage: String?
-    @Published var searchQuery = ""
-    
-    init() {
-        loadSampleListings()
+@MainActor
+final class ListingsViewModel: ObservableObject {
+  @Published var items: [Listing] = []
+  @Published var loading = false
+  private let service: SupabaseService
+  init(client: SupabaseClient) { self.service = SupabaseService(client) }
+
+  func load() async {
+    guard !loading else { return }
+    loading = true; defer { loading = false }
+    do { items = try await service.fetchListings() }
+    catch {
+      print("Listings fetch error:", error)
     }
-    
-    func loadListings() {
-        isLoading = true
-        errorMessage = nil
-        
-        // TODO: Implement Supabase data loading
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.loadSampleListings()
-            self.isLoading = false
-            print("Listings loaded: \(self.listings.count) items")
-        }
-    }
-    
-    func searchListings(query: String) {
-        searchQuery = query
-        // TODO: Implement search functionality
-        print("Searching for: \(query)")
-    }
-    
-    private func loadSampleListings() {
-        listings = [
-            RoomListing(
-                id: "1",
-                title: "Cozy Studio in Downtown",
-                description: "Perfect for students and young professionals",
-                price: 1200,
-                location: "Downtown",
-                imageURL: nil,
-                amenities: ["WiFi", "Laundry", "Kitchen"]
-            ),
-            RoomListing(
-                id: "2",
-                title: "Shared Room near University",
-                description: "Great location, friendly roommates",
-                price: 800,
-                location: "University District",
-                imageURL: nil,
-                amenities: ["WiFi", "Parking", "Study Area"]
-            )
-        ]
-    }
+  }
 }
 

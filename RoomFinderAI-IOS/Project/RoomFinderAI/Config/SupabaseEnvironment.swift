@@ -1,16 +1,17 @@
-import SwiftUI
+import Foundation
 import Supabase
+import SwiftUI
 
-private struct SupabaseClientKey: EnvironmentKey {
-    static let defaultValue: SupabaseClient = {
-        let url = URL(string: "https://invalid.local")!
-        return SupabaseClient(supabaseURL: url, supabaseKey: "invalid")
-    }()
+struct SupabaseKey: EnvironmentKey {
+  static let defaultValue = SupabaseClient(
+    supabaseURL: URL(string: Secrets.supabaseURL)!,
+    supabaseKey: Secrets.supabaseAnonKey
+  )
 }
 
 extension EnvironmentValues {
-    var supabase: SupabaseClient {
-        get { self[SupabaseClientKey.self] }
-        set { self[SupabaseClientKey.self] = newValue }
-    }
+  var supabase: SupabaseClient {
+    get { self[SupabaseKey.self] }
+    set { self[SupabaseKey.self] = newValue }
+  }
 }
