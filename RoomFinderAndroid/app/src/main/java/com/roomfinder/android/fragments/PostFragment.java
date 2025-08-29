@@ -421,7 +421,8 @@ public class PostFragment extends Fragment {
         
         listing.setHouseType(selectedPropertyType);
         listing.setBedrooms(parseBedrooms(selectedBedrooms));
-        listing.setBathrooms(parseBathrooms(selectedBathrooms));
+        // Note: bathrooms field not supported by database yet
+        // listing.setBathrooms(parseBathrooms(selectedBathrooms));
         listing.setUtilities("included"); // You can add a utilities selection if needed
         listing.setUserEmail(currentUser.getEmail());
         listing.setCreatedAt(new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(new Date()));
