@@ -351,9 +351,10 @@ public class Listing implements Serializable {
         @Override
         public void write(JsonWriter out, Double value) throws IOException {
             if (value == null) {
-                out.value(0.0);
+                out.value(0);
             } else {
-                out.value(value);
+                // Write as integer for database compatibility (database expects integer type)
+                out.value(value.intValue());
             }
         }
 
