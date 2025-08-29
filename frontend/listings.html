@@ -2117,6 +2117,78 @@
             console.log('- Valid coordinates:', validCoordinates.length);
         }
 
+        // Global smart scroll variables and functions
+        let unreadMessagesCount = 0;
+        let userScrolledUp = false;
+        
+        // Smart scroll function - only scrolls if user is at bottom
+        function smartScrollToBottom() {
+            const chatMessagesContainer = document.getElementById('chatMessages');
+            if (!chatMessagesContainer) return;
+            
+            const scrollTop = chatMessagesContainer.scrollTop;
+            const scrollHeight = chatMessagesContainer.scrollHeight;
+            const clientHeight = chatMessagesContainer.clientHeight;
+            const scrollThreshold = 100; // pixels from bottom
+            
+            const isNearBottom = (scrollHeight - scrollTop - clientHeight) <= scrollThreshold;
+            
+            if (isNearBottom && !userScrolledUp) {
+                chatMessagesContainer.scrollTop = scrollHeight;
+                unreadMessagesCount = 0;
+                updateScrollButton();
+            } else {
+                unreadMessagesCount++;
+                updateScrollButton();
+            }
+        }
+        
+        // Check if user is at bottom
+        function isUserAtBottom() {
+            const chatMessagesContainer = document.getElementById('chatMessages');
+            if (!chatMessagesContainer) return true;
+            const scrollTop = chatMessagesContainer.scrollTop;
+            const scrollHeight = chatMessagesContainer.scrollHeight;
+            const clientHeight = chatMessagesContainer.clientHeight;
+            return (scrollHeight - scrollTop - clientHeight) <= 50;
+        }
+        
+        // Update scroll button visibility and unread count
+        function updateScrollButton() {
+            const scrollBtn = document.getElementById('scrollToBottomBtn');
+            const unreadCountEl = document.getElementById('unreadCount');
+            
+            if (!scrollBtn || !unreadCountEl) return;
+            
+            const atBottom = isUserAtBottom();
+            
+            if (atBottom) {
+                scrollBtn.classList.add('hidden');
+                unreadMessagesCount = 0;
+                userScrolledUp = false;
+            } else {
+                scrollBtn.classList.remove('hidden');
+                userScrolledUp = true;
+            }
+            
+            if (unreadMessagesCount > 0) {
+                unreadCountEl.textContent = unreadMessagesCount;
+                unreadCountEl.classList.remove('hidden');
+            } else {
+                unreadCountEl.classList.add('hidden');
+            }
+        }
+        
+        // Scroll to bottom function
+        function scrollToBottom() {
+            const chatMessagesContainer = document.getElementById('chatMessages');
+            if (!chatMessagesContainer) return;
+            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+            unreadMessagesCount = 0;
+            userScrolledUp = false;
+            updateScrollButton();
+        }
+
         // Authentication check and header update
         async function initializeListingsPage() {
             console.log('DOMContentLoaded event fired');
@@ -3279,74 +3351,6 @@
             const chatInput = document.getElementById('chatInput');
             const chatSendBtn = document.getElementById('chatSendBtn');
             
-            // Smart scroll variables
-            let unreadMessagesCount = 0;
-            let userScrolledUp = false;
-            
-            // Smart scroll function - only scrolls if user is at bottom
-            function smartScrollToBottom() {
-                if (!chatMessagesContainer) return;
-                
-                const scrollTop = chatMessagesContainer.scrollTop;
-                const scrollHeight = chatMessagesContainer.scrollHeight;
-                const clientHeight = chatMessagesContainer.clientHeight;
-                const scrollThreshold = 100; // pixels from bottom
-                
-                const isNearBottom = (scrollHeight - scrollTop - clientHeight) <= scrollThreshold;
-                
-                if (isNearBottom && !userScrolledUp) {
-                    chatMessagesContainer.scrollTop = scrollHeight;
-                    unreadMessagesCount = 0;
-                    updateScrollButton();
-                } else {
-                    unreadMessagesCount++;
-                    updateScrollButton();
-                }
-            }
-            
-            // Check if user is at bottom
-            function isUserAtBottom() {
-                if (!chatMessagesContainer) return true;
-                const scrollTop = chatMessagesContainer.scrollTop;
-                const scrollHeight = chatMessagesContainer.scrollHeight;
-                const clientHeight = chatMessagesContainer.clientHeight;
-                return (scrollHeight - scrollTop - clientHeight) <= 50;
-            }
-            
-            // Update scroll button visibility and unread count
-            function updateScrollButton() {
-                const scrollBtn = document.getElementById('scrollToBottomBtn');
-                const unreadCountEl = document.getElementById('unreadCount');
-                
-                if (!scrollBtn || !unreadCountEl) return;
-                
-                const atBottom = isUserAtBottom();
-                
-                if (atBottom) {
-                    scrollBtn.classList.add('hidden');
-                    unreadMessagesCount = 0;
-                    userScrolledUp = false;
-                } else {
-                    scrollBtn.classList.remove('hidden');
-                    userScrolledUp = true;
-                }
-                
-                if (unreadMessagesCount > 0) {
-                    unreadCountEl.textContent = unreadMessagesCount;
-                    unreadCountEl.classList.remove('hidden');
-                } else {
-                    unreadCountEl.classList.add('hidden');
-                }
-            }
-            
-            // Scroll to bottom function
-            function scrollToBottom() {
-                if (!chatMessagesContainer) return;
-                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-                unreadMessagesCount = 0;
-                userScrolledUp = false;
-                updateScrollButton();
-            }
 
             console.log('✅ All chat elements found:', {
                 chatModal: !!chatModal,
