@@ -4867,33 +4867,27 @@
                 } catch (apiError) {
                     console.log('📱 API unavailable, using localStorage fallback:', apiError.message);
                     
-                    // Fallback to localStorage
+                    // Fallback to localStorage - store complete listing objects like active listings
                     const storageKey = `savedListings_${currentUser.email}`;
                     let savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
                     
-                    // Also store the complete listings data for profile page
-                    let allListings = JSON.parse(localStorage.getItem('listings')) || [];
-                    
                     if (isFavorited) {
                         // Remove from localStorage
-                        savedListings = savedListings.filter(id => id !== listingId);
+                        savedListings = savedListings.filter(listing => listing.id !== listingId);
                         localStorage.setItem(storageKey, JSON.stringify(savedListings));
                         console.log('✅ Removed from favorites via localStorage:', listingId);
                     } else {
-                        // Add to localStorage
-                        if (!savedListings.includes(listingId)) {
-                            savedListings.push(listingId);
+                        // Add to localStorage - store complete listing object
+                        if (listingData && !savedListings.find(l => l.id === listingId)) {
+                            // Add saved timestamp for consistency
+                            const listingToSave = {
+                                ...listingData,
+                                saved_at: new Date().toISOString()
+                            };
+                            savedListings.push(listingToSave);
                             localStorage.setItem(storageKey, JSON.stringify(savedListings));
+                            console.log('✅ Added to favorites via localStorage with complete data:', listingId);
                         }
-                        
-                        // Also add the listing data to the main listings storage if not already there
-                        if (listingData && !allListings.find(l => l.id === listingId)) {
-                            allListings.push(listingData);
-                            localStorage.setItem('listings', JSON.stringify(allListings));
-                            console.log('✅ Added listing data to main storage:', listingId);
-                        }
-                        
-                        console.log('✅ Added to favorites via localStorage:', listingId);
                     }
                     success = true;
                 }
