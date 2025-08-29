@@ -971,7 +971,13 @@
             let displayFirstName = user.firstName || '';
             let displayLastName = user.lastName || '';
             
-            // Fetch the latest profile data from backend (including names and profile image)
+            // Always prioritize localStorage profile image first (uploaded images are stored locally)
+            if (user.profileImage) {
+                document.getElementById('profileImage').src = user.profileImage;
+                console.log('✅ Loaded local profile image for:', user.email);
+            }
+            
+            // Fetch the latest profile data from backend (for names only)
             try {
                 const response = await fetch(`/api/user-profile/${encodeURIComponent(user.email)}`);
                 if (response.ok) {
@@ -988,8 +994,8 @@
                         currentUser.firstName = displayFirstName;
                         currentUser.lastName = displayLastName;
                         
-                        // Also update profile image if exists
-                        if (profileData.profileImage) {
+                        // Only update profile image from backend if we don't have a local one
+                        if (profileData.profileImage && !user.profileImage) {
                             currentUser.profileImage = profileData.profileImage;
                             currentUser.hasCustomProfileImage = profileData.hasCustomProfileImage;
                             document.getElementById('profileImage').src = profileData.profileImage;
@@ -1000,8 +1006,8 @@
                     } else {
                         console.log('ℹ️ No names found in database, using local data');
                         
-                        // Still check for profile image
-                        if (profileData.profileImage) {
+                        // Only update profile image from backend if we don't have a local one
+                        if (profileData.profileImage && !user.profileImage) {
                             document.getElementById('profileImage').src = profileData.profileImage;
                             console.log('✅ Loaded profile image from backend for:', user.email);
                             
@@ -1012,20 +1018,11 @@
                         }
                     }
                 } else {
-                    console.log('ℹ️ Could not fetch profile data, using local data');
-                    // Fallback to local profile image
-                    if (user.profileImage) {
-                        document.getElementById('profileImage').src = user.profileImage;
-                        console.log('✅ Loaded local profile image for:', user.email);
-                    }
+                    console.log('ℹ️ Could not fetch profile data, keeping local profile image');
                 }
             } catch (error) {
                 console.error('Error fetching profile data:', error);
-                // Fallback to local data
-                if (user.profileImage) {
-                    document.getElementById('profileImage').src = user.profileImage;
-                    console.log('✅ Loaded local profile image (fallback) for:', user.email);
-                }
+                console.log('ℹ️ Using local profile image due to error');
             }
             
             // Update profile information with final names (either from database or localStorage)
