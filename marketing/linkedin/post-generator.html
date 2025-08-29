@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Post Generator - RoomFinder AI Marketing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #0077b5 0%, #0e76a8 100%);
+            --success-gradient: linear-gradient(135deg, #00d084 0%, #00a86b 100%);
+            --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        .linkedin-blue {
+            background: var(--primary-gradient);
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .post-preview {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .btn-generate {
+            background: var(--primary-gradient);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,119,181,0.3);
+        }
+        
+        .template-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .template-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .template-card.selected {
+            border-color: #0077b5;
+            background: linear-gradient(135deg, rgba(0,119,181,0.05) 0%, rgba(14,118,168,0.05) 100%);
+        }
+        
+        .copy-button {
+            transition: all 0.3s ease;
+        }
+        
+        .copy-button:active {
+            transform: scale(0.95);
+        }
+        
+        .copied-notification {
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .hashtag {
+            display: inline-block;
+            padding: 4px 8px;
+            background: rgba(0,119,181,0.1);
+            color: #0077b5;
+            border-radius: 4px;
+            margin: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .hashtag:hover {
+            background: rgba(0,119,181,0.2);
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold linkedin-blue bg-clip-text text-transparent">
+                        RoomFinder AI - LinkedIn Post Generator
+                    </h1>
+                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                        Landlord Marketing Tool
+                    </span>
+                </div>
+                <button onclick="window.location.href='/'" class="px-4 py-2 text-gray-600 hover:text-gray-900">
+                    Back to Dashboard
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column - Generator Controls -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                <!-- Post Type Selection -->
+                <div class="glass-card p-6">
+                    <h2 class="text-lg font-semibold mb-4">Post Type</h2>
+                    <select id="postType" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="ai_advantage">AI Advantage</option>
+                        <option value="time_saving">Time Saving Benefits</option>
+                        <option value="roi_focused">ROI & Cost Savings</option>
+                        <option value="feature_highlight">Feature Highlight</option>
+                        <option value="success_story">Success Story</option>
+                        <option value="industry_insight">Industry Insight</option>
+                        <option value="educational">Educational Content</option>
+                        <option value="announcement">Platform Update</option>
+                        <option value="testimonial">Testimonial Style</option>
+                        <option value="problem_solution">Problem-Solution</option>
+                    </select>
+                </div>
+
+                <!-- Tone Selection -->
+                <div class="glass-card p-6">
+                    <h2 class="text-lg font-semibold mb-4">Tone & Style</h2>
+                    <div class="space-y-2">
+                        <label class="flex items-center space-x-2">
+                            <input type="radio" name="tone" value="professional" checked class="text-blue-600">
+                            <span>Professional & Data-Driven</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="radio" name="tone" value="friendly" class="text-blue-600">
+                            <span>Friendly & Conversational</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="radio" name="tone" value="urgent" class="text-blue-600">
+                            <span>Urgent & Action-Oriented</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="radio" name="tone" value="storytelling" class="text-blue-600">
+                            <span>Storytelling & Narrative</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Customization Options -->
+                <div class="glass-card p-6">
+                    <h2 class="text-lg font-semibold mb-4">Customization</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Include Statistics</label>
+                            <input type="checkbox" id="includeStats" checked class="ml-2">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Add Emojis</label>
+                            <input type="checkbox" id="includeEmojis" checked class="ml-2">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Include CTA</label>
+                            <input type="checkbox" id="includeCTA" checked class="ml-2">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Target Market</label>
+                            <select id="targetMarket" class="w-full mt-1 p-2 border rounded">
+                                <option value="all">All Landlords</option>
+                                <option value="residential">Residential Only</option>
+                                <option value="commercial">Commercial Only</option>
+                                <option value="multi_unit">Multi-Unit Properties</option>
+                                <option value="new_landlords">New Landlords</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <button onclick="generatePost()" class="btn-generate w-full text-white font-semibold py-4 px-6 rounded-lg">
+                    Generate LinkedIn Post
+                </button>
+
+                <!-- Quick Stats -->
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-semibold mb-4">Quick Stats to Include</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="stat-item">• 75% faster tenant screening</div>
+                        <div class="stat-item">• 24/7 AI negotiation availability</div>
+                        <div class="stat-item">• Zero cost to landlords</div>
+                        <div class="stat-item">• 90% tenant satisfaction rate</div>
+                        <div class="stat-item">• 50% reduction in vacancy time</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Column - Post Preview -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- LinkedIn Post Preview -->
+                <div class="glass-card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold">Post Preview</h2>
+                        <div class="flex space-x-2">
+                            <button onclick="copyPost()" class="copy-button px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                Copy Post
+                            </button>
+                            <button onclick="regeneratePost()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                Regenerate
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- LinkedIn Style Post -->
+                    <div class="post-preview p-6">
+                        <div class="flex items-start space-x-3 mb-4">
+                            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                                RF
+                            </div>
+                            <div>
+                                <div class="font-semibold">RoomFinder AI</div>
+                                <div class="text-sm text-gray-500">AI-Powered Property Management Platform</div>
+                                <div class="text-sm text-gray-500">Just now • 🌐</div>
+                            </div>
+                        </div>
+                        
+                        <div id="postContent" class="text-gray-800 whitespace-pre-wrap mb-4">
+                            Click "Generate LinkedIn Post" to create engaging content for landlords...
+                        </div>
+                        
+                        <div id="hashtagContainer" class="mb-4">
+                            <!-- Hashtags will be inserted here -->
+                        </div>
+                        
+                        <div class="border-t pt-4 flex justify-between text-gray-500 text-sm">
+                            <span>👍 Like</span>
+                            <span>💬 Comment</span>
+                            <span>🔄 Repost</span>
+                            <span>📤 Send</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Suggested Hashtags -->
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-semibold mb-4">Suggested Hashtags</h3>
+                    <div id="suggestedHashtags" class="flex flex-wrap">
+                        <span class="hashtag">#PropTech</span>
+                        <span class="hashtag">#RealEstate</span>
+                        <span class="hashtag">#PropertyManagement</span>
+                        <span class="hashtag">#LandlordLife</span>
+                        <span class="hashtag">#AIinRealEstate</span>
+                        <span class="hashtag">#RentalProperty</span>
+                        <span class="hashtag">#SmartProperty</span>
+                        <span class="hashtag">#RealEstateInvesting</span>
+                        <span class="hashtag">#TenantScreening</span>
+                        <span class="hashtag">#PropertyTech</span>
+                    </div>
+                </div>
+
+                <!-- Posting Tips -->
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-semibold mb-4">📈 Best Practices for LinkedIn</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="stat-card">
+                            <h4 class="font-semibold text-blue-600 mb-2">Best Times to Post</h4>
+                            <ul class="text-sm space-y-1">
+                                <li>• Tuesday-Thursday: 8-10 AM</li>
+                                <li>• Wednesday: 12 PM</li>
+                                <li>• Thursday: 5-6 PM</li>
+                            </ul>
+                        </div>
+                        <div class="stat-card">
+                            <h4 class="font-semibold text-blue-600 mb-2">Engagement Tips</h4>
+                            <ul class="text-sm space-y-1">
+                                <li>• Use 3-5 relevant hashtags</li>
+                                <li>• Keep posts under 1,300 characters</li>
+                                <li>• Include a clear CTA</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Character Count -->
+                <div class="glass-card p-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">Character Count:</span>
+                        <span id="charCount" class="text-sm font-bold">0 / 3,000</span>
+                    </div>
+                    <div class="mt-2 bg-gray-200 rounded-full h-2">
+                        <div id="charBar" class="bg-blue-600 h-2 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template Examples Section -->
+        <div class="mt-12">
+            <h2 class="text-2xl font-bold mb-6">Recent Generated Posts</h2>
+            <div id="recentPosts" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Recent posts will be displayed here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Copy Notification -->
+    <div id="copyNotification" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg hidden copied-notification">
+        ✓ Post copied to clipboard!
+    </div>
+
+    <script src="post-generator.js"></script>
+    <script src="templates.js"></script>
+    <script src="content-library.js"></script>
+</body>
+</html>

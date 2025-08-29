@@ -482,4 +482,61 @@ public class SupabaseClient {
             return null;
         }
     }
+    
+    /**
+     * Insert a new listing to Supabase database
+     * Equivalent to: supabase.from('listings').insert([listing]).select()
+     */
+    public Listing insertListing(Listing listing) {
+        try {
+            String url = baseUrl + "listings";
+            
+            // Create the listing JSON object
+            String jsonBody = gson.toJson(listing);
+            Log.d(TAG, "Inserting listing: " + jsonBody);
+            
+            okhttp3.RequestBody body = okhttp3.RequestBody.create(
+                    jsonBody,
+                    okhttp3.MediaType.parse("application/json; charset=utf-8")
+            );
+            
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(body)
+                    .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("Prefer", "return=representation")
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                String responseBody = response.body() != null ? response.body().string() : "";
+                
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Error inserting listing: " + response.code() + " - " + response.message());
+                    Log.e(TAG, "Error response: " + responseBody);
+                    return null;
+                }
+                
+                Log.d(TAG, "Listing inserted successfully. Response: " + responseBody);
+                
+                // Parse the response - Supabase returns an array with the inserted item
+                Type listType = new TypeToken<List<Listing>>(){}.getType();
+                List<Listing> insertedListings = gson.fromJson(responseBody, listType);
+                
+                if (insertedListings != null && !insertedListings.isEmpty()) {
+                    Listing insertedListing = insertedListings.get(0);
+                    Log.d(TAG, "Successfully inserted listing with ID: " + insertedListing.getId());
+                    return insertedListing;
+                }
+                
+                Log.e(TAG, "Unexpected response format after insert");
+                return null;
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error inserting listing: " + e.getMessage(), e);
+            return null;
+        }
+    }
 }

@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ModuWell V3 - Viral Machina Marketing Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --machina-black: #0a0a0a;
+            --machina-neon: #00ff41;
+            --machina-blue: #00d4ff;
+            --machina-purple: #a855f7;
+            --machina-red: #ff0040;
+            --machina-gray: #1a1a1a;
+            --machina-border: #333;
+            --machina-gradient: linear-gradient(135deg, #00ff41 0%, #00d4ff 50%, #a855f7 100%);
+            --viral-gradient: linear-gradient(135deg, #ff0040 0%, #00ff41 100%);
+            --algorithm-gradient: linear-gradient(135deg, #a855f7 0%, #00d4ff 100%);
+        }
+        
+        * {
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+        
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        body {
+            background: var(--machina-black);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+        
+        .machina-card {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(10, 10, 10, 0.95) 100%);
+            border: 1px solid var(--machina-border);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 4px 20px rgba(0, 255, 65, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .machina-card:hover {
+            border-color: var(--machina-neon);
+            box-shadow: 0 8px 40px rgba(0, 255, 65, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .viral-card {
+            background: linear-gradient(135deg, rgba(255, 0, 64, 0.1) 0%, rgba(0, 255, 65, 0.1) 100%);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .viral-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            padding: 2px;
+            background: var(--viral-gradient);
+            border-radius: inherit;
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: subtract;
+        }
+        
+        .algorithm-btn {
+            background: var(--algorithm-gradient);
+            color: #ffffff;
+            font-weight: 700;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+        }
+        
+        .algorithm-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.4);
+        }
+        
+        .viral-btn {
+            background: var(--viral-gradient);
+            color: #ffffff;
+            font-weight: 700;
+            padding: 16px 32px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .viral-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .viral-btn:hover::before {
+            left: 100%;
+        }
+        
+        .viral-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(255, 0, 64, 0.4);
+        }
+        
+        .neon-text {
+            color: var(--machina-neon);
+            text-shadow: 0 0 5px var(--machina-neon);
+        }
+        
+        .viral-text {
+            color: var(--machina-red);
+            text-shadow: 0 0 5px var(--machina-red);
+        }
+        
+        .algorithm-text {
+            color: var(--machina-purple);
+            text-shadow: 0 0 5px var(--machina-purple);
+        }
+        
+        .platform-preview {
+            background: #000000;
+            border: 2px solid var(--machina-border);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tiktok-preview {
+            background: linear-gradient(135deg, #ff0050 0%, #000000 100%);
+        }
+        
+        .instagram-preview {
+            background: linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%);
+        }
+        
+        .twitter-preview {
+            background: #000000;
+            border: 1px solid #333;
+        }
+        
+        .viral-score {
+            background: var(--machina-gradient);
+            color: #000000;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 900;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .engagement-meter {
+            background: linear-gradient(90deg, var(--machina-red) 0%, var(--machina-neon) 50%, var(--machina-blue) 100%);
+            height: 8px;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .engagement-meter::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: scan 2s infinite;
+        }
+        
+        @keyframes scan {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .glitch {
+            position: relative;
+            animation: glitch 2s infinite;
+        }
+        
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-1px, 1px); }
+            40% { transform: translate(-1px, -1px); }
+            60% { transform: translate(1px, 1px); }
+            80% { transform: translate(1px, -1px); }
+        }
+        
+        .typing-effect::after {
+            content: '|';
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .matrix-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0.02;
+            pointer-events: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--machina-neon);
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg" id="matrixBg"></div>
+    
+    <!-- Viral Header -->
+    <header class="border-b border-machina-border bg-machina-black/90 backdrop-blur-xl sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-lg flex items-center justify-center" style="background: var(--machina-gradient);">
+                        <span class="text-black font-bold text-xl mono">M3</span>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold">
+                            <span class="neon-text">VIRAL MACHINA</span> 
+                            <span class="text-white">ENGINE</span>
+                        </h1>
+                        <p class="text-sm text-gray-400 mono">AI-Driven Content Generation V3.0</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="viral-score">🔥 MAXIMUM VIRAL</div>
+                    <div class="viral-score bg-algorithm-gradient">🤖 AI OPTIMIZED</div>
+                </div>
+            </div>
+            
+            <!-- Algorithm Status -->
+            <div class="mt-4">
+                <div class="flex items-center justify-between text-sm font-medium mono">
+                    <span class="viral-text">VIRAL OPTIMIZATION: ACTIVE</span>
+                    <span class="algorithm-text">ENGAGEMENT RATE: 97.3%</span>
+                    <span class="neon-text">ALGORITHM STATUS: LOCKED</span>
+                </div>
+                <div class="engagement-meter mt-2"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column - Viral Controls -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                <!-- Content Type Selection -->
+                <div class="machina-card p-6">
+                    <h2 class="text-lg font-bold mb-4 flex items-center neon-text mono">
+                        <span>🎯</span>
+                        <span class="ml-2">VIRAL CONTENT TYPE</span>
+                    </h2>
+                    <select id="viralContentType" class="w-full p-3 border border-machina-border rounded-lg mono" style="background: #2a2a2a; color: #ffffff;">
+                        <option value="trend_hijack" style="background: #2a2a2a; color: #ffffff;">TREND HIJACKING</option>
+                        <option value="pov_discovery" style="background: #2a2a2a; color: #ffffff;">POV: YOU DISCOVER</option>
+                        <option value="data_dump" style="background: #2a2a2a; color: #ffffff;">VIRAL DATA DUMP</option>
+                        <option value="before_after" style="background: #2a2a2a; color: #ffffff;">TRANSFORMATION REVEAL</option>
+                        <option value="controversial_truth" style="background: #2a2a2a; color: #ffffff;">FORBIDDEN KNOWLEDGE</option>
+                        <option value="exm7777_style" style="background: #2a2a2a; color: #ff0040;">@EXM7777 PROVOCATIVE</option>
+                        <option value="medical_cartel" style="background: #2a2a2a; color: #ff0040;">MEDICAL CARTEL EXPOSED</option>
+                        <option value="challenge_script" style="background: #2a2a2a; color: #ffffff;">VIRAL CHALLENGE</option>
+                        <option value="algorithm_hack" style="background: #2a2a2a; color: #ffffff;">ALGORITHM EXPLOITATION</option>
+                        <option value="ugs_prompt" style="background: #2a2a2a; color: #ffffff;">UGC GENERATION</option>
+                        <option value="secret_exposed" style="background: #2a2a2a; color: #ffffff;">INDUSTRY SECRETS</option>
+                    </select>
+                </div>
+
+                <!-- Platform Targeting -->
+                <div class="machina-card p-6">
+                    <h2 class="text-lg font-bold mb-4 algorithm-text mono">📱 PLATFORM ALGORITHM</h2>
+                    <div class="space-y-3">
+                        <label class="flex items-center space-x-3 p-2 rounded-lg cursor-pointer hover:bg-gray-800">
+                            <input type="radio" name="platform" value="tiktok" checked style="accent-color: var(--machina-neon);">
+                            <span class="font-medium">TikTok (15s-3min)</span>
+                            <div class="text-xs bg-red-600 px-2 py-1 rounded">HOT</div>
+                        </label>
+                        <label class="flex items-center space-x-3 p-2 rounded-lg cursor-pointer hover:bg-gray-800">
+                            <input type="radio" name="platform" value="instagram" style="accent-color: var(--machina-neon);">
+                            <span class="font-medium">Instagram Reels (30s)</span>
+                            <div class="text-xs bg-purple-600 px-2 py-1 rounded">VIRAL</div>
+                        </label>
+                        <label class="flex items-center space-x-3 p-2 rounded-lg cursor-pointer hover:bg-gray-800">
+                            <input type="radio" name="platform" value="youtube" style="accent-color: var(--machina-neon);">
+                            <span class="font-medium">YouTube Shorts (60s)</span>
+                            <div class="text-xs bg-blue-600 px-2 py-1 rounded">ALGO</div>
+                        </label>
+                        <label class="flex items-center space-x-3 p-2 rounded-lg cursor-pointer hover:bg-gray-800">
+                            <input type="radio" name="platform" value="twitter" style="accent-color: var(--machina-neon);">
+                            <span class="font-medium">X/Twitter (280 char)</span>
+                            <div class="text-xs bg-green-600 px-2 py-1 rounded">FAST</div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Viral Intensity -->
+                <div class="machina-card p-6">
+                    <h2 class="text-lg font-bold mb-4 viral-text mono">🔥 VIRAL INTENSITY</h2>
+                    <div class="space-y-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="maxEngagement" checked style="accent-color: var(--machina-neon);">
+                            <span>Maximum Engagement Hooks</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="algorithmOptimized" checked style="accent-color: var(--machina-neon);">
+                            <span>Algorithm Optimization</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="controversialAngle" style="accent-color: var(--machina-neon);">
+                            <span>Controversial Positioning</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="trendJacking" checked style="accent-color: var(--machina-neon);">
+                            <span>Trend Integration</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="shareability" checked style="accent-color: var(--machina-neon);">
+                            <span>Share Triggers</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Research Integration -->
+                <div class="machina-card p-6">
+                    <h2 class="text-lg font-bold mb-4 algorithm-text mono">🧬 DATA INTEGRATION</h2>
+                    <select id="researchFocus" class="w-full p-3 border border-machina-border rounded-lg mono mb-4" style="background: #2a2a2a; color: #ffffff;">
+                        <option value="multi_specialty" style="background: #2a2a2a; color: #ffffff;">6 Medical Specialties</option>
+                        <option value="ingredient_breakdown" style="background: #2a2a2a; color: #ffffff;">Ingredient Science</option>
+                        <option value="mechanism_reveal" style="background: #2a2a2a; color: #ffffff;">Hidden Mechanisms</option>
+                        <option value="transformation_data" style="background: #2a2a2a; color: #ffffff;">Patient Transformations</option>
+                        <option value="competitive_intel" style="background: #2a2a2a; color: #ffffff;">Competitor Failures</option>
+                        <option value="research_citations" style="background: #2a2a2a; color: #ffffff;">Study Citations</option>
+                    </select>
+                </div>
+
+                <!-- Generate Button -->
+                <button onclick="generateViralContent()" class="viral-btn w-full glitch">
+                    GENERATE VIRAL CONTENT
+                </button>
+
+                <!-- Algorithm Status -->
+                <div class="viral-card p-6">
+                    <h3 class="text-lg font-bold mb-4 neon-text mono">⚡ ALGORITHM STATUS</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center p-3 bg-machina-gray rounded-lg">
+                            <div class="text-2xl font-bold neon-text mono">98.7%</div>
+                            <div class="text-xs text-gray-400">Viral Score</div>
+                        </div>
+                        <div class="text-center p-3 bg-machina-gray rounded-lg">
+                            <div class="text-2xl font-bold viral-text mono">47.2M</div>
+                            <div class="text-xs text-gray-400">Est. Reach</div>
+                        </div>
+                        <div class="text-center p-3 bg-machina-gray rounded-lg">
+                            <div class="text-2xl font-bold algorithm-text mono">2.1M</div>
+                            <div class="text-xs text-gray-400">Engagement</div>
+                        </div>
+                        <div class="text-center p-3 bg-machina-gray rounded-lg">
+                            <div class="text-2xl font-bold text-blue-400 mono">89%</div>
+                            <div class="text-xs text-gray-400">Share Rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle & Right Columns - Preview & Output -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Viral Content Preview -->
+                <div class="machina-card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold">VIRAL CONTENT OUTPUT</h2>
+                        <div class="flex items-center space-x-3">
+                            <div class="viral-score">
+                                <span id="viralRating">🚀 VIRAL LEVEL: MAX</span>
+                            </div>
+                            <button onclick="copyViralContent()" class="algorithm-btn">
+                                COPY
+                            </button>
+                            <button onclick="regenerateViral()" class="algorithm-btn">
+                                REGENERATE
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Platform Preview -->
+                    <div id="contentContainer" class="space-y-4">
+                        <div class="platform-preview p-6" id="platformPreview">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style="background: var(--machina-gradient);">
+                                    <span class="text-black font-bold mono">M</span>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="font-bold">ModuWell_Research</span>
+                                        <div class="text-xs bg-red-600 px-2 py-1 rounded">VIRAL</div>
+                                        <span class="text-gray-400">@moduwellresearch</span>
+                                        <span class="text-gray-400">·</span>
+                                        <span class="text-gray-400">now</span>
+                                    </div>
+                                    <div id="viralContent" class="text-white whitespace-pre-wrap leading-relaxed typing-effect">
+Click "GENERATE VIRAL CONTENT" to create algorithm-optimized content that breaks the internet...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Performance Metrics -->
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-machina-gray rounded-xl">
+                        <div class="text-center">
+                            <span class="text-sm font-medium text-gray-400 mono">VIRAL POTENTIAL</span>
+                            <div id="viralPotential" class="text-2xl font-bold neon-text mono">97.3%</div>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-sm font-medium text-gray-400 mono">ENGAGEMENT</span>
+                            <div id="engagementScore" class="text-2xl font-bold viral-text mono">89.7%</div>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-sm font-medium text-gray-400 mono">SHAREABILITY</span>
+                            <div id="shareScore" class="text-2xl font-bold algorithm-text mono">94.1%</div>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-sm font-medium text-gray-400 mono">ALGORITHM FIT</span>
+                            <div id="algorithmScore" class="text-2xl font-bold text-blue-400 mono">100%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Viral Strategy Breakdown -->
+                <div class="viral-card p-6">
+                    <h3 class="text-lg font-bold mb-4 neon-text mono">🎯 VIRAL STRATEGY</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="p-4 bg-machina-gray rounded-lg">
+                            <h4 class="font-bold viral-text mb-2 mono">ALGORITHM EXPLOITATION</h4>
+                            <ul class="text-sm space-y-1 text-gray-300">
+                                <li>• Hook within first 3 seconds</li>
+                                <li>• Pattern interrupt techniques</li>
+                                <li>• Engagement-baiting questions</li>
+                                <li>• Share trigger implementation</li>
+                            </ul>
+                        </div>
+                        <div class="p-4 bg-machina-gray rounded-lg">
+                            <h4 class="font-bold algorithm-text mb-2 mono">CONTENT FORMULA</h4>
+                            <ul class="text-sm space-y-1 text-gray-300">
+                                <li>• Controversy + Authority</li>
+                                <li>• Data reveal + Transformation</li>
+                                <li>• Problem + Solution + Proof</li>
+                                <li>• Trend integration + Unique angle</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Multi-Platform Distribution -->
+                <div class="machina-card p-6">
+                    <h3 class="text-lg font-bold mb-4 algorithm-text mono">🌐 MULTI-PLATFORM DISTRIBUTION</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 bg-gradient-to-r from-red-900/20 to-black rounded-lg border border-red-500/20">
+                            <div class="text-lg font-bold text-red-400 mb-2">TikTok Optimization</div>
+                            <div class="text-xs text-gray-300 mono">15-second hooks, vertical format, trending sounds integration</div>
+                        </div>
+                        <div class="p-4 bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-lg border border-purple-500/20">
+                            <div class="text-lg font-bold text-purple-400 mb-2">Instagram Reels</div>
+                            <div class="text-xs text-gray-300 mono">Story-driven, visually engaging, hashtag optimized</div>
+                        </div>
+                        <div class="p-4 bg-gradient-to-r from-blue-900/20 to-black rounded-lg border border-blue-500/20">
+                            <div class="text-lg font-bold text-blue-400 mb-2">YouTube Shorts</div>
+                            <div class="text-xs text-gray-300 mono">60-second deep dives, educational hooks, subscriber conversion</div>
+                        </div>
+                        <div class="p-4 bg-gradient-to-r from-green-900/20 to-black rounded-lg border border-green-500/20">
+                            <div class="text-lg font-bold text-green-400 mb-2">X/Twitter</div>
+                            <div class="text-xs text-gray-300 mono">Thread-worthy, retweet mechanics, community building</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Copy Notification -->
+    <div id="copyNotification" class="fixed top-4 right-4 text-black px-6 py-3 rounded-lg shadow-lg hidden font-bold" style="background: var(--machina-gradient);">
+        ✓ VIRAL CONTENT COPIED TO SYSTEM CLIPBOARD
+    </div>
+
+    <script>
+// Viral Machina Content Generation Engine V3.0
+// Algorithm-Optimized, AI-Driven Marketing System
+
+let currentViralContent = '';
+let currentViralData = {};
+
+// Initialize Matrix Background Effect
+function initMatrixEffect() {
+    const matrixBg = document.getElementById('matrixBg');
+    const chars = '01100110011001100110';
+    let matrixText = '';
+    
+    for (let i = 0; i < 2000; i++) {
+        matrixText += chars.charAt(Math.floor(Math.random() * chars.length));
+        if (i % 100 === 0) matrixText += '\n';
+    }
+    
+    matrixBg.textContent = matrixText;
+}
+
+// Viral Content Library - Algorithm Optimized
+const viralContentLibrary = {
+    trendHijack: {
+        hooks: [
+            "POV: You discover the one ingredient that 6 medical specialties have been hiding from you",
+            "This is how I went from passing out daily to running marathons (doctors HATE this)",
+            "3 years of research condensed into 60 seconds that will change everything you know about hydration",
+            "The $50,000 formula that makes LMNT look like sugar water",
+            "What cardiologists + neurologists + endocrinologists discovered when they finally worked together"
+        ],
+        bodies: [
+            "I spent 3 years combining research from:\n\n🫀 Cardiologists: Heart mechanisms\n🧠 Neurologists: Brain pathways\n🧬 Endocrinologists: Hormone systems\n🔬 Nephrologists: Volume regulation\n💪 Exercise physiologists: Performance data\n🩺 Dysautonomia specialists: POTS research\n\nResult: The world's first neuromodulating hydration formula",
+            "The medical field works in silos:\n\n❌ Cardiologists: \"It's your heart\"\n❌ Neurologists: \"It's your brain\" \n❌ Doctors: \"Just drink more water\"\n\n✅ Me: Combined ALL their research into one breakthrough formula\n\nNow 1000+ patients have stable autonomic function",
+            "Here's what $50,000 in research taught me:\n\n🔬 POTS isn't dehydration\n🔬 It's nervous system instability\n🔬 Sports drinks make it WORSE\n🔬 You need neuromodulating compounds\n\nI synthesized 6 medical specialties into one solution"
+        ]
+    },
+    
+    povDiscovery: {
+        hooks: [
+            "POV: You realize everything you know about hydration is wrong",
+            "POV: You discover why your doctor's advice isn't working",
+            "POV: You find the study that changes everything about POTS",
+            "POV: You learn what cardiologists don't tell neurologists"
+        ],
+        revelations: [
+            "Your nervous system CONTROLS hydration\n\nNot the other way around\n\nThis is why drinking more water doesn't fix POTS\n\nThis is why sports drinks make you crash\n\nThis is why my formula targets your autonomic nervous system\n\nNot just your electrolyte levels",
+            "Magnesium L-threonate is the ONLY form that crosses your blood-brain barrier\n\nIt directly modulates your hypothalamic autonomic centers\n\nNo other hydration formula uses this\n\nBecause they don't understand POTS pathophysiology\n\nI do",
+            "Taurine doesn't just help athletes\n\nIt stabilizes calcium in your heart cells\n\nAND saves sodium in your kidneys\n\nAND calms brain excitability\n\n300mg targets all three systems\n\nOne ingredient, three mechanisms"
+        ]
+    },
+    
+    dataDump: {
+        research: [
+            "6 MEDICAL SPECIALTIES, ONE BREAKTHROUGH:\n\n🫀 Cardiology: Taurine stabilizes calcium channels (23% improvement)\n🧠 Neurology: Mg L-threonate crosses blood-brain barrier (15% increase)\n🧬 Endocrinology: B5 creates acetylcholine (28% boost)\n💧 Nephrology: Triple sodium optimizes volume (45% better retention)\n⚡ Exercise Physiology: L-alanine prevents crashes (35% more stable)\n🩺 Dysautonomia: Targets all 4 POTS subtypes (73% success rate)",
+            "THE NUMBERS DON'T LIE:\n\n📊 47 formulations tested\n📊 1000+ POTS patients studied\n📊 3 years of research\n📊 $50,000 invested\n📊 6 medical specialties synthesized\n📊 12 active ingredients\n📊 85% report improvement in 3 weeks\n📊 Average 35 BPM heart rate reduction"
+        ],
+        competitive: [
+            "LMNT VS MODUWELL BREAKDOWN:\n\n❌ LMNT: 3 ingredients, targets muscles\n✅ ModuWell: 12 ingredients, targets nervous system\n\n❌ LMNT: 1000mg sodium (too much)\n✅ ModuWell: 750mg optimized sodium blend\n\n❌ LMNT: No brain penetration\n✅ ModuWell: Crosses blood-brain barrier\n\n❌ LMNT: Works for athletes\n✅ ModuWell: Works for autonomic dysfunction"
+        ]
+    },
+    
+    beforeAfter: [
+        "BEFORE: Passing out daily, heart rate 150 standing\nAFTER: Running marathons, HR stable at 85\n\nTIME: 3 weeks with the right formula\n\nDIFFERENCE: Targeting nervous system, not just electrolytes",
+        "BEFORE: Tried every electrolyte powder (LMNT, Liquid IV, etc.)\nAFTER: Created the first neuromodulating hydration formula\n\nTURNING POINT: Realizing POTS is a brain problem, not a heart problem",
+        "BEFORE: Medical system told me 'learn to live with it'\nAFTER: 1000+ patients achieving autonomic stability\n\nSOLUTION: Synthesizing research from 6 medical specialties"
+    ],
+    
+    controversialTruth: [
+        "DOCTORS WON'T TELL YOU THIS:\n\nPOTS isn't a heart condition\nIt's nervous system dysfunction\n\nThey can't prescribe for your autonomic system\nSo they treat symptoms instead of cause\n\nI found the cause\nAnd the solution",
+        "THE MEDICAL FIELD'S BIGGEST LIE:\n\n'Just drink more water'\n\nWater doesn't cross your blood-brain barrier\nYour brain controls hydration\nYou need compounds that reach your autonomic centers\n\nMagnesium L-threonate does this\nNothing else can",
+        "WHY SPORTS DRINKS MAKE POTS WORSE:\n\nThey're designed for people who sweat electrolytes\nNot people with nervous system dysfunction\n\nLiquid IV: 11g sugar → insulin spike → crash\nLMNT: 1000mg sodium → volume overload\n\nBoth ignore your autonomic system"
+    ],
+    
+    challengeScript: [
+        "THE POTS STABILITY CHALLENGE:\n\n✅ Day 1: Take your standing heart rate\n✅ Day 1-21: Use neuromodulating hydration daily\n✅ Day 21: Retest standing heart rate\n✅ Share your results\n\nAverage improvement: 35 BPM reduction\n\nWho's trying this?",
+        "HYDRATION FORMULA TEST:\n\n🥤 Week 1: Your current electrolyte drink\n🧪 Week 2: ModuWell neuromodulating formula\n📊 Track: Energy, brain fog, heart rate, crashes\n📱 Share: Which week felt better?\n\nMy prediction: Week 2 wins by a landslide"
+    ],
+    
+    ugcPrompt: [
+        "SHARE YOUR POTS STORY:\n\n📝 What symptoms do you struggle with?\n📝 What have doctors told you?\n📝 What treatments have you tried?\n📝 Tag a friend who needs to see this\n\nI'm creating content for every POTS subtype\nYour story matters",
+        "RATE YOUR HYDRATION FORMULA:\n\n🥤 What do you currently use?\n⭐ Rate it 1-10 for:\n- Energy levels\n- Brain fog\n- Heart rate stability\n- Crash prevention\n\nI'll show you why most fail at nervous system support"
+    ]
+};
+
+// Viral Score Calculator
+function calculateViralScore(contentType, platform, options) {
+    let baseScore = 75;
+    
+    // Content type multipliers
+    const typeMultipliers = {
+        'trend_hijack': 1.3,
+        'pov_discovery': 1.25,
+        'data_dump': 1.2,
+        'controversial_truth': 1.4,
+        'before_after': 1.35
+    };
+    
+    // Platform multipliers  
+    const platformMultipliers = {
+        'tiktok': 1.2,
+        'instagram': 1.15,
+        'youtube': 1.1,
+        'twitter': 1.05
+    };
+    
+    // Option bonuses
+    if (options.maxEngagement) baseScore += 10;
+    if (options.algorithmOptimized) baseScore += 8;
+    if (options.controversialAngle) baseScore += 15;
+    if (options.trendJacking) baseScore += 12;
+    if (options.shareability) baseScore += 10;
+    
+    const finalScore = Math.min(100, baseScore * (typeMultipliers[contentType] || 1) * (platformMultipliers[platform] || 1));
+    return Math.round(finalScore * 10) / 10;
+}
+
+// Main viral content generation
+function generateViralContent() {
+    const contentType = document.getElementById('viralContentType').value;
+    const platform = document.querySelector('input[name="platform"]:checked').value;
+    const researchFocus = document.getElementById('researchFocus').value;
+    
+    const options = {
+        maxEngagement: document.getElementById('maxEngagement').checked,
+        algorithmOptimized: document.getElementById('algorithmOptimized').checked,
+        controversialAngle: document.getElementById('controversialAngle').checked,
+        trendJacking: document.getElementById('trendJacking').checked,
+        shareability: document.getElementById('shareability').checked
+    };
+    
+    let viralContent = generateContentByType(contentType, platform, researchFocus, options);
+    
+    // Add platform-specific optimizations
+    viralContent = optimizeForPlatform(viralContent, platform, options);
+    
+    currentViralContent = viralContent;
+    updateViralPreview(viralContent, platform);
+    updateViralMetrics(contentType, platform, options);
+    
+    // Add typing effect
+    typewriterEffect('viralContent', viralContent);
+}
+
+function generateContentByType(type, platform, focus, options) {
+    let content = '';
+    
+    switch(type) {
+        case 'trend_hijack':
+            content = selectRandom(viralContentLibrary.trendHijack.hooks) + '\n\n' + selectRandom(viralContentLibrary.trendHijack.bodies);
+            break;
+        case 'pov_discovery':
+            content = selectRandom(viralContentLibrary.povDiscovery.hooks) + '\n\n' + selectRandom(viralContentLibrary.povDiscovery.revelations);
+            break;
+        case 'data_dump':
+            content = selectRandom(viralContentLibrary.dataDump.research);
+            break;
+        case 'before_after':
+            content = selectRandom(viralContentLibrary.beforeAfter);
+            break;
+        case 'controversial_truth':
+            content = selectRandom(viralContentLibrary.controversialTruth);
+            break;
+        case 'challenge_script':
+            content = selectRandom(viralContentLibrary.challengeScript);
+            break;
+        case 'ugs_prompt':
+            content = selectRandom(viralContentLibrary.ugcPrompt);
+            break;
+        default:
+            content = selectRandom(viralContentLibrary.trendHijack.hooks) + '\n\n' + selectRandom(viralContentLibrary.trendHijack.bodies);
+    }
+    
+    return content;
+}
+
+function optimizeForPlatform(content, platform, options) {
+    if (options.shareability) {
+        switch(platform) {
+            case 'tiktok':
+                content += '\n\n#POTS #AutonomicDysfunction #Hydration #Science';
+                break;
+            case 'instagram':
+                content += '\n\n✨ Save this post\n💭 Share your experience\n👥 Tag someone who needs this';
+                break;
+            case 'youtube':
+                content += '\n\n👍 LIKE if this helped\n🔔 SUBSCRIBE for more research\n💬 COMMENT your questions';
+                break;
+            case 'twitter':
+                content += '\n\n🧵 THREAD (1/?)';
+                break;
+        }
+    }
+    
+    if (options.maxEngagement && platform !== 'twitter') {
+        content += '\n\nWhat questions do you have? Drop them below! 👇';
+    }
+    
+    return content;
+}
+
+function typewriterEffect(elementId, text) {
+    const element = document.getElementById(elementId);
+    element.classList.add('typing-effect');
+    element.textContent = '';
+    
+    let i = 0;
+    const timer = setInterval(() => {
+        if (i < text.length) {
+            element.textContent += text.charAt(i);
+            i++;
+        } else {
+            clearInterval(timer);
+            element.classList.remove('typing-effect');
+        }
+    }, 20);
+}
+
+function updateViralPreview(content, platform) {
+    const preview = document.getElementById('platformPreview');
+    
+    // Update preview styling based on platform
+    preview.className = `platform-preview p-6 ${platform}-preview`;
+    
+    const container = document.getElementById('viralContent');
+    // Content will be updated by typewriter effect
+}
+
+function updateViralMetrics(contentType, platform, options) {
+    const viralScore = calculateViralScore(contentType, platform, options);
+    
+    document.getElementById('viralPotential').textContent = `${viralScore}%`;
+    document.getElementById('engagementScore').textContent = `${Math.round(viralScore * 0.9)}%`;
+    document.getElementById('shareScore').textContent = `${Math.round(viralScore * 0.95)}%`;
+    document.getElementById('algorithmScore').textContent = options.algorithmOptimized ? '100%' : '87%';
+    
+    const rating = viralScore >= 95 ? 'MAXIMUM VIRAL' : viralScore >= 90 ? 'HIGH VIRAL' : viralScore >= 80 ? 'VIRAL POTENTIAL' : 'OPTIMIZE MORE';
+    document.getElementById('viralRating').textContent = `🚀 VIRAL LEVEL: ${rating}`;
+}
+
+function copyViralContent() {
+    if (!currentViralContent) {
+        alert('Generate viral content first!');
+        return;
+    }
+    
+    navigator.clipboard.writeText(currentViralContent).then(() => {
+        const notification = document.getElementById('copyNotification');
+        notification.classList.remove('hidden');
+        setTimeout(() => {
+            notification.classList.add('hidden');
+        }, 3000);
+    });
+}
+
+function regenerateViral() {
+    generateViralContent();
+}
+
+function selectRandom(array) {
+    if (!array || !Array.isArray(array) || array.length === 0) return '';
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', () => {
+    initMatrixEffect();
+    generateViralContent();
+});
+    </script>
+</body>
+</html>

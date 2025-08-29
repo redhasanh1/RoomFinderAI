@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moduwell V2 - Authority Marketing Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --authority-blue: #1e3a8a;
+            --research-purple: #6366f1;
+            --breakthrough-gold: #f59e0b;
+            --medical-red: #dc2626;
+            --moduwell-gradient: linear-gradient(135deg, #1e3a8a 0%, #6366f1 50%, #f59e0b 100%);
+            --authority-gradient: linear-gradient(135deg, #dc2626 0%, #1e3a8a 100%);
+        }
+        
+        * {
+            font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%);
+            min-height: 100vh;
+        }
+        
+        .authority-gradient {
+            background: var(--authority-gradient);
+        }
+        
+        .research-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(30, 58, 138, 0.05) 100%);
+            border: 2px solid rgba(99, 102, 241, 0.2);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .research-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+        }
+        
+        .breakthrough-badge {
+            background: var(--breakthrough-gold);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .authority-badge {
+            background: var(--medical-red);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .research-focus {
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(30, 58, 138, 0.1) 100%);
+            border-left: 4px solid var(--medical-red);
+            padding: 16px;
+            border-radius: 8px;
+        }
+        
+        .knees-style-card {
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid transparent;
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .knees-style-card:hover {
+            border-color: var(--research-purple);
+            transform: translateY(-6px);
+            box-shadow: 0 25px 60px rgba(99, 102, 241, 0.2);
+        }
+        
+        .content-split-indicator {
+            background: linear-gradient(90deg, var(--medical-red) 0%, var(--medical-red) 60%, var(--breakthrough-gold) 60%, var(--breakthrough-gold) 100%);
+            height: 4px;
+            border-radius: 2px;
+            margin: 16px 0;
+        }
+        
+        .viral-score {
+            background: var(--moduwell-gradient);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .research-depth {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+            border: 1px solid rgba(30, 58, 138, 0.2);
+            border-radius: 12px;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .research-depth:hover {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
+        }
+        
+        .controversy-indicator {
+            background: var(--medical-red);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .authority-twitter-preview {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            border-left: 4px solid var(--research-purple);
+        }
+        
+        .medical-disclaimer {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 12px;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <!-- Authority Header -->
+    <header class="bg-white shadow-lg border-b-2 border-indigo-100">
+        <div class="container mx-auto px-6 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 authority-gradient rounded-full flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">M</span>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">
+                            Viral Health Twitter Generator
+                        </h1>
+                        <p class="text-sm text-gray-600">Enhanced V2 - Creates Fully Typed Viral Health Posts</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="breakthrough-badge">BREAKTHROUGH RESEARCH</div>
+                    <div class="authority-badge">MEDICAL AUTHORITY</div>
+                </div>
+            </div>
+            
+            <!-- Content Split Indicator -->
+            <div class="mt-4">
+                <div class="flex items-center justify-between text-sm font-medium">
+                    <span class="text-red-600">70% Viral Health Content</span>
+                    <span class="text-yellow-600">30% Authority & Science</span>
+                </div>
+                <div class="content-split-indicator"></div>
+                <div class="text-center mt-2">
+                    <span class="text-xs text-gray-600">✨ Optimized for 2024 viral health post patterns</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column - Authority Controls -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                <!-- Content Focus Selection -->
+                <div class="knees-style-card p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <span class="text-red-600">🧠</span>
+                        <span class="ml-2">Authority Focus</span>
+                    </h2>
+                    <select id="contentFocus" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <optgroup label="🔥 VIRAL HEALTH FORMATS">
+                            <option value="viral_my_story">My Transformation Story</option>
+                            <option value="before_after_transformation">Before/After Transformation</option>
+                            <option value="shocking_statistics">Shocking Health Statistics</option>
+                            <option value="controversial_health_take">Controversial Health Take</option>
+                            <option value="what_doctors_hide">What Doctors Don't Tell You</option>
+                        </optgroup>
+                        <optgroup label="📚 RESEARCH AUTHORITY">
+                            <option value="research_breakthrough">Personal Research Breakthrough</option>
+                            <option value="multi_specialist_synthesis">Multi-Specialist Research Synthesis</option>
+                            <option value="specialist_integration">Specialist Integration Story</option>
+                            <option value="ingredient_discovery">Ingredient Discovery Story</option>
+                        </optgroup>
+                        <optgroup label="🎯 EDUCATIONAL CONTENT">
+                            <option value="medical_contrarian">Medical Establishment Critique</option>
+                            <option value="personal_transformation">Personal Transformation</option>
+                            <option value="patient_case_study">Patient Case Study</option>
+                            <option value="autonomic_education">Autonomic System Education</option>
+                            <option value="pots_subtype">POTS Subtype Analysis</option>
+                            <option value="competitive_superiority">Competitive Superiority</option>
+                            <option value="mechanism_deep_dive">Mechanism Deep Dive</option>
+                            <option value="medical_failure">Medical System Failures</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <!-- KneesOverToes Style -->
+                <div class="knees-style-card p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">📈 Authority Style</h2>
+                    <div class="space-y-3">
+                        <label class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
+                            <input type="radio" name="authorityStyle" value="breakthrough" checked class="text-indigo-600">
+                            <span class="font-medium">Breakthrough Discovery</span>
+                            <div class="controversy-indicator">VIRAL</div>
+                        </label>
+                        <label class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
+                            <input type="radio" name="authorityStyle" value="contrarian" class="text-indigo-600">
+                            <span class="font-medium">Contrarian Medical Take</span>
+                            <div class="controversy-indicator">HOT</div>
+                        </label>
+                        <label class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
+                            <input type="radio" name="authorityStyle" value="personal" class="text-indigo-600">
+                            <span class="font-medium">Personal Authority Story</span>
+                        </label>
+                        <label class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
+                            <input type="radio" name="authorityStyle" value="educational" class="text-indigo-600">
+                            <span class="font-medium">Educational Authority</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Target Audience -->
+                <div class="knees-style-card p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">🎯 Audience</h2>
+                    <select id="targetAudience" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500">
+                        <option value="pots_patients">POTS Patients</option>
+                        <option value="dysautonomia">Dysautonomia Community</option>
+                        <option value="medical_professionals">Healthcare Providers</option>
+                        <option value="researchers">Medical Researchers</option>
+                        <option value="biohackers">Biohackers & Optimizers</option>
+                        <option value="chronic_illness">Chronic Illness Community</option>
+                        <option value="general_health">General Health Audience</option>
+                    </select>
+                </div>
+
+                <!-- Viral Intensity Control -->
+                <div class="knees-style-card p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">🔥 Viral Intensity</h2>
+                    <div class="space-y-4">
+                        <label class="text-sm font-medium">Viral Power Level</label>
+                        <select id="viralIntensity" class="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500">
+                            <option value="moderate">Moderate - Professional tone</option>
+                            <option value="high">High - Attention-grabbing</option>
+                            <option value="maximum" selected>Maximum - Viral potential</option>
+                        </select>
+                        <div class="text-xs text-gray-600 mt-2">
+                            <span class="font-medium">Note:</span> Higher intensity = more emotional triggers & controversial elements
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Research Depth -->
+                <div class="knees-style-card p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">🔬 Content Elements</h2>
+                    <div class="space-y-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeStudies" checked class="text-indigo-600">
+                            <span>Include Research Citations</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeMechanisms" checked class="text-indigo-600">
+                            <span>Explain Mechanisms</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="includePersonal" checked class="text-indigo-600">
+                            <span>Personal Discovery Story</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeControversy" checked class="text-indigo-600">
+                            <span>Controversial Takes</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeEmojis" checked class="text-indigo-600">
+                            <span>Viral Emojis & Formatting</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeStats" checked class="text-indigo-600">
+                            <span>Shocking Statistics</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Thread Builder -->
+                <div class="knees-style-card p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">🧵 Authority Thread</h2>
+                    <div class="space-y-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="createAuthorityThread">
+                            <span>Create Authority Thread</span>
+                        </label>
+                        <div id="threadOptions" class="hidden space-y-3">
+                            <div>
+                                <label class="text-sm font-medium">Thread Type</label>
+                                <select id="threadType" class="w-full mt-1 p-2 border rounded-lg">
+                                    <option value="my_story">My Personal Story</option>
+                                    <option value="shocking">Shocking Revelation</option>
+                                    <option value="discovery">Discovery Story</option>
+                                    <option value="education">Educational Deep-Dive</option>
+                                    <option value="controversy">Controversial Take</option>
+                                    <option value="case_study">Case Study Breakdown</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">Length</label>
+                                <input type="range" id="threadLength" min="3" max="8" value="5" class="w-full">
+                                <span id="threadLengthDisplay" class="text-sm text-gray-600">5 tweets</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <button onclick="generateAuthorityPost()" class="w-full py-4 px-6 text-white font-bold rounded-xl authority-gradient hover:opacity-90 transition-all transform hover:scale-105">
+                    Generate Authority Content 🚀
+                </button>
+
+                <!-- Research Paper Download -->
+                <div class="knees-style-card p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <span class="text-indigo-600">📄</span>
+                        <span class="ml-2">Research Paper</span>
+                    </h2>
+                    <p class="text-sm text-gray-600 mb-4">Download the comprehensive research paper backing up your multi-specialty synthesis approach with 24+ peer-reviewed citations.</p>
+                    <button onclick="downloadResearchPaper()" class="w-full py-3 px-4 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-all">
+                        Download Research Paper 📥
+                    </button>
+                </div>
+
+                <!-- Research Stats -->
+                <div class="research-card p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">🏆 Authority Metrics</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="research-depth text-center">
+                            <div class="text-2xl font-bold text-indigo-600">3+</div>
+                            <div class="text-xs text-gray-600">Years Research</div>
+                        </div>
+                        <div class="research-depth text-center">
+                            <div class="text-2xl font-bold text-indigo-600">1000+</div>
+                            <div class="text-xs text-gray-600">POTS Patients</div>
+                        </div>
+                        <div class="research-depth text-center">
+                            <div class="text-2xl font-bold text-indigo-600">47</div>
+                            <div class="text-xs text-gray-600">Formulations</div>
+                        </div>
+                        <div class="research-depth text-center">
+                            <div class="text-2xl font-bold text-indigo-600">12</div>
+                            <div class="text-xs text-gray-600">Ingredients</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle & Right Columns - Preview & Features -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Viral Post Preview -->
+                <div class="knees-style-card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold text-gray-900">Viral Health Post Preview</h2>
+                        <div class="flex items-center space-x-3">
+                            <div class="viral-score">
+                                <span>🔥</span>
+                                <span id="viralScore">VIRAL POTENTIAL: HIGH</span>
+                            </div>
+                            <button onclick="copyAuthorityPost()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+                                Copy Post
+                            </button>
+                            <button onclick="regeneratePost()" class="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium">
+                                Regenerate
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Twitter Preview -->
+                    <div id="tweetContainer" class="space-y-4">
+                        <div class="authority-twitter-preview p-6">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-12 h-12 authority-gradient rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white font-bold">M</span>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-bold">ModuWell Research</span>
+                                        <div class="breakthrough-badge">AUTHORITY</div>
+                                        <span class="text-gray-500">@moduwellresearch</span>
+                                        <span class="text-gray-500">·</span>
+                                        <span class="text-gray-500">now</span>
+                                    </div>
+                                    <div id="authorityContent" class="mt-3 text-gray-900 whitespace-pre-wrap leading-relaxed">
+Click "Generate Authority Content" to create fully typed viral health Twitter posts that align with 2024 viral patterns and include your personal transformation story...
+                                    </div>
+                                    <div class="mt-4 flex items-center justify-between text-gray-500">
+                                        <button class="flex items-center space-x-2 hover:text-blue-500 transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                            </svg>
+                                            <span class="text-sm font-medium">Reply</span>
+                                        </button>
+                                        <button class="flex items-center space-x-2 hover:text-green-500 transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                            </svg>
+                                            <span class="text-sm font-medium">Retweet</span>
+                                        </button>
+                                        <button class="flex items-center space-x-2 hover:text-red-500 transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                            </svg>
+                                            <span class="text-sm font-medium">Like</span>
+                                        </button>
+                                        <button class="flex items-center space-x-2 hover:text-blue-500 transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 2.684A9.001 9.001 0 0012 21c4.474 0 8.268-3.12 9.032-7.326"></path>
+                                            </svg>
+                                            <span class="text-sm font-medium">Share</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Thread Preview Container -->
+                        <div id="threadPreviewContainer"></div>
+                    </div>
+                    
+                    <!-- Character Count -->
+                    <div class="mt-4 flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div class="flex items-center space-x-4">
+                            <span class="text-sm font-medium text-gray-600">Character Count:</span>
+                            <span id="charCount" class="text-sm font-bold text-green-600">0 / 280</span>
+                        </div>
+                        <div class="w-32 bg-gray-200 rounded-full h-2">
+                            <div id="charBar" class="bg-indigo-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Authority Strategy -->
+                <div class="research-card p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">🎯 KneesOverToesGuy Strategy</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="research-focus">
+                            <h4 class="font-bold text-red-600 mb-2">Authority Positioning</h4>
+                            <ul class="text-sm space-y-1 text-gray-700">
+                                <li>• Personal breakthrough story</li>
+                                <li>• Contrarian medical takes</li>
+                                <li>• Research-backed authority</li>
+                                <li>• Patient transformation results</li>
+                            </ul>
+                        </div>
+                        <div class="research-focus">
+                            <h4 class="font-bold text-indigo-600 mb-2">Content Formula</h4>
+                            <ul class="text-sm space-y-1 text-gray-700">
+                                <li>• Hook: Controversial statement</li>
+                                <li>• Authority: Personal research</li>
+                                <li>• Education: Mechanism explanation</li>
+                                <li>• Proof: Results/studies</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Research Deep Dives -->
+                <div class="knees-style-card p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">🔬 Your Breakthrough Research</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="research-depth text-center p-4">
+                            <div class="text-lg font-bold text-indigo-600 mb-2">Magnesium L-Threonate</div>
+                            <div class="text-xs text-gray-600">Only form that crosses blood-brain barrier for direct autonomic modulation</div>
+                        </div>
+                        <div class="research-depth text-center p-4">
+                            <div class="text-lg font-bold text-indigo-600 mb-2">Taurine + Sodium</div>
+                            <div class="text-xs text-gray-600">Protects heart, kidneys, brain while enhancing sodium retention</div>
+                        </div>
+                        <div class="research-depth text-center p-4">
+                            <div class="text-lg font-bold text-indigo-600 mb-2">3-Source Sodium</div>
+                            <div class="text-xs text-gray-600">Chloride + citrate + ascorbate for complete autonomic support</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medical Disclaimer -->
+                <div class="medical-disclaimer">
+                    <strong>⚠️ Medical Disclaimer:</strong> This generator creates educational content about autonomic dysfunction research. All medical claims should be reviewed for compliance with FDA regulations. Content is for educational purposes and not medical advice.
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Copy Notification -->
+    <div id="copyNotification" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg hidden">
+        ✓ Authority content copied to clipboard!
+    </div>
+
+    <script src="authority-generator-v2.js"></script>
+    <script src="research-content-library.js"></script>
+    <script src="authority-templates-v2.js"></script>
+</body>
+</html>
