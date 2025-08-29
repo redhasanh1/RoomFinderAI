@@ -246,6 +246,25 @@ public class AiChatFragment extends Fragment {
             }
             return false;
         });
+        
+        // 3-dot menu button click handler
+        if (binding.menuButton != null) {
+            binding.menuButton.setOnClickListener(v -> {
+                // Show popup menu
+                androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(requireContext(), v);
+                popup.getMenuInflater().inflate(R.menu.ai_chat_menu, popup.getMenu());
+                
+                popup.setOnMenuItemClickListener(item -> {
+                    if (item.getItemId() == R.id.action_clear_chat) {
+                        showClearChatConfirmation();
+                        return true;
+                    }
+                    return false;
+                });
+                
+                popup.show();
+            });
+        }
     }
     
     // Welcome message is now handled by AiNegotiationService to avoid duplicates
