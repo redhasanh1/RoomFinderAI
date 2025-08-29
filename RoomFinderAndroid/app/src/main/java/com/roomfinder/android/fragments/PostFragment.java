@@ -1,5 +1,6 @@
 package com.roomfinder.android.fragments;
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -11,13 +12,23 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.chip.Chip;
+import com.roomfinder.android.auth.AuthManager;
+import com.roomfinder.android.database.SupabaseClient;
 import com.roomfinder.android.databinding.FragmentPostBinding;
+import com.roomfinder.android.models.Listing;
+import com.roomfinder.android.models.User;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class PostFragment extends Fragment {
     
     private FragmentPostBinding binding;
     private int currentStep = 1;
     private final int TOTAL_STEPS = 4;
+    private ExecutorService executorService;
+    private ProgressDialog progressDialog;
     
     // Form data
     private String selectedPropertyType = "";
@@ -28,6 +39,7 @@ public class PostFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentPostBinding.inflate(inflater, container, false);
+        executorService = Executors.newSingleThreadExecutor();
         return binding.getRoot();
     }
     
@@ -367,9 +379,90 @@ public class PostFragment extends Fragment {
     }
     
     private void submitListing() {
-        // TODO: Implement actual API submission
-        Toast.makeText(getContext(), "Listing posted successfully!", Toast.LENGTH_LONG).show();
+        // Check if user is logged in
+        User currentUser = AuthManager.getInstance(getContext()).getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(getContext(), "Please log in to post a listing", Toast.LENGTH_LONG).show();
+            return;
+        }
         
+        // Show progress dialog
+        progressDialog = new ProgressDialog(getContext());
+        progressDialog.setMessage("Posting your listing...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+        
+        // Create listing object
+        Listing listing = new Listing();
+        listing.setTitle(binding.titleInput.getText().toString().trim());
+        listing.setDescription(binding.descriptionInput.getText().toString().trim());
+        listing.setPrice(Double.parseDouble(binding.priceInput.getText().toString().trim()));
+        
+        // Parse location - it might be in format "Street, City, PostalCode" or just "City"
+        String location = binding.locationInput.getText().toString().trim();
+        String[] locationParts = location.split(",");
+        
+        if (locationParts.length >= 3) {
+            // Full address format: Street, City, PostalCode
+            listing.setStreet(locationParts[0].trim());
+            listing.setCity(locationParts[1].trim());
+            listing.setPostalCode(locationParts[2].trim());
+        } else if (locationParts.length == 2) {
+            // Partial address: City, PostalCode or Street, City
+            listing.setStreet("");
+            listing.setCity(locationParts[0].trim());
+            listing.setPostalCode(locationParts[1].trim());
+        } else {
+            // Just city or full address as one string
+            listing.setStreet("");
+            listing.setCity(location);
+            listing.setPostalCode("");
+        }
+        
+        listing.setHouseType(selectedPropertyType);
+        listing.setBedrooms(parseBedrooms(selectedBedrooms));
+        listing.setBathrooms(parseBathrooms(selectedBathrooms));
+        listing.setUtilities("included"); // You can add a utilities selection if needed
+        listing.setUserEmail(currentUser.getEmail());
+        listing.setCreatedAt(new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(new Date()));
+        listing.setMedia(new ArrayList<>()); // TODO: Add photo upload functionality
+        
+        // Submit to database in background
+        executorService.execute(() -> {
+            try {
+                SupabaseClient client = SupabaseClient.getInstance();
+                Listing insertedListing = client.insertListing(listing);
+                
+                // Update UI on main thread
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        if (progressDialog != null && progressDialog.isShowing()) {
+                            progressDialog.dismiss();
+                        }
+                        
+                        if (insertedListing != null) {
+                            Toast.makeText(getContext(), "Listing posted successfully!", Toast.LENGTH_LONG).show();
+                            resetForm();
+                        } else {
+                            Toast.makeText(getContext(), "Failed to post listing. Please try again.", Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        if (progressDialog != null && progressDialog.isShowing()) {
+                            progressDialog.dismiss();
+                        }
+                        Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+                }
+            }
+        });
+    }
+    
+    private void resetForm() {
         // Reset form
         currentStep = 1;
         selectedPropertyType = "";
@@ -391,9 +484,38 @@ public class PostFragment extends Fragment {
         updateStepUI();
     }
     
+    private int parseBedrooms(String bedroomText) {
+        try {
+            // Extract number from text like "1 Bedroom" or "Studio"
+            if (bedroomText.toLowerCase().contains("studio")) {
+                return 0;
+            }
+            String numberOnly = bedroomText.replaceAll("[^0-9]", "");
+            return Integer.parseInt(numberOnly);
+        } catch (Exception e) {
+            return 1; // Default to 1 bedroom
+        }
+    }
+    
+    private int parseBathrooms(String bathroomText) {
+        try {
+            // Extract number from text like "1 Bathroom" or "2.5 Bathrooms"
+            String numberOnly = bathroomText.replaceAll("[^0-9.]", "");
+            return (int) Math.floor(Double.parseDouble(numberOnly));
+        } catch (Exception e) {
+            return 1; // Default to 1 bathroom
+        }
+    }
+    
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (executorService != null) {
+            executorService.shutdown();
+        }
+        if (progressDialog != null && progressDialog.isShowing()) {
+            progressDialog.dismiss();
+        }
         binding = null;
     }
 }

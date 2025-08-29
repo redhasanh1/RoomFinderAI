@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moduwell - Twitter/X Post Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --moduwell-blue: #00B4D8;
+            --moduwell-dark: #03045E;
+            --moduwell-light: #CAF0F8;
+            --moduwell-accent: #0077B6;
+            --moduwell-white: #FFFFFF;
+            --gradient-primary: linear-gradient(135deg, #00B4D8 0%, #0077B6 100%);
+            --gradient-dark: linear-gradient(135deg, #03045E 0%, #0077B6 100%);
+            --gradient-light: linear-gradient(135deg, #CAF0F8 0%, #00B4D8 100%);
+        }
+        
+        * {
+            font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(180deg, #CAF0F8 0%, #FFFFFF 50%, #CAF0F8 100%);
+            min-height: 100vh;
+        }
+        
+        .moduwell-gradient {
+            background: var(--gradient-primary);
+        }
+        
+        .moduwell-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 180, 216, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 119, 182, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .moduwell-card:hover {
+            box-shadow: 0 20px 60px rgba(0, 119, 182, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 180, 216, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(0, 180, 216, 0.4);
+        }
+        
+        .twitter-preview {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        
+        .character-count {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .character-count.warning {
+            color: #F59E0B;
+        }
+        
+        .character-count.danger {
+            color: #EF4444;
+        }
+        
+        .character-count.good {
+            color: #10B981;
+        }
+        
+        .template-option {
+            cursor: pointer;
+            padding: 12px;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .template-option:hover {
+            background: rgba(0, 180, 216, 0.05);
+            border-color: var(--moduwell-blue);
+        }
+        
+        .template-option.selected {
+            background: rgba(0, 180, 216, 0.1);
+            border-color: var(--moduwell-accent);
+        }
+        
+        .water-animation {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 180, 216, 0.03) 100%);
+            pointer-events: none;
+        }
+        
+        .hydration-badge {
+            background: var(--gradient-light);
+            color: var(--moduwell-dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .stat-bubble {
+            background: linear-gradient(135deg, rgba(0, 180, 216, 0.1) 0%, rgba(0, 119, 182, 0.1) 100%);
+            border: 1px solid rgba(0, 180, 216, 0.2);
+            border-radius: 16px;
+            padding: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-bubble:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0, 180, 216, 0.2);
+        }
+        
+        .thread-number {
+            background: var(--moduwell-accent);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .viral-indicator {
+            background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .engagement-score {
+            background: var(--gradient-dark);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        @keyframes pulse-water {
+            0% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+            100% { opacity: 0.3; }
+        }
+        
+        .water-drop {
+            animation: pulse-water 3s infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-100">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-10 h-10 moduwell-gradient rounded-full flex items-center justify-center">
+                            <span class="text-white font-bold text-lg">M</span>
+                        </div>
+                        <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                            Moduwell Twitter Generator
+                        </h1>
+                    </div>
+                    <span class="hydration-badge">Hydration Marketing Tool</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-500">Viral Post Creator</span>
+                    <div class="viral-indicator">Hot</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column - Generator Controls -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                <!-- Post Style Selection -->
+                <div class="moduwell-card p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <span class="water-drop">💧</span>
+                        <span class="ml-2">Post Style</span>
+                    </h2>
+                    <select id="postStyle" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+                        <option value="bold_claim">Bold Claim</option>
+                        <option value="story">Story/Experience</option>
+                        <option value="contrarian">Contrarian Take</option>
+                        <option value="problem_solution">Problem → Solution</option>
+                        <option value="list">Numbered List</option>
+                        <option value="comparison">Before/After</option>
+                        <option value="science">Science-Backed</option>
+                        <option value="testimonial">Customer Story</option>
+                        <option value="challenge">Challenge/Dare</option>
+                        <option value="myth_buster">Myth Buster</option>
+                        <option value="ingredient">Ingredient Spotlight</option>
+                        <option value="routine">Daily Routine</option>
+                    </select>
+                </div>
+
+                <!-- Hook Type -->
+                <div class="moduwell-card p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">🎣 Hook Type</h2>
+                    <div class="space-y-2">
+                        <label class="template-option flex items-center space-x-2">
+                            <input type="radio" name="hook" value="shocking" checked class="text-blue-500">
+                            <span>Shocking Statement</span>
+                        </label>
+                        <label class="template-option flex items-center space-x-2">
+                            <input type="radio" name="hook" value="question" class="text-blue-500">
+                            <span>Provocative Question</span>
+                        </label>
+                        <label class="template-option flex items-center space-x-2">
+                            <input type="radio" name="hook" value="statistic" class="text-blue-500">
+                            <span>Surprising Statistic</span>
+                        </label>
+                        <label class="template-option flex items-center space-x-2">
+                            <input type="radio" name="hook" value="personal" class="text-blue-500">
+                            <span>Personal Story</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Target Audience -->
+                <div class="moduwell-card p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">🎯 Target Audience</h2>
+                    <select id="audience" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400">
+                        <option value="athletes">Athletes & Fitness</option>
+                        <option value="professionals">Busy Professionals</option>
+                        <option value="health">Health Conscious</option>
+                        <option value="performance">Peak Performers</option>
+                        <option value="students">Students</option>
+                        <option value="general">General Wellness</option>
+                    </select>
+                </div>
+
+                <!-- Thread Option -->
+                <div class="moduwell-card p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">🧵 Thread Builder</h2>
+                    <div class="space-y-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="createThread" class="text-blue-500">
+                            <span>Create Thread (2-5 tweets)</span>
+                        </label>
+                        <div id="threadOptions" class="hidden space-y-2">
+                            <label class="text-sm font-medium">Thread Length</label>
+                            <input type="range" id="threadLength" min="2" max="5" value="3" class="w-full">
+                            <span id="threadLengthDisplay" class="text-sm text-gray-600">3 tweets</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <button onclick="generatePost()" class="btn-primary w-full text-center">
+                    Generate Viral Post 🚀
+                </button>
+
+                <!-- Quick Stats -->
+                <div class="moduwell-card p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">⚡ Power Stats</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="stat-bubble text-center">
+                            <div class="text-2xl font-bold text-blue-600">3x</div>
+                            <div class="text-xs text-gray-600">More Hydration</div>
+                        </div>
+                        <div class="stat-bubble text-center">
+                            <div class="text-2xl font-bold text-blue-600">87%</div>
+                            <div class="text-xs text-gray-600">Energy Boost</div>
+                        </div>
+                        <div class="stat-bubble text-center">
+                            <div class="text-2xl font-bold text-blue-600">2hrs</div>
+                            <div class="text-xs text-gray-600">Faster Recovery</div>
+                        </div>
+                        <div class="stat-bubble text-center">
+                            <div class="text-2xl font-bold text-blue-600">5⭐</div>
+                            <div class="text-xs text-gray-600">Customer Rating</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Column - Post Preview -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Twitter Post Preview -->
+                <div class="moduwell-card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold text-gray-900">Post Preview</h2>
+                        <div class="flex items-center space-x-3">
+                            <div class="engagement-score">
+                                <span>🔥</span>
+                                <span id="engagementScore">High Impact</span>
+                            </div>
+                            <button onclick="copyPost()" class="btn-primary px-4 py-2 text-sm">
+                                Copy Post
+                            </button>
+                            <button onclick="regeneratePost()" class="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-sm font-medium">
+                                Regenerate
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Twitter Style Preview -->
+                    <div id="tweetContainer" class="space-y-4">
+                        <div class="twitter-preview p-4">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-12 h-12 moduwell-gradient rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white font-bold">M</span>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-bold">Moduwell</span>
+                                        <span class="text-gray-500">@moduwell</span>
+                                        <span class="text-gray-500">·</span>
+                                        <span class="text-gray-500">now</span>
+                                    </div>
+                                    <div id="postContent" class="mt-2 text-gray-900 whitespace-pre-wrap">
+Click "Generate Viral Post" to create engaging content...
+                                    </div>
+                                    <div class="mt-4 flex items-center justify-between text-gray-500">
+                                        <button class="flex items-center space-x-2 hover:text-blue-500">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                            </svg>
+                                            <span class="text-sm">Reply</span>
+                                        </button>
+                                        <button class="flex items-center space-x-2 hover:text-green-500">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                            </svg>
+                                            <span class="text-sm">Retweet</span>
+                                        </button>
+                                        <button class="flex items-center space-x-2 hover:text-red-500">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                            </svg>
+                                            <span class="text-sm">Like</span>
+                                        </button>
+                                        <button class="flex items-center space-x-2 hover:text-blue-500">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a9.001 9.001 0 01-7.432 0m9.032-4.026A9.001 9.001 0 0112 3c-4.474 0-8.268 3.12-9.032 7.326m0 2.684A9.001 9.001 0 0012 21c4.474 0 8.268-3.12 9.032-7.326"></path>
+                                            </svg>
+                                            <span class="text-sm">Share</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional thread tweets will be added here -->
+                        <div id="threadContainer"></div>
+                    </div>
+                    
+                    <!-- Character Count -->
+                    <div class="mt-4 flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div class="flex items-center space-x-4">
+                            <span class="text-sm font-medium text-gray-600">Character Count:</span>
+                            <span id="charCount" class="character-count good">0 / 280</span>
+                        </div>
+                        <div class="w-32 bg-gray-200 rounded-full h-2">
+                            <div id="charBar" class="bg-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Engagement Tips -->
+                <div class="moduwell-card p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">📈 Viral Tweet Formula</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="stat-bubble">
+                            <h4 class="font-bold text-blue-600 mb-2">Best Times</h4>
+                            <ul class="text-sm space-y-1 text-gray-600">
+                                <li>• 9 AM EST (Morning scroll)</li>
+                                <li>• 12-1 PM (Lunch break)</li>
+                                <li>• 5-6 PM (After work)</li>
+                                <li>• 8-10 PM (Peak engagement)</li>
+                            </ul>
+                        </div>
+                        <div class="stat-bubble">
+                            <h4 class="font-bold text-blue-600 mb-2">Engagement Hacks</h4>
+                            <ul class="text-sm space-y-1 text-gray-600">
+                                <li>• Start with a hook (3 seconds)</li>
+                                <li>• Use line breaks for readability</li>
+                                <li>• End with a question or CTA</li>
+                                <li>• Reply to your own thread</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hashtag Suggestions -->
+                <div class="moduwell-card p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4"># Trending Hashtags</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium cursor-pointer hover:bg-blue-100">#Hydration</span>
+                        <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium cursor-pointer hover:bg-blue-100">#Performance</span>
+                        <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium cursor-pointer hover:bg-blue-100">#Wellness</span>
+                        <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium cursor-pointer hover:bg-blue-100">#Energy</span>
+                        <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium cursor-pointer hover:bg-blue-100">#Recovery</span>
+                        <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium cursor-pointer hover:bg-blue-100">#Fitness</span>
+                        <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium cursor-pointer hover:bg-blue-100">#Health</span>
+                        <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium cursor-pointer hover:bg-blue-100">#Supplements</span>
+                        <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium cursor-pointer hover:bg-blue-100">#Athlete</span>
+                        <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium cursor-pointer hover:bg-blue-100">#Electrolytes</span>
+                    </div>
+                </div>
+
+                <!-- Recent Posts History -->
+                <div class="moduwell-card p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">📝 Recent Generated Posts</h3>
+                    <div id="recentPosts" class="space-y-3">
+                        <!-- Recent posts will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Copy Notification -->
+    <div id="copyNotification" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg hidden">
+        ✓ Post copied to clipboard!
+    </div>
+
+    <script src="twitter-generator.js"></script>
+    <script src="twitter-templates.js"></script>
+    <script src="moduwell-content.js"></script>
+</body>
+</html>
