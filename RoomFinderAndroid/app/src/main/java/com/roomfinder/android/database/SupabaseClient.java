@@ -3,6 +3,7 @@ package com.roomfinder.android.database;
 import android.util.Log;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.roomfinder.android.models.Listing;
 import com.roomfinder.android.utils.ApiKeys;
@@ -31,7 +32,21 @@ public class SupabaseClient {
                 .writeTimeout(10, TimeUnit.SECONDS)   // Faster write
                 .connectionPool(new okhttp3.ConnectionPool(5, 5, TimeUnit.MINUTES))
                 .build();
-        this.gson = new Gson();
+        // Configure Gson to exclude bathrooms field when serializing for database insertion
+        this.gson = new GsonBuilder()
+                .addSerializationExclusionStrategy(new com.google.gson.ExclusionStrategy() {
+                    @Override
+                    public boolean shouldSkipField(com.google.gson.FieldAttributes f) {
+                        // Skip bathrooms field during serialization as it's not in the database schema
+                        return f.getName().equals("bathrooms");
+                    }
+                    
+                    @Override
+                    public boolean shouldSkipClass(Class<?> clazz) {
+                        return false;
+                    }
+                })
+                .create();
         this.baseUrl = ApiKeys.SUPABASE_URL + "rest/v1/";
     }
     

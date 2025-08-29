@@ -32,6 +32,7 @@ public class Listing implements Serializable {
     @SerializedName("bedrooms")
     private int bedrooms;
     
+    // Note: bathrooms field not supported by database yet - excluded from serialization by SupabaseClient
     @SerializedName("bathrooms")
     private int bathrooms;
     
