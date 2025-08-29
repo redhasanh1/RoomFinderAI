@@ -1147,22 +1147,37 @@
                     ids: savedListingIds
                 });
                 
-                // Get all listings from localStorage to match the saved IDs
-                const allListingsData = localStorage.getItem('listings') || '[]';
-                const allListings = JSON.parse(allListingsData);
+                let allListings = [];
                 
-                // Also check user-specific listings from all users
-                const allUsers = JSON.parse(localStorage.getItem('users')) || [];
-                const userListingsFromAllUsers = allUsers.flatMap(u => u.listings || []);
+                // First try to get listings from API
+                try {
+                    const response = await fetch('/api/listings');
+                    if (response.ok) {
+                        allListings = await response.json();
+                        console.log('✅ Loaded listings from API:', allListings.length);
+                    }
+                } catch (error) {
+                    console.log('ℹ️ API not available, using localStorage fallback');
+                }
                 
-                // Combine all possible listings
-                const combinedListings = [...allListings, ...userListingsFromAllUsers];
+                // Fallback to localStorage if API fails
+                if (allListings.length === 0) {
+                    const allListingsData = localStorage.getItem('listings') || '[]';
+                    allListings = JSON.parse(allListingsData);
+                    
+                    // Also check user-specific listings from all users
+                    const allUsers = JSON.parse(localStorage.getItem('users')) || [];
+                    const userListingsFromAllUsers = allUsers.flatMap(u => u.listings || []);
+                    
+                    // Combine all possible listings
+                    allListings = [...allListings, ...userListingsFromAllUsers];
+                }
                 
-                console.log('🔍 All available listings:', combinedListings);
+                console.log('🔍 All available listings:', allListings.length);
                 
                 // Match saved IDs with actual listing data
                 const savedListings = savedListingIds.map(id => {
-                    const listing = combinedListings.find(l => l.id === id);
+                    const listing = allListings.find(l => l.id === id);
                     if (listing) {
                         return {
                             ...listing,
