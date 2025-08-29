@@ -1070,6 +1070,65 @@
             background-color: #f9fafb;
             border-radius: 0.5rem;
             margin-bottom: 10px;
+            position: relative;
+        }
+        
+        /* Scroll to bottom button styles */
+        .scroll-to-bottom-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .scroll-to-bottom-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+        
+        .scroll-to-bottom-btn.hidden {
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        
+        .scroll-arrow {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .unread-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+        }
+        
+        .unread-count.hidden {
+            display: none;
         }
         .message {
             margin: 10px 0;
@@ -1599,7 +1658,13 @@
                     <h2 id="chatTitle" class="text-xl font-bold text-gray-800">Chat</h2>
                     <span class="close-button chat-close-button">×</span>
                 </div>
-                <div id="chatMessages" class="chat-messages"></div>
+                <div id="chatMessages" class="chat-messages">
+                    <!-- Scroll to bottom button -->
+                    <div id="scrollToBottomBtn" class="scroll-to-bottom-btn hidden">
+                        <span class="scroll-arrow">↓</span>
+                        <span id="unreadCount" class="unread-count hidden">0</span>
+                    </div>
+                </div>
                 <div class="chat-input-container">
                     <div class="flex items-end space-x-2">
                         <div class="flex-1">
@@ -2050,6 +2115,78 @@
             console.log('- Successful markers:', successfulMarkers);
             console.log('- Markers in cluster group:', markerClusterGroup.getLayers().length);
             console.log('- Valid coordinates:', validCoordinates.length);
+        }
+
+        // Global smart scroll variables and functions
+        let unreadMessagesCount = 0;
+        let userScrolledUp = false;
+        
+        // Smart scroll function - only scrolls if user is at bottom
+        function smartScrollToBottom() {
+            const chatMessagesContainer = document.getElementById('chatMessages');
+            if (!chatMessagesContainer) return;
+            
+            const scrollTop = chatMessagesContainer.scrollTop;
+            const scrollHeight = chatMessagesContainer.scrollHeight;
+            const clientHeight = chatMessagesContainer.clientHeight;
+            const scrollThreshold = 100; // pixels from bottom
+            
+            const isNearBottom = (scrollHeight - scrollTop - clientHeight) <= scrollThreshold;
+            
+            if (isNearBottom && !userScrolledUp) {
+                chatMessagesContainer.scrollTop = scrollHeight;
+                unreadMessagesCount = 0;
+                updateScrollButton();
+            } else {
+                unreadMessagesCount++;
+                updateScrollButton();
+            }
+        }
+        
+        // Check if user is at bottom
+        function isUserAtBottom() {
+            const chatMessagesContainer = document.getElementById('chatMessages');
+            if (!chatMessagesContainer) return true;
+            const scrollTop = chatMessagesContainer.scrollTop;
+            const scrollHeight = chatMessagesContainer.scrollHeight;
+            const clientHeight = chatMessagesContainer.clientHeight;
+            return (scrollHeight - scrollTop - clientHeight) <= 50;
+        }
+        
+        // Update scroll button visibility and unread count
+        function updateScrollButton() {
+            const scrollBtn = document.getElementById('scrollToBottomBtn');
+            const unreadCountEl = document.getElementById('unreadCount');
+            
+            if (!scrollBtn || !unreadCountEl) return;
+            
+            const atBottom = isUserAtBottom();
+            
+            if (atBottom) {
+                scrollBtn.classList.add('hidden');
+                unreadMessagesCount = 0;
+                userScrolledUp = false;
+            } else {
+                scrollBtn.classList.remove('hidden');
+                userScrolledUp = true;
+            }
+            
+            if (unreadMessagesCount > 0) {
+                unreadCountEl.textContent = unreadMessagesCount;
+                unreadCountEl.classList.remove('hidden');
+            } else {
+                unreadCountEl.classList.add('hidden');
+            }
+        }
+        
+        // Scroll to bottom function
+        function scrollToBottom() {
+            const chatMessagesContainer = document.getElementById('chatMessages');
+            if (!chatMessagesContainer) return;
+            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+            unreadMessagesCount = 0;
+            userScrolledUp = false;
+            updateScrollButton();
         }
 
         // Authentication check and header update
@@ -3213,6 +3350,7 @@
             const chatMessagesContainer = document.getElementById('chatMessages');
             const chatInput = document.getElementById('chatInput');
             const chatSendBtn = document.getElementById('chatSendBtn');
+            
 
             console.log('✅ All chat elements found:', {
                 chatModal: !!chatModal,
@@ -3229,6 +3367,17 @@
                 chatModal.classList.remove('active'); // Use class for animation
                 console.log('Chat modal closed');
             });
+            
+            // Add scroll event listener for smart scroll behavior
+            chatMessagesContainer.addEventListener('scroll', () => {
+                updateScrollButton();
+            });
+            
+            // Add click handler for scroll to bottom button
+            const scrollBtn = document.getElementById('scrollToBottomBtn');
+            if (scrollBtn) {
+                scrollBtn.addEventListener('click', scrollToBottom);
+            }
 
             window.addEventListener('click', (event) => {
                 if (event.target === chatModal) {
@@ -3357,7 +3506,7 @@
                     <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
                 `;
                 chatMessagesContainer.appendChild(messageElement);
-                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                smartScrollToBottom();
                 
                 // Send to database
                 const { error } = await supabase
@@ -3399,7 +3548,7 @@
                     <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
                 `;
                 chatMessagesContainer.appendChild(messageElement);
-                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                smartScrollToBottom();
 
                 try {
                     // Upload file to Supabase storage
@@ -4166,7 +4315,7 @@
                     chatMessagesContainer.appendChild(messageElement);
                 });
 
-                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                smartScrollToBottom();
                 console.log('✅ Messages loaded successfully:', messages.length, 'messages displayed');
                 
             } catch (error) {
