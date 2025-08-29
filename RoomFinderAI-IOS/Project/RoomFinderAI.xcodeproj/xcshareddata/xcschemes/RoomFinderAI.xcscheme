@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A01234567890123456789063"
-               BuildableName = "RoomFinderAI"
+               BuildableName = "RoomFinderAI.app"
                BlueprintName = "RoomFinderAI"
                ReferencedContainer = "container:RoomFinderAI.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A01234567890123456789063"
-            BuildableName = "RoomFinderAI"
+            BuildableName = "RoomFinderAI.app"
             BlueprintName = "RoomFinderAI"
             ReferencedContainer = "container:RoomFinderAI.xcodeproj">
          </BuildableReference>
@@ -61,7 +61,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A01234567890123456789063"
-            BuildableName = "RoomFinderAI"
+            BuildableName = "RoomFinderAI.app"
             BlueprintName = "RoomFinderAI"
             ReferencedContainer = "container:RoomFinderAI.xcodeproj">
          </BuildableReference>
