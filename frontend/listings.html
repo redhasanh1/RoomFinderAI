@@ -2489,7 +2489,7 @@
                                 data-listing-id="${listing.id}" 
                                 data-favorited="false" 
                                 title="Save to favorites"
-                                onclick="toggleFavorite('${listing.id}', this)">
+                                onclick="toggleFavorite('${listing.id}', this, ${JSON.stringify(listing).replace(/"/g, '&quot;')})">
                             <svg class="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                             </svg>
@@ -4799,7 +4799,7 @@
         }
 
         // Favorites functionality with localStorage fallback
-        async function toggleFavorite(listingId, buttonElement) {
+        async function toggleFavorite(listingId, buttonElement, listingData) {
             const currentUser = window.UniversalAuth.getCurrentUser();
             
             console.log('🔍 toggleFavorite called:', { listingId, currentUser });
@@ -4871,6 +4871,9 @@
                     const storageKey = `savedListings_${currentUser.email}`;
                     let savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
                     
+                    // Also store the complete listings data for profile page
+                    let allListings = JSON.parse(localStorage.getItem('listings')) || [];
+                    
                     if (isFavorited) {
                         // Remove from localStorage
                         savedListings = savedListings.filter(id => id !== listingId);
@@ -4882,6 +4885,14 @@
                             savedListings.push(listingId);
                             localStorage.setItem(storageKey, JSON.stringify(savedListings));
                         }
+                        
+                        // Also add the listing data to the main listings storage if not already there
+                        if (listingData && !allListings.find(l => l.id === listingId)) {
+                            allListings.push(listingData);
+                            localStorage.setItem('listings', JSON.stringify(allListings));
+                            console.log('✅ Added listing data to main storage:', listingId);
+                        }
+                        
                         console.log('✅ Added to favorites via localStorage:', listingId);
                     }
                     success = true;
