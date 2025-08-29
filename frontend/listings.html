@@ -4935,12 +4935,12 @@
             } catch (error) {
                 console.log('📱 API unavailable, loading from localStorage:', error.message);
                 
-                // Fallback to localStorage
+                // Fallback to localStorage - extract IDs from complete listing objects
                 const storageKey = `savedListings_${currentUser.email}`;
                 const savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
-                favoriteIds = new Set(savedListings);
+                favoriteIds = new Set(savedListings.map(listing => listing.id));
                 console.log(`✅ Loaded ${savedListings.length} favorite states via localStorage`);
-                console.log(`💾 Raw localStorage data:`, savedListings);
+                console.log(`💾 Extracted favorite IDs:`, Array.from(favoriteIds));
             }
 
             // Update heart button states with retry mechanism
