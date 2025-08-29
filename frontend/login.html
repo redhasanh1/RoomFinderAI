@@ -315,53 +315,62 @@
           const r = await fetch('/api/login',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password})});
           const result = await r.json();
           if (r.ok){
-            // Try to find existing user data in the users array first
+            // Get user data from backend response (includes database profile image)
+            const backendUser = result.user || {};
+            console.log('📡 Backend user data received:', {
+              email: backendUser.email,
+              hasProfileImage: !!backendUser.profileImage,
+              firstName: backendUser.firstName,
+              lastName: backendUser.lastName
+            });
+            
+            // Try to find existing user data in localStorage
             let users=[]; 
             try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
             
-            const existing = users.find(u=>u?.email?.toLowerCase()===email);
+            const existingLocal = users.find(u=>u?.email?.toLowerCase()===email);
             
-            if (existing) {
-              // User exists - preserve ALL their existing data including profile image
-              console.log('✅ Found existing user, preserving profile image:', existing.email);
-              localStorage.setItem('currentUser', JSON.stringify(existing));
+            // Merge backend data with local data (backend takes priority for profile image)
+            let finalUser;
+            
+            if (existingLocal) {
+              // Merge: Use backend profile image if available, otherwise keep local
+              finalUser = {
+                ...existingLocal,
+                firstName: backendUser.firstName || existingLocal.firstName,
+                lastName: backendUser.lastName || existingLocal.lastName,
+                email: email,
+                profileImage: backendUser.profileImage || existingLocal.profileImage || getDefaultProfileImage(),
+                hasCustomProfileImage: !!backendUser.profileImage || existingLocal.hasCustomProfileImage
+              };
+              console.log('✅ Merged backend and local data, profile from:', backendUser.profileImage ? 'database' : 'localStorage');
             } else {
-              // Check if there's a currentUser with this email
-              let currentUser = null;
-              try{
-                const storedUser = localStorage.getItem('currentUser');
-                if (storedUser){
-                  const parsed = JSON.parse(storedUser);
-                  if (parsed?.email?.toLowerCase() === email) {
-                    currentUser = parsed;
-                  }
-                }
-              }catch{}
-              
-              if (currentUser) {
-                // Found in currentUser - preserve that data
-                console.log('✅ Found user in currentUser, preserving data');
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                // Also add to users array
-                users.push(currentUser);
-                localStorage.setItem('users', JSON.stringify(users));
-              } else {
-                // Truly new user - create with defaults
-                console.log('ℹ️ Creating new user with defaults');
-                const newUser = { 
-                  firstName:'User', 
-                  lastName:'Name', 
-                  email, 
-                  profileImage:getDefaultProfileImage(), 
-                  aiChats:[], 
-                  listings:[], 
-                  emailVerified:true 
-                };
-                users.push(newUser);
-                localStorage.setItem('users', JSON.stringify(users));
-                localStorage.setItem('currentUser', JSON.stringify(newUser));
-              }
+              // No local data - use backend data or create new
+              finalUser = {
+                firstName: backendUser.firstName || 'User',
+                lastName: backendUser.lastName || 'Name',
+                email: email,
+                profileImage: backendUser.profileImage || getDefaultProfileImage(),
+                hasCustomProfileImage: !!backendUser.profileImage,
+                aiChats: [],
+                listings: [],
+                emailVerified: true
+              };
+              console.log('✅ Using backend data, profile from:', backendUser.profileImage ? 'database' : 'default');
             }
+            
+            // Update users array
+            const idx = users.findIndex(u=>u?.email?.toLowerCase()===email);
+            if (idx >= 0) {
+              users[idx] = finalUser;
+            } else {
+              users.push(finalUser);
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('currentUser', JSON.stringify(finalUser));
+            
             window.location.href='verification-modal.html?redirect=index.html';
           }else{
             alert(result.error || 'Login failed');
