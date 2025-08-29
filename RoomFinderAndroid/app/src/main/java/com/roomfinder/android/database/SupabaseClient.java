@@ -37,8 +37,9 @@ public class SupabaseClient {
                 .addSerializationExclusionStrategy(new com.google.gson.ExclusionStrategy() {
                     @Override
                     public boolean shouldSkipField(com.google.gson.FieldAttributes f) {
-                        // Skip bathrooms field during serialization as it's not in the database schema
-                        return f.getName().equals("bathrooms");
+                        // Skip fields that are not in the database schema
+                        String fieldName = f.getName();
+                        return fieldName.equals("bathrooms") || fieldName.equals("isFavorite");
                     }
                     
                     @Override
