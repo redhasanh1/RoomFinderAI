@@ -315,27 +315,48 @@
           const r = await fetch('/api/login',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password})});
           const result = await r.json();
           if (r.ok){
-            // lightweight client cache (do not store secrets)
-            let currentUser = null;
-            try{
-              const storedUser = localStorage.getItem('currentUser');
-              if (storedUser){
-                const parsed = JSON.parse(storedUser);
-                if (parsed?.email?.toLowerCase() === email) currentUser = {...parsed, email};
-              }
-            }catch{}
-            if (currentUser){
-              localStorage.setItem('currentUser', JSON.stringify(currentUser));
-              let users=[]; try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
-              const idx = users.findIndex(u=>u?.email?.toLowerCase()===email);
-              if (idx>=0) users[idx]=currentUser; else users.push(currentUser);
-              localStorage.setItem('users', JSON.stringify(users));
-            }else{
-              let users=[]; try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
-              const existing = users.find(u=>u?.email?.toLowerCase()===email);
-              if (existing){ existing.email=email; localStorage.setItem('currentUser', JSON.stringify(existing)); }
-              else{
-                const newUser = { firstName:'User', lastName:'Name', email, profileImage:getDefaultProfileImage(), aiChats:[], listings:[], emailVerified:true };
+            // Try to find existing user data in the users array first
+            let users=[]; 
+            try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
+            
+            const existing = users.find(u=>u?.email?.toLowerCase()===email);
+            
+            if (existing) {
+              // User exists - preserve ALL their existing data including profile image
+              console.log('✅ Found existing user, preserving profile image:', existing.email);
+              localStorage.setItem('currentUser', JSON.stringify(existing));
+            } else {
+              // Check if there's a currentUser with this email
+              let currentUser = null;
+              try{
+                const storedUser = localStorage.getItem('currentUser');
+                if (storedUser){
+                  const parsed = JSON.parse(storedUser);
+                  if (parsed?.email?.toLowerCase() === email) {
+                    currentUser = parsed;
+                  }
+                }
+              }catch{}
+              
+              if (currentUser) {
+                // Found in currentUser - preserve that data
+                console.log('✅ Found user in currentUser, preserving data');
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                // Also add to users array
+                users.push(currentUser);
+                localStorage.setItem('users', JSON.stringify(users));
+              } else {
+                // Truly new user - create with defaults
+                console.log('ℹ️ Creating new user with defaults');
+                const newUser = { 
+                  firstName:'User', 
+                  lastName:'Name', 
+                  email, 
+                  profileImage:getDefaultProfileImage(), 
+                  aiChats:[], 
+                  listings:[], 
+                  emailVerified:true 
+                };
                 users.push(newUser);
                 localStorage.setItem('users', JSON.stringify(users));
                 localStorage.setItem('currentUser', JSON.stringify(newUser));
@@ -396,10 +417,32 @@
         const r = await fetch('/api/verify-email',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email: pendingUserData.email, code })});
         const result = await r.json();
         if (r.ok){
-          const user = { firstName:pendingUserData.firstName, lastName:pendingUserData.lastName, email:pendingUserData.email, profileImage:getDefaultProfileImage(), aiChats:[], listings:[], emailVerified:true };
-          let users=[]; try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
+          // Check if user already exists to preserve profile image
+          let users=[]; 
+          try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
+          
+          const existingUser = users.find(u=>u?.email?.toLowerCase()===pendingUserData.email.toLowerCase());
+          
+          const user = { 
+            firstName:pendingUserData.firstName, 
+            lastName:pendingUserData.lastName, 
+            email:pendingUserData.email, 
+            profileImage: existingUser?.profileImage || getDefaultProfileImage(), // Preserve existing profile image
+            hasCustomProfileImage: existingUser?.hasCustomProfileImage || false,
+            aiChats: existingUser?.aiChats || [], 
+            listings: existingUser?.listings || [], 
+            emailVerified:true 
+          };
+          
           const idx = users.findIndex(u=>u?.email?.toLowerCase()===user.email.toLowerCase());
-          if (idx>=0) users[idx]=user; else users.push(user);
+          if (idx>=0) {
+            console.log('✅ Updating existing user, preserving profile image');
+            users[idx]=user;
+          } else {
+            console.log('ℹ️ Adding new user');
+            users.push(user);
+          }
+          
           localStorage.setItem('users', JSON.stringify(users));
           localStorage.setItem('currentUser', JSON.stringify(user));
           alert('Email verified successfully! Welcome to RoomFinder AI.');
