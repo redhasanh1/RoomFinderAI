@@ -5,7 +5,11 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
+import com.google.gson.TypeAdapter;
 import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -22,7 +26,7 @@ public class Listing implements Serializable {
     private String description;
     
     @SerializedName("price")
-    @JsonAdapter(FlexibleDoubleDeserializer.class)
+    @JsonAdapter(FlexibleDoubleTypeAdapter.class)
     private double price;
     
     @SerializedName("bedrooms")
@@ -341,7 +345,48 @@ public class Listing implements Serializable {
         }
     }
     
-    // Custom deserializer to handle various numeric types for price field
+    // Custom TypeAdapter to handle various numeric types for price field (both serialization and deserialization)
+    public static class FlexibleDoubleTypeAdapter extends TypeAdapter<Double> {
+        @Override
+        public void write(JsonWriter out, Double value) throws IOException {
+            if (value == null) {
+                out.value(0.0);
+            } else {
+                out.value(value);
+            }
+        }
+
+        @Override
+        public Double read(JsonReader in) throws IOException {
+            try {
+                switch (in.peek()) {
+                    case NULL:
+                        in.nextNull();
+                        return 0.0;
+                    case NUMBER:
+                        return in.nextDouble();
+                    case STRING:
+                        String str = in.nextString();
+                        if (str.isEmpty()) {
+                            return 0.0;
+                        }
+                        return Double.parseDouble(str);
+                    default:
+                        in.skipValue();
+                        return 0.0;
+                }
+            } catch (NumberFormatException e) {
+                android.util.Log.e("Listing", "Error parsing price: " + e.getMessage());
+                return 0.0;
+            } catch (Exception e) {
+                android.util.Log.e("Listing", "Unexpected error parsing price: " + e.getMessage());
+                return 0.0;
+            }
+        }
+    }
+    
+    // Keeping old deserializer for backward compatibility (deprecated)
+    @Deprecated
     public static class FlexibleDoubleDeserializer implements JsonDeserializer<Double> {
         @Override
         public Double deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
