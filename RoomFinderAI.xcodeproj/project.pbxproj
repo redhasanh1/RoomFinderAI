@@ -54,6 +54,8 @@
 		A01234567890123456789049 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		A01234567890123456789051 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		A01234567890123456789053 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A01234567890123456789081 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
+		A01234567890123456789082 /* OpenAIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,6 +121,8 @@
 				A01234567890123456789021 /* ListingsViewModel.swift */,
 				A01234567890123456789023 /* ChatViewModel.swift */,
 				A01234567890123456789025 /* NetworkManager.swift */,
+				A01234567890123456789081 /* Secrets.swift */,
+				A01234567890123456789082 /* OpenAIClient.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
