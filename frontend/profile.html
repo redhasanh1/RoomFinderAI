@@ -1140,60 +1140,18 @@
         async function loadSavedListings(user) {
             try {
                 const savedListingsKey = `savedListings_${user.email}`;
-                const savedListingIds = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
+                const savedListings = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
                 
                 console.log('💾 Loading saved listings:', {
                     key: savedListingsKey,
-                    ids: savedListingIds
+                    count: savedListings.length,
+                    listings: savedListings
                 });
-                
-                let allListings = [];
-                
-                // First try to get listings from API
-                try {
-                    const response = await fetch('/api/listings');
-                    if (response.ok) {
-                        allListings = await response.json();
-                        console.log('✅ Loaded listings from API:', allListings.length);
-                    }
-                } catch (error) {
-                    console.log('ℹ️ API not available, using localStorage fallback');
-                }
-                
-                // Fallback to localStorage if API fails
-                if (allListings.length === 0) {
-                    const allListingsData = localStorage.getItem('listings') || '[]';
-                    allListings = JSON.parse(allListingsData);
-                    
-                    // Also check user-specific listings from all users
-                    const allUsers = JSON.parse(localStorage.getItem('users')) || [];
-                    const userListingsFromAllUsers = allUsers.flatMap(u => u.listings || []);
-                    
-                    // Combine all possible listings
-                    allListings = [...allListings, ...userListingsFromAllUsers];
-                }
-                
-                console.log('🔍 All available listings:', allListings.length);
-                
-                // Match saved IDs with actual listing data
-                const savedListings = savedListingIds.map(id => {
-                    const listing = allListings.find(l => l.id === id);
-                    if (listing) {
-                        return {
-                            ...listing,
-                            saved_at: new Date().toISOString() // Add saved timestamp
-                        };
-                    }
-                    return null;
-                }).filter(Boolean);
-                
-                console.log('❤️ Matched saved listings:', savedListings);
                 
                 document.getElementById('savedCount').textContent = savedListings.length;
                 document.getElementById('savedListingsCount').textContent = `${savedListings.length} saved`;
                 
                 const container = document.getElementById('savedListingsContainer');
-                const emptyState = document.getElementById('savedListingsEmpty');
                 
                 if (savedListings.length === 0) {
                     container.innerHTML = `
@@ -1208,6 +1166,8 @@
                     `;
                 } else {
                     container.innerHTML = savedListings.map(listing => {
+                        console.log('📝 Processing saved listing:', listing);
+                        
                         const title = listing.title || listing.name || 'Untitled Listing';
                         const price = listing.price || 0;
                         const location = [listing.street, listing.city].filter(x => x).join(', ') || 'No location';
@@ -1326,18 +1286,18 @@
         function unsaveListing(id) {
             const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
             const savedListingsKey = `savedListings_${currentUser.email}`;
-            let savedListingIds = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
+            let savedListings = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
             
             console.log('🗑️ Removing saved listing:', {
                 id: id,
-                beforeRemoval: savedListingIds
+                beforeRemoval: savedListings.length
             });
             
-            // Remove the listing ID from the array
-            savedListingIds = savedListingIds.filter(savedId => savedId !== id);
-            localStorage.setItem(savedListingsKey, JSON.stringify(savedListingIds));
+            // Remove the listing object from the array
+            savedListings = savedListings.filter(listing => listing.id !== id);
+            localStorage.setItem(savedListingsKey, JSON.stringify(savedListings));
             
-            console.log('✅ Updated saved listings:', savedListingIds);
+            console.log('✅ Updated saved listings count:', savedListings.length);
             
             // Reload the saved listings
             loadSavedListings(currentUser);
