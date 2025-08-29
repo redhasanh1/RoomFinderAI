@@ -968,6 +968,7 @@
         }
 
         async function updateProfileUI(user) {
+            // Start with localStorage names (these are the registration names)
             let displayFirstName = user.firstName || '';
             let displayLastName = user.lastName || '';
             
@@ -977,52 +978,52 @@
                 console.log('✅ Loaded local profile image for:', user.email);
             }
             
-            // Fetch the latest profile data from backend (for names only)
+            // Fetch the latest profile data from backend
             try {
                 const response = await fetch(`/api/user-profile/${encodeURIComponent(user.email)}`);
                 if (response.ok) {
                     const profileData = await response.json();
                     
-                    // Update names from database (prioritize database over localStorage)
-                    if (profileData.firstName || profileData.lastName) {
-                        displayFirstName = profileData.firstName || '';
-                        displayLastName = profileData.lastName || '';
-                        console.log('✅ Loaded names from backend for:', user.email, 'Names:', displayFirstName, displayLastName);
+                    // Only update names from backend if they are valid and not default values
+                    // and if localStorage doesn't have proper names
+                    if (profileData.firstName && profileData.lastName && 
+                        profileData.firstName !== 'tesing' && profileData.lastName !== 'falsecode' &&
+                        profileData.firstName !== 'User' && profileData.lastName !== 'Name') {
                         
-                        // Update localStorage with latest names
-                        const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
-                        currentUser.firstName = displayFirstName;
-                        currentUser.lastName = displayLastName;
-                        
-                        // Only update profile image from backend if we don't have a local one
-                        if (profileData.profileImage && !user.profileImage) {
-                            currentUser.profileImage = profileData.profileImage;
-                            currentUser.hasCustomProfileImage = profileData.hasCustomProfileImage;
-                            document.getElementById('profileImage').src = profileData.profileImage;
-                            console.log('✅ Loaded profile image from backend for:', user.email);
-                        }
-                        
-                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                    } else {
-                        console.log('ℹ️ No names found in database, using local data');
-                        
-                        // Only update profile image from backend if we don't have a local one
-                        if (profileData.profileImage && !user.profileImage) {
-                            document.getElementById('profileImage').src = profileData.profileImage;
-                            console.log('✅ Loaded profile image from backend for:', user.email);
+                        // Only use backend names if localStorage names are empty or default
+                        if (!displayFirstName || !displayLastName || 
+                            displayFirstName === 'User' || displayLastName === 'Name') {
+                            displayFirstName = profileData.firstName;
+                            displayLastName = profileData.lastName;
+                            console.log('✅ Using backend names for:', user.email, 'Names:', displayFirstName, displayLastName);
                             
+                            // Update localStorage with backend names
                             const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
-                            currentUser.profileImage = profileData.profileImage;
-                            currentUser.hasCustomProfileImage = profileData.hasCustomProfileImage;
+                            currentUser.firstName = displayFirstName;
+                            currentUser.lastName = displayLastName;
                             localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        } else {
+                            console.log('ℹ️ Keeping localStorage names (registration names) for:', user.email);
                         }
+                    } else {
+                        console.log('ℹ️ Backend names are invalid or default, using localStorage names');
+                    }
+                    
+                    // Only update profile image from backend if we don't have a local one
+                    if (profileData.profileImage && !user.profileImage) {
+                        const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                        currentUser.profileImage = profileData.profileImage;
+                        currentUser.hasCustomProfileImage = profileData.hasCustomProfileImage;
+                        document.getElementById('profileImage').src = profileData.profileImage;
+                        console.log('✅ Loaded profile image from backend for:', user.email);
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
                     }
                 } else {
-                    console.log('ℹ️ Could not fetch profile data, keeping local profile image');
+                    console.log('ℹ️ Could not fetch profile data, using localStorage names');
                 }
             } catch (error) {
                 console.error('Error fetching profile data:', error);
-                console.log('ℹ️ Using local profile image due to error');
+                console.log('ℹ️ Using localStorage names and profile image due to error');
             }
             
             // Update profile information with final names (either from database or localStorage)
