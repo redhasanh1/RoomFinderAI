@@ -1,1054 +1,339 @@
 import SwiftUI
 import Supabase
 
-@main
-struct RoomFinderAIApp: App {
-    let supabaseClient: SupabaseClient = {
+// MARK: - Secrets Configuration
+enum Secrets {
+  static let supabaseURL = "https://fkktwhjybuflxqzopaex.supabase.co"
+  static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs"
+
+  // 🚀 OpenAI (inserted credentials)
+  static let openAIKey = "sk-proj-CbQtehx5UM0V9mXWrdZnM-hP3l98a0ZVguNWb51K7G63M0dfChAziWYeIO_AOPE2cEnVGOcwyT3BlbkFJliQDGy85OmZ3UGhQS7RSltE9YKO_5qrdLaLEweqkbxs-dDtMy3FMf6Msuot00O58p9L9XQBucA"
+  static let openAIOrgID: String? = "org-EPHQ1A3u0XIUZml6JABMgZzg"
+  static let openAIModel = "gpt-4o-mini"
+
+  static func assertValid() {
+    precondition(supabaseURL.hasPrefix("https://"), "Supabase URL must start with https://")
+    precondition(supabaseURL.contains(".supabase.co"), "Must use .supabase.co domain")
+    precondition(URL(string: supabaseURL)?.host?.hasSuffix(".supabase.co") == true, "Invalid host in Supabase URL")
+    precondition(!supabaseAnonKey.isEmpty, "Anon key is empty")
+    
+    // OpenAI validation (fail loudly if missing)
+    precondition(!openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                 "OPENAI key is missing. Update Secrets.openAIKey")
+    precondition(openAIKey.hasPrefix("sk-"), "Invalid OpenAI API key format. Must start with 'sk-'.")
+  }
+}
+
+enum SupabaseFactory {
+    static func makeClient() -> SupabaseClient {
+        Secrets.assertValid()
         let url = URL(string: Secrets.supabaseURL)!
         return SupabaseClient(supabaseURL: url, supabaseKey: Secrets.supabaseAnonKey)
+    }
+}
+
+// MARK: - Environment Key
+private struct SupabaseClientKey: EnvironmentKey {
+    static let defaultValue: SupabaseClient = {
+        let url = URL(string: "https://invalid.local")!
+        return SupabaseClient(supabaseURL: url, supabaseKey: "invalid")
     }()
-    
-    init() {
-        // Runtime startup log to confirm correct OpenAI key is loaded
-        print("🔐 OpenAI key loaded: \(Secrets.openAIKey.hasPrefix("sk-proj-") ? "project key" : "classic key") (\(Secrets.openAIModel))")
-        Secrets.assertValid()
-    }
+}
 
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environment(\.supabase, supabaseClient)
-        }
+extension EnvironmentValues {
+    var supabase: SupabaseClient {
+        get { self[SupabaseClientKey.self] }
+        set { self[SupabaseClientKey.self] = newValue }
     }
 }
 
-struct ContentView: View {
-    @State private var showingDebug = false
-    
-    var body: some View {
-        TabView {
-            NavigationView {
-                RoomListView()
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("ⓘ") {
-                                showingDebug = true
-                            }
-                        }
-                    }
-            }
-            .tabItem {
-                Image(systemName: "house")
-                Text("Rooms")
-            }
-            
-            NavigationView {
-                AINegotiatorHub()
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("ⓘ") {
-                                showingDebug = true
-                            }
-                        }
-                    }
-            }
-            .tabItem {
-                Image(systemName: "brain.head.profile")
-                Text("AI")
-            }
-        }
-        .sheet(isPresented: $showingDebug) {
-            DebugInfoView()
-        }
-    }
+// MARK: - Models
+struct MediaItem: Decodable, Equatable {
+  let url: String?
 }
 
-struct RoomListView: View {
-    @Environment(\.supabase) private var supabase
-    @State private var rooms: [Room] = []
-    @State private var isLoading = false
-    @State private var error: String?
-    @State private var showingAddRoom = false
-    @State private var searchText = ""
+struct HomePageListing: Identifiable, Decodable, Equatable {
+  let id: UUID
+  let title: String?
+  let price: Int?
+  let city: String?
+  let house_type: String?
+  let bedrooms: Int?
+  let description: String?
+  let created_at: String?
+  let media: [MediaItem]?
+
+  var coverURLString: String? { media?.first?.url }
+}
+
+// MARK: - Simple AI Negotiator View
+struct SimpleAINegotiatorView: View {
+  let listing: HomePageListing
+  @State private var messageText = ""
+  @State private var messages: [String] = []
+  @State private var isLoading = false
+  
+  var body: some View {
+    VStack {
+      // Header
+      HStack {
+        VStack(alignment: .leading) {
+          Text("Negotiating: \(listing.title ?? "Property")")
+            .font(.headline)
+          Text("$\(listing.price ?? 0)/mo")
+            .font(.subheadline)
+            .foregroundColor(.blue)
+        }
+        Spacer()
+      }
+      .padding()
+      
+      // Messages
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: 8) {
+          ForEach(messages.indices, id: \.self) { index in
+            Text(messages[index])
+              .padding()
+              .background(Color.gray.opacity(0.1))
+              .cornerRadius(8)
+          }
+        }
+        .padding()
+      }
+      
+      Spacer()
+      
+      // Input
+      HStack {
+        TextField("Type your message...", text: $messageText)
+          .textFieldStyle(RoundedBorderTextFieldStyle())
+        
+        Button("Send") {
+          sendMessage()
+        }
+        .disabled(messageText.isEmpty || isLoading)
+      }
+      .padding()
+    }
+    .navigationTitle("AI Negotiator")
+    .navigationBarTitleDisplayMode(.inline)
+    .onAppear {
+      // Add welcome message
+      messages.append("👋 Hi! I'm your AI Negotiator. How can I help you with this property?")
+    }
+  }
+  
+  private func sendMessage() {
+    guard !messageText.isEmpty else { return }
     
-    var filteredRooms: [Room] {
-        if searchText.isEmpty {
-            return rooms
+    let userMessage = messageText
+    messages.append("You: \(userMessage)")
+    messageText = ""
+    isLoading = true
+    
+    Task {
+      do {
+        let aiResponse = try await getAIResponse(for: userMessage)
+        await MainActor.run {
+          messages.append("AI: \(aiResponse)")
+          isLoading = false
+        }
+      } catch {
+        await MainActor.run {
+          messages.append("AI: Sorry, I'm having trouble connecting. Please try again.")
+          isLoading = false
+        }
+      }
+    }
+  }
+  
+  private func getAIResponse(for message: String) async throws -> String {
+    let url = URL(string: "https://api.openai.com/v1/chat/completions")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue("Bearer \(Secrets.openAIKey)", forHTTPHeaderField: "Authorization")
+    if let orgID = Secrets.openAIOrgID {
+      request.setValue(orgID, forHTTPHeaderField: "OpenAI-Organization")
+    }
+    
+    let body = [
+      "model": Secrets.openAIModel,
+      "messages": [
+        [
+          "role": "system",
+          "content": "You are a helpful AI negotiator assistant helping with property rentals. Keep responses concise and helpful."
+        ],
+        [
+          "role": "user", 
+          "content": "Property: \(listing.title ?? "Unknown"), Price: $\(listing.price ?? 0)/mo. User message: \(message)"
+        ]
+      ],
+      "max_tokens": 150
+    ] as [String: Any]
+    
+    request.httpBody = try JSONSerialization.data(withJSONObject: body)
+    
+    let (data, _) = try await URLSession.shared.data(for: request)
+    
+    struct OpenAIResponse: Decodable {
+      struct Choice: Decodable {
+        struct Message: Decodable {
+          let content: String
+        }
+        let message: Message
+      }
+      let choices: [Choice]
+    }
+    
+    let response = try JSONDecoder().decode(OpenAIResponse.self, from: data)
+    return response.choices.first?.message.content ?? "I'm not sure how to help with that."
+  }
+}
+
+// MARK: - Main Views
+struct HomeScreen: View {
+  @State private var listings: [HomePageListing] = []
+  @State private var isLoading = true
+  @State private var error: String?
+  @Environment(\.supabase) private var supabase
+
+  var body: some View {
+    NavigationView {
+      VStack {
+        if isLoading {
+          ProgressView("Loading listings...")
+        } else if let error = error {
+          VStack {
+            Text("Error: \(error)")
+              .foregroundColor(.red)
+            Button("Retry") {
+              loadListings()
+            }
+          }
         } else {
-            return rooms.filter { room in
-                room.title.lowercased().contains(searchText.lowercased()) ||
-                room.location.lowercased().contains(searchText.lowercased()) ||
-                room.description.lowercased().contains(searchText.lowercased())
-            }
+          List(listings) { listing in
+            ListingCardView(listing: listing)
+              .listRowSeparator(.hidden)
+              .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+          }
+          .listStyle(PlainListStyle())
         }
+      }
+      .navigationTitle("RoomFinder")
+      .onAppear {
+        loadListings()
+      }
     }
+  }
+
+  private func loadListings() {
+    isLoading = true
+    error = nil
     
-    var body: some View {
-        NavigationView {
-            VStack {
-                if isLoading {
-                    ProgressView("Loading rooms...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if filteredRooms.isEmpty && !searchText.isEmpty {
-                    VStack {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 50))
-                            .foregroundColor(.secondary)
-                        Text("No rooms found")
-                            .font(.title2)
-                            .foregroundColor(.secondary)
-                        Text("Try adjusting your search terms")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if filteredRooms.isEmpty {
-                    VStack {
-                        Image(systemName: "house.slash")
-                            .font(.system(size: 50))
-                            .foregroundColor(.secondary)
-                        Text("No rooms available")
-                            .font(.title2)
-                            .foregroundColor(.secondary)
-                        Text("Be the first to add a room")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List {
-                        ForEach(filteredRooms) { room in
-                            NavigationLink(destination: RoomDetailView(room: room)) {
-                                RoomRowView(room: room)
-                            }
-                        }
-                    }
-                    .searchable(text: $searchText, prompt: "Search rooms...")
-                }
-                
-                if let error = error {
-                    Text("Error: \(error)")
-                        .foregroundColor(.red)
-                        .padding()
-                }
-            }
-            .navigationTitle("Room Finder")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        showingAddRoom = true
-                    }) {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
-            .sheet(isPresented: $showingAddRoom) {
-                AddRoomView()
-            }
-            .task {
-                await loadRooms()
-            }
-            .refreshable {
-                await loadRooms()
-            }
-        }
-    }
-    
-    private func loadRooms() async {
-        isLoading = true
-        error = nil
+    Task {
+      do {
+        let response: [HomePageListing] = try await supabase
+          .from("listings")
+          .select("*")
+          .execute()
+          .value
         
-        do {
-            let response: [Room] = try await supabase
-                .from("rooms")
-                .select()
-                .order("created_at", ascending: false)
-                .execute()
-                .value
-            
-            await MainActor.run {
-                self.rooms = response
-                self.isLoading = false
-            }
-        } catch {
-            await MainActor.run {
-                self.error = error.localizedDescription
-                self.isLoading = false
-            }
+        await MainActor.run {
+          self.listings = response
+          self.isLoading = false
         }
+      } catch {
+        await MainActor.run {
+          self.error = error.localizedDescription
+          self.isLoading = false
+        }
+      }
     }
+  }
 }
 
-struct RoomRowView: View {
-    let room: Room
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(room.title)
-                    .font(.headline)
-                    .lineLimit(1)
-                Spacer()
-                Text("$\(room.price, specifier: "%.0f")")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-            }
-            
-            HStack {
-                Image(systemName: "location")
-                    .foregroundColor(.secondary)
-                Text(room.location)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-                Spacer()
-                Text("\(room.bedrooms) bed • \(room.bathrooms) bath")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            
-            Text(room.description)
-                .font(.body)
-                .foregroundColor(.secondary)
-                .lineLimit(2)
-            
-            if room.availableFrom > Date() {
-                HStack {
-                    Image(systemName: "calendar")
-                        .foregroundColor(.orange)
-                    Text("Available from \(room.availableFrom, style: .date)")
-                        .font(.caption)
-                        .foregroundColor(.orange)
-                }
-            } else {
-                HStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                    Text("Available now")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                }
-            }
-        }
-        .padding(.vertical, 4)
-    }
-}
+struct ListingCardView: View {
+  let listing: HomePageListing
+  @State private var imageURL: URL?
+  @Environment(\.supabase) private var supabase
 
-struct RoomDetailView: View {
-    let room: Room
-    @State private var showingNegotiator = false
-    
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                AsyncImage(url: URL(string: room.imageURL ?? "")) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    Rectangle()
-                        .foregroundColor(.gray.opacity(0.3))
-                        .overlay {
-                            Image(systemName: "photo")
-                                .font(.system(size: 50))
-                                .foregroundColor(.gray)
-                        }
-                }
-                .frame(height: 250)
-                .clipped()
-                .cornerRadius(12)
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text(room.title)
-                            .font(.title)
-                            .fontWeight(.bold)
-                        Spacer()
-                        Text("$\(room.price, specifier: "%.0f")/month")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.primary)
-                    }
-                    
-                    HStack {
-                        Image(systemName: "location")
-                        Text(room.location)
-                            .font(.subheadline)
-                    }
-                    .foregroundColor(.secondary)
-                    
-                    HStack {
-                        VStack {
-                            Text("\(room.bedrooms)")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                            Text("Bedrooms")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        
-                        VStack {
-                            Text("\(room.bathrooms)")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                            Text("Bathrooms")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        
-                        VStack {
-                            Text("\(Int(room.squareFeet))")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                            Text("Sq Ft")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(12)
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Description")
-                            .font(.headline)
-                        Text(room.description)
-                            .font(.body)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Amenities")
-                            .font(.headline)
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 8) {
-                            ForEach(room.amenities, id: \.self) { amenity in
-                                HStack {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.green)
-                                    Text(amenity)
-                                        .font(.body)
-                                    Spacer()
-                                }
-                            }
-                        }
-                    }
-                    
-                    if room.availableFrom > Date() {
-                        HStack {
-                            Image(systemName: "calendar")
-                                .foregroundColor(.orange)
-                            Text("Available from \(room.availableFrom, style: .date)")
-                                .font(.body)
-                                .foregroundColor(.orange)
-                        }
-                        .padding()
-                        .background(Color.orange.opacity(0.1))
-                        .cornerRadius(8)
-                    }
-                }
-                .padding(.horizontal)
-            }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Negotiate") {
-                    showingNegotiator = true
-                }
-                .foregroundColor(.blue)
-                .fontWeight(.semibold)
-            }
-        }
-        .sheet(isPresented: $showingNegotiator) {
-            AINegotiatorView(room: room)
-        }
-    }
-}
+  var body: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      // Image
+      AsyncImage(url: imageURL) { image in
+        image
+          .resizable()
+          .aspectRatio(contentMode: .fill)
+      } placeholder: {
+        placeholder
+      }
+      .frame(height: 200)
+      .clipShape(RoundedRectangle(cornerRadius: 12))
 
-struct AddRoomView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.supabase) private var supabase
-    
-    @State private var title = ""
-    @State private var description = ""
-    @State private var location = ""
-    @State private var price: Double = 1000
-    @State private var bedrooms: Int = 1
-    @State private var bathrooms: Int = 1
-    @State private var squareFeet: Double = 500
-    @State private var imageURL = ""
-    @State private var availableFrom = Date()
-    @State private var selectedAmenities: Set<String> = []
-    
-    @State private var isSubmitting = false
-    @State private var error: String?
-    
-    let availableAmenities = [
-        "Wi-Fi", "Air Conditioning", "Heating", "Parking", "Laundry",
-        "Pet Friendly", "Furnished", "Gym", "Pool", "Balcony",
-        "Dishwasher", "Microwave", "Refrigerator", "Storage"
-    ]
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section("Basic Information") {
-                    TextField("Room Title", text: $title)
-                    TextField("Location", text: $location)
-                    TextField("Description", text: $description, axis: .vertical)
-                        .lineLimit(3...6)
-                }
-                
-                Section("Details") {
-                    HStack {
-                        Text("Price per month")
-                        Spacer()
-                        TextField("Price", value: $price, format: .currency(code: "USD"))
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    
-                    Stepper("Bedrooms: \(bedrooms)", value: $bedrooms, in: 1...10)
-                    Stepper("Bathrooms: \(bathrooms)", value: $bathrooms, in: 1...10)
-                    
-                    HStack {
-                        Text("Square Feet")
-                        Spacer()
-                        TextField("Sq Ft", value: $squareFeet, format: .number)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    
-                    DatePicker("Available From", selection: $availableFrom, displayedComponents: .date)
-                }
-                
-                Section("Image") {
-                    TextField("Image URL (optional)", text: $imageURL)
-                }
-                
-                Section("Amenities") {
-                    ForEach(availableAmenities, id: \.self) { amenity in
-                        HStack {
-                            Button(action: {
-                                if selectedAmenities.contains(amenity) {
-                                    selectedAmenities.remove(amenity)
-                                } else {
-                                    selectedAmenities.insert(amenity)
-                                }
-                            }) {
-                                HStack {
-                                    Image(systemName: selectedAmenities.contains(amenity) ? "checkmark.circle.fill" : "circle")
-                                        .foregroundColor(selectedAmenities.contains(amenity) ? .blue : .gray)
-                                    Text(amenity)
-                                        .foregroundColor(.primary)
-                                    Spacer()
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                if let error = error {
-                    Section {
-                        Text("Error: \(error)")
-                            .foregroundColor(.red)
-                    }
-                }
-            }
-            .navigationTitle("Add Room")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        Task {
-                            await submitRoom()
-                        }
-                    }
-                    .disabled(title.isEmpty || location.isEmpty || description.isEmpty || isSubmitting)
-                }
-            }
-        }
-    }
-    
-    private func submitRoom() async {
-        isSubmitting = true
-        error = nil
-        
-        let newRoom = Room(
-            id: UUID(),
-            title: title,
-            description: description,
-            price: price,
-            location: location,
-            bedrooms: bedrooms,
-            bathrooms: bathrooms,
-            squareFeet: squareFeet,
-            imageURL: imageURL.isEmpty ? nil : imageURL,
-            amenities: Array(selectedAmenities),
-            availableFrom: availableFrom,
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-        
-        do {
-            try await supabase
-                .from("rooms")
-                .insert(newRoom)
-                .execute()
-            
-            await MainActor.run {
-                dismiss()
-            }
-        } catch {
-            await MainActor.run {
-                self.error = error.localizedDescription
-                self.isSubmitting = false
-            }
-        }
-    }
-}
+      // Content
+      VStack(alignment: .leading, spacing: 6) {
+        Text(listing.title ?? "Untitled")
+          .font(.headline)
+          .lineLimit(2)
 
-struct Room: Identifiable, Codable, Hashable {
-    let id: UUID
-    let title: String
-    let description: String
-    let price: Double
-    let location: String
-    let bedrooms: Int
-    let bathrooms: Int
-    let squareFeet: Double
-    let imageURL: String?
-    let amenities: [String]
-    let availableFrom: Date
-    let createdAt: Date
-    let updatedAt: Date
-    
-    enum CodingKeys: String, CodingKey {
-        case id, title, description, price, location, bedrooms, bathrooms, amenities
-        case squareFeet = "square_feet"
-        case imageURL = "image_url"
-        case availableFrom = "available_from"
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
-    }
-}
+        HStack(spacing: 8) {
+          if let price = listing.price { Text("$\(price)") }
+          if let type = listing.house_type { Text("· \(type)") }
+          if let bd = listing.bedrooms { Text("· \(bd) bd") }
+        }
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
 
-// MARK: - AI Negotiator Components
-
-struct AINegotiatorHub: View {
-    @State private var sessions: [NegotiationSession] = []
-    @State private var showingNewNegotiation = false
-    @Environment(\.supabase) private var supabase
-    
-    var body: some View {
-        NavigationView {
-            VStack {
-                if sessions.isEmpty {
-                    VStack(spacing: 20) {
-                        Image(systemName: "brain.head.profile")
-                            .font(.system(size: 60))
-                            .foregroundColor(.blue)
-                        
-                        Text("AI Negotiator")
-                            .font(.title)
-                            .fontWeight(.bold)
-                        
-                        Text("Start negotiating room prices with our AI assistant")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                        
-                        Button("Start New Negotiation") {
-                            showingNewNegotiation = true
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                    .padding()
-                } else {
-                    List {
-                        ForEach(sessions) { session in
-                            NavigationLink(destination: AINegotiatorView(session: session)) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(session.roomTitle)
-                                        .font(.headline)
-                                    Text("Last offer: $\(session.currentOffer, specifier: "%.0f")")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            .navigationTitle("AI Negotiator")
-            .toolbar {
-                if !sessions.isEmpty {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("New") {
-                            showingNewNegotiation = true
-                        }
-                    }
-                }
-            }
-            .sheet(isPresented: $showingNewNegotiation) {
-                RoomSelectionView { room in
-                    let newSession = NegotiationSession(
-                        id: UUID(),
-                        room: room,
-                        messages: [],
-                        currentOffer: room.price,
-                        status: .active,
-                        createdAt: Date()
-                    )
-                    sessions.append(newSession)
-                    showingNewNegotiation = false
-                }
-            }
-        }
-    }
-}
-
-struct RoomSelectionView: View {
-    @Environment(\.supabase) private var supabase
-    @Environment(\.dismiss) private var dismiss
-    @State private var rooms: [Room] = []
-    @State private var isLoading = false
-    let onRoomSelected: (Room) -> Void
-    
-    var body: some View {
-        NavigationView {
-            VStack {
-                if isLoading {
-                    ProgressView("Loading rooms...")
-                } else if rooms.isEmpty {
-                    Text("No rooms available")
-                        .foregroundColor(.secondary)
-                } else {
-                    List {
-                        ForEach(rooms) { room in
-                            Button(action: {
-                                onRoomSelected(room)
-                            }) {
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text(room.title)
-                                            .font(.headline)
-                                            .foregroundColor(.primary)
-                                        Text(room.location)
-                                            .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    Spacer()
-                                    Text("$\(room.price, specifier: "%.0f")")
-                                        .font(.title3)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.primary)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            .navigationTitle("Select Room")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-            }
-            .task {
-                await loadRooms()
-            }
-        }
-    }
-    
-    private func loadRooms() async {
-        isLoading = true
-        
-        do {
-            let response: [Room] = try await supabase
-                .from("rooms")
-                .select()
-                .order("created_at", ascending: false)
-                .execute()
-                .value
-            
-            await MainActor.run {
-                self.rooms = response
-                self.isLoading = false
-            }
-        } catch {
-            await MainActor.run {
-                self.isLoading = false
-            }
-        }
-    }
-}
-
-struct AINegotiatorView: View {
-    let room: Room?
-    @State private var session: NegotiationSession
-    @State private var messageText = ""
-    @State private var isProcessing = false
-    @Environment(\.dismiss) private var dismiss
-    
-    init(room: Room) {
-        self.room = room
-        self._session = State(initialValue: NegotiationSession(
-            id: UUID(),
-            room: room,
-            messages: [],
-            currentOffer: room.price,
-            status: .active,
-            createdAt: Date()
-        ))
-    }
-    
-    init(session: NegotiationSession) {
-        self.room = nil
-        self._session = State(initialValue: session)
-    }
-    
-    var body: some View {
-        VStack {
-            // Room header
-            HStack {
-                VStack(alignment: .leading) {
-                    Text(session.roomTitle)
-                        .font(.headline)
-                    Text("Current offer: $\(session.currentOffer, specifier: "%.0f")")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                Spacer()
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            
-            // Messages
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 12) {
-                        if session.messages.isEmpty {
-                            VStack(spacing: 16) {
-                                Image(systemName: "brain.head.profile")
-                                    .font(.system(size: 40))
-                                    .foregroundColor(.blue)
-                                Text("Start negotiating!")
-                                    .font(.headline)
-                                Text("I'm here to help you negotiate the best price for this room.")
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                        } else {
-                            ForEach(session.messages) { message in
-                                MessageBubble(message: message)
-                                    .id(message.id)
-                            }
-                        }
-                        
-                        if isProcessing {
-                            HStack {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                Text("AI is thinking...")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.leading)
-                        }
-                    }
-                    .padding()
-                }
-                .onChange(of: session.messages.count) { _ in
-                    withAnimation {
-                        proxy.scrollTo(session.messages.last?.id, anchor: .bottom)
-                    }
-                }
-            }
-            
-            // Input
-            HStack {
-                TextField("Type your message...", text: $messageText, axis: .vertical)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .lineLimit(1...4)
-                
-                Button("Send") {
-                    Task {
-                        await sendMessage()
-                    }
-                }
-                .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isProcessing)
-            }
-            .padding()
-        }
-        .navigationTitle("Negotiation")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Done") {
-                    dismiss()
-                }
-            }
-        }
-        .task {
-            if session.messages.isEmpty {
-                await sendInitialMessage()
-            }
-        }
-    }
-    
-    private func sendInitialMessage() async {
-        isProcessing = true
-        
-        let aiMessage = NegotiationMessage(
-            id: UUID(),
-            content: "Hello! I'm here to help you negotiate the price for \(session.roomTitle). The asking price is $\(session.room.price, specifier: "%.0f"). What would you like to offer?",
-            isFromUser: false,
-            timestamp: Date(),
-            offer: nil
-        )
-        
-        session.messages.append(aiMessage)
-        isProcessing = false
-    }
-    
-    private func sendMessage() async {
-        let text = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
-        
-        let userMessage = NegotiationMessage(
-            id: UUID(),
-            content: text,
-            isFromUser: true,
-            timestamp: Date(),
-            offer: nil
-        )
-        
-        session.messages.append(userMessage)
-        messageText = ""
-        isProcessing = true
-        
-        do {
-            let response = try await OpenAIClient.shared.textChat(
-                system: """
-                You are a helpful AI negotiation assistant helping users negotiate room rental prices. 
-                Current room: \(session.roomTitle)
-                Asking price: $\(session.room.price)
-                Current offer in negotiation: $\(session.currentOffer)
-                
-                Rules:
-                1. Be helpful and professional
-                2. Help the user make reasonable offers
-                3. Explain negotiation strategies
-                4. If user mentions a specific price, acknowledge it as their offer
-                5. Keep responses concise and conversational
-                6. Don't make offers on behalf of the landlord
-                """,
-                user: text
-            )
-            
-            let aiMessage = NegotiationMessage(
-                id: UUID(),
-                content: response,
-                isFromUser: false,
-                timestamp: Date(),
-                offer: nil
-            )
-            
-            await MainActor.run {
-                session.messages.append(aiMessage)
-                isProcessing = false
-            }
-        } catch {
-            await MainActor.run {
-                let errorMessage = NegotiationMessage(
-                    id: UUID(),
-                    content: "Sorry, I encountered an error: \(error.localizedDescription)",
-                    isFromUser: false,
-                    timestamp: Date(),
-                    offer: nil
-                )
-                session.messages.append(errorMessage)
-                isProcessing = false
-            }
-        }
-    }
-}
-
-struct MessageBubble: View {
-    let message: NegotiationMessage
-    
-    var body: some View {
+        // Negotiate button
         HStack {
-            if message.isFromUser {
-                Spacer()
+          Spacer()
+          NavigationLink(destination: SimpleAINegotiatorView(listing: listing)) {
+            HStack(spacing: 4) {
+              Image(systemName: "brain")
+              Text("Negotiate")
             }
-            
-            VStack(alignment: message.isFromUser ? .trailing : .leading, spacing: 4) {
-                Text(message.content)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(message.isFromUser ? Color.blue : Color(.systemGray5))
-                    .foregroundColor(message.isFromUser ? .white : .primary)
-                    .cornerRadius(12)
-                
-                Text(message.timestamp, style: .time)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-            
-            if !message.isFromUser {
-                Spacer()
-            }
+            .font(.caption)
+            .fontWeight(.medium)
+            .foregroundColor(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color.blue)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+          }
         }
+      }
     }
+    .padding(12)
+    .background(RoundedRectangle(cornerRadius: 18).fill(Color(.secondarySystemBackground)))
+    .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.black.opacity(0.06)))
+    .task {
+      if let s = listing.coverURLString, let u = URL(string: s) { imageURL = u }
+    }
+  }
+
+  private var placeholder: some View {
+    Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary)
+  }
 }
 
-struct NegotiationSession: Identifiable {
-    let id: UUID
-    let room: Room
-    var messages: [NegotiationMessage]
-    var currentOffer: Double
-    var status: NegotiationStatus
-    let createdAt: Date
+// MARK: - App
+@main
+struct MyApp: App {
+  private let supabase = SupabaseFactory.makeClient()
+  
+  init() {
+    // Assert OpenAI credentials are configured at startup (fail fast)
+    Secrets.assertValid()
     
-    var roomTitle: String { room.title }
-}
-
-struct NegotiationMessage: Identifiable {
-    let id: UUID
-    let content: String
-    let isFromUser: Bool
-    let timestamp: Date
-    let offer: Double?
-}
-
-enum NegotiationStatus {
-    case active, completed, cancelled
-}
-
-// MARK: - OpenAI Client
-
-final class OpenAIClient {
-    static let shared = OpenAIClient()
-    private init() {}
-    
-    private var isProjectKey: Bool { Secrets.openAIKey.hasPrefix("sk-proj-") }
-    
-    private func request(_ body: [String:Any]) async throws -> Data {
-        Secrets.assertValid()
-        
-        var req = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
-        req.httpMethod = "POST"
-        req.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.addValue("Bearer \(Secrets.openAIKey)", forHTTPHeaderField: "Authorization")
-        req.addValue("keys/v1", forHTTPHeaderField: "OpenAI-Beta") // required for project keys routing
-        
-        // ✅ Only attach org for classic keys (NOT for sk-proj)
-        if !isProjectKey, let org = Secrets.openAIOrgID, !org.isEmpty {
-            req.addValue(org, forHTTPHeaderField: "OpenAI-Organization")
-        }
-        
-        req.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        let (data, resp) = try await URLSession.shared.data(for: req)
-        guard let http = resp as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-            let txt = String(data: data, encoding: .utf8) ?? ""
-            let code = (resp as? HTTPURLResponse)?.statusCode ?? -1
-            let hint = (code == 401)
-                ? "401 Unauthorized: with sk-proj keys the org header must be omitted and the key must be valid/fresh."
-                : "OpenAI HTTP \(code)"
-            throw NSError(domain: "OpenAI", code: code,
-                          userInfo: [NSLocalizedDescriptionKey: "\(hint)\n\(txt)"])
-        }
-        return data
+    // Debug: Confirm OpenAI integration is ready
+    print("🚀 AI Negotiator ready with OpenAI credentials configured!")
+  }
+  
+  var body: some Scene {
+    WindowGroup {
+      HomeScreen()
+        .environment(\.supabase, supabase)
     }
-    
-    func textChat(model: String = Secrets.openAIModel, system: String, user: String) async throws -> String {
-        let body: [String:Any] = [
-            "model": model,
-            "messages": [
-                ["role":"system","content":system],
-                ["role":"user","content":user]
-            ],
-            "temperature": 0.3
-        ]
-        struct R: Decodable { struct C: Decodable { struct M: Decodable { let content: String }; let message: M }; let choices: [C] }
-        let data = try await request(body)
-        return try JSONDecoder().decode(R.self, from: data).choices.first?.message.content ?? ""
-    }
-    
-    func jsonChat<T:Decodable>(model: String = Secrets.openAIModel, system: String, user: String, schema: T.Type) async throws -> T {
-        let body: [String:Any] = [
-            "model": model,
-            "response_format": ["type":"json_object"],
-            "messages": [
-                ["role":"system","content":system],
-                ["role":"user","content":user]
-            ],
-            "temperature": 0.2
-        ]
-        struct R: Decodable { struct C: Decodable { struct M: Decodable { let content: String }; let message: M }; let choices: [C] }
-        let data = try await request(body)
-        let wrap = try JSONDecoder().decode(R.self, from: data)
-        let json = wrap.choices.first?.message.content ?? "{}"
-        return try JSONDecoder().decode(T.self, from: Data(json.utf8))
-    }
-    
-    // In-app self-test for the ⓘ screen
-    func health() async -> String {
-        do { _ = try await textChat(system: "Reply 'pong'.", user: "ping"); return "OpenAI: OK (\(Secrets.openAIModel))" }
-        catch { return "OpenAI: \(error.localizedDescription)" }
-    }
-}
-
-// MARK: - Debug Info View
-
-struct DebugInfoView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var status = "Checking..."
-    
-    var body: some View {
-        NavigationView {
-            List {
-                Section("OpenAI Configuration") {
-                    Text("Key type: \(Secrets.openAIKey.hasPrefix("sk-proj-") ? "project" : "classic")")
-                    Text("Model: \(Secrets.openAIModel)")
-                    Text("Org ID: \(Secrets.openAIOrgID ?? "nil")")
-                }
-                
-                Section("Health Check") {
-                    Text(status)
-                        .foregroundColor(status.contains("OK") ? .green : .red)
-                }
-            }
-            .navigationTitle("Debug Info")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-            .task {
-                status = await OpenAIClient.shared.health()
-            }
-        }
-    }
+  }
 }

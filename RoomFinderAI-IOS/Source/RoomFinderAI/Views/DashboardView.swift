@@ -269,7 +269,44 @@ struct ActivityCard: View {
     }
 }
 
-// FeaturedListingCard moved to RoomFinderAIApp.swift to avoid duplication
+struct FeaturedListingCard: View {
+    let listing: Listing
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            AsyncImage(url: URL(string: listing.images?.first ?? "")) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
+                Rectangle()
+                    .foregroundColor(.secondary.opacity(0.3))
+            }
+            .frame(width: 200, height: 120)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(listing.title ?? "Unknown")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .lineLimit(2)
+                
+                Text("$\(listing.price ?? 0)")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primaryBlue)
+                
+                HStack {
+                    Label("\(listing.bedrooms)", systemImage: "bed.double")
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 4)
+        }
+        .frame(width: 200)
+    }
+}
 
 // Duplicate components removed - using SharedComponents.swift
 
