@@ -11,6 +11,7 @@ import com.google.android.material.card.MaterialCardView;
 import com.roomfinder.android.MainActivity;
 import com.roomfinder.android.R;
 import com.roomfinder.android.activities.MortgageToolsActivity;
+import com.roomfinder.android.activities.LegalCenterActivity;
 import android.content.Intent;
 
 public class ToolsFragment extends Fragment {
@@ -44,8 +45,8 @@ public class ToolsFragment extends Fragment {
         // Student Housing - Navigate to Student Housing Fragment
         studentHousingCard.setOnClickListener(v -> navigateToStudentHousing());
         
-        // Legal Center - Show coming soon message
-        legalCenterCard.setOnClickListener(v -> showComingSoon("Legal Center"));
+        // Legal Center - Navigate to Legal Center Activity
+        legalCenterCard.setOnClickListener(v -> navigateToLegalCenter());
         
         // Mortgage Tools - Navigate to Mortgage Tools Activity
         mortgageToolsCard.setOnClickListener(v -> navigateToMortgageTools());
@@ -106,6 +107,11 @@ public class ToolsFragment extends Fragment {
 
     private void navigateToMortgageTools() {
         Intent intent = new Intent(getActivity(), MortgageToolsActivity.class);
+        startActivity(intent);
+    }
+
+    private void navigateToLegalCenter() {
+        Intent intent = new Intent(getActivity(), LegalCenterActivity.class);
         startActivity(intent);
     }
 }
