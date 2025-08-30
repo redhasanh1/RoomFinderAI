@@ -66,6 +66,11 @@
             android:theme="@style/Theme.Fullscreen"
             android:screenOrientation="portrait" />
             
+        <activity
+            android:name=".activities.MortgageToolsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+            
         <!-- FileProvider for camera photos -->
         <provider
             android:name="androidx.core.content.FileProvider"
