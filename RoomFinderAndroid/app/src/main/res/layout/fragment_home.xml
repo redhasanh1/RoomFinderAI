@@ -21,54 +21,69 @@
                 android:orientation="vertical"
                 android:background="@color/background">
 
-                <!-- Hero Section with Gradient Background -->
-                <LinearLayout
+                <!-- Enhanced Hero Section with Modern Design -->
+                <RelativeLayout
                     android:layout_width="match_parent"
-                    android:layout_height="240dp"
-                    android:background="@drawable/gradient_primary"
-                    android:orientation="horizontal"
-                    android:padding="24dp"
-                    android:gravity="center_vertical">
+                    android:layout_height="280dp"
+                    android:background="@drawable/gradient_primary">
+                    
+                    <!-- Background pattern overlay -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/glass_overlay"
+                        android:alpha="0.1" />
 
-                    <!-- Hero Content -->
+                    <!-- Hero Content Container -->
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_centerInParent="true"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="32dp"
+                        android:gravity="center">
 
+                        <!-- Main Title -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Find Your Perfect Home"
                             android:textColor="@color/white"
-                            android:textSize="26sp"
+                            android:textSize="32sp"
                             android:textStyle="bold"
                             android:fontFamily="sans-serif-medium"
-                            android:elevation="2dp" />
+                            android:gravity="center"
+                            android:elevation="4dp"
+                            android:layout_marginBottom="12dp" />
 
+                        <!-- Subtitle -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
                             android:text="Discover amazing properties with AI-powered search"
                             android:textColor="@color/white"
-                            android:textSize="15sp"
-                            android:alpha="0.95"
-                            android:elevation="2dp" />
+                            android:textSize="16sp"
+                            android:alpha="0.9"
+                            android:gravity="center"
+                            android:elevation="4dp"
+                            android:lineSpacingExtra="2dp" />
 
                     </LinearLayout>
 
-                    <!-- Hero Image on Right -->
+                    <!-- Floating Hero Image -->
                     <ImageView
-                        android:layout_width="100dp"
-                        android:layout_height="100dp"
-                        android:layout_marginStart="8dp"
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentTop="true"
+                        android:layout_marginTop="24dp"
+                        android:layout_marginEnd="24dp"
                         android:src="@drawable/house_3d_modern"
                         android:scaleType="centerCrop"
-                        android:alpha="0.9" />
+                        android:alpha="0.7"
+                        android:elevation="2dp" />
 
-                </LinearLayout>
+                </RelativeLayout>
 
                 <!-- Search Section -->
                 <LinearLayout
@@ -78,19 +93,19 @@
                     android:padding="16dp"
                     android:layout_marginTop="-40dp">
 
-                    <!-- Search Bar -->
+                    <!-- Beautiful Glassmorphism Search Bar -->
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="56dp"
-                        android:background="@drawable/search_bar_background"
+                        android:layout_height="64dp"
+                        android:background="@drawable/search_bar_glassmorphism"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:paddingHorizontal="20dp"
-                        android:elevation="4dp">
+                        android:paddingHorizontal="24dp"
+                        android:elevation="8dp">
 
                         <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
                             android:src="@drawable/ic_search"
                             android:tint="@color/purple_primary" />
 
@@ -99,34 +114,26 @@
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
                             android:layout_weight="1"
-                            android:layout_marginStart="12dp"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginEnd="8dp"
                             android:background="@null"
-                            android:hint="Search properties..."
-                            android:textColorHint="@color/gray_500"
+                            android:hint="Search properties, locations, or keywords..."
+                            android:textColorHint="@color/gray_400"
                             android:textColor="@color/text_primary"
                             android:textSize="16sp"
                             android:inputType="text"
-                            android:imeOptions="actionSearch" />
+                            android:imeOptions="actionSearch"
+                            android:gravity="center_vertical" />
 
                         <ImageView
                             android:id="@+id/clearSearchButton"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
                             android:src="@android:drawable/ic_menu_close_clear_cancel"
-                            android:tint="@color/gray_500"
+                            android:tint="@color/gray_400"
                             android:background="?attr/selectableItemBackgroundBorderless"
-                            android:padding="4dp"
+                            android:padding="6dp"
                             android:visibility="gone" />
-
-                        <ImageView
-                            android:id="@+id/filterButton"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_filter"
-                            android:tint="@color/gray_500"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:padding="4dp"
-                            android:layout_marginStart="8dp" />
 
                     </LinearLayout>
 
@@ -193,119 +200,85 @@
 
                     </LinearLayout>
 
-                    <!-- Filter Chips -->
-                    <HorizontalScrollView
+                    <!-- Elegant Filter Categories -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:scrollbars="none">
-
-                        <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_marginTop="20dp">
+                        
+                        <!-- Property Type Filters -->
+                        <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:paddingHorizontal="4dp">
+                            android:text="Property Type"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="8dp" />
+                            
+                        <HorizontalScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:scrollbars="none">
 
-                            <TextView
-                                android:id="@+id/chipAll"
+                            <LinearLayout
                                 android:layout_width="wrap_content"
-                                android:layout_height="36dp"
-                                android:text="All"
-                                android:gravity="center"
-                                android:paddingHorizontal="16dp"
-                                android:background="@drawable/filter_chip_background"
-                                android:textColor="@color/white"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="8dp"
-                                android:clickable="true" />
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:paddingHorizontal="2dp">
 
-                            <TextView
-                                android:id="@+id/chipApartment"
-                                android:layout_width="wrap_content"
-                                android:layout_height="36dp"
-                                android:text="Apartment"
-                                android:gravity="center"
-                                android:paddingHorizontal="16dp"
-                                android:background="@drawable/filter_chip_background"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="8dp" />
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chipAll"
+                                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="All"
+                                    android:textSize="14sp"
+                                    android:layout_marginEnd="8dp"
+                                    android:checkable="true"
+                                    android:checked="true" />
 
-                            <TextView
-                                android:id="@+id/chipHouse"
-                                android:layout_width="wrap_content"
-                                android:layout_height="36dp"
-                                android:text="House"
-                                android:gravity="center"
-                                android:paddingHorizontal="16dp"
-                                android:background="@drawable/filter_chip_background"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="8dp" />
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chipApartment"
+                                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="Apartment"
+                                    android:textSize="14sp"
+                                    android:layout_marginEnd="8dp" />
 
-                            <TextView
-                                android:id="@+id/chipCondo"
-                                android:layout_width="wrap_content"
-                                android:layout_height="36dp"
-                                android:text="Condo"
-                                android:gravity="center"
-                                android:paddingHorizontal="16dp"
-                                android:background="@drawable/filter_chip_background"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="8dp" />
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chipHouse"
+                                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="House"
+                                    android:textSize="14sp"
+                                    android:layout_marginEnd="8dp" />
 
-                            <TextView
-                                android:id="@+id/chipStudio"
-                                android:layout_width="wrap_content"
-                                android:layout_height="36dp"
-                                android:text="Studio"
-                                android:gravity="center"
-                                android:paddingHorizontal="16dp"
-                                android:background="@drawable/filter_chip_background"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="8dp" />
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chipCondo"
+                                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="Condo"
+                                    android:textSize="14sp"
+                                    android:layout_marginEnd="8dp" />
 
-                            <TextView
-                                android:id="@+id/chipUnder1000"
-                                android:layout_width="wrap_content"
-                                android:layout_height="36dp"
-                                android:text="Under $1000"
-                                android:gravity="center"
-                                android:paddingHorizontal="16dp"
-                                android:background="@drawable/filter_chip_background"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="8dp" />
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chipStudio"
+                                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="Studio"
+                                    android:textSize="14sp" />
 
-                            <TextView
-                                android:id="@+id/chip1000to1500"
-                                android:layout_width="wrap_content"
-                                android:layout_height="36dp"
-                                android:text="$1000-1500"
-                                android:gravity="center"
-                                android:paddingHorizontal="16dp"
-                                android:background="@drawable/filter_chip_background"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="8dp" />
+                            </LinearLayout>
 
-                            <TextView
-                                android:id="@+id/chipOver1500"
-                                android:layout_width="wrap_content"
-                                android:layout_height="36dp"
-                                android:text="Over $1500"
-                                android:gravity="center"
-                                android:paddingHorizontal="16dp"
-                                android:background="@drawable/filter_chip_background"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="8dp" />
-
-                        </LinearLayout>
-
-                    </HorizontalScrollView>
+                        </HorizontalScrollView>
+                        
+                    </LinearLayout>
 
                 </LinearLayout>
 
@@ -317,41 +290,50 @@
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="8dp">
 
+                    <!-- Clean Section Header -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="16dp">
+                        android:orientation="vertical"
+                        android:layout_marginBottom="20dp">
 
-                        <TextView
-                            android:layout_width="0dp"
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Featured Properties"
-                            android:textColor="@color/text_primary"
-                            android:textSize="20sp"
-                            android:textStyle="bold" />
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="8dp">
 
-                        <Button
-                            android:id="@+id/sortButton"
-                            style="@style/Widget.MaterialComponents.Button.TextButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Sort ▼"
-                            android:textColor="@color/purple_primary"
-                            android:textSize="14sp"
-                            android:layout_marginEnd="8dp" />
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Featured Properties"
+                                android:textColor="@color/text_primary"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                android:fontFamily="sans-serif-medium" />
 
-                        <Button
-                            android:id="@+id/clearAllFiltersButton"
-                            style="@style/Widget.MaterialComponents.Button.TextButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Clear Filters"
-                            android:textColor="@color/purple_primary"
-                            android:textSize="14sp"
-                            android:visibility="gone" />
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/sortButton"
+                                style="@style/Widget.Material3.Button.TextButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="40dp"
+                                android:text="Sort"
+                                android:textColor="@color/purple_primary"
+                                android:textSize="14sp"
+                                app:icon="@drawable/ic_expand_more"
+                                app:iconTint="@color/purple_primary"
+                                app:iconGravity="textEnd" />
+
+                        </LinearLayout>
+                        
+                        <!-- Subtle divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/outline"
+                            android:alpha="0.3" />
 
                     </LinearLayout>
 
