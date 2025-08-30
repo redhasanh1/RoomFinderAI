@@ -7,7 +7,16 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
+import com.roomfinder.android.BuildConfig;
 import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.auth.AuthService;
 import com.roomfinder.android.databinding.ActivityLoginBinding;
@@ -23,6 +32,8 @@ public class LoginActivity extends AppCompatActivity {
     private ActivityLoginBinding binding;
     private AuthService authService;
     private AuthManager authManager;
+    private GoogleSignInClient googleSignInClient;
+    private ActivityResultLauncher<Intent> googleSignInLauncher;
     private boolean isLogin = true; // Start with login form (matching website)
     
     // Pending user data for verification (matching website)
@@ -40,6 +51,9 @@ public class LoginActivity extends AppCompatActivity {
         
         authService = AuthService.getInstance(this);
         authManager = AuthManager.getInstance(this);
+        
+        // Initialize Google Sign-In (matching website configuration)
+        initializeGoogleSignIn();
         
         // Upgrade existing users by generating tokens if they don't have them
         User currentUser = authManager.getCurrentUser();
@@ -92,6 +106,9 @@ public class LoginActivity extends AppCompatActivity {
         
         // Skip button
         binding.skipButton.setOnClickListener(v -> finish());
+        
+        // Google Sign-In button (matching website googleSignInBtn)
+        binding.googleButton.setOnClickListener(v -> performGoogleSignIn());
         
         // Add form validation (matching website real-time validation)
         setupFormValidation();
@@ -423,6 +440,95 @@ public class LoginActivity extends AppCompatActivity {
         
         Log.w(TAG, "All extraction methods failed for message: " + message);
         return null;
+    }
+    
+    /**
+     * Initialize Google Sign-In (matching website loadOAuthConfig and initializeGoogleSignIn)
+     */
+    private void initializeGoogleSignIn() {
+        // Configure Google Sign-In options (matching website configuration)
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(BuildConfig.GOOGLE_OAUTH_CLIENT_ID) // Use the client ID from BuildConfig
+                .requestEmail()
+                .requestProfile()
+                .build();
+        
+        googleSignInClient = GoogleSignIn.getClient(this, gso);
+        
+        // Register for activity result (modern approach)
+        googleSignInLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    handleGoogleSignInResult(result.getData());
+                } else {
+                    Log.w(TAG, "Google Sign-In cancelled or failed");
+                    Toast.makeText(this, "Google Sign-In cancelled", Toast.LENGTH_SHORT).show();
+                }
+            }
+        );
+        
+        Log.d(TAG, "Google Sign-In initialized with client ID: " + BuildConfig.GOOGLE_OAUTH_CLIENT_ID);
+    }
+    
+    /**
+     * Perform Google Sign-In (matching website handleGoogleSignIn)
+     */
+    private void performGoogleSignIn() {
+        Log.d(TAG, "Starting Google Sign-In process");
+        
+        // Sign out any previous account to force account picker
+        googleSignInClient.signOut().addOnCompleteListener(this, task -> {
+            // Launch sign-in intent
+            Intent signInIntent = googleSignInClient.getSignInIntent();
+            googleSignInLauncher.launch(signInIntent);
+        });
+    }
+    
+    /**
+     * Handle Google Sign-In result (matching website handleGoogleIdToken)
+     */
+    private void handleGoogleSignInResult(Intent data) {
+        try {
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            GoogleSignInAccount account = task.getResult(ApiException.class);
+            
+            if (account != null && account.getIdToken() != null) {
+                Log.d(TAG, "Google Sign-In successful, ID token received");
+                Log.d(TAG, "User: " + account.getDisplayName() + " (" + account.getEmail() + ")");
+                
+                // Show loading state
+                setLoadingState(true, "Signing in with Google...");
+                
+                // Send ID token to backend (matching website)
+                authService.authenticateWithGoogle(account.getIdToken(), new AuthService.AuthCallback() {
+                    @Override
+                    public void onSuccess(User user) {
+                        Log.d(TAG, "Google authentication successful for user: " + user.getEmail());
+                        setLoadingState(false, null);
+                        
+                        Toast.makeText(LoginActivity.this, "Welcome " + user.getFirstName() + "!", Toast.LENGTH_SHORT).show();
+                        
+                        // Navigate to main activity (matching website redirect)
+                        navigateToMainActivity();
+                    }
+                    
+                    @Override
+                    public void onError(String error) {
+                        Log.e(TAG, "Google authentication failed: " + error);
+                        setLoadingState(false, null);
+                        
+                        Toast.makeText(LoginActivity.this, "Google Sign-In failed: " + error, Toast.LENGTH_LONG).show();
+                    }
+                });
+            } else {
+                Log.e(TAG, "Google Sign-In result missing ID token");
+                Toast.makeText(this, "Google Sign-In failed - no authentication token received", Toast.LENGTH_LONG).show();
+            }
+        } catch (ApiException e) {
+            Log.e(TAG, "Google Sign-In failed with exception: " + e.getStatusCode(), e);
+            Toast.makeText(this, "Google Sign-In failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
     
     /**

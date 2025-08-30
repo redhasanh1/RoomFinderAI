@@ -2,14 +2,17 @@ package com.roomfinder.android;
 
 import android.app.Application;
 import android.util.Log;
+import androidx.multidex.MultiDexApplication;
 
-public class RoomFinderApplication extends Application {
+public class RoomFinderApplication extends MultiDexApplication {
     
     private static final String TAG = "RoomFinderApplication";
     
     @Override
     public void onCreate() {
         super.onCreate();
+        
+        Log.d(TAG, "Initializing MultiDex support...");
         
         // Set up global exception handler
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {

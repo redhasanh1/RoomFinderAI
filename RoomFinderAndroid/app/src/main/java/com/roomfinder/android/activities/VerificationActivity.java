@@ -3,6 +3,7 @@ package com.roomfinder.android.activities;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -30,6 +31,8 @@ public class VerificationActivity extends AppCompatActivity {
     private String firstName;
     private String lastName;
     private String demoVerificationCode; // Store demo code for display
+    private String sessionId; // For password reset flow
+    private String verificationType; // "email_verification" or "password_reset"
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +48,14 @@ public class VerificationActivity extends AppCompatActivity {
         email = getIntent().getStringExtra("email");
         firstName = getIntent().getStringExtra("firstName");
         lastName = getIntent().getStringExtra("lastName");
+        sessionId = getIntent().getStringExtra("sessionId");
+        verificationType = getIntent().getStringExtra("verificationType");
         demoVerificationCode = getIntent().getStringExtra("demo_code"); // Get demo code if passed
+        
+        // Default to email verification if no type specified
+        if (verificationType == null || verificationType.isEmpty()) {
+            verificationType = "email_verification";
+        }
         
         // If no demo code was passed directly, try to get it from the signup success message
         if (demoVerificationCode == null) {
@@ -213,7 +223,7 @@ public class VerificationActivity extends AppCompatActivity {
     }
     
     /**
-     * Perform email verification (matching website verification logic)
+     * Perform verification (email or password reset based on type)
      */
     private void performVerification() {
         String code = binding.verificationCodeInput.getText().toString().trim();
@@ -231,6 +241,19 @@ public class VerificationActivity extends AppCompatActivity {
         // Show loading state
         setLoadingState(true);
         
+        if ("password_reset".equals(verificationType)) {
+            // Password reset verification flow
+            performPasswordResetVerification(code);
+        } else {
+            // Default email verification flow
+            performEmailVerification(code);
+        }
+    }
+    
+    /**
+     * Perform email verification (matching website verification logic)
+     */
+    private void performEmailVerification(String code) {
         // Call verify email API (matching website fetch('/api/verify-email'))
         authService.verifyEmail(email, code, new AuthService.AuthCallback() {
             @Override
@@ -270,6 +293,52 @@ public class VerificationActivity extends AppCompatActivity {
                 Toast.makeText(VerificationActivity.this, error, Toast.LENGTH_LONG).show();
             }
         });
+    }
+    
+    /**
+     * Perform password reset verification (matching website verify-reset-code flow)
+     */
+    private void performPasswordResetVerification(String code) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            Toast.makeText(this, "Invalid session - please try again", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        
+        // Call verify reset code API (matching website fetch('/api/verify-reset-code'))
+        authService.verifyResetCode(email, code, sessionId, new AuthService.CodeVerificationCallback() {
+            @Override
+            public void onSuccess() {
+                Log.d(TAG, "Reset code verification successful");
+                setLoadingState(false);
+                
+                Toast.makeText(VerificationActivity.this, "Code verified! Please set your new password.", 
+                    Toast.LENGTH_SHORT).show();
+                
+                // Navigate to password reset activity
+                navigateToPasswordReset(email, code, sessionId);
+            }
+            
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Reset code verification failed: " + error);
+                setLoadingState(false);
+                
+                Toast.makeText(VerificationActivity.this, error, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+    
+    /**
+     * Navigate to password reset activity
+     */
+    private void navigateToPasswordReset(String email, String code, String sessionId) {
+        Intent intent = new Intent(this, ResetPasswordActivity.class);
+        intent.putExtra("email", email);
+        intent.putExtra("code", code);
+        intent.putExtra("sessionId", sessionId);
+        startActivity(intent);
+        finish(); // Close verification activity
     }
     
     /**

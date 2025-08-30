@@ -652,6 +652,99 @@ app.get('/api/listings', async (req, res) => {
     }
 });
 
+// API: Search listings (GET version for Android app)
+app.get('/api/listings/search', async (req, res) => {
+    try {
+        const { q: query, min_price, max_price, bedrooms, location } = req.query;
+        
+        // Check if Supabase is connected
+        if (!supabase) {
+            return res.status(500).json({ 
+                success: false,
+                data: null,
+                message: 'Database not connected'
+            });
+        }
+        
+        if (!query || query.trim() === '') {
+            // Return all listings if no query
+            const { data: dbListings, error } = await supabase
+                .from('listings')
+                .select('*')
+                .order('created_at', { ascending: false });
+                
+            if (error) {
+                console.error('Error fetching listings:', error);
+                return res.status(500).json({
+                    success: false,
+                    data: null,
+                    message: 'Failed to fetch listings'
+                });
+            }
+            
+            const transformedListings = (dbListings || []).map(transformListingForAndroid);
+            return res.json({
+                success: true,
+                data: transformedListings,
+                message: 'All listings returned'
+            });
+        }
+        
+        const searchTerm = query.toLowerCase().trim();
+        
+        // Build dynamic query with optional filters
+        let dbQuery = supabase
+            .from('listings')
+            .select('*');
+            
+        // Apply search term filter
+        dbQuery = dbQuery.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,street.ilike.%${searchTerm}%,house_type.ilike.%${searchTerm}%`);
+        
+        // Apply additional filters if provided
+        if (min_price && !isNaN(parseFloat(min_price))) {
+            dbQuery = dbQuery.gte('price', parseFloat(min_price));
+        }
+        if (max_price && !isNaN(parseFloat(max_price))) {
+            dbQuery = dbQuery.lte('price', parseFloat(max_price));
+        }
+        if (bedrooms && !isNaN(parseInt(bedrooms))) {
+            dbQuery = dbQuery.eq('bedrooms', parseInt(bedrooms));
+        }
+        if (location && location.trim()) {
+            const locationTerm = location.toLowerCase().trim();
+            dbQuery = dbQuery.or(`city.ilike.%${locationTerm}%,street.ilike.%${locationTerm}%`);
+        }
+        
+        dbQuery = dbQuery.order('created_at', { ascending: false });
+        
+        const { data: dbListings, error } = await dbQuery;
+            
+        if (error) {
+            console.error('Error searching listings:', error);
+            return res.status(500).json({
+                success: false,
+                data: null,
+                message: 'Search failed'
+            });
+        }
+        
+        const transformedListings = (dbListings || []).map(transformListingForAndroid);
+        
+        res.json({
+            success: true,
+            data: transformedListings,
+            message: `Found ${transformedListings.length} listings`
+        });
+    } catch (error) {
+        console.error('Error in GET search:', error.message);
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: 'Search failed'
+        });
+    }
+});
+
 // API: Get listing by ID
 app.get('/api/listings/:id', (req, res) => {
     try {

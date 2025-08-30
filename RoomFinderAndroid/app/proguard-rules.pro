@@ -39,3 +39,45 @@
   **[] $VALUES;
   public *;
 }
+
+# Supabase SDK
+-keep class io.github.jan_tennert.supabase.** { *; }
+-keep class io.ktor.** { *; }
+-dontwarn io.ktor.**
+
+# Keep API key security
+-keep class com.roomfinder.android.BuildConfig { *; }
+
+# Keep model classes for JSON serialization
+-keep class com.roomfinder.android.models.** { *; }
+-keep class com.roomfinder.android.database.** { *; }
+
+# Keep authentication classes
+-keep class com.roomfinder.android.auth.** { *; }
+
+# Keep service classes
+-keep class com.roomfinder.android.services.** { *; }
+
+# Fragment and Activity classes
+-keep class com.roomfinder.android.fragments.** { *; }
+-keep class com.roomfinder.android.activities.** { *; }
+
+# Adapter classes
+-keep class com.roomfinder.android.adapters.** { *; }
+
+# Network classes
+-keep class com.roomfinder.android.network.** { *; }
+
+# Remove debug logging in release
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int i(...);
+    public static int w(...);
+    public static int d(...);
+    public static int e(...);
+}
+
+# Keep line numbers for crash reports
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
