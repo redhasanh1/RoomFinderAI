@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    
+    <!-- Background Circle with Gradient -->
+    <path
+        android:pathData="M48,8 A40,40 0 0,1 48,88 A40,40 0 0,1 48,8 Z"
+        android:fillColor="#667eea"/>
+    
+    <!-- Inner Circle -->
+    <path
+        android:pathData="M48,16 A32,32 0 0,1 48,80 A32,32 0 0,1 48,16 Z"
+        android:fillColor="#7c8cff"
+        android:fillAlpha="0.8"/>
+    
+    <!-- AI Brain Neural Network -->
+    <group android:translateX="48" android:translateY="48">
+        
+        <!-- Central Core -->
+        <circle
+            android:centerX="0"
+            android:centerY="0"
+            android:radius="4"
+            android:fillColor="#ffffff"/>
+        
+        <!-- Neural Connections -->
+        <path
+            android:pathData="M-12,-8 Q-6,-4 0,0 Q6,4 12,8"
+            android:strokeColor="#ffffff"
+            android:strokeWidth="2"
+            android:fillColor="@android:color/transparent"
+            android:strokeAlpha="0.9"/>
+            
+        <path
+            android:pathData="M-12,8 Q-6,4 0,0 Q6,-4 12,-8"
+            android:strokeColor="#ffffff"
+            android:strokeWidth="2"
+            android:fillColor="@android:color/transparent"
+            android:strokeAlpha="0.9"/>
+            
+        <path
+            android:pathData="M-8,-12 Q-4,-6 0,0 Q4,6 8,12"
+            android:strokeColor="#ffffff"
+            android:strokeWidth="2"
+            android:fillColor="@android:color/transparent"
+            android:strokeAlpha="0.7"/>
+            
+        <path
+            android:pathData="M-8,12 Q-4,6 0,0 Q4,-6 8,-12"
+            android:strokeColor="#ffffff"
+            android:strokeWidth="2"
+            android:fillColor="@android:color/transparent"
+            android:strokeAlpha="0.7"/>
+        
+        <!-- Neural Nodes -->
+        <circle android:centerX="-12" android:centerY="-8" android:radius="2" android:fillColor="#ffffff" android:fillAlpha="0.9"/>
+        <circle android:centerX="12" android:centerY="8" android:radius="2" android:fillColor="#ffffff" android:fillAlpha="0.9"/>
+        <circle android:centerX="-12" android:centerY="8" android:radius="2" android:fillColor="#ffffff" android:fillAlpha="0.9"/>
+        <circle android:centerX="12" android:centerY="-8" android:radius="2" android:fillColor="#ffffff" android:fillAlpha="0.9"/>
+        <circle android:centerX="-8" android:centerY="-12" android:radius="2" android:fillColor="#ffffff" android:fillAlpha="0.7"/>
+        <circle android:centerX="8" android:centerY="12" android:radius="2" android:fillColor="#ffffff" android:fillAlpha="0.7"/>
+        <circle android:centerX="-8" android:centerY="12" android:radius="2" android:fillColor="#ffffff" android:fillAlpha="0.7"/>
+        <circle android:centerX="8" android:centerY="-12" android:radius="2" android:fillColor="#ffffff" android:fillAlpha="0.7"/>
+        
+        <!-- Chat Bubble Elements -->
+        <path
+            android:pathData="M-16,-16 Q-20,-20 -16,-24 Q-12,-20 -16,-16 Z"
+            android:fillColor="#ffffff"
+            android:fillAlpha="0.6"/>
+            
+        <path
+            android:pathData="M16,16 Q20,20 16,24 Q12,20 16,16 Z"
+            android:fillColor="#ffffff"
+            android:fillAlpha="0.6"/>
+    </group>
+    
+    <!-- Sparkle Effects -->
+    <group>
+        <path
+            android:pathData="M20,20 L22,18 L20,16 L18,18 Z"
+            android:fillColor="#ffffff"
+            android:fillAlpha="0.8"/>
+        <path
+            android:pathData="M76,28 L78,26 L76,24 L74,26 Z"
+            android:fillColor="#ffffff"
+            android:fillAlpha="0.8"/>
+        <path
+            android:pathData="M72,72 L74,70 L72,68 L70,70 Z"
+            android:fillColor="#ffffff"
+            android:fillAlpha="0.6"/>
+        <path
+            android:pathData="M24,76 L26,74 L24,72 L22,74 Z"
+            android:fillColor="#ffffff"
+            android:fillAlpha="0.6"/>
+    </group>
+    
+</vector>

@@ -28,13 +28,11 @@ public class StateRightsData {
         public String getState() { return state; }
     }
     
-    private static Map<String, TenantRightsInfo> stateRightsMap = new HashMap<>();
-    
-    static {
-        initializeStateRights();
-    }
+    private static Map<String, TenantRightsInfo> stateRightsMap = null;
+    private static final Object lock = new Object();
     
     private static void initializeStateRights() {
+        stateRightsMap = new HashMap<>();
         // California
         stateRightsMap.put("California", new TenantRightsInfo(
             "California",
@@ -258,6 +256,15 @@ public class StateRightsData {
     }
     
     public static TenantRightsInfo getRightsForState(String state) {
+        // Lazy initialization with thread safety
+        if (stateRightsMap == null) {
+            synchronized (lock) {
+                if (stateRightsMap == null) {
+                    initializeStateRights();
+                }
+            }
+        }
+        
         TenantRightsInfo rights = stateRightsMap.get(state);
         if (rights != null) {
             return rights;
@@ -309,10 +316,26 @@ public class StateRightsData {
     }
     
     public static boolean hasStateData(String state) {
+        // Ensure map is initialized
+        if (stateRightsMap == null) {
+            synchronized (lock) {
+                if (stateRightsMap == null) {
+                    initializeStateRights();
+                }
+            }
+        }
         return stateRightsMap.containsKey(state);
     }
     
     public static String[] getSupportedStates() {
+        // Ensure map is initialized
+        if (stateRightsMap == null) {
+            synchronized (lock) {
+                if (stateRightsMap == null) {
+                    initializeStateRights();
+                }
+            }
+        }
         return stateRightsMap.keySet().toArray(new String[0]);
     }
 }
