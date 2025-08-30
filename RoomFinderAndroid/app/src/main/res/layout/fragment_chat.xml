@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/chat_page_background">
+    android:background="@color/background">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -65,7 +65,7 @@
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/ai_chat_card_premium">
+                    android:background="@drawable/ai_chat_card_background">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -87,7 +87,7 @@
                                 android:layout_width="72dp"
                                 android:layout_height="72dp"
                                 android:layout_marginEnd="20dp"
-                                android:src="@drawable/modern_ai_icon"
+                                android:src="@drawable/ic_bot"
                                 android:scaleType="centerInside"
                                 android:contentDescription="AI Assistant"
                                 android:elevation="4dp" />
@@ -212,7 +212,7 @@
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/normal_chat_card_modern">
+                    android:background="@drawable/enhanced_gradient_header">
 
                     <LinearLayout
                         android:layout_width="match_parent"
