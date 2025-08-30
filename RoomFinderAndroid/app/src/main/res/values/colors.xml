@@ -30,6 +30,7 @@
     <!-- Accent Colors -->
     <color name="pink_accent">#EC4899</color>
     <color name="blue_accent">#3B82F6</color>
+    <color name="blue_light">#E3F2FD</color>
     <color name="cyan_accent">#00f2fe</color>
     <color name="accent_cyan">#00FFCC</color>
     
