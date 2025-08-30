@@ -268,9 +268,10 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
             // Reset all chips
             resetChipSelection();
             
-            // Set selected chip with animation
-            v.setSelected(true);
-            updateChipAppearanceWithAnimation((TextView) v, true);
+            // Set selected chip - Material Chips handle appearance
+            if (v instanceof com.google.android.material.chip.Chip) {
+                ((com.google.android.material.chip.Chip) v).setChecked(true);
+            }
             
             // Update filter
             String filterText = ((TextView) v).getText().toString();
@@ -284,23 +285,13 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         binding.chipHouse.setOnClickListener(chipClickListener);
         binding.chipCondo.setOnClickListener(chipClickListener);
         
-        // Add null checks for new chips
+        // Add null checks for chips
         if (binding.chipStudio != null) {
             binding.chipStudio.setOnClickListener(chipClickListener);
         }
-        if (binding.chipUnder1000 != null) {
-            binding.chipUnder1000.setOnClickListener(chipClickListener);
-        }
-        if (binding.chip1000to1500 != null) {
-            binding.chip1000to1500.setOnClickListener(chipClickListener);
-        }
-        if (binding.chipOver1500 != null) {
-            binding.chipOver1500.setOnClickListener(chipClickListener);
-        }
         
-        // Set initial selection
-        binding.chipAll.setSelected(true);
-        updateChipAppearanceWithAnimation(binding.chipAll, true);
+        // Set initial selection - Material Chips handle their own appearance
+        binding.chipAll.setChecked(true);
     }
     
     private void setupSortAndClearButtons() {
@@ -309,10 +300,7 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
             binding.sortButton.setOnClickListener(v -> showSortMenu());
         }
         
-        // Setup clear all filters button  
-        if (binding.clearAllFiltersButton != null) {
-            binding.clearAllFiltersButton.setOnClickListener(v -> clearAllFilters());
-        }
+        // Clear all filters functionality removed - simplified design
         
         // Add debug button temporarily (remove this later)
         if (binding.sortButton != null) {
@@ -333,7 +321,7 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
             String sortOption = item.getTitle().toString();
             if (!sortOption.equals(currentSortOption)) {
                 currentSortOption = sortOption;
-                binding.sortButton.setText("Sort: " + sortOption + " ▼");
+                binding.sortButton.setText("Sort");
                 applyFiltersWithAnimation();
             }
             return true;
@@ -351,12 +339,11 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         // Reset filter to "All"
         currentFilter = "All";
         resetChipSelection();
-        binding.chipAll.setSelected(true);
-        updateChipAppearanceWithAnimation(binding.chipAll, true);
+        binding.chipAll.setChecked(true);
         
         // Reset sort to default
         currentSortOption = "Price: Low → High";
-        binding.sortButton.setText("Sort ▼");
+        binding.sortButton.setText("Sort");
         
         // Apply changes with animation
         applyFiltersWithAnimation();
@@ -364,19 +351,7 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     }
     
     private void updateFilterButtonsVisibility() {
-        boolean hasActiveFilters = !currentSearchQuery.isEmpty() || 
-                                 !currentFilter.equals("All") || 
-                                 !currentSortOption.equals("Price: Low → High");
-        
-        if (binding.clearAllFiltersButton != null) {
-            if (hasActiveFilters && binding.clearAllFiltersButton.getVisibility() == View.GONE) {
-                binding.clearAllFiltersButton.setVisibility(View.VISIBLE);
-                binding.clearAllFiltersButton.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.fade_in));
-            } else if (!hasActiveFilters && binding.clearAllFiltersButton.getVisibility() == View.VISIBLE) {
-                binding.clearAllFiltersButton.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.fade_out));
-                binding.clearAllFiltersButton.setVisibility(View.GONE);
-            }
-        }
+        // Simplified design - no clear filters button needed
     }
     
     private void clearCacheAndReload() {
@@ -407,65 +382,22 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     }
     
     private void resetChipSelection() {
-        binding.chipAll.setSelected(false);
-        binding.chipApartment.setSelected(false);
-        binding.chipHouse.setSelected(false);
-        binding.chipCondo.setSelected(false);
+        binding.chipAll.setChecked(false);
+        binding.chipApartment.setChecked(false);
+        binding.chipHouse.setChecked(false);
+        binding.chipCondo.setChecked(false);
         
-        // Reset new chips with null checks
+        // Reset chips with null checks
         if (binding.chipStudio != null) {
-            binding.chipStudio.setSelected(false);
-        }
-        if (binding.chipUnder1000 != null) {
-            binding.chipUnder1000.setSelected(false);
-        }
-        if (binding.chip1000to1500 != null) {
-            binding.chip1000to1500.setSelected(false);
-        }
-        if (binding.chipOver1500 != null) {
-            binding.chipOver1500.setSelected(false);
+            binding.chipStudio.setChecked(false);
         }
         
-        updateChipAppearance(binding.chipAll, false);
-        updateChipAppearance(binding.chipApartment, false);
-        updateChipAppearance(binding.chipHouse, false);
-        updateChipAppearance(binding.chipCondo, false);
-        
-        // Update new chip appearances with null checks
-        if (binding.chipStudio != null) {
-            updateChipAppearance(binding.chipStudio, false);
-        }
-        if (binding.chipUnder1000 != null) {
-            updateChipAppearance(binding.chipUnder1000, false);
-        }
-        if (binding.chip1000to1500 != null) {
-            updateChipAppearance(binding.chip1000to1500, false);
-        }
-        if (binding.chipOver1500 != null) {
-            updateChipAppearance(binding.chipOver1500, false);
-        }
+        // Material Chips handle their own appearance automatically
     }
     
-    private void updateChipAppearance(TextView chip, boolean selected) {
-        if (selected) {
-            chip.setTextColor(getResources().getColor(android.R.color.white, null));
-            chip.setBackgroundResource(R.drawable.filter_chip_selected);
-        } else {
-            chip.setTextColor(getResources().getColor(R.color.text_secondary, null));
-            chip.setBackgroundResource(R.drawable.filter_chip_unselected);
-        }
-    }
+    // Material Chips handle their own appearance - method removed
     
-    private void updateChipAppearanceWithAnimation(TextView chip, boolean selected) {
-        // Start fade animation
-        chip.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.fade_out));
-        
-        // Apply new appearance after fade out
-        chip.postDelayed(() -> {
-            updateChipAppearance(chip, selected);
-            chip.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.fade_in));
-        }, 100);
-    }
+    // Material Chips handle their own animations - method removed
     
     private void applyFiltersWithAnimation() {
         // Show brief loading state
