@@ -140,16 +140,16 @@ public class DocumentGeneratorFragment extends Fragment {
         // Show/hide input fields based on document type
         switch (selectedDocumentType) {
             case LEASE_AGREEMENT:
-                monthlyRentInput.getParent().setVisibility(View.VISIBLE);
-                securityDepositInput.getParent().setVisibility(View.VISIBLE);
+                ((View) monthlyRentInput.getParent()).setVisibility(View.VISIBLE);
+                ((View) securityDepositInput.getParent()).setVisibility(View.VISIBLE);
                 break;
             case TERMINATION_NOTICE:
-                monthlyRentInput.getParent().setVisibility(View.GONE);
-                securityDepositInput.getParent().setVisibility(View.GONE);
+                ((View) monthlyRentInput.getParent()).setVisibility(View.GONE);
+                ((View) securityDepositInput.getParent()).setVisibility(View.GONE);
                 break;
             case COMPLAINT_LETTER:
-                monthlyRentInput.getParent().setVisibility(View.GONE);
-                securityDepositInput.getParent().setVisibility(View.GONE);
+                ((View) monthlyRentInput.getParent()).setVisibility(View.GONE);
+                ((View) securityDepositInput.getParent()).setVisibility(View.GONE);
                 break;
         }
     }

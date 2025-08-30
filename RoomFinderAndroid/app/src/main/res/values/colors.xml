@@ -122,6 +122,7 @@
     <!-- Status Colors -->
     <color name="success_light">#D4F6D4</color>
     <color name="success_main">#48BB78</color>
+    <color name="error_light">#FFEBEE</color>
     <color name="warning_light">#FFF4E6</color>
     <color name="warning_main">#ED8936</color>
     
