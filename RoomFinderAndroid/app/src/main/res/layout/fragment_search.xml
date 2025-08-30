@@ -75,7 +75,7 @@
                     android:layout_weight="1"
                     android:layout_marginStart="12dp"
                     android:background="@null"
-                    android:hint="Try 'downtown', '2 bedroom', or 'under $1500'..."
+                    android:hint="Search properties..."
                     android:textColorHint="@color/gray_500"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp"
