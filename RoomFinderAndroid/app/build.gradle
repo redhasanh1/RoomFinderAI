@@ -44,8 +44,39 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
         // Build config fields for API keys - secure configuration
+        // OpenAI
         buildConfigField "String", "OPENAI_API_KEY", "\"${getApiKey('OPENAI_API_KEY')}\""
         buildConfigField "String", "OPENAI_ORG_ID", "\"${getApiKey('OPENAI_ORG_ID')}\""
+        buildConfigField "String", "OPENAI_MODEL", "\"${getApiKey('OPENAI_MODEL')}\""
+        
+        // Azure Services
+        buildConfigField "String", "AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT", "\"${getApiKey('AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT')}\""
+        buildConfigField "String", "AZURE_DOCUMENT_INTELLIGENCE_KEY", "\"${getApiKey('AZURE_DOCUMENT_INTELLIGENCE_KEY')}\""
+        buildConfigField "String", "AZURE_FACE_ENDPOINT", "\"${getApiKey('AZURE_FACE_ENDPOINT')}\""
+        buildConfigField "String", "AZURE_FACE_KEY", "\"${getApiKey('AZURE_FACE_KEY')}\""
+        
+        // Email Service
+        buildConfigField "String", "BREVO_API_KEY", "\"${getApiKey('BREVO_API_KEY')}\""
+        
+        // Google Services
+        buildConfigField "String", "GOOGLE_API_KEY", "\"${getApiKey('GOOGLE_API_KEY')}\""
+        buildConfigField "String", "GOOGLE_OAUTH_CLIENT_ID", "\"${getApiKey('GOOGLE_OAUTH_CLIENT_ID')}\""
+        buildConfigField "String", "GOOGLE_OAUTH_CLIENT_SECRET", "\"${getApiKey('GOOGLE_OAUTH_CLIENT_SECRET')}\""
+        
+        // Real Estate API
+        buildConfigField "String", "RENTCAST_KEY", "\"${getApiKey('RENTCAST_KEY')}\""
+        
+        // Payment Processing
+        buildConfigField "String", "STRIPE_PUBLISHABLE_KEY", "\"${getApiKey('STRIPE_PUBLISHABLE_KEY')}\""
+        buildConfigField "String", "STRIPE_SECRET_KEY", "\"${getApiKey('STRIPE_SECRET_KEY')}\""
+        
+        // Backend Services
+        buildConfigField "String", "SUPABASE_URL", "\"${getApiKey('SUPABASE_URL')}\""
+        buildConfigField "String", "SUPABASE_ANON_KEY", "\"${getApiKey('SUPABASE_ANON_KEY')}\""
+        
+        // Security
+        buildConfigField "String", "TURNSTILE_SITE_KEY", "\"${getApiKey('TURNSTILE_SITE_KEY')}\""
+        buildConfigField "String", "TURNSTILE_SECRET_KEY", "\"${getApiKey('TURNSTILE_SECRET_KEY')}\""
     }
     
     // Signing configurations - must be defined before buildTypes
@@ -71,9 +102,7 @@ android {
                 signingConfig signingConfigs.release
             }
             
-            // Use environment variables or local properties for API keys in release
-            buildConfigField "String", "OPENAI_API_KEY", "\"${getApiKey('OPENAI_API_KEY')}\""
-            buildConfigField "String", "OPENAI_ORG_ID", "\"${getApiKey('OPENAI_ORG_ID')}\""
+            // API keys are already defined in defaultConfig, no need to duplicate here
         }
         
         debug {
