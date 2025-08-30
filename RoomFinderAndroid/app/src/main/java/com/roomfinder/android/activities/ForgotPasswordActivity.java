@@ -64,25 +64,25 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         // Show loading state
         setLoadingState(true);
         
-        // Call forgot password API (matching website fetch('/api/forgot-password'))
-        authService.forgotPassword(email, new AuthService.PasswordResetCallback() {
+        // Call send reset code API (matching website fetch('/api/send-reset-code'))
+        authService.sendPasswordResetCode(email, new AuthService.ResetCodeCallback() {
             @Override
-            public void onSuccess(String message) {
-                Log.d(TAG, "Password reset email sent successfully");
+            public void onSuccess(String sessionId) {
+                Log.d(TAG, "Reset code sent successfully, sessionId: " + sessionId);
                 setLoadingState(false);
                 
                 // Show success message (matching website)
                 Toast.makeText(ForgotPasswordActivity.this, 
-                    "Password reset email sent! Please check your inbox.", 
+                    "Reset code sent! Please check your email.", 
                     Toast.LENGTH_LONG).show();
                 
-                // Show success state
-                showSuccessState();
+                // Navigate to verification activity with session info
+                navigateToVerification(email, sessionId);
             }
             
             @Override
             public void onError(String error) {
-                Log.e(TAG, "Forgot password failed: " + error);
+                Log.e(TAG, "Send reset code failed: " + error);
                 setLoadingState(false);
                 
                 Toast.makeText(ForgotPasswordActivity.this, error, Toast.LENGTH_LONG).show();
@@ -91,15 +91,15 @@ public class ForgotPasswordActivity extends AppCompatActivity {
     }
     
     /**
-     * Show success state after email is sent
+     * Navigate to verification activity with reset code flow
      */
-    private void showSuccessState() {
-        // Hide the form and show success message
-        binding.formContainer.setVisibility(View.GONE);
-        binding.successContainer.setVisibility(View.VISIBLE);
-        
-        String email = binding.emailInput.getText().toString().trim();
-        binding.successEmailText.setText(email);
+    private void navigateToVerification(String email, String sessionId) {
+        Intent intent = new Intent(this, VerificationActivity.class);
+        intent.putExtra("email", email);
+        intent.putExtra("sessionId", sessionId);
+        intent.putExtra("verificationType", "password_reset");
+        startActivity(intent);
+        finish(); // Close this activity
     }
     
     /**
