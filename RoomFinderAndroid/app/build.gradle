@@ -2,28 +2,84 @@ plugins {
     id 'com.android.application'
 }
 
+// Function to securely load API keys
+def getApiKey(String keyName) {
+    def localPropertiesFile = project.rootProject.file("local.properties")
+    def localProperties = new Properties()
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.withInputStream { localProperties.load(it) }
+    }
+    
+    // Priority: 1) Environment variables 2) local.properties 3) empty string for security
+    def key = System.getenv(keyName) ?: localProperties.getProperty(keyName, "")
+    if (key.isEmpty()) {
+        println "WARNING: ${keyName} not found in environment or local.properties"
+        return "API_KEY_NOT_CONFIGURED"
+    }
+    return key
+}
+
 android {
     namespace 'com.roomfinder.android'
     compileSdk rootProject.ext.compileSdkVersion
+    
+    // Load signing configuration
+    def keystorePropertiesFile = rootProject.file("keystore.properties")
+    def keystoreProperties = new Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    }
 
     defaultConfig {
         applicationId "com.roomfinder.android"
         minSdk rootProject.ext.minSdkVersion
         targetSdk rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
+        
+        // Additional configuration for Play Store
+        vectorDrawables.useSupportLibrary = true
+        multiDexEnabled true
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
-        // Build config fields for API keys
-        buildConfigField "String", "OPENAI_API_KEY", "\"${System.getenv('OPENAI_API_KEY') ?: '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'}\""
-        buildConfigField "String", "OPENAI_ORG_ID", "\"${System.getenv('OPENAI_ORG_ID') ?: 'org-EPHQ1A3u0XIUZml6JABMgZzg'}\""
+        // Build config fields for API keys - secure configuration
+        buildConfigField "String", "OPENAI_API_KEY", "\"${getApiKey('OPENAI_API_KEY')}\""
+        buildConfigField "String", "OPENAI_ORG_ID", "\"${getApiKey('OPENAI_ORG_ID')}\""
+    }
+    
+    // Signing configurations - must be defined before buildTypes
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists() && keystoreProperties['storeFile']) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
+        }
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            debuggable false
+            // Only apply signing config if keystore is configured
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+            
+            // Use environment variables or local properties for API keys in release
+            buildConfigField "String", "OPENAI_API_KEY", "\"${getApiKey('OPENAI_API_KEY')}\""
+            buildConfigField "String", "OPENAI_ORG_ID", "\"${getApiKey('OPENAI_ORG_ID')}\""
+        }
+        
+        debug {
+            applicationIdSuffix ".debug"
+            debuggable true
+            minifyEnabled false
         }
     }
     
@@ -45,6 +101,32 @@ android {
         pickFirst '**/META-INF/NOTICE.txt'
         pickFirst '**/META-INF/ASL2.0'
         pickFirst '**/META-INF/LGPL2.1'
+        
+        // Exclude unnecessary files to reduce APK size
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.DSA'
+        exclude 'META-INF/*.RSA'
+    }
+    
+    // Bundle configuration for Play Store
+    bundle {
+        language {
+            // Split APKs by language to reduce download size
+            enableSplit = false
+        }
+        density {
+            // Split APKs by screen density
+            enableSplit = true
+        }
+        abi {
+            // Split APKs by CPU architecture
+            enableSplit = true
+        }
     }
 }
 
@@ -90,6 +172,9 @@ dependencies {
     implementation 'io.ktor:ktor-client-android:2.3.7'
     implementation 'io.ktor:ktor-client-core:2.3.7'
     implementation 'io.ktor:ktor-utils:2.3.7'
+    
+    // MultiDex support for large apps
+    implementation 'androidx.multidex:multidex:2.0.1'
     
     // Testing
     testImplementation 'junit:junit:4.13.2'
