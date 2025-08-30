@@ -189,6 +189,10 @@ dependencies {
     // Gson
     implementation 'com.google.code.gson:gson:2.10.1'
     
+    // Google Sign-In
+    implementation 'com.google.android.gms:play-services-auth:20.7.0'
+    implementation 'com.google.android.gms:play-services-base:18.2.0'
+    
     // Email Service - SendGrid
     implementation 'com.sendgrid:sendgrid-java:4.9.3'
     implementation 'org.apache.httpcomponents:httpclient:4.5.14'

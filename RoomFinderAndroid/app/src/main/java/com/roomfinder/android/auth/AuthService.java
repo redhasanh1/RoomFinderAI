@@ -33,8 +33,10 @@ public class AuthService {
     private static final String LOGIN_URL = BASE_URL + "/api/login";
     private static final String SEND_VERIFICATION_URL = BASE_URL + "/api/send-verification";
     private static final String VERIFY_EMAIL_URL = BASE_URL + "/api/verify-email";
-    private static final String FORGOT_PASSWORD_URL = BASE_URL + "/api/forgot-password";
+    private static final String SEND_RESET_CODE_URL = BASE_URL + "/api/send-reset-code";
+    private static final String VERIFY_RESET_CODE_URL = BASE_URL + "/api/verify-reset-code";
     private static final String RESET_PASSWORD_URL = BASE_URL + "/api/reset-password";
+    private static final String GOOGLE_AUTH_URL = BASE_URL + "/api/auth/google";
     
     // Callback interfaces (matching website patterns)
     public interface AuthCallback {
@@ -49,6 +51,16 @@ public class AuthService {
     
     public interface PasswordResetCallback {
         void onSuccess(String message);
+        void onError(String error);
+    }
+    
+    public interface ResetCodeCallback {
+        void onSuccess(String sessionId);
+        void onError(String error);
+    }
+    
+    public interface CodeVerificationCallback {
+        void onSuccess();
         void onError(String error);
     }
     
@@ -430,10 +442,10 @@ public class AuthService {
     }
     
     /**
-     * Forgot password (matching website /api/forgot-password call)
+     * Send password reset code (matching website /api/send-reset-code call)
      */
-    public void forgotPassword(String email, PasswordResetCallback callback) {
-        Log.d(TAG, "Requesting password reset for: " + email);
+    public void sendPasswordResetCode(String email, ResetCodeCallback callback) {
+        Log.d(TAG, "Sending password reset code for: " + email);
         
         new Thread(() -> {
             try {
@@ -447,54 +459,110 @@ public class AuthService {
                 );
                 
                 Request request = new Request.Builder()
-                        .url(FORGOT_PASSWORD_URL)
+                        .url(SEND_RESET_CODE_URL)
                         .post(body)
                         .addHeader("Content-Type", "application/json")
                         .build();
                 
-                Log.d(TAG, "Executing forgot password request");
+                Log.d(TAG, "Executing send reset code request");
                 
                 try (Response response = httpClient.newCall(request).execute()) {
                     String responseBody = response.body() != null ? response.body().string() : "";
-                    Log.d(TAG, "Forgot password response code: " + response.code());
+                    Log.d(TAG, "Send reset code response code: " + response.code());
                     
                     if (response.isSuccessful()) {
                         JSONObject jsonResponse = new JSONObject(responseBody);
-                        String message = jsonResponse.optString("message", "Password reset email sent successfully");
-                        runOnMainThread(() -> callback.onSuccess(message));
+                        String sessionId = jsonResponse.optString("sessionId", "");
+                        runOnMainThread(() -> callback.onSuccess(sessionId));
                     } else {
                         try {
                             JSONObject errorObj = new JSONObject(responseBody);
-                            String error = errorObj.optString("error", "Failed to send password reset email");
+                            String error = errorObj.optString("error", "Failed to send reset code");
                             runOnMainThread(() -> callback.onError(error));
                         } catch (Exception e) {
-                            runOnMainThread(() -> callback.onError("Failed to send password reset email"));
+                            runOnMainThread(() -> callback.onError("Failed to send reset code"));
                         }
                     }
                 }
                 
             } catch (IOException e) {
-                Log.e(TAG, "Network error during forgot password", e);
+                Log.e(TAG, "Network error during send reset code", e);
                 runOnMainThread(() -> callback.onError("Network error: Please check your internet connection"));
             } catch (Exception e) {
-                Log.e(TAG, "Forgot password error", e);
-                runOnMainThread(() -> callback.onError("Failed to send password reset email: " + e.getMessage()));
+                Log.e(TAG, "Send reset code error", e);
+                runOnMainThread(() -> callback.onError("Failed to send reset code: " + e.getMessage()));
             }
         }).start();
     }
     
     /**
-     * Reset password with token (matching website /api/reset-password call)
+     * Verify password reset code (matching website /api/verify-reset-code call)
      */
-    public void resetPassword(String token, String newPassword, PasswordResetCallback callback) {
-        Log.d(TAG, "Resetting password with token");
+    public void verifyResetCode(String email, String code, String sessionId, CodeVerificationCallback callback) {
+        Log.d(TAG, "Verifying reset code for: " + email);
         
         new Thread(() -> {
             try {
                 // Create request body (matching website exactly)
                 JSONObject requestData = new JSONObject();
-                requestData.put("token", token);
+                requestData.put("email", email);
+                requestData.put("code", code);
+                requestData.put("sessionId", sessionId);
+                
+                RequestBody body = RequestBody.create(
+                    requestData.toString(),
+                    MediaType.get("application/json")
+                );
+                
+                Request request = new Request.Builder()
+                        .url(VERIFY_RESET_CODE_URL)
+                        .post(body)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                
+                Log.d(TAG, "Executing verify reset code request");
+                
+                try (Response response = httpClient.newCall(request).execute()) {
+                    String responseBody = response.body() != null ? response.body().string() : "";
+                    Log.d(TAG, "Verify reset code response code: " + response.code());
+                    
+                    if (response.isSuccessful()) {
+                        runOnMainThread(() -> callback.onSuccess());
+                    } else {
+                        try {
+                            JSONObject errorObj = new JSONObject(responseBody);
+                            String error = errorObj.optString("error", "Invalid or expired code");
+                            runOnMainThread(() -> callback.onError(error));
+                        } catch (Exception e) {
+                            runOnMainThread(() -> callback.onError("Invalid or expired code"));
+                        }
+                    }
+                }
+                
+            } catch (IOException e) {
+                Log.e(TAG, "Network error during verify reset code", e);
+                runOnMainThread(() -> callback.onError("Network error: Please check your internet connection"));
+            } catch (Exception e) {
+                Log.e(TAG, "Verify reset code error", e);
+                runOnMainThread(() -> callback.onError("Code verification failed: " + e.getMessage()));
+            }
+        }).start();
+    }
+    
+    /**
+     * Reset password with code and session (matching website /api/reset-password call)
+     */
+    public void resetPassword(String email, String code, String newPassword, String sessionId, PasswordResetCallback callback) {
+        Log.d(TAG, "Resetting password with code for: " + email);
+        
+        new Thread(() -> {
+            try {
+                // Create request body (matching website exactly)
+                JSONObject requestData = new JSONObject();
+                requestData.put("email", email);
+                requestData.put("code", code);
                 requestData.put("newPassword", newPassword);
+                requestData.put("sessionId", sessionId);
                 
                 RequestBody body = RequestBody.create(
                     requestData.toString(),
@@ -541,6 +609,63 @@ public class AuthService {
     /**
      * Helper method to run code on main thread
      */
+    /**
+     * Authenticate with Google ID token (matching website /api/auth/google call)
+     */
+    public void authenticateWithGoogle(String idToken, AuthCallback callback) {
+        Log.d(TAG, "Authenticating with Google ID token");
+        
+        new Thread(() -> {
+            try {
+                // Create request body (matching website exactly)
+                JSONObject requestData = new JSONObject();
+                requestData.put("idToken", idToken);
+                
+                RequestBody body = RequestBody.create(
+                    requestData.toString(),
+                    MediaType.get("application/json")
+                );
+                
+                Request request = new Request.Builder()
+                        .url(GOOGLE_AUTH_URL)
+                        .post(body)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                
+                Log.d(TAG, "Executing Google authentication request");
+                
+                try (Response response = httpClient.newCall(request).execute()) {
+                    String responseBody = response.body() != null ? response.body().string() : "";
+                    Log.d(TAG, "Google auth response code: " + response.code());
+                    Log.d(TAG, "Google auth response body: " + responseBody);
+                    
+                    if (response.isSuccessful()) {
+                        Log.d(TAG, "🎉 Google authentication successful, processing response");
+                        // Handle successful Google authentication
+                        handleLoginSuccessWithApiResponse(responseBody, callback);
+                    } else {
+                        Log.e(TAG, "❌ Google authentication failed with code: " + response.code());
+                        try {
+                            JSONObject errorObj = new JSONObject(responseBody);
+                            String error = errorObj.optString("error", "Google Sign-In failed");
+                            Log.e(TAG, "❌ Google auth error: " + error);
+                            runOnMainThread(() -> callback.onError("Google Sign-In failed: " + error));
+                        } catch (Exception e) {
+                            runOnMainThread(() -> callback.onError("Google Sign-In failed"));
+                        }
+                    }
+                }
+                
+            } catch (IOException e) {
+                Log.e(TAG, "Network error during Google authentication", e);
+                runOnMainThread(() -> callback.onError("Network error: Please check your internet connection"));
+            } catch (Exception e) {
+                Log.e(TAG, "Google authentication error", e);
+                runOnMainThread(() -> callback.onError("Google Sign-In failed: " + e.getMessage()));
+            }
+        }).start();
+    }
+    
     private void runOnMainThread(Runnable runnable) {
         new Handler(Looper.getMainLooper()).post(runnable);
     }
