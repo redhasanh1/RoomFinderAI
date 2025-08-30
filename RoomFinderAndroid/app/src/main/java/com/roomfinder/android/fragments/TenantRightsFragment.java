@@ -1,5 +1,6 @@
 package com.roomfinder.android.fragments;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -105,11 +106,31 @@ public class TenantRightsFragment extends Fragment {
     }
 
     private void loadRightsForState(String state) {
-        try {
-            // Get rights information for the state
-            currentRightsInfo = StateRightsData.getRightsForState(state);
-            
-            if (currentRightsInfo != null) {
+        // Load rights data in background to prevent ANR
+        new RightsLoadingTask().execute(state);
+    }
+    
+    private class RightsLoadingTask extends AsyncTask<String, Void, TenantRightsInfo> {
+        private String state;
+        private String errorMessage;
+        
+        @Override
+        protected TenantRightsInfo doInBackground(String... params) {
+            try {
+                state = params[0];
+                // This may trigger lazy initialization, so do it in background
+                return StateRightsData.getRightsForState(state);
+            } catch (Exception e) {
+                errorMessage = "Error loading rights: " + e.getMessage();
+                return null;
+            }
+        }
+        
+        @Override
+        protected void onPostExecute(TenantRightsInfo rightsInfo) {
+            if (rightsInfo != null) {
+                currentRightsInfo = rightsInfo;
+                
                 // Show success message
                 String message = StateRightsData.hasStateData(state) ? 
                     "Loaded detailed rights for " + state :
@@ -126,11 +147,8 @@ public class TenantRightsFragment extends Fragment {
                 showRightsOverview();
                 
             } else {
-                showError("Unable to load rights information for " + state);
+                showError(errorMessage != null ? errorMessage : "Unable to load rights information for " + state);
             }
-            
-        } catch (Exception e) {
-            showError("Error loading rights: " + e.getMessage());
         }
     }
 
