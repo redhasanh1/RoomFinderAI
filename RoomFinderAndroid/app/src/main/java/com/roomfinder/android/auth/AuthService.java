@@ -142,7 +142,7 @@ public class AuthService {
                     if (response.isSuccessful()) {
                         Log.d(TAG, "🎉 API login successful, processing response");
                         // Handle successful login with API response data
-                        handleLoginSuccessWithApiResponse(responseBody, callback);
+                        handleLoginSuccessWithApiResponse(email, responseBody, callback);
                     } else {
                         Log.e(TAG, "❌ API login failed with code: " + response.code());
                         
@@ -181,42 +181,76 @@ public class AuthService {
     }
     
     /**
-     * Handle successful login with API response data
+     * Handle successful login with API response data (matching website login.html logic)
      */
-    private void handleLoginSuccessWithApiResponse(String responseBody, AuthCallback callback) {
+    private void handleLoginSuccessWithApiResponse(String email, String responseBody, AuthCallback callback) {
         try {
             Log.d(TAG, "Processing API login response: " + responseBody);
             
             JSONObject apiResponse = new JSONObject(responseBody);
-            JSONObject userData = apiResponse.optJSONObject("user");
             
-            if (userData != null) {
-                // Create user from API response (matching website logic)
-                User user = new User();
-                user.setFirstName(userData.optString("firstName", "User"));
-                user.setLastName(userData.optString("lastName", "Account"));
-                user.setEmail(userData.optString("email"));
-                user.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
-                user.setEmailVerified(true);
-                
-                // Set tokens if provided
-                String accessToken = apiResponse.optString("access_token");
-                if (!accessToken.isEmpty()) {
-                    user.setAccessToken(accessToken);
-                }
-                
-                // Initialize lists (matching website user structure)
-                user.setAiChats(new java.util.ArrayList<>());
-                user.setListings(new java.util.ArrayList<>());
-                
-                // Store user and complete authentication
-                authManager.storeCurrentUser(user);
-                Log.d(TAG, "API login successful for user: " + user.getFirstName() + " " + user.getLastName() + " (" + user.getEmail() + ")");
-                runOnMainThread(() -> callback.onSuccess(user));
+            // Match website logic: use existing currentUser if email matches, otherwise find in users array, otherwise create new
+            User user = null;
+            
+            // First check if we have currentUser that matches this email (website logic)
+            User currentUser = authManager.getCurrentUser();
+            if (currentUser != null && currentUser.getEmail().equalsIgnoreCase(email)) {
+                user = currentUser;
+                Log.d(TAG, "Using existing currentUser data for: " + email);
             } else {
-                Log.e(TAG, "API response missing user data");
-                runOnMainThread(() -> callback.onError("Invalid API response format"));
+                // Check users array for existing user (website logic)
+                User existingUser = authManager.findUserByEmail(email);
+                if (existingUser != null) {
+                    user = existingUser;
+                    Log.d(TAG, "Using existing user data for: " + email);
+                } else {
+                    // Create new user with default values (matching website: { firstName:'User', lastName:'Name', email, profileImage:getDefaultProfileImage(), aiChats:[], listings:[], emailVerified:true })
+                    user = new User();
+                    user.setFirstName("User");
+                    user.setLastName("Name");
+                    user.setEmail(email);
+                    user.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+                    user.setEmailVerified(true);
+                    user.setAiChats(new java.util.ArrayList<>());
+                    user.setListings(new java.util.ArrayList<>());
+                    
+                    // Add to users array (matching website logic)
+                    authManager.registerUser(user);
+                    Log.d(TAG, "Created new user for: " + email);
+                }
             }
+            
+            // Update user with any API response data if provided
+            JSONObject userData = apiResponse.optJSONObject("user");
+            if (userData != null) {
+                // Only update if API provides specific fields, otherwise keep existing values
+                String apiFirstName = userData.optString("firstName");
+                String apiLastName = userData.optString("lastName");
+                String apiEmail = userData.optString("email");
+                
+                if (!apiFirstName.isEmpty()) user.setFirstName(apiFirstName);
+                if (!apiLastName.isEmpty()) user.setLastName(apiLastName);
+                if (!apiEmail.isEmpty()) user.setEmail(apiEmail);
+                
+                // Set verified status from API if provided
+                if (userData.has("emailVerified")) {
+                    user.setEmailVerified(userData.optBoolean("emailVerified", true));
+                }
+            }
+            
+            // Set tokens if provided
+            String accessToken = apiResponse.optString("access_token");
+            if (!accessToken.isEmpty()) {
+                user.setAccessToken(accessToken);
+            }
+            
+            // Store user as currentUser (matching website localStorage.setItem('currentUser', JSON.stringify(user)))
+            authManager.storeCurrentUser(user);
+            Log.d(TAG, "Login successful for user: " + user.getFirstName() + " " + user.getLastName() + " (" + user.getEmail() + ")");
+            
+            // Create final reference for lambda
+            final User finalUser = user;
+            runOnMainThread(() -> callback.onSuccess(finalUser));
             
         } catch (Exception e) {
             Log.e(TAG, "Error processing API login response", e);
@@ -641,8 +675,8 @@ public class AuthService {
                     
                     if (response.isSuccessful()) {
                         Log.d(TAG, "🎉 Google authentication successful, processing response");
-                        // Handle successful Google authentication
-                        handleLoginSuccessWithApiResponse(responseBody, callback);
+                        // Handle successful Google authentication (email will be extracted from response)
+                        handleGoogleAuthSuccessWithApiResponse(responseBody, callback);
                     } else {
                         Log.e(TAG, "❌ Google authentication failed with code: " + response.code());
                         try {
@@ -664,6 +698,82 @@ public class AuthService {
                 runOnMainThread(() -> callback.onError("Google Sign-In failed: " + e.getMessage()));
             }
         }).start();
+    }
+    
+    /**
+     * Handle successful Google authentication with API response data (matching website login.html Google auth logic)
+     */
+    private void handleGoogleAuthSuccessWithApiResponse(String responseBody, AuthCallback callback) {
+        try {
+            Log.d(TAG, "Processing Google auth API response: " + responseBody);
+            
+            JSONObject apiResponse = new JSONObject(responseBody);
+            JSONObject userData = apiResponse.optJSONObject("user");
+            
+            if (userData != null) {
+                // Extract email from user data
+                String email = userData.optString("email", "").toLowerCase();
+                
+                if (email.isEmpty()) {
+                    Log.e(TAG, "Google auth response missing email");
+                    runOnMainThread(() -> callback.onError("Google Sign-In response missing email"));
+                    return;
+                }
+                
+                // Match website Google auth logic: localStorage.setItem('currentUser', JSON.stringify(result.user))
+                // Check if user already exists
+                User existingUser = authManager.findUserByEmail(email);
+                User user;
+                
+                if (existingUser != null) {
+                    // Update existing user with Google data
+                    user = existingUser;
+                    Log.d(TAG, "Updating existing user with Google data for: " + email);
+                } else {
+                    // Create new user
+                    user = new User();
+                    user.setAiChats(new java.util.ArrayList<>());
+                    user.setListings(new java.util.ArrayList<>());
+                    
+                    // Add to users array
+                    authManager.registerUser(user);
+                    Log.d(TAG, "Created new user from Google auth for: " + email);
+                }
+                
+                // Update user with Google auth data
+                user.setFirstName(userData.optString("firstName", userData.optString("given_name", "User")));
+                user.setLastName(userData.optString("lastName", userData.optString("family_name", "Name")));
+                user.setEmail(email);
+                user.setEmailVerified(true); // Google accounts are pre-verified
+                
+                // Set profile image from Google if provided
+                String profileImage = userData.optString("profileImage", userData.optString("picture", ""));
+                if (!profileImage.isEmpty()) {
+                    user.setProfileImage(profileImage);
+                } else {
+                    user.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+                }
+                
+                // Set tokens if provided
+                String accessToken = apiResponse.optString("access_token");
+                if (!accessToken.isEmpty()) {
+                    user.setAccessToken(accessToken);
+                }
+                
+                // Store user as currentUser (matching website)
+                authManager.storeCurrentUser(user);
+                Log.d(TAG, "Google auth successful for user: " + user.getFirstName() + " " + user.getLastName() + " (" + user.getEmail() + ")");
+                runOnMainThread(() -> callback.onSuccess(user));
+                
+            } else {
+                Log.e(TAG, "Google auth API response missing user data");
+                runOnMainThread(() -> callback.onError("Invalid Google auth response format"));
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error processing Google auth API response", e);
+            runOnMainThread(() -> callback.onError("Google auth processing failed"));
+        }
     }
     
     private void runOnMainThread(Runnable runnable) {
