@@ -298,7 +298,7 @@
                             android:layout_width="48dp"
                             android:layout_height="48dp"
                             android:background="@drawable/circle_background"
-                            android:backgroundTint="@color/blue_light"
+                            android:backgroundTint="@color/gray_100"
                             android:padding="12dp"
                             android:src="@drawable/ic_search"
                             android:tint="@color/blue_accent" />

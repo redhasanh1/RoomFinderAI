@@ -10,6 +10,8 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.card.MaterialCardView;
 import com.roomfinder.android.MainActivity;
 import com.roomfinder.android.R;
+import com.roomfinder.android.activities.MortgageToolsActivity;
+import android.content.Intent;
 
 public class ToolsFragment extends Fragment {
 
@@ -45,8 +47,8 @@ public class ToolsFragment extends Fragment {
         // Legal Center - Show coming soon message
         legalCenterCard.setOnClickListener(v -> showComingSoon("Legal Center"));
         
-        // Mortgage Tools - Show coming soon message
-        mortgageToolsCard.setOnClickListener(v -> showComingSoon("Mortgage Tools"));
+        // Mortgage Tools - Navigate to Mortgage Tools Activity
+        mortgageToolsCard.setOnClickListener(v -> navigateToMortgageTools());
         
         // Quick Post - Navigate to Post Fragment
         quickPostCard.setOnClickListener(v -> navigateToPost());
@@ -100,5 +102,10 @@ public class ToolsFragment extends Fragment {
                 featureName + " coming soon! Stay tuned for updates.", 
                 android.widget.Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void navigateToMortgageTools() {
+        Intent intent = new Intent(getActivity(), MortgageToolsActivity.class);
+        startActivity(intent);
     }
 }
