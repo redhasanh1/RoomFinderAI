@@ -58,7 +58,7 @@ config = {
     GOOGLE_API_KEY: process.env.GOOGLE_API_KEY?.trim() || config.GOOGLE_API_KEY,
     SUPABASE_URL: process.env.SUPABASE_URL?.trim() || config.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.trim() || config.SUPABASE_ANON_KEY,
-    OPENAI_API_KEY: process.env._API_KEY?.trim() || config.OPENAI_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim() || config.OPENAI_API_KEY,
     OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim() || config.OPENAI_ORG_ID,
     OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || config.OPENAI_MODEL || 'gpt-3.5-turbo',
     BREVO_API_KEY: process.env.BREVO_API_KEY?.trim() || config.BREVO_API_KEY,
@@ -2366,6 +2366,65 @@ app.post('/api/auth/apple', async (req, res) => {
     } catch (error) {
         console.error('Apple OAuth error:', error);
         res.status(500).json({ error: 'Apple Sign-In failed' });
+    }
+});
+
+// API: Get user profile
+app.get('/api/user-profile/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        // Try to get from Supabase first
+        if (supabase) {
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('email', decodeURIComponent(email))
+                    .single();
+
+                if (!error && data) {
+                    return res.json({
+                        id: data.id,
+                        email: data.email,
+                        firstName: data.first_name || '',
+                        lastName: data.last_name || '',
+                        profileImage: data.profile_image || 'https://via.placeholder.com/40',
+                        emailVerified: data.email_verified || false,
+                        createdAt: data.created_at,
+                        plan: data.plan || 'free'
+                    });
+                }
+            } catch (supabaseError) {
+                console.log('Supabase profile fetch failed:', supabaseError.message);
+            }
+        }
+
+        // Fallback to in-memory users
+        const user = users.find(u => u.email === decodeURIComponent(email));
+        
+        if (user) {
+            return res.json({
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                profileImage: user.profileImage || 'https://via.placeholder.com/40',
+                emailVerified: user.emailVerified || false,
+                plan: user.plan || 'free'
+            });
+        }
+
+        // User not found
+        return res.status(404).json({ error: 'User not found' });
+
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        res.status(500).json({ error: 'Failed to fetch user profile' });
     }
 });
 
