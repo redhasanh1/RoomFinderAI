@@ -2874,22 +2874,34 @@ app.get('/api/brevo-status', async (req, res) => {
 
 // API: AI Negotiator chat with OpenAI integration
 app.post('/api/ai-negotiate', async (req, res) => {
+    console.log('🤖 AI Negotiate endpoint called');
+    console.log('📝 Request body keys:', Object.keys(req.body));
+    
     try {
         const { message, conversationHistory, userEmail, listingData } = req.body;
         
         if (!message) {
+            console.log('❌ No message provided');
             return res.status(400).json({ error: 'Message is required' });
         }
 
+        console.log('📞 Message length:', message.length);
+        console.log('📊 Conversation history length:', conversationHistory?.length || 0);
+
         // Check if OpenAI is configured
         if (!config.OPENAI_API_KEY) {
+            console.log('❌ OpenAI API key not configured');
             return res.status(503).json({ error: 'AI service not available - OpenAI not configured' });
         }
+        
+        console.log('✅ OpenAI API key is configured');
 
         // Build the conversation context for OpenAI
         let systemPrompt;
         try {
+            console.log('🏗️ Building negotiation system prompt...');
             systemPrompt = buildNegotiationSystemPrompt();
+            console.log('✅ System prompt built successfully, length:', systemPrompt.length);
         } catch (error) {
             console.error('❌ Error building negotiation system prompt:', error);
             return res.status(500).json({ error: 'Failed to initialize AI system', details: error.message });
@@ -2903,6 +2915,7 @@ app.post('/api/ai-negotiate', async (req, res) => {
         // Add the current user message
         messages.push({ role: 'user', content: message });
 
+        console.log('📨 Total messages for OpenAI:', messages.length);
         console.log('🤖 Sending OpenAI request for negotiation...');
         
         // Call OpenAI API
@@ -2923,6 +2936,8 @@ app.post('/api/ai-negotiate', async (req, res) => {
             })
         });
 
+        console.log('📡 OpenAI response status:', openaiResponse.status);
+        
         if (!openaiResponse.ok) {
             const errorData = await openaiResponse.json().catch(() => ({}));
             console.error('❌ OpenAI API error:', errorData);
@@ -2936,7 +2951,9 @@ app.post('/api/ai-negotiate', async (req, res) => {
             throw new Error(`OpenAI API error: ${openaiResponse.status} - ${errorData.error?.message || JSON.stringify(errorData)}`);
         }
 
+        console.log('✅ OpenAI API call successful');
         const data = await openaiResponse.json();
+        console.log('📦 OpenAI response data keys:', Object.keys(data));
         
         if (!data.choices || !data.choices[0] || !data.choices[0].message) {
             throw new Error('Invalid OpenAI response format');
