@@ -50,8 +50,8 @@ class ChatSystem {
             // Get Supabase client
             if (supabaseClient) {
                 this.supabase = supabaseClient;
-            } else if (window.ConfigManager && window.ConfigManager.getSupabaseClient) {
-                this.supabase = window.ConfigManager.getSupabaseClient();
+            } else if (window.ClientConfig && window.ClientConfig.getSupabaseClient) {
+                this.supabase = window.ClientConfig.getSupabaseClient();
             } else {
                 throw new Error('No Supabase client available');
             }

@@ -20,7 +20,7 @@ async function initializeAuth() {
     
     try {
         // Get Supabase client
-        const supabase = window.ConfigManager.getSupabaseClient();
+        const supabase = window.ClientConfig.getSupabaseClient();
         
         // Get current session
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -153,7 +153,7 @@ function updateAuthUI(user) {
  */
 async function createOrUpdateUserProfile(user) {
     try {
-        const supabase = window.ConfigManager.getSupabaseClient();
+        const supabase = window.ClientConfig.getSupabaseClient();
         
         const profileData = {
             id: user.id,
@@ -321,7 +321,7 @@ async function restoreUserData() {
  */
 async function getCurrentSession() {
     try {
-        const supabase = window.ConfigManager.getSupabaseClient();
+        const supabase = window.ClientConfig.getSupabaseClient();
         const { data: { session } } = await supabase.auth.getSession();
         return session;
     } catch (error) {
@@ -357,7 +357,7 @@ function isAuthenticated() {
  */
 async function signOut() {
     try {
-        const supabase = window.ConfigManager.getSupabaseClient();
+        const supabase = window.ClientConfig.getSupabaseClient();
         const { error } = await supabase.auth.signOut();
         
         if (error) {
