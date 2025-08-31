@@ -120,13 +120,25 @@ public class PostFragment extends Fragment {
         binding.propertyTypeChipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (!checkedIds.isEmpty()) {
                 Chip selectedChip = group.findViewById(checkedIds.get(0));
-                selectedPropertyType = selectedChip.getText().toString().toLowerCase();
-                // Remove emoji from property type
-                if (selectedPropertyType.contains("apartment")) selectedPropertyType = "apartment";
-                else if (selectedPropertyType.contains("house")) selectedPropertyType = "house";
-                else if (selectedPropertyType.contains("condo")) selectedPropertyType = "condo";
-                else if (selectedPropertyType.contains("studio")) selectedPropertyType = "studio";
-                
+                if (selectedChip != null) {
+                    String chipText = selectedChip.getText().toString().toLowerCase();
+                    // Remove emoji from property type and set selectedPropertyType
+                    if (chipText.contains("apartment")) selectedPropertyType = "apartment";
+                    else if (chipText.contains("house")) selectedPropertyType = "house";
+                    else if (chipText.contains("condo")) selectedPropertyType = "condo";
+                    else if (chipText.contains("studio")) selectedPropertyType = "studio";
+                    else {
+                        // Fallback: use the chip text directly (cleaned)
+                        selectedPropertyType = chipText.replaceAll("[^a-zA-Z]", "").toLowerCase();
+                    }
+                    
+                    // Debug log to verify selection
+                    android.util.Log.d("PostFragment", "Property type selected: " + selectedPropertyType);
+                    validateStep1();
+                }
+            } else {
+                // No chip selected, reset property type
+                selectedPropertyType = "";
                 validateStep1();
             }
         });
