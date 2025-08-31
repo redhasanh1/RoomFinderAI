@@ -1996,7 +1996,7 @@
                     </a>
                 `;
                 // Continue loading page without authentication
-                loadListings();
+                displayListings();
                 return;
             }
 
@@ -2547,20 +2547,31 @@
             console.log('✅ Listings display complete:', listings.length, 'listings processed');
             
             // Check if we should auto-open a specific listing
+            setTimeout(() => {
+                checkAutoOpenListing(listings);
+            }, 100);
+        }
+
+        // Function to check and handle auto-opening a listing
+        function checkAutoOpenListing(listings) {
             const autoOpenId = sessionStorage.getItem('autoOpenListingId');
-            if (autoOpenId) {
-                console.log('🎯 Auto-opening listing with ID:', autoOpenId);
-                const targetListing = listings.find(listing => listing.id === autoOpenId);
-                if (targetListing) {
-                    console.log('✅ Found listing to auto-open:', targetListing.title);
-                    // Small delay to ensure DOM is ready
-                    setTimeout(() => {
-                        showListingModal(targetListing);
-                    }, 500);
-                } else {
-                    console.warn('⚠️ Listing not found for auto-open ID:', autoOpenId);
-                }
-                // Clear the auto-open ID after use
+            if (!autoOpenId) return;
+
+            console.log('🎯 Auto-opening listing with ID:', autoOpenId);
+            
+            // Find the listing by ID
+            const targetListing = listings.find(listing => listing.id === autoOpenId);
+            if (targetListing) {
+                console.log('✅ Found listing to auto-open:', targetListing.title);
+                // Clear the auto-open ID first to prevent multiple triggers
+                sessionStorage.removeItem('autoOpenListingId');
+                // Small delay to ensure DOM is ready
+                setTimeout(() => {
+                    showListingModal(targetListing);
+                }, 300);
+            } else {
+                console.warn('⚠️ Listing not found for auto-open ID:', autoOpenId);
+                // Clear the ID even if not found to prevent infinite attempts
                 sessionStorage.removeItem('autoOpenListingId');
             }
         }
@@ -4798,7 +4809,7 @@
                     } else {
                         console.log('ℹ️ Anonymous user, loading listings...');
                     }
-                    loadListings().then(() => {
+                    displayListings().then(() => {
                         // Load favorite states after listings are loaded, with a small delay to ensure DOM is ready
                         setTimeout(() => {
                             loadFavoriteStates();
@@ -4807,7 +4818,7 @@
                 })
                 .catch(error => {
                     console.error('Auth initialization error:', error);
-                    loadListings().then(() => {
+                    displayListings().then(() => {
                         // Load favorite states after listings are loaded, with a small delay to ensure DOM is ready
                         setTimeout(() => {
                             loadFavoriteStates();
