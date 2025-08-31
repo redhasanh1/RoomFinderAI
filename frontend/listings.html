@@ -2445,36 +2445,14 @@
                 try {
                     const cached = JSON.parse(cachedListings);
                     if (cached.data && Array.isArray(cached.data) && cached.data.length > 0) {
-                        // Update with live data in background (non-blocking)
-                        if (window.supabaseClient && typeof window.supabaseClient.from === 'function') {
-                            setTimeout(async () => {
-                                try {
-                                    const { data, error } = await window.supabaseClient
-                                        .from('listings')
-                                        .select('*')
-                                        .order('created_at', { ascending: false })
-                                        .range(0, 19);
-                                    if (!error && data) {
-                                        // Update cache and refresh display
-                                        localStorage.setItem('cachedListings', JSON.stringify({
-                                            data: data,
-                                            timestamp: Date.now()
-                                        }));
-                                        // Only refresh if significantly different
-                                        if (data.length !== cached.data.length) {
-                                            isLoadingListings = false;
-                                            displayListings();
-                                        }
-                                    }
-                                } catch (e) {
-                                    console.warn('Background update failed:', e);
-                                }
-                            }, 0);
-                        }
+                        console.log(`📦 Loaded ${cached.data.length} cached listings instantly`);
+                        // Schedule live update for later (much later to not interfere)
+                        scheduleLiveUpdate();
                         return cached.data;
                     }
                 } catch (e) {
                     console.error('Failed to parse cached listings:', e);
+                    localStorage.removeItem('cachedListings'); // Remove corrupt cache
                 }
             }
             
@@ -2630,24 +2608,20 @@
             // Add all listing cards to DOM at once
             container.appendChild(fragment);
 
-            // Use event delegation for better performance
-            container.addEventListener('click', (e) => {
-                if (e.target.matches('.view-details-btn')) {
-                    const listingCard = e.target.closest('.listing-card');
-                    if (listingCard && listingCard.listingData) {
-                        showListingModal(listingCard.listingData);
-                    }
-                } else if (e.target.matches('.chat-btn') && !e.target.disabled) {
-                    const listingCard = e.target.closest('.listing-card');
-                    if (listingCard && listingCard.listingData) {
-                        startConversation(listingCard.listingData);
-                    }
-                } else if (e.target.matches('.favorite-btn') || e.target.closest('.favorite-btn')) {
-                    const btn = e.target.matches('.favorite-btn') ? e.target : e.target.closest('.favorite-btn');
-                    const listingCard = btn.closest('.listing-card');
-                    if (listingCard && listingCard.listingData) {
-                        toggleFavorite(listingCard.listingData.id, btn, listingCard.listingData);
-                    }
+            // Add event listeners directly to buttons for each card (faster than delegation)
+            container.querySelectorAll('.listing-card').forEach(card => {
+                const viewBtn = card.querySelector('.view-details-btn');
+                const chatBtn = card.querySelector('.chat-btn');
+                const favBtn = card.querySelector('.favorite-btn');
+                
+                if (viewBtn) {
+                    viewBtn.onclick = () => showListingModal(card.listingData);
+                }
+                if (chatBtn && !chatBtn.disabled) {
+                    chatBtn.onclick = () => startConversation(card.listingData);
+                }
+                if (favBtn) {
+                    favBtn.onclick = () => toggleFavorite(card.listingData.id, favBtn, card.listingData);
                 }
             });
 
