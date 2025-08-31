@@ -60,41 +60,39 @@
                 // Continue anyway with cached data
             });
 
-        // Load listings immediately when DOM is ready
+        // Load listings immediately when DOM is ready (before other scripts)
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
-                console.log('📄 DOM Content Loaded - loading listings immediately');
-                isDOMReady = true;
+                console.log('📄 DOM ready - loading listings instantly');
                 
-                // Setup mobile menu
+                // Load listings FIRST, before any other setup
+                displayListings();
+                
+                // Do setup after listings start loading
+                setTimeout(() => {
+                    closeMobileMenu();
+                    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                        document.body.style.webkitTouchCallout = 'none';
+                        document.body.style.webkitUserSelect = 'none';
+                    }
+                    setViewMode('grid');
+                }, 0);
+            });
+        } else {
+            console.log('📄 DOM ready - loading listings instantly');
+            
+            // Load listings FIRST
+            displayListings();
+            
+            // Do setup after
+            setTimeout(() => {
                 closeMobileMenu();
                 if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
                     document.body.style.webkitTouchCallout = 'none';
                     document.body.style.webkitUserSelect = 'none';
                 }
-                
-                // Initialize view mode
                 setViewMode('grid');
-                
-                // Load listings immediately
-                displayListings();
-            });
-        } else {
-            console.log('📄 DOM already ready - loading listings immediately');
-            isDOMReady = true;
-            
-            // Setup mobile menu
-            closeMobileMenu();
-            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-                document.body.style.webkitTouchCallout = 'none';
-                document.body.style.webkitUserSelect = 'none';
-            }
-            
-            // Initialize view mode  
-            setViewMode('grid');
-            
-            // Load listings immediately
-            setTimeout(() => displayListings(), 0);
+            }, 0);
         }
 
         // Safe initialization function with retry mechanism
@@ -114,7 +112,7 @@
             
             try {
                 console.log(`🔄 Starting initialization attempt ${initializationAttempts}/${MAX_INIT_ATTEMPTS}`);
-                initializeListingsPage();
+                // initializeListingsPage(); // Disabled - listings load immediately now
                 console.log('✅ Initialization completed successfully');
             } catch (error) {
                 console.error(`❌ Initialization attempt ${initializationAttempts} failed:`, error);
@@ -5077,8 +5075,14 @@
             let favoriteIds = new Set();
 
             try {
-                // Try API first
-                const response = await fetch(`/api/favorites?userEmail=${encodeURIComponent(currentUser.email)}`);
+                // Try API first with short timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 500); // 0.5 second timeout
+                
+                const response = await fetch(`/api/favorites?userEmail=${encodeURIComponent(currentUser.email)}`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
                 
                 if (response.ok) {
                     const favorites = await response.json();
@@ -5088,10 +5092,8 @@
                     throw new Error(`API failed: ${response.status}`);
                 }
             } catch (error) {
-                // Don't log 500 errors as they're expected when API is down
-                if (!error.message.includes('500')) {
-                    console.log('📱 API unavailable, loading from localStorage:', error.message);
-                }
+                // Silently fallback to localStorage for any API issues
+                console.log('📱 Using localStorage fallback for favorites');
                 
                 // Fallback to localStorage - extract IDs from complete listing objects
                 const storageKey = `savedListings_${currentUser.email}`;
