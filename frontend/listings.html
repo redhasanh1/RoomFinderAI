@@ -44,7 +44,7 @@
                 // Initialize Supabase client - CDN version exposes the library differently
                 if (window.supabase && typeof window.supabase.createClient === 'function') {
                     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    window.supabase = supabase; // Make it globally available
+                    window.supabaseClient = supabase; // Store client separately to not overwrite the library
                     console.log('📡 Supabase client initialized');
                 } else {
                     console.error('❌ Supabase library not loaded properly');
@@ -112,12 +112,14 @@
     <script>
         console.log('🛡️ Initializing Emergency Authentication Protection System for Listings Page...');
         
-        // Store original functions to prevent blocking
-        const ORIGINAL_LOCATION_HREF = window.ORIGINAL_LOCATION_HREF || Object.getOwnPropertyDescriptor(window.location, 'href');
-        window.ORIGINAL_LOCATION_HREF = ORIGINAL_LOCATION_HREF;
-        const ORIGINAL_LOCATION_ASSIGN = window.location.assign;
-        const ORIGINAL_LOCATION_REPLACE = window.location.replace;
-        const ORIGINAL_LOCATION_RELOAD = window.location.reload;
+        // Store original functions to prevent blocking (check if already defined)
+        if (!window.ORIGINAL_LOCATION_HREF_DEFINED) {
+            window.ORIGINAL_LOCATION_HREF_DEFINED = true;
+            var ORIGINAL_LOCATION_HREF = window.ORIGINAL_LOCATION_HREF || Object.getOwnPropertyDescriptor(window.location, 'href');
+            window.ORIGINAL_LOCATION_HREF = ORIGINAL_LOCATION_HREF;
+            var ORIGINAL_LOCATION_ASSIGN = window.location.assign;
+            var ORIGINAL_LOCATION_REPLACE = window.location.replace;
+            var ORIGINAL_LOCATION_RELOAD = window.location.reload;
         
         // Emergency protection: Block ALL redirects to login pages
         Object.defineProperty(window.location, 'href', {
@@ -162,6 +164,7 @@
             }
             return ORIGINAL_REMOVE_ITEM.call(this, key);
         };
+        } // Close the if statement for ORIGINAL_LOCATION_HREF_DEFINED
         
         // Backup system for user data
         function createUserBackup() {
@@ -2401,14 +2404,14 @@
             console.log('Fetching listings from Supabase');
             
             // Wait for Supabase to be initialized
-            if (!window.supabase || typeof window.supabase.from !== 'function') {
+            if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') {
                 console.error('Supabase not properly initialized yet');
                 // Return empty array and let initialization retry later
                 return [];
             }
             
             try {
-                const { data, error } = await window.supabase
+                const { data, error } = await window.supabaseClient
                     .from('listings')
                     .select('*')
                     .order('created_at', { ascending: false })
@@ -2476,13 +2479,13 @@
             
             // Wait for Supabase to be ready (max 5 seconds)
             let waitAttempts = 0;
-            while ((!window.supabase || typeof window.supabase.from !== 'function') && waitAttempts < 50) {
+            while ((!window.supabaseClient || typeof window.supabaseClient.from !== 'function') && waitAttempts < 50) {
                 console.log('⏳ Waiting for Supabase initialization...');
                 await new Promise(resolve => setTimeout(resolve, 100));
                 waitAttempts++;
             }
             
-            if (!window.supabase || typeof window.supabase.from !== 'function') {
+            if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') {
                 console.error('❌ Supabase failed to initialize after 5 seconds');
                 updateListingCount(0, false, false);
                 const errorElement = document.getElementById('emptyState');
@@ -5049,7 +5052,10 @@
                     throw new Error(`API failed: ${response.status}`);
                 }
             } catch (error) {
-                console.log('📱 API unavailable, loading from localStorage:', error.message);
+                // Don't log 500 errors as they're expected when API is down
+                if (!error.message.includes('500')) {
+                    console.log('📱 API unavailable, loading from localStorage:', error.message);
+                }
                 
                 // Fallback to localStorage - extract IDs from complete listing objects
                 const storageKey = `savedListings_${currentUser.email}`;

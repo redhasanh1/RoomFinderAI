@@ -214,14 +214,11 @@ async function updateAuthSection() {
  * Initialize authentication for Supabase-enabled pages
  */
 async function initSupabaseAuth() {
-    if (typeof window.supabase === 'undefined' || !window.supabase) {
-        console.log('Supabase not available, skipping Supabase auth');
-        return false;
-    }
+    // Check for both possible Supabase client locations
+    const supabaseClient = window.supabaseClient || window.supabase;
     
-    // Check if supabase has the expected structure
-    if (typeof window.supabase.from !== 'function') {
-        console.log('Supabase client not properly initialized, skipping Supabase auth');
+    if (!supabaseClient || typeof supabaseClient.from !== 'function') {
+        console.log('Supabase client not available or not properly initialized, skipping Supabase auth');
         return false;
     }
 
@@ -232,7 +229,7 @@ async function initSupabaseAuth() {
 
     try {
         // Check if user exists in profiles table
-        let { data: profile, error } = await window.supabase
+        let { data: profile, error } = await supabaseClient
             .from('profiles')
             .select('*')
             .eq('email', currentUser.email)
@@ -244,7 +241,7 @@ async function initSupabaseAuth() {
                 email: currentUser.email,
                 profile_image: DEFAULT_PROFILE_IMAGE
             };
-            const { data, error: insertError } = await window.supabase
+            const { data, error: insertError } = await supabaseClient
                 .from('profiles')
                 .insert([newProfile])
                 .select()
