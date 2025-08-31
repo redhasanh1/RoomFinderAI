@@ -172,8 +172,12 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
         if (binding.voiceSearchButton != null) {
             binding.voiceSearchButton.setOnClickListener(v -> {
                 animateButtonClick(v);
-                // TODO: Implement voice search
-                showToast("Voice search coming soon!");
+                // Trigger search with current query
+                if (currentSearchQuery.isEmpty()) {
+                    showSearchSuggestions();
+                } else {
+                    performSearch();
+                }
             });
         }
         
@@ -557,10 +561,11 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
     private boolean matchesSmartSearch(Listing listing, String query) {
         String lowerQuery = query.toLowerCase().trim();
         
-        // Basic text search
-        boolean basicMatch = listing.getTitle().toLowerCase().contains(lowerQuery) ||
-                (listing.getCity() != null && listing.getCity().toLowerCase().contains(lowerQuery)) ||
-                (listing.getStreet() != null && listing.getStreet().toLowerCase().contains(lowerQuery));
+        // Basic text search with null safety
+        boolean titleMatch = listing.getTitle() != null && listing.getTitle().toLowerCase().contains(lowerQuery);
+        boolean locationMatch = (listing.getLocation() != null && listing.getLocation().toLowerCase().contains(lowerQuery));
+        boolean cityMatch = (listing.getCity() != null && listing.getCity().toLowerCase().contains(lowerQuery));
+        boolean basicMatch = titleMatch || locationMatch || cityMatch;
         
         // Smart price search
         if (lowerQuery.contains("under") && lowerQuery.contains("$")) {
@@ -664,32 +669,28 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
         if (binding.quickFilterPrice != null) {
             binding.quickFilterPrice.setOnClickListener(v -> {
                 animateButtonClick(v);
-                // TODO: Show price filter dialog
-                showToast("Price filter coming soon!");
+                toggleAdvancedFilters();
             });
         }
         
         if (binding.quickFilterLocation != null) {
             binding.quickFilterLocation.setOnClickListener(v -> {
                 animateButtonClick(v);
-                // TODO: Show location filter dialog
-                showToast("Location filter coming soon!");
+                toggleAdvancedFilters();
             });
         }
         
         if (binding.quickFilterType != null) {
             binding.quickFilterType.setOnClickListener(v -> {
                 animateButtonClick(v);
-                // TODO: Show type filter dialog
-                showToast("Property type filter coming soon!");
+                toggleAdvancedFilters();
             });
         }
         
         if (binding.quickFilterBeds != null) {
             binding.quickFilterBeds.setOnClickListener(v -> {
                 animateButtonClick(v);
-                // TODO: Show bedrooms filter dialog
-                showToast("Bedrooms filter coming soon!");
+                toggleAdvancedFilters();
             });
         }
         
