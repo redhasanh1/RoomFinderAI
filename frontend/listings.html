@@ -41,9 +41,15 @@
                     hasGoogleKey: !!GOOGLE_API_KEY
                 });
 
-                // Initialize Supabase client
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                console.log('📡 Supabase client initialized');
+                // Initialize Supabase client - CDN version exposes the library differently
+                if (window.supabase && typeof window.supabase.createClient === 'function') {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    window.supabase = supabase; // Make it globally available
+                    console.log('📡 Supabase client initialized');
+                } else {
+                    console.error('❌ Supabase library not loaded properly');
+                    showError('Failed to initialize database connection');
+                }
                 
                 isConfigLoaded = true;
                 // Only initialize if DOM is also ready
@@ -2393,8 +2399,16 @@
         // Fetch listings from Supabase
         async function fetchListings() {
             console.log('Fetching listings from Supabase');
+            
+            // Wait for Supabase to be initialized
+            if (!window.supabase || typeof window.supabase.from !== 'function') {
+                console.error('Supabase not properly initialized yet');
+                // Return empty array and let initialization retry later
+                return [];
+            }
+            
             try {
-                const { data, error } = await supabase
+                const { data, error } = await window.supabase
                     .from('listings')
                     .select('*')
                     .order('created_at', { ascending: false })
@@ -2404,7 +2418,10 @@
                 return data || [];
             } catch (error) {
                 console.error('Error fetching listings:', error);
-                alert('Failed to load listings: ' + error.message);
+                // Don't show alert for initialization errors
+                if (error.message && !error.message.includes('Cannot read properties')) {
+                    alert('Failed to load listings: ' + error.message);
+                }
                 return [];
             }
         }
@@ -2454,6 +2471,25 @@
             // Prevent duplicate calls
             if (isLoadingListings) {
                 console.log('⚠️ displayListings already running, skipping duplicate call');
+                return;
+            }
+            
+            // Wait for Supabase to be ready (max 5 seconds)
+            let waitAttempts = 0;
+            while ((!window.supabase || typeof window.supabase.from !== 'function') && waitAttempts < 50) {
+                console.log('⏳ Waiting for Supabase initialization...');
+                await new Promise(resolve => setTimeout(resolve, 100));
+                waitAttempts++;
+            }
+            
+            if (!window.supabase || typeof window.supabase.from !== 'function') {
+                console.error('❌ Supabase failed to initialize after 5 seconds');
+                updateListingCount(0, false, false);
+                const errorElement = document.getElementById('emptyState');
+                if (errorElement) {
+                    errorElement.innerHTML = '<p class="text-red-600">Database connection failed. Please refresh the page.</p>';
+                    errorElement.classList.remove('hidden');
+                }
                 return;
             }
             
