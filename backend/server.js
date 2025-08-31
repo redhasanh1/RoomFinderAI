@@ -893,8 +893,24 @@ app.delete('/api/listings/:id', (req, res) => {
 });
 
 // ========================================
+// VAPID KEY ENDPOINT FOR PUSH NOTIFICATIONS
+// ========================================
+
+// Get VAPID public key for push notifications
+app.get('/api/vapid-key', (req, res) => {
+    // Return a dummy VAPID key for now
+    // In production, this should be generated and stored securely
+    res.json({ 
+        vapidKey: 'BNZ7VFmSY9V4FhnE8S9cNlBmWLX7HQpFQqH8dxI0m2P8vLMxL_shCHYh8SL_Gskt6pAm0Lp0X7s2uN9LCqWXpXw'
+    });
+});
+
+// ========================================
 // BOOKMARK/FAVORITES API ENDPOINTS
 // ========================================
+
+// In-memory storage for favorites when database is not available
+const inMemoryFavorites = new Map(); // Map of userEmail -> Set of listingIds
 
 // Add listing to favorites
 app.post('/api/favorites', async (req, res) => {
@@ -906,7 +922,16 @@ app.post('/api/favorites', async (req, res) => {
         }
 
         if (!supabase) {
-            return res.status(500).json({ error: 'Database not connected' });
+            // Use in-memory storage as fallback
+            if (!inMemoryFavorites.has(userEmail)) {
+                inMemoryFavorites.set(userEmail, new Set());
+            }
+            const userFavorites = inMemoryFavorites.get(userEmail);
+            if (userFavorites.has(listingId)) {
+                return res.json({ message: 'Listing already in favorites', alreadyFavorited: true });
+            }
+            userFavorites.add(listingId);
+            return res.status(201).json({ message: 'Added to favorites successfully (in-memory)', favorite: { listing_id: listingId, user_email: userEmail } });
         }
 
         // Check if listing exists
@@ -960,7 +985,16 @@ app.delete('/api/favorites/:listingId', async (req, res) => {
         }
 
         if (!supabase) {
-            return res.status(500).json({ error: 'Database not connected' });
+            // Use in-memory storage as fallback
+            if (!inMemoryFavorites.has(userEmail)) {
+                return res.status(404).json({ error: 'No favorites found for user' });
+            }
+            const userFavorites = inMemoryFavorites.get(userEmail);
+            if (!userFavorites.has(listingId)) {
+                return res.status(404).json({ error: 'Favorite not found' });
+            }
+            userFavorites.delete(listingId);
+            return res.json({ message: 'Removed from favorites successfully (in-memory)' });
         }
 
         const { data, error } = await supabase
@@ -996,7 +1030,19 @@ app.get('/api/favorites', async (req, res) => {
         }
 
         if (!supabase) {
-            return res.status(500).json({ error: 'Database not connected' });
+            // Use in-memory storage as fallback
+            const userFavorites = inMemoryFavorites.get(userEmail);
+            if (!userFavorites || userFavorites.size === 0) {
+                return res.json([]);
+            }
+            // Return listing IDs as basic favorites
+            const favorites = Array.from(userFavorites).map(listingId => ({
+                id: listingId,
+                listing_id: listingId,
+                user_email: userEmail,
+                favorited_at: new Date().toISOString()
+            }));
+            return res.json(favorites);
         }
 
         // Join favorites with listings to get full listing details
