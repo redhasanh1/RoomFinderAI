@@ -22,7 +22,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/enhanced_gradient_header"
+                android:background="#FFFFFF"
                 android:padding="24dp"
                 android:elevation="4dp"
                 android:layout_marginBottom="40dp">
@@ -31,22 +31,18 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Connect &amp; Chat"
-                    android:textColor="#FFFFFF"
+                    android:textColor="#000000"
                     android:textSize="32sp"
                     android:textStyle="bold"
                     android:fontFamily="sans-serif-medium"
                     android:gravity="center"
-                    android:shadowColor="#40000000"
-                    android:shadowDx="1"
-                    android:shadowDy="2"
-                    android:shadowRadius="3"
                     android:layout_marginBottom="8dp" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Choose how you want to connect with properties"
-                    android:textColor="#FFFFFF"
+                    android:textColor="#000000"
                     android:textSize="16sp"
                     android:gravity="center"
                     android:lineSpacingExtra="2dp" />
