@@ -206,7 +206,7 @@
                             android:layout_height="24dp"
                             android:layout_gravity="center_vertical"
                             android:src="@drawable/ic_arrow_right"
-                            android:tint="@color/purple_primary"
+                            android:tint="@color/white"
                             android:contentDescription="Go to Direct Messages" />
 
                     </LinearLayout>
