@@ -6132,12 +6132,15 @@ app.get('/:page', (req, res) => {
             pageName = pageName.slice(0, -5);
         }
         
-        // Special handling for listings page - use modular version
+        // Special handling for listings page - use modular version (UPDATED 2025-08-31)
         if (pageName === 'listings') {
             const modularListingsPath = path.join(__dirname, '..', 'frontend', 'listings', 'index.html');
+            console.log(`🔍 DEBUG: Checking for modular listings at: ${modularListingsPath}`);
             if (fs.existsSync(modularListingsPath)) {
-                console.log(`📄 Serving modular listings from: ${modularListingsPath}`);
+                console.log(`📄 SUCCESS: Serving modular listings from: ${modularListingsPath}`);
                 return res.sendFile(modularListingsPath);
+            } else {
+                console.log(`❌ ERROR: Modular listings file not found at: ${modularListingsPath}`);
             }
         }
         
