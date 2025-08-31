@@ -298,7 +298,7 @@ async function initUniversalAuth(options = {}) {
     }
 
     // Initialize Supabase if required and available
-    if (requireSupabase || window.supabase) {
+    if (requireSupabase || window.supabase || window.supabaseClient) {
         await initSupabaseAuth();
     }
 
