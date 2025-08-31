@@ -2545,6 +2545,24 @@
             console.log('📍 Updating map with', listings.length, 'listings...');
             await updateMap(listings);
             console.log('✅ Listings display complete:', listings.length, 'listings processed');
+            
+            // Check if we should auto-open a specific listing
+            const autoOpenId = sessionStorage.getItem('autoOpenListingId');
+            if (autoOpenId) {
+                console.log('🎯 Auto-opening listing with ID:', autoOpenId);
+                const targetListing = listings.find(listing => listing.id === autoOpenId);
+                if (targetListing) {
+                    console.log('✅ Found listing to auto-open:', targetListing.title);
+                    // Small delay to ensure DOM is ready
+                    setTimeout(() => {
+                        showListingModal(targetListing);
+                    }, 500);
+                } else {
+                    console.warn('⚠️ Listing not found for auto-open ID:', autoOpenId);
+                }
+                // Clear the auto-open ID after use
+                sessionStorage.removeItem('autoOpenListingId');
+            }
         }
 
         // Modal handling for listings
