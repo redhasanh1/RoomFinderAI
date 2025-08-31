@@ -40,7 +40,7 @@ public class Listing implements Serializable {
     @SerializedName("postalCode")
     private String postalCode;
     
-    @SerializedName("house_type")
+    @SerializedName("propertyType")
     private String houseType;
     
     @SerializedName("utilities")
