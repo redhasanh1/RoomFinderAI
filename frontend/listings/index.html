@@ -143,11 +143,63 @@
     
     <!-- Initialize application -->
     <script>
+        // Function to load initial listings
+        async function loadInitialListings() {
+            try {
+                console.log('📋 Loading initial listings...');
+                
+                // Initialize API first
+                if (window.ListingsAPI && window.ListingsAPI.initializeAPI) {
+                    await window.ListingsAPI.initializeAPI();
+                }
+                
+                // Fetch listings
+                const listings = await window.ListingsAPI.fetchListings();
+                
+                // Display listings
+                if (window.ListingsUI && window.ListingsUI.displayListings) {
+                    window.ListingsUI.displayListings(listings);
+                } else {
+                    console.log('⏳ Waiting for UI module...');
+                    setTimeout(() => {
+                        if (window.ListingsUI && window.ListingsUI.displayListings) {
+                            window.ListingsUI.displayListings(listings);
+                        }
+                    }, 1000);
+                }
+                
+                console.log(`✅ Loaded ${listings.length} listings`);
+            } catch (error) {
+                console.error('❌ Error loading initial listings:', error);
+                // Show error message in listings container
+                const container = document.getElementById('listingsContainer');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="col-span-full text-center py-12">
+                            <div class="text-red-500 text-lg">Error loading listings</div>
+                            <p class="text-gray-400 mt-2">Please try refreshing the page</p>
+                            <button onclick="loadInitialListings()" class="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                                Retry
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        // Make loadInitialListings available globally
+        window.loadInitialListings = loadInitialListings;
+
         // Start configuration loading
         window.ClientConfig.loadConfiguration()
             .then(() => {
                 console.log('✅ Configuration loaded, starting initialization...');
                 window.AppInitializer.attemptInitialization();
+                
+                // Load listings after initialization
+                setTimeout(() => {
+                    loadInitialListings();
+                }, 500);
             })
             .catch(error => {
                 console.error('❌ Configuration loading failed:', error);
