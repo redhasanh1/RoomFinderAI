@@ -122,7 +122,7 @@ class PerformanceManager {
         // Track memory usage
         if ('memory' in performance) {
             setInterval(() => {
-                const memory = (performance as any).memory;
+                const memory = performance.memory;
                 if (memory.usedJSHeapSize > memory.jsHeapSizeLimit * 0.9) {
                     console.warn('⚠️ High memory usage detected');
                     this.triggerMemoryOptimization();
