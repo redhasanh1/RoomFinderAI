@@ -665,7 +665,7 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
     }
     
     private void setupQuickFilters() {
-        // Quick filter click handlers
+        // Quick filter click handlers - show advanced filters for each
         if (binding.quickFilterPrice != null) {
             binding.quickFilterPrice.setOnClickListener(v -> {
                 animateButtonClick(v);
