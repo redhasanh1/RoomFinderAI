@@ -315,32 +315,62 @@
           const r = await fetch('/api/login',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password})});
           const result = await r.json();
           if (r.ok){
-            // lightweight client cache (do not store secrets)
-            let currentUser = null;
-            try{
-              const storedUser = localStorage.getItem('currentUser');
-              if (storedUser){
-                const parsed = JSON.parse(storedUser);
-                if (parsed?.email?.toLowerCase() === email) currentUser = {...parsed, email};
-              }
-            }catch{}
-            if (currentUser){
-              localStorage.setItem('currentUser', JSON.stringify(currentUser));
-              let users=[]; try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
-              const idx = users.findIndex(u=>u?.email?.toLowerCase()===email);
-              if (idx>=0) users[idx]=currentUser; else users.push(currentUser);
-              localStorage.setItem('users', JSON.stringify(users));
-            }else{
-              let users=[]; try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
-              const existing = users.find(u=>u?.email?.toLowerCase()===email);
-              if (existing){ existing.email=email; localStorage.setItem('currentUser', JSON.stringify(existing)); }
-              else{
-                const newUser = { firstName:'User', lastName:'Name', email, profileImage:getDefaultProfileImage(), aiChats:[], listings:[], emailVerified:true };
-                users.push(newUser);
-                localStorage.setItem('users', JSON.stringify(users));
-                localStorage.setItem('currentUser', JSON.stringify(newUser));
-              }
+            // Get user data from backend response (includes database profile image)
+            const backendUser = result.user || {};
+            console.log('📡 Backend user data received:', {
+              email: backendUser.email,
+              hasProfileImage: !!backendUser.profileImage,
+              firstName: backendUser.firstName,
+              lastName: backendUser.lastName
+            });
+            
+            // Try to find existing user data in localStorage
+            let users=[]; 
+            try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
+            
+            const existingLocal = users.find(u=>u?.email?.toLowerCase()===email);
+            
+            // Merge backend data with local data (backend takes priority for profile image)
+            let finalUser;
+            
+            if (existingLocal) {
+              // Merge: Use backend profile image if available, otherwise keep local
+              finalUser = {
+                ...existingLocal,
+                firstName: backendUser.firstName || existingLocal.firstName,
+                lastName: backendUser.lastName || existingLocal.lastName,
+                email: email,
+                profileImage: backendUser.profileImage || existingLocal.profileImage || getDefaultProfileImage(),
+                hasCustomProfileImage: !!backendUser.profileImage || existingLocal.hasCustomProfileImage
+              };
+              console.log('✅ Merged backend and local data, profile from:', backendUser.profileImage ? 'database' : 'localStorage');
+            } else {
+              // No local data - use backend data or create new
+              finalUser = {
+                firstName: backendUser.firstName || 'User',
+                lastName: backendUser.lastName || 'Name',
+                email: email,
+                profileImage: backendUser.profileImage || getDefaultProfileImage(),
+                hasCustomProfileImage: !!backendUser.profileImage,
+                aiChats: [],
+                listings: [],
+                emailVerified: true
+              };
+              console.log('✅ Using backend data, profile from:', backendUser.profileImage ? 'database' : 'default');
             }
+            
+            // Update users array
+            const idx = users.findIndex(u=>u?.email?.toLowerCase()===email);
+            if (idx >= 0) {
+              users[idx] = finalUser;
+            } else {
+              users.push(finalUser);
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('currentUser', JSON.stringify(finalUser));
+            
             window.location.href='verification-modal.html?redirect=index.html';
           }else{
             alert(result.error || 'Login failed');
@@ -396,10 +426,32 @@
         const r = await fetch('/api/verify-email',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email: pendingUserData.email, code })});
         const result = await r.json();
         if (r.ok){
-          const user = { firstName:pendingUserData.firstName, lastName:pendingUserData.lastName, email:pendingUserData.email, profileImage:getDefaultProfileImage(), aiChats:[], listings:[], emailVerified:true };
-          let users=[]; try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
+          // Check if user already exists to preserve profile image
+          let users=[]; 
+          try{users=JSON.parse(localStorage.getItem('users'))||[];}catch{}
+          
+          const existingUser = users.find(u=>u?.email?.toLowerCase()===pendingUserData.email.toLowerCase());
+          
+          const user = { 
+            firstName:pendingUserData.firstName, 
+            lastName:pendingUserData.lastName, 
+            email:pendingUserData.email, 
+            profileImage: existingUser?.profileImage || getDefaultProfileImage(), // Preserve existing profile image
+            hasCustomProfileImage: existingUser?.hasCustomProfileImage || false,
+            aiChats: existingUser?.aiChats || [], 
+            listings: existingUser?.listings || [], 
+            emailVerified:true 
+          };
+          
           const idx = users.findIndex(u=>u?.email?.toLowerCase()===user.email.toLowerCase());
-          if (idx>=0) users[idx]=user; else users.push(user);
+          if (idx>=0) {
+            console.log('✅ Updating existing user, preserving profile image');
+            users[idx]=user;
+          } else {
+            console.log('ℹ️ Adding new user');
+            users.push(user);
+          }
+          
           localStorage.setItem('users', JSON.stringify(users));
           localStorage.setItem('currentUser', JSON.stringify(user));
           alert('Email verified successfully! Welcome to RoomFinder AI.');
@@ -470,8 +522,9 @@
       google.accounts.id.initialize({
         client_id: oauthConfig.googleClientId,
         callback: handleGoogleIdToken,
-        auto_select:false,
-        cancel_on_tap_outside:true
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        use_fedcm_for_prompt: false  // Disable FedCM to avoid conflicts
       });
       // Popup OAuth (code exchange)
       // Try using postmessage as redirect_uri for popup mode
@@ -486,16 +539,41 @@
       googleInitialized = true;
     }
 
+    // Helper function to preserve custom profile images
+    function preserveCustomProfileImage(backendUser) {
+      // Check existing user data
+      const existingUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const users = JSON.parse(localStorage.getItem('users')||'[]');
+      const existingInUsers = users.find(u=>u?.email?.toLowerCase()===backendUser.email?.toLowerCase());
+      
+      // Check if user has a custom profile image
+      const hasCustomPfp = (existingUser.hasCustomProfileImage && existingUser.profileImage?.startsWith('data:image/')) ||
+                           (existingInUsers?.hasCustomProfileImage && existingInUsers?.profileImage?.startsWith('data:image/'));
+      
+      if (hasCustomPfp) {
+        // Preserve the custom profile image
+        const customImage = existingUser.profileImage?.startsWith('data:image/') ? existingUser.profileImage : existingInUsers.profileImage;
+        backendUser.profileImage = customImage;
+        backendUser.hasCustomProfileImage = true;
+        console.log('✅ Preserved custom profile image for:', backendUser.email);
+      }
+      
+      return backendUser;
+    }
+
     // One-Tap ID token => backend verify
     async function handleGoogleIdToken(resp){
       try{
         const r = await fetch('/api/auth/google',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ idToken: resp.credential })});
         const result = await r.json();
         if (r.ok){
-          localStorage.setItem('currentUser', JSON.stringify(result.user));
+          // Preserve custom profile image before saving
+          const userWithCustomPfp = preserveCustomProfileImage(result.user);
+          
+          localStorage.setItem('currentUser', JSON.stringify(userWithCustomPfp));
           const users = JSON.parse(localStorage.getItem('users')||'[]');
-          const i = users.findIndex(u=>u?.email?.toLowerCase()===result.user.email?.toLowerCase());
-          if (i>=0) users[i]=result.user; else users.push(result.user);
+          const i = users.findIndex(u=>u?.email?.toLowerCase()===userWithCustomPfp.email?.toLowerCase());
+          if (i>=0) users[i]=userWithCustomPfp; else users.push(userWithCustomPfp);
           localStorage.setItem('users', JSON.stringify(users));
           window.location.href='verification-modal.html?redirect=index.html';
         }else{
@@ -512,10 +590,13 @@
         const r = await fetch('/api/auth/google/oauth-code',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ code: resp.code })});
         const result = await r.json();
         if (r.ok){
-          localStorage.setItem('currentUser', JSON.stringify(result.user));
+          // Preserve custom profile image before saving
+          const userWithCustomPfp = preserveCustomProfileImage(result.user);
+          
+          localStorage.setItem('currentUser', JSON.stringify(userWithCustomPfp));
           const users = JSON.parse(localStorage.getItem('users')||'[]');
-          const i = users.findIndex(u=>u?.email?.toLowerCase()===result.user.email?.toLowerCase());
-          if (i>=0) users[i]=result.user; else users.push(result.user);
+          const i = users.findIndex(u=>u?.email?.toLowerCase()===userWithCustomPfp.email?.toLowerCase());
+          if (i>=0) users[i]=userWithCustomPfp; else users.push(userWithCustomPfp);
           localStorage.setItem('users', JSON.stringify(users));
           window.location.href='verification-modal.html?redirect=index.html';
         }else{
@@ -529,71 +610,46 @@
     }
 
     async function handleGoogleSignIn(){
-      if (!oauthConfig) await loadOAuthConfig();
-      if (!googleInitialized) initializeGoogleSignIn();
-
-      try{
-        // Try One‑Tap first
-        google.accounts.id.prompt((note)=>{
-          const oneTapUnavailable = note.isNotDisplayed() || note.isSkippedMoment();
-          if (oneTapUnavailable){
-            // Fallback: guaranteed user-initiated popup
-            if (codeClient) codeClient.requestCode();
-            else alert('Google Sign-In unavailable. Try email/password.');
-          }
-        });
-      }catch{
-        if (codeClient) codeClient.requestCode();
-        else alert('Google Sign-In unavailable. Try email/password.');
+      try {
+        if (!oauthConfig) await loadOAuthConfig();
+        if (!googleInitialized) initializeGoogleSignIn();
+        
+        if (!codeClient) {
+          console.error('Google OAuth client not initialized');
+          alert('Google Sign-In is not available. Please try again later.');
+          return;
+        }
+        
+        console.log('Initiating Google OAuth popup...');
+        // Use popup OAuth directly to avoid FedCM issues
+        codeClient.requestCode();
+        
+      } catch(e) { 
+        console.error('Google Sign-In error:', e); 
+        alert('Google Sign-In failed. Please try again.'); 
       }
     }
 
     async function handleAppleSignIn(){
       if (!oauthConfig) await loadOAuthConfig();
-      
-      // Check if Apple ID is available
-      if (typeof AppleID === 'undefined'){ 
-        console.error('Apple ID SDK not loaded');
-        alert('Apple Sign-In is currently unavailable.'); 
-        return; 
-      }
-      
+      if (typeof AppleID === 'undefined'){ alert('Apple Sign-In is currently unavailable.'); return; }
       try{
-        // Initialize Apple ID if not done and we have config
-        if (!window.appleIdInitialized){
-          // Use a default service ID if none configured
-          const clientId = oauthConfig?.appleClientId || 'com.roomfinderai.web';
-          
-          console.log('Initializing Apple ID with client:', clientId);
-          
+        if (!window.appleIdInitialized && oauthConfig?.appleClientId){
           AppleID.auth.init({
-            clientId: clientId,
+            clientId: oauthConfig.appleClientId,
             scope: 'name email',
-            redirectURI: window.location.origin + '/login.html',
+            redirectURI: window.location.origin + '/auth/apple/callback',
             state: 'roomfinder_auth',
             usePopup: true
           });
           window.appleIdInitialized = true;
         }
-        
-        console.log('Starting Apple Sign-In...');
         const response = await AppleID.auth.signIn();
-        console.log('Apple Sign-In response:', response);
-        
-        // Send to backend - backend expects 'identityToken'
         const r = await fetch('/api/auth/apple',{
-          method:'POST', 
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({ 
-            identityToken: response.authorization.id_token,
-            authorizationCode: response.authorization.code,
-            user: response.user 
-          })
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({ authorizationCode: response.authorization.code, identityToken: response.authorization.id_token, user: response.user })
         });
-        
         const result = await r.json();
-        console.log('Backend response:', result);
-        
         if (r.ok){
           localStorage.setItem('currentUser', JSON.stringify(result.user));
           const users = JSON.parse(localStorage.getItem('users')||'[]');
@@ -602,11 +658,9 @@
           localStorage.setItem('users', JSON.stringify(users));
           window.location.href='verification-modal.html?redirect=index.html';
         }else{
-          console.error('Apple auth backend error:', result);
           alert(result.error || 'Apple Sign-In failed');
         }
       }catch(error){
-        console.error('Apple Sign-In error:', error);
         if (error?.error === 'popup_closed_by_user') return;
         if (error?.error === 'popup_blocked_by_browser') alert('Apple popup was blocked. Please allow popups and try again.');
         else alert('Apple Sign-In failed. Please try email/password.');
