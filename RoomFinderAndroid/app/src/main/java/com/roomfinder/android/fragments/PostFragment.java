@@ -266,9 +266,6 @@ public class PostFragment extends Fragment {
         if (title.isEmpty()) {
             binding.titleInputLayout.setError("Title is required");
             isValid = false;
-        } else if (title.length() < 10) {
-            binding.titleInputLayout.setError("Title should be at least 10 characters");
-            isValid = false;
         } else {
             binding.titleInputLayout.setError(null);
         }
