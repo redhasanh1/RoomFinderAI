@@ -49,7 +49,7 @@
                     if (document.getElementById('listingsContainer')?.children.length > 0) {
                         console.log('🔄 Refreshing with live data');
                         isLoadingListings = false;
-                        displayListings();
+                        setTimeout(() => displayListings(), 0);
                     }
                 }
                 
@@ -65,12 +65,35 @@
             document.addEventListener('DOMContentLoaded', () => {
                 console.log('📄 DOM Content Loaded - loading listings immediately');
                 isDOMReady = true;
-                displayListings(); // Load immediately
+                
+                // Setup mobile menu
+                closeMobileMenu();
+                if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                    document.body.style.webkitTouchCallout = 'none';
+                    document.body.style.webkitUserSelect = 'none';
+                }
+                
+                // Initialize view mode
+                setViewMode('grid');
+                
+                // Load listings immediately
+                displayListings();
             });
         } else {
             console.log('📄 DOM already ready - loading listings immediately');
             isDOMReady = true;
-            // Small delay to ensure all scripts are loaded
+            
+            // Setup mobile menu
+            closeMobileMenu();
+            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                document.body.style.webkitTouchCallout = 'none';
+                document.body.style.webkitUserSelect = 'none';
+            }
+            
+            // Initialize view mode  
+            setViewMode('grid');
+            
+            // Load listings immediately
             setTimeout(() => displayListings(), 0);
         }
 
@@ -111,21 +134,16 @@
     
     <!-- 🛡️ EMERGENCY AUTHENTICATION PROTECTION SYSTEM -->
     <script>
-        (function() {
-            // Prevent multiple initializations
-            if (window.EMERGENCY_AUTH_INITIALIZED) {
-                console.log('🛡️ Emergency auth already initialized, skipping...');
-                return;
-            }
+        if (!window.EMERGENCY_AUTH_INITIALIZED) {
             window.EMERGENCY_AUTH_INITIALIZED = true;
             
             console.log('🛡️ Initializing Emergency Authentication Protection System for Listings Page...');
             
             // Store original functions to prevent blocking
-            var ORIGINAL_LOCATION_HREF = Object.getOwnPropertyDescriptor(window.location, 'href');
-            var ORIGINAL_LOCATION_ASSIGN = window.location.assign;
-            var ORIGINAL_LOCATION_REPLACE = window.location.replace;
-            var ORIGINAL_LOCATION_RELOAD = window.location.reload;
+            window.ORIGINAL_LOCATION_HREF = Object.getOwnPropertyDescriptor(window.location, 'href');
+            window.ORIGINAL_LOCATION_ASSIGN = window.location.assign;
+            window.ORIGINAL_LOCATION_REPLACE = window.location.replace;
+            window.ORIGINAL_LOCATION_RELOAD = window.location.reload;
         
         // Emergency protection: Block ALL redirects to login pages
         Object.defineProperty(window.location, 'href', {
@@ -135,10 +153,10 @@
                     console.trace('Stack trace for blocked redirect:');
                     return; // Block the redirect
                 }
-                return ORIGINAL_LOCATION_HREF.set.call(this, url);
+                return window.ORIGINAL_LOCATION_HREF.set.call(this, url);
             },
             get: function() {
-                return ORIGINAL_LOCATION_HREF.get.call(this);
+                return window.ORIGINAL_LOCATION_HREF.get.call(this);
             }
         });
         
@@ -148,7 +166,7 @@
                 console.trace('Stack trace for blocked redirect:');
                 return; // Block the redirect
             }
-            return ORIGINAL_LOCATION_ASSIGN.call(this, url);
+            return window.ORIGINAL_LOCATION_ASSIGN.call(this, url);
         };
         
         window.location.replace = function(url) {
@@ -157,7 +175,7 @@
                 console.trace('Stack trace for blocked redirect:');
                 return; // Block the redirect
             }
-            return ORIGINAL_LOCATION_REPLACE.call(this, url);
+            return window.ORIGINAL_LOCATION_REPLACE.call(this, url);
         };
         
         // Block localStorage.removeItem for currentUser
@@ -206,6 +224,7 @@
         }, 5000);
         
         console.log('✅ Emergency Authentication Protection System Active');
+        } // Close the if statement
         })(); // Close the IIFE
     </script>
     
@@ -2011,25 +2030,24 @@
                         Login/Register
                     </a>
                 `;
-                // Continue loading page without authentication
-                displayListings();
+                // Continue loading page without authentication - listings already loading
+                console.log('✅ Listings will load from main initialization');
                 return;
             }
 
-            // Set current user email for RLS
-            try {
-                const { error } = await supabase.rpc('set_current_user_email', { email: currentUser.email });
-                console.log('RPC set_current_user_email response:', { error });
-                if (error) {
-                    console.error('Error setting current user email:', error);
-                    alert('Failed to initialize session: ' + error.message);
-                    return;
-                }
-                console.log('Current user email set for RLS:', currentUser.email);
-            } catch (err) {
-                console.error('RPC call failed:', err);
-                alert('Failed to initialize session. Please check your connection.');
-                return;
+            // Set current user email for RLS (non-blocking)
+            if (window.supabaseClient && typeof window.supabaseClient.rpc === 'function') {
+                window.supabaseClient.rpc('set_current_user_email', { email: currentUser.email })
+                    .then(({ error }) => {
+                        if (error) {
+                            console.warn('Error setting current user email:', error);
+                        } else {
+                            console.log('Current user email set for RLS:', currentUser.email);
+                        }
+                    })
+                    .catch(err => {
+                        console.warn('RPC call failed:', err);
+                    });
             }
 
             if (!currentUser.profileImage) {
@@ -4515,7 +4533,7 @@
             
             // Reset to show all listings
             filteredListings = [];
-            displayListings();
+            // displayListings(); // Remove duplicate call - listings auto-refresh
         }
         
         function displayListingCard(listing, container) {
@@ -4895,17 +4913,7 @@
             }
         }, { passive: false });
 
-        // Initialize mobile menu on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Ensure mobile menu is closed on page load
-            closeMobileMenu();
-            
-            // Add proper touch handling for iOS
-            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-                document.body.style.webkitTouchCallout = 'none';
-                document.body.style.webkitUserSelect = 'none';
-            }
-        });
+        // Mobile menu setup (merged into main DOMContentLoaded)
         
         // Real-time subscription to listings
         if (typeof supabase !== 'undefined' && supabase) {
@@ -4913,7 +4921,7 @@
                 .channel('public:listings')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'listings' }, (payload) => {
                     console.log('New listing added:', payload.new);
-                    displayListings();
+                    // displayListings(); // Remove duplicate call - listings auto-refresh
                 })
                 .subscribe((status) => {
                     console.log('Listings channel status:', status);
@@ -5145,51 +5153,59 @@
     
     <!-- Initialize Notifications -->
     <script>
-        // Initialize all systems when DOM is ready
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🚀 Initializing RoomFinderAI systems...');
+        // Initialize systems in background (non-blocking)
+        setTimeout(() => {
+            console.log('🚀 Initializing RoomFinderAI systems in background...');
             
-            // Initialize offline cache
+            // Initialize offline cache (non-blocking)
             if (window.offlineCacheManager) {
-                await window.offlineCacheManager.init();
-                console.log('✅ Offline cache initialized');
+                window.offlineCacheManager.init().then(() => {
+                    console.log('✅ Offline cache initialized');
+                }).catch(console.warn);
             }
             
-            // Initialize notification system
+            // Initialize notification system (non-blocking)
             if (window.notificationManager) {
-                await window.notificationManager.init();
-                console.log('✅ Notification system initialized');
-                
-                // Show notification prompt after 10 seconds if not already granted
-                setTimeout(() => {
-                    if (window.notificationManager.permission === 'default') {
-                        window.notificationManager.requestPermission().catch(console.error);
-                    }
-                }, 10000);
+                window.notificationManager.init().then(() => {
+                    console.log('✅ Notification system initialized');
+                    
+                    // Show notification prompt after 10 seconds if not already granted
+                    setTimeout(() => {
+                        if (window.notificationManager.permission === 'default') {
+                            window.notificationManager.requestPermission().catch(console.error);
+                        }
+                    }, 10000);
+                }).catch(console.warn);
             }
             
-            // Initialize sync manager when user is authenticated
+            // Initialize sync manager when user is authenticated (non-blocking)
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             if (currentUser && window.syncManager) {
-                await window.syncManager.init(currentUser);
-                console.log('✅ Cross-device sync initialized');
-            }
-            
-            // Initialize recommendation engine
-            if (currentUser && window.recommendationEngine) {
-                await window.recommendationEngine.init(currentUser);
-                console.log('✅ Recommendation engine initialized');
-                
-                // Track page view for recommendations
-                window.recommendationEngine.recordInteraction('search', {
-                    query: '',
-                    location: '',
-                    resultCount: 0
+                window.syncManager.init(currentUser).then(() => {
+                    console.log('✅ Cross-device sync initialized');
+                }).catch(err => {
+                    console.warn('Sync manager failed to initialize:', err);
                 });
             }
             
-            console.log('🎉 All systems initialized successfully');
-        });
+            // Initialize recommendation engine (non-blocking)
+            if (currentUser && window.recommendationEngine) {
+                window.recommendationEngine.init(currentUser).then(() => {
+                    console.log('✅ Recommendation engine initialized');
+                    
+                    // Track page view for recommendations
+                    window.recommendationEngine.recordInteraction('search', {
+                        query: '',
+                        location: '',
+                        resultCount: 0
+                    });
+                }).catch(err => {
+                    console.warn('Recommendation engine failed:', err);
+                });
+            }
+            
+            console.log('🎉 All systems initializing in background');
+        }, 100);
         
         // Add notification triggers for new listings
         if (supabase) {
