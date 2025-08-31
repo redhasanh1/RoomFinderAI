@@ -27,7 +27,7 @@ public class ChatFragment extends Fragment {
     private FragmentChatBinding binding;
     private AnimatorSet pressAnimator;
     private AnimatorSet releaseAnimator;
-    private AnimatorSet iconAnimator;
+    // iconAnimator removed since aiChatIcon was removed from layout
     private Handler animationHandler = new Handler(Looper.getMainLooper());
     
     @Override
@@ -52,8 +52,7 @@ public class ChatFragment extends Fragment {
                 R.animator.ai_chat_card_press_scale);
             releaseAnimator = (AnimatorSet) AnimatorInflater.loadAnimator(requireContext(), 
                 R.animator.ai_chat_card_release_scale);
-            iconAnimator = (AnimatorSet) AnimatorInflater.loadAnimator(requireContext(), 
-                R.animator.ai_chat_icon_rotation);
+            // iconAnimator loading removed since aiChatIcon was removed from layout
                 
             // Set animation targets only if animators loaded successfully
             if (pressAnimator != null && binding.aiChatCard != null) {
@@ -62,14 +61,12 @@ public class ChatFragment extends Fragment {
             if (releaseAnimator != null && binding.aiChatCard != null) {
                 releaseAnimator.setTarget(binding.aiChatCard);
             }
-            if (iconAnimator != null && binding.aiChatIcon != null) {
-                iconAnimator.setTarget(binding.aiChatIcon);
-            }
+            // Icon animator removed since aiChatIcon was removed from layout
         } catch (Exception e) {
             // Fallback if animations fail to load - disable animations
             pressAnimator = null;
             releaseAnimator = null;
-            iconAnimator = null;
+            // iconAnimator cleanup removed
             android.util.Log.w("ChatFragment", "Failed to load animations, continuing without them", e);
         }
     }
@@ -123,14 +120,7 @@ public class ChatFragment extends Fragment {
         // AI Negotiator Chat Card
         if (binding.aiChatCard != null) {
             binding.aiChatCard.setOnClickListener(v -> {
-                // Trigger icon animation
-                if (iconAnimator != null) {
-                    try {
-                        iconAnimator.start();
-                    } catch (Exception e) {
-                        android.util.Log.w("ChatFragment", "Icon animation error", e);
-                    }
-                }
+                // Icon animation removed since aiChatIcon was removed from layout
                 
                 // Navigate to AI Chat Fragment with slight delay for animation
                 if (animationHandler != null) {
@@ -230,10 +220,7 @@ public class ChatFragment extends Fragment {
             releaseAnimator.cancel();
             releaseAnimator = null;
         }
-        if (iconAnimator != null) {
-            iconAnimator.cancel();
-            iconAnimator = null;
-        }
+        // iconAnimator cleanup removed since aiChatIcon was removed from layout
         
         // Remove any pending animation callbacks
         animationHandler.removeCallbacksAndMessages(null);
