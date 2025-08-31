@@ -107,7 +107,8 @@
         console.log('🛡️ Initializing Emergency Authentication Protection System for Listings Page...');
         
         // Store original functions to prevent blocking
-        const ORIGINAL_LOCATION_HREF = Object.getOwnPropertyDescriptor(window.location, 'href');
+        const ORIGINAL_LOCATION_HREF = window.ORIGINAL_LOCATION_HREF || Object.getOwnPropertyDescriptor(window.location, 'href');
+        window.ORIGINAL_LOCATION_HREF = ORIGINAL_LOCATION_HREF;
         const ORIGINAL_LOCATION_ASSIGN = window.location.assign;
         const ORIGINAL_LOCATION_REPLACE = window.location.replace;
         const ORIGINAL_LOCATION_RELOAD = window.location.reload;
@@ -2410,6 +2411,43 @@
 
         // Display listings
         let isLoadingListings = false;
+        
+        // Define updateListingCount before its first use
+        window.updateListingCount = window.updateListingCount || function(count, isFiltered = false, isLoading = false) {
+            const countElement = document.getElementById('listingCount');
+            const emptyState = document.getElementById('emptyState');
+            const listingsContainer = document.getElementById('listingsContainer');
+            
+            if (!countElement) return;
+            
+            if (isLoading) {
+                countElement.textContent = 'Loading properties...';
+                if (emptyState) emptyState.classList.add('hidden');
+                if (listingsContainer) {
+                    listingsContainer.classList.remove('hidden');
+                    // Show loading skeleton
+                    listingsContainer.innerHTML = `
+                        <div class="loading-skeleton h-64 rounded-xl"></div>
+                        <div class="loading-skeleton h-64 rounded-xl"></div>
+                        <div class="loading-skeleton h-64 rounded-xl"></div>
+                    `;
+                }
+                return;
+            }
+            
+            if (count === 0) {
+                if (emptyState) {
+                    emptyState.classList.remove('hidden');
+                    if (listingsContainer) listingsContainer.classList.add('hidden');
+                }
+                countElement.textContent = isFiltered ? 'No properties match your search' : 'No properties available';
+            } else {
+                if (emptyState) emptyState.classList.add('hidden');
+                if (listingsContainer) listingsContainer.classList.remove('hidden');
+                countElement.textContent = `${count} ${count === 1 ? 'property' : 'properties'} found`;
+            }
+        };
+        
         async function displayListings() {
             console.log('🔄 Starting displayListings function');
             
@@ -4109,14 +4147,18 @@
                 
                 // FORCE hide notifications if totalUnread is 0
                 if (totalUnread === 0) {
-                    messageNotificationBadge.classList.add('hidden');
-                    profileNotificationBadge.classList.add('hidden');
+                    if (messageNotificationBadge) messageNotificationBadge.classList.add('hidden');
+                    if (profileNotificationBadge) profileNotificationBadge.classList.add('hidden');
                     console.log('🔥 FORCING notifications to hide - totalUnread is 0');
                 } else {
-                    messageNotificationBadge.textContent = totalUnread;
-                    messageNotificationBadge.classList.remove('hidden');
-                    profileNotificationBadge.textContent = totalUnread;
-                    profileNotificationBadge.classList.remove('hidden');
+                    if (messageNotificationBadge) {
+                        messageNotificationBadge.textContent = totalUnread;
+                        messageNotificationBadge.classList.remove('hidden');
+                    }
+                    if (profileNotificationBadge) {
+                        profileNotificationBadge.textContent = totalUnread;
+                        profileNotificationBadge.classList.remove('hidden');
+                    }
                     console.log('✅ Showing notifications:', totalUnread);
                 }
                 
@@ -5337,7 +5379,7 @@
         }
 
         // Enhanced Listing Count Update
-        function updateListingCount(count, isFiltered = false, isLoading = false) {
+        window.updateListingCount = function(count, isFiltered = false, isLoading = false) {
             const countElement = document.getElementById('listingCount');
             const emptyState = document.getElementById('emptyState');
             const listingsContainer = document.getElementById('listingsContainer');
