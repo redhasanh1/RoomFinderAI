@@ -4478,6 +4478,12 @@
                 const conversationTabs = document.getElementById('conversationTabs');
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 
+                // Add null check for conversationTabs element
+                if (!conversationTabs) {
+                    console.error('conversationTabs element not found');
+                    return;
+                }
+                
                 if (globalUserConversations.length === 0) {
                     conversationTabs.innerHTML = '<div id="noConversations" class="p-4 text-gray-500 text-center">No conversations yet</div>';
                     return;
@@ -6157,13 +6163,16 @@
             // Apply the filter based on type
             switch(type) {
                 case 'price':
-                    document.getElementById('searchMaxPrice').value = value;
+                    const maxPriceEl = document.getElementById('searchMaxPrice');
+                    if (maxPriceEl) maxPriceEl.value = value;
                     break;
                 case 'bedrooms':
-                    document.getElementById('searchBedrooms').value = value + '+';
+                    const bedroomsEl = document.getElementById('searchBedrooms');
+                    if (bedroomsEl) bedroomsEl.value = value + '+';
                     break;
                 case 'type':
-                    document.getElementById('searchRoomType').value = value;
+                    const roomTypeEl = document.getElementById('searchRoomType');
+                    if (roomTypeEl) roomTypeEl.value = value;
                     break;
                 case 'utilities':
                     // This would need custom logic based on your data structure
