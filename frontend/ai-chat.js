@@ -851,7 +851,11 @@ class AIChatHandler {
         
         // Save to history and localStorage (skip typing indicators)
         if (!isTypingIndicator) {
-            this.conversationHistory.push({ role: sender.toLowerCase(), content: message });
+            // Map display names to OpenAI-compatible roles
+            const role = sender.toLowerCase() === 'you' ? 'user' : 
+                        sender.toLowerCase() === 'ai' ? 'assistant' : 
+                        sender.toLowerCase();
+            this.conversationHistory.push({ role: role, content: message });
             this.saveConversationHistory();
         }
     }
