@@ -22,7 +22,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@color/purple_primary"
+                android:background="@color/pink_accent"
                 android:padding="24dp"
                 android:elevation="4dp"
                 android:layout_marginBottom="40dp">
