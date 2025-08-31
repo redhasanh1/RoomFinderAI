@@ -90,7 +90,7 @@ function storeProfileImage(email, imageData) {
 /**
  * Update auth section with appropriate content
  */
-function updateAuthSection() {
+async function updateAuthSection() {
     const authSection = document.getElementById('authSection');
     if (!authSection) {
         console.log('No authSection found on this page');
@@ -110,27 +110,63 @@ function updateAuthSection() {
     const currentUser = getCurrentUser();
     
     if (isUserAuthenticated() && currentUser) {
-        // Try to retrieve stored profile image first
-        let profileImage = getStoredProfileImage(currentUser.email);
+        // Try to fetch the latest profile image from backend first
+        let profileImage = null;
         
-        // If no stored image, check current user object
+        try {
+            const response = await fetch(`/api/user-profile/${encodeURIComponent(currentUser.email)}`);
+            if (response.ok) {
+                const profileData = await response.json();
+                
+                // Update profile image if exists
+                if (profileData.profileImage) {
+                    profileImage = profileData.profileImage;
+                    currentUser.profileImage = profileData.profileImage;
+                    currentUser.hasCustomProfileImage = profileData.hasCustomProfileImage;
+                    console.log('✅ Updated profile image from backend in auth section');
+                }
+                
+                // Update names from database (prioritize database over localStorage)
+                if (profileData.firstName || profileData.lastName) {
+                    currentUser.firstName = profileData.firstName || '';
+                    currentUser.lastName = profileData.lastName || '';
+                    console.log('✅ Updated names from backend in auth section:', profileData.firstName, profileData.lastName);
+                }
+                
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+        } catch (error) {
+            console.error('Error fetching profile data in auth section:', error);
+        }
+        
+        // Fallback to stored/local profile image if backend fetch failed
+        if (!profileImage) {
+            profileImage = getStoredProfileImage(currentUser.email);
+        }
+        
+        // If still no image, check current user object
         if (!profileImage) {
             profileImage = currentUser.profileImage;
         }
         
-        // Force update to new default profile icon if user has old placeholder images
-        const oldPlaceholderPatterns = [
-            'https://via.placeholder.com/',
-            'https://ui-avatars.com/api/',
-            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA',
-            'PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA'
-        ];
-        
-        const needsUpdate = !profileImage || 
-            oldPlaceholderPatterns.some(pattern => profileImage.includes(pattern));
-        
-        if (needsUpdate) {
-            profileImage = DEFAULT_PROFILE_IMAGE;
+        // If user has uploaded a custom profile image, ALWAYS use it
+        if (currentUser.hasCustomProfileImage && currentUser.profileImage && currentUser.profileImage.startsWith('data:image/')) {
+            profileImage = currentUser.profileImage;
+        } else {
+            // Force update to new default profile icon if user has old placeholder images
+            const oldPlaceholderPatterns = [
+                'https://via.placeholder.com/',
+                'https://ui-avatars.com/api/',
+                'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA',
+                'PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA'
+            ];
+            
+            const needsUpdate = !profileImage || 
+                oldPlaceholderPatterns.some(pattern => profileImage.includes(pattern));
+            
+            if (needsUpdate && !currentUser.hasCustomProfileImage) {
+                profileImage = DEFAULT_PROFILE_IMAGE;
+            }
         }
         
         // Update currentUser with the correct image
@@ -246,7 +282,7 @@ async function initUniversalAuth(options = {}) {
     if (!isAuthenticated) {
         if (allowAnonymous) {
             console.log('✅ Anonymous access allowed');
-            updateAuthSection();
+            await updateAuthSection();
             return { authenticated: false, allowed: true };
         } else if (redirectToLogin) {
             console.log('🔄 Redirecting to login...');
@@ -261,7 +297,7 @@ async function initUniversalAuth(options = {}) {
     }
 
     // Update the auth section
-    updateAuthSection();
+    await updateAuthSection();
 
     console.log('✅ Universal auth initialized successfully');
     return { authenticated: isAuthenticated, allowed: true };
@@ -286,15 +322,15 @@ function handleLogout() {
 /**
  * Refresh auth state (useful for dynamic updates)
  */
-function refreshAuthState() {
-    updateAuthSection();
+async function refreshAuthState() {
+    await updateAuthSection();
 }
 
 // Auto-refresh auth state when localStorage changes
 window.addEventListener('storage', function(event) {
     if (event.key === 'currentUser') {
         console.log('🔄 User data changed, refreshing auth state...');
-        updateAuthSection();
+        refreshAuthState();
     }
 });
 
@@ -309,14 +345,14 @@ document.addEventListener('visibilitychange', function() {
 window.addEventListener('storage', (e) => {
     if (e.key === 'currentUser') {
         console.log('Current user updated in storage, refreshing auth section');
-        updateAuthSection();
+        refreshAuthState();
     }
 });
 
 // Also listen for custom events for same-window updates
 window.addEventListener('userProfileUpdated', () => {
     console.log('User profile updated, refreshing auth section');
-    updateAuthSection();
+    refreshAuthState();
 });
 
 // Export functions for use in other scripts

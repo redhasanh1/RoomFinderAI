@@ -245,48 +245,47 @@ class AINegotatior {
         return sorted.length % 2 !== 0 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
     }
 
-    // Generate strategic negotiation message with human psychology
+    // Generate intelligent negotiation message
     async generateNegotiationMessage(listing, userBudget, marketData) {
         try {
-            console.log('🤖 Generating strategic negotiation message for:', listing.title);
+            console.log('🤖 Generating negotiation message for:', listing.title);
 
-            // Calculate strategic anchor price using negotiation psychology
-            const strategicPrice = this.calculateStrategicAnchorPrice(listing.price, userBudget, marketData);
-            const personalityStyle = this.selectNegotiationPersonality();
-            const urgencyTactic = this.generateUrgencyTactic();
-            const valueProposition = this.generateValueProposition();
+            const prompt = `
+            You are an expert rental negotiator. Generate a professional negotiation message for this rental:
 
-            const prompt = `You are a highly skilled human rental negotiator with excellent emotional intelligence and proven success closing deals. Generate a personable, strategic negotiation message.
+            LISTING DETAILS:
+            - Title: ${listing.title}
+            - Current Price: $${listing.price}/month
+            - Type: ${listing.house_type}
+            - Bedrooms: ${listing.bedrooms}
+            - Location: ${listing.city || 'Not specified'}
+            - Utilities: ${listing.utilities}
 
-PROPERTY CONTEXT:
-- Property: ${listing.title} 
-- Asking Price: $${listing.price}/month
-- Type: ${listing.house_type}, ${listing.bedrooms} bedrooms
-- Location: ${listing.city || 'Not specified'}
-- Market Average: $${marketData.average} (${marketData.count} comparable properties)
+            USER REQUIREMENTS:
+            - Budget: $${userBudget}
+            - Looking for: ${listing.house_type}
 
-YOUR STRATEGY:
-- Personality Style: ${personalityStyle.style} - ${personalityStyle.description}
-- Strategic Anchor: $${strategicPrice}/month (${this.getAnchorJustification(strategicPrice, listing.price, marketData)})
-- Value Proposition: ${valueProposition}
-- Urgency: ${urgencyTactic}
+            MARKET DATA:
+            - Average market price: $${marketData.average}
+            - Market range: $${marketData.min} - $${marketData.max}
+            - Data source: ${marketData.source}
+            - Analysis: ${marketData.analysis || 'Standard market conditions'}
 
-NEGOTIATION PSYCHOLOGY RULES:
-1. ANCHORING: Start with your strategic anchor price with clear market-based justification
-2. RECIPROCITY: Offer something valuable in return (quick move-in, long lease, etc.)
-3. SOCIAL PROOF: Reference market data or similar successful deals
-4. RAPPORT: Show genuine enthusiasm for THIS specific property
-5. CONFIDENCE: Be direct but warm - avoid phrases like "I hope" or "maybe"
-6. HUMAN TOUCH: Use conversational language, show personality
+            NEGOTIATION STRATEGY:
+            1. Be professional and respectful
+            2. Express genuine interest in the property
+            3. Mention you're a qualified tenant ready to move quickly
+            4. If listing price is above market average or user budget, suggest a lower price with justification
+            5. Offer quick decision-making and reliable tenancy
+            6. Keep message concise (2-3 sentences max)
 
-FORBIDDEN PHRASES (too robotic):
-- "Thank you for your message"
-- "I'm very interested in the property"  
-- "Could you provide more details"
-- "I'm a qualified tenant"
-- "Are you open to flexibility"
+            PRICING LOGIC:
+            - If listing price > market average: Suggest price closer to market average
+            - If listing price > user budget: Suggest price within budget
+            - If listing price is fair: Express interest and ask about flexibility
 
-GENERATE: Write as a confident, friendly human who genuinely loves this property. Be direct about your offer. Show personality. 2-3 sentences max.`;
+            Generate ONLY the message content (no "Dear" or signatures):
+            `;
 
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
@@ -296,10 +295,10 @@ GENERATE: Write as a confident, friendly human who genuinely loves this property
                     'OpenAI-Organization': this.config.OPENAI_ORG_ID
                 },
                 body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
+                    model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
                     messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 120,
-                    temperature: 0.8
+                    max_tokens: 150,
+                    temperature: 0.7
                 })
             });
 
@@ -310,108 +309,19 @@ GENERATE: Write as a confident, friendly human who genuinely loves this property
             const data = await response.json();
             const message = data.choices[0].message.content.trim();
             
-            console.log('✅ Generated strategic negotiation message');
+            console.log('✅ Generated negotiation message');
             return message;
 
         } catch (error) {
             console.error('Error generating negotiation message:', error);
             
-            // Strategic fallback with personality
-            const strategicPrice = this.calculateStrategicAnchorPrice(listing.price, userBudget, marketData);
-            const fallbackMessages = [
-                `This ${listing.house_type} caught my eye immediately! Based on similar properties in ${listing.city}, I'd love to offer $${strategicPrice}/month. I can move in next week and take excellent care of the place.`,
-                `Wow, this place looks perfect for me! I've been searching for exactly this type of ${listing.house_type} in ${listing.city}. Would $${strategicPrice}/month work? I'm ready to sign today with excellent references.`,
-                `Your ${listing.title} is exactly what I've been looking for! Market data shows similar places around $${strategicPrice}/month - I'd be thrilled to pay that and can move in immediately. Deal?`
-            ];
+            // Fallback message
+            const suggestion = listing.price > marketData.average ? 
+                `Would you consider $${Math.round(marketData.average * 0.95)} based on current market rates?` :
+                'Are you open to any flexibility on the rent?';
             
-            return fallbackMessages[Math.floor(Math.random() * fallbackMessages.length)];
+            return `Hi! I'm very interested in your ${listing.house_type} "${listing.title}". I'm a qualified tenant ready to move quickly. ${suggestion}`;
         }
-    }
-
-    // Calculate strategic anchor price using negotiation psychology
-    calculateStrategicAnchorPrice(listingPrice, userBudget, marketData) {
-        // Strategic anchoring: Start 10-15% below listing but above your real budget
-        const marketBaseline = marketData.average || listingPrice;
-        const maxAnchor = Math.min(userBudget * 1.05, listingPrice * 0.85); // Slight buffer above budget
-        const minAnchor = Math.max(userBudget * 0.85, marketBaseline * 0.90); // Don't go too low initially
-        
-        // Use market data to justify the anchor
-        if (listingPrice > marketBaseline * 1.1) {
-            // Overpriced property - anchor closer to market rate
-            return Math.round(Math.min(maxAnchor, marketBaseline * 0.95));
-        } else if (listingPrice < marketBaseline * 0.9) {
-            // Underpriced property - can anchor closer to listing price
-            return Math.round(Math.min(maxAnchor, listingPrice * 0.92));
-        } else {
-            // Fair market price - anchor in between
-            return Math.round((minAnchor + maxAnchor) / 2);
-        }
-    }
-
-    // Get justification for anchor price
-    getAnchorJustification(anchorPrice, listingPrice, marketData) {
-        const priceDiff = ((listingPrice - anchorPrice) / listingPrice * 100).toFixed(0);
-        const marketDiff = marketData.average ? ((anchorPrice - marketData.average) / marketData.average * 100).toFixed(0) : 0;
-        
-        if (listingPrice > marketData.average * 1.1) {
-            return `${priceDiff}% below asking, based on market average of $${marketData.average}`;
-        } else if (marketDiff > 0) {
-            return `${Math.abs(marketDiff)}% above market average, showing strong interest`;
-        } else {
-            return `market-competitive offer based on comparable properties`;
-        }
-    }
-
-    // Select negotiation personality style
-    selectNegotiationPersonality() {
-        const personalities = [
-            {
-                style: "Enthusiastic Professional",
-                description: "Confident, excited about the property, direct but warm"
-            },
-            {
-                style: "Strategic Analyzer", 
-                description: "Data-driven, market-focused, logical but personable"
-            },
-            {
-                style: "Friendly Straight-shooter",
-                description: "Honest, direct, builds quick rapport through authenticity"
-            },
-            {
-                style: "Experienced Renter",
-                description: "Knowledgeable about market, confident in value as tenant"
-            }
-        ];
-        
-        return personalities[Math.floor(Math.random() * personalities.length)];
-    }
-
-    // Generate urgency tactics (subtle, not pushy)
-    generateUrgencyTactic() {
-        const tactics = [
-            "Need to decide this week due to current lease ending",
-            "Ready to sign immediately with deposit",
-            "Currently viewing several properties, yours is my top choice",
-            "Moving from out of state, need quick decision",
-            "Have pre-approved finances and references ready"
-        ];
-        
-        return tactics[Math.floor(Math.random() * tactics.length)];
-    }
-
-    // Generate value propositions beyond just being "reliable"
-    generateValueProposition() {
-        const propositions = [
-            "Long-term tenant (looking for 2+ year lease)",
-            "Work from home, excellent care of property", 
-            "No smoking, no pets, minimal wear and tear",
-            "Excellent credit score and stable income",
-            "Previous landlord references available immediately",
-            "Professional who travels frequently (minimal property use)",
-            "Willing to handle minor maintenance tasks"
-        ];
-        
-        return propositions[Math.floor(Math.random() * propositions.length)];
     }
 
     // Handle incoming replies and continue negotiation
@@ -649,26 +559,15 @@ GENERATE: Write as a confident, friendly human who genuinely loves this property
         }
     }
 
-    // Enhanced reply analysis with better acceptance detection
+    // Analyze landlord's reply
     async analyzeReply(replyContent, negotiation, listing) {
-        console.log('🔍 Starting enhanced reply analysis for:', replyContent);
+        console.log('🔍 Starting reply analysis for:', replyContent);
         
-        // Enhanced acceptance patterns - more comprehensive
+        // First check for simple acceptance patterns IMMEDIATELY
         const simpleReply = replyContent.trim().toLowerCase();
-        const acceptancePatterns = [
-            /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely|perfect|excellent|great)$/i,
-            /^(that works|works for me|sounds perfect|i accept|accepted|let's do it|you got it)$/i,
-            /^(sure thing|no problem|that's fine|alright|all right)$/i
-        ];
+        const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)$/i.test(simpleReply);
         
-        const isSimpleAcceptance = acceptancePatterns.some(pattern => pattern.test(simpleReply));
-        
-        // Also check for contextual acceptance ("sure" after a price offer)
-        const hasContextualAcceptance = /\b(sure|yes|ok|okay|sounds good|works|agreed|deal)\b/i.test(simpleReply) && 
-                                      simpleReply.length < 20 && // Short replies are often acceptance
-                                      !/(too|low|high|can't|cannot|no|not)/i.test(simpleReply);
-        
-        if (isSimpleAcceptance || hasContextualAcceptance) {
+        if (isSimpleAcceptance) {
             console.log('🎯 IMMEDIATE ACCEPTANCE DETECTED:', simpleReply);
             const lastOffer = this.extractLastOfferedPrice(negotiation);
             return {
@@ -679,10 +578,9 @@ GENERATE: Write as a confident, friendly human who genuinely loves this property
                 shouldRespond: true,
                 isFinalized: true,
                 agreedPrice: lastOffer || negotiation.userBudget,
-                responseStrategy: 'celebrate_and_close',
-                suggestedResponse: `🎉 Fantastic! I'm thrilled we agreed on $${lastOffer || negotiation.userBudget}/month. When can we finalize the paperwork?`,
-                negotiationPhase: 'closing',
-                confidence: 0.95
+                responseStrategy: 'thank',
+                suggestedResponse: `Excellent! Thank you for accepting the $${lastOffer || negotiation.userBudget}/month offer.`,
+                negotiationPhase: 'closing'
             };
         }
 
@@ -770,165 +668,116 @@ GENERATE: Write as a confident, friendly human who genuinely loves this property
         } catch (error) {
             console.error('Error with AI analysis, using enhanced fallback:', error);
             
-            // Enhanced fallback analysis with psychological insights
+            // Enhanced fallback analysis with better detection
             const replyLower = replyContent.toLowerCase().trim();
-            const hasPrice = replyContent.match(/\$(\d+[,.]?\d*)/);
-            const extractedPrice = hasPrice ? parseFloat(hasPrice[1].replace(',', '')) : null;
-            
-            // Better sentiment analysis
-            const positiveWords = /\b(yes|ok|sure|accept|agree|sounds good|works|fine|deal|great|perfect|excellent|love|like|interested)\b/i;
-            const negativeWords = /\b(no|nope|can't|cannot|won't|will not|too low|too high|not|never|impossible|ridiculous)\b/i;
-            const neutralWords = /\b(maybe|possibly|consider|think about|let me|hmm|well)\b/i;
-            
-            let sentiment = 'neutral';
-            if (positiveWords.test(replyContent) && !negativeWords.test(replyContent)) {
-                sentiment = 'positive';
-            } else if (negativeWords.test(replyContent)) {
-                sentiment = 'negative';
-            }
-            
-            // Enhanced acceptance detection
+            const hasPrice = replyContent.match(/\$(\d+)/);
+            const seemsPositive = /\b(yes|ok|sure|accept|agree|sounds good|works|fine|deal|great|perfect)\b/i.test(replyContent);
             const hasAcceptanceWords = /\b(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|perfect|great|excellent)\b/i.test(replyLower);
-            const isShortPositive = replyLower.length < 15 && positiveWords.test(replyLower) && !negativeWords.test(replyLower);
-            const isAcceptance = (hasAcceptanceWords || isShortPositive) && !hasPrice;
             
-            // Detect communication style for adaptation
-            const communicationStyle = this.detectCommunicationStyle(replyContent);
-            
-            console.log('🔧 Enhanced fallback analysis:', {
-                hasAcceptanceWords,
-                isShortPositive, 
-                isAcceptance,
-                sentiment,
-                communicationStyle,
-                extractedPrice
-            });
+            console.log('🔧 Fallback analysis - hasAcceptanceWords:', hasAcceptanceWords, 'for:', replyLower);
             
             return {
-                sentiment: sentiment,
-                priceOffered: extractedPrice,
-                acceptsOffer: isAcceptance,
-                makesCounterOffer: !!extractedPrice,
+                sentiment: seemsPositive ? 'positive' : 'neutral',
+                priceOffered: hasPrice ? parseInt(hasPrice[1]) : null,
+                acceptsOffer: hasAcceptanceWords && !hasPrice,
+                makesCounterOffer: !!hasPrice,
                 shouldRespond: true,
-                isFinalized: isAcceptance,
-                agreedPrice: isAcceptance ? this.extractLastOfferedPrice(negotiation) : null,
-                responseStrategy: isAcceptance ? 'celebrate_and_close' : (extractedPrice ? 'strategic_counter' : 'clarify_and_persuade'),
-                negotiationPhase: isAcceptance ? 'closing' : (extractedPrice ? 'bargaining' : 'persuasion'),
-                communicationStyle: communicationStyle,
-                confidence: isAcceptance ? 0.85 : 0.7
+                isFinalized: hasAcceptanceWords && !hasPrice,
+                agreedPrice: (hasAcceptanceWords && !hasPrice) ? this.extractLastOfferedPrice(negotiation) : null,
+                responseStrategy: (hasAcceptanceWords && !hasPrice) ? 'thank' : (hasPrice ? 'counter' : 'clarify'),
+                negotiationPhase: (hasAcceptanceWords && !hasPrice) ? 'closing' : 'bargaining'
             };
         }
     }
 
-    // Detect landlord communication style for better adaptation
-    detectCommunicationStyle(replyContent) {
-        const formal = /\b(thank you|please|kindly|regards|sincerely|appreciate)\b/i.test(replyContent);
-        const casual = /\b(yeah|yep|nah|gonna|wanna|hey|hi|sup)\b/i.test(replyContent) || /[!]{2,}/.test(replyContent);
-        const direct = replyContent.length < 20 && !/\b(please|thank|appreciate|sorry)\b/i.test(replyContent);
-        const business = /\b(property|rental|lease|terms|agreement|contract)\b/i.test(replyContent);
-        
-        if (formal || business) return 'formal';
-        if (casual) return 'casual';
-        if (direct) return 'direct';
-        return 'neutral';
-        }
-    }
-
-    // Generate strategic counter-response with personality
+    // Generate counter-response
     async generateCounterResponse(analysis, negotiation, listing) {
         if (!analysis.shouldRespond) return null;
 
         try {
             if (analysis.isFinalized && analysis.acceptsOffer) {
                 const finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
-                console.log('🎉 GENERATING CELEBRATORY ACCEPTANCE RESPONSE - Price:', finalPrice);
-                
-                // Celebratory responses with personality and clear next steps
-                const celebratoryResponses = [
-                    `🎉 Amazing! I'm so excited we agreed on $${finalPrice}/month - this place is perfect for me! I have deposit ready and can sign the lease this week. What's our next step?`,
-                    `🎉 Fantastic! $${finalPrice}/month it is - I couldn't be happier! I have all documents ready (credit report, references, bank statements). When can we make this official?`,
-                    `🎉 Perfect! Thank you for accepting $${finalPrice}/month. This is exactly what I was hoping for! I'm ready with first month's rent and deposit. How should we proceed with the paperwork?`
-                ];
-                
-                return celebratoryResponses[Math.floor(Math.random() * celebratoryResponses.length)];
+                console.log('🎉 GENERATING FINAL ACCEPTANCE RESPONSE - Price:', finalPrice);
+                return `🎉 Excellent! Thank you for accepting the $${finalPrice}/month offer. I'm thrilled to move forward with this rental! I'm a reliable tenant ready to proceed immediately. Could you please let me know the next steps for finalizing the rental agreement? I have excellent references and can complete all necessary paperwork promptly. Looking forward to hearing from you soon!`;
             }
 
             if (analysis.makesCounterOffer && analysis.priceOffered) {
-                console.log('💰 Generating strategic counter-offer response');
-                return await this.generateStrategicCounterOffer(analysis, negotiation, listing);
+                console.log('💰 Generating counter-offer response');
+                return await this.generateAdvancedCounterOffer(analysis, negotiation, listing);
             }
 
-            if (analysis.sentiment === 'negative') {
-                console.log('🔄 Generating persuasive response for negative sentiment');
-                return await this.generatePersuasiveResponse(analysis, negotiation, listing);
+            if (analysis.sentiment === 'negative' || analysis.responseStrategy === 'clarify') {
+                console.log('🔄 Generating market-based response for negative sentiment');
+                return await this.generateMarketBasedResponse(negotiation, listing);
             }
 
-            // Generate adaptive response based on communication style
-            console.log('🎯 Generating adaptive response based on landlord style');
-            return await this.generateAdaptiveResponse(analysis, negotiation, listing);
+            // Use AI to generate contextual response
+            console.log('🤖 Generating contextual response');
+            return await this.generateContextualResponse(analysis, negotiation, listing);
 
         } catch (error) {
             console.error('Error generating counter-response:', error);
-            
-            // Intelligent fallback based on analysis
-            if (analysis.isFinalized) {
-                const finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
-                return `🎉 Perfect! I'm so excited we agreed on $${finalPrice}/month. This place is going to be amazing! When can we make it official?`;
-            }
-            
-            const strategicPrice = Math.min(negotiation.userBudget, Math.round((negotiation.marketData?.average || negotiation.userBudget) * 0.95));
-            return `I'm really interested in making this work! How about $${strategicPrice}/month? I can move in immediately and I'll take excellent care of your property.`;
+            return "Thank you for your response. I'm very interested in moving forward with this rental and I'm flexible on terms.";
         }
     }
 
-    // Generate strategic counter-offer with psychological tactics
-    async generateStrategicCounterOffer(analysis, negotiation, listing) {
+    // Generate advanced counter-offer with market analysis
+    async generateAdvancedCounterOffer(analysis, negotiation, listing) {
         const userBudget = negotiation.userBudget;
         const counterPrice = analysis.priceOffered;
         const marketData = negotiation.marketData;
-        const communicationStyle = analysis.communicationStyle || 'neutral';
 
-        // If their counter-offer is within budget - accept enthusiastically
-        if (counterPrice <= userBudget * 1.02) { // Small buffer for rounding
-            const enthusiasticResponses = [
-                `Perfect! $${counterPrice}/month works great for me - you've got a deal! I have deposit ready and can move in next week. When can we sign?`,
-                `$${counterPrice}/month is exactly what I was hoping for! I'm ready to proceed immediately with first month and deposit. This is going to work out perfectly!`,
-                `That works perfectly! $${counterPrice}/month it is. I'm so excited about this place - when can we make it official?`
-            ];
+        if (counterPrice <= userBudget) {
+            return `Perfect! $${counterPrice}/month works excellently for me. I'm ready to proceed immediately and can provide excellent references. When can we arrange to finalize the rental agreement?`;
+        } else {
+            const maxOffer = Math.min(userBudget, Math.round(counterPrice * 0.92));
+            let justification = '';
             
-            return enthusiasticResponses[Math.floor(Math.random() * enthusiasticResponses.length)];
+            if (marketData && counterPrice > marketData.average) {
+                justification = ` Given that similar properties in the area average around $${marketData.average}/month,`;
+            }
+            
+            return `I really appreciate your counter-offer!${justification} Would you consider $${maxOffer}/month? This fits perfectly within my budget and I can guarantee immediate occupancy with excellent references. I'm a serious, reliable tenant looking to establish a long-term rental relationship.`;
         }
+    }
 
-        // Strategic counter-offer using negotiation psychology
-        const strategicCounter = this.calculateStrategicCounter(counterPrice, userBudget, marketData);
-        const gap = counterPrice - strategicCounter;
-        const personalityStyle = this.selectNegotiationPersonality();
+    // Generate market-based response for rejections
+    async generateMarketBasedResponse(negotiation, listing) {
+        const marketData = negotiation.marketData || await this.getMarketData(
+            listing.city, listing.house_type, listing.bedrooms
+        );
         
-        const prompt = `You're an expert negotiator responding to a landlord's counter-offer. Generate a strategic, human-like response.
+        const suggestion = Math.min(
+            negotiation.userBudget, 
+            Math.round(marketData.average * 0.95)
+        );
+        
+        return `I understand your position. Based on current market data for similar ${listing.house_type}s in ${listing.city}, comparable properties are typically renting for around $${marketData.average}/month. Would you consider $${suggestion}/month? I'm a qualified, reliable tenant with excellent references and I'm ready to move in immediately.`;
+    }
 
-SITUATION:
-- Landlord counter-offered: $${counterPrice}/month
-- Your strategic counter: $${strategicCounter}/month  
-- Gap to close: $${gap}
-- Your max budget: $${userBudget}/month
-- Market average: $${marketData.average || 'unknown'}/month
-- Landlord communication style: ${communicationStyle}
-- Your personality: ${personalityStyle.style}
-
-STRATEGIC GOALS:
-1. BRIDGING: Acknowledge their offer positively, then bridge to your counter
-2. JUSTIFICATION: Give compelling reason for your counter (market data, budget constraints, value you bring)
-3. RECIPROCITY: Offer something valuable in return (longer lease, immediate move, excellent care)
-4. URGENCY: Subtle time pressure without being pushy
-5. RELATIONSHIP: Build rapport and show you want this to work
-
-TONE: ${this.getCommunicationTone(communicationStyle)}
-
-AVOID: Generic phrases, robotic language, weak justifications
-
-Write a confident, warm response that makes your counter-offer compelling. 2-3 sentences max.`;
-
+    // Generate contextual response using AI
+    async generateContextualResponse(analysis, negotiation, listing) {
         try {
+            const prompt = `
+            Generate a persuasive rental negotiation response based on this context:
+            
+            LANDLORD'S SENTIMENT: ${analysis.sentiment}
+            STRATEGY NEEDED: ${analysis.responseStrategy}
+            NEGOTIATION PHASE: ${analysis.negotiationPhase}
+            
+            PROPERTY: ${listing.title} - $${listing.price}/month (${listing.house_type})
+            USER BUDGET: $${negotiation.userBudget}/month
+            CONVERSATION: ${negotiation.messages.slice(-2).map(m => `${m.sender}: ${m.content}`).join(' | ')}
+            
+            Generate a professional, persuasive response (2-3 sentences max) that:
+            1. Acknowledges their position respectfully
+            2. Emphasizes tenant reliability and quick decision-making
+            3. Makes a reasonable counter-proposal if needed
+            4. Shows genuine interest in the property
+            
+            Be concise and professional. Do NOT include greetings or signatures.
+            `;
+
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
@@ -940,7 +789,7 @@ Write a confident, warm response that makes your counter-offer compelling. 2-3 s
                     model: this.config.OPENAI_MODEL || 'gpt-4',
                     messages: [{ role: 'system', content: prompt }],
                     max_tokens: 120,
-                    temperature: 0.8
+                    temperature: 0.7
                 })
             });
 
@@ -949,197 +798,10 @@ Write a confident, warm response that makes your counter-offer compelling. 2-3 s
                 return data.choices[0].message.content.trim();
             }
         } catch (error) {
-            console.error('Error generating strategic counter-offer:', error);
-        }
-
-        // Fallback strategic response
-        const valueOffers = [
-            "I can move in immediately and sign a longer lease",
-            "I'll take excellent care of the property and handle minor maintenance", 
-            "I can provide first month + security deposit upfront",
-            "I'm looking for a long-term rental (2+ years)"
-        ];
-        
-        const selectedValue = valueOffers[Math.floor(Math.random() * valueOffers.length)];
-        const justification = marketData && counterPrice > marketData.average ? 
-            ` Given the market average is around $${marketData.average},` : '';
-            
-        return `I appreciate your counter-offer of $${counterPrice}!${justification} How about we meet in the middle at $${strategicCounter}/month? ${selectedValue} and I'm genuinely excited about this place!`;
-    }
-
-    // Calculate strategic counter-offer price
-    calculateStrategicCounter(theirOffer, maxBudget, marketData) {
-        // Never go over budget
-        const absoluteMax = maxBudget;
-        
-        // Try to split the difference, but weighted toward your favor
-        const lastOffer = this.getLastOfferFromNegotiation() || maxBudget * 0.9;
-        const weightedMiddle = Math.round((theirOffer * 0.3) + (lastOffer * 0.7));
-        
-        // Ensure it's reasonable and within budget
-        return Math.min(absoluteMax, Math.max(lastOffer + 50, weightedMiddle));
-    }
-    
-    // Get last offer from negotiation history (placeholder - would need actual implementation)
-    getLastOfferFromNegotiation() {
-        // This would extract the last price offered by the AI
-        // For now, return null to use fallback logic
-        return null;
-    }
-
-    // Generate persuasive response for negative sentiment  
-    async generatePersuasiveResponse(analysis, negotiation, listing) {
-        const marketData = negotiation.marketData || await this.getMarketData(
-            listing.city, listing.house_type, listing.bedrooms
-        );
-        
-        const strategicOffer = Math.min(
-            negotiation.userBudget, 
-            Math.round(marketData.average * 0.97)
-        );
-        
-        const communicationStyle = analysis.communicationStyle || 'neutral';
-        const originalMessage = analysis.originalMessage || 'previous offer';
-        
-        const prompt = `The landlord rejected your offer with negative sentiment. Generate a persuasive response that turns this around.
-
-CONTEXT:
-- Landlord's rejection: "${originalMessage}"
-- Communication style: ${communicationStyle}
-- Your strategic final offer: $${strategicOffer}/month
-- Market average: $${marketData.average}/month
-- Property: ${listing.title} (${listing.house_type})
-
-PERSUASION STRATEGY:
-1. ACKNOWLEDGE: Respect their position without being defensive
-2. REFRAME: Present new perspective or value proposition
-3. MARKET DATA: Use data to support your position (if property is overpriced)
-4. VALUE: Emphasize unique value you bring as tenant
-5. FINAL OFFER: Make this feel like your best and final offer
-6. URGENCY: Create gentle time pressure
-
-PSYCHOLOGY:
-- Use "yes, and..." instead of "but"
-- Appeal to their desire for a reliable, long-term tenant
-- Show you understand their business needs
-- Make them feel smart for choosing you
-
-TONE: ${this.getCommunicationTone(communicationStyle)}
-
-Write a compelling response that addresses their concerns and makes your final offer irresistible. 3-4 sentences max.`;
-
-        try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'OpenAI-Organization': this.config.OPENAI_ORG_ID
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
-                    messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 140,
-                    temperature: 0.8
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                return data.choices[0].message.content.trim();
-            }
-        } catch (error) {
-            console.error('Error generating persuasive response:', error);
-        }
-
-        // Fallback persuasive response with personality
-        const persuasiveMessages = [
-            `I completely understand - you want the best value for your property! Based on current market rates for ${listing.house_type}s in ${listing.city} (averaging $${marketData.average}), I'd love to offer $${strategicOffer}/month as my final offer. I'm the kind of tenant who'll treat your place like my own and stay long-term. What do you think?`,
-            `You're absolutely right to want fair market value! Looking at comparable properties in ${listing.city}, $${strategicOffer}/month would be competitive and I can guarantee you'll have zero headaches with me as a tenant. I'm ready to move in this week and plan to stay for years. Deal?`,
-            `I hear you, and I want this to work for both of us! My research shows similar properties averaging $${marketData.average}/month, so $${strategicOffer} feels fair for both sides. Plus you're getting a reliable, long-term tenant who takes excellent care of properties. Sound good?`
-        ];
-        
-        return persuasiveMessages[Math.floor(Math.random() * persuasiveMessages.length)];
-    }
-
-    // Generate adaptive response based on landlord communication style
-    async generateAdaptiveResponse(analysis, negotiation, listing) {
-        const communicationStyle = analysis.communicationStyle || 'neutral';
-        const sentiment = analysis.sentiment;
-        const marketData = negotiation.marketData;
-        const strategicPrice = Math.min(negotiation.userBudget, Math.round(marketData.average * 0.95));
-        
-        const prompt = `Generate an adaptive response that matches the landlord's communication style and sentiment.
-
-CONTEXT:
-- Landlord communication style: ${communicationStyle}
-- Landlord sentiment: ${sentiment} 
-- Property: ${listing.title} ($${listing.price}/month)
-- Your strategic price: $${strategicPrice}/month
-- Market data: $${marketData.average}/month average
-- Phase: ${analysis.negotiationPhase}
-
-ADAPTATION RULES:
-- If FORMAL style: Be professional, use proper grammar, respectful language
-- If CASUAL style: Be friendly, use relaxed language, maybe light humor
-- If DIRECT style: Be concise, straightforward, no fluff
-- If BUSINESS style: Focus on practical aspects, ROI, professional relationship
-
-STRATEGY based on sentiment:
-- POSITIVE: Build on momentum, suggest moving forward
-- NEUTRAL: Provide compelling reasons to engage
-- NEGATIVE: Address concerns, reframe perspective
-
-TONE: ${this.getCommunicationTone(communicationStyle)}
-
-Write a response that feels natural for this landlord's style while advancing the negotiation. 2-3 sentences max.`;
-
-        try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'OpenAI-Organization': this.config.OPENAI_ORG_ID
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
-                    messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 100,
-                    temperature: 0.8
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                return data.choices[0].message.content.trim();
-            }
-        } catch (error) {
-            console.error('Error generating adaptive response:', error);
+            console.error('Error generating contextual response:', error);
         }
         
-        // Style-specific fallback responses
-        const fallbackResponses = {
-            formal: `I appreciate your consideration of my inquiry. Based on current market analysis showing similar properties at $${marketData.average}/month, would $${strategicPrice}/month be acceptable? I am prepared to proceed expeditiously with all necessary documentation.`,
-            casual: `Hey, I really love this place! I've been looking at similar spots and they're going for around $${strategicPrice}/month. Would that work for you? I can move in super quick and I'm pretty low-maintenance!`,
-            direct: `$${strategicPrice}/month. Market rate. Ready to sign today. Deal?`,
-            business: `Given comparable properties average $${marketData.average}/month in this market, $${strategicPrice}/month represents fair value for both parties. I offer reliable tenancy and immediate occupancy. Shall we proceed?`
-        };
-        
-        return fallbackResponses[communicationStyle] || fallbackResponses.formal;
-    }
-    
-    // Get communication tone guidance based on style
-    getCommunicationTone(style) {
-        const tones = {
-            formal: "Professional, respectful, proper grammar, courteous",
-            casual: "Friendly, relaxed, conversational, maybe light humor", 
-            direct: "Concise, straightforward, no-nonsense, brief",
-            business: "Practical, focused on value and ROI, professional",
-            neutral: "Balanced, polite but not overly formal, clear"
-        };
-        
-        return tones[style] || tones.neutral;
+        return `Thank you for your consideration. I'm very interested in this ${listing.house_type} and I'm a reliable tenant ready to move quickly. Is there any flexibility we can work with?`;
     }
 
     // Send negotiation message
