@@ -2,14 +2,10 @@ package com.roomfinder.android.fragments;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.EditorInfo;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -43,7 +39,7 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     private List<Listing> allListings = new ArrayList<>();
     private SupabaseService supabaseService;
     private String currentFilter = "All";
-    private String currentSearchQuery = "";
+    // Removed currentSearchQuery - no search in simple home page
     private String currentSortOption = "Price: Low → High";
     private int activeFilterCount = 0;
     
@@ -69,8 +65,6 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        // Cancel any pending search operations
-        cancelPendingSearch();
         binding = null;
     }
     
@@ -179,10 +173,7 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
             binding.sortButton.setOnClickListener(v -> showSortMenu());
         }
         
-        // Clear all filters button
-        if (binding.clearFiltersButton != null) {
-            binding.clearFiltersButton.setOnClickListener(v -> clearAllFilters());
-        }
+        // Clear all filters button removed - not in simple layout
         
         // Add debug button temporarily (remove this later)
         if (binding.sortButton != null) {
