@@ -3041,6 +3041,18 @@ app.post('/api/ai-negotiate', async (req, res) => {
     }
 });
 
+// API: Test endpoint to verify deployment
+app.get('/api/test-negotiate', (req, res) => {
+    console.log('🧪 Test negotiate endpoint called - server is running updated code');
+    res.json({ 
+        message: 'Test endpoint working',
+        timestamp: new Date().toISOString(),
+        serverVersion: '7069a05-debugging-enhanced',
+        hasOpenAI: !!config.OPENAI_API_KEY,
+        openAIKeyFormat: config.OPENAI_API_KEY ? (config.OPENAI_API_KEY.startsWith('sk-') ? 'valid' : 'invalid') : 'missing'
+    });
+});
+
 // API: Send actual message to landlord
 app.post('/api/message-landlord', async (req, res) => {
     try {
