@@ -187,7 +187,7 @@ class PerformanceManager {
     // Optimize long tasks
     optimizeLongTask(entry) {
         // Break up long tasks using scheduler.postTask if available
-        if ('scheduler' in window && 'postTask' in (window as any).scheduler) {
+        if ('scheduler' in window && 'postTask' in window.scheduler) {
             console.log('🔧 Using scheduler.postTask for task optimization');
         } else {
             // Fallback to setTimeout for task yielding
@@ -231,7 +231,7 @@ class PerformanceManager {
             const imageObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        const img = entry.target as HTMLImageElement;
+                        const img = entry.target;
                         
                         // Add loading placeholder
                         if (!img.src && img.dataset.src) {
@@ -306,7 +306,7 @@ class PerformanceManager {
 
         // Force garbage collection if available
         if ('gc' in window) {
-            (window as any).gc();
+            window.gc();
         }
 
         console.log('🧹 Memory optimization triggered');
@@ -461,7 +461,7 @@ class PerformanceManager {
             pageLoad: this.metrics.pageLoad,
             resourceCount: this.resourceTimings.length,
             slowResources: this.resourceTimings.filter(r => r.duration > 1000).length,
-            memoryUsage: 'memory' in performance ? (performance as any).memory : null,
+            memoryUsage: 'memory' in performance ? performance.memory : null,
             timestamp: new Date().toISOString()
         };
     }
