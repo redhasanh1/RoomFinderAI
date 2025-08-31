@@ -82,12 +82,12 @@ async function waitForConfiguration() {
     const checkInterval = 100; // 100ms
     let waited = 0;
     
-    while (!window.ConfigManager.isConfigurationLoaded() && waited < maxWait) {
+    while (!window.ClientConfig.isConfigurationLoaded() && waited < maxWait) {
         await new Promise(resolve => setTimeout(resolve, checkInterval));
         waited += checkInterval;
     }
     
-    if (!window.ConfigManager.isConfigurationLoaded()) {
+    if (!window.ClientConfig.isConfigurationLoaded()) {
         throw new Error('Configuration loading timeout');
     }
 }
@@ -102,7 +102,9 @@ async function initializeCoreComponents() {
     await window.AuthManager.initializeAuth();
     
     // Initialize spell checker
-    window.ConfigManager.initializeSpellChecker();
+    if (window.ClientConfig.initializeTypo) {
+        window.ClientConfig.initializeTypo();
+    }
     
     console.log('✅ Core components initialized');
 }
@@ -366,7 +368,7 @@ function handleInitializationError(error) {
         console.error('💥 All initialization attempts failed');
         
         // Show error to user
-        window.ConfigManager.showError(
+        window.ClientConfig.showError(
             'Application initialization failed. Some features may not work properly. Please refresh the page.'
         );
         
@@ -455,12 +457,12 @@ function handleContactSubmit(e) {
  */
 function attemptInitialization() {
     console.log('🚀 Attempting initialization...', {
-        configLoaded: window.ConfigManager.isConfigurationLoaded(),
+        configLoaded: window.ClientConfig.isConfigurationLoaded(),
         domReady: isDOMReady,
         attempt: initializationAttempts + 1
     });
 
-    if (!window.ConfigManager.isConfigurationLoaded() || !isDOMReady) {
+    if (!window.ClientConfig.isConfigurationLoaded() || !isDOMReady) {
         console.log('⏳ Waiting for prerequisites...');
         return;
     }
@@ -481,7 +483,7 @@ function attemptInitialization() {
             }, 1000);
         } else {
             console.error('💥 All initialization attempts failed. System may not work properly.');
-            window.ConfigManager.showError('Application initialization failed. Some features may not work. Please refresh the page.');
+            window.ClientConfig.showError('Application initialization failed. Some features may not work. Please refresh the page.');
         }
     }
 }
