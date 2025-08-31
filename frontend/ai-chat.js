@@ -700,26 +700,63 @@ class AIChatHandler {
         try {
             this.appendMessage('AI', `📤 Sending negotiation message for listing ${listing.id}...`, 'left');
             
+            // Prepare request data
+            const requestData = {
+                message: `I'm interested in listing ${listing.id} - ${listing.title || 'Property'} in ${listing.city || listing.street}. Please help me negotiate a good deal.`,
+                conversationHistory: this.conversationHistory.slice(-5),
+                userEmail: this.currentUser?.email,
+                listingData: listing
+            };
+            
+            console.log('📤 AI Negotiate Request Details:');
+            console.log('- URL:', '/api/ai-negotiate');
+            console.log('- Method:', 'POST');
+            console.log('- Request Data:', requestData);
+            console.log('- User Email:', this.currentUser?.email);
+            console.log('- Listing ID:', listing.id);
+            console.log('- Message Length:', requestData.message.length);
+            console.log('- Conversation History Length:', requestData.conversationHistory.length);
+            
             // Call the AI negotiation API
             const response = await fetch('/api/ai-negotiate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    message: `I'm interested in listing ${listing.id} - ${listing.title || 'Property'} in ${listing.city || listing.street}. Please help me negotiate a good deal.`,
-                    conversationHistory: this.conversationHistory.slice(-5),
-                    userEmail: this.currentUser?.email,
-                    listingData: listing
-                })
+                body: JSON.stringify(requestData)
             });
 
+            console.log('🔍 AI Negotiate Response Details:');
+            console.log('- Status:', response.status);
+            console.log('- Status Text:', response.statusText);
+            console.log('- Headers:', Object.fromEntries(response.headers.entries()));
+            
             if (response.ok) {
                 const data = await response.json();
+                console.log('✅ Success Response:', data);
                 this.appendMessage('AI', `✅ Negotiation initiated for listing ${listing.id}`, 'left');
                 this.appendMessage('AI', data.response, 'left');
             } else {
+                // Try to get error details from response
+                let errorDetails = 'No additional details';
+                try {
+                    const errorData = await response.json();
+                    console.error('❌ Server Error Response:', errorData);
+                    errorDetails = errorData.error || errorData.details || JSON.stringify(errorData);
+                } catch (e) {
+                    console.error('❌ Could not parse error response as JSON');
+                    const textResponse = await response.text().catch(() => 'Could not read response');
+                    console.error('❌ Raw error response:', textResponse);
+                    errorDetails = textResponse;
+                }
+                
                 this.appendMessage('AI', `❌ Failed to initiate negotiation for listing ${listing.id}`, 'left');
+                this.appendMessage('AI', `Error: ${errorDetails}`, 'left');
+                console.error('❌ Full error context:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    errorDetails: errorDetails
+                });
             }
         } catch (error) {
             console.error('Negotiation error:', error);
