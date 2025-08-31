@@ -265,7 +265,10 @@ async function initSupabaseAuth() {
         console.log('✅ Supabase profile synchronized');
         return true;
     } catch (error) {
-        console.error('Error initializing Supabase auth:', error);
+        // Only log error if it's not a connection issue
+        if (error && error.message && !error.message.includes('Cannot read properties')) {
+            console.error('Error initializing Supabase auth:', error);
+        }
         return false;
     }
 }
