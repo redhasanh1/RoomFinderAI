@@ -11,7 +11,7 @@ let apiInitialized = false;
  */
 function initializeAPI() {
     try {
-        supabase = window.ConfigManager.getSupabaseClient();
+        supabase = window.ClientConfig.getSupabaseClient();
         apiInitialized = true;
         console.log('📡 Listings API initialized');
         return true;
