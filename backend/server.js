@@ -2889,12 +2889,30 @@ app.post('/api/ai-negotiate', async (req, res) => {
         console.log('📊 Conversation history length:', conversationHistory?.length || 0);
 
         // Check if OpenAI is configured
+        console.log('🔍 Checking OpenAI configuration...');
+        console.log('- Config keys available:', Object.keys(config));
+        console.log('- OPENAI_API_KEY present:', !!config.OPENAI_API_KEY);
+        console.log('- OPENAI_API_KEY type:', typeof config.OPENAI_API_KEY);
+        console.log('- OPENAI_API_KEY starts with sk-:', config.OPENAI_API_KEY?.startsWith?.('sk-'));
+        
         if (!config.OPENAI_API_KEY) {
             console.log('❌ OpenAI API key not configured');
-            return res.status(503).json({ error: 'AI service not available - OpenAI not configured' });
+            return res.status(503).json({ 
+                error: 'AI service not available - OpenAI not configured',
+                configKeys: Object.keys(config),
+                hasKey: !!config.OPENAI_API_KEY
+            });
         }
         
-        console.log('✅ OpenAI API key is configured');
+        if (!config.OPENAI_API_KEY.startsWith('sk-')) {
+            console.log('❌ OpenAI API key format invalid');
+            return res.status(503).json({ 
+                error: 'AI service not available - OpenAI key format invalid',
+                keyLength: config.OPENAI_API_KEY.length
+            });
+        }
+        
+        console.log('✅ OpenAI API key is configured and valid format');
 
         // Build the conversation context for OpenAI
         let systemPrompt;
@@ -3002,9 +3020,22 @@ app.post('/api/ai-negotiate', async (req, res) => {
     } catch (error) {
         console.error('❌ Error in /api/ai-negotiate:', error.message);
         console.error('Full error:', error);
+        console.error('Error stack:', error.stack);
+        console.error('Error type:', typeof error);
+        console.error('Error constructor:', error.constructor.name);
+        
+        // Additional debugging info
+        console.error('Environment check:');
+        console.error('- NODE_ENV:', process.env.NODE_ENV);
+        console.error('- Has OPENAI_API_KEY:', !!config.OPENAI_API_KEY);
+        console.error('- OPENAI_API_KEY length:', config.OPENAI_API_KEY?.length);
+        console.error('- OPENAI_MODEL:', config.OPENAI_MODEL);
+        
         res.status(500).json({ 
             error: 'Failed to process AI negotiation request',
             details: error.message,
+            type: error.constructor.name,
+            timestamp: new Date().toISOString(),
             stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
         });
     }
