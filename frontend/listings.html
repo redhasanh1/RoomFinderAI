@@ -2430,10 +2430,27 @@
                     await displayListings();
                     liveUpdateScheduled = false;
                 } else {
-                    setTimeout(checkAndUpdate, 500);
+                    // Only retry a limited number of times to prevent infinite recursion
+                    let retryCount = 0;
+                    const maxRetries = 10;
+                    const retryCheck = () => {
+                        if (retryCount >= maxRetries) {
+                            console.log('⚠️ Max retries reached for live update, stopping');
+                            liveUpdateScheduled = false;
+                            return;
+                        }
+                        if (window.supabaseClient && typeof window.supabaseClient.from === 'function') {
+                            checkAndUpdate();
+                        } else {
+                            retryCount++;
+                            setTimeout(retryCheck, 500);
+                        }
+                    };
+                    retryCheck();
+                    return;
                 }
             };
-            setTimeout(checkAndUpdate, 500);
+            setTimeout(checkAndUpdate, 1000); // Increased delay to reduce race conditions
         }
         
         // Fetch listings from Supabase
@@ -2616,14 +2633,29 @@
                 const chatBtn = card.querySelector('.chat-btn');
                 const favBtn = card.querySelector('.favorite-btn');
                 
-                if (viewBtn) {
-                    viewBtn.onclick = () => showListingModal(card.listingData);
+                if (viewBtn && card.listingData) {
+                    viewBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🔍 View button clicked for listing:', card.listingData);
+                        showListingModal(card.listingData);
+                    });
                 }
-                if (chatBtn && !chatBtn.disabled) {
-                    chatBtn.onclick = () => startConversation(card.listingData);
+                if (chatBtn && !chatBtn.disabled && card.listingData) {
+                    chatBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('💬 Chat button clicked for listing:', card.listingData);
+                        startConversation(card.listingData);
+                    });
                 }
-                if (favBtn) {
-                    favBtn.onclick = () => toggleFavorite(card.listingData.id, favBtn, card.listingData);
+                if (favBtn && card.listingData) {
+                    favBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('❤️ Favorite button clicked for listing:', card.listingData);
+                        toggleFavorite(card.listingData.id, favBtn, card.listingData);
+                    });
                 }
             });
 
