@@ -2438,15 +2438,39 @@
         async function fetchListings() {
             console.log('Fetching listings from Supabase');
             
-            // Check for cached listings first for instant display
+            // ALWAYS check for cached listings first for instant display
             const cachedListings = localStorage.getItem('cachedListings');
-            if (cachedListings && (!window.supabaseClient || typeof window.supabaseClient.from !== 'function')) {
+            if (cachedListings) {
                 console.log('📦 Using cached listings for instant display');
                 try {
                     const cached = JSON.parse(cachedListings);
-                    if (cached.data && Array.isArray(cached.data)) {
-                        // Update with live data later when Supabase is ready
-                        scheduleLiveUpdate();
+                    if (cached.data && Array.isArray(cached.data) && cached.data.length > 0) {
+                        // Update with live data in background (non-blocking)
+                        if (window.supabaseClient && typeof window.supabaseClient.from === 'function') {
+                            setTimeout(async () => {
+                                try {
+                                    const { data, error } = await window.supabaseClient
+                                        .from('listings')
+                                        .select('*')
+                                        .order('created_at', { ascending: false })
+                                        .range(0, 19);
+                                    if (!error && data) {
+                                        // Update cache and refresh display
+                                        localStorage.setItem('cachedListings', JSON.stringify({
+                                            data: data,
+                                            timestamp: Date.now()
+                                        }));
+                                        // Only refresh if significantly different
+                                        if (data.length !== cached.data.length) {
+                                            isLoadingListings = false;
+                                            displayListings();
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.warn('Background update failed:', e);
+                                }
+                            }, 0);
+                        }
                         return cached.data;
                     }
                 } catch (e) {
@@ -2454,9 +2478,9 @@
                 }
             }
             
-            // If Supabase isn't ready, return cached or empty
+            // If no cache or Supabase isn't ready, try to get live data
             if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') {
-                console.log('⏳ Supabase not ready, will update when available');
+                console.log('⏳ Supabase not ready, showing empty for now');
                 scheduleLiveUpdate();
                 return [];
             }
@@ -2572,94 +2596,58 @@
             // Use DocumentFragment for batch DOM operations
             const fragment = document.createDocumentFragment();
             
-            listings.forEach(listing => {
-                console.log('Processing listing:', listing.id, listing.title);
+            // Super fast rendering - minimal template and batch processing
+            listings.forEach((listing, index) => {
                 let media = listing.media || [];
-                if (!Array.isArray(media)) {
-                    console.warn('Media is not an array, resetting to empty array:', media);
-                    media = [];
-                }
-
-                // Quick MIME type correction (optimized)
-                if (media.length > 0 && media[0].name && !media[0].type.startsWith('image/')) {
-                    const ext = media[0].name.split('.').pop().toLowerCase();
-                    if (ext === 'jpg' || ext === 'jpeg') media[0].type = 'image/jpeg';
-                    else if (ext === 'png') media[0].type = 'image/png';
-                }
-
-                const isImage = (file) => {
-                    const byType = file.type.startsWith('image/');
-                    const byExtension = file.name.match(/\.(jpg|jpeg|png)$/i);
-                    return byType || byExtension;
-                };
-
-                const primaryImage = media.length > 0 && isImage(media[0])
-                    ? media[0].url
-                    : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
-
+                const imageUrl = (media.length > 0 && media[0]?.url) ? media[0].url : '';
+                const hasOwner = !!listing.user_email;
+                
                 const listingCard = document.createElement('div');
                 listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
-
-                const hasOwner = !!listing.user_email;
+                
+                // Minimal HTML template - no JSON.stringify until needed
                 listingCard.innerHTML = `
                     <div class="relative">
-                        <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+">
-                        <button class="favorite-btn absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 z-10" 
-                                data-listing-id="${listing.id}" 
-                                data-favorited="false" 
-                                title="Save to favorites"
-                                onclick="toggleFavorite('${listing.id}', this, ${JSON.stringify(listing).replace(/"/g, '&quot;')})">
-                            <svg class="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                            </svg>
-                        </button>
+                        <img src="${imageUrl || '/placeholder.jpg'}" alt="${listing.title}" class="listing-image w-full h-48 object-cover">
+                        <button class="favorite-btn absolute top-2 right-2 p-2 bg-white/90 rounded-full" data-listing-id="${listing.id}">♡</button>
                     </div>
                     <div class="p-4">
                         <h3 class="text-lg font-semibold text-gray-800 truncate">${listing.title}</h3>
-                        <p class="text-xl font-bold text-blue-600">$${listing.price.toLocaleString()}/mo</p>
-                        <p class="text-gray-600 text-sm">${listing.street}, ${listing.city}, ${listing.postalCode}</p>
-                        <div class="flex items-center space-x-2 text-sm text-gray-600 mt-2">
-                            <span>${listing.bedrooms} Bed</span>
-                            <span>•</span>
-                            <span>${listing.house_type}</span>
-                            <span>•</span>
-                            <span>${listing.utilities}</span>
-                        </div>
-                        <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
+                        <p class="text-xl font-bold text-blue-600">$${listing.price}/mo</p>
+                        <p class="text-gray-600 text-sm">${listing.street}, ${listing.city}</p>
                         <div class="flex space-x-2 mt-4">
-                            <button class="view-details-btn w-1/2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                            <button class="chat-btn w-1/2 ${hasOwner ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
+                            <button class="view-details-btn w-1/2 bg-purple-600 text-white px-4 py-2 rounded-lg" data-id="${listing.id}">View</button>
+                            <button class="chat-btn w-1/2 ${hasOwner ? 'bg-blue-600' : 'bg-gray-400'} text-white px-4 py-2 rounded-lg" data-id="${listing.id}" ${hasOwner ? '' : 'disabled'}>Chat</button>
                         </div>
                     </div>
                 `;
+                
+                // Store listing data on element instead of JSON.stringify
+                listingCard.listingData = listing;
                 fragment.appendChild(listingCard);
             });
             
             // Add all listing cards to DOM at once
             container.appendChild(fragment);
 
-            document.querySelectorAll('.view-details-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const listing = JSON.parse(button.dataset.listing);
-                    showListingModal(listing);
-                });
-            });
-
-            document.querySelectorAll('.chat-btn').forEach(button => {
-                if (!button.disabled) {
-                    button.addEventListener('click', () => {
-                        try {
-                            console.log('🎯 Chat button clicked (legacy handler):', button.dataset.listing);
-                            const listing = JSON.parse(button.dataset.listing);
-                            console.log('📋 Parsed listing data:', listing);
-                            startConversation(listing);
-                        } catch (error) {
-                            console.error('❌ Error parsing listing data or starting conversation:', error);
-                            alert('Error opening chat. Please refresh the page and try again.');
-                        }
-                    });
-                } else {
-                    console.log('⚠️ Chat button is disabled (legacy handler) - no owner email specified');
+            // Use event delegation for better performance
+            container.addEventListener('click', (e) => {
+                if (e.target.matches('.view-details-btn')) {
+                    const listingCard = e.target.closest('.listing-card');
+                    if (listingCard && listingCard.listingData) {
+                        showListingModal(listingCard.listingData);
+                    }
+                } else if (e.target.matches('.chat-btn') && !e.target.disabled) {
+                    const listingCard = e.target.closest('.listing-card');
+                    if (listingCard && listingCard.listingData) {
+                        startConversation(listingCard.listingData);
+                    }
+                } else if (e.target.matches('.favorite-btn') || e.target.closest('.favorite-btn')) {
+                    const btn = e.target.matches('.favorite-btn') ? e.target : e.target.closest('.favorite-btn');
+                    const listingCard = btn.closest('.listing-card');
+                    if (listingCard && listingCard.listingData) {
+                        toggleFavorite(listingCard.listingData.id, btn, listingCard.listingData);
+                    }
                 }
             });
 
@@ -2671,10 +2659,8 @@
                 setTimeout(() => updateMap(listings), 0); // Non-blocking
             }
             
-            // Check if we should auto-open a specific listing (reduced delay)
-            setTimeout(() => {
-                checkAutoOpenListing(listings);
-            }, 50);
+            // Check if we should auto-open a specific listing (immediate)
+            checkAutoOpenListing(listings);
             
             // Reset loading flag
             isLoadingListings = false;
@@ -2699,10 +2685,8 @@
                 console.log('✅ Found listing to auto-open:', targetListing.title);
                 // Clear the auto-open ID first to prevent multiple triggers
                 sessionStorage.removeItem('autoOpenListingId');
-                // Minimal delay for fast response
-                setTimeout(() => {
-                    showListingModal(targetListing);
-                }, 100);
+                // Open immediately
+                showListingModal(targetListing);
             } else {
                 console.warn('⚠️ Listing not found for auto-open ID:', autoOpenId);
                 // Clear the ID even if not found to prevent infinite attempts
@@ -4680,7 +4664,7 @@
             
             // Initial filter if parameters were provided
             if (allParams.size > 0) {
-                setTimeout(filterListings, 500); // Allow time for listings to load
+                filterListings(); // Filter immediately
             }
             
             // Handle messaging popup if openChat parameter exists
@@ -4763,8 +4747,12 @@
             }
         }
         
-        // Initialize search filters after page loads
-        setTimeout(setupSearchFilters, 1000);
+        // Initialize search filters immediately when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupSearchFilters);
+        } else {
+            setupSearchFilters();
+        }
         
         // Dropdown functionality
         function toggleDropdown(dropdownId) {
