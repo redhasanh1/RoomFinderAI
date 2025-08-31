@@ -6132,6 +6132,15 @@ app.get('/:page', (req, res) => {
             pageName = pageName.slice(0, -5);
         }
         
+        // Special handling for listings page - use modular version
+        if (pageName === 'listings') {
+            const modularListingsPath = path.join(__dirname, '..', 'frontend', 'listings', 'index.html');
+            if (fs.existsSync(modularListingsPath)) {
+                console.log(`📄 Serving modular listings from: ${modularListingsPath}`);
+                return res.sendFile(modularListingsPath);
+            }
+        }
+        
         // Check root directory first
         const htmlPath = path.join(__dirname, '..', `${pageName}.html`);
         
