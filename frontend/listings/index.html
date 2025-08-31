@@ -86,6 +86,7 @@
     </style>
     
     <!-- Core JavaScript modules -->
+    <script src="/frontend/client-config.js"></script>
     <script src="/frontend/listings/js/core/config.js"></script>
     <script src="/frontend/listings/js/core/auth-manager.js"></script>
     <script src="/frontend/listings/js/core/initialization.js"></script>
@@ -109,7 +110,7 @@
     <!-- Initialize application -->
     <script>
         // Start configuration loading
-        window.ConfigManager.loadConfiguration()
+        window.ClientConfig.loadConfiguration()
             .then(() => {
                 console.log('✅ Configuration loaded, starting initialization...');
                 window.AppInitializer.attemptInitialization();
