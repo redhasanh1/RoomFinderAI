@@ -54,7 +54,7 @@
                 android:layout_marginBottom="8dp"
                 android:gravity="center"
                 android:text="No conversations yet"
-                android:textColor="@color/text_primary"
+                android:textColor="#FFFFFF"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
@@ -64,7 +64,7 @@
                 android:layout_marginBottom="24dp"
                 android:gravity="center"
                 android:text="Start chatting with property owners and other renters by contacting them through listings"
-                android:textColor="@color/text_secondary"
+                android:textColor="#FFFFFF"
                 android:textSize="16sp" />
 
             <com.google.android.material.button.MaterialButton
