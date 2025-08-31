@@ -103,6 +103,7 @@ localStorage.clear = function() {
 };
 
 // 💾 AUTOMATIC USER DATA BACKUP SYSTEM
+let lastBackupLog = 0;
 function createUserBackup() {
     const currentUser = localStorage.getItem('currentUser');
     if (currentUser) {
@@ -111,7 +112,13 @@ function createUserBackup() {
         localStorage.setItem('currentUser_backup_2', currentUser);
         localStorage.setItem('currentUser_emergency', currentUser);
         localStorage.setItem('currentUser_backup_timestamp', Date.now().toString());
-        console.log('💾 User backup created in multiple locations');
+        
+        // Only log backup creation every 5 minutes to avoid spam
+        const now = Date.now();
+        if (now - lastBackupLog > 300000) { // 5 minutes = 300,000ms
+            console.log('💾 User backup created in multiple locations');
+            lastBackupLog = now;
+        }
     }
 }
 
@@ -162,7 +169,7 @@ setInterval(() => {
         console.log('🔄 User data restored automatically - KEPT USER LOGGED IN');
     }
     createUserBackup(); // Refresh backups
-}, 3000); // Check every 3 seconds
+}, 30000); // Check every 30 seconds
 
 // ⚡ IMMEDIATE PROTECTION
 createUserBackup();

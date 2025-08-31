@@ -2887,7 +2887,14 @@ app.post('/api/ai-negotiate', async (req, res) => {
         }
 
         // Build the conversation context for OpenAI
-        const systemPrompt = buildNegotiationSystemPrompt();
+        let systemPrompt;
+        try {
+            systemPrompt = buildNegotiationSystemPrompt();
+        } catch (error) {
+            console.error('❌ Error building negotiation system prompt:', error);
+            return res.status(500).json({ error: 'Failed to initialize AI system', details: error.message });
+        }
+        
         const messages = [
             { role: 'system', content: systemPrompt },
             ...(conversationHistory || []).slice(-8) // Keep last 8 messages for context
