@@ -119,6 +119,14 @@
                     android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:textStyle="bold"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Choose one then continue to property title"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
                     android:layout_marginBottom="8dp" />
 
                 <com.google.android.material.chip.ChipGroup
@@ -157,14 +165,6 @@
                         android:text="🏠 Studio" />
 
                 </com.google.android.material.chip.ChipGroup>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Choose one then continue to property title"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="14sp"
-                    android:layout_marginBottom="16dp" />
 
                 <!-- Title -->
                 <com.google.android.material.textfield.TextInputLayout
