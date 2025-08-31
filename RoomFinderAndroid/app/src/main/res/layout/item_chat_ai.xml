@@ -27,12 +27,6 @@
             android:elevation="4dp"
             android:contentDescription="AI Assistant Avatar" />
             
-        <!-- Subtle avatar glow -->
-        <View
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/ai_chat_card_glow"
-            android:alpha="0.4" />
         
     </FrameLayout>
 
@@ -44,13 +38,13 @@
         android:orientation="vertical"
         android:layout_marginEnd="80dp">
 
-        <!-- Premium Message Bubble -->
+        <!-- Message Bubble -->
         <FrameLayout
             android:id="@+id/messageBubbleContainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/ai_bubble_gradient"
-            android:elevation="3dp">
+            android:elevation="2dp">
 
             <TextView
                 android:id="@+id/messageText"
