@@ -113,7 +113,7 @@
             android:inputType="textMultiLine"
             android:maxLines="4"
             android:padding="12dp"
-            android:textColor="@color/text_primary"
+            android:textColor="#FFFFFF"
             android:textColorHint="@color/text_secondary"
             android:textSize="16sp" />
 
