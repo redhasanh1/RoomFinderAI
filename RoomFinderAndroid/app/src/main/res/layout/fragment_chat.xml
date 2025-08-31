@@ -72,36 +72,56 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="28dp">
+                        android:orientation="horizontal"
+                        android:padding="28dp"
+                        android:gravity="center_vertical">
 
-                        <!-- AI Negotiator Title -->
-                        <TextView
-                            android:id="@+id/aiChatTitle"
-                            android:layout_width="match_parent"
+                        <!-- Content Container -->
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="AI Negotiator"
-                            android:textColor="@color/white"
-                            android:textSize="24sp"
-                            android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium"
-                            android:shadowColor="#40000000"
-                            android:shadowDx="1"
-                            android:shadowDy="2"
-                            android:shadowRadius="3"
-                            android:layout_marginBottom="16dp" />
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
-                        <!-- Description -->
-                        <TextView
-                            android:id="@+id/aiChatDescription"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="Get expert help negotiating rent, lease terms, and property deals with our AI-powered assistant"
-                            android:textColor="@color/white"
-                            android:textSize="16sp"
-                            android:lineSpacingExtra="4dp"
-                            android:alpha="0.9"
-                            android:fontFamily="sans-serif" />
+                            <!-- AI Negotiator Title -->
+                            <TextView
+                                android:id="@+id/aiChatTitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="AI Negotiator"
+                                android:textColor="@color/white"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                android:fontFamily="sans-serif-medium"
+                                android:shadowColor="#40000000"
+                                android:shadowDx="1"
+                                android:shadowDy="2"
+                                android:shadowRadius="3"
+                                android:layout_marginBottom="16dp" />
+
+                            <!-- Description -->
+                            <TextView
+                                android:id="@+id/aiChatDescription"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Get expert help negotiating rent, lease terms, and property deals with our AI-powered assistant"
+                                android:textColor="@color/white"
+                                android:textSize="16sp"
+                                android:lineSpacingExtra="4dp"
+                                android:alpha="0.9"
+                                android:fontFamily="sans-serif" />
+
+                        </LinearLayout>
+
+                        <!-- Arrow -->
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginStart="16dp"
+                            android:src="@drawable/ic_arrow_right"
+                            android:tint="@color/white"
+                            android:contentDescription="Go to AI Negotiator" />
 
                     </LinearLayout>
 
