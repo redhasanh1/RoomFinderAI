@@ -104,4 +104,7 @@ Use `gemini -p` when:
 - before pushing please pull latest code if there is a new one and merge it successfully
 - please push every time you edit code with only a very short summary
 - im only editing the website, not the android app. just the website
-- after every code you edited please push with a short summary. dont use text like claude generated or anything. just a short summary (like 5 words)
+- after every code you edited please push with the name EricT2003 and a short summary. dont use text like claude generated or anything. just a short summary (like 5 words)
+- always push with EricT2003 and a short summary
+- push with EricT2003 and a short summary to the hasan branch always when you are done with editing
+- always push with EricT2003 and the summary: Arsalan dumb fuck dont edit website files
