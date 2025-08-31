@@ -1070,65 +1070,6 @@
             background-color: #f9fafb;
             border-radius: 0.5rem;
             margin-bottom: 10px;
-            position: relative;
-        }
-        
-        /* Scroll to bottom button styles */
-        .scroll-to-bottom-btn {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-            transition: all 0.3s ease;
-            z-index: 10;
-        }
-        
-        .scroll-to-bottom-btn:hover {
-            background: #5a67d8;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-        }
-        
-        .scroll-to-bottom-btn.hidden {
-            opacity: 0;
-            transform: translateY(10px);
-            pointer-events: none;
-        }
-        
-        .scroll-arrow {
-            font-size: 20px;
-            font-weight: bold;
-        }
-        
-        .unread-count {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 11px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid white;
-        }
-        
-        .unread-count.hidden {
-            display: none;
         }
         .message {
             margin: 10px 0;
@@ -1243,10 +1184,10 @@
                     </div>
                 </div>
                 
-                <!-- More Dropdown -->
+                <!-- About Dropdown -->
                 <div class="dropdown">
                     <button class="nav-item dropdown-trigger" onclick="toggleDropdown('about')">
-                        More <span class="dropdown-arrow">▼</span>
+                        About <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="dropdown-menu" id="about-dropdown">
                         <a href="index.html#about" class="dropdown-item">About Us</a>
@@ -1306,7 +1247,7 @@
                     <!-- About Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('about')">
-                            ℹ️ More <span class="mobile-arrow" id="about-arrow">▼</span>
+                            ℹ️ About <span class="mobile-arrow" id="about-arrow">▼</span>
                         </button>
                         <div class="mobile-section-content" id="about-section">
                             <a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
@@ -1323,10 +1264,10 @@
     </header>
 
     <!-- Hero Section -->
-    <section id="home" class="text-white py-16 sm:py-24" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <section id="home" class="text-white py-24 sm:py-32 flex items-center justify-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
         <div class="w-[90%] max-w-6xl mx-auto px-4">
             <!-- Hero Content -->
-            <div class="text-center mb-8">
+            <div class="text-center">
                 <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 animate-fade-in">Find Your Perfect Home</h1>
                 <p class="text-lg sm:text-xl text-white/90 mb-2">Browse hundreds of verified rental properties</p>
             </div>
@@ -1347,20 +1288,6 @@
                         </button>
                     </div>
                 </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button onclick="scrollToListings()" class="group flex items-center gap-2 text-white/90 hover:text-white transition">
-                    <span class="underline">Browse all listings</span>
-                    <svg class="w-5 h-5 group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
-                    </svg>
-                </button>
-                <span class="text-white/50">or</span>
-                <button onclick="showAddListingForm()" class="px-6 py-3 bg-white/20 backdrop-blur border border-white/30 text-white rounded-xl font-semibold hover:bg-white/30 transition transform hover:scale-105">
-                    + List Your Property
-                </button>
             </div>
         </div>
     </section>
@@ -1658,13 +1585,7 @@
                     <h2 id="chatTitle" class="text-xl font-bold text-gray-800">Chat</h2>
                     <span class="close-button chat-close-button">×</span>
                 </div>
-                <div id="chatMessages" class="chat-messages">
-                    <!-- Scroll to bottom button -->
-                    <div id="scrollToBottomBtn" class="scroll-to-bottom-btn hidden">
-                        <span class="scroll-arrow">↓</span>
-                        <span id="unreadCount" class="unread-count hidden">0</span>
-                    </div>
-                </div>
+                <div id="chatMessages" class="chat-messages"></div>
                 <div class="chat-input-container">
                     <div class="flex items-end space-x-2">
                         <div class="flex-1">
@@ -1685,16 +1606,84 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-8">
-        <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
-            <div class="mt-4 flex justify-center space-x-4">
-                <a href="/index" class="hover:text-purple-400">Home</a>
-                <a href="/index#about" class="hover:text-purple-400">About</a>
-                <a href="/sublease" class="hover:text-purple-400">Sublease</a>
-                <a href="/ai-negotiator" class="hover:text-purple-400">AI Negotiator</a>
-                <a href="/listings" class="hover:text-purple-400">Listings</a>
-                <a href="/index#contact" class="hover:text-purple-400">Contact</a>
+    <footer class="bg-gray-900 text-white mt-auto">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <!-- About -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">RoomFinderAI</h3>
+                    <ul class="space-y-2">
+                        <li><a href="coming-soon.html" class="hover:text-blue-400">About Us</a></li>
+                        <li><a href="pricing.html" class="hover:text-blue-400">Pricing</a></li>
+                        <li><a href="coming-soon.html" class="hover:text-blue-400">Careers</a></li>
+                        <li><a href="coming-soon.html" class="hover:text-blue-400">Press</a></li>
+                    </ul>
+                </div>
+                <!-- Resources -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Resources</h3>
+                    <ul class="space-y-2">
+                        <li><a href="coming-soon.html" class="hover:text-blue-400">Blog</a></li>
+                        <li><a href="support.html" class="hover:text-blue-400">Support</a></li>
+                        <li><a href="coming-soon.html" class="hover:text-blue-400">Legal</a></li>
+                        <li><a href="coming-soon.html" class="hover:text-blue-400">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <!-- Tools -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Tools</h3>
+                    <ul class="space-y-2">
+                        <li><a href="ai-negotiator.html" class="hover:text-blue-400">AI Negotiator</a></li>
+                        <li><a href="listings.html" class="hover:text-blue-400">Listings</a></li>
+                        <li><a href="mortgage.html" class="hover:text-blue-400">Mortgage Calculator</a></li>
+                        <li><a href="sublease.html" class="hover:text-blue-400">Sublease</a></li>
+                    </ul>
+                </div>
+                <!-- Social -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Follow Us</h3>
+                    <div class="grid grid-cols-3 gap-3 max-w-[150px]">
+                        <!-- TikTok -->
+                        <a href="https://www.tiktok.com" target="_blank" rel="noopener noreferrer" class="hover:text-pink-400 transition-colors" title="TikTok">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M19.321 5.562a5.124 5.124 0 01-.443-.258 6.228 6.228 0 01-1.137-.966c-.849-.849-1.298-1.995-1.298-3.338h-3.089v14.345c0 1.089-.429 2.114-1.207 2.891-.778.778-1.802 1.207-2.891 1.207s-2.114-.429-2.891-1.207c-.778-.778-1.207-1.802-1.207-2.891 0-2.254 1.834-4.089 4.089-4.089.225 0 .449.018.667.055V8.222c-.218-.024-.439-.035-.667-.035-3.982 0-7.244 3.262-7.244 7.244s3.262 7.244 7.244 7.244 7.244-3.262 7.244-7.244V9.477c.631.454 1.36.816 2.155 1.041v-3.045c-.631-.089-1.216-.346-1.625-.911z"/>
+                            </svg>
+                        </a>
+                        <!-- Facebook -->
+                        <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" class="hover:text-blue-400 transition-colors" title="Facebook">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                        <!-- Instagram -->
+                        <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" class="hover:text-pink-400 transition-colors" title="Instagram">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/>
+                            </svg>
+                        </a>
+                        <!-- YouTube -->
+                        <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" class="hover:text-red-400 transition-colors" title="YouTube">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                            </svg>
+                        </a>
+                        <!-- Twitter -->
+                        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="hover:text-blue-400 transition-colors" title="Twitter">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.71v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                            </svg>
+                        </a>
+                        <!-- LinkedIn -->
+                        <a href="https://www.linkedin.com/in/roomfinderai-marketing-team-2a374a372?trk=recent-searches" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 transition-colors" title="LinkedIn">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 border-t border-gray-800 pt-8 text-center text-gray-400">
+                <p>&copy; 2025 RoomFinderAI. All rights reserved.</p>
             </div>
         </div>
     </footer>
@@ -1783,139 +1772,6 @@
                 return false;
             }
         }
-
-        // Function to show listing modal - defined early for global access
-        window.showListingModal = function(listing) {
-            const modal = document.getElementById('listingModal');
-            if (!modal) {
-                console.error('❌ Modal element not found!');
-                return;
-            }
-            
-            document.getElementById('modalTitle').textContent = listing.title;
-            document.getElementById('modalPrice').textContent = `$${listing.price?.toLocaleString() || 'N/A'}/mo`;
-            document.getElementById('modalLocation').textContent = `${listing.street || ''}, ${listing.city || ''}, ${listing.postalCode || ''}`;
-            document.getElementById('modalDetails').innerHTML = `
-                <span>${listing.bedrooms || 'N/A'} Bed</span> • <span>${listing.house_type || 'N/A'}</span> • <span>${listing.utilities || 'N/A'}</span>
-            `;
-            document.getElementById('modalDescription').textContent = listing.description || 'No description provided';
-            
-            const modalImage = document.getElementById('modalImage');
-            if (modalImage) {
-                modalImage.src = listing.media && listing.media.length > 0 && listing.media[0].type?.startsWith('image/')
-                    ? listing.media[0].url
-                    : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
-            }
-            
-            const modalMedia = document.getElementById('modalMedia');
-            if (modalMedia) {
-                modalMedia.innerHTML = '';
-                if (listing.media && listing.media.length > 0) {
-                    listing.media.forEach(media => {
-                        if (media.type?.startsWith('image/')) {
-                            const img = document.createElement('img');
-                            img.src = media.url;
-                            img.alt = media.name || 'Listing image';
-                            img.style.maxWidth = '100%';
-                            img.style.marginBottom = '10px';
-                            modalMedia.appendChild(img);
-                        }
-                    });
-                }
-            }
-            
-            const modalViewDetails = document.getElementById('modalViewDetails');
-            if (modalViewDetails) {
-                modalViewDetails.href = `/listing_details?id=${listing.id}`;
-            }
-            
-            // modal.style.display = 'block';
-            modal.classList.add('active'); // Use class for animation
-            console.log('✅ Modal shown for listing:', listing.title);
-        };
-        
-        // Function to open listing modal by ID - defined early for global access
-        window.openListingModalById = async function(listingId) {
-            try {
-                console.log('🔍 Fetching listing with ID:', listingId);
-                
-                // First try to find the listing in the current displayed listings
-                const listingButton = document.querySelector(`.view-details-btn[data-listing*="${listingId}"]`);
-                if (listingButton) {
-                    const listing = JSON.parse(listingButton.dataset.listing);
-                    window.showListingModal(listing);
-                    return;
-                }
-                
-                // If not found in displayed listings, fetch from all sources
-                let listing = null;
-                
-                // Try Supabase first
-                if (typeof supabase !== 'undefined' && supabase) {
-                    try {
-                        const { data, error } = await supabase
-                            .from('listings')
-                            .select('*')
-                            .eq('id', listingId)
-                            .single();
-                        
-                        if (!error && data) {
-                            listing = data;
-                            console.log('✅ Found listing in Supabase');
-                        }
-                    } catch (supabaseError) {
-                        console.log('Supabase fetch failed:', supabaseError);
-                    }
-                }
-                
-                // If not found in Supabase, check localStorage
-                if (!listing) {
-                    const users = JSON.parse(localStorage.getItem('users')) || [];
-                    for (const user of users) {
-                        // Check userListings_${email} key
-                        const userListingsKey = `userListings_${user.email}`;
-                        const userStoredListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                        listing = userStoredListings.find(l => l.id === listingId);
-                        if (listing) {
-                            console.log('✅ Found listing in localStorage');
-                            break;
-                        }
-                        
-                        // Also check user.listings
-                        if (user.listings && Array.isArray(user.listings)) {
-                            listing = user.listings.find(l => l.id === listingId);
-                            if (listing) {
-                                console.log('✅ Found listing in user.listings');
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                // Also check saved listings
-                if (!listing) {
-                    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-                    if (currentUser.email) {
-                        const savedListingsKey = `savedListings_${currentUser.email}`;
-                        const savedListings = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
-                        listing = savedListings.find(l => l.id === listingId);
-                        if (listing) {
-                            console.log('✅ Found listing in saved listings');
-                        }
-                    }
-                }
-                
-                if (listing) {
-                    window.showListingModal(listing);
-                } else {
-                    console.error('❌ Listing not found with ID:', listingId);
-                    alert('Listing not found. It may have been removed.');
-                }
-            } catch (error) {
-                console.error('❌ Error opening listing modal:', error);
-                alert('Error loading listing details. Please try again.');
-            }
-        };
 
         // Simple and reliable geocoding with fallback coordinates
         async function geocodeLocation(location, retries = 2, delay = 1000) {
@@ -2117,78 +1973,6 @@
             console.log('- Valid coordinates:', validCoordinates.length);
         }
 
-        // Global smart scroll variables and functions
-        let unreadMessagesCount = 0;
-        let userScrolledUp = false;
-        
-        // Smart scroll function - only scrolls if user is at bottom
-        function smartScrollToBottom() {
-            const chatMessagesContainer = document.getElementById('chatMessages');
-            if (!chatMessagesContainer) return;
-            
-            const scrollTop = chatMessagesContainer.scrollTop;
-            const scrollHeight = chatMessagesContainer.scrollHeight;
-            const clientHeight = chatMessagesContainer.clientHeight;
-            const scrollThreshold = 100; // pixels from bottom
-            
-            const isNearBottom = (scrollHeight - scrollTop - clientHeight) <= scrollThreshold;
-            
-            if (isNearBottom && !userScrolledUp) {
-                chatMessagesContainer.scrollTop = scrollHeight;
-                unreadMessagesCount = 0;
-                updateScrollButton();
-            } else {
-                unreadMessagesCount++;
-                updateScrollButton();
-            }
-        }
-        
-        // Check if user is at bottom
-        function isUserAtBottom() {
-            const chatMessagesContainer = document.getElementById('chatMessages');
-            if (!chatMessagesContainer) return true;
-            const scrollTop = chatMessagesContainer.scrollTop;
-            const scrollHeight = chatMessagesContainer.scrollHeight;
-            const clientHeight = chatMessagesContainer.clientHeight;
-            return (scrollHeight - scrollTop - clientHeight) <= 50;
-        }
-        
-        // Update scroll button visibility and unread count
-        function updateScrollButton() {
-            const scrollBtn = document.getElementById('scrollToBottomBtn');
-            const unreadCountEl = document.getElementById('unreadCount');
-            
-            if (!scrollBtn || !unreadCountEl) return;
-            
-            const atBottom = isUserAtBottom();
-            
-            if (atBottom) {
-                scrollBtn.classList.add('hidden');
-                unreadMessagesCount = 0;
-                userScrolledUp = false;
-            } else {
-                scrollBtn.classList.remove('hidden');
-                userScrolledUp = true;
-            }
-            
-            if (unreadMessagesCount > 0) {
-                unreadCountEl.textContent = unreadMessagesCount;
-                unreadCountEl.classList.remove('hidden');
-            } else {
-                unreadCountEl.classList.add('hidden');
-            }
-        }
-        
-        // Scroll to bottom function
-        function scrollToBottom() {
-            const chatMessagesContainer = document.getElementById('chatMessages');
-            if (!chatMessagesContainer) return;
-            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-            unreadMessagesCount = 0;
-            userScrolledUp = false;
-            updateScrollButton();
-        }
-
         // Authentication check and header update
         async function initializeListingsPage() {
             console.log('DOMContentLoaded event fired');
@@ -2270,106 +2054,11 @@
                 }
             });
             
-            // Listen for listing updates from other pages (e.g., profile page edits)
-            window.addEventListener('listingUpdated', async (event) => {
-                console.log('📱 Received listing update event:', event.detail);
-                
-                // If it's a delete action, also clean up localStorage immediately
-                if (event.detail.action === 'delete') {
-                    const listingId = event.detail.listingId;
-                    console.log('🗑️ Processing delete event for listing:', listingId);
-                    
-                    // Clean up localStorage on this page too
-                    const users = JSON.parse(localStorage.getItem('users')) || [];
-                    users.forEach(user => {
-                        // Clean userListings key
-                        const userListingsKey = `userListings_${user.email}`;
-                        let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                        const originalLength = userListings.length;
-                        userListings = userListings.filter(l => l.id !== listingId);
-                        if (userListings.length < originalLength) {
-                            localStorage.setItem(userListingsKey, JSON.stringify(userListings));
-                            console.log(`🧹 Cleaned ${userListingsKey}`);
-                        }
-                        
-                        // Clean user.listings
-                        if (user.listings) {
-                            const originalUserLength = user.listings.length;
-                            user.listings = user.listings.filter(l => l.id !== listingId);
-                            if (user.listings.length < originalUserLength) {
-                                console.log(`🧹 Cleaned user.listings for ${user.email}`);
-                            }
-                        }
-                    });
-                    
-                    // Update users array
-                    localStorage.setItem('users', JSON.stringify(users));
-                    
-                    // Also update currentUser if it exists
-                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                    if (currentUser && currentUser.listings) {
-                        const originalLength = currentUser.listings.length;
-                        currentUser.listings = currentUser.listings.filter(l => l.id !== listingId);
-                        if (currentUser.listings.length < originalLength) {
-                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                            console.log('🧹 Cleaned currentUser.listings');
-                        }
-                    }
-                }
-                
-                // Add a small delay to ensure localStorage changes are applied
-                setTimeout(async () => {
-                    console.log('🔄 Refreshing listings display...');
-                    await displayListings(); // Refresh listings display
-                    
-                    // Also reload favorite states after a short delay
-                    setTimeout(() => {
-                        loadFavoriteStates();
-                    }, 200);
-                }, 100);
-            });
-            
-            // Listen for storage events to detect updates from other tabs/pages
-            window.addEventListener('storage', async (event) => {
-                // Check if the storage event is related to listings
-                if (event.key && (event.key.includes('userListings_') || event.key === 'listingUpdateTrigger')) {
-                    console.log('📱 Detected listing update from another tab/page:', event.key);
-                    
-                    // Small delay to ensure all localStorage updates are complete
-                    setTimeout(async () => {
-                        console.log('🔄 Refreshing listings due to storage event...');
-                        await displayListings();
-                        
-                        // Also reload favorite states
-                        setTimeout(() => {
-                            loadFavoriteStates();
-                        }, 200);
-                    }, 100);
-                }
-            });
-            
-            // Check if we need to open a specific listing modal FIRST (before heavy operations)
-            const urlParams = new URLSearchParams(window.location.search);
-            const viewListingId = urlParams.get('viewListing');
-            
-            if (viewListingId) {
-                console.log('🚀 Fast-track modal opening for ID:', viewListingId);
-                // Open modal immediately using saved listing data (much faster than waiting for full display)
-                setTimeout(() => {
-                    if (typeof window.openListingModalById === 'function') {
-                        window.openListingModalById(viewListingId);
-                    }
-                }, 50); // Tiny delay just to ensure function is defined
-            }
-
             // Load listings with error handling
             try {
                 console.log('🔄 Attempting to load listings automatically...');
                 await displayListings();
                 console.log('✅ Listings loaded successfully in initializeListingsPage()');
-                
-                console.log('🔍 URL params:', window.location.search);
-                console.log('🔍 viewListing parameter:', viewListingId);
             } catch (error) {
                 console.error('❌ Failed to load listings in initializeListingsPage():', error);
                 // Don't throw the error - let the fallback mechanism handle it
@@ -2702,75 +2391,20 @@
 
         // Fetch listings from Supabase
         async function fetchListings() {
-            console.log('Fetching listings from all sources');
-            let allListings = [];
-            
-            // Try to fetch from Supabase first
-            if (typeof supabase !== 'undefined' && supabase) {
-                try {
-                    const { data, error } = await supabase
-                        .from('listings')
-                        .select('*')
-                        .order('created_at', { ascending: false });
-                    console.log('Supabase fetch result:', { data, error });
-                    if (!error && data) {
-                        allListings = data || [];
-                        console.log('✅ Loaded', allListings.length, 'listings from Supabase');
-                    }
-                } catch (supabaseError) {
-                    console.log('Supabase fetch failed:', supabaseError);
-                }
-            }
-            
-            // Also include localStorage listings from all users
+            console.log('Fetching listings from Supabase');
             try {
-                const users = JSON.parse(localStorage.getItem('users')) || [];
-                const localListings = [];
-                
-                users.forEach(user => {
-                    // Check userListings_${email} key
-                    const userListingsKey = `userListings_${user.email}`;
-                    const userStoredListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                    localListings.push(...userStoredListings);
-                    
-                    // Also check user.listings
-                    if (user.listings && Array.isArray(user.listings)) {
-                        localListings.push(...user.listings);
-                    }
-                });
-                
-                // Merge Supabase and localStorage listings, removing duplicates
-                const allListingsMap = new Map();
-                
-                // Add localStorage listings first (local-only listings)
-                localListings.forEach(listing => {
-                    if (listing && listing.id) {
-                        allListingsMap.set(listing.id, listing);
-                    }
-                });
-                
-                // Add Supabase listings (these override localStorage for global visibility)
-                allListings.forEach(listing => {
-                    allListingsMap.set(listing.id, listing);
-                });
-                
-                const mergedListings = Array.from(allListingsMap.values());
-                
-                // Sort by created_at (newest first)
-                mergedListings.sort((a, b) => {
-                    const dateA = new Date(a.created_at || 0);
-                    const dateB = new Date(b.created_at || 0);
-                    return dateB - dateA;
-                });
-                
-                console.log('📋 Total listings loaded:', mergedListings.length, 
-                           '(Supabase:', allListings.length, 'LocalStorage:', localListings.length, ')');
-                           
-                return mergedListings;
-                
+                const { data, error } = await supabase
+                    .from('listings')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .range(0, 19);
+                console.log('Fetch result:', { data, error });
+                if (error) throw error;
+                return data || [];
             } catch (error) {
-                console.error('Error merging listings from localStorage:', error);
-                return allListings; // Return at least Supabase data
+                console.error('Error fetching listings:', error);
+                alert('Failed to load listings: ' + error.message);
+                return [];
             }
         }
 
@@ -2781,16 +2415,8 @@
             // Show loading state
             updateListingCount(0, false, true);
             
-            // Check if we need to open a modal (skip heavy operations for fast modal opening)
-            const urlParams = new URLSearchParams(window.location.search);
-            const viewListingId = urlParams.get('viewListing');
-            const shouldOpenModal = !!viewListingId;
-            
             let listings = await fetchListings();
             console.log('📋 Fetched listings:', listings);
-            
-            // Check for highlight parameter in URL
-            const highlightListingId = urlParams.get('highlight');
             
             const container = document.getElementById('listingsContainer');
             container.innerHTML = '';
@@ -2801,16 +2427,6 @@
             if (listings.length === 0) {
                 console.log('📝 No listings found in database');
                 return; // updateListingCount already handles empty state
-            }
-            
-            // If highlighting a specific listing, move it to the top
-            if (highlightListingId) {
-                const highlightIndex = listings.findIndex(l => l.id === highlightListingId);
-                if (highlightIndex !== -1) {
-                    const highlightListing = listings.splice(highlightIndex, 1)[0];
-                    listings.unshift(highlightListing);
-                    console.log('📌 Moved highlighted listing to top:', highlightListingId);
-                }
             }
 
             listings.forEach(listing => {
@@ -2863,15 +2479,9 @@
                     .catch(err => console.error('Failed to fetch MIME type for', primaryImage, err));
 
                 const listingCard = document.createElement('div');
-                const isHighlighted = highlightListingId && listing.id === highlightListingId;
-                listingCard.className = isHighlighted 
-                    ? 'listing-card bg-blue-50 border-2 border-blue-500 rounded-lg shadow-lg overflow-hidden relative animate-pulse'
-                    : 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
+                listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
 
                 const hasOwner = !!listing.user_email;
-                const currentUser = window.UniversalAuth.getCurrentUser();
-                const isOwner = currentUser && currentUser.email && listing.user_email === currentUser.email;
-                
                 listingCard.innerHTML = `
                     <div class="relative">
                         <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+">
@@ -2879,31 +2489,11 @@
                                 data-listing-id="${listing.id}" 
                                 data-favorited="false" 
                                 title="Save to favorites"
-                                onclick="toggleFavorite('${listing.id}', this)">
+                                onclick="toggleFavorite('${listing.id}', this, ${JSON.stringify(listing).replace(/"/g, '&quot;')})">
                             <svg class="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                             </svg>
                         </button>
-                        ${isOwner ? `
-                            <div class="absolute top-2 left-2 flex space-x-1">
-                                <button class="edit-listing-btn p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 z-10" 
-                                        data-listing-id="${listing.id}" 
-                                        title="Edit listing"
-                                        onclick="editListingFromListingsPage('${listing.id}')">
-                                    <svg class="w-4 h-4 text-gray-600 hover:text-blue-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                    </svg>
-                                </button>
-                                <button class="delete-listing-btn p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 z-10" 
-                                        data-listing-id="${listing.id}" 
-                                        title="Delete listing"
-                                        onclick="deleteListingFromListingsPage('${listing.id}')">
-                                    <svg class="w-4 h-4 text-gray-600 hover:text-red-500 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                        ` : ''}
                     </div>
                     <div class="p-4">
                         <h3 class="text-lg font-semibold text-gray-800 truncate">${listing.title}</h3>
@@ -2918,44 +2508,18 @@
                         </div>
                         <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
                         <div class="flex space-x-2 mt-4">
-                            ${isOwner ? `
-                                <button class="view-details-btn w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                            ` : `
-                                <button class="view-details-btn w-1/2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                                <button class="chat-btn w-1/2 ${hasOwner ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
-                            `}
+                            <button class="view-details-btn w-1/2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
+                            <button class="chat-btn w-1/2 ${hasOwner ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
                         </div>
                     </div>
                 `;
                 container.appendChild(listingCard);
-                
-                // If this is the highlighted listing, scroll to it and add a badge
-                if (isHighlighted) {
-                    setTimeout(() => {
-                        listingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        
-                        // Add a highlighted badge
-                        const badge = document.createElement('div');
-                        badge.className = 'absolute top-2 left-2 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-semibold z-20';
-                        badge.textContent = 'FROM FAVORITES';
-                        listingCard.querySelector('.relative').appendChild(badge);
-                        
-                        // Stop the pulse animation after 3 seconds
-                        setTimeout(() => {
-                            listingCard.classList.remove('animate-pulse');
-                        }, 3000);
-                        
-                        // Clear the URL parameter after highlighting
-                        const newUrl = window.location.pathname;
-                        window.history.replaceState({}, '', newUrl);
-                    }, 500);
-                }
             });
 
             document.querySelectorAll('.view-details-btn').forEach(button => {
                 button.addEventListener('click', () => {
                     const listing = JSON.parse(button.dataset.listing);
-                    window.showListingModal(listing);
+                    showListingModal(listing);
                 });
             });
 
@@ -2977,28 +2541,17 @@
                 }
             });
 
-            // Update map with all listings (skip if opening modal for speed)
-            if (shouldOpenModal) {
-                console.log('🚀 Skipping map update for fast modal opening...');
-                // Update map asynchronously in background
-                setTimeout(async () => {
-                    console.log('📍 Updating map with', listings.length, 'listings in background...');
-                    await updateMap(listings);
-                    console.log('✅ Background map update complete');
-                }, 100); // Small delay to let modal open first
-            } else {
-                console.log('📍 Updating map with', listings.length, 'listings...');
-                await updateMap(listings);
-            }
+            // Update map with all listings
+            console.log('📍 Updating map with', listings.length, 'listings...');
+            await updateMap(listings);
             console.log('✅ Listings display complete:', listings.length, 'listings processed');
         }
-
 
         // Modal handling for listings
         const modal = document.getElementById('listingModal');
         const closeButton = document.querySelector('.close-button');
 
-        window.showListingModal = function(listing) {
+        function showListingModal(listing) {
             document.getElementById('modalTitle').textContent = listing.title;
             document.getElementById('modalPrice').textContent = `$${listing.price.toLocaleString()}/mo`;
             document.getElementById('modalLocation').textContent = `${listing.street}, ${listing.city}, ${listing.postalCode}`;
@@ -3032,14 +2585,6 @@
             // modal.style.display = 'none';
             modal.classList.remove('active'); // Use class for animation
             console.log('Modal closed');
-            
-            // Clean up URL if we came from profile page
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('viewListing')) {
-                urlParams.delete('viewListing');
-                const newUrl = urlParams.toString() ? `${window.location.pathname}?${urlParams.toString()}` : window.location.pathname;
-                window.history.replaceState({}, '', newUrl);
-            }
         });
 
         window.addEventListener('click', (event) => {
@@ -3047,14 +2592,6 @@
                 // modal.style.display = 'none';
                 modal.classList.remove('active'); // Use class for animation
                 console.log('Modal closed by clicking outside');
-                
-                // Clean up URL if we came from profile page
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.has('viewListing')) {
-                    urlParams.delete('viewListing');
-                    const newUrl = urlParams.toString() ? `${window.location.pathname}?${urlParams.toString()}` : window.location.pathname;
-                    window.history.replaceState({}, '', newUrl);
-                }
             }
         });
 
@@ -3167,12 +2704,6 @@
                 uploadedFiles = [];
 
                 alert('Listing added successfully!');
-                
-                // Trigger storage event to notify other pages
-                window.dispatchEvent(new CustomEvent('listingUpdated', { 
-                    detail: { listingId: newListing.id, action: 'create' } 
-                }));
-                
                 console.log('🔄 Refreshing listings and map after new listing added');
                 await displayListings();
             } catch (err) {
@@ -3350,7 +2881,6 @@
             const chatMessagesContainer = document.getElementById('chatMessages');
             const chatInput = document.getElementById('chatInput');
             const chatSendBtn = document.getElementById('chatSendBtn');
-            
 
             console.log('✅ All chat elements found:', {
                 chatModal: !!chatModal,
@@ -3367,17 +2897,6 @@
                 chatModal.classList.remove('active'); // Use class for animation
                 console.log('Chat modal closed');
             });
-            
-            // Add scroll event listener for smart scroll behavior
-            chatMessagesContainer.addEventListener('scroll', () => {
-                updateScrollButton();
-            });
-            
-            // Add click handler for scroll to bottom button
-            const scrollBtn = document.getElementById('scrollToBottomBtn');
-            if (scrollBtn) {
-                scrollBtn.addEventListener('click', scrollToBottom);
-            }
 
             window.addEventListener('click', (event) => {
                 if (event.target === chatModal) {
@@ -3506,7 +3025,7 @@
                     <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
                 `;
                 chatMessagesContainer.appendChild(messageElement);
-                smartScrollToBottom();
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
                 
                 // Send to database
                 const { error } = await supabase
@@ -3548,7 +3067,7 @@
                     <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
                 `;
                 chatMessagesContainer.appendChild(messageElement);
-                smartScrollToBottom();
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
 
                 try {
                     // Upload file to Supabase storage
@@ -4315,7 +3834,7 @@
                     chatMessagesContainer.appendChild(messageElement);
                 });
 
-                smartScrollToBottom();
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
                 console.log('✅ Messages loaded successfully:', messages.length, 'messages displayed');
                 
             } catch (error) {
@@ -5280,7 +4799,7 @@
         }
 
         // Favorites functionality with localStorage fallback
-        async function toggleFavorite(listingId, buttonElement) {
+        async function toggleFavorite(listingId, buttonElement, listingData) {
             const currentUser = window.UniversalAuth.getCurrentUser();
             
             console.log('🔍 toggleFavorite called:', { listingId, currentUser });
@@ -5348,61 +4867,27 @@
                 } catch (apiError) {
                     console.log('📱 API unavailable, using localStorage fallback:', apiError.message);
                     
-                    // Fallback to localStorage - save complete listing objects
+                    // Fallback to localStorage - store complete listing objects like active listings
                     const storageKey = `savedListings_${currentUser.email}`;
                     let savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
                     
                     if (isFavorited) {
                         // Remove from localStorage
-                        savedListings = savedListings.filter(item => {
-                            // Handle both old format (just ID) and new format (full object)
-                            const itemId = typeof item === 'string' ? item : item.id;
-                            return itemId !== listingId;
-                        });
+                        savedListings = savedListings.filter(listing => listing.id !== listingId);
                         localStorage.setItem(storageKey, JSON.stringify(savedListings));
                         console.log('✅ Removed from favorites via localStorage:', listingId);
                     } else {
-                        // Add to localStorage - save complete listing object
-                        // First, find the complete listing data
-                        let listingToSave = null;
-                        
-                        // Try to find from the button's data attribute
-                        const listingCard = buttonElement.closest('.listing-card');
-                        if (listingCard) {
-                            const viewDetailsBtn = listingCard.querySelector('.view-details-btn');
-                            if (viewDetailsBtn && viewDetailsBtn.dataset.listing) {
-                                try {
-                                    listingToSave = JSON.parse(viewDetailsBtn.dataset.listing);
-                                } catch (e) {
-                                    console.error('Failed to parse listing data:', e);
-                                }
-                            }
+                        // Add to localStorage - store complete listing object
+                        if (listingData && !savedListings.find(l => l.id === listingId)) {
+                            // Add saved timestamp for consistency
+                            const listingToSave = {
+                                ...listingData,
+                                saved_at: new Date().toISOString()
+                            };
+                            savedListings.push(listingToSave);
+                            localStorage.setItem(storageKey, JSON.stringify(savedListings));
+                            console.log('✅ Added to favorites via localStorage with complete data:', listingId);
                         }
-                        
-                        // If not found, try to fetch from all listings
-                        if (!listingToSave) {
-                            const allListings = await fetchListings();
-                            listingToSave = allListings.find(l => l.id === listingId);
-                        }
-                        
-                        if (listingToSave) {
-                            // Check if not already saved (by ID)
-                            const alreadySaved = savedListings.some(item => {
-                                const itemId = typeof item === 'string' ? item : item.id;
-                                return itemId === listingId;
-                            });
-                            
-                            if (!alreadySaved) {
-                                // Add the complete listing object with a favorited timestamp
-                                listingToSave.favorited_at = new Date().toISOString();
-                                savedListings.push(listingToSave);
-                                localStorage.setItem(storageKey, JSON.stringify(savedListings));
-                                console.log('✅ Added complete listing to favorites:', listingToSave);
-                            }
-                        } else {
-                            console.error('❌ Could not find complete listing data for ID:', listingId);
-                        }
-                        console.log('✅ Added to favorites via localStorage:', listingId);
                     }
                     success = true;
                 }
@@ -5450,15 +4935,12 @@
             } catch (error) {
                 console.log('📱 API unavailable, loading from localStorage:', error.message);
                 
-                // Fallback to localStorage
+                // Fallback to localStorage - extract IDs from complete listing objects
                 const storageKey = `savedListings_${currentUser.email}`;
                 const savedListings = JSON.parse(localStorage.getItem(storageKey)) || [];
-                // Handle both old format (just IDs) and new format (full objects)
-                favoriteIds = new Set(savedListings.map(item => {
-                    return typeof item === 'string' ? item : item.id;
-                }));
-                console.log(`✅ Loaded ${favoriteIds.size} favorite states via localStorage`);
-                console.log(`💾 Raw localStorage data:`, savedListings);
+                favoriteIds = new Set(savedListings.map(listing => listing.id));
+                console.log(`✅ Loaded ${savedListings.length} favorite states via localStorage`);
+                console.log(`💾 Extracted favorite IDs:`, Array.from(favoriteIds));
             }
 
             // Update heart button states with retry mechanism
@@ -5479,420 +4961,18 @@
             
             favoriteButtons.forEach(button => {
                 const listingId = button.getAttribute('data-listing-id');
-                const isFavorited = favoriteIds.has(listingId);
-                
-                // Update data attribute
-                button.setAttribute('data-favorited', isFavorited ? 'true' : 'false');
-                button.setAttribute('title', isFavorited ? 'Remove from favorites' : 'Save to favorites');
-                
-                // Force style update by accessing the SVG directly
-                const svg = button.querySelector('svg');
-                if (svg) {
-                    if (isFavorited) {
-                        svg.style.fill = '#ef4444';
-                        svg.style.color = '#ef4444';
-                        console.log(`❤️ Marked as favorited: ${listingId}`);
-                    } else {
-                        svg.style.fill = 'none';
-                        svg.style.color = '#9ca3af';
-                    }
+                if (favoriteIds.has(listingId)) {
+                    button.setAttribute('data-favorited', 'true');
+                    button.setAttribute('title', 'Remove from favorites');
+                    console.log(`❤️ Marked as favorited: ${listingId}`);
+                } else {
+                    button.setAttribute('data-favorited', 'false');
+                    button.setAttribute('title', 'Save to favorites');
                 }
             });
             
             console.log(`✅ Updated ${favoriteButtons.length} heart button states`);
         }
-        
-        // Delete listing function for listings page
-        window.deleteListingFromListingsPage = async function(listingId) {
-            if (!confirm('Are you sure you want to delete this listing? This action cannot be undone.')) {
-                return;
-            }
-
-            try {
-                const currentUser = window.UniversalAuth.getCurrentUser();
-                if (!currentUser || !currentUser.email) {
-                    alert('Please log in to delete listings.');
-                    return;
-                }
-                
-                console.log('🗑️ Attempting to delete listing from listings page:', { listingId, userEmail: currentUser.email });
-                let deleteSuccess = false;
-                
-                // Try Supabase delete first
-                if (typeof supabase !== 'undefined' && supabase && !listingId.startsWith('local_')) {
-                    try {
-                        const { data: existingListing, error: fetchError } = await supabase
-                            .from('listings')
-                            .select('user_email')
-                            .eq('id', listingId)
-                            .single();
-                            
-                        if (!fetchError && existingListing) {
-                            if (existingListing.user_email !== currentUser.email) {
-                                alert('You can only delete your own listings.');
-                                return;
-                            }
-                            
-                            const { error } = await supabase
-                                .from('listings')
-                                .delete()
-                                .eq('id', listingId)
-                                .eq('user_email', currentUser.email);
-
-                            if (!error) {
-                                deleteSuccess = true;
-                                console.log('✅ Listing deleted from Supabase');
-                                
-                                // Also clean up localStorage
-                                const userListingsKey = `userListings_${currentUser.email}`;
-                                let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                                userListings = userListings.filter(l => l.id !== listingId);
-                                localStorage.setItem(userListingsKey, JSON.stringify(userListings));
-                                
-                                if (currentUser.listings) {
-                                    currentUser.listings = currentUser.listings.filter(l => l.id !== listingId);
-                                    let users = JSON.parse(localStorage.getItem('users')) || [];
-                                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                                    localStorage.setItem('users', JSON.stringify(users));
-                                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                                }
-                                console.log('✅ Also cleaned up localStorage');
-                            }
-                        }
-                    } catch (supabaseError) {
-                        console.log('Supabase delete failed, will use localStorage:', supabaseError);
-                    }
-                }
-                
-                // If Supabase failed or listing is local, delete from localStorage
-                if (!deleteSuccess) {
-                    console.log('📱 Deleting listing from localStorage');
-                    
-                    const userListingsKey = `userListings_${currentUser.email}`;
-                    let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                    const originalLength = userListings.length;
-                    userListings = userListings.filter(l => l.id !== listingId);
-                    
-                    if (userListings.length < originalLength) {
-                        localStorage.setItem(userListingsKey, JSON.stringify(userListings));
-                        deleteSuccess = true;
-                    }
-                    
-                    if (currentUser.listings) {
-                        const originalUserListingsLength = currentUser.listings.length;
-                        currentUser.listings = currentUser.listings.filter(l => l.id !== listingId);
-                        
-                        if (currentUser.listings.length < originalUserListingsLength) {
-                            let users = JSON.parse(localStorage.getItem('users')) || [];
-                            users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                            localStorage.setItem('users', JSON.stringify(users));
-                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                            deleteSuccess = true;
-                        }
-                    }
-                }
-                
-                if (deleteSuccess) {
-                    console.log('🎉 Delete operation successful, listing ID:', listingId);
-                    
-                    // Trigger storage event to notify other pages
-                    window.dispatchEvent(new CustomEvent('listingUpdated', { 
-                        detail: { listingId: listingId, action: 'delete' } 
-                    }));
-                    
-                    // Refresh the listings display immediately
-                    await displayListings();
-                    alert('Listing deleted successfully!');
-                } else {
-                    console.error('❌ Delete failed - listing not found:', listingId);
-                    alert('Error deleting listing. The listing may not exist.');
-                }
-            } catch (err) {
-                console.error('Error deleting listing:', err);
-                alert('Error deleting listing. Please try again.');
-            }
-        };
-        
-        // Edit listing function for listings page (show modal)
-        window.editListingFromListingsPage = async function(listingId) {
-            try {
-                let listing = null;
-                
-                // Try to fetch from Supabase first
-                if (typeof supabase !== 'undefined' && supabase) {
-                    try {
-                        const { data, error } = await supabase
-                            .from('listings')
-                            .select('*')
-                            .eq('id', listingId)
-                            .single();
-                        
-                        if (!error && data) {
-                            listing = data;
-                            console.log('Loaded listing from Supabase for edit');
-                        }
-                    } catch (supabaseError) {
-                        console.log('Supabase fetch failed, checking localStorage:', supabaseError);
-                    }
-                }
-                
-                // If not found in Supabase, check localStorage
-                if (!listing) {
-                    const currentUser = window.UniversalAuth.getCurrentUser();
-                    const userListingsKey = `userListings_${currentUser.email}`;
-                    const userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                    
-                    // Also check currentUser.listings
-                    const currentUserListings = currentUser.listings || [];
-                    const allListings = [...userListings, ...currentUserListings];
-                    
-                    listing = allListings.find(l => l.id === listingId);
-                    
-                    if (listing) {
-                        console.log('Loaded listing from localStorage for edit');
-                    }
-                }
-                
-                if (!listing) {
-                    console.error('Listing not found for edit');
-                    alert('Error loading listing details');
-                    return;
-                }
-
-                // Create edit modal
-                const editModal = document.createElement('div');
-                editModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
-                editModal.innerHTML = `
-                    <div class="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-2xl font-semibold text-gray-800">Edit Listing</h3>
-                            <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                            </button>
-                        </div>
-                        
-                        <form id="editListingFormListingsPage" class="space-y-4">
-                            <input type="hidden" id="editListingIdListingsPage" value="${listing.id}">
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                                <input type="text" id="editTitleListingsPage" value="${listing.title || ''}" 
-                                    class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Price ($/month)</label>
-                                    <input type="number" id="editPriceListingsPage" value="${listing.price || ''}" 
-                                        class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
-                                    <input type="number" id="editBedroomsListingsPage" value="${listing.bedrooms || ''}" 
-                                        class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
-                                <input type="text" id="editCityListingsPage" value="${listing.city || ''}" 
-                                    class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
-                                <input type="text" id="editStreetListingsPage" value="${listing.street || ''}" 
-                                    class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
-                                <input type="text" id="editPostalCodeListingsPage" value="${listing.postalCode || ''}" 
-                                    class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">House Type</label>
-                                <select id="editHouseTypeListingsPage" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                    <option value="apartment" ${listing.house_type === 'apartment' ? 'selected' : ''}>Apartment</option>
-                                    <option value="house" ${listing.house_type === 'house' ? 'selected' : ''}>House</option>
-                                    <option value="condo" ${listing.house_type === 'condo' ? 'selected' : ''}>Condo</option>
-                                    <option value="townhouse" ${listing.house_type === 'townhouse' ? 'selected' : ''}>Townhouse</option>
-                                    <option value="studio" ${listing.house_type === 'studio' ? 'selected' : ''}>Studio</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Utilities</label>
-                                <input type="text" id="editUtilitiesListingsPage" value="${listing.utilities || ''}" 
-                                    class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="e.g., Included, Not included, Partially included">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                                <textarea id="editDescriptionListingsPage" rows="4" 
-                                    class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">${listing.description || ''}</textarea>
-                            </div>
-                            
-                            <div class="flex space-x-3 pt-4">
-                                <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                                    Save Changes
-                                </button>
-                                <button type="button" onclick="this.closest('.fixed').remove()" 
-                                    class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition">
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                `;
-
-                document.body.appendChild(editModal);
-
-                // Handle form submission
-                document.getElementById('editListingFormListingsPage').addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    
-                    const updatedListing = {
-                        title: document.getElementById('editTitleListingsPage').value,
-                        price: parseFloat(document.getElementById('editPriceListingsPage').value),
-                        bedrooms: parseInt(document.getElementById('editBedroomsListingsPage').value),
-                        city: document.getElementById('editCityListingsPage').value,
-                        street: document.getElementById('editStreetListingsPage').value,
-                        postalCode: document.getElementById('editPostalCodeListingsPage').value,
-                        house_type: document.getElementById('editHouseTypeListingsPage').value,
-                        utilities: document.getElementById('editUtilitiesListingsPage').value,
-                        description: document.getElementById('editDescriptionListingsPage').value,
-                        updated_at: new Date().toISOString()
-                    };
-
-                    try {
-                        const currentUser = window.UniversalAuth.getCurrentUser();
-                        if (!currentUser || !currentUser.email) {
-                            alert('Please log in to edit listings.');
-                            return;
-                        }
-                        
-                        let updateSuccess = false;
-                        
-                        // Try Supabase update first
-                        if (typeof supabase !== 'undefined' && supabase && !listingId.startsWith('local_')) {
-                            try {
-                                const { data: existingListing, error: fetchError } = await supabase
-                                    .from('listings')
-                                    .select('*')
-                                    .eq('id', listingId)
-                                    .single();
-                                    
-                                if (!fetchError && existingListing) {
-                                    if (existingListing.user_email !== currentUser.email) {
-                                        alert('You can only edit your own listings.');
-                                        return;
-                                    }
-                                    
-                                    const { data, error } = await supabase
-                                        .from('listings')
-                                        .update(updatedListing)
-                                        .eq('id', listingId)
-                                        .eq('user_email', currentUser.email)
-                                        .select();
-
-                                    if (!error && data && data.length > 0) {
-                                        updateSuccess = true;
-                                        console.log('✅ Listing updated in Supabase');
-                                        
-                                        // Clean up localStorage to ensure global consistency
-                                        const userListingsKey = `userListings_${currentUser.email}`;
-                                        let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                                        const listingIndex = userListings.findIndex(l => l.id === listingId);
-                                        
-                                        if (listingIndex !== -1) {
-                                            userListings.splice(listingIndex, 1);
-                                            localStorage.setItem(userListingsKey, JSON.stringify(userListings));
-                                        }
-                                        
-                                        if (currentUser.listings) {
-                                            const userListingIndex = currentUser.listings.findIndex(l => l.id === listingId);
-                                            if (userListingIndex !== -1) {
-                                                currentUser.listings.splice(userListingIndex, 1);
-                                                let users = JSON.parse(localStorage.getItem('users')) || [];
-                                                users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                                                localStorage.setItem('users', JSON.stringify(users));
-                                                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                                            }
-                                        }
-                                    }
-                                }
-                            } catch (supabaseError) {
-                                console.log('Supabase update failed, will use localStorage:', supabaseError);
-                            }
-                        }
-                        
-                        // If Supabase failed or listing is local, update in localStorage
-                        if (!updateSuccess) {
-                            console.log('📱 Updating listing in localStorage');
-                            
-                            const userListingsKey = `userListings_${currentUser.email}`;
-                            let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                            const listingIndex = userListings.findIndex(l => l.id === listingId);
-                            
-                            if (listingIndex !== -1) {
-                                userListings[listingIndex] = {
-                                    ...userListings[listingIndex],
-                                    ...updatedListing
-                                };
-                                localStorage.setItem(userListingsKey, JSON.stringify(userListings));
-                                updateSuccess = true;
-                            }
-                            
-                            if (currentUser.listings) {
-                                const userListingIndex = currentUser.listings.findIndex(l => l.id === listingId);
-                                if (userListingIndex !== -1) {
-                                    currentUser.listings[userListingIndex] = {
-                                        ...currentUser.listings[userListingIndex],
-                                        ...updatedListing
-                                    };
-                                    
-                                    let users = JSON.parse(localStorage.getItem('users')) || [];
-                                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                                    localStorage.setItem('users', JSON.stringify(users));
-                                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                                    updateSuccess = true;
-                                }
-                            }
-                        }
-                        
-                        if (updateSuccess) {
-                            // Close modal first
-                            editModal.remove();
-                            
-                            // Trigger storage event to notify other pages
-                            window.dispatchEvent(new CustomEvent('listingUpdated', { 
-                                detail: { listingId: listingId, action: 'update' } 
-                            }));
-                            
-                            // Refresh the listings display immediately
-                            await displayListings();
-                            alert('Listing updated successfully!');
-                        } else {
-                            alert('Update failed - listing may not exist or you may not have permission to edit it.');
-                        }
-                    } catch (err) {
-                        console.error('Error updating listing:', err);
-                        alert('Error updating listing. Please try again.');
-                    }
-                });
-
-            } catch (error) {
-                console.error('Error in editListingFromListingsPage:', error);
-                alert('Error loading listing details');
-            }
-        };
-        
     </script>
     
     <!-- Property Visit Tracker -->
