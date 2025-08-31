@@ -6129,6 +6129,31 @@ app.get('/', (req, res) => {
     }
 });
 
+// Special routes for listings page - MUST BE BEFORE dynamic handler
+app.get('/listings.html', (req, res) => {
+    const modularListingsPath = path.join(__dirname, '..', 'frontend', 'listings', 'index.html');
+    console.log('🔍 DIRECT /listings.html route - serving modular version');
+    if (fs.existsSync(modularListingsPath)) {
+        console.log(`📄 SUCCESS: Serving modular listings from: ${modularListingsPath}`);
+        return res.sendFile(modularListingsPath);
+    } else {
+        console.log(`❌ ERROR: Modular listings file not found at: ${modularListingsPath}`);
+        return res.status(404).send('Listings not found');
+    }
+});
+
+app.get('/listings', (req, res) => {
+    const modularListingsPath = path.join(__dirname, '..', 'frontend', 'listings', 'index.html');
+    console.log('🔍 DIRECT /listings route - serving modular version');
+    if (fs.existsSync(modularListingsPath)) {
+        console.log(`📄 SUCCESS: Serving modular listings from: ${modularListingsPath}`);
+        return res.sendFile(modularListingsPath);
+    } else {
+        console.log(`❌ ERROR: Modular listings file not found at: ${modularListingsPath}`);
+        return res.status(404).send('Listings not found');
+    }
+});
+
 // Dynamic route handler for all HTML pages - MUST BE LAST
 app.get('/:page', (req, res) => {
     try {
