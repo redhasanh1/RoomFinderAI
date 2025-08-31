@@ -729,12 +729,7 @@
         <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">Saved Listings</h2>
-                <div class="flex items-center space-x-2">
-                    <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                    </svg>
-                    <span id="savedListingsCount" class="text-sm text-gray-600">0 saved</span>
-                </div>
+                <span id="savedListingsCount" class="text-sm text-gray-600">0 saved</span>
             </div>
             <div id="savedListingsContainer" class="space-y-4">
                 <div id="savedListingsEmpty" class="text-center py-12">
@@ -1154,10 +1149,10 @@
                     container.innerHTML = `
                         <div id="savedListingsEmpty" class="text-center py-12">
                             <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                             </svg>
                             <p class="text-gray-500 text-lg">No saved listings yet</p>
-                            <p class="text-gray-400 text-sm mt-2">Click the heart icon on any listing to save it here</p>
+                            <p class="text-gray-400 text-sm mt-2">Save listings to view them here</p>
                             <a href="listings.html" class="inline-block mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">Browse Listings</a>
                         </div>
                     `;
@@ -1273,7 +1268,7 @@
         }
 
         function viewListing(id) {
-            window.location.href = `listing-details.html?id=${id}`;
+            window.location.href = `listings.html?id=${id}`;
         }
 
         function unsaveListing(id) {
