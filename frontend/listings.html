@@ -2409,14 +2409,28 @@
         }
 
         // Display listings
+        let isLoadingListings = false;
         async function displayListings() {
             console.log('🔄 Starting displayListings function');
+            
+            // Prevent duplicate calls
+            if (isLoadingListings) {
+                console.log('⚠️ displayListings already running, skipping duplicate call');
+                return;
+            }
+            
+            isLoadingListings = true;
+            
+            try {
             
             // Show loading state
             updateListingCount(0, false, true);
             
             let listings = await fetchListings();
             console.log('📋 Fetched listings:', listings);
+            
+            // Store listings globally for map access
+            window.currentListings = listings;
             
             const container = document.getElementById('listingsContainer');
             container.innerHTML = '';
@@ -2426,9 +2440,13 @@
 
             if (listings.length === 0) {
                 console.log('📝 No listings found in database');
+                isLoadingListings = false; // Reset loading flag
                 return; // updateListingCount already handles empty state
             }
 
+            // Use DocumentFragment for batch DOM operations
+            const fragment = document.createDocumentFragment();
+            
             listings.forEach(listing => {
                 console.log('Processing listing:', listing.id, listing.title);
                 let media = listing.media || [];
@@ -2437,29 +2455,12 @@
                     media = [];
                 }
 
-                media = media.map(item => {
-                    if (item.type === 'application/json' || !item.type || item.type === 'application/octet-stream') {
-                        const extension = item.name.split('.').pop().toLowerCase();
-                        let correctedType;
-                        switch (extension) {
-                            case 'jpg':
-                            case 'jpeg':
-                                correctedType = 'image/jpeg';
-                                break;
-                            case 'png':
-                                correctedType = 'image/png';
-                                break;
-                            case 'mp4':
-                                correctedType = 'video/mp4';
-                                break;
-                            default:
-                                correctedType = item.type || 'application/octet-stream';
-                        }
-                        console.log('Corrected MIME type for', item.name, 'from', item.type, 'to', correctedType);
-                        return { ...item, type: correctedType };
-                    }
-                    return item;
-                });
+                // Quick MIME type correction (optimized)
+                if (media.length > 0 && media[0].name && !media[0].type.startsWith('image/')) {
+                    const ext = media[0].name.split('.').pop().toLowerCase();
+                    if (ext === 'jpg' || ext === 'jpeg') media[0].type = 'image/jpeg';
+                    else if (ext === 'png') media[0].type = 'image/png';
+                }
 
                 const isImage = (file) => {
                     const byType = file.type.startsWith('image/');
@@ -2470,13 +2471,6 @@
                 const primaryImage = media.length > 0 && isImage(media[0])
                     ? media[0].url
                     : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
-
-                fetch(primaryImage, { method: 'HEAD' })
-                    .then(response => {
-                        const serverContentType = response.headers.get('Content-Type');
-                        console.log('Server content type for', primaryImage, ':', serverContentType);
-                    })
-                    .catch(err => console.error('Failed to fetch MIME type for', primaryImage, err));
 
                 const listingCard = document.createElement('div');
                 listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
@@ -2513,8 +2507,11 @@
                         </div>
                     </div>
                 `;
-                container.appendChild(listingCard);
+                fragment.appendChild(listingCard);
             });
+            
+            // Add all listing cards to DOM at once
+            container.appendChild(fragment);
 
             document.querySelectorAll('.view-details-btn').forEach(button => {
                 button.addEventListener('click', () => {
@@ -2541,15 +2538,27 @@
                 }
             });
 
-            // Update map with all listings
-            console.log('📍 Updating map with', listings.length, 'listings...');
-            await updateMap(listings);
+            // Skip expensive map update for faster loading
             console.log('✅ Listings display complete:', listings.length, 'listings processed');
             
-            // Check if we should auto-open a specific listing
+            // Lazy load map data only when map view is selected
+            if (document.getElementById('mapContainer').style.display !== 'none') {
+                setTimeout(() => updateMap(listings), 0); // Non-blocking
+            }
+            
+            // Check if we should auto-open a specific listing (reduced delay)
             setTimeout(() => {
                 checkAutoOpenListing(listings);
-            }, 100);
+            }, 50);
+            
+            // Reset loading flag
+            isLoadingListings = false;
+            
+            } catch (error) {
+                console.error('❌ Error in displayListings:', error);
+                isLoadingListings = false;
+                updateListingCount(0, true, false); // Show error state
+            }
         }
 
         // Function to check and handle auto-opening a listing
@@ -2565,10 +2574,10 @@
                 console.log('✅ Found listing to auto-open:', targetListing.title);
                 // Clear the auto-open ID first to prevent multiple triggers
                 sessionStorage.removeItem('autoOpenListingId');
-                // Small delay to ensure DOM is ready
+                // Minimal delay for fast response
                 setTimeout(() => {
                     showListingModal(targetListing);
-                }, 300);
+                }, 100);
             } else {
                 console.warn('⚠️ Listing not found for auto-open ID:', autoOpenId);
                 // Clear the ID even if not found to prevent infinite attempts
@@ -5314,6 +5323,11 @@
                 gridBtn.className = 'px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium flex items-center gap-2';
                 listingsContainer.classList.add('hidden');
                 mapContainer.classList.remove('hidden');
+                
+                // Load map data only when map view is selected
+                if (window.currentListings && window.currentListings.length > 0) {
+                    updateMap(window.currentListings);
+                }
                 
                 // Initialize map if needed
                 if (typeof initializeMap === 'function') {
