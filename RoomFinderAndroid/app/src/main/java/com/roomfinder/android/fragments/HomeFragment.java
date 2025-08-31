@@ -455,7 +455,9 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
             Log.d(TAG, "⚠️ [DEBUG] Showing empty state (filtered out all listings)");
             showEmptyState();
         } else {
-            binding.emptyLayout.setVisibility(View.GONE);
+            if (binding != null && binding.emptyLayout != null) {
+                binding.emptyLayout.setVisibility(View.GONE);
+            }
         }
     }
     
