@@ -26,7 +26,10 @@
         let initializationAttempts = 0;
         const MAX_INIT_ATTEMPTS = 3;
 
-        // Load configuration from Railway API
+        // Start loading listings immediately (don't wait for config)
+        console.log('🚀 Starting immediate listings load');
+        
+        // Load configuration in parallel
         fetch('/api/config')
             .then(response => response.json())
             .then(config => {
@@ -34,43 +37,41 @@
                 SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
                 GOOGLE_API_KEY = config.GOOGLE_API_KEY;
                 
-                // Debug config loading
-                console.log('🔧 Listings config loaded:', {
-                    hasSupabaseURL: !!SUPABASE_URL,
-                    hasSupabaseKey: !!SUPABASE_ANON_KEY,
-                    hasGoogleKey: !!GOOGLE_API_KEY
-                });
+                console.log('🔧 Config loaded');
 
-                // Initialize Supabase client - CDN version exposes the library differently
+                // Initialize Supabase client when ready
                 if (window.supabase && typeof window.supabase.createClient === 'function') {
                     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    window.supabaseClient = supabase; // Store client separately to not overwrite the library
+                    window.supabaseClient = supabase;
                     console.log('📡 Supabase client initialized');
-                } else {
-                    console.error('❌ Supabase library not loaded properly');
-                    showError('Failed to initialize database connection');
+                    
+                    // Trigger live update if listings were loaded from cache
+                    if (document.getElementById('listingsContainer')?.children.length > 0) {
+                        console.log('🔄 Refreshing with live data');
+                        isLoadingListings = false;
+                        displayListings();
+                    }
                 }
                 
                 isConfigLoaded = true;
-                // Only initialize if DOM is also ready
-                attemptInitialization();
             })
             .catch(error => {
-                console.error('❌ Failed to load configuration:', error);
-                showError('Failed to load configuration. Please refresh the page.');
+                console.error('❌ Config load failed:', error);
+                // Continue anyway with cached data
             });
 
-        // Wait for DOM to be ready
+        // Load listings immediately when DOM is ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
-                console.log('📄 DOM Content Loaded');
+                console.log('📄 DOM Content Loaded - loading listings immediately');
                 isDOMReady = true;
-                attemptInitialization();
+                displayListings(); // Load immediately
             });
         } else {
-            console.log('📄 DOM already ready');
+            console.log('📄 DOM already ready - loading listings immediately');
             isDOMReady = true;
-            attemptInitialization();
+            // Small delay to ensure all scripts are loaded
+            setTimeout(() => displayListings(), 0);
         }
 
         // Safe initialization function with retry mechanism
@@ -2070,14 +2071,8 @@
             });
             
             // Load listings with error handling
-            try {
-                console.log('🔄 Attempting to load listings automatically...');
-                await displayListings();
-                console.log('✅ Listings loaded successfully in initializeListingsPage()');
-            } catch (error) {
-                console.error('❌ Failed to load listings in initializeListingsPage():', error);
-                // Don't throw the error - let the fallback mechanism handle it
-            }
+            // Listings are already loading immediately, no need to call again
+            console.log('✅ Listings already loading on page init');
         }
 
 
@@ -2404,14 +2399,49 @@
             return uploadedMedia;
         }
 
+        // Schedule live update when Supabase becomes available
+        let liveUpdateScheduled = false;
+        function scheduleLiveUpdate() {
+            if (liveUpdateScheduled) return;
+            liveUpdateScheduled = true;
+            
+            const checkAndUpdate = async () => {
+                if (window.supabaseClient && typeof window.supabaseClient.from === 'function') {
+                    console.log('🔄 Updating with live data from Supabase');
+                    isLoadingListings = false; // Reset flag to allow update
+                    await displayListings();
+                    liveUpdateScheduled = false;
+                } else {
+                    setTimeout(checkAndUpdate, 500);
+                }
+            };
+            setTimeout(checkAndUpdate, 500);
+        }
+        
         // Fetch listings from Supabase
         async function fetchListings() {
             console.log('Fetching listings from Supabase');
             
-            // Wait for Supabase to be initialized
+            // Check for cached listings first for instant display
+            const cachedListings = localStorage.getItem('cachedListings');
+            if (cachedListings && (!window.supabaseClient || typeof window.supabaseClient.from !== 'function')) {
+                console.log('📦 Using cached listings for instant display');
+                try {
+                    const cached = JSON.parse(cachedListings);
+                    if (cached.data && Array.isArray(cached.data)) {
+                        // Update with live data later when Supabase is ready
+                        scheduleLiveUpdate();
+                        return cached.data;
+                    }
+                } catch (e) {
+                    console.error('Failed to parse cached listings:', e);
+                }
+            }
+            
+            // If Supabase isn't ready, return cached or empty
             if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') {
-                console.error('Supabase not properly initialized yet');
-                // Return empty array and let initialization retry later
+                console.log('⏳ Supabase not ready, will update when available');
+                scheduleLiveUpdate();
                 return [];
             }
             
@@ -2423,12 +2453,28 @@
                     .range(0, 19);
                 console.log('Fetch result:', { data, error });
                 if (error) throw error;
+                
+                // Cache the results for next time
+                if (data && data.length > 0) {
+                    localStorage.setItem('cachedListings', JSON.stringify({
+                        data: data,
+                        timestamp: Date.now()
+                    }));
+                }
+                
                 return data || [];
             } catch (error) {
                 console.error('Error fetching listings:', error);
                 // Don't show alert for initialization errors
                 if (error.message && !error.message.includes('Cannot read properties')) {
-                    alert('Failed to load listings: ' + error.message);
+                    // Silently fail and use cached data if available
+                    const cached = localStorage.getItem('cachedListings');
+                    if (cached) {
+                        try {
+                            const { data } = JSON.parse(cached);
+                            return data || [];
+                        } catch (e) {}
+                    }
                 }
                 return [];
             }
@@ -2479,25 +2525,6 @@
             // Prevent duplicate calls
             if (isLoadingListings) {
                 console.log('⚠️ displayListings already running, skipping duplicate call');
-                return;
-            }
-            
-            // Wait for Supabase to be ready (max 5 seconds)
-            let waitAttempts = 0;
-            while ((!window.supabaseClient || typeof window.supabaseClient.from !== 'function') && waitAttempts < 50) {
-                console.log('⏳ Waiting for Supabase initialization...');
-                await new Promise(resolve => setTimeout(resolve, 100));
-                waitAttempts++;
-            }
-            
-            if (!window.supabaseClient || typeof window.supabaseClient.from !== 'function') {
-                console.error('❌ Supabase failed to initialize after 5 seconds');
-                updateListingCount(0, false, false);
-                const errorElement = document.getElementById('emptyState');
-                if (errorElement) {
-                    errorElement.innerHTML = '<p class="text-red-600">Database connection failed. Please refresh the page.</p>';
-                    errorElement.classList.remove('hidden');
-                }
                 return;
             }
             
@@ -4895,30 +4922,26 @@
             console.warn('Supabase not initialized for real-time listings subscription');
         }
         
-        // Initialize Universal Authentication Manager
+        // Initialize Universal Authentication Manager (but don't wait for listings)
         if (typeof window.UniversalAuth !== 'undefined') {
             window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: true })
                 .then(result => {
                     if (result.authenticated) {
-                        console.log('✅ User authenticated, loading listings...');
+                        console.log('✅ User authenticated');
                     } else {
-                        console.log('ℹ️ Anonymous user, loading listings...');
+                        console.log('ℹ️ Anonymous user');
                     }
-                    displayListings().then(() => {
-                        // Load favorite states after listings are loaded, with a small delay to ensure DOM is ready
-                        setTimeout(() => {
-                            loadFavoriteStates();
-                        }, 100);
-                    });
+                    // Load favorite states after listings are shown
+                    setTimeout(() => {
+                        loadFavoriteStates();
+                    }, 200);
                 })
                 .catch(error => {
                     console.error('Auth initialization error:', error);
-                    displayListings().then(() => {
-                        // Load favorite states after listings are loaded, with a small delay to ensure DOM is ready
-                        setTimeout(() => {
-                            loadFavoriteStates();
-                        }, 100);
-                    });
+                    // Still load favorite states
+                    setTimeout(() => {
+                        loadFavoriteStates();
+                    }, 200);
                 });
         }
 
@@ -5492,23 +5515,7 @@
                 } catch (error) {
                     console.error('❌ Fallback listings loading failed:', error);
                 }
-            }, 2000); // Wait 2 seconds for main initialization
-            
-            // Safety timeout - force load after 5 seconds if still no listings
-            setTimeout(async () => {
-                try {
-                    const container = document.getElementById('listingsContainer');
-                    const hasListings = container && container.children.length > 0;
-                    
-                    if (!hasListings) {
-                        console.log('🚨 Safety timeout: Force loading listings after 5 seconds');
-                        await displayListings();
-                        console.log('✅ Safety timeout listings loading successful');
-                    }
-                } catch (error) {
-                    console.error('❌ Safety timeout listings loading failed:', error);
-                }
-            }, 5000); // 5-second safety timeout
+            }, 100); // Quick check after 100ms instead of 2 seconds
         });
     </script>
     
