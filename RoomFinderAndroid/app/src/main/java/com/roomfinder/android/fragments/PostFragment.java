@@ -258,6 +258,7 @@ public class PostFragment extends Fragment {
         
         // Validate property type
         if (selectedPropertyType.isEmpty()) {
+            Toast.makeText(getContext(), "Please select a property type to continue", Toast.LENGTH_SHORT).show();
             isValid = false;
         }
         
