@@ -6072,6 +6072,18 @@ app.get('/api/turnstile-key', (req, res) => {
     res.json({ siteKey });
 });
 
+// Debug test route to verify deployment
+app.get('/debug-test', (req, res) => {
+    const fs = require('fs');
+    const path = require('path');
+    res.json({
+        message: 'Debug endpoint working!',
+        timestamp: new Date().toISOString(),
+        commit: '6e91f8c',
+        modularFileExists: fs.existsSync(path.join(__dirname, '..', 'frontend', 'listings', 'index.html'))
+    });
+});
+
 // Health check route for Railway monitoring - MUST BE BEFORE /:page
 app.get('/health', (req, res) => {
     const health = {
