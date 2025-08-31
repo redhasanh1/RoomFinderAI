@@ -9,6 +9,9 @@ const bcrypt = require('bcryptjs');
 
 // Load environment variables from .env file in development
 require('dotenv').config();
+console.log('🔍 DEBUG: Environment variables loaded');
+console.log('🔍 DEBUG: SUPABASE_URL:', process.env.SUPABASE_URL ? 'SET' : 'NOT SET');
+console.log('🔍 DEBUG: SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
 
 // Service availability tracking
 const serviceStatus = {
@@ -241,14 +244,20 @@ try {
 // Initialize Supabase client with error handling
 let supabase;
 try {
+    console.log('🔍 DEBUG: Attempting Supabase initialization...');
+    console.log('🔍 DEBUG: config.SUPABASE_URL:', config.SUPABASE_URL ? config.SUPABASE_URL.substring(0, 30) + '...' : 'NOT SET');
+    console.log('🔍 DEBUG: config.SUPABASE_ANON_KEY:', config.SUPABASE_ANON_KEY ? config.SUPABASE_ANON_KEY.substring(0, 30) + '...' : 'NOT SET');
+    
     if (config.SUPABASE_URL && config.SUPABASE_ANON_KEY && 
         !config.SUPABASE_URL.includes('your-project') && 
         !config.SUPABASE_ANON_KEY.includes('your-supabase')) {
         supabase = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
         serviceStatus.supabase = true;
-        console.log('✅ Supabase initialized');
+        console.log('✅ Supabase initialized successfully');
     } else {
         console.log('⚠️ Supabase not initialized - missing or default credentials');
+        console.log('🔍 DEBUG: URL includes "your-project"?', config.SUPABASE_URL?.includes('your-project'));
+        console.log('🔍 DEBUG: KEY includes "your-supabase"?', config.SUPABASE_ANON_KEY?.includes('your-supabase'));
         if (DEMO_MODE) {
             console.log('📝 Demo mode enabled - Database features will use mock data');
         }
@@ -368,7 +377,54 @@ app.use('/3D%20House%20Models', express.static(houseModelsPath));
 const GOOGLE_API_KEY = config.GOOGLE_API_KEY;
 
 // In-memory database (replace with MongoDB/PostgreSQL in production)
-const listings = [];
+const listings = [
+    {
+        id: 'demo-1',
+        title: 'Modern Downtown Apartment',
+        description: 'Beautiful 2BR apartment in the heart of downtown',
+        price: 2500,
+        address: '123 Main St, City Center',
+        bedrooms: 2,
+        bathrooms: 2,
+        size: 1200,
+        images: ['https://via.placeholder.com/400x300?text=Apartment+1'],
+        houseType: 'Apartment',
+        created_at: new Date().toISOString(),
+        latitude: 40.7128,
+        longitude: -74.0060
+    },
+    {
+        id: 'demo-2',
+        title: 'Cozy Studio Near Campus',
+        description: 'Perfect for students, walking distance to university',
+        price: 1200,
+        address: '456 College Ave',
+        bedrooms: 1,
+        bathrooms: 1,
+        size: 600,
+        images: ['https://via.placeholder.com/400x300?text=Studio+1'],
+        houseType: 'Studio',
+        created_at: new Date().toISOString(),
+        latitude: 40.7200,
+        longitude: -74.0100
+    },
+    {
+        id: 'demo-3',
+        title: 'Spacious Family Home',
+        description: '4BR house with backyard and garage',
+        price: 3500,
+        address: '789 Oak Street',
+        bedrooms: 4,
+        bathrooms: 3,
+        size: 2500,
+        images: ['https://via.placeholder.com/400x300?text=House+1'],
+        houseType: 'House',
+        created_at: new Date().toISOString(),
+        latitude: 40.7300,
+        longitude: -74.0200
+    }
+];
+console.log('🔍 DEBUG: Mock listings initialized with', listings.length, 'demo listings');
 const users = [];
 const emailVerificationCodes = new Map(); // Store verification codes with expiration
 const passwordResetCodes = new Map(); // Store password reset codes with expiration
@@ -607,12 +663,18 @@ function transformListingForAndroid(listing) {
 // API: Get all listings
 app.get('/api/listings', async (req, res) => {
     try {
+        console.log('🔍 DEBUG /api/listings: Request received');
+        console.log('🔍 DEBUG /api/listings: Supabase status:', supabase ? 'INITIALIZED' : 'NOT INITIALIZED');
+        
         // Check if Supabase is connected
         if (!supabase) {
-            return res.status(500).json({ 
-                success: false,
-                data: null,
-                message: 'Database not connected'
+            console.log('🔍 DEBUG /api/listings: Using mock data (no database)');
+            // Return mock listings when database is not connected
+            const transformedListings = listings.map(transformListingForAndroid);
+            return res.json({ 
+                success: true,
+                data: transformedListings,
+                message: 'Using demo listings (database not connected)'
             });
         }
 
@@ -1023,13 +1085,17 @@ app.delete('/api/favorites/:listingId', async (req, res) => {
 // Get user's favorite listings
 app.get('/api/favorites', async (req, res) => {
     try {
+        console.log('🔍 DEBUG /api/favorites: Request received for email:', req.query.userEmail);
         const { userEmail } = req.query;
         
         if (!userEmail) {
+            console.log('🔍 DEBUG /api/favorites: No userEmail provided');
             return res.status(400).json({ error: 'userEmail is required' });
         }
 
+        console.log('🔍 DEBUG /api/favorites: Supabase status:', supabase ? 'INITIALIZED' : 'NOT INITIALIZED');
         if (!supabase) {
+            console.log('🔍 DEBUG /api/favorites: Using in-memory fallback');
             // Use in-memory storage as fallback
             const userFavorites = inMemoryFavorites.get(userEmail);
             if (!userFavorites || userFavorites.size === 0) {
