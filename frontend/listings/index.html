@@ -13,6 +13,9 @@
     <!-- Tailwind CSS CDN - FOR DEVELOPMENT ONLY. Replace with compiled CSS in production -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Removed typo.js spell checker - was causing deprecated sync XHR warnings -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/global-styles.css">
+    <!-- Removed typo.js spell checker - was causing deprecated sync XHR warnings -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     
     <!-- Leaflet Map Libraries -->
@@ -31,6 +34,37 @@
     
     <!-- Enhanced Listings CSS -->
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --shadow-soft: 0 8px 32px rgba(31, 38, 135, 0.37);
+            --shadow-hard: 0 20px 40px rgba(0, 0, 0, 0.1);
+            --transition-smooth: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+            --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        * {
+            scroll-behavior: smooth;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+        }
+        
         .listing-grid-enhanced {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
@@ -120,13 +154,13 @@
             });
     </script>
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
+<body class="bg-gray-50 flex flex-col min-h-screen" style="padding-top: 80px;">
     <!-- Header -->
-    <header class="sticky top-0 bg-white shadow-md z-50">
+    <header id="header" class="fixed top-0 w-full premium-header z-50">
         <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
             <!-- Mobile Layout -->
             <div class="flex items-center justify-between w-full md:w-auto">
-                <div class="text-xl md:text-2xl font-bold gradient-text">RoomFinderAI</div>
+                <a href="/" class="text-xl md:text-2xl font-bold brand-logo font-display" style="text-decoration: none; color: inherit;">RoomFinderAI</a>
                 
                 <!-- Mobile Menu Button -->
                 <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
@@ -139,7 +173,10 @@
             <!-- Desktop Navigation -->
             <div class="desktop-nav hidden md:flex items-center space-x-8">
                 <!-- Home - Standalone -->
-                <a href="/index" class="nav-item">Home</a>
+                <a href="/" class="nav-item">Home</a>
+                
+                <!-- Dashboard - Standalone -->
+                <a href="/dashboard" class="nav-item">Dashboard</a>
                 
                 <!-- Browse Dropdown -->
                 <div class="dropdown">
