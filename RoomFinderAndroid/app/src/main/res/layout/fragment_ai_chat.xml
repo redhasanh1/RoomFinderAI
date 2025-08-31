@@ -18,16 +18,25 @@
         android:elevation="4dp">
 
         <!-- Back Button -->
-        <ImageView
+        <FrameLayout
             android:id="@+id/backButton"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_arrow_left"
-            android:tint="#FFFFFF"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/circle_background"
+            android:backgroundTint="#33FFFFFF"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="8dp" />
+            android:layout_marginEnd="8dp">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_arrow_left"
+                android:tint="#FFFFFF"
+                android:padding="4dp" />
+
+        </FrameLayout>
 
         <!-- Title Section -->
         <LinearLayout
