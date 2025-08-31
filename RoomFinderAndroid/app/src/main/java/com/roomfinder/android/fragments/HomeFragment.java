@@ -2,10 +2,14 @@ package com.roomfinder.android.fragments;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -39,7 +43,7 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     private List<Listing> allListings = new ArrayList<>();
     private SupabaseService supabaseService;
     private String currentFilter = "All";
-    // Removed currentSearchQuery - no search in simple home page
+    private String currentSearchQuery = "";
     private String currentSortOption = "Price: Low → High";
     private int activeFilterCount = 0;
     
@@ -65,6 +69,8 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        // Cancel any pending search operations
+        cancelPendingSearch();
         binding = null;
     }
     
@@ -135,10 +141,127 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     }
     
     private void setupSearchAndFilters() {
+        // Search input listener
+        binding.searchInput.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                performSearch(binding.searchInput.getText().toString().trim());
+                return true;
+            }
+            return false;
+        });
+        
+        // Text change listener for real-time search and clear button visibility
+        binding.searchInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Show/hide clear button based on text content
+                if (binding.clearSearchButton != null) {
+                    binding.clearSearchButton.setVisibility(s.length() > 0 ? View.VISIBLE : View.GONE);
+                }
+            }
+            
+            @Override
+            public void afterTextChanged(Editable s) {
+                String query = s.toString().trim();
+                if (!query.equals(currentSearchQuery)) {
+                    currentSearchQuery = query;
+                    // Improved debouncing with longer delay and better cancellation
+                    cancelPendingSearch();
+                    if (!query.trim().isEmpty()) {
+                        binding.searchInput.postDelayed(searchRunnable, 500); // Increased to 500ms
+                    } else {
+                        // If search is empty, apply immediately
+                        performSearch(query);
+                    }
+                }
+            }
+        });
+        
+        // Clear search button click listener
+        if (binding.clearSearchButton != null) {
+            binding.clearSearchButton.setOnClickListener(v -> {
+                cancelPendingSearch(); // Cancel any pending search
+                binding.searchInput.setText("");
+                binding.searchInput.clearFocus();
+                hidePopularSearches();
+                // Immediately apply empty search
+                currentSearchQuery = "";
+                performSearch("");
+            });
+        }
+        
+        // Show popular searches when search input is focused and empty
+        binding.searchInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus && binding.searchInput.getText().toString().trim().isEmpty()) {
+                showPopularSearches();
+            } else if (!hasFocus) {
+                hidePopularSearches();
+            }
+        });
+        
+        // Setup popular search suggestions
+        setupPopularSearches();
+        
         // Filter chips click listeners
         setupFilterChips();
     }
     
+    private void setupPopularSearches() {
+        // Popular search chip click listeners with null checks
+        if (binding.chipDowntown != null) {
+            binding.chipDowntown.setOnClickListener(v -> {
+                performSearchFromSuggestion("downtown");
+            });
+        }
+        
+        if (binding.chip2Bedroom != null) {
+            binding.chip2Bedroom.setOnClickListener(v -> {
+                performSearchFromSuggestion("2 bedroom");
+            });
+        }
+        
+        if (binding.chipUnder1500 != null) {
+            binding.chipUnder1500.setOnClickListener(v -> {
+                performSearchFromSuggestion("under $1500");
+            });
+        }
+        
+        if (binding.chipPetFriendly != null) {
+            binding.chipPetFriendly.setOnClickListener(v -> {
+                performSearchFromSuggestion("pet friendly");
+            });
+        }
+    }
+    
+    private void performSearchFromSuggestion(String suggestion) {
+        cancelPendingSearch(); // Cancel any pending search
+        binding.searchInput.setText(suggestion);
+        binding.searchInput.clearFocus();
+        currentSearchQuery = suggestion;
+        performSearch(suggestion);
+        hidePopularSearches();
+    }
+    
+    private void showPopularSearches() {
+        if (binding.popularSearchesLayout != null) {
+            binding.popularSearchesLayout.setVisibility(View.VISIBLE);
+        }
+    }
+    
+    private void hidePopularSearches() {
+        if (binding.popularSearchesLayout != null) {
+            binding.popularSearchesLayout.setVisibility(View.GONE);
+        }
+    }
+    
+    private final Runnable searchRunnable = () -> performSearch(currentSearchQuery);
+    
+    private void cancelPendingSearch() {
+        binding.searchInput.removeCallbacks(searchRunnable);
+    }
     
     private void setupFilterChips() {
         View.OnClickListener chipClickListener = v -> {
@@ -162,6 +285,10 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         binding.chipHouse.setOnClickListener(chipClickListener);
         binding.chipCondo.setOnClickListener(chipClickListener);
         
+        // Add null checks for chips
+        if (binding.chipStudio != null) {
+            binding.chipStudio.setOnClickListener(chipClickListener);
+        }
         
         // Set initial selection - Material Chips handle their own appearance
         binding.chipAll.setChecked(true);
@@ -173,7 +300,7 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
             binding.sortButton.setOnClickListener(v -> showSortMenu());
         }
         
-        // Clear all filters button removed - not in simple layout
+        // Clear all filters functionality removed - simplified design
         
         // Add debug button temporarily (remove this later)
         if (binding.sortButton != null) {
@@ -204,6 +331,11 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     }
     
     private void clearAllFilters() {
+        // Clear search
+        cancelPendingSearch();
+        binding.searchInput.setText("");
+        currentSearchQuery = "";
+        
         // Reset filter to "All"
         currentFilter = "All";
         resetChipSelection();
@@ -218,28 +350,8 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         updateFilterButtonsVisibility();
     }
     
-    
     private void updateFilterButtonsVisibility() {
-        // Update results counter
-        updateResultsCounter();
-    }
-    
-    private void updateResultsCounter() {
-        if (binding.resultsCounter != null) {
-            int totalResults = listings.size();
-            String counterText;
-            
-            if (totalResults == 0) {
-                counterText = "No properties found";
-            } else if (totalResults == 1) {
-                counterText = "1 property found";
-            } else {
-                counterText = totalResults + " properties found";
-            }
-            
-            
-            binding.resultsCounter.setText(counterText);
-        }
+        // Simplified design - no clear filters button needed
     }
     
     private void clearCacheAndReload() {
@@ -275,6 +387,10 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         binding.chipHouse.setChecked(false);
         binding.chipCondo.setChecked(false);
         
+        // Reset chips with null checks
+        if (binding.chipStudio != null) {
+            binding.chipStudio.setChecked(false);
+        }
         
         // Material Chips handle their own appearance automatically
     }
@@ -293,10 +409,16 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         }, 150);
     }
     
+    private void performSearch(String query) {
+        currentSearchQuery = query;
+        applyFiltersWithAnimation();
+        updateFilterButtonsVisibility();
+    }
     
     private void applyFilters() {
         Log.d(TAG, "🔍 [DEBUG] applyFilters() called");
         Log.d(TAG, "🔍 [DEBUG] Input: allListings.size() = " + allListings.size());
+        Log.d(TAG, "🔍 [DEBUG] Current search query: '" + currentSearchQuery + "'");
         Log.d(TAG, "🔍 [DEBUG] Current filter: '" + currentFilter + "'");
         Log.d(TAG, "🔍 [DEBUG] Current sort: '" + currentSortOption + "'");
         
@@ -304,13 +426,14 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         
         for (int i = 0; i < allListings.size(); i++) {
             Listing listing = allListings.get(i);
+            boolean matchesSearch = matchesSmartSearch(listing, currentSearchQuery);
             boolean matchesFilter = matchesFilterCriteria(listing, currentFilter);
             
             Log.d(TAG, "🔍 [DEBUG] Listing " + (i+1) + "/" + allListings.size() + 
                   ": '" + (listing.getTitle() != null ? listing.getTitle().substring(0, Math.min(20, listing.getTitle().length())) : "null") + "'" +
-                  " | Filter: " + matchesFilter);
+                  " | Search: " + matchesSearch + " | Filter: " + matchesFilter);
             
-            if (matchesFilter) {
+            if (matchesSearch && matchesFilter) {
                 filteredListings.add(listing);
             }
         }
@@ -326,7 +449,7 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         adapter.notifyDataSetChanged();
         
         Log.d(TAG, "🔍 [DEBUG] Final result: " + listings.size() + " listings displayed to user");
-        Log.d(TAG, "Applied filters - Filter: '" + currentFilter + "', Results: " + listings.size());
+        Log.d(TAG, "Applied filters - Search: '" + currentSearchQuery + "', Filter: '" + currentFilter + "', Results: " + listings.size());
         
         if (listings.isEmpty() && !allListings.isEmpty()) {
             Log.d(TAG, "⚠️ [DEBUG] Showing empty state (filtered out all listings)");
@@ -346,9 +469,10 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
         List<Listing> filteredListings = new ArrayList<>();
         
         for (Listing listing : allListings) {
+            boolean matchesSearch = matchesSmartSearch(listing, currentSearchQuery);
             boolean matchesFilter = matchesFilterCriteria(listing, currentFilter);
             
-            if (matchesFilter) {
+            if (matchesSearch && matchesFilter) {
                 filteredListings.add(listing);
             }
         }
@@ -399,28 +523,79 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
     }
     
     private boolean matchesSmartSearch(Listing listing, String query) {
-        return true; // No search functionality in home page
-    }
-    
-    private boolean matchesFilterCriteria(Listing listing, String filter) {
-        if (filter.equals("All") || filter.equals("All Types")) return true;
+        if (query.isEmpty()) return true;
         
-        // Property type filters (handle emoji text)
-        if (filter.contains("Apartment") || filter.equals("Apartment")) {
-            return listing.getHouseType().toLowerCase().contains("apartment");
+        String lowerQuery = query.toLowerCase().trim();
+        
+        // Basic text search
+        boolean basicMatch = listing.getTitle().toLowerCase().contains(lowerQuery) ||
+                listing.getCity().toLowerCase().contains(lowerQuery) ||
+                listing.getStreet().toLowerCase().contains(lowerQuery);
+        
+        // Smart price search
+        if (lowerQuery.contains("under") && lowerQuery.contains("$")) {
+            try {
+                String priceStr = lowerQuery.replaceAll("[^0-9]", "");
+                if (!priceStr.isEmpty()) {
+                    double maxPrice = Double.parseDouble(priceStr);
+                    return listing.getPrice() <= maxPrice;
+                }
+            } catch (NumberFormatException e) {}
         }
-        if (filter.contains("House") || filter.equals("House")) {
-            return listing.getHouseType().toLowerCase().contains("house");
+        
+        if (lowerQuery.contains("over") && lowerQuery.contains("$")) {
+            try {
+                String priceStr = lowerQuery.replaceAll("[^0-9]", "");
+                if (!priceStr.isEmpty()) {
+                    double minPrice = Double.parseDouble(priceStr);
+                    return listing.getPrice() >= minPrice;
+                }
+            } catch (NumberFormatException e) {}
         }
-        if (filter.contains("Condo") || filter.equals("Condo")) {
-            return listing.getHouseType().toLowerCase().contains("condo");
+        
+        // Price range search (e.g., "1000-1500")
+        if (lowerQuery.matches(".*\\d+-\\d+.*")) {
+            try {
+                String[] parts = lowerQuery.replaceAll("[^0-9-]", "").split("-");
+                if (parts.length == 2) {
+                    double minPrice = Double.parseDouble(parts[0]);
+                    double maxPrice = Double.parseDouble(parts[1]);
+                    return listing.getPrice() >= minPrice && listing.getPrice() <= maxPrice;
+                }
+            } catch (NumberFormatException e) {}
         }
-        if (filter.contains("Studio") || filter.equals("Studio")) {
+        
+        // Bedroom search
+        if (lowerQuery.contains("bedroom") || lowerQuery.contains("bed")) {
+            try {
+                String bedStr = lowerQuery.replaceAll("[^0-9]", "");
+                if (!bedStr.isEmpty()) {
+                    int bedrooms = Integer.parseInt(bedStr);
+                    return listing.getBedrooms() == bedrooms;
+                }
+            } catch (NumberFormatException e) {}
+        }
+        
+        // Studio search
+        if (lowerQuery.contains("studio")) {
             return listing.getHouseType().toLowerCase().contains("studio") ||
                    listing.getBedrooms() == 0;
         }
         
-        // Price filters - expanded options
+        return basicMatch;
+    }
+    
+    private boolean matchesFilterCriteria(Listing listing, String filter) {
+        if (filter.equals("All")) return true;
+        
+        // Property type filters
+        if (filter.equals("Apartment") || filter.equals("House") || 
+            filter.equals("Condo") || filter.equals("Studio")) {
+            return listing.getHouseType().toLowerCase().contains(filter.toLowerCase()) ||
+                   (filter.equals("Studio") && listing.getBedrooms() == 0);
+        }
+        
+        // Price filters
         if (filter.equals("Under $1000")) {
             return listing.getPrice() < 1000;
         }
@@ -428,17 +603,6 @@ public class HomeFragment extends Fragment implements ListingsAdapter.OnListingC
             return listing.getPrice() >= 1000 && listing.getPrice() <= 1500;
         }
         if (filter.equals("Over $1500")) {
-            return listing.getPrice() > 1500;
-        }
-        
-        // Legacy price filters
-        if (filter.equals("Under $1K")) {
-            return listing.getPrice() < 1000;
-        }
-        if (filter.equals("$1K-1.5K")) {
-            return listing.getPrice() >= 1000 && listing.getPrice() <= 1500;
-        }
-        if (filter.equals("$1.5K+")) {
             return listing.getPrice() > 1500;
         }
         
