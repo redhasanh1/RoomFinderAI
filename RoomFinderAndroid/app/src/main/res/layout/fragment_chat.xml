@@ -14,166 +14,288 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="24dp">
+            android:orientation="vertical">
 
-            <!-- Modern Header Section -->
+            <!-- Professional Header with Stats -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="#FFFFFF"
-                android:padding="24dp"
-                android:elevation="4dp"
-                android:layout_marginBottom="40dp">
+                android:paddingTop="24dp"
+                android:paddingBottom="8dp"
+                android:paddingHorizontal="20dp">
 
+                <!-- Title and Badge -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Messages"
+                        android:textColor="@color/text_primary"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-black" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <!-- Activity Indicator -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <View
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:background="@drawable/circle_background"
+                            android:backgroundTint="#4CAF50"
+                            android:layout_marginEnd="6dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Active now"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Subtitle -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Connect &amp; Chat"
-                    android:textColor="#000000"
-                    android:textSize="32sp"
-                    android:textStyle="bold"
-                    android:fontFamily="sans-serif-medium"
-                    android:gravity="center"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Choose how you want to connect with properties"
-                    android:textColor="#000000"
-                    android:textSize="16sp"
-                    android:gravity="center"
-                    android:lineSpacingExtra="2dp" />
+                    android:text="Start a conversation with AI or connect directly"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="20dp" />
 
             </LinearLayout>
 
-            <!-- Premium AI Negotiator Chat Card -->
+            <!-- Premium AI Assistant Card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/aiChatCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="16dp"
                 android:clickable="true"
                 android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@android:color/transparent"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp">
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                app:cardBackgroundColor="@android:color/transparent">
 
-                <!-- Custom background with glassmorphism -->
-                <FrameLayout
+                <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/ai_chat_card_background">
+                    android:background="@drawable/gradient_primary">
+
+                    <!-- Beta Badge -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_margin="12dp"
+                        android:text="BETA"
+                        android:textColor="@color/white"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:background="@drawable/rounded_background"
+                        android:backgroundTint="#40FFFFFF"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="4dp" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="28dp"
-                        android:gravity="center_vertical">
+                        android:orientation="vertical"
+                        android:padding="20dp">
 
-                        <!-- Content Container -->
+                        <!-- Icon and Title Row -->
                         <LinearLayout
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="12dp">
 
-                            <!-- AI Negotiator Title -->
-                            <TextView
-                                android:id="@+id/aiChatTitle"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="AI Negotiator"
-                                android:textColor="@color/white"
-                                android:textSize="24sp"
-                                android:textStyle="bold"
-                                android:fontFamily="sans-serif-medium"
-                                android:shadowColor="#40000000"
-                                android:shadowDx="1"
-                                android:shadowDy="2"
-                                android:shadowRadius="3"
-                                android:layout_marginBottom="16dp" />
+                            <!-- AI Icon Background -->
+                            <LinearLayout
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:background="@drawable/circle_background"
+                                android:backgroundTint="#20FFFFFF"
+                                android:gravity="center"
+                                android:layout_marginEnd="12dp">
 
-                            <!-- Description -->
-                            <TextView
-                                android:id="@+id/aiChatDescription"
-                                android:layout_width="match_parent"
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:src="@drawable/ai_negotiator_icon"
+                                    android:tint="@color/white" />
+
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:text="Get expert help negotiating rent, lease terms, and property deals with our AI-powered assistant"
-                                android:textColor="@color/white"
-                                android:textSize="16sp"
-                                android:lineSpacingExtra="4dp"
-                                android:alpha="0.9"
-                                android:fontFamily="sans-serif" />
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="AI Assistant"
+                                    android:textColor="@color/white"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="sans-serif-medium" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Powered by advanced AI"
+                                    android:textColor="@color/white"
+                                    android:textSize="12sp"
+                                    android:alpha="0.8" />
+
+                            </LinearLayout>
+
+                            <!-- Arrow -->
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_arrow_right"
+                                android:tint="@color/white" />
 
                         </LinearLayout>
 
-                        <!-- Arrow -->
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center_vertical"
-                            android:layout_marginStart="16dp"
-                            android:src="@drawable/ic_arrow_right"
-                            android:tint="@color/white"
-                            android:contentDescription="Go to AI Negotiator" />
+                        <!-- Description -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Negotiate rent, analyze lease terms, get instant answers"
+                            android:textColor="@color/white"
+                            android:textSize="14sp"
+                            android:alpha="0.95"
+                            android:layout_marginBottom="16dp" />
+
+                        <!-- Stats Row -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:layout_marginEnd="20dp">
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:src="@drawable/ic_check_circle"
+                                    android:tint="@color/white"
+                                    android:layout_marginEnd="4dp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="24/7 Available"
+                                    android:textColor="@color/white"
+                                    android:textSize="12sp"
+                                    android:alpha="0.9" />
+
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:src="@drawable/ic_favorite_filled"
+                                    android:tint="@color/white"
+                                    android:layout_marginEnd="4dp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="4.8 Rating"
+                                    android:textColor="@color/white"
+                                    android:textSize="12sp"
+                                    android:alpha="0.9" />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
 
                     </LinearLayout>
 
-                </FrameLayout>
+                </RelativeLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Normal Chat Card - Sleek Design -->
+            <!-- Direct Messages Card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/normalChatCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="16dp"
                 android:clickable="true"
                 android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@android:color/transparent"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp">
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/white">
 
-                <FrameLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/enhanced_gradient_header">
+                    android:orientation="vertical"
+                    android:padding="20dp">
 
+                    <!-- Icon and Title Row -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:padding="24dp"
-                        android:gravity="center_vertical">
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
 
-                        <!-- Modern Person Icon -->
+                        <!-- Message Icon Background -->
                         <LinearLayout
-                            android:layout_width="64dp"
-                            android:layout_height="64dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:background="@drawable/circle_background"
-                            android:backgroundTint="@color/purple_primary"
-                            android:layout_marginEnd="20dp"
+                            android:backgroundTint="@color/surface_variant"
                             android:gravity="center"
-                            android:elevation="2dp">
+                            android:layout_marginEnd="12dp">
 
                             <ImageView
-                                android:layout_width="28dp"
-                                android:layout_height="28dp"
-                                android:src="@drawable/ic_person"
-                                android:tint="@color/white"
-                                android:contentDescription="Chat with People" />
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_chat"
+                                android:tint="@color/purple_primary" />
 
                         </LinearLayout>
 
-                        <!-- Content -->
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -181,44 +303,142 @@
                             android:orientation="vertical">
 
                             <TextView
-                                android:layout_width="match_parent"
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Direct Messages"
-                                android:textColor="#FFFFFF"
+                                android:textColor="@color/text_primary"
                                 android:textSize="20sp"
                                 android:textStyle="bold"
-                                android:fontFamily="sans-serif-medium"
-                                android:layout_marginBottom="4dp" />
+                                android:fontFamily="sans-serif-medium" />
 
                             <TextView
-                                android:layout_width="match_parent"
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Chat directly with property owners and other renters"
-                                android:textColor="#FFFFFF"
-                                android:textSize="14sp"
-                                android:lineSpacingExtra="2dp" />
+                                android:text="Chat with real people"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp" />
 
                         </LinearLayout>
 
                         <!-- Arrow -->
                         <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center_vertical"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
                             android:src="@drawable/ic_arrow_right"
-                            android:tint="@color/white"
-                            android:contentDescription="Go to Direct Messages" />
+                            android:tint="@color/text_secondary" />
 
                     </LinearLayout>
 
-                </FrameLayout>
+                    <!-- Description -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Connect with property owners, current tenants, and other renters"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- Stats Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <!-- Active Users -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginEnd="20dp">
+
+                            <View
+                                android:layout_width="6dp"
+                                android:layout_height="6dp"
+                                android:background="@drawable/circle_background"
+                                android:backgroundTint="#4CAF50"
+                                android:layout_marginEnd="6dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="238 online"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp" />
+
+                        </LinearLayout>
+
+                        <!-- Response Time -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <ImageView
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:src="@drawable/ic_info"
+                                android:tint="@color/text_secondary"
+                                android:layout_marginEnd="4dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="~2h response"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Bottom Spacing -->
-            <View
+            <!-- Quick Tips Section -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="32dp" />
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="20dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="24dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Quick tips"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_info"
+                        android:tint="@color/text_secondary"
+                        android:layout_marginEnd="8dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="AI Assistant can help you negotiate better deals"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
 
         </LinearLayout>
 
