@@ -2,7 +2,7 @@
 const CACHE_NAME = 'roomfinder-v1';
 const urlsToCache = [
     '/',
-    '/listings.html',
+    '/listings',
     '/css/mobile-android.css',
     '/js/notification-manager.js',
     '/icons/icon-192x192.png'
@@ -171,7 +171,7 @@ self.addEventListener('notificationclick', (event) => {
     const action = event.action;
     const data = event.notification.data || {};
     
-    let urlToOpen = '/listings.html';
+    let urlToOpen = '/listings';
     
     // Handle different actions
     switch (action) {
@@ -186,7 +186,7 @@ self.addEventListener('notificationclick', (event) => {
         case 'reply':
         case 'view_chat':
             if (data.conversationId) {
-                urlToOpen = `/listings.html?chat=${data.conversationId}`;
+                urlToOpen = `/listings?chat=${data.conversationId}`;
             }
             break;
             
@@ -197,7 +197,7 @@ self.addEventListener('notificationclick', (event) => {
             break;
             
         case 'reschedule':
-            urlToOpen = `/listings.html?reschedule=${data.propertyId}`;
+            urlToOpen = `/listings?reschedule=${data.propertyId}`;
             break;
             
         default:
