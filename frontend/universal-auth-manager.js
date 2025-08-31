@@ -214,8 +214,14 @@ async function updateAuthSection() {
  * Initialize authentication for Supabase-enabled pages
  */
 async function initSupabaseAuth() {
-    if (typeof window.supabase === 'undefined') {
+    if (typeof window.supabase === 'undefined' || !window.supabase) {
         console.log('Supabase not available, skipping Supabase auth');
+        return false;
+    }
+    
+    // Check if supabase has the expected structure
+    if (typeof window.supabase.from !== 'function') {
+        console.log('Supabase client not properly initialized, skipping Supabase auth');
         return false;
     }
 

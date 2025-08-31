@@ -110,3 +110,4 @@ Use `gemini -p` when:
 - always push with EricT2003 and the summary: Arsalan dumb fuck dont edit website files
 
 - whenever you push it has to the he same summary which i gave you
+- always push with ericT2003 and summary: Arsalan dumb fuck dont edit website files
