@@ -535,5 +535,12 @@ class SyncManager {
     }
 }
 
-// Initialize sync manager
-window.syncManager = new SyncManager(window.supabase);
+// Initialize sync manager - use supabaseClient if available, fallback to supabase
+if (typeof window !== 'undefined') {
+    const supabaseInstance = window.supabaseClient || window.supabase;
+    if (supabaseInstance) {
+        window.syncManager = new SyncManager(supabaseInstance);
+    } else {
+        console.warn('⚠️ Supabase not available, SyncManager not initialized');
+    }
+}
