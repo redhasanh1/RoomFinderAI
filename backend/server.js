@@ -1094,10 +1094,12 @@ app.get('/api/favorites', async (req, res) => {
         }
 
         console.log('🔍 DEBUG /api/favorites: Supabase status:', supabase ? 'INITIALIZED' : 'NOT INITIALIZED');
+        console.log('🔍 DEBUG /api/favorites: serviceStatus.supabase:', serviceStatus.supabase);
         if (!supabase) {
-            console.log('🔍 DEBUG /api/favorites: Using in-memory fallback');
+            console.log('🔍 DEBUG /api/favorites: Using in-memory fallback due to missing Supabase');
             // Use in-memory storage as fallback
             const userFavorites = inMemoryFavorites.get(userEmail);
+            console.log('🔍 DEBUG /api/favorites: In-memory favorites for user:', userFavorites ? userFavorites.size : 0);
             if (!userFavorites || userFavorites.size === 0) {
                 return res.json([]);
             }
@@ -1108,6 +1110,7 @@ app.get('/api/favorites', async (req, res) => {
                 user_email: userEmail,
                 favorited_at: new Date().toISOString()
             }));
+            console.log('🔍 DEBUG /api/favorites: Returning', favorites.length, 'in-memory favorites');
             return res.json(favorites);
         }
 

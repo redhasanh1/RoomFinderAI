@@ -426,11 +426,15 @@ class PerformanceManager {
         window.fetch = function(...args) {
             const [url, options = {}] = args;
             
-            // Add compression headers
-            options.headers = {
-                ...options.headers,
-                'Accept-Encoding': 'gzip, deflate, br'
-            };
+            // Preserve existing headers and add compression (don't overwrite Supabase headers)
+            if (!options.headers) {
+                options.headers = {};
+            }
+            
+            // Only add compression if not already present
+            if (!options.headers['Accept-Encoding']) {
+                options.headers['Accept-Encoding'] = 'gzip, deflate, br';
+            }
             
             return originalFetch(url, options);
         };
