@@ -118,18 +118,15 @@
     <script>
         console.log('🛡️ Authentication Protection already loaded via universal-auth-protection.js');
         
-        // Block localStorage.removeItem for currentUser (if not already done)
-        if (!window.ORIGINAL_REMOVE_ITEM) {
-            window.ORIGINAL_REMOVE_ITEM = localStorage.removeItem;
-        }
-        const ORIGINAL_REMOVE_ITEM = window.ORIGINAL_REMOVE_ITEM;
+        // Use the already defined ORIGINAL_REMOVE_ITEM from universal-auth-protection.js
+        // No need to redefine it here
         localStorage.removeItem = function(key) {
             if (key === 'currentUser') {
                 console.error('⚠️ BLOCKING currentUser removal for debugging');
                 console.trace('Stack trace for blocked currentUser removal:');
                 return; // Block the removal
             }
-            return ORIGINAL_REMOVE_ITEM.call(this, key);
+            return window.ORIGINAL_REMOVE_ITEM.call(this, key);
         };
         
         // Backup system for user data
@@ -2192,20 +2189,23 @@
                 return;
             }
 
-            // Set current user email for RLS
-            try {
-                const { error } = await supabase.rpc('set_current_user_email', { email: currentUser.email });
-                console.log('RPC set_current_user_email response:', { error });
-                if (error) {
-                    console.error('Error setting current user email:', error);
-                    alert('Failed to initialize session: ' + error.message);
-                    return;
+            // Set current user email for RLS (only if Supabase is ready)
+            if (supabaseReady && supabase) {
+                try {
+                    const { error } = await supabase.rpc('set_current_user_email', { email: currentUser.email });
+                    console.log('RPC set_current_user_email response:', { error });
+                    if (error) {
+                        console.error('Error setting current user email:', error);
+                        // Don't alert for RPC errors - continue without RLS
+                    } else {
+                        console.log('Current user email set for RLS:', currentUser.email);
+                    }
+                } catch (err) {
+                    console.error('RPC call failed:', err);
+                    // Don't alert for RPC errors - continue without RLS
                 }
-                console.log('Current user email set for RLS:', currentUser.email);
-            } catch (err) {
-                console.error('RPC call failed:', err);
-                alert('Failed to initialize session. Please check your connection.');
-                return;
+            } else {
+                console.log('Supabase not ready yet, skipping RLS setup');
             }
 
             if (!currentUser.profileImage) {
