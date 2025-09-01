@@ -31,10 +31,10 @@ public class Listing implements Serializable {
     @SerializedName("bathrooms")
     private int bathrooms;
     
-    @SerializedName("city")
+    @SerializedName("location")
     private String city;
     
-    @SerializedName("street")
+    @SerializedName("address")
     private String street;
     
     @SerializedName("postalCode")
@@ -49,7 +49,10 @@ public class Listing implements Serializable {
     @SerializedName("media")
     private List<MediaFile> media;
     
-    @SerializedName("created_at")
+    @SerializedName("imageUrl")
+    private String imageUrl;
+    
+    @SerializedName("createdAt")
     private String createdAt;
     
     @SerializedName("user_email")
@@ -195,6 +198,14 @@ public class Listing implements Serializable {
         this.media = media;
     }
     
+    public String getImageUrl() {
+        return imageUrl;
+    }
+    
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+    
     public String getCreatedAt() {
         return createdAt;
     }
@@ -275,6 +286,12 @@ public class Listing implements Serializable {
     }
     
     public String getFirstImageUrl() {
+        // Prioritize imageUrl field from API
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            return imageUrl;
+        }
+        
+        // Fallback to media array
         if (media != null && !media.isEmpty()) {
             for (MediaFile file : media) {
                 if (file.getType() != null && file.getType().startsWith("image/")) {
@@ -286,6 +303,12 @@ public class Listing implements Serializable {
     }
     
     public boolean hasImages() {
+        // Check imageUrl field first
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            return true;
+        }
+        
+        // Fallback to media array
         if (media == null || media.isEmpty()) {
             return false;
         }
