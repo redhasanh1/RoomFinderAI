@@ -25,6 +25,12 @@ class SyncManager {
         this.currentUser = user;
         this.lastSyncTime = this.getLastSyncTime();
         
+        // Check if Supabase is properly initialized
+        if (!this.supabase || typeof this.supabase.from !== 'function') {
+            console.warn('⚠️ SyncManager: Supabase not properly initialized, skipping sync');
+            return;
+        }
+        
         try {
             // Initial sync from server
             await this.syncFromServer();
@@ -62,6 +68,12 @@ class SyncManager {
     // Sync all data from server to local
     async syncFromServer() {
         if (!this.currentUser) return;
+        
+        // Check if Supabase is properly initialized
+        if (!this.supabase || typeof this.supabase.from !== 'function') {
+            console.warn('⚠️ SyncManager: Cannot sync - Supabase not properly initialized');
+            return;
+        }
         
         console.log('📥 Syncing data from server...');
         
