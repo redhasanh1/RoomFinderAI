@@ -549,28 +549,36 @@ class SyncManager {
 
 // Initialize sync manager - wait for Supabase to be ready
 if (typeof window !== 'undefined') {
-    // Wait for Supabase to be ready
-    const initSyncManager = () => {
-        const supabaseInstance = window.supabaseClient || window.supabase;
-        if (supabaseInstance && !window.syncManager) {
-            window.syncManager = new SyncManager(supabaseInstance);
-            console.log('✅ SyncManager initialized with Supabase');
-        }
-    };
-    
-    // Try to initialize immediately if Supabase is ready
-    initSyncManager();
-    
-    // Also listen for when Supabase becomes ready
-    if (!window.syncManager) {
-        const checkInterval = setInterval(() => {
-            if (window.supabase || window.supabaseClient) {
-                initSyncManager();
-                clearInterval(checkInterval);
-            }
-        }, 100);
+    // Prevent multiple initializations
+    if (window.SYNC_MANAGER_INITIALIZED) {
+        console.log('🔄 SyncManager already initialized, skipping');
+    } else {
+        window.SYNC_MANAGER_INITIALIZED = true;
         
-        // Stop checking after 10 seconds
-        setTimeout(() => clearInterval(checkInterval), 10000);
+        // Wait for Supabase to be ready
+        const initSyncManager = () => {
+            const supabaseInstance = window.supabaseClient || window.supabase;
+            if (supabaseInstance && typeof supabaseInstance.from === 'function' && !window.syncManager) {
+                window.syncManager = new SyncManager(supabaseInstance);
+                console.log('✅ SyncManager initialized with Supabase');
+                return true;
+            }
+            return false;
+        };
+        
+        // Try to initialize immediately if Supabase is ready
+        if (!initSyncManager()) {
+            // Also listen for when Supabase becomes ready
+            let checkCount = 0;
+            const checkInterval = setInterval(() => {
+                checkCount++;
+                if (initSyncManager() || checkCount > 100) { // Stop after 10 seconds (100 * 100ms)
+                    clearInterval(checkInterval);
+                    if (checkCount > 100) {
+                        console.warn('⚠️ SyncManager initialization timeout - Supabase not available');
+                    }
+                }
+            }, 100);
+        }
     }
 }
