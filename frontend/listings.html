@@ -12,51 +12,53 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/window.supabase.min.js"></script>
     <script>
-        // Initialize configuration variables
-        let SUPABASE_URL;
-        let SUPABASE_ANON_KEY;
-        let GOOGLE_API_KEY;
-        let supabase;
-        let supabaseReady = false;
+        // Use window scope to prevent re-declaration errors on page navigation
+        window.SUPABASE_URL = window.SUPABASE_URL || null;
+        window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || null;
+        window.GOOGLE_API_KEY = window.GOOGLE_API_KEY || null;
+        window.supabase = window.supabase || null;
+        window.supabaseReady = window.supabaseReady || false;
 
         // Global initialization state tracking
-        let isConfigLoaded = false;
-        let isDOMReady = false;
-        let initializationAttempts = 0;
+        window.window.isConfigLoaded = window.window.isConfigLoaded || false;
+        window.window.isDOMReady = window.window.isDOMReady || false;
+        window.window.initializationAttempts = window.window.initializationAttempts || 0;
         const MAX_INIT_ATTEMPTS = 3;
 
-        // Load configuration from Railway API
-        fetch('/api/config')
+        // Load configuration from Railway API (only if not already loaded)
+        if (!window.window.isConfigLoaded) {
+            fetch('/api/config')
             .then(response => response.json())
             .then(config => {
-                SUPABASE_URL = config.SUPABASE_URL;
-                SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
-                GOOGLE_API_KEY = config.GOOGLE_API_KEY;
+                window.SUPABASE_URL = config.SUPABASE_URL;
+                window.SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
+                window.GOOGLE_API_KEY = config.GOOGLE_API_KEY;
                 
                 // Debug config loading
                 console.log('🔧 Listings config loaded:', {
-                    hasSupabaseURL: !!SUPABASE_URL,
-                    hasSupabaseKey: !!SUPABASE_ANON_KEY,
-                    hasGoogleKey: !!GOOGLE_API_KEY
+                    hasSupabaseURL: !!window.SUPABASE_URL,
+                    hasSupabaseKey: !!window.SUPABASE_ANON_KEY,
+                    hasGoogleKey: !!window.GOOGLE_API_KEY
                 });
 
                 // Initialize Supabase client with proper headers
                 console.log('🔑 Initializing Supabase with:', {
-                    url: SUPABASE_URL,
-                    hasKey: !!SUPABASE_ANON_KEY,
-                    keyLength: SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.length : 0
+                    url: window.SUPABASE_URL,
+                    hasKey: !!window.SUPABASE_ANON_KEY,
+                    keyLength: window.SUPABASE_ANON_KEY ? window.SUPABASE_ANON_KEY.length : 0
                 });
                 
-                if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+                if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
                     console.error('❌ Supabase configuration missing:', {
-                        url: SUPABASE_URL,
-                        key: SUPABASE_ANON_KEY
+                        url: window.SUPABASE_URL,
+                        key: window.SUPABASE_ANON_KEY
                     });
-                    supabaseReady = false;
-                } else {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                    window.supabaseReady = false;
+                } else if (!window.supabase || !window.supabaseReady) {
+                    // Only create client if not already created
+                    window.supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
                         auth: {
                             persistSession: true,
                             autoRefreshToken: true,
@@ -64,19 +66,21 @@
                         },
                         global: {
                             headers: {
-                                'apikey': SUPABASE_ANON_KEY,
-                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                                'apikey': window.SUPABASE_ANON_KEY,
+                                'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`
                             }
                         },
                         db: {
                             schema: 'public'
                         }
                     });
-                    supabaseReady = true;
+                    window.supabaseReady = true;
                     console.log('📡 Supabase client initialized with API key');
+                } else {
+                    console.log('📡 Supabase client already initialized, skipping');
                 }
                 
-                isConfigLoaded = true;
+                window.window.isConfigLoaded = true;
                 // Only initialize if DOM is also ready
                 attemptInitialization();
             })
@@ -84,44 +88,48 @@
                 console.error('❌ Failed to load configuration:', error);
                 showError('Failed to load configuration. Please refresh the page.');
             });
+        } else {
+            console.log('🔧 Configuration already loaded, skipping fetch');
+            attemptInitialization();
+        }
 
         // Wait for DOM to be ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 console.log('📄 DOM Content Loaded');
-                isDOMReady = true;
+                window.window.isDOMReady = true;
                 attemptInitialization();
             });
         } else {
             console.log('📄 DOM already ready');
-            isDOMReady = true;
+            window.isDOMReady = true;
             attemptInitialization();
         }
 
         // Safe initialization function with retry mechanism
         function attemptInitialization() {
             console.log('🚀 Attempting initialization...', {
-                configLoaded: isConfigLoaded,
-                domReady: isDOMReady,
-                attempt: initializationAttempts + 1
+                configLoaded: window.isConfigLoaded,
+                domReady: window.isDOMReady,
+                attempt: window.initializationAttempts + 1
             });
 
-            if (!isConfigLoaded || !isDOMReady) {
+            if (!window.isConfigLoaded || !window.isDOMReady) {
                 console.log('⏳ Waiting for prerequisites...');
                 return;
             }
 
-            initializationAttempts++;
+            window.initializationAttempts++;
             
             try {
-                console.log(`🔄 Starting initialization attempt ${initializationAttempts}/${MAX_INIT_ATTEMPTS}`);
+                console.log(`🔄 Starting initialization attempt ${window.initializationAttempts}/${MAX_INIT_ATTEMPTS}`);
                 initializeListingsPage();
                 console.log('✅ Initialization completed successfully');
             } catch (error) {
-                console.error(`❌ Initialization attempt ${initializationAttempts} failed:`, error);
+                console.error(`❌ Initialization attempt ${window.initializationAttempts} failed:`, error);
                 
-                if (initializationAttempts < MAX_INIT_ATTEMPTS) {
-                    console.log(`🔄 Retrying in 1 second... (${MAX_INIT_ATTEMPTS - initializationAttempts} attempts remaining)`);
+                if (window.initializationAttempts < MAX_INIT_ATTEMPTS) {
+                    console.log(`🔄 Retrying in 1 second... (${MAX_INIT_ATTEMPTS - window.initializationAttempts} attempts remaining)`);
                     setTimeout(() => {
                         attemptInitialization();
                     }, 1000);
@@ -2159,9 +2167,9 @@
             }
 
             // Set current user email for RLS (only if Supabase is ready)
-            if (supabaseReady && supabase) {
+            if (window.supabaseReady && window.supabase) {
                 try {
-                    const { error } = await supabase.rpc('set_current_user_email', { email: currentUser.email });
+                    const { error } = await window.supabase.rpc('set_current_user_email', { email: currentUser.email });
                     console.log('RPC set_current_user_email response:', { error });
                     if (error) {
                         console.error('Error setting current user email:', error);
@@ -2527,7 +2535,7 @@
         // Upload media to Supabase
         async function uploadMedia(files) {
             const uploadedMedia = [];
-            const storageApiUrl = `${SUPABASE_URL}/storage/v1/object/listing-media/Photos`;
+            const storageApiUrl = `${window.SUPABASE_URL}/storage/v1/object/listing-media/Photos`;
 
             for (const fileObj of files) {
                 const file = fileObj.file;
@@ -2575,8 +2583,8 @@
                     const response = await fetch(`${storageApiUrl}/${filePath}`, {
                         method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                            'apikey': SUPABASE_ANON_KEY
+                            'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`,
+                            'apikey': window.SUPABASE_ANON_KEY
                         },
                         body: formData
                     });
@@ -2586,7 +2594,7 @@
                         throw new Error(`Upload failed: ${response.status} - ${errorText}`);
                     }
 
-                    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/listing-media/Photos/${filePath}`;
+                    const publicUrl = `${window.SUPABASE_URL}/storage/v1/object/public/listing-media/Photos/${filePath}`;
                     let verifyResponse = await fetch(publicUrl, { method: 'HEAD' });
                     let serverContentType = verifyResponse.headers.get('Content-Type');
                     console.log('Server-reported content type:', { name: file.name, serverContentType });
@@ -2596,8 +2604,8 @@
                         await fetch(`${storageApiUrl}/${filePath}`, {
                             method: 'DELETE',
                             headers: {
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                            'apikey': SUPABASE_ANON_KEY
+                            'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`,
+                            'apikey': window.SUPABASE_ANON_KEY
                             }
                         });
 
@@ -2610,8 +2618,8 @@
                         const reUploadResponse = await fetch(`${storageApiUrl}/${filePath}`, {
                             method: 'POST',
                             headers: {
-                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                                'apikey': SUPABASE_ANON_KEY
+                                'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`,
+                                'apikey': window.SUPABASE_ANON_KEY
                             },
                             body: reUploadFormData
                         });
@@ -2651,9 +2659,9 @@
             let allListings = [];
             
             // Try to fetch from Supabase first
-            if (typeof supabase !== 'undefined' && supabase && SUPABASE_ANON_KEY) {
+            if (typeof supabase !== 'undefined' && supabase && window.SUPABASE_ANON_KEY) {
                 try {
-                    console.log('Making Supabase request with API key:', !!SUPABASE_ANON_KEY);
+                    console.log('Making Supabase request with API key:', !!window.SUPABASE_ANON_KEY);
                     const { data, error } = await supabase
                         .from('listings')
                         .select('*')
@@ -2725,11 +2733,11 @@
             console.log('🔄 Starting displayListings function');
             
             // Wait for Supabase to be initialized if not ready
-            if (!supabaseReady) {
+            if (!window.supabaseReady) {
                 console.log('⏳ Waiting for Supabase initialization...');
                 await new Promise(resolve => {
                     const checkInterval = setInterval(() => {
-                        if (supabaseReady) {
+                        if (window.supabaseReady) {
                             clearInterval(checkInterval);
                             console.log('✅ Supabase is now ready');
                             resolve();
@@ -3521,7 +3529,7 @@
                     const fileName = `chat-${currentConversationId}-${Date.now()}-${file.name}`;
                     const filePath = `chat-files/${fileName}`;
 
-                    const { data: uploadData, error: uploadError } = await supabase.storage
+                    const { data: uploadData, error: uploadError } = await window.supabase.storage
                         .from('chat-documents')
                         .upload(filePath, file, {
                             contentType: file.type,
@@ -3533,7 +3541,7 @@
                     }
 
                     // Get public URL
-                    const { data: urlData } = supabase.storage
+                    const { data: urlData } = window.supabase.storage
                         .from('chat-documents')
                         .getPublicUrl(filePath);
 
@@ -3751,7 +3759,7 @@
             // Test Supabase connection
             if (supabase) {
                 // Test basic connection
-                supabase.from('conversations').select('count').limit(1)
+                window.supabase.from('conversations').select('count').limit(1)
                     .then(result => {
                         console.log('✅ Supabase connection test successful:', result);
                     })
@@ -3763,7 +3771,7 @@
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 if (currentUser) {
                     console.log('🔍 Testing conversation_reads table access...');
-                    supabase.from('conversation_reads')
+                    window.supabase.from('conversation_reads')
                         .select('*')
                         .eq('user_email', currentUser.email)
                         .limit(1)
@@ -6272,6 +6280,37 @@
                     console.error('❌ Safety timeout listings loading failed:', error);
                 }
             }, 5000); // 5-second safety timeout
+        });
+    </script>
+    
+    <!-- Page Navigation Cleanup -->
+    <script>
+        // Add cleanup handlers for page navigation
+        window.addEventListener('beforeunload', function() {
+            console.log('🔄 Page unloading - preserving global state');
+            // Don't reset global flags, just cleanup listeners
+            if (window.AUTH_PROTECTION_INTERVAL) {
+                // Keep the interval running for session protection
+            }
+        });
+        
+        // Reset some page-specific flags when navigating away
+        window.addEventListener('pagehide', function() {
+            console.log('📱 Page hidden - cleaning up page-specific state');
+            // Reset only page-specific flags, keep auth and Supabase
+            window.window.isDOMReady = false;
+            window.window.initializationAttempts = 0;
+        });
+        
+        // Restore state when page shows again
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                console.log('📱 Page restored from cache - reinitializing');
+                // Page was restored from cache, ensure everything is working
+                if (window.supabase && window.supabaseReady) {
+                    console.log('✅ Supabase still ready after page cache restore');
+                }
+            }
         });
     </script>
     
