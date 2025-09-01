@@ -535,12 +535,30 @@ class SyncManager {
     }
 }
 
-// Initialize sync manager - use supabaseClient if available, fallback to supabase
+// Initialize sync manager - wait for Supabase to be ready
 if (typeof window !== 'undefined') {
-    const supabaseInstance = window.supabaseClient || window.supabase;
-    if (supabaseInstance) {
-        window.syncManager = new SyncManager(supabaseInstance);
-    } else {
-        console.warn('⚠️ Supabase not available, SyncManager not initialized');
+    // Wait for Supabase to be ready
+    const initSyncManager = () => {
+        const supabaseInstance = window.supabaseClient || window.supabase;
+        if (supabaseInstance && !window.syncManager) {
+            window.syncManager = new SyncManager(supabaseInstance);
+            console.log('✅ SyncManager initialized with Supabase');
+        }
+    };
+    
+    // Try to initialize immediately if Supabase is ready
+    initSyncManager();
+    
+    // Also listen for when Supabase becomes ready
+    if (!window.syncManager) {
+        const checkInterval = setInterval(() => {
+            if (window.supabase || window.supabaseClient) {
+                initSyncManager();
+                clearInterval(checkInterval);
+            }
+        }, 100);
+        
+        // Stop checking after 10 seconds
+        setTimeout(() => clearInterval(checkInterval), 10000);
     }
 }
