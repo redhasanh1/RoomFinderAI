@@ -557,7 +557,7 @@ if (typeof window !== 'undefined') {
         
         // Wait for Supabase to be ready
         const initSyncManager = () => {
-            const supabaseInstance = window.supabaseClient || window.supabase;
+            const supabaseInstance = window.supabaseClient;
             if (supabaseInstance && typeof supabaseInstance.from === 'function' && !window.syncManager) {
                 window.syncManager = new SyncManager(supabaseInstance);
                 console.log('✅ SyncManager initialized with Supabase');
@@ -572,11 +572,11 @@ if (typeof window !== 'undefined') {
             let checkCount = 0;
             const checkInterval = setInterval(() => {
                 checkCount++;
-                if (initSyncManager() || checkCount > 100) { // Stop after 10 seconds (100 * 100ms)
+                if (window.supabaseClient && initSyncManager()) {
                     clearInterval(checkInterval);
-                    if (checkCount > 100) {
-                        console.warn('⚠️ SyncManager initialization timeout - Supabase not available');
-                    }
+                } else if (checkCount > 100) { // Stop after 10 seconds (100 * 100ms)
+                    clearInterval(checkInterval);
+                    console.warn('⚠️ SyncManager initialization timeout - Supabase not available');
                 }
             }, 100);
         }

@@ -12,23 +12,23 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/window.supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/window.supabaseClient.min.js"></script>
     <script>
         // Use window scope to prevent re-declaration errors on page navigation
         window.SUPABASE_URL = window.SUPABASE_URL || null;
         window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || null;
         window.GOOGLE_API_KEY = window.GOOGLE_API_KEY || null;
-        window.supabase = window.supabase || null;
+        window.supabaseClient = window.supabaseClient || null;
         window.supabaseReady = window.supabaseReady || false;
 
         // Global initialization state tracking
-        window.window.isConfigLoaded = window.window.isConfigLoaded || false;
-        window.window.isDOMReady = window.window.isDOMReady || false;
-        window.window.initializationAttempts = window.window.initializationAttempts || 0;
+        window.isConfigLoaded = window.isConfigLoaded || false;
+        window.isDOMReady = window.isDOMReady || false;
+        window.initializationAttempts = window.initializationAttempts || 0;
         const MAX_INIT_ATTEMPTS = 3;
 
         // Load configuration from Railway API (only if not already loaded)
-        if (!window.window.isConfigLoaded) {
+        if (!window.isConfigLoaded) {
             fetch('/api/config')
             .then(response => response.json())
             .then(config => {
@@ -47,7 +47,8 @@
                 console.log('🔑 Initializing Supabase with:', {
                     url: window.SUPABASE_URL,
                     hasKey: !!window.SUPABASE_ANON_KEY,
-                    keyLength: window.SUPABASE_ANON_KEY ? window.SUPABASE_ANON_KEY.length : 0
+                    keyLength: window.SUPABASE_ANON_KEY ? window.SUPABASE_ANON_KEY.length : 0,
+                    keyPreview: window.SUPABASE_ANON_KEY ? window.SUPABASE_ANON_KEY.substring(0, 20) + '...' : 'null'
                 });
                 
                 if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
@@ -56,9 +57,9 @@
                         key: window.SUPABASE_ANON_KEY
                     });
                     window.supabaseReady = false;
-                } else if (!window.supabase || !window.supabaseReady) {
-                    // Only create client if not already created
-                    window.supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+                } else if (!window.supabaseClient || !window.supabaseReady) {
+                    // Only create client if not already created (use supabaseClient to avoid conflict)
+                    window.supabaseClient = window.supabaseClient.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
                         auth: {
                             persistSession: true,
                             autoRefreshToken: true,
@@ -80,7 +81,7 @@
                     console.log('📡 Supabase client already initialized, skipping');
                 }
                 
-                window.window.isConfigLoaded = true;
+                window.isConfigLoaded = true;
                 // Only initialize if DOM is also ready
                 attemptInitialization();
             })
@@ -97,7 +98,7 @@
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 console.log('📄 DOM Content Loaded');
-                window.window.isDOMReady = true;
+                window.isDOMReady = true;
                 attemptInitialization();
             });
         } else {
@@ -1801,7 +1802,7 @@
                 let listing = null;
                 
                 // Try Supabase first
-                if (typeof supabase !== 'undefined' && supabase) {
+                if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient) {
                     try {
                         const { data, error } = await supabase
                             .from('listings')
@@ -2169,7 +2170,7 @@
             // Set current user email for RLS (only if Supabase is ready)
             if (window.supabaseReady && window.supabase) {
                 try {
-                    const { error } = await window.supabase.rpc('set_current_user_email', { email: currentUser.email });
+                    const { error } = await window.supabaseClient.rpc('set_current_user_email', { email: currentUser.email });
                     console.log('RPC set_current_user_email response:', { error });
                     if (error) {
                         console.error('Error setting current user email:', error);
@@ -2659,7 +2660,7 @@
             let allListings = [];
             
             // Try to fetch from Supabase first
-            if (typeof supabase !== 'undefined' && supabase && window.SUPABASE_ANON_KEY) {
+            if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient && window.SUPABASE_ANON_KEY) {
                 try {
                     console.log('Making Supabase request with API key:', !!window.SUPABASE_ANON_KEY);
                     const { data, error } = await supabase
@@ -3088,7 +3089,7 @@
                 
                 // Try Supabase first
                 try {
-                    if (typeof supabase !== 'undefined' && supabase) {
+                    if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient) {
                         const { data, error } = await supabase
                             .from('listings')
                             .insert([listing])
@@ -3529,7 +3530,7 @@
                     const fileName = `chat-${currentConversationId}-${Date.now()}-${file.name}`;
                     const filePath = `chat-files/${fileName}`;
 
-                    const { data: uploadData, error: uploadError } = await window.supabase.storage
+                    const { data: uploadData, error: uploadError } = await window.supabaseClient.storage
                         .from('chat-documents')
                         .upload(filePath, file, {
                             contentType: file.type,
@@ -3541,7 +3542,7 @@
                     }
 
                     // Get public URL
-                    const { data: urlData } = window.supabase.storage
+                    const { data: urlData } = window.supabaseClient.storage
                         .from('chat-documents')
                         .getPublicUrl(filePath);
 
@@ -3759,7 +3760,7 @@
             // Test Supabase connection
             if (supabase) {
                 // Test basic connection
-                window.supabase.from('conversations').select('count').limit(1)
+                window.supabaseClient.from('conversations').select('count').limit(1)
                     .then(result => {
                         console.log('✅ Supabase connection test successful:', result);
                     })
@@ -3771,7 +3772,7 @@
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 if (currentUser) {
                     console.log('🔍 Testing conversation_reads table access...');
-                    window.supabase.from('conversation_reads')
+                    window.supabaseClient.from('conversation_reads')
                         .select('*')
                         .eq('user_email', currentUser.email)
                         .limit(1)
@@ -5218,7 +5219,7 @@
         });
         
         // Real-time subscription to listings
-        if (typeof supabase !== 'undefined' && supabase) {
+        if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient) {
             supabase
                 .channel('public:listings')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'listings' }, (payload) => {
@@ -5499,7 +5500,7 @@
                 let deleteSuccess = false;
                 
                 // Try Supabase delete first
-                if (typeof supabase !== 'undefined' && supabase && !listingId.startsWith('local_')) {
+                if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient && !listingId.startsWith('local_')) {
                     try {
                         const { data: existingListing, error: fetchError } = await supabase
                             .from('listings')
@@ -5599,7 +5600,7 @@
                 let listing = null;
                 
                 // Try to fetch from Supabase first
-                if (typeof supabase !== 'undefined' && supabase) {
+                if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient) {
                     try {
                         const { data, error } = await supabase
                             .from('listings')
@@ -5760,7 +5761,7 @@
                         let updateSuccess = false;
                         
                         // Try Supabase update first
-                        if (typeof supabase !== 'undefined' && supabase && !listingId.startsWith('local_')) {
+                        if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient && !listingId.startsWith('local_')) {
                             try {
                                 const { data: existingListing, error: fetchError } = await supabase
                                     .from('listings')
@@ -6298,8 +6299,8 @@
         window.addEventListener('pagehide', function() {
             console.log('📱 Page hidden - cleaning up page-specific state');
             // Reset only page-specific flags, keep auth and Supabase
-            window.window.isDOMReady = false;
-            window.window.initializationAttempts = 0;
+            window.isDOMReady = false;
+            window.initializationAttempts = 0;
         });
         
         // Restore state when page shows again
