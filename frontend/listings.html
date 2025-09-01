@@ -43,19 +43,38 @@
                 });
 
                 // Initialize Supabase client with proper headers
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                    auth: {
-                        persistSession: true,
-                        autoRefreshToken: true
-                    },
-                    global: {
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY
-                        }
-                    }
+                console.log('🔑 Initializing Supabase with:', {
+                    url: SUPABASE_URL,
+                    hasKey: !!SUPABASE_ANON_KEY,
+                    keyLength: SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.length : 0
                 });
-                supabaseReady = true;
-                console.log('📡 Supabase client initialized with API key');
+                
+                if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+                    console.error('❌ Supabase configuration missing:', {
+                        url: SUPABASE_URL,
+                        key: SUPABASE_ANON_KEY
+                    });
+                    supabaseReady = false;
+                } else {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                        auth: {
+                            persistSession: true,
+                            autoRefreshToken: true,
+                            detectSessionInUrl: true
+                        },
+                        global: {
+                            headers: {
+                                'apikey': SUPABASE_ANON_KEY,
+                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                            }
+                        },
+                        db: {
+                            schema: 'public'
+                        }
+                    });
+                    supabaseReady = true;
+                    console.log('📡 Supabase client initialized with API key');
+                }
                 
                 isConfigLoaded = true;
                 // Only initialize if DOM is also ready
@@ -114,57 +133,7 @@
         }
     </script>
     
-    <!-- 🛡️ EMERGENCY AUTHENTICATION PROTECTION SYSTEM -->
-    <script>
-        console.log('🛡️ Authentication Protection already loaded via universal-auth-protection.js');
-        
-        // Use the already defined ORIGINAL_REMOVE_ITEM from universal-auth-protection.js
-        // No need to redefine it here
-        localStorage.removeItem = function(key) {
-            if (key === 'currentUser') {
-                console.error('⚠️ BLOCKING currentUser removal for debugging');
-                console.trace('Stack trace for blocked currentUser removal:');
-                return; // Block the removal
-            }
-            return window.ORIGINAL_REMOVE_ITEM.call(this, key);
-        };
-        
-        // Backup system for user data
-        function createUserBackup() {
-            const currentUser = localStorage.getItem('currentUser');
-            if (currentUser) {
-                localStorage.setItem('currentUser_backup', currentUser);
-                localStorage.setItem('currentUser_backup_timestamp', Date.now().toString());
-                console.log('💾 User backup created');
-            }
-        }
-        
-        // Restore system for user data
-        function restoreUserIfNeeded() {
-            const currentUser = localStorage.getItem('currentUser');
-            const backup = localStorage.getItem('currentUser_backup');
-            
-            if (!currentUser && backup) {
-                console.log('🔄 Restoring user from backup');
-                localStorage.setItem('currentUser', backup);
-                return true;
-            }
-            return false;
-        }
-        
-        // Create initial backup
-        createUserBackup();
-        
-        // Continuous monitoring and restoration
-        setInterval(() => {
-            if (restoreUserIfNeeded()) {
-                console.log('🔄 User data restored automatically');
-            }
-            createUserBackup(); // Refresh backup
-        }, 5000);
-        
-        console.log('✅ Emergency Authentication Protection System Active');
-    </script>
+    <!-- Authentication protection handled by universal-auth-protection.js -->
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
