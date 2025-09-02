@@ -2288,10 +2288,10 @@
                     console.log('🔄 Refreshing listings display...');
                     await displayListings(); // Refresh listings display
                     
-                    // Also reload favorite states after a short delay
+                    // Also reload favorite states immediately 
                     setTimeout(() => {
                         loadFavoriteStates();
-                    }, 200);
+                    }, 50);
                 }, 100);
             });
             
@@ -2306,10 +2306,10 @@
                         console.log('🔄 Refreshing listings due to storage event...');
                         await displayListings();
                         
-                        // Also reload favorite states
+                        // Also reload favorite states immediately
                         setTimeout(() => {
                             loadFavoriteStates();
-                        }, 200);
+                        }, 50);
                     }, 100);
                 }
             });
@@ -3007,6 +3007,11 @@
             setTimeout(() => {
                 sessionStorage.removeItem('autoOpenListingId_temp');
             }, 5000);
+            
+            // Load favorite states immediately after listings are rendered
+            setTimeout(() => {
+                loadFavoriteStates();
+            }, 100);
 
             document.querySelectorAll('.view-details-btn').forEach(button => {
                 button.addEventListener('click', () => {
@@ -5324,19 +5329,19 @@
                         console.log('ℹ️ Anonymous user, loading listings...');
                     }
                     loadListings().then(() => {
-                        // Load favorite states after listings are loaded, with a small delay to ensure DOM is ready
+                        // Load favorite states immediately after listings are loaded
                         setTimeout(() => {
                             loadFavoriteStates();
-                        }, 100);
+                        }, 50);
                     });
                 })
                 .catch(error => {
                     console.error('Auth initialization error:', error);
                     loadListings().then(() => {
-                        // Load favorite states after listings are loaded, with a small delay to ensure DOM is ready
+                        // Load favorite states immediately after listings are loaded
                         setTimeout(() => {
                             loadFavoriteStates();
-                        }, 100);
+                        }, 50);
                     });
                 });
         }
