@@ -1635,6 +1635,18 @@
         </div>
     </main>
 
+    <!-- Loading Popup Modal -->
+    <div id="loadingModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+            <div class="bg-white rounded-xl p-8 mx-4 text-center shadow-2xl max-w-sm w-full">
+                <div class="animate-spin w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Loading Listings</h3>
+                <p class="text-gray-600 text-sm">Finding your saved listing...</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-gray-800 text-white py-8">
         <div class="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -2733,6 +2745,12 @@
         async function displayListings() {
             console.log('🔄 Starting displayListings function');
             
+            // Check if we should show loading modal for auto-open
+            const autoOpenListingId = sessionStorage.getItem('autoOpenListingId');
+            if (autoOpenListingId) {
+                showLoadingModal();
+            }
+            
             // Wait for Supabase to be initialized if not ready
             if (!window.supabaseReady) {
                 console.log('⏳ Waiting for Supabase initialization...');
@@ -2743,13 +2761,13 @@
                             console.log('✅ Supabase is now ready');
                             resolve();
                         }
-                    }, 100);
-                    // Timeout after 5 seconds
+                    }, 50);
+                    // Timeout after 1.5 seconds for faster loading
                     setTimeout(() => {
                         clearInterval(checkInterval);
                         console.warn('⚠️ Supabase initialization timeout - proceeding without it');
                         resolve();
-                    }, 5000);
+                    }, 1500);
                 });
             }
             
@@ -2761,7 +2779,16 @@
             const viewListingId = urlParams.get('viewListing');
             const shouldOpenModal = !!viewListingId;
             
-            let listings = await fetchListings();
+            // Fetch listings with optimized loading
+            let listings;
+            try {
+                listings = await fetchListings();
+            } catch (error) {
+                console.error('❌ Error fetching listings:', error);
+                hideLoadingModal();
+                updateListingCount(0, false, false);
+                return;
+            }
             console.log('📋 Fetched listings:', listings);
             
             // Check for highlight parameter in URL
@@ -2775,7 +2802,35 @@
 
             if (listings.length === 0) {
                 console.log('📝 No listings found in database');
+                hideLoadingModal(); // Hide loading modal if no listings
                 return; // updateListingCount already handles empty state
+            }
+            
+            // Check for auto-open listing from saved listings
+            const autoOpenListingId = sessionStorage.getItem('autoOpenListingId');
+            let foundAutoOpenListing = false;
+            
+            if (autoOpenListingId) {
+                console.log('🎯 Auto-opening saved listing:', autoOpenListingId);
+                
+                // Find the listing to highlight
+                const targetListing = listings.find(l => l.id === autoOpenListingId);
+                if (targetListing) {
+                    foundAutoOpenListing = true;
+                    // Move to top for easier scrolling
+                    const targetIndex = listings.findIndex(l => l.id === autoOpenListingId);
+                    if (targetIndex !== -1) {
+                        listings.splice(targetIndex, 1);
+                        listings.unshift(targetListing);
+                    }
+                    // Store for use in the forEach loop
+                    sessionStorage.setItem('autoOpenListingId_temp', autoOpenListingId);
+                } else {
+                    console.warn('⚠️ Auto-open listing not found:', autoOpenListingId);
+                    hideLoadingModal(); // Hide if listing not found
+                }
+                
+                sessionStorage.removeItem('autoOpenListingId'); // Clear original after processing
             }
             
             // If highlighting a specific listing, move it to the top
@@ -2904,15 +2959,17 @@
                 `;
                 container.appendChild(listingCard);
                 
-                // If this is the highlighted listing, scroll to it and add a badge
-                if (isHighlighted) {
+                // If this is the highlighted listing or auto-open listing, scroll to it and add a badge
+                const tempAutoOpenId = sessionStorage.getItem('autoOpenListingId_temp');
+                const isAutoOpen = foundAutoOpenListing && listing.id === tempAutoOpenId;
+                if (isHighlighted || isAutoOpen) {
                     setTimeout(() => {
                         listingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         
                         // Add a highlighted badge
                         const badge = document.createElement('div');
                         badge.className = 'absolute top-2 left-2 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-semibold z-20';
-                        badge.textContent = 'FROM FAVORITES';
+                        badge.textContent = isAutoOpen ? 'SAVED LISTING' : 'FROM FAVORITES';
                         listingCard.querySelector('.relative').appendChild(badge);
                         
                         // Stop the pulse animation after 3 seconds
@@ -2920,12 +2977,31 @@
                             listingCard.classList.remove('animate-pulse');
                         }, 3000);
                         
+                        // Auto-open the listing modal if it's from saved listings
+                        if (isAutoOpen) {
+                            setTimeout(() => {
+                                hideLoadingModal();
+                                sessionStorage.removeItem('autoOpenListingId_temp'); // Clean up
+                                window.showListingModal(listing);
+                            }, 800); // Small delay for smooth scroll
+                        }
+                        
                         // Clear the URL parameter after highlighting
                         const newUrl = window.location.pathname;
                         window.history.replaceState({}, '', newUrl);
-                    }, 500);
+                    }, 300); // Reduced delay for faster response
                 }
             });
+            
+            // Hide loading modal if no auto-open occurred
+            if (!foundAutoOpenListing) {
+                hideLoadingModal();
+            }
+            
+            // Clean up temp storage
+            setTimeout(() => {
+                sessionStorage.removeItem('autoOpenListingId_temp');
+            }, 5000);
 
             document.querySelectorAll('.view-details-btn').forEach(button => {
                 button.addEventListener('click', () => {
@@ -5258,6 +5334,23 @@
                         }, 100);
                     });
                 });
+        }
+
+        // Loading modal functions
+        function showLoadingModal() {
+            const modal = document.getElementById('loadingModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                console.log('🔄 Loading modal shown');
+            }
+        }
+        
+        function hideLoadingModal() {
+            const modal = document.getElementById('loadingModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                console.log('✅ Loading modal hidden');
+            }
         }
 
         // Favorites functionality with localStorage fallback
