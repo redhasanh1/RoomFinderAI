@@ -41,8 +41,33 @@ class MobileAppProfile {
                     this.user.id = user.id;
                     this.user.email = user.email;
                     this.user.name = user.user_metadata?.full_name || user.email.split('@')[0];
-                    this.user.avatar = user.user_metadata?.avatar_url;
                     this.user.phone = user.user_metadata?.phone;
+                    
+                    // Try to fetch profile image from backend
+                    try {
+                        const response = await fetch(`/api/user-profile/${encodeURIComponent(user.email)}`);
+                        if (response.ok) {
+                            const profileData = await response.json();
+                            
+                            // Use custom profile image if available
+                            if (profileData.hasCustomProfileImage && profileData.profileImage) {
+                                this.user.avatar = profileData.profileImage;
+                                console.log('✅ Loaded custom profile image from backend');
+                            } else {
+                                // Use default or metadata avatar
+                                this.user.avatar = user.user_metadata?.avatar_url || null;
+                            }
+                            
+                            // Update names if available
+                            if (profileData.firstName && profileData.lastName) {
+                                this.user.name = `${profileData.firstName} ${profileData.lastName}`.trim();
+                            }
+                        }
+                    } catch (fetchError) {
+                        console.warn('⚠️ Could not fetch profile data:', fetchError);
+                        // Fallback to metadata avatar
+                        this.user.avatar = user.user_metadata?.avatar_url || null;
+                    }
                     
                     // Load additional profile data
                     await this.loadUserStats();
@@ -384,9 +409,78 @@ class MobileAppProfile {
 
 // Global function bindings
 window.editAvatar = () => {
-    if (window.MobileAppConfig) {
-        window.MobileAppConfig.showToast('Avatar editing coming soon!', 'info');
-    }
+    // Create a file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    
+    input.onchange = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            if (window.MobileAppConfig) {
+                window.MobileAppConfig.showToast('Image size must be less than 5MB', 'error');
+            }
+            return;
+        }
+        
+        // Read the file as data URL
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const imageData = e.target.result;
+            
+            // Update the UI immediately
+            if (window.MobileAppProfile && window.MobileAppProfile.user) {
+                window.MobileAppProfile.user.avatar = imageData;
+                
+                // Re-render the profile dashboard
+                window.MobileAppProfile.renderProfileDashboard();
+                
+                // Save to backend
+                if (window.MobileAppProfile.user.email) {
+                    try {
+                        const response = await fetch('/api/update-profile-image', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                email: window.MobileAppProfile.user.email,
+                                profileImage: imageData
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            // Update localStorage
+                            const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                            currentUser.profileImage = imageData;
+                            currentUser.hasCustomProfileImage = true;
+                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                            
+                            if (window.MobileAppConfig) {
+                                window.MobileAppConfig.showToast('Profile picture updated successfully!', 'success');
+                                window.MobileAppConfig.updateProfileUI();
+                            }
+                        } else {
+                            throw new Error('Failed to save profile image');
+                        }
+                    } catch (error) {
+                        console.error('❌ Error saving profile image:', error);
+                        if (window.MobileAppConfig) {
+                            window.MobileAppConfig.showToast('Failed to save profile picture', 'error');
+                        }
+                    }
+                }
+            }
+        };
+        
+        reader.readAsDataURL(file);
+    };
+    
+    // Trigger the file input
+    input.click();
 };
 
 window.editProfile = () => {
