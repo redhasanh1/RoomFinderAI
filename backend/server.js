@@ -2462,7 +2462,8 @@ app.get('/api/user-profile/:email', async (req, res) => {
                         email: data.email,
                         firstName: data.first_name || '',
                         lastName: data.last_name || '',
-                        profileImage: data.profile_image || 'https://via.placeholder.com/40',
+                        profileImage: data.profile_image || null,
+                        hasCustomProfileImage: data.has_custom_profile_image || false,
                         emailVerified: data.email_verified || false,
                         createdAt: data.created_at,
                         plan: data.plan || 'free'
@@ -2482,7 +2483,8 @@ app.get('/api/user-profile/:email', async (req, res) => {
                 email: user.email,
                 firstName: user.firstName || '',
                 lastName: user.lastName || '',
-                profileImage: user.profileImage || 'https://via.placeholder.com/40',
+                profileImage: user.profileImage || null,
+                hasCustomProfileImage: user.hasCustomProfileImage || false,
                 emailVerified: user.emailVerified || false,
                 plan: user.plan || 'free'
             });
@@ -2494,6 +2496,111 @@ app.get('/api/user-profile/:email', async (req, res) => {
     } catch (error) {
         console.error('Error fetching user profile:', error);
         res.status(500).json({ error: 'Failed to fetch user profile' });
+    }
+});
+
+// API: Update user profile image
+app.post('/api/update-profile-image', async (req, res) => {
+    try {
+        const { email, profileImage } = req.body;
+        
+        if (!email || !profileImage) {
+            return res.status(400).json({ error: 'Email and profile image are required' });
+        }
+
+        console.log(`📸 Updating profile image for: ${email}`);
+        console.log(`📸 Image size: ${profileImage.length} characters`);
+
+        // Try to update in Supabase first
+        if (supabase) {
+            try {
+                // Check if profile exists
+                const { data: existingProfile } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('email', email)
+                    .single();
+
+                if (existingProfile) {
+                    // Update existing profile
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .update({ 
+                            profile_image: profileImage,
+                            has_custom_profile_image: true,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('email', email)
+                        .select()
+                        .single();
+
+                    if (!error && data) {
+                        console.log('✅ Profile image updated in Supabase');
+                        return res.json({ 
+                            success: true, 
+                            message: 'Profile image updated successfully',
+                            profileImage: data.profile_image
+                        });
+                    }
+                } else {
+                    // Create new profile
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .insert([{ 
+                            email: email,
+                            profile_image: profileImage,
+                            has_custom_profile_image: true,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        }])
+                        .select()
+                        .single();
+
+                    if (!error && data) {
+                        console.log('✅ New profile created with image in Supabase');
+                        return res.json({ 
+                            success: true, 
+                            message: 'Profile image saved successfully',
+                            profileImage: data.profile_image
+                        });
+                    }
+                }
+
+                if (error) {
+                    console.error('Supabase error:', error);
+                }
+            } catch (supabaseError) {
+                console.error('Supabase profile image update failed:', supabaseError);
+            }
+        }
+
+        // Fallback to in-memory storage
+        const userIndex = users.findIndex(u => u.email === email);
+        
+        if (userIndex !== -1) {
+            users[userIndex].profileImage = profileImage;
+            users[userIndex].hasCustomProfileImage = true;
+            console.log('✅ Profile image updated in memory');
+        } else {
+            // Create new user in memory if doesn't exist
+            users.push({
+                id: users.length + 1,
+                email: email,
+                profileImage: profileImage,
+                hasCustomProfileImage: true
+            });
+            console.log('✅ New user created with profile image in memory');
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'Profile image updated successfully',
+            profileImage: profileImage
+        });
+
+    } catch (error) {
+        console.error('Error updating profile image:', error);
+        res.status(500).json({ error: 'Failed to update profile image' });
     }
 });
 
