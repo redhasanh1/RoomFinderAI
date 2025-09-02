@@ -1270,19 +1270,8 @@
             // Store the listing ID to auto-open on listings page
             sessionStorage.setItem('autoOpenListingId', id);
             
-            // Show loading feedback
-            const loadingToast = document.createElement('div');
-            loadingToast.className = 'fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 flex items-center gap-2';
-            loadingToast.innerHTML = `
-                <div class="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                <span>Opening listing...</span>
-            `;
-            document.body.appendChild(loadingToast);
-            
-            // Navigate to listings page
-            setTimeout(() => {
-                window.location.href = `listings.html`;
-            }, 200); // Small delay to show the loading toast
+            // Navigate to listings page immediately
+            window.location.href = `listings.html`;
         }
 
         function unsaveListing(id) {
