@@ -2454,14 +2454,40 @@ app.get('/api/user-profile/:email', async (req, res) => {
                     .from('profiles')
                     .select('*')
                     .eq('email', decodeURIComponent(email))
+                    .order('created_at', { ascending: false })
+                    .limit(1)
                     .single();
 
                 if (!error && data) {
+                    // Filter out test data
+                    const firstName = (data.first_name && data.first_name !== 'tesing' && data.first_name !== 'testing') 
+                        ? data.first_name : '';
+                    const lastName = (data.last_name && data.last_name !== 'falsecode') 
+                        ? data.last_name : '';
+                    
+                    // If we have test data, try to get from in-memory users instead
+                    if (firstName === '' && lastName === '') {
+                        const memUser = users.find(u => u.email === decodeURIComponent(email));
+                        if (memUser && memUser.firstName && memUser.lastName) {
+                            return res.json({
+                                id: data.id,
+                                email: data.email,
+                                firstName: memUser.firstName,
+                                lastName: memUser.lastName,
+                                profileImage: data.profile_image || null,
+                                hasCustomProfileImage: data.has_custom_profile_image || false,
+                                emailVerified: data.email_verified || false,
+                                createdAt: data.created_at,
+                                plan: data.plan || 'free'
+                            });
+                        }
+                    }
+                    
                     return res.json({
                         id: data.id,
                         email: data.email,
-                        firstName: data.first_name || '',
-                        lastName: data.last_name || '',
+                        firstName: firstName,
+                        lastName: lastName,
                         profileImage: data.profile_image || null,
                         hasCustomProfileImage: data.has_custom_profile_image || false,
                         emailVerified: data.email_verified || false,
@@ -2601,6 +2627,127 @@ app.post('/api/update-profile-image', async (req, res) => {
     } catch (error) {
         console.error('Error updating profile image:', error);
         res.status(500).json({ error: 'Failed to update profile image' });
+    }
+});
+
+// API: Update user profile
+app.post('/api/update-profile', async (req, res) => {
+    try {
+        const { email, firstName, lastName } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+        
+        // Validate names - ensure they're not test data
+        if (firstName === 'tesing' || firstName === 'testing' || lastName === 'falsecode') {
+            return res.status(400).json({ error: 'Invalid name values' });
+        }
+
+        console.log(`📝 Updating profile for: ${email}`);
+        console.log(`📝 New names: ${firstName} ${lastName}`);
+
+        // Try to update in Supabase first
+        if (supabase) {
+            try {
+                // Check if profile exists
+                const { data: existingProfile } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('email', email)
+                    .single();
+
+                if (existingProfile) {
+                    // Update existing profile
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .update({ 
+                            first_name: firstName || '',
+                            last_name: lastName || '',
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('email', email)
+                        .select()
+                        .single();
+
+                    if (!error && data) {
+                        console.log('✅ Profile names updated in Supabase');
+                        
+                        // Also update in-memory
+                        const userIndex = users.findIndex(u => u.email === email);
+                        if (userIndex !== -1) {
+                            users[userIndex].firstName = firstName;
+                            users[userIndex].lastName = lastName;
+                        }
+                        
+                        return res.json({ 
+                            success: true, 
+                            message: 'Profile updated successfully',
+                            firstName: data.first_name,
+                            lastName: data.last_name
+                        });
+                    }
+                } else {
+                    // Create new profile if doesn't exist
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .insert([{ 
+                            email: email,
+                            first_name: firstName || '',
+                            last_name: lastName || '',
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        }])
+                        .select()
+                        .single();
+
+                    if (!error && data) {
+                        console.log('✅ New profile created with names in Supabase');
+                        return res.json({ 
+                            success: true, 
+                            message: 'Profile created successfully',
+                            firstName: data.first_name,
+                            lastName: data.last_name
+                        });
+                    }
+                }
+
+                if (error) {
+                    console.error('Supabase error:', error);
+                }
+            } catch (supabaseError) {
+                console.error('Supabase profile update failed:', supabaseError);
+            }
+        }
+
+        // Fallback to in-memory storage
+        const userIndex = users.findIndex(u => u.email === email);
+        
+        if (userIndex !== -1) {
+            users[userIndex].firstName = firstName || users[userIndex].firstName;
+            users[userIndex].lastName = lastName || users[userIndex].lastName;
+            console.log('✅ Profile names updated in memory');
+        } else {
+            // Create new user in memory if doesn't exist
+            users.push({
+                id: users.length + 1,
+                email: email,
+                firstName: firstName || '',
+                lastName: lastName || ''
+            });
+            console.log('✅ New user created with names in memory');
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'Profile updated successfully',
+            firstName: firstName,
+            lastName: lastName
+        });
+
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ error: 'Failed to update profile' });
     }
 });
 

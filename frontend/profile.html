@@ -979,29 +979,28 @@
                 if (response.ok) {
                     const profileData = await response.json();
                     
-                    // Only update names from backend if they are valid and not default values
-                    // and if localStorage doesn't have proper names
-                    if (profileData.firstName && profileData.lastName && 
-                        profileData.firstName !== 'tesing' && profileData.lastName !== 'falsecode' &&
-                        profileData.firstName !== 'User' && profileData.lastName !== 'Name') {
+                    // Check if backend has valid names
+                    const hasValidBackendNames = profileData.firstName && profileData.lastName && 
+                        profileData.firstName !== '' && profileData.lastName !== '';
+                    
+                    // If backend has valid names, use them
+                    if (hasValidBackendNames) {
+                        displayFirstName = profileData.firstName;
+                        displayLastName = profileData.lastName;
+                        console.log('✅ Using backend names for:', user.email, 'Names:', displayFirstName, displayLastName);
                         
-                        // Only use backend names if localStorage names are empty or default
-                        if (!displayFirstName || !displayLastName || 
-                            displayFirstName === 'User' || displayLastName === 'Name') {
-                            displayFirstName = profileData.firstName;
-                            displayLastName = profileData.lastName;
-                            console.log('✅ Using backend names for:', user.email, 'Names:', displayFirstName, displayLastName);
-                            
-                            // Update localStorage with backend names
-                            const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
-                            currentUser.firstName = displayFirstName;
-                            currentUser.lastName = displayLastName;
-                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                        } else {
-                            console.log('ℹ️ Keeping localStorage names (registration names) for:', user.email);
-                        }
+                        // Update localStorage with backend names
+                        const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                        currentUser.firstName = displayFirstName;
+                        currentUser.lastName = displayLastName;
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    } else if (displayFirstName && displayLastName && 
+                               displayFirstName !== 'User' && displayLastName !== 'Name') {
+                        // If localStorage has valid names but backend doesn't, update backend
+                        console.log('📤 Updating backend with localStorage names');
+                        updateProfileNames(user.email, displayFirstName, displayLastName);
                     } else {
-                        console.log('ℹ️ Backend names are invalid or default, using localStorage names');
+                        console.log('ℹ️ No valid names found, using defaults');
                     }
                     
                     // Only update profile image from backend if we don't have a local one
@@ -1326,6 +1325,33 @@
         }
 
         // Function to save profile image to backend database
+        async function updateProfileNames(email, firstName, lastName) {
+            try {
+                console.log('🔄 Updating profile names in backend for:', email);
+                
+                const response = await fetch('/api/update-profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        firstName: firstName,
+                        lastName: lastName
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Profile names updated in backend:', result);
+                } else {
+                    console.error('❌ Failed to update profile names in backend');
+                }
+            } catch (error) {
+                console.error('❌ Error updating profile names:', error);
+            }
+        }
+        
         async function saveProfileImageToBackend(email, imageData) {
             try {
                 console.log('🔄 Attempting to save profile image to backend for:', email);
