@@ -2741,15 +2741,20 @@
             }
         }
 
+        // Check and show loading modal on page load if needed
+        function checkForAutoOpenListing() {
+            const autoOpenListingId = sessionStorage.getItem('autoOpenListingId');
+            if (autoOpenListingId) {
+                console.log('🎯 Auto-open listing detected, showing loading modal');
+                showLoadingModal();
+                return true;
+            }
+            return false;
+        }
+
         // Display listings
         async function displayListings() {
             console.log('🔄 Starting displayListings function');
-            
-            // Check if we should show loading modal for auto-open
-            const autoOpenListingId = sessionStorage.getItem('autoOpenListingId');
-            if (autoOpenListingId) {
-                showLoadingModal();
-            }
             
             // Wait for Supabase to be initialized if not ready
             if (!window.supabaseReady) {
@@ -5992,6 +5997,9 @@
         // Initialize all systems when DOM is ready
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🚀 Initializing RoomFinderAI systems...');
+            
+            // Check for auto-open listing and show loading modal immediately
+            checkForAutoOpenListing();
             
             // Initialize offline cache
             if (window.offlineCacheManager) {
