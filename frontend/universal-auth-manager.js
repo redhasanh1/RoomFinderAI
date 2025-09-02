@@ -122,8 +122,19 @@ async function updateAuthSection() {
                 if (profileData.profileImage) {
                     profileImage = profileData.profileImage;
                     currentUser.profileImage = profileData.profileImage;
-                    currentUser.hasCustomProfileImage = profileData.hasCustomProfileImage;
+                    currentUser.hasCustomProfileImage = profileData.hasCustomProfileImage || false;
+                    
+                    // Store profile image for persistence
+                    if (profileData.hasCustomProfileImage) {
+                        storeProfileImage(currentUser.email, profileData.profileImage);
+                    }
+                    
                     console.log('✅ Updated profile image from backend in auth section');
+                } else if (profileData.hasCustomProfileImage === false) {
+                    // User hasn't uploaded a custom image yet, use default
+                    profileImage = DEFAULT_PROFILE_IMAGE;
+                    currentUser.profileImage = DEFAULT_PROFILE_IMAGE;
+                    currentUser.hasCustomProfileImage = false;
                 }
                 
                 // Update names from database (prioritize database over localStorage)
