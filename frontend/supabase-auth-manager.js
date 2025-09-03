@@ -117,7 +117,7 @@ class SupabaseAuthManager {
             if (error) throw error;
             
             this.currentUser = null;
-            localStorage.removeItem('currentUser');
+            // localStorage removed
             return { success: true };
         } catch (error) {
             console.error('Sign out error:', error);
@@ -238,7 +238,7 @@ class SupabaseAuthManager {
                 lastName: user.user_metadata?.last_name || '',
                 isAuthenticated: true
             };
-            localStorage.setItem('currentUser', JSON.stringify(userData));
+            // localStorage removed - using Supabase);
 
         } catch (error) {
             console.error('Error syncing user profile:', error);

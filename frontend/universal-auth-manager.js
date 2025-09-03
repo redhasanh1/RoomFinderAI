@@ -92,7 +92,7 @@ async function getStoredProfileImage(email) {
         
         // Check backup storage
         const backupKey = `profileImageBackup_${email}`;
-        const backupImage = localStorage.getItem(backupKey);
+        const backupImage = null;
         
         if (backupImage && backupImage !== 'null' && backupImage !== 'undefined') {
             return backupImage;
@@ -114,10 +114,10 @@ function storeProfileImage(email, imageData) {
         const backupKey = `profileImageBackup_${email}`;
         
         // Store in primary location
-        localStorage.setItem(profileImageKey, imageData);
+        // localStorage removed - using Supabase
         
         // Store backup
-        localStorage.setItem(backupKey, imageData);
+        // localStorage removed - using Supabase
         
         console.log('✅ Profile image stored successfully');
     } catch (error) {
@@ -182,7 +182,7 @@ async function updateAuthSection() {
                     console.log('✅ Updated names from backend in auth section:', profileData.firstName, profileData.lastName);
                 }
                 
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                // localStorage removed - using Supabase);
             }
         } catch (error) {
             console.error('Error fetching profile data in auth section:', error);
@@ -221,13 +221,13 @@ async function updateAuthSection() {
         // Update currentUser with the correct image
         if (currentUser.profileImage !== profileImage) {
             currentUser.profileImage = profileImage;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            // localStorage removed - using Supabase);
             
             // Also update users array
             try {
-                let users = JSON.parse(localStorage.getItem('users')) || [];
+                let users = JSON.parse(null) || [];
                 users = users.map(u => u && u.email === currentUser.email ? { ...u, profileImage: profileImage } : u);
-                localStorage.setItem('users', JSON.stringify(users));
+                // localStorage removed - using Supabase);
                 console.log('✅ Profile image synchronized');
             } catch (e) {
                 console.error('Error updating users array:', e);
@@ -306,7 +306,7 @@ async function initSupabaseAuth() {
         // Update current user with profile data
         currentUser.id = profile.id;
         currentUser.profileImage = profile.profile_image || DEFAULT_PROFILE_IMAGE;
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        // localStorage removed - using Supabase);
 
         console.log('✅ Supabase profile synchronized');
         return true;
@@ -367,7 +367,7 @@ function handleLogout() {
     // The universal-auth-protection.js will block this, but try anyway
     // This provides a consistent logout interface
     try {
-        localStorage.removeItem('currentUser');
+        // localStorage removed
         window.location.href = '/login';
     } catch (error) {
         console.log('Logout blocked by protection system');

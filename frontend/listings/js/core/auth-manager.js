@@ -282,7 +282,7 @@ async function backupUserData() {
             session: await getCurrentSession()
         };
         
-        localStorage.setItem('user_backup', JSON.stringify(backupData));
+        // localStorage removed - using Supabase);
         
     } catch (error) {
         console.error('❌ User backup error:', error);
@@ -294,7 +294,7 @@ async function backupUserData() {
  */
 async function restoreUserData() {
     try {
-        const backupData = localStorage.getItem('user_backup');
+        const backupData = null;
         if (!backupData) return null;
         
         const parsed = JSON.parse(backupData);
@@ -306,7 +306,7 @@ async function restoreUserData() {
             return parsed;
         } else {
             console.log('⏰ Backup data too old, ignoring');
-            localStorage.removeItem('user_backup');
+            // localStorage removed
             return null;
         }
         
@@ -334,7 +334,7 @@ async function getCurrentSession() {
  * Clear user data
  */
 function clearUserData() {
-    localStorage.removeItem('user_backup');
+    // localStorage removed
     console.log('🗑️ User data cleared');
 }
 

@@ -163,27 +163,27 @@ class SyncManager {
         
         switch (data_type) {
             case this.syncTypes.PREFERENCES:
-                localStorage.setItem('userPreferences', JSON.stringify(data));
+                // localStorage removed - using Supabase);
                 break;
                 
             case this.syncTypes.SAVED_SEARCHES:
-                localStorage.setItem('savedSearches', JSON.stringify(data));
+                // localStorage removed - using Supabase);
                 break;
                 
             case this.syncTypes.SAVED_PROPERTIES:
-                localStorage.setItem('savedProperties', JSON.stringify(data));
+                // localStorage removed - using Supabase);
                 break;
                 
             case this.syncTypes.SEARCH_HISTORY:
-                localStorage.setItem('searchHistory', JSON.stringify(data));
+                // localStorage removed - using Supabase);
                 break;
                 
             case this.syncTypes.VISIT_HISTORY:
-                localStorage.setItem('visitHistory', JSON.stringify(data));
+                // localStorage removed - using Supabase);
                 break;
                 
             case this.syncTypes.NOTIFICATION_SETTINGS:
-                localStorage.setItem('notificationPreferences', JSON.stringify(data));
+                // localStorage removed - using Supabase);
                 if (window.notificationManager) {
                     window.notificationManager.preferences = data;
                 }
@@ -386,35 +386,35 @@ class SyncManager {
 
     // Utility functions
     getDeviceId() {
-        let deviceId = localStorage.getItem('deviceId');
+        let deviceId = null;
         if (!deviceId) {
             deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('deviceId', deviceId);
+            // localStorage removed - using Supabase
         }
         return deviceId;
     }
 
     getLastSyncTime() {
-        return localStorage.getItem('lastSyncTime');
+        return null;
     }
 
     updateLastSyncTime() {
         const now = new Date().toISOString();
-        localStorage.setItem('lastSyncTime', now);
+        // localStorage removed - using Supabase
         this.lastSyncTime = now;
     }
 
     getLocalDataTimestamp(dataType) {
-        return localStorage.getItem(`${dataType}_timestamp`);
+        return null;
     }
 
     setLocalDataTimestamp(dataType, timestamp) {
-        localStorage.setItem(`${dataType}_timestamp`, timestamp);
+        // localStorage removed - using Supabase
     }
 
     updateLocalData(dataType, data) {
         const key = this.getLocalStorageKey(dataType);
-        localStorage.setItem(key, JSON.stringify(data));
+        // localStorage removed - using Supabase);
         this.setLocalDataTimestamp(dataType, new Date().toISOString());
     }
 
@@ -438,7 +438,7 @@ class SyncManager {
     }
 
     getLocalChanges() {
-        const changes = JSON.parse(localStorage.getItem('pendingSyncChanges') || '[]');
+        const changes = JSON.parse(null || '[]');
         return changes;
     }
 
@@ -458,22 +458,22 @@ class SyncManager {
             changes.push(change);
         }
         
-        localStorage.setItem('pendingSyncChanges', JSON.stringify(changes));
+        // localStorage removed - using Supabase);
     }
 
     clearLocalChanges() {
-        localStorage.removeItem('pendingSyncChanges');
+        // localStorage removed
     }
 
     storeFailedSync(dataType, data) {
-        const failed = JSON.parse(localStorage.getItem('failedSyncs') || '[]');
+        const failed = JSON.parse(null || '[]');
         failed.push({
             type: dataType,
             data: data,
             timestamp: new Date().toISOString(),
             retries: 0
         });
-        localStorage.setItem('failedSyncs', JSON.stringify(failed));
+        // localStorage removed - using Supabase);
     }
 
     triggerUIUpdate(dataType) {
@@ -492,7 +492,7 @@ class SyncManager {
     }
 
     async saveSavedSearch(search) {
-        const saved = JSON.parse(localStorage.getItem('savedSearches') || '[]');
+        const saved = JSON.parse(null || '[]');
         search.id = search.id || Date.now().toString();
         search.timestamp = new Date().toISOString();
         
@@ -509,7 +509,7 @@ class SyncManager {
     }
 
     async saveProperty(propertyId) {
-        const saved = JSON.parse(localStorage.getItem('savedProperties') || '[]');
+        const saved = JSON.parse(null || '[]');
         if (!saved.includes(propertyId)) {
             saved.push(propertyId);
             this.updateLocalData(this.syncTypes.SAVED_PROPERTIES, saved);
@@ -520,7 +520,7 @@ class SyncManager {
     }
 
     async unsaveProperty(propertyId) {
-        const saved = JSON.parse(localStorage.getItem('savedProperties') || '[]');
+        const saved = JSON.parse(null || '[]');
         const filtered = saved.filter(id => id !== propertyId);
         
         if (filtered.length !== saved.length) {
