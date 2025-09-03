@@ -1857,13 +1857,14 @@ app.post('/api/login', async (req, res) => {
         // Try Supabase authentication first
         if (supabase) {
             try {
+                console.log('🔍 Attempting Supabase Auth login for:', email);
                 const { data, error } = await supabase.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
 
                 if (error) {
-                    console.log('Supabase Auth login failed:', error.message);
+                    console.log('❌ Supabase Auth login failed:', error.message);
                     // Try checking password in profiles table
                     const { data: profile } = await supabase
                         .from('profiles')
@@ -1871,29 +1872,38 @@ app.post('/api/login', async (req, res) => {
                         .eq('email', email)
                         .single();
                     
-                    if (profile && profile.password) {
-                        // Check password against profiles table
-                        const isMatch = await bcrypt.compare(password, profile.password);
-                        if (isMatch) {
-                            console.log('✅ Login successful using profiles table for:', email);
-                            
-                            // Generate a token for this user
-                            const token = `profile_token_${profile.id}_${Date.now()}`;
-                            
-                            return res.json({
-                                message: 'Login successful',
-                                access_token: token,
-                                userId: profile.id,
-                                user: {
-                                    firstName: profile.first_name || 'User',
-                                    lastName: profile.last_name || 'Name',
-                                    email: profile.email,
-                                    profileImage: profile.profile_image_url
-                                }
-                            });
+                    if (profile) {
+                        // If profile exists in database, ONLY check password there
+                        if (profile.password) {
+                            // Check password against profiles table
+                            const isMatch = await bcrypt.compare(password, profile.password);
+                            if (isMatch) {
+                                console.log('✅ Login successful using profiles table for:', email);
+                                
+                                // Generate a token for this user
+                                const token = `profile_token_${profile.id}_${Date.now()}`;
+                                
+                                return res.json({
+                                    message: 'Login successful',
+                                    access_token: token,
+                                    userId: profile.id,
+                                    user: {
+                                        firstName: profile.first_name || 'User',
+                                        lastName: profile.last_name || 'Name',
+                                        email: profile.email,
+                                        profileImage: profile.profile_image_url
+                                    }
+                                });
+                            } else {
+                                // Password doesn't match - don't check anywhere else
+                                return res.status(401).json({ error: 'Invalid credentials' });
+                            }
+                        } else {
+                            // Profile exists but no password set
+                            return res.status(401).json({ error: 'Please reset your password' });
                         }
                     }
-                    // If profile password check also failed, fall through to in-memory check
+                    // Only fall through to in-memory check if profile doesn't exist in database
                 } else if (data.user) {
                     // Get user profile from database
                     const { data: profile, error: profileError } = await supabase
@@ -3130,10 +3140,19 @@ app.post('/api/reset-password', async (req, res) => {
                     console.log('⚠️ Note: User may need to re-register for full Supabase Auth integration');
                 }
                 
-                // Also update in-memory if user exists there
+                // Also update in-memory if user exists there (and clear old password)
                 const user = users.find(u => u.email === email);
                 if (user) {
                     user.password = hashedPassword;
+                    console.log('✅ In-memory password also updated for:', email);
+                }
+                
+                // Try to sign out any existing Supabase Auth sessions for this user
+                try {
+                    await supabase.auth.signOut();
+                    console.log('✅ Cleared any existing auth sessions');
+                } catch (signOutError) {
+                    console.log('⚠️ Could not clear auth sessions:', signOutError.message);
                 }
                 
             } catch (dbError) {
