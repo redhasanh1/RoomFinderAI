@@ -3088,71 +3088,56 @@ app.post('/api/reset-password', async (req, res) => {
                 
                 console.log('🔄 Attempting to update password for:', email);
                 
-                // Since we can't use admin API with anon key, we'll need to:
-                // 1. Store a temporary recovery token
-                // 2. Let the user know they need to use Supabase's built-in password recovery
-                // OR just update the password hash in profiles table for now
-                
-                // For now, let's hash and store in profiles table
-                // Users will need to re-register to get proper Supabase Auth account
+                // Now we have service role key, so we can update Supabase Auth password
                 const hashedPassword = await bcrypt.hash(newPassword, 10);
                 
-                // First try to update just the password field
-                const { error: updateError } = await supabase
-                    .from('profiles')
-                    .update({ 
-                        password: hashedPassword
-                    })
-                    .eq('email', email);
+                // First, find the user in Supabase Auth
+                const { data: { users: authUsers }, error: listError } = await supabase.auth.admin.listUsers();
                 
-                if (updateError) {
-                    console.error('❌ Failed to update password in profiles:', updateError);
-                    console.error('❌ Update error details:', JSON.stringify(updateError, null, 2));
-                    
-                    // If password column doesn't exist, try without it
-                    if (updateError.message && updateError.message.includes('column')) {
-                        console.log('⚠️ Password column may not exist in profiles table');
-                        console.log('✅ Password reset validated but cannot store in database');
-                        
-                        // Update in-memory for now
-                        const user = users.find(u => u.email === email);
-                        if (!user) {
-                            // Create a temporary user in memory
-                            users.push({
-                                id: profile.id || uuidv4(),
-                                email: email,
-                                password: hashedPassword,
-                                firstName: profile.first_name || email.split('@')[0],
-                                lastName: profile.last_name || '',
-                                emailVerified: true
-                            });
-                        } else {
-                            user.password = hashedPassword;
-                        }
-                        
-                        // Don't return error - password is updated in memory
-                        console.log('✅ Password updated in memory for:', email);
-                    } else {
-                        return res.status(500).json({ error: 'Failed to update password. Please try again.' });
-                    }
-                } else {
-                    console.log('✅ Password updated in profiles table for:', email);
-                    console.log('⚠️ Note: User may need to re-register for full Supabase Auth integration');
+                if (listError) {
+                    console.error('❌ Failed to list users in Supabase Auth:', listError);
+                    return res.status(500).json({ error: 'Failed to access user accounts' });
                 }
                 
-                // Also update in-memory if user exists there (and clear old password)
+                const authUser = authUsers?.find(u => u.email === email);
+                
+                if (authUser) {
+                    // Update password in Supabase Auth (this will replace the old password)
+                    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
+                        authUser.id,
+                        { password: newPassword }
+                    );
+                    
+                    if (authUpdateError) {
+                        console.error('❌ Failed to update password in Supabase Auth:', authUpdateError);
+                        return res.status(500).json({ error: 'Failed to update password in authentication system' });
+                    }
+                    
+                    console.log('✅ Password updated in Supabase Auth for:', email);
+                } else {
+                    console.log('⚠️ User not found in Supabase Auth, updating profiles table only');
+                    
+                    // Update password in profiles table as fallback
+                    const { error: updateError } = await supabase
+                        .from('profiles')
+                        .update({ 
+                            password: hashedPassword
+                        })
+                        .eq('email', email);
+                    
+                    if (updateError) {
+                        console.error('❌ Failed to update password in profiles:', updateError);
+                        return res.status(500).json({ error: 'Failed to update password' });
+                    }
+                    
+                    console.log('✅ Password updated in profiles table for:', email);
+                }
+                
+                // Also update in-memory if user exists there (replace old password)
                 const user = users.find(u => u.email === email);
                 if (user) {
                     user.password = hashedPassword;
                     console.log('✅ In-memory password also updated for:', email);
-                }
-                
-                // Try to sign out any existing Supabase Auth sessions for this user
-                try {
-                    await supabase.auth.signOut();
-                    console.log('✅ Cleared any existing auth sessions');
-                } catch (signOutError) {
-                    console.log('⚠️ Could not clear auth sessions:', signOutError.message);
                 }
                 
             } catch (dbError) {
