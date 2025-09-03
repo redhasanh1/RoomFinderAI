@@ -1743,49 +1743,70 @@ app.post('/api/verify-email', async (req, res) => {
 
         // Code is valid, create the user account
         const { firstName, lastName, password } = verificationData.userData;
-        const hashedPassword = await bcrypt.hash(password, 10);
         
-        const user = {
-            id: uuidv4(),
-            firstName,
-            lastName,
-            email,
-            password: hashedPassword,
-            emailVerified: true,
-            createdAt: new Date().toISOString(),
-        };
-
-        users.push(user);
-
-        // Create user in Supabase profiles table
+        // Create Supabase Auth account first
         if (supabase) {
             try {
-                const { error: userError } = await supabase
-                    .from('profiles')
-                    .insert([{
-                        id: user.id,
-                        email: user.email,
-                        first_name: user.firstName,
-                        last_name: user.lastName,
-                        is_verified: true,
-                        created_at: user.createdAt,
-                        updated_at: user.createdAt
-                    }]);
+                console.log('🔐 Creating Supabase Auth account for:', email);
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: email,
+                    password: password
+                });
                 
-                if (userError) {
-                    console.warn('Warning: Could not create user in Supabase:', userError);
-                } else {
-                    console.log('✅ User created in Supabase users table:', user.email);
+                if (authError) {
+                    console.error('❌ Supabase Auth signup failed:', authError.message);
+                    return res.status(400).json({ error: 'Failed to create authentication account: ' + authError.message });
                 }
-            } catch (userErr) {
-                console.warn('Warning: Error creating user in Supabase:', userErr);
+                
+                console.log('✅ Supabase Auth account created:', authData.user?.id);
+                
+                // Create or update profile in profiles table
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .upsert([{
+                        id: authData.user.id,
+                        email: email,
+                        first_name: firstName,
+                        last_name: lastName,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }], {
+                        onConflict: 'email'
+                    });
+                
+                if (profileError) {
+                    console.warn('Warning: Error creating profile:', profileError.message);
+                } else {
+                    console.log('✅ User profile created/updated in Supabase');
+                }
+                
+                // Store user data for backward compatibility
+                const user = {
+                    id: authData.user.id,
+                    firstName,
+                    lastName,
+                    email,
+                    emailVerified: true,
+                    createdAt: new Date().toISOString(),
+                };
+                
+                users.push(user);
+                
+            } catch (authErr) {
+                console.error('❌ Error creating Supabase Auth account:', authErr);
+                return res.status(500).json({ error: 'Failed to create authentication account' });
             }
+        } else {
+            return res.status(500).json({ error: 'Database not available' });
         }
 
+        // Get the created user for response
+        const createdUser = users[users.length - 1];
+
         // Log user registration activity
-        await logUserActivity(user.email, 'registered', 'User account created successfully', {
-            firstName: user.firstName,
-            lastName: user.lastName
+        await logUserActivity(createdUser.email, 'registered', 'User account created successfully', {
+            firstName: createdUser.firstName,
+            lastName: createdUser.lastName
         });
 
         // Clean up verification code
@@ -1794,11 +1815,11 @@ app.post('/api/verify-email', async (req, res) => {
         res.status(201).json({ 
             message: 'Email verified and account created successfully',
             user: {
-                id: user.id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                emailVerified: user.emailVerified
+                id: createdUser.id,
+                firstName: createdUser.firstName,
+                lastName: createdUser.lastName,
+                email: createdUser.email,
+                emailVerified: createdUser.emailVerified
             }
         });
     } catch (error) {
