@@ -27,13 +27,20 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
 
     // 🚫 BLOCK ALL REDIRECTS TO LOGIN PAGES (unless legitimate logout)
     try {
+        // Check if property was already defined (prevent re-definition errors)
+        const descriptor = Object.getOwnPropertyDescriptor(window.location, 'href');
+        if (descriptor && descriptor.set === window.ORIGINAL_LOCATION_HREF?.set) {
+            console.log('✅ Auth protection already initialized, skipping...');
+            return;
+        }
+        
         Object.defineProperty(window.location, 'href', {
             set: function(url) {
                 if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
                     // Check if this is a legitimate logout request
-                    if (// sessionStorage removed === 'true') {
+                    if (sessionStorage.getItem('legitimateLogout') === 'true') {
                         console.log('✅ Allowing legitimate logout redirect');
-                        // sessionStorage removed
+                        sessionStorage.removeItem('legitimateLogout');
                         return window.ORIGINAL_LOCATION_HREF.set.call(this, url);
                     }
                     console.error('🚫 BLOCKED location.href redirect to login:', url);

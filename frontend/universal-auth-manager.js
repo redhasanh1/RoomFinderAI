@@ -23,9 +23,26 @@ const DEFAULT_PROFILE_IMAGE = 'data:image/svg+xml;base64,' + btoa(`
  */
 async function isUserAuthenticated() {
     try {
-        if (!window.supabase) return false;
-        const { data: { session } } = await window.supabase.auth.getSession();
-        return !!session?.user;
+        // First check localStorage (primary auth method)
+        const currentUser = localStorage.getItem('currentUser');
+        if (currentUser && currentUser !== 'null' && currentUser !== 'undefined') {
+            try {
+                const userData = JSON.parse(currentUser);
+                if (userData && userData.email) {
+                    return true;
+                }
+            } catch (e) {
+                console.error('Error parsing currentUser:', e);
+            }
+        }
+        
+        // Fallback to Supabase if available
+        if (window.supabase && window.supabase.auth) {
+            const { data: { session } } = await window.supabase.auth.getSession();
+            return !!session?.user;
+        }
+        
+        return false;
     } catch (error) {
         console.error('Auth check error:', error);
         return false;
@@ -37,33 +54,49 @@ async function isUserAuthenticated() {
  */
 async function getCurrentUser() {
     try {
-        if (!window.supabase) return null;
+        // First check localStorage (primary auth method)
+        const currentUser = localStorage.getItem('currentUser');
+        if (currentUser && currentUser !== 'null' && currentUser !== 'undefined') {
+            try {
+                const userData = JSON.parse(currentUser);
+                if (userData && userData.email) {
+                    return userData;
+                }
+            } catch (e) {
+                console.error('Error parsing currentUser from localStorage:', e);
+            }
+        }
         
-        const { data: { session } } = await window.supabase.auth.getSession();
-        if (!session?.user) return null;
-        
-        // Get profile data from profiles table
-        const { data: profile, error } = await window.supabase
-            .from('profiles')
-            .select('first_name, last_name, email, profile_image_url')
-            .eq('email', session.user.email)
-            .single();
+        // Fallback to Supabase if available
+        if (window.supabase && window.supabase.auth) {
+            const { data: { session } } = await window.supabase.auth.getSession();
+            if (!session?.user) return null;
             
-        if (error) {
-            console.warn('Profile fetch error:', error);
+            // Get profile data from profiles table
+            const { data: profile, error } = await window.supabase
+                .from('profiles')
+                .select('first_name, last_name, email, profile_image_url')
+                .eq('email', session.user.email)
+                .single();
+                
+            if (error) {
+                console.warn('Profile fetch error:', error);
+                return {
+                    email: session.user.email,
+                    firstName: 'User',
+                    lastName: 'Name'
+                };
+            }
+            
             return {
-                email: session.user.email,
-                firstName: 'User',
-                lastName: 'Name'
+                email: profile.email,
+                firstName: profile.first_name || 'User',
+                lastName: profile.last_name || 'Name',
+                profileImage: profile.profile_image_url
             };
         }
         
-        return {
-            email: profile.email,
-            firstName: profile.first_name || 'User',
-            lastName: profile.last_name || 'Name',
-            profileImage: profile.profile_image_url
-        };
+        return null;
     } catch (error) {
         console.error('Error getting current user:', error);
         return null;
@@ -211,7 +244,7 @@ async function updateAuthSection() {
             ];
             
             const needsUpdate = !profileImage || 
-                oldPlaceholderPatterns.some(pattern => profileImage.includes(pattern));
+                (typeof profileImage === 'string' && oldPlaceholderPatterns.some(pattern => profileImage.includes(pattern)));
             
             if (needsUpdate && !currentUser.hasCustomProfileImage) {
                 profileImage = DEFAULT_PROFILE_IMAGE;
