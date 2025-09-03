@@ -2537,6 +2537,8 @@ app.post('/api/update-profile-image', async (req, res) => {
         }
 
         console.log(`📸 Updating profile image for: ${email}`);
+        console.log('📸 Supabase initialized?', !!supabase);
+        console.log('📸 Image type:', profileImage.substring(0, 30));
         
         // Check if it's a base64 image
         if (profileImage.startsWith('data:image')) {
@@ -2548,13 +2550,21 @@ app.post('/api/update-profile-image', async (req, res) => {
             // Convert base64 to buffer
             const buffer = Buffer.from(base64Data, 'base64');
             
-            console.log(`📸 Converting base64 to file (${buffer.length} bytes)`);
+            console.log(`📸 Converting base64 to file:`);
+            console.log(`   - Size: ${buffer.length} bytes`);
+            console.log(`   - MIME: ${mimeType}`);
+            console.log(`   - Extension: ${fileExt}`);
             
             // Upload to Supabase Storage
             if (supabase) {
                 try {
                     // Create unique filename using email
                     const fileName = `${email.replace('@', '_').replace('.', '_')}/profile.${fileExt}`;
+                    console.log(`📸 Uploading to: profile-images/${fileName}`);
+                    
+                    // First, check if bucket exists
+                    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+                    console.log('📸 Available buckets:', buckets?.map(b => b.name).join(', '));
                     
                     // Upload to storage bucket
                     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -2565,7 +2575,8 @@ app.post('/api/update-profile-image', async (req, res) => {
                         });
                     
                     if (uploadError) {
-                        console.error('Storage upload error:', uploadError);
+                        console.error('❌ Storage upload error:', uploadError);
+                        console.error('   Error details:', JSON.stringify(uploadError, null, 2));
                         throw uploadError;
                     }
                     
