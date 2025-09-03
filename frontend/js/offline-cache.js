@@ -447,7 +447,7 @@ class OfflineCacheManager {
                 searches: searchesCount,
                 images: imagesCount,
                 userdata: userdataCount,
-                lastCleanup: localStorage.getItem('lastCacheCleanup'),
+                lastCleanup: null,
                 maxAge: this.maxAge,
                 cacheSize: this.cacheSize
             };
@@ -554,7 +554,7 @@ class OfflineCacheManager {
             isOnline: this.isOnline(),
             hasCachedData: this.db !== null,
             cacheAge: this.maxAge,
-            lastSync: localStorage.getItem('lastSyncTime')
+            lastSync: null
         };
     }
 }

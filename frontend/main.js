@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         .subscribe();
 
     // Real-time subscription to messages for notifications
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const currentUser = JSON.parse(null);
     if (currentUser) {
         supabase
             .channel('user_messages')

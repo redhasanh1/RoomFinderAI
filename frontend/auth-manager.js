@@ -104,7 +104,7 @@ function initializeEmergencyProtection() {
  */
 function loadCurrentUser() {
     try {
-        const storedUser = localStorage.getItem('currentUser');
+        const storedUser = null;
         if (storedUser) {
             currentUser = JSON.parse(storedUser);
             console.log('👤 Current user loaded:', currentUser.email);
@@ -129,10 +129,10 @@ function loadCurrentUser() {
 function saveCurrentUser() {
     if (currentUser) {
         try {
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            // localStorage removed - using Supabase);
             
             // Also update users array
-            let users = JSON.parse(localStorage.getItem('users')) || [];
+            let users = JSON.parse(null) || [];
             users = users.map(u => u.email === currentUser.email ? currentUser : u);
             
             // Add to users array if not exists
@@ -140,7 +140,7 @@ function saveCurrentUser() {
                 users.push(currentUser);
             }
             
-            localStorage.setItem('users', JSON.stringify(users));
+            // localStorage removed - using Supabase);
             console.log('💾 Current user saved to localStorage');
         } catch (error) {
             console.error('❌ Error saving current user:', error);
@@ -168,10 +168,10 @@ function setupUserBackupSystem() {
  * Create backup of current user data
  */
 function createUserBackup() {
-    const currentUserData = localStorage.getItem('currentUser');
+    const currentUserData = null;
     if (currentUserData) {
-        localStorage.setItem('currentUser_backup', currentUserData);
-        localStorage.setItem('currentUser_backup_timestamp', Date.now().toString());
+        // localStorage removed - using Supabase
+        // localStorage removed - using Supabase.toString());
         console.log('💾 User backup created');
     }
 }
@@ -182,17 +182,17 @@ function createUserBackup() {
  */
 function restoreUserIfNeeded() {
     // Check if this is a legitimate logout - if so, don't restore
-    if (sessionStorage.getItem('legitimateLogout') === 'true') {
+    if (// sessionStorage removed === 'true') {
         console.log('✅ Legitimate logout detected, skipping restore');
         return false;
     }
     
-    const currentUserData = localStorage.getItem('currentUser');
-    const backup = localStorage.getItem('currentUser_backup');
+    const currentUserData = null;
+    const backup = null;
     
     if (!currentUserData && backup) {
         console.log('🔄 Restoring user from backup');
-        localStorage.setItem('currentUser', backup);
+        // localStorage removed - using Supabase
         loadCurrentUser(); // Reload the current user
         return true;
     }
@@ -239,7 +239,7 @@ function clearCurrentUser() {
     
     // Only clear if emergency protection is not active
     if (!emergencyProtectionActive) {
-        localStorage.removeItem('currentUser');
+        // localStorage removed
         console.log('👤 Current user cleared');
     } else {
         console.log('🛡️ User logout blocked by emergency protection');

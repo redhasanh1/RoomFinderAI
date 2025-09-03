@@ -29,9 +29,9 @@ class RecommendationEngine {
     // Load user behavior data
     async loadUserData() {
         // Load from localStorage and IndexedDB
-        this.viewHistory = JSON.parse(localStorage.getItem('propertyViewHistory') || '[]');
-        this.searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
-        this.savedProperties = JSON.parse(localStorage.getItem('savedProperties') || '[]');
+        this.viewHistory = JSON.parse(null || '[]');
+        this.searchHistory = JSON.parse(null || '[]');
+        this.savedProperties = JSON.parse(null || '[]');
         
         // Load additional data from cache if available
         if (window.offlineCacheManager) {
@@ -93,7 +93,7 @@ class RecommendationEngine {
             this.viewHistory = this.viewHistory.slice(0, 100);
         }
         
-        localStorage.setItem('propertyViewHistory', JSON.stringify(this.viewHistory));
+        // localStorage removed - using Supabase);
     }
 
     // Record search query
@@ -114,14 +114,14 @@ class RecommendationEngine {
             this.searchHistory = this.searchHistory.slice(0, 50);
         }
         
-        localStorage.setItem('searchHistory', JSON.stringify(this.searchHistory));
+        // localStorage removed - using Supabase);
     }
 
     // Record property save
     recordSave(propertyId) {
         if (!this.savedProperties.includes(propertyId)) {
             this.savedProperties.push(propertyId);
-            localStorage.setItem('savedProperties', JSON.stringify(this.savedProperties));
+            // localStorage removed - using Supabase);
         }
     }
 
