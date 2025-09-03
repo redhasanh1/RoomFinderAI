@@ -2474,8 +2474,8 @@ app.get('/api/user-profile/:email', async (req, res) => {
                                 email: data.email,
                                 firstName: memUser.firstName,
                                 lastName: memUser.lastName,
-                                profileImage: data.profile_image || null,
-                                hasCustomProfileImage: data.has_custom_profile_image || false,
+                                profileImage: data.profile_image_url || data.profile_image || null,
+                                hasCustomProfileImage: data.profile_image_url ? true : (data.has_custom_profile_image || false),
                                 emailVerified: data.email_verified || false,
                                 createdAt: data.created_at,
                                 plan: data.plan || 'free'
@@ -2488,8 +2488,8 @@ app.get('/api/user-profile/:email', async (req, res) => {
                         email: data.email,
                         firstName: firstName,
                         lastName: lastName,
-                        profileImage: data.profile_image || null,
-                        hasCustomProfileImage: data.has_custom_profile_image || false,
+                        profileImage: data.profile_image_url || data.profile_image || null,
+                        hasCustomProfileImage: data.profile_image_url ? true : (data.has_custom_profile_image || false),
                         emailVerified: data.email_verified || false,
                         createdAt: data.created_at,
                         plan: data.plan || 'free'
@@ -2525,7 +2525,7 @@ app.get('/api/user-profile/:email', async (req, res) => {
     }
 });
 
-// API: Update user profile image
+// API: Update user profile image - Now uses Supabase Storage
 app.post('/api/update-profile-image', async (req, res) => {
     try {
         const { email, profileImage } = req.body;
@@ -2535,12 +2535,104 @@ app.post('/api/update-profile-image', async (req, res) => {
         }
 
         console.log(`📸 Updating profile image for: ${email}`);
-        console.log(`📸 Image size: ${profileImage.length} characters`);
+        
+        // Check if it's a base64 image
+        if (profileImage.startsWith('data:image')) {
+            // Extract base64 data
+            const base64Data = profileImage.split(',')[1];
+            const mimeType = profileImage.split(':')[1].split(';')[0];
+            const fileExt = mimeType.split('/')[1];
+            
+            // Convert base64 to buffer
+            const buffer = Buffer.from(base64Data, 'base64');
+            
+            console.log(`📸 Converting base64 to file (${buffer.length} bytes)`);
+            
+            // Upload to Supabase Storage
+            if (supabase) {
+                try {
+                    // Create unique filename using email
+                    const fileName = `${email.replace('@', '_').replace('.', '_')}/profile.${fileExt}`;
+                    
+                    // Upload to storage bucket
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('profile-images')
+                        .upload(fileName, buffer, {
+                            contentType: mimeType,
+                            upsert: true // Replace if exists
+                        });
+                    
+                    if (uploadError) {
+                        console.error('Storage upload error:', uploadError);
+                        throw uploadError;
+                    }
+                    
+                    // Get public URL
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('profile-images')
+                        .getPublicUrl(fileName);
+                    
+                    console.log('✅ Image uploaded to Supabase Storage:', publicUrl);
+                    
+                    // Update profile with new URL
+                    const { data: existingProfile } = await supabase
+                        .from('profiles')
+                        .select('id')
+                        .eq('email', email)
+                        .single();
 
-        // Try to update in Supabase first
-        if (supabase) {
-            try {
-                // Check if profile exists
+                    if (existingProfile) {
+                        // Update existing profile
+                        const { data, error } = await supabase
+                            .from('profiles')
+                            .update({ 
+                                profile_image_url: publicUrl,
+                                profile_image: null, // Clear old base64 field
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('email', email)
+                            .select()
+                            .single();
+
+                        if (!error && data) {
+                            console.log('✅ Profile updated with new image URL');
+                            return res.json({ 
+                                success: true, 
+                                message: 'Profile image updated successfully',
+                                profileImage: publicUrl
+                            });
+                        }
+                    } else {
+                        // Create new profile
+                        const { data, error } = await supabase
+                            .from('profiles')
+                            .insert([{ 
+                                email: email,
+                                profile_image_url: publicUrl,
+                                created_at: new Date().toISOString(),
+                                updated_at: new Date().toISOString()
+                            }])
+                            .select()
+                            .single();
+
+                        if (!error && data) {
+                            console.log('✅ New profile created with image URL');
+                            return res.json({ 
+                                success: true, 
+                                message: 'Profile image saved successfully',
+                                profileImage: publicUrl
+                            });
+                        }
+                    }
+                    
+                } catch (storageError) {
+                    console.error('Storage operation failed:', storageError);
+                    // Continue with fallback
+                }
+            }
+        } else if (profileImage.startsWith('http')) {
+            // It's already a URL, just save it
+            if (supabase) {
                 const { data: existingProfile } = await supabase
                     .from('profiles')
                     .select('id')
@@ -2548,55 +2640,29 @@ app.post('/api/update-profile-image', async (req, res) => {
                     .single();
 
                 if (existingProfile) {
-                    // Update existing profile
-                    const { data, error } = await supabase
+                    await supabase
                         .from('profiles')
                         .update({ 
-                            profile_image: profileImage,
-                            has_custom_profile_image: true,
+                            profile_image_url: profileImage,
+                            profile_image: null,
                             updated_at: new Date().toISOString()
                         })
-                        .eq('email', email)
-                        .select()
-                        .single();
-
-                    if (!error && data) {
-                        console.log('✅ Profile image updated in Supabase');
-                        return res.json({ 
-                            success: true, 
-                            message: 'Profile image updated successfully',
-                            profileImage: data.profile_image
-                        });
-                    }
+                        .eq('email', email);
                 } else {
-                    // Create new profile
-                    const { data, error } = await supabase
+                    await supabase
                         .from('profiles')
                         .insert([{ 
                             email: email,
-                            profile_image: profileImage,
-                            has_custom_profile_image: true,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        }])
-                        .select()
-                        .single();
-
-                    if (!error && data) {
-                        console.log('✅ New profile created with image in Supabase');
-                        return res.json({ 
-                            success: true, 
-                            message: 'Profile image saved successfully',
-                            profileImage: data.profile_image
-                        });
-                    }
+                            profile_image_url: profileImage,
+                            created_at: new Date().toISOString()
+                        }]);
                 }
-
-                if (error) {
-                    console.error('Supabase error:', error);
-                }
-            } catch (supabaseError) {
-                console.error('Supabase profile image update failed:', supabaseError);
+                
+                return res.json({ 
+                    success: true, 
+                    message: 'Profile image URL saved',
+                    profileImage: profileImage
+                });
             }
         }
 
@@ -2608,7 +2674,6 @@ app.post('/api/update-profile-image', async (req, res) => {
             users[userIndex].hasCustomProfileImage = true;
             console.log('✅ Profile image updated in memory');
         } else {
-            // Create new user in memory if doesn't exist
             users.push({
                 id: users.length + 1,
                 email: email,
