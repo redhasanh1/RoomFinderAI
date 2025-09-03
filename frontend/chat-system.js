@@ -304,7 +304,7 @@ class ChatSystem {
             return;
         }
 
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const currentUser = JSON.parse(null);
         if (!currentUser) {
             console.error('No authenticated user');
             return;
@@ -502,7 +502,7 @@ class ChatSystem {
             }
             
             chatMessagesContainer.innerHTML = '';
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const currentUser = JSON.parse(null);
 
             messages.forEach((message) => {
                 const messageElement = document.createElement('div');
@@ -561,7 +561,7 @@ class ChatSystem {
             console.log('🚀 Starting conversation for listing:', listing?.title || 'Unknown listing');
         
             // Verify authentication
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const currentUser = JSON.parse(null);
             if (!currentUser) {
                 console.error('❌ No authenticated user found');
                 this.showConnectionNotification('Please log in to start a chat.', 'warning');
@@ -766,7 +766,7 @@ class ChatSystem {
      * Load user conversations
      */
     async loadUserConversations() {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const currentUser = JSON.parse(null);
         if (!currentUser) return;
 
         try {
@@ -823,7 +823,7 @@ class ChatSystem {
         const conversationTabs = document.getElementById('conversationTabs');
         if (!conversationTabs) return;
 
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const currentUser = JSON.parse(null);
         
         if (this.globalUserConversations.length === 0) {
             conversationTabs.innerHTML = '<div class="p-4 text-gray-500 text-center">No conversations yet</div>';
@@ -902,7 +902,7 @@ class ChatSystem {
      * Mark conversation as read in database
      */
     async markConversationAsRead(conversationId) {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const currentUser = JSON.parse(null);
         if (!currentUser) return;
 
         try {
@@ -964,7 +964,7 @@ class ChatSystem {
                 table: 'messages' 
             }, (payload) => {
                 console.log('🔔 PANEL: New message event:', payload);
-                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const currentUser = JSON.parse(null);
                 
                 if (payload.new.sender_email !== currentUser.email) {
                     const convIndex = this.globalUserConversations.findIndex(c => c.id === payload.new.conversation_id);
@@ -1157,7 +1157,7 @@ class ChatSystem {
             issues.push('Supabase client not initialized');
         }
 
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const currentUser = JSON.parse(null);
         if (!currentUser) {
             issues.push('No authenticated user (warning only)');
         }
@@ -1214,7 +1214,7 @@ class ChatSystem {
         const panel = document.getElementById('chat-diagnostics-panel');
         if (!panel) return;
 
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const currentUser = JSON.parse(null);
         const now = new Date().toLocaleTimeString();
 
         panel.innerHTML = `

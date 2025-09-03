@@ -14,7 +14,7 @@ class PropertyVisitTracker {
     async startVisit(propertyId, propertyTitle) {
         console.log('📍 Starting property visit:', propertyTitle);
         
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const currentUser = JSON.parse(null);
         if (!currentUser) {
             alert('Please login to track property visits');
             return false;
@@ -456,7 +456,7 @@ class PropertyVisitTracker {
             this.currentVisit.notes = this.notes;
             this.currentVisit.voice_notes = this.voiceNotes;
             
-            localStorage.setItem(`visit_${this.currentVisit.id}`, JSON.stringify(this.currentVisit));
+            // localStorage removed - using Supabase);
         }
     }
 
@@ -493,7 +493,7 @@ class PropertyVisitTracker {
             alert('Property visit saved successfully!');
             
             // Clear local storage
-            localStorage.removeItem(`visit_${this.currentVisit.id}`);
+            // localStorage removed
             
             // Close modal
             this.endVisit();

@@ -214,7 +214,7 @@ class NotificationManager {
 
     // Update subscription on server
     async updateSubscriptionOnServer(subscription) {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const currentUser = JSON.parse(null);
         if (!currentUser) return;
 
         try {
@@ -238,7 +238,7 @@ class NotificationManager {
         } catch (error) {
             console.error('Failed to update subscription on server:', error);
             // Store locally for retry later
-            localStorage.setItem('pendingPushSubscription', JSON.stringify(subscription));
+            // localStorage removed - using Supabase);
         }
     }
 
@@ -251,7 +251,7 @@ class NotificationManager {
             this.subscription = null;
             
             // Remove from server
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const currentUser = JSON.parse(null);
             if (currentUser) {
                 await fetch('/api/push-subscription', {
                     method: 'DELETE',
@@ -398,7 +398,7 @@ class NotificationManager {
             this.preferences[checkbox.id] = checkbox.checked;
         });
         
-        localStorage.setItem('notificationPreferences', JSON.stringify(this.preferences));
+        // localStorage removed - using Supabase);
         
         // Update server
         this.updateSubscriptionOnServer(this.subscription);
@@ -408,7 +408,7 @@ class NotificationManager {
 
     // Load preferences from localStorage
     loadPreferences() {
-        const saved = localStorage.getItem('notificationPreferences');
+        const saved = null;
         return saved ? JSON.parse(saved) : {
             new_listing: true,
             price_change: true,

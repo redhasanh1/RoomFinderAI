@@ -106,7 +106,7 @@ class MobileAppProfile {
     async loadUserPreferences() {
         try {
             // Load from localStorage for now - in production, sync with database
-            const saved = localStorage.getItem('userPreferences');
+            const saved = null;
             if (saved) {
                 this.user.preferences = { ...this.user.preferences, ...JSON.parse(saved) };
             }
@@ -117,7 +117,7 @@ class MobileAppProfile {
 
     async saveUserPreferences() {
         try {
-            localStorage.setItem('userPreferences', JSON.stringify(this.user.preferences));
+            // localStorage removed - using Supabase);
             
             // In production, also save to database
             if (window.supabase && this.user.isLoggedIn) {
@@ -454,10 +454,10 @@ window.editAvatar = () => {
                         
                         if (response.ok) {
                             // Update localStorage
-                            const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                            const currentUser = JSON.parse(null) || {};
                             currentUser.profileImage = imageData;
                             currentUser.hasCustomProfileImage = true;
-                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                            // localStorage removed - using Supabase);
                             
                             if (window.MobileAppConfig) {
                                 window.MobileAppConfig.showToast('Profile picture updated successfully!', 'success');

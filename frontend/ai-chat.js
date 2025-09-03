@@ -768,7 +768,7 @@ class AIChatHandler {
     async loadConversationHistory() {
         try {
             const storageKey = `ai_negotiator_chat_${this.currentUser?.email || 'anonymous'}`;
-            const savedHistory = localStorage.getItem(storageKey);
+            const savedHistory = null;
             
             if (savedHistory) {
                 this.conversationHistory = JSON.parse(savedHistory);
@@ -795,7 +795,7 @@ class AIChatHandler {
     saveConversationHistory() {
         try {
             const storageKey = `ai_negotiator_chat_${this.currentUser?.email || 'anonymous'}`;
-            localStorage.setItem(storageKey, JSON.stringify(this.conversationHistory));
+            // localStorage removed - using Supabase);
         } catch (error) {
             console.error('Error saving conversation history:', error);
         }
@@ -805,7 +805,7 @@ class AIChatHandler {
     clearConversationHistory() {
         try {
             const storageKey = `ai_negotiator_chat_${this.currentUser?.email || 'anonymous'}`;
-            localStorage.removeItem(storageKey);
+            // localStorage removed
             this.conversationHistory = [];
             
             const messages = document.getElementById('chatMessages');

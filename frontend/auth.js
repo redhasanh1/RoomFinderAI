@@ -7,7 +7,7 @@ const defaultProfileImage = 'data:image/svg+xml;base64,' + btoa(`
 `.trim());
 
 async function initializeAuth(supabase, allowAnonymous = false) {
-    let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    let currentUser = JSON.parse(null);
     const authSection = document.getElementById('authSection');
 
     if (!currentUser) {
@@ -96,7 +96,7 @@ async function initializeAuth(supabase, allowAnonymous = false) {
     }
     
     currentUser.profileImage = profile.profile_image;
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    // localStorage removed - using Supabase);
 
     authSection.innerHTML = `
         <a href="/profile">
