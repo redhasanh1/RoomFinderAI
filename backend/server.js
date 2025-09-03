@@ -1010,12 +1010,9 @@ app.post('/api/favorites', async (req, res) => {
             return res.status(404).json({ error: 'Listing not found' });
         }
 
-        // Create user_favorites table if it doesn't exist
-        await ensureUserFavoritesTable();
-
         // Insert favorite (ON CONFLICT DO NOTHING to handle duplicates)
         const { data, error } = await supabase
-            .from('user_favorites')
+            .from('favorites')
             .insert({
                 user_email: userEmail,
                 listing_id: listingId,
@@ -1063,7 +1060,7 @@ app.delete('/api/favorites/:listingId', async (req, res) => {
         }
 
         const { data, error } = await supabase
-            .from('user_favorites')
+            .from('favorites')
             .delete()
             .eq('listing_id', listingId)
             .eq('user_email', userEmail)
@@ -1117,26 +1114,34 @@ app.get('/api/favorites', async (req, res) => {
             return res.json(favorites);
         }
 
-        // Join favorites with listings to get full listing details
-        const { data, error } = await supabase
-            .from('user_favorites')
-            .select(`
-                *,
-                listings:listing_id (*)
-            `)
+        // Get favorites then manually join with listings
+        const { data: favoritesData, error: favError } = await supabase
+            .from('favorites')
+            .select('*')
             .eq('user_email', userEmail)
             .order('created_at', { ascending: false });
 
-        if (error) {
-            console.error('Error fetching favorites:', error);
+        if (favError) {
+            console.error('Error fetching favorites:', favError);
             return res.status(500).json({ error: 'Failed to fetch favorites' });
         }
 
-        // Transform the data to have listings at the top level
-        const favorites = data.map(favorite => ({
-            ...favorite.listings,
-            favorited_at: favorite.created_at
-        }));
+        // Get listing details for each favorite
+        const favorites = [];
+        for (const favorite of favoritesData) {
+            const { data: listing, error: listingError } = await supabase
+                .from('listings')
+                .select('*')
+                .eq('id', favorite.listing_id)
+                .single();
+                
+            if (!listingError && listing) {
+                favorites.push({
+                    ...listing,
+                    favorited_at: favorite.created_at
+                });
+            }
+        }
 
         res.json(favorites);
     } catch (error) {
@@ -1159,7 +1164,7 @@ app.post('/api/favorites/check', async (req, res) => {
         }
 
         const { data, error } = await supabase
-            .from('user_favorites')
+            .from('favorites')
             .select('listing_id')
             .eq('user_email', userEmail)
             .in('listing_id', listingIds);
@@ -1182,22 +1187,22 @@ app.post('/api/favorites/check', async (req, res) => {
     }
 });
 
-// Helper function to ensure user_favorites table exists
+// Helper function to ensure favorites table exists
 async function ensureUserFavoritesTable() {
     try {
         // Check if table exists by trying to query it
         const { data, error } = await supabase
-            .from('user_favorites')
+            .from('favorites')
             .select('count')
             .limit(1);
 
         if (error && error.code === '42P01') {
             // Table doesn't exist, create it
-            console.log('Creating user_favorites table...');
+            console.log('Creating favorites table...');
             
             const { error: createError } = await supabase.rpc('exec_sql', {
                 sql: `
-                    CREATE TABLE IF NOT EXISTS user_favorites (
+                    CREATE TABLE IF NOT EXISTS favorites (
                         id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
                         user_email VARCHAR(255) NOT NULL,
                         listing_id UUID NOT NULL,
@@ -1206,32 +1211,32 @@ async function ensureUserFavoritesTable() {
                     );
                     
                     -- Create indexes for better performance
-                    CREATE INDEX IF NOT EXISTS idx_user_favorites_user_email 
-                    ON user_favorites(user_email);
+                    CREATE INDEX IF NOT EXISTS idx_favorites_user_email 
+                    ON favorites(user_email);
                     
-                    CREATE INDEX IF NOT EXISTS idx_user_favorites_listing_id 
-                    ON user_favorites(listing_id);
+                    CREATE INDEX IF NOT EXISTS idx_favorites_listing_id 
+                    ON favorites(listing_id);
                     
                     -- Enable RLS
-                    ALTER TABLE user_favorites ENABLE ROW LEVEL SECURITY;
+                    ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
                     
                     -- Create policy to allow users to manage their own favorites
                     CREATE POLICY "Users can manage their own favorites" 
-                    ON user_favorites 
+                    ON favorites 
                     FOR ALL 
                     USING (true);
                 `
             });
 
             if (createError) {
-                console.error('Failed to create user_favorites table:', createError);
+                console.error('Failed to create favorites table:', createError);
                 throw createError;
             }
             
-            console.log('✅ user_favorites table created successfully');
+            console.log('✅ favorites table created successfully');
         }
     } catch (error) {
-        console.error('Error ensuring user_favorites table:', error);
+        console.error('Error ensuring favorites table:', error);
         // Don't throw error - let the operation continue and handle it at the API level
     }
 }
