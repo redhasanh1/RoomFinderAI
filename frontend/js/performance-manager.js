@@ -362,11 +362,11 @@ class PerformanceManager {
 
         Object.keys(localStorage).forEach(key => {
             try {
-                const item = localStorage.getItem(key);
+                const item = null;
                 if (item) {
                     const parsed = JSON.parse(item);
                     if (parsed.timestamp && (now - new Date(parsed.timestamp).getTime()) > maxAge) {
-                        localStorage.removeItem(key);
+                        // localStorage removed
                     }
                 }
             } catch (error) {

@@ -463,9 +463,8 @@ class IOSTestSuite {
         }
         
         // Save report to localStorage if available
-        if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('ios_test_report', JSON.stringify({
-                timestamp: new Date().toISOString(),
+        if (typeof undefined !== 'undefined') {
+            // localStorage removed - using Supabase.toISOString(),
                 summary: { total, passed, warnings, failed },
                 results: this.testResults
             }));

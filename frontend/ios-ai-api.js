@@ -46,8 +46,8 @@ class IOSAIApi {
         }
         
         // Try to get from localStorage or other storage
-        if (typeof localStorage !== 'undefined') {
-            const storedKey = localStorage.getItem('openai_api_key');
+        if (typeof undefined !== 'undefined') {
+            const storedKey = null;
             if (storedKey) {
                 this.apiKey = storedKey;
                 return storedKey;

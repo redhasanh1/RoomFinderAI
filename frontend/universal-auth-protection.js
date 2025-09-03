@@ -4,7 +4,7 @@
  * This script PREVENTS ALL UNWANTED LOGOUTS across the entire application.
  * It provides bulletproof protection against:
  * - Automatic redirects to login pages
- * - localStorage.removeItem('currentUser') calls
+ * - // localStorage removed calls
  * - Session data loss
  * - Authentication state corruption
  * 
@@ -31,9 +31,9 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
             set: function(url) {
                 if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
                     // Check if this is a legitimate logout request
-                    if (sessionStorage.getItem('legitimateLogout') === 'true') {
+                    if (// sessionStorage removed === 'true') {
                         console.log('✅ Allowing legitimate logout redirect');
-                        sessionStorage.removeItem('legitimateLogout');
+                        // sessionStorage removed
                         return window.ORIGINAL_LOCATION_HREF.set.call(this, url);
                     }
                     console.error('🚫 BLOCKED location.href redirect to login:', url);
@@ -53,9 +53,9 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
     window.location.assign = function(url) {
         if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
             // Check if this is a legitimate logout request
-            if (sessionStorage.getItem('legitimateLogout') === 'true') {
+            if (// sessionStorage removed === 'true') {
                 console.log('✅ Allowing legitimate logout redirect via assign');
-                sessionStorage.removeItem('legitimateLogout');
+                // sessionStorage removed
                 return window.ORIGINAL_LOCATION_ASSIGN.call(this, url);
             }
             console.error('🚫 BLOCKED location.assign to login:', url);
@@ -68,9 +68,9 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
     window.location.replace = function(url) {
         if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
             // Check if this is a legitimate logout request
-            if (sessionStorage.getItem('legitimateLogout') === 'true') {
+            if (// sessionStorage removed === 'true') {
                 console.log('✅ Allowing legitimate logout redirect via replace');
-                sessionStorage.removeItem('legitimateLogout');
+                // sessionStorage removed
                 return window.ORIGINAL_LOCATION_REPLACE.call(this, url);
             }
             console.error('🚫 BLOCKED location.replace to login:', url);
@@ -84,7 +84,7 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
     localStorage.removeItem = function(key) {
         if (key === 'currentUser' || key.startsWith('currentUser_')) {
             // Check if this is a legitimate logout request
-            if (sessionStorage.getItem('legitimateLogout') === 'true') {
+            if (// sessionStorage removed === 'true') {
                 console.log('✅ Allowing legitimate logout data removal');
                 return window.ORIGINAL_REMOVE_ITEM.call(this, key);
             }
@@ -96,7 +96,7 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
     };
 
     localStorage.clear = function() {
-        console.error('⚠️ BLOCKING localStorage.clear() - preserving user session');
+        console.error('⚠️ BLOCKING // localStorage removed - preserving user session');
         console.trace('Stack trace for blocked localStorage.clear:');
         // Don't clear - preserve user data
         return;
@@ -105,13 +105,13 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
     // 💾 AUTOMATIC USER DATA BACKUP SYSTEM
     let lastBackupLog = 0;
     window.createUserBackup = function() {
-        const currentUser = localStorage.getItem('currentUser');
+        const currentUser = null;
         if (currentUser) {
             // Create multiple backup locations
-            localStorage.setItem('currentUser_backup', currentUser);
-            localStorage.setItem('currentUser_backup_2', currentUser);
-            localStorage.setItem('currentUser_emergency', currentUser);
-            localStorage.setItem('currentUser_backup_timestamp', Date.now().toString());
+            // localStorage removed - using Supabase
+            // localStorage removed - using Supabase
+            // localStorage removed - using Supabase
+            // localStorage removed - using Supabase.toString());
             
             // Only log backup creation every 5 minutes to avoid spam
             const now = Date.now();
@@ -125,22 +125,22 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
     // 🔄 AUTOMATIC USER DATA RESTORATION
     window.restoreUserIfNeeded = function() {
         // Check if this is a legitimate logout - if so, don't restore
-        if (sessionStorage.getItem('legitimateLogout') === 'true') {
+        if (// sessionStorage removed === 'true') {
             console.log('✅ Legitimate logout detected, skipping restore');
             return false;
         }
         
-        const currentUser = localStorage.getItem('currentUser');
+        const currentUser = null;
         
         if (!currentUser) {
             // Try to restore from backups
-            const backup = localStorage.getItem('currentUser_backup') || 
-                          localStorage.getItem('currentUser_backup_2') || 
-                          localStorage.getItem('currentUser_emergency');
+            const backup = null || 
+                          null || 
+                          null;
             
             if (backup) {
                 console.log('🔄 Restoring user from backup - KEEPING USER LOGGED IN');
-                localStorage.setItem('currentUser', backup);
+                // localStorage removed - using Supabase
                 return true;
             }
         }

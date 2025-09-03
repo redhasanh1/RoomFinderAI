@@ -23,7 +23,7 @@ function setupChat(supabase) {
     });
 
     async function startConversation(listing) {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const currentUser = JSON.parse(null);
         if (!currentUser) {
             alert('Please log in to start a chat.');
             window.location.href = '/login';
@@ -89,7 +89,7 @@ function setupChat(supabase) {
         }
 
         chatMessagesContainer.innerHTML = '';
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const currentUser = JSON.parse(null);
 
         messages.forEach(message => {
             const messageElement = document.createElement('div');
@@ -109,7 +109,7 @@ function setupChat(supabase) {
         const messageContent = chatInput.value.trim();
         if (!messageContent || !currentConversationId) return;
 
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const currentUser = JSON.parse(null);
         const { error } = await supabase
             .from('messages')
             .insert({
@@ -227,7 +227,7 @@ function setupTypingIndicators() {
 function broadcastTyping(typing) {
     if (!window.currentChatChannel || !currentConversationId) return;
     
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const currentUser = JSON.parse(null);
     if (!currentUser) return;
     
     window.currentChatChannel.send({
@@ -243,7 +243,7 @@ function broadcastTyping(typing) {
 }
 
 function showTypingIndicator(userEmail, isTyping) {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const currentUser = JSON.parse(null);
     if (!currentUser || userEmail === currentUser.email) return;
     
     const chatContainer = document.getElementById('chatMessages');
@@ -280,7 +280,7 @@ function showTypingIndicator(userEmail, isTyping) {
 function setupPresenceTracking() {
     if (!window.currentChatChannel || !currentConversationId) return;
     
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const currentUser = JSON.parse(null);
     if (!currentUser) return;
     
     // Track presence
@@ -340,7 +340,7 @@ function appendMessageToUI(message) {
     const chatContainer = document.getElementById('chatMessages');
     if (!chatContainer) return;
     
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const currentUser = JSON.parse(null);
     const isCurrentUser = message.sender_email === currentUser.email;
     
     const messageElement = document.createElement('div');
@@ -377,7 +377,7 @@ function appendMessageToUI(message) {
 async function updateReadStatus() {
     if (!currentConversationId) return;
     
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const currentUser = JSON.parse(null);
     if (!currentUser) return;
     
     try {
@@ -590,7 +590,7 @@ function updatePendingMessage(messageId, status) {
 // Enhanced message persistence with local storage
 function saveMessageToLocal(message) {
     const key = `chat_message_${message.conversation_id}_${Date.now()}`;
-    localStorage.setItem(key, JSON.stringify(message));
+    // localStorage removed - using Supabase);
 }
 
 function loadLocalMessages(conversationId) {
@@ -599,7 +599,7 @@ function loadLocalMessages(conversationId) {
         const key = localStorage.key(i);
         if (key && key.startsWith(`chat_message_${conversationId}_`)) {
             try {
-                const message = JSON.parse(localStorage.getItem(key));
+                const message = JSON.parse(null);
                 messages.push(message);
             } catch (error) {
                 console.error('Error parsing local message:', error);
@@ -617,7 +617,7 @@ function clearLocalMessages(conversationId) {
             keysToRemove.push(key);
         }
     }
-    keysToRemove.forEach(key => localStorage.removeItem(key));
+    keysToRemove.forEach(key => // localStorage removed);
 }
 
 // Make functions available globally
