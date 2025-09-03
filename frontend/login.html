@@ -181,6 +181,18 @@
                 <span id="length-icon" class="mr-2 text-red-500">✗</span>
                 <span>At least 8 characters</span>
               </div>
+              <div id="req-uppercase" class="flex items-center text-sm">
+                <span id="uppercase-icon" class="mr-2 text-red-500">✗</span>
+                <span>One uppercase letter (A-Z)</span>
+              </div>
+              <div id="req-lowercase" class="flex items-center text-sm">
+                <span id="lowercase-icon" class="mr-2 text-red-500">✗</span>
+                <span>One lowercase letter (a-z)</span>
+              </div>
+              <div id="req-number" class="flex items-center text-sm">
+                <span id="number-icon" class="mr-2 text-red-500">✗</span>
+                <span>One number (0-9)</span>
+              </div>
             </div>
             <small id="password-help" class="sr-only">Enter your account password.</small>
           </div>
@@ -279,18 +291,52 @@
     const passwordInput = document.getElementById('password');
     let isLogin = true;
 
-    function validatePassword(p){ return p.length >= 8; }
-    function updatePasswordRequirements(isValid){
-      const icon = document.getElementById('length-icon');
-      if (!icon) return;
-      if (isValid){ icon.textContent='✓'; icon.className='mr-2 text-green-500'; }
-      else { icon.textContent='✗'; icon.className='mr-2 text-red-500'; }
+    function validatePassword(p){ 
+      const hasLength = p.length >= 8;
+      const hasUppercase = /[A-Z]/.test(p);
+      const hasLowercase = /[a-z]/.test(p);
+      const hasNumber = /[0-9]/.test(p);
+      return { hasLength, hasUppercase, hasLowercase, hasNumber, isValid: hasLength && hasUppercase && hasLowercase && hasNumber };
+    }
+    
+    function updatePasswordRequirements(password){
+      const validation = validatePassword(password);
+      
+      // Update length requirement
+      const lengthIcon = document.getElementById('length-icon');
+      if (lengthIcon) {
+        lengthIcon.textContent = validation.hasLength ? '✓' : '✗';
+        lengthIcon.className = validation.hasLength ? 'mr-2 text-green-500' : 'mr-2 text-red-500';
+      }
+      
+      // Update uppercase requirement
+      const uppercaseIcon = document.getElementById('uppercase-icon');
+      if (uppercaseIcon) {
+        uppercaseIcon.textContent = validation.hasUppercase ? '✓' : '✗';
+        uppercaseIcon.className = validation.hasUppercase ? 'mr-2 text-green-500' : 'mr-2 text-red-500';
+      }
+      
+      // Update lowercase requirement
+      const lowercaseIcon = document.getElementById('lowercase-icon');
+      if (lowercaseIcon) {
+        lowercaseIcon.textContent = validation.hasLowercase ? '✓' : '✗';
+        lowercaseIcon.className = validation.hasLowercase ? 'mr-2 text-green-500' : 'mr-2 text-red-500';
+      }
+      
+      // Update number requirement
+      const numberIcon = document.getElementById('number-icon');
+      if (numberIcon) {
+        numberIcon.textContent = validation.hasNumber ? '✓' : '✗';
+        numberIcon.className = validation.hasNumber ? 'mr-2 text-green-500' : 'mr-2 text-red-500';
+      }
+      
+      return validation.isValid;
     }
 
     if (passwordInput && passwordRequirements){
       passwordInput.addEventListener('focus', () => { if(!isLogin) passwordRequirements.style.display='block'; });
       passwordInput.addEventListener('blur', () => setTimeout(()=> passwordRequirements.style.display='none', 200));
-      passwordInput.addEventListener('input', e => { if(!isLogin) updatePasswordRequirements(validatePassword(e.target.value)); });
+      passwordInput.addEventListener('input', e => { if(!isLogin) updatePasswordRequirements(e.target.value); });
     }
 
     toggleForm.addEventListener('click', () => {
@@ -381,7 +427,17 @@
         const firstName = document.getElementById('firstName').value.trim();
         const lastName = document.getElementById('lastName').value.trim();
         if (!firstName || !lastName){ alert('Please fill in all fields.'); return; }
-        if (!validatePassword(password)){ alert('Password must be at least 8 characters long.'); return; }
+        
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.isValid){ 
+          const missing = [];
+          if (!passwordValidation.hasLength) missing.push('at least 8 characters');
+          if (!passwordValidation.hasUppercase) missing.push('one uppercase letter');
+          if (!passwordValidation.hasLowercase) missing.push('one lowercase letter');
+          if (!passwordValidation.hasNumber) missing.push('one number');
+          alert('Password must contain: ' + missing.join(', '));
+          return; 
+        }
 
         try{
           submitButton.disabled=true; submitButton.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
