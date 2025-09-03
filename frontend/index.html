@@ -11,6 +11,27 @@
     <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
     <script src="universal-auth-manager.js?v=2.0.1"></script>
     
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    
+    <!-- App Configuration -->
+    <script>
+        // Initialize AppConfig for auth.js
+        window.AppConfig = {
+            supabase: null // Will be initialized if needed
+        };
+        
+        // Initialize Supabase if available
+        if (typeof supabase !== 'undefined') {
+            const SUPABASE_URL = 'https://zmxyysauqtfkvntgtjsm.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpteHl5c2F1cXRma3ZudGd0anNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY5NTc3OTQsImV4cCI6MjA1MjUzMzc5NH0.F6M7G-fxnRDnKzWAWgO4y0Z7IuKIDaecvSUBz8aVeQM';
+            window.AppConfig.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+    </script>
+    
+    <!-- Auth Manager -->
+    <script src="/js/auth.js"></script>
+    
     <!-- Tailwind CSS CDN - FOR DEVELOPMENT ONLY. Replace with compiled CSS in production -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Removed typo.js spell checker - was causing deprecated sync XHR warnings -->
@@ -2489,12 +2510,19 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOMContentLoaded - Initializing auth...');
             
-            // Force immediate auth state check to handle logout redirects
-            console.log('Checking auth state immediately...');
-            const currentUser = localStorage.getItem('currentUser');
-            console.log('Current user in localStorage:', currentUser);
+            // Initialize AuthManager if available
+            if (typeof window.AuthManager !== 'undefined') {
+                console.log('AuthManager found, initializing...');
+                window.AuthManager.initialize();
+                
+                // Force update the profile UI after a short delay to ensure everything is loaded
+                setTimeout(() => {
+                    console.log('Force updating profile UI...');
+                    window.AuthManager.updateProfileUI();
+                }, 100);
+            }
             
-            // Initialize UniversalAuth which will handle the authSection automatically
+            // Also try UniversalAuth for backward compatibility
             if (typeof window.UniversalAuth !== 'undefined') {
                 console.log('UniversalAuth found, initializing...');
                 window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
@@ -2506,14 +2534,19 @@
                         window.UniversalAuth.refreshAuthState();
                     }
                 }, 100);
-            } else {
-                console.error('UniversalAuth not found! Falling back to manual auth update.');
-                // Fallback: manually update auth section
+            }
+            
+            // If neither AuthManager nor UniversalAuth are available, fallback to manual update
+            if (typeof window.AuthManager === 'undefined' && typeof window.UniversalAuth === 'undefined') {
+                console.error('Neither AuthManager nor UniversalAuth found! Falling back to manual auth update.');
                 updateAuthSectionManual();
             }
+            
+            // Also update mobile auth section
+            updateMobileAuthSection();
         });
         
-        // Manual auth section update function
+        // Manual auth section update function (fallback)
         function updateAuthSectionManual() {
             const authSection = document.getElementById('authSection');
             const currentUser = localStorage.getItem('currentUser');
@@ -2524,13 +2557,7 @@
                 if (currentUser && currentUser !== 'null' && currentUser !== 'undefined') {
                     try {
                         const userData = JSON.parse(currentUser);
-                        const profileImage = userData.profileImage || 'data:image/svg+xml;base64,' + btoa(`
-                            <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-                                <rect width="100" height="100" rx="50" fill="#E5E7EB"/>
-                                <path d="M50 45C56.075 45 61 40.075 61 34C61 27.925 56.075 23 50 23C43.925 23 39 27.925 39 34C39 40.075 43.925 45 50 45Z" fill="#9CA3AF"/>
-                                <path d="M30 77C30 77 30 66.103 30 62C30 55.373 36.268 50 44 50H56C63.732 50 70 55.373 70 62C70 66.103 70 77 70 77" fill="#9CA3AF"/>
-                            </svg>
-                        `.trim());
+                        const profileImage = userData.profileImage || 'https://ui-avatars.com/api/?name=User&background=667eea&color=ffffff&size=128&format=svg';
                         
                         authSection.innerHTML = `
                             <a href="profile.html" class="profile-link">
@@ -2607,35 +2634,41 @@
         });
 
         function logout() {
-            // Mark this as a legitimate logout to bypass protection
-            sessionStorage.setItem('legitimateLogout', 'true');
-            
-            // Clear all authentication data using original methods
-            if (window.ORIGINAL_REMOVE_ITEM) {
-                window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'currentUser');
-                window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'authToken');
-                window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'users');
-                // Also clear backup data
-                window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'currentUser_backup');
-                window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'currentUser_backup_2');
-                window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'currentUser_emergency');
+            // Use AuthManager logout if available
+            if (typeof window.AuthManager !== 'undefined' && typeof window.AuthManager.logout === 'function') {
+                window.AuthManager.logout();
             } else {
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('users');
-                // Also clear backup data
-                localStorage.removeItem('currentUser_backup');
-                localStorage.removeItem('currentUser_backup_2');
-                localStorage.removeItem('currentUser_emergency');
+                // Fallback to manual logout
+                // Mark this as a legitimate logout to bypass protection
+                sessionStorage.setItem('legitimateLogout', 'true');
+                
+                // Clear all authentication data using original methods
+                if (window.ORIGINAL_REMOVE_ITEM) {
+                    window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'currentUser');
+                    window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'authToken');
+                    window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'users');
+                    // Also clear backup data
+                    window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'currentUser_backup');
+                    window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'currentUser_backup_2');
+                    window.ORIGINAL_REMOVE_ITEM.call(localStorage, 'currentUser_emergency');
+                } else {
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('users');
+                    // Also clear backup data
+                    localStorage.removeItem('currentUser_backup');
+                    localStorage.removeItem('currentUser_backup_2');
+                    localStorage.removeItem('currentUser_emergency');
+                }
+                
+                // Clear the logout flag after a delay to allow normal backup functionality to resume
+                setTimeout(() => {
+                    sessionStorage.removeItem('legitimateLogout');
+                }, 10000); // 10 seconds should be enough for the page refresh
+                
+                // Refresh the page to show logged out state
+                window.location.reload();
             }
-            
-            // Clear the logout flag after a delay to allow normal backup functionality to resume
-            setTimeout(() => {
-                sessionStorage.removeItem('legitimateLogout');
-            }, 10000); // 10 seconds should be enough for the page refresh
-            
-            // Refresh the page to show logged out state
-            window.location.reload();
         }
 
     </script>
