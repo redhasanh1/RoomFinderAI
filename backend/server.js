@@ -251,8 +251,10 @@ try {
     if (config.SUPABASE_URL && config.SUPABASE_ANON_KEY && 
         !config.SUPABASE_URL.includes('your-project') && 
         !config.SUPABASE_ANON_KEY.includes('your-supabase')) {
-        // Use service role key if available for backend operations
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
+        // Use service role key for backend operations (hardcoded for Railway)
+        const serviceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzQ5ODk3NCwiZXhwIjoyMDYzMDc0OTc0fQ.fvQAO_ZBC1QM9hVCedQ5UEoXmqlXTub12jCF5vfRq78';
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || serviceRoleKey;
+        console.log('🔍 DEBUG: Using SERVICE_ROLE key for admin operations');
         supabase = createClient(config.SUPABASE_URL, supabaseKey);
         serviceStatus.supabase = true;
         console.log('✅ Supabase initialized successfully');
