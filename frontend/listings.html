@@ -8,11 +8,19 @@
     <script src="universal-auth-protection.js?v=3.0.1"></script>
     
     <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
-    <!-- Auth handled by supabase-auth-only.js -->
+    <script src="universal-auth-manager.js?v=2.0.1"></script>
+    
+    <!-- Auth Manager -->
+    <script src="/js/auth.js"></script>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/window.supabaseClient.min.js"></script>
+    
+    <!-- Initialize AppConfig for auth.js -->
+    <script>
+        window.AppConfig = window.AppConfig || { supabase: null };
+    </script>
     <script>
         // Use window scope to prevent re-declaration errors on page navigation
         window.SUPABASE_URL = window.SUPABASE_URL || null;
@@ -2162,59 +2170,66 @@
                 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzZCNzI4MCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4=',
                 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0ZGOUYxQyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4='
             ];
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            console.log('Current user:', currentUser);
-            const authSection = document.getElementById('authSection');
-
-            if (!currentUser) {
-                console.log('No current user, showing anonymous interface');
-                // Show login/register interface for anonymous users
-                authSection.innerHTML = `
-                    <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                        Login/Register
-                    </a>
-                `;
-                // Continue loading page without authentication
-                loadListings();
-                return;
-            }
-
-            // Set current user email for RLS (only if Supabase is ready)
-            if (window.supabaseReady && window.supabase) {
-                try {
-                    const { error } = await window.supabaseClient.rpc('set_current_user_email', { email: currentUser.email });
-                    console.log('RPC set_current_user_email response:', { error });
-                    if (error) {
-                        console.error('Error setting current user email:', error);
-                        // Don't alert for RPC errors - continue without RLS
-                    } else {
-                        console.log('Current user email set for RLS:', currentUser.email);
-                    }
-                } catch (err) {
-                    console.error('RPC call failed:', err);
-                    // Don't alert for RPC errors - continue without RLS
-                }
+            // Use AuthManager to update profile UI if available
+            if (window.AuthManager && typeof window.AuthManager.updateProfileUI === 'function') {
+                console.log('Using AuthManager to update profile UI');
+                window.AuthManager.updateProfileUI();
             } else {
-                console.log('Supabase not ready yet, skipping RLS setup');
-            }
+                // Fallback to manual update
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                console.log('Current user:', currentUser);
+                const authSection = document.getElementById('authSection');
 
-            if (!currentUser.profileImage) {
-                currentUser.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
-                let users = JSON.parse(localStorage.getItem('users')) || [];
-                users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                localStorage.setItem('users', JSON.stringify(users));
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            }
-            authSection.innerHTML = `
-                <div class="flex items-center space-x-2">
-                    <div class="relative">
-                        <span id="profileNotificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hidden z-10">0</span>
-                        <a href="/profile">
-                            <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
+                if (!currentUser) {
+                    console.log('No current user, showing anonymous interface');
+                    // Show login/register interface for anonymous users
+                    authSection.innerHTML = `
+                        <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                            Login/Register
                         </a>
+                    `;
+                    // Continue loading page without authentication
+                    loadListings();
+                    return;
+                }
+
+                // Set current user email for RLS (only if Supabase is ready)
+                if (window.supabaseReady && window.supabase) {
+                    try {
+                        const { error } = await window.supabaseClient.rpc('set_current_user_email', { email: currentUser.email });
+                        console.log('RPC set_current_user_email response:', { error });
+                        if (error) {
+                            console.error('Error setting current user email:', error);
+                            // Don't alert for RPC errors - continue without RLS
+                        } else {
+                            console.log('Current user email set for RLS:', currentUser.email);
+                        }
+                    } catch (err) {
+                        console.error('RPC call failed:', err);
+                        // Don't alert for RPC errors - continue without RLS
+                    }
+                } else {
+                    console.log('Supabase not ready yet, skipping RLS setup');
+                }
+
+                if (!currentUser.profileImage) {
+                    currentUser.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
+                    let users = JSON.parse(localStorage.getItem('users')) || [];
+                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                    localStorage.setItem('users', JSON.stringify(users));
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                }
+                authSection.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="relative">
+                            <span id="profileNotificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hidden z-10">0</span>
+                            <a href="/profile">
+                                <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
+                            </a>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
 
             // Initialize map
             initMap();
@@ -2848,7 +2863,7 @@
                 }
             }
 
-            listings.forEach(listing => {
+            listings.forEach(async listing => {
                 console.log('Processing listing:', listing.id, listing.title);
                 let media = listing.media || [];
                 if (!Array.isArray(media)) {
@@ -2904,7 +2919,7 @@
                     : 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
 
                 const hasOwner = !!listing.user_email;
-                const currentUser = window.UniversalAuth.getCurrentUser();
+                const currentUser = await getCurrentUserSafe();
                 const isOwner = currentUser && currentUser.email && listing.user_email === currentUser.email;
                 
                 listingCard.innerHTML = `
@@ -5321,6 +5336,12 @@
         
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {
+            // Initialize AuthManager if available
+            if (window.AuthManager && typeof window.AuthManager.initialize === 'function') {
+                console.log('Initializing AuthManager...');
+                window.AuthManager.initialize();
+            }
+            
             window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: true })
                 .then(result => {
                     if (result.authenticated) {
@@ -5363,9 +5384,36 @@
             }
         }
 
+        // Helper function to get current user from either AuthManager or UniversalAuth
+        async function getCurrentUserSafe() {
+            try {
+                // Use AuthManager if available
+                if (window.AuthManager && typeof window.AuthManager.getCurrentUser === 'function') {
+                    return window.AuthManager.getCurrentUser();
+                }
+                // Fallback to UniversalAuth
+                if (window.UniversalAuth && typeof window.UniversalAuth.getCurrentUser === 'function') {
+                    return await window.UniversalAuth.getCurrentUser();
+                }
+                // Last fallback to localStorage
+                const currentUser = localStorage.getItem('currentUser');
+                if (currentUser && currentUser !== 'null' && currentUser !== 'undefined') {
+                    try {
+                        return JSON.parse(currentUser);
+                    } catch (e) {
+                        console.error('Error parsing currentUser:', e);
+                    }
+                }
+                return null;
+            } catch (error) {
+                console.error('Error getting current user:', error);
+                return null;
+            }
+        }
+
         // Favorites functionality with localStorage fallback
         async function toggleFavorite(listingId, buttonElement) {
-            const currentUser = window.UniversalAuth.getCurrentUser();
+            const currentUser = await getCurrentUserSafe();
             
             console.log('🔍 toggleFavorite called:', { listingId, currentUser });
             
@@ -5509,7 +5557,7 @@
         }
 
         async function loadFavoriteStates() {
-            const currentUser = window.UniversalAuth.getCurrentUser();
+            const currentUser = await getCurrentUserSafe();
             
             if (!currentUser || !currentUser.email) {
                 console.log('No authenticated user, skipping favorite states');
@@ -5593,7 +5641,7 @@
             }
 
             try {
-                const currentUser = window.UniversalAuth.getCurrentUser();
+                const currentUser = await getCurrentUserSafe();
                 if (!currentUser || !currentUser.email) {
                     alert('Please log in to delete listings.');
                     return;
@@ -5722,7 +5770,7 @@
                 
                 // If not found in Supabase, check localStorage
                 if (!listing) {
-                    const currentUser = window.UniversalAuth.getCurrentUser();
+                    const currentUser = await getCurrentUserSafe();
                     const userListingsKey = `userListings_${currentUser.email}`;
                     const userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                     
@@ -5855,7 +5903,7 @@
                     };
 
                     try {
-                        const currentUser = window.UniversalAuth.getCurrentUser();
+                        const currentUser = await getCurrentUserSafe();
                         if (!currentUser || !currentUser.email) {
                             alert('Please log in to edit listings.');
                             return;
