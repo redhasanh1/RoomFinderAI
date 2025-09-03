@@ -7,7 +7,7 @@ const defaultProfileImage = 'data:image/svg+xml;base64,' + btoa(`
 `.trim());
 
 async function initializeAuth(supabase, allowAnonymous = false) {
-    let currentUser = JSON.parse(null);
+    let currentUser = JSON.parse(localStorage.getItem('currentUser'));
     const authSection = document.getElementById('authSection');
 
     if (!currentUser) {
