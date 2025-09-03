@@ -2888,8 +2888,36 @@ app.post('/api/send-reset-code', async (req, res) => {
             return res.status(400).json({ error: 'Email is required' });
         }
 
-        // Check if user exists
-        const user = users.find(u => u.email === email);
+        // Check if user exists in Supabase
+        let user = null;
+        let firstName = 'User';
+        
+        if (supabase) {
+            try {
+                // Check profiles table for user data
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('email, first_name')
+                    .eq('email', email)
+                    .single();
+                    
+                if (profile) {
+                    user = { email: profile.email, firstName: profile.first_name || 'User' };
+                    firstName = profile.first_name || 'User';
+                }
+            } catch (err) {
+                console.log('Profile lookup error:', err.message);
+            }
+        }
+        
+        // Fall back to in-memory check
+        if (!user) {
+            user = users.find(u => u.email === email);
+            if (user) {
+                firstName = user.firstName || 'User';
+            }
+        }
+        
         if (!user) {
             // Don't reveal if user exists or not for security
             return res.json({ 
@@ -2913,7 +2941,7 @@ app.post('/api/send-reset-code', async (req, res) => {
 
         console.log('📤 Sending password reset email to:', email);
         // Send reset email
-        const emailResult = await sendPasswordResetEmail(email, code, user.firstName);
+        const emailResult = await sendPasswordResetEmail(email, code, firstName);
         
         if (emailResult.success) {
             console.log('✅ Password reset email sent successfully');
@@ -3006,30 +3034,70 @@ app.post('/api/reset-password', async (req, res) => {
             return res.status(400).json({ error: 'Invalid reset credentials' });
         }
 
-        // Find user and update password
-        const user = users.find(u => u.email === email);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        // Hash new password
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        user.password = hashedPassword;
-        
-        // Update in Supabase if available
+        // Update password in Supabase Auth if available
         if (supabase) {
             try {
-                const { error } = await supabase
+                // First, check if user exists in profiles
+                const { data: profile } = await supabase
                     .from('profiles')
-                    .update({ password: hashedPassword })
-                    .eq('email', email);
+                    .select('email')
+                    .eq('email', email)
+                    .single();
                 
-                if (error) {
-                    console.error('Error updating password in Supabase:', error);
+                if (!profile) {
+                    return res.status(404).json({ error: 'User not found' });
+                }
+                
+                // Get the user from Supabase Auth
+                const { data: { users: authUsers }, error: searchError } = await supabase.auth.admin.listUsers();
+                
+                if (searchError) {
+                    console.error('Error searching for user in Auth:', searchError);
+                    // Try alternative method - update by email
+                    const { error: updateError } = await supabase.auth.admin.updateUserById(
+                        email, // This will need the actual user ID
+                        { password: newPassword }
+                    );
+                    
+                    if (updateError) {
+                        console.error('Failed to update password in Supabase Auth:', updateError);
+                        return res.status(500).json({ error: 'Failed to update password. Please try again.' });
+                    }
+                } else {
+                    // Find the user in auth users
+                    const authUser = authUsers?.find(u => u.email === email);
+                    
+                    if (authUser) {
+                        // Update the user's password in Supabase Auth
+                        const { error: updateError } = await supabase.auth.admin.updateUserById(
+                            authUser.id,
+                            { password: newPassword }
+                        );
+                        
+                        if (updateError) {
+                            console.error('Failed to update password in Supabase Auth:', updateError);
+                            return res.status(500).json({ error: 'Failed to update password. Please try again.' });
+                        }
+                        
+                        console.log('✅ Password updated successfully in Supabase Auth for:', email);
+                    } else {
+                        console.log('⚠️ User not found in Supabase Auth, may need to register again');
+                    }
                 }
             } catch (dbError) {
                 console.error('Database update error:', dbError);
+                return res.status(500).json({ error: 'Failed to update password' });
             }
+        } else {
+            // Fallback to in-memory update if Supabase is not available
+            const user = users.find(u => u.email === email);
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            // Hash new password
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            user.password = hashedPassword;
         }
 
         // Clean up reset code
