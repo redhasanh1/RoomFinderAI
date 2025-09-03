@@ -19,34 +19,72 @@ const DEFAULT_PROFILE_IMAGE = 'data:image/svg+xml;base64,' + btoa(`
 `.trim());
 
 /**
- * Check if user is authenticated
+ * Check if user is authenticated via Supabase
  */
-function isUserAuthenticated() {
-    const currentUser = localStorage.getItem('currentUser');
-    return currentUser && currentUser !== 'null' && currentUser !== 'undefined';
+async function isUserAuthenticated() {
+    try {
+        if (!window.supabase) return false;
+        const { data: { session } } = await window.supabase.auth.getSession();
+        return !!session?.user;
+    } catch (error) {
+        console.error('Auth check error:', error);
+        return false;
+    }
 }
 
 /**
- * Get current user data
+ * Get current user data from Supabase
  */
-function getCurrentUser() {
+async function getCurrentUser() {
     try {
-        const currentUser = localStorage.getItem('currentUser');
-        return currentUser ? JSON.parse(currentUser) : null;
+        if (!window.supabase) return null;
+        
+        const { data: { session } } = await window.supabase.auth.getSession();
+        if (!session?.user) return null;
+        
+        // Get profile data from profiles table
+        const { data: profile, error } = await window.supabase
+            .from('profiles')
+            .select('first_name, last_name, email, profile_image_url')
+            .eq('email', session.user.email)
+            .single();
+            
+        if (error) {
+            console.warn('Profile fetch error:', error);
+            return {
+                email: session.user.email,
+                firstName: 'User',
+                lastName: 'Name'
+            };
+        }
+        
+        return {
+            email: profile.email,
+            firstName: profile.first_name || 'User',
+            lastName: profile.last_name || 'Name',
+            profileImage: profile.profile_image_url
+        };
     } catch (error) {
-        console.error('Error parsing current user:', error);
+        console.error('Error getting current user:', error);
         return null;
     }
 }
 
 /**
- * Get stored profile image with fallback
+ * Get stored profile image from Supabase with fallback
  */
-function getStoredProfileImage(email) {
+async function getStoredProfileImage(email) {
     try {
-        // Check multiple storage locations for profile image
-        const profileImageKey = `profileImage_${email}`;
-        const storedImage = localStorage.getItem(profileImageKey);
+        if (!window.supabase || !email) return DEFAULT_PROFILE_IMAGE;
+        
+        // Get profile image from Supabase
+        const { data: profile, error } = await window.supabase
+            .from('profiles')
+            .select('profile_image_url')
+            .eq('email', email)
+            .single();
+            
+        const storedImage = profile?.profile_image_url;
         
         if (storedImage && storedImage !== 'null' && storedImage !== 'undefined') {
             return storedImage;
