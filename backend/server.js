@@ -1666,11 +1666,18 @@ app.post('/api/send-verification', async (req, res) => {
             return res.status(400).json({ error: passwordValidation.message });
         }
 
-        // Check if user already exists
-        const existingUser = users.find(u => u.email === email);
-        if (existingUser) {
-            console.log('❌ User already exists:', email);
-            return res.status(400).json({ error: 'Email already registered' });
+        // Check if user already exists in Supabase Auth
+        if (supabase) {
+            try {
+                const { data: authUsers } = await supabase.auth.admin.listUsers();
+                const existingAuthUser = authUsers?.users?.find(u => u.email === email);
+                if (existingAuthUser) {
+                    console.log('❌ User already exists in Supabase Auth:', email);
+                    return res.status(400).json({ error: 'Email already registered' });
+                }
+            } catch (authCheckError) {
+                console.log('⚠️ Could not check auth users, proceeding with registration');
+            }
         }
 
         // Check if Brevo API key is available
