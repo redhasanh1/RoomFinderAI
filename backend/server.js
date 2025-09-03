@@ -437,11 +437,22 @@ const passwordResetCodes = new Map(); // Store password reset codes with expirat
 
 // Password validation function
 function validatePassword(password) {
-    const isValid = password.length >= 8;
+    const hasLength = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const isValid = hasLength && hasUppercase && hasLowercase && hasNumber;
+    
+    const missing = [];
+    if (!hasLength) missing.push('at least 8 characters');
+    if (!hasUppercase) missing.push('one uppercase letter (A-Z)');
+    if (!hasLowercase) missing.push('one lowercase letter (a-z)');
+    if (!hasNumber) missing.push('one number (0-9)');
     
     return {
         isValid,
-        message: isValid ? 'Password meets requirements' : 'Password must be at least 8 characters long'
+        message: isValid ? 'Password meets requirements' : 
+                `Password must contain: ${missing.join(', ')}`
     };
 }
 
