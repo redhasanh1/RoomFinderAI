@@ -1757,11 +1757,11 @@ app.post('/api/verify-email', async (req, res) => {
 
         users.push(user);
 
-        // Create user in Supabase users table
+        // Create user in Supabase profiles table
         if (supabase) {
             try {
                 const { error: userError } = await supabase
-                    .from('users')
+                    .from('profiles')
                     .insert([{
                         id: user.id,
                         email: user.email,
@@ -1829,16 +1829,16 @@ app.post('/api/login', async (req, res) => {
                 } else if (data.user) {
                     // Get user profile from database
                     const { data: profile, error: profileError } = await supabase
-                        .from('users')
-                        .select('firstName, lastName, email, profileImage')
+                        .from('profiles')
+                        .select('first_name, last_name, email, profile_image_url')
                         .eq('email', email)
                         .single();
 
                     const userData = {
-                        firstName: profile?.firstName || 'User',
-                        lastName: profile?.lastName || 'Name', 
+                        firstName: profile?.first_name || 'User',
+                        lastName: profile?.last_name || 'Name', 
                         email: data.user.email,
-                        profileImage: profile?.profileImage
+                        profileImage: profile?.profile_image_url
                     };
 
                     return res.json({
@@ -2597,7 +2597,7 @@ app.post('/api/update-profile-image', async (req, res) => {
                     
                     // Update user with new URL
                     const { data: existingUser } = await supabase
-                        .from('users')
+                        .from('profiles')
                         .select('id')
                         .eq('email', email)
                         .single();
@@ -2605,7 +2605,7 @@ app.post('/api/update-profile-image', async (req, res) => {
                     if (existingUser) {
                         // Update existing user
                         const { data, error } = await supabase
-                            .from('users')
+                            .from('profiles')
                             .update({ 
                                 profile_image_url: publicUrl,
                                 profile_image: null, // Clear old base64 field
@@ -2627,7 +2627,7 @@ app.post('/api/update-profile-image', async (req, res) => {
                     } else {
                         // Create new user
                         const { data, error } = await supabase
-                            .from('users')
+                            .from('profiles')
                             .insert([{ 
                                 email: email,
                                 profile_image_url: publicUrl,
