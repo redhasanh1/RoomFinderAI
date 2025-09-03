@@ -251,7 +251,9 @@ try {
     if (config.SUPABASE_URL && config.SUPABASE_ANON_KEY && 
         !config.SUPABASE_URL.includes('your-project') && 
         !config.SUPABASE_ANON_KEY.includes('your-supabase')) {
-        supabase = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+        // Use service role key if available for backend operations
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
+        supabase = createClient(config.SUPABASE_URL, supabaseKey);
         serviceStatus.supabase = true;
         console.log('✅ Supabase initialized successfully');
     } else {
