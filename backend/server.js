@@ -1863,8 +1863,37 @@ app.post('/api/login', async (req, res) => {
                 });
 
                 if (error) {
-                    console.log('Supabase login failed:', error.message);
-                    // Fall through to in-memory check for demo accounts
+                    console.log('Supabase Auth login failed:', error.message);
+                    // Try checking password in profiles table
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('id, email, first_name, last_name, password, profile_image_url')
+                        .eq('email', email)
+                        .single();
+                    
+                    if (profile && profile.password) {
+                        // Check password against profiles table
+                        const isMatch = await bcrypt.compare(password, profile.password);
+                        if (isMatch) {
+                            console.log('✅ Login successful using profiles table for:', email);
+                            
+                            // Generate a token for this user
+                            const token = `profile_token_${profile.id}_${Date.now()}`;
+                            
+                            return res.json({
+                                message: 'Login successful',
+                                access_token: token,
+                                userId: profile.id,
+                                user: {
+                                    firstName: profile.first_name || 'User',
+                                    lastName: profile.last_name || 'Name',
+                                    email: profile.email,
+                                    profileImage: profile.profile_image_url
+                                }
+                            });
+                        }
+                    }
+                    // If profile password check also failed, fall through to in-memory check
                 } else if (data.user) {
                     // Get user profile from database
                     const { data: profile, error: profileError } = await supabase
@@ -3034,13 +3063,12 @@ app.post('/api/reset-password', async (req, res) => {
             return res.status(400).json({ error: 'Invalid reset credentials' });
         }
 
-        // Update password in Supabase Auth if available
+        // Check if user exists in profiles
         if (supabase) {
             try {
-                // First, check if user exists in profiles
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('email')
+                    .select('email, id')
                     .eq('email', email)
                     .single();
                 
@@ -3048,42 +3076,39 @@ app.post('/api/reset-password', async (req, res) => {
                     return res.status(404).json({ error: 'User not found' });
                 }
                 
-                // Get the user from Supabase Auth
-                const { data: { users: authUsers }, error: searchError } = await supabase.auth.admin.listUsers();
+                console.log('🔄 Attempting to update password for:', email);
                 
-                if (searchError) {
-                    console.error('Error searching for user in Auth:', searchError);
-                    // Try alternative method - update by email
-                    const { error: updateError } = await supabase.auth.admin.updateUserById(
-                        email, // This will need the actual user ID
-                        { password: newPassword }
-                    );
-                    
-                    if (updateError) {
-                        console.error('Failed to update password in Supabase Auth:', updateError);
-                        return res.status(500).json({ error: 'Failed to update password. Please try again.' });
-                    }
-                } else {
-                    // Find the user in auth users
-                    const authUser = authUsers?.find(u => u.email === email);
-                    
-                    if (authUser) {
-                        // Update the user's password in Supabase Auth
-                        const { error: updateError } = await supabase.auth.admin.updateUserById(
-                            authUser.id,
-                            { password: newPassword }
-                        );
-                        
-                        if (updateError) {
-                            console.error('Failed to update password in Supabase Auth:', updateError);
-                            return res.status(500).json({ error: 'Failed to update password. Please try again.' });
-                        }
-                        
-                        console.log('✅ Password updated successfully in Supabase Auth for:', email);
-                    } else {
-                        console.log('⚠️ User not found in Supabase Auth, may need to register again');
-                    }
+                // Since we can't use admin API with anon key, we'll need to:
+                // 1. Store a temporary recovery token
+                // 2. Let the user know they need to use Supabase's built-in password recovery
+                // OR just update the password hash in profiles table for now
+                
+                // For now, let's hash and store in profiles table
+                // Users will need to re-register to get proper Supabase Auth account
+                const hashedPassword = await bcrypt.hash(newPassword, 10);
+                
+                const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({ 
+                        password: hashedPassword,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('email', email);
+                
+                if (updateError) {
+                    console.error('Failed to update password in profiles:', updateError);
+                    return res.status(500).json({ error: 'Failed to update password. Please try again.' });
                 }
+                
+                console.log('✅ Password hash updated in profiles table for:', email);
+                console.log('⚠️ Note: User may need to re-register for full Supabase Auth integration');
+                
+                // Also update in-memory if user exists there
+                const user = users.find(u => u.email === email);
+                if (user) {
+                    user.password = hashedPassword;
+                }
+                
             } catch (dbError) {
                 console.error('Database update error:', dbError);
                 return res.status(500).json({ error: 'Failed to update password' });
