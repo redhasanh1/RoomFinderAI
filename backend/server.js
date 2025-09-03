@@ -1752,26 +1752,28 @@ app.post('/api/verify-email', async (req, res) => {
 
         users.push(user);
 
-        // Create profile in Supabase for chat functionality
+        // Create user in Supabase users table
         if (supabase) {
             try {
-                const { error: profileError } = await supabase
-                    .from('profiles')
+                const { error: userError } = await supabase
+                    .from('users')
                     .insert([{
                         id: user.id,
                         email: user.email,
                         first_name: user.firstName,
                         last_name: user.lastName,
-                        created_at: user.createdAt
+                        is_verified: true,
+                        created_at: user.createdAt,
+                        updated_at: user.createdAt
                     }]);
                 
-                if (profileError) {
-                    console.warn('Warning: Could not create profile in Supabase:', profileError);
+                if (userError) {
+                    console.warn('Warning: Could not create user in Supabase:', userError);
                 } else {
-                    console.log('✅ Profile created in Supabase for:', user.email);
+                    console.log('✅ User created in Supabase users table:', user.email);
                 }
-            } catch (profileErr) {
-                console.warn('Warning: Error creating profile in Supabase:', profileErr);
+            } catch (userErr) {
+                console.warn('Warning: Error creating user in Supabase:', userErr);
             }
         }
 
@@ -2588,20 +2590,21 @@ app.post('/api/update-profile-image', async (req, res) => {
                     
                     console.log('✅ Image uploaded to Supabase Storage:', publicUrl);
                     
-                    // Update profile with new URL
-                    const { data: existingProfile } = await supabase
-                        .from('profiles')
+                    // Update user with new URL
+                    const { data: existingUser } = await supabase
+                        .from('users')
                         .select('id')
                         .eq('email', email)
                         .single();
 
-                    if (existingProfile) {
-                        // Update existing profile
+                    if (existingUser) {
+                        // Update existing user
                         const { data, error } = await supabase
-                            .from('profiles')
+                            .from('users')
                             .update({ 
                                 profile_image_url: publicUrl,
                                 profile_image: null, // Clear old base64 field
+                                has_custom_profile_image: true,
                                 updated_at: new Date().toISOString()
                             })
                             .eq('email', email)
@@ -2609,7 +2612,7 @@ app.post('/api/update-profile-image', async (req, res) => {
                             .single();
 
                         if (!error && data) {
-                            console.log('✅ Profile updated with new image URL');
+                            console.log('✅ User updated with new image URL');
                             return res.json({ 
                                 success: true, 
                                 message: 'Profile image updated successfully',
@@ -2617,12 +2620,13 @@ app.post('/api/update-profile-image', async (req, res) => {
                             });
                         }
                     } else {
-                        // Create new profile
+                        // Create new user
                         const { data, error } = await supabase
-                            .from('profiles')
+                            .from('users')
                             .insert([{ 
                                 email: email,
                                 profile_image_url: publicUrl,
+                                has_custom_profile_image: true,
                                 created_at: new Date().toISOString(),
                                 updated_at: new Date().toISOString()
                             }])
@@ -2630,7 +2634,7 @@ app.post('/api/update-profile-image', async (req, res) => {
                             .single();
 
                         if (!error && data) {
-                            console.log('✅ New profile created with image URL');
+                            console.log('✅ New user created with image URL');
                             return res.json({ 
                                 success: true, 
                                 message: 'Profile image saved successfully',
