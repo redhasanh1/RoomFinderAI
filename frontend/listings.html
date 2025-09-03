@@ -84,12 +84,29 @@
                         }
                     });
                     window.supabaseReady = true;
-                    console.log('📡 Supabase client initialized with API key');
+                    // Also set AppConfig.supabase for AuthManager
+                    if (window.AppConfig) {
+                        window.AppConfig.supabase = window.supabaseClient;
+                        console.log('📡 Supabase client initialized and set in AppConfig');
+                    } else {
+                        console.log('📡 Supabase client initialized with API key');
+                    }
                 } else {
                     console.log('📡 Supabase client already initialized, skipping');
+                    // Ensure AppConfig.supabase is set
+                    if (window.AppConfig && window.supabaseClient) {
+                        window.AppConfig.supabase = window.supabaseClient;
+                    }
                 }
                 
                 window.isConfigLoaded = true;
+                
+                // Initialize AuthManager early if available
+                if (window.AuthManager && typeof window.AuthManager.initialize === 'function') {
+                    console.log('Early initialization of AuthManager...');
+                    window.AuthManager.initialize();
+                }
+                
                 // Only initialize if DOM is also ready
                 attemptInitialization();
             })
@@ -5336,10 +5353,10 @@
         
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {
-            // Initialize AuthManager if available
-            if (window.AuthManager && typeof window.AuthManager.initialize === 'function') {
-                console.log('Initializing AuthManager...');
-                window.AuthManager.initialize();
+            // AuthManager should already be initialized earlier
+            if (window.AuthManager && typeof window.AuthManager.updateProfileUI === 'function') {
+                console.log('Updating profile UI with AuthManager...');
+                window.AuthManager.updateProfileUI();
             }
             
             window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: true })
@@ -5387,23 +5404,31 @@
         // Helper function to get current user from either AuthManager or UniversalAuth
         async function getCurrentUserSafe() {
             try {
-                // Use AuthManager if available
+                // Use AuthManager if available (synchronous)
                 if (window.AuthManager && typeof window.AuthManager.getCurrentUser === 'function') {
-                    return window.AuthManager.getCurrentUser();
+                    const user = window.AuthManager.getCurrentUser();
+                    console.log('AuthManager.getCurrentUser returned:', user);
+                    return user;
                 }
-                // Fallback to UniversalAuth
+                // Fallback to UniversalAuth (async)
                 if (window.UniversalAuth && typeof window.UniversalAuth.getCurrentUser === 'function') {
-                    return await window.UniversalAuth.getCurrentUser();
+                    const user = await window.UniversalAuth.getCurrentUser();
+                    console.log('UniversalAuth.getCurrentUser returned:', user);
+                    return user;
                 }
                 // Last fallback to localStorage
-                const currentUser = localStorage.getItem('currentUser');
-                if (currentUser && currentUser !== 'null' && currentUser !== 'undefined') {
+                const currentUserStr = localStorage.getItem('currentUser');
+                console.log('localStorage currentUser:', currentUserStr);
+                if (currentUserStr && currentUserStr !== 'null' && currentUserStr !== 'undefined') {
                     try {
-                        return JSON.parse(currentUser);
+                        const user = JSON.parse(currentUserStr);
+                        console.log('Parsed user from localStorage:', user);
+                        return user;
                     } catch (e) {
                         console.error('Error parsing currentUser:', e);
                     }
                 }
+                console.log('No user found in any source');
                 return null;
             } catch (error) {
                 console.error('Error getting current user:', error);
