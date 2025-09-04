@@ -617,16 +617,69 @@ function validateListingInput(data) {
 }
 
 // API: Add a new listing
-app.post('/api/listings', (req, res) => {
+app.post('/api/listings', async (req, res) => {
     try {
         console.log('Received listing request:', req.body);
-        const { city, street, postalCode, title, price, houseType, bedrooms, utilities, description, media } = req.body;
+        const { city, street, postalCode, title, price, houseType, bedrooms, utilities, description, media, userEmail } = req.body;
         
         const errors = validateListingInput(req.body);
         if (errors.length > 0) {
             return res.status(400).json({ errors });
         }
 
+        // Get user email from request or session
+        let user_email = userEmail;
+        
+        // If using Supabase, create listing in database
+        if (supabase) {
+            try {
+                // Ensure user is authenticated
+                if (!user_email) {
+                    return res.status(401).json({ error: 'User authentication required' });
+                }
+                
+                const listingData = {
+                    id: uuidv4(),
+                    city,
+                    street,
+                    postal_code: postalCode,
+                    title,
+                    price: parseFloat(price),
+                    house_type: houseType,
+                    room_type: houseType, // For compatibility
+                    bedrooms: parseInt(bedrooms),
+                    utilities,
+                    description,
+                    media: media || [],
+                    user_email: user_email, // Store user email for messaging
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                
+                const { data, error } = await supabase
+                    .from('listings')
+                    .insert([listingData])
+                    .select()
+                    .single();
+                    
+                if (error) {
+                    console.error('Database error creating listing:', error);
+                    return res.status(500).json({ error: 'Failed to create listing in database' });
+                }
+                
+                console.log('✅ Listing created in database with ID:', data.id);
+                return res.status(201).json({ 
+                    message: 'Listing added successfully', 
+                    listing: data 
+                });
+                
+            } catch (dbError) {
+                console.error('Error creating listing in Supabase:', dbError);
+                // Fall back to in-memory storage
+            }
+        }
+
+        // Fallback to in-memory storage
         const listing = {
             id: uuidv4(),
             city,
@@ -639,6 +692,7 @@ app.post('/api/listings', (req, res) => {
             utilities,
             description,
             media: media || [],
+            user_email: user_email,
             createdAt: new Date().toISOString(),
         };
 
