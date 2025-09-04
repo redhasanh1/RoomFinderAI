@@ -2537,7 +2537,42 @@ app.get('/api/user-profile/:email', async (req, res) => {
             return res.status(400).json({ error: 'Email is required' });
         }
 
-        // Try to get from Supabase first
+        // Get profile picture from Supabase Storage directly
+        let profileImageUrl = null;
+        let hasCustomProfileImage = false;
+        
+        if (supabase) {
+            try {
+                // Check if user has a profile picture in storage
+                const { data: profileFiles, error: listError } = await supabase.storage
+                    .from('profile-images')
+                    .list(decodeURIComponent(email) + '/pictures', {
+                        limit: 10
+                    });
+                
+                if (!listError && profileFiles) {
+                    // Look for any profile picture file
+                    const profilePicture = profileFiles.find(file => file.name.startsWith('profile.'));
+                    
+                    if (profilePicture) {
+                        const fileName = `${decodeURIComponent(email)}/pictures/${profilePicture.name}`;
+                        const { data: { publicUrl } } = supabase.storage
+                            .from('profile-images')
+                            .getPublicUrl(fileName);
+                        
+                        profileImageUrl = publicUrl;
+                        hasCustomProfileImage = true;
+                        console.log(`✅ Found profile picture for ${email}: ${profilePicture.name}`);
+                    } else {
+                        console.log(`ℹ️ No profile picture found for ${email}`);
+                    }
+                }
+            } catch (storageError) {
+                console.warn('⚠️ Could not check storage for profile picture:', storageError.message);
+            }
+        }
+        
+        // Try to get profile data from database
         if (supabase) {
             try {
                 const { data, error } = await supabase
@@ -2564,8 +2599,8 @@ app.get('/api/user-profile/:email', async (req, res) => {
                                 email: data.email,
                                 firstName: memUser.firstName,
                                 lastName: memUser.lastName,
-                                profileImage: data.profile_image_url || null,
-                                hasCustomProfileImage: data.profile_image_url ? true : false,
+                                profileImage: profileImageUrl, // Use storage URL
+                                hasCustomProfileImage: hasCustomProfileImage,
                                 emailVerified: data.email_verified || false,
                                 createdAt: data.created_at,
                                 plan: data.plan || 'free'
@@ -2578,8 +2613,8 @@ app.get('/api/user-profile/:email', async (req, res) => {
                         email: data.email,
                         firstName: firstName,
                         lastName: lastName,
-                        profileImage: data.profile_image_url || null,
-                        hasCustomProfileImage: data.profile_image_url ? true : false,
+                        profileImage: profileImageUrl, // Use storage URL
+                        hasCustomProfileImage: hasCustomProfileImage,
                         emailVerified: data.email_verified || false,
                         createdAt: data.created_at,
                         plan: data.plan || 'free'
@@ -2599,10 +2634,23 @@ app.get('/api/user-profile/:email', async (req, res) => {
                 email: user.email,
                 firstName: user.firstName || '',
                 lastName: user.lastName || '',
-                profileImage: user.profileImage || null,
-                hasCustomProfileImage: user.hasCustomProfileImage || false,
+                profileImage: profileImageUrl || user.profileImage || null, // Prioritize storage URL
+                hasCustomProfileImage: hasCustomProfileImage || user.hasCustomProfileImage || false,
                 emailVerified: user.emailVerified || false,
                 plan: user.plan || 'free'
+            });
+        }
+        
+        // If no user data found anywhere, but we found a profile picture in storage
+        if (profileImageUrl) {
+            return res.json({
+                email: decodeURIComponent(email),
+                profileImage: profileImageUrl,
+                hasCustomProfileImage: hasCustomProfileImage,
+                firstName: '',
+                lastName: '',
+                emailVerified: false,
+                plan: 'free'
             });
         }
 
