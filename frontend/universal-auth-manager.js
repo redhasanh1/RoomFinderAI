@@ -194,23 +194,20 @@ async function updateAuthSection() {
             if (response.ok) {
                 const profileData = await response.json();
                 
-                // Update profile image if exists
-                if (profileData.profileImage) {
+                // Check if profile image exists in storage (backend checks storage directly)
+                if (profileData.profileImage && profileData.profileImage !== 'null') {
                     profileImage = profileData.profileImage;
                     currentUser.profileImage = profileData.profileImage;
-                    currentUser.hasCustomProfileImage = profileData.hasCustomProfileImage || false;
+                    currentUser.hasCustomProfileImage = true;
                     
-                    // Store profile image for persistence
-                    if (profileData.hasCustomProfileImage) {
-                        storeProfileImage(currentUser.email, profileData.profileImage);
-                    }
-                    
-                    console.log('✅ Updated profile image from backend in auth section');
-                } else if (profileData.hasCustomProfileImage === false) {
-                    // User hasn't uploaded a custom image yet, use default
+                    console.log('✅ Profile image loaded from Supabase Storage:', profileData.profileImage);
+                } else {
+                    // No profile image found in storage, use default
                     profileImage = DEFAULT_PROFILE_IMAGE;
                     currentUser.profileImage = DEFAULT_PROFILE_IMAGE;
                     currentUser.hasCustomProfileImage = false;
+                    
+                    console.log('ℹ️ No profile image found in storage, using default');
                 }
                 
                 // Update names from database (prioritize database over localStorage)
@@ -236,21 +233,8 @@ async function updateAuthSection() {
             profileImage = currentUser.profileImage;
         }
         
-        // Force update to new default profile icon if user has old placeholder images
-        const oldPlaceholderPatterns = [
-            'https://via.placeholder.com/',
-            'https://ui-avatars.com/api/',
-            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA',
-            'PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA'
-        ];
-        
-        const needsUpdate = !profileImage || 
-            (typeof profileImage === 'string' && oldPlaceholderPatterns.some(pattern => profileImage.includes(pattern)));
-        
-        // If user has uploaded a custom profile image, ALWAYS use it
-        if (currentUser.hasCustomProfileImage && currentUser.profileImage && currentUser.profileImage.startsWith('data:image/')) {
-            profileImage = currentUser.profileImage;
-        } else if (needsUpdate && !currentUser.hasCustomProfileImage) {
+        // Ensure we have a valid profile image (either from storage or default)
+        if (!profileImage || profileImage === 'null' || profileImage === 'undefined') {
             profileImage = DEFAULT_PROFILE_IMAGE;
         }
         
@@ -269,10 +253,7 @@ async function updateAuthSection() {
                 console.error('Error updating users array:', e);
             }
             
-            // Store profile image separately for persistence
-            if (profileImage !== DEFAULT_PROFILE_IMAGE && !needsUpdate) {
-                storeProfileImage(currentUser.email, profileImage);
-            }
+            // Profile images are now stored in Supabase Storage, no local persistence needed
         }
         
         // User is logged in - show profile
