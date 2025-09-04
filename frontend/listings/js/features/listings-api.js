@@ -172,35 +172,50 @@ async function fetchListings(filters = {}, options = {}) {
         // Order by created_at desc
         query = query.order('created_at', { ascending: false });
         
-        // Apply pagination for initial load only (not when fetching all for cache)
+        // Apply pagination
         const range_start = (page - 1) * limit;
         const range_end = range_start + limit - 1;
         
-        // Fetch all for caching, or paginated for display
-        if (useCache && !listingsCache) {
-            // Fetch all listings for cache (limited to 100 for performance)
-            query = query.range(0, 99);
-        } else {
-            // Fetch paginated
-            query = query.range(range_start, range_end);
-        }
+        // Always fetch paginated results for display
+        query = query.range(range_start, range_end);
         
         const { data, error, count } = await query;
         
         if (error) {
+            console.error('Database query error:', error);
             throw error;
         }
         
-        // Save to cache if we fetched all listings
-        if (useCache && !listingsCache && data.length > 0) {
-            saveToCache(data, filters);
+        // Log what we got from database
+        console.log(`📊 Database returned: ${data?.length || 0} listings (Total in DB: ${count || 0})`);
+        
+        // If no data returned, ensure we return empty array not null
+        const listings = data || [];
+        
+        // Only cache if we have data and caching is enabled
+        if (useCache && listings.length > 0 && !listingsCache) {
+            // Fetch more for cache in background (don't block display)
+            setTimeout(async () => {
+                try {
+                    const cacheQuery = supabase.from('listings')
+                        .select('id, title, description, city, country, room_type, price, bedrooms, bathrooms, wifi, parking, kitchen, laundry, furnished, pets_allowed, created_at, media, user_id, user_email')
+                        .order('created_at', { ascending: false })
+                        .range(0, 49); // Get first 50 for cache
+                    
+                    const { data: cacheData } = await cacheQuery;
+                    if (cacheData && cacheData.length > 0) {
+                        saveToCache(cacheData, filters);
+                        console.log('💾 Background cache updated with', cacheData.length, 'listings');
+                    }
+                } catch (cacheError) {
+                    console.error('Cache update error:', cacheError);
+                }
+            }, 100);
         }
         
-        console.log(`📊 Fetched ${data.length} listings (Total: ${count})`);
-        
         return {
-            data: data,
-            totalCount: count,
+            data: listings,
+            totalCount: count || listings.length,
             fromCache: false
         };
         
