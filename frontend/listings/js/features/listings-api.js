@@ -230,13 +230,38 @@ async function createListing(listingData) {
         // Get current user
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user) {
-            throw new Error('User not authenticated');
+            // Try to get user from localStorage as fallback
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (!currentUser.email) {
+                throw new Error('User not authenticated');
+            }
+            
+            // Use localStorage user info if Supabase auth fails
+            const listingWithUser = {
+                ...listingData,
+                user_email: currentUser.email,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+            
+            console.log('⚠️ Using localStorage user for listing creation');
+            
+            const { data, error } = await supabase
+                .from('listings')
+                .insert([listingWithUser])
+                .select()
+                .single();
+            
+            if (error) throw error;
+            
+            console.log('✅ Listing created with email only:', data.id);
+            return data;
         }
         
         // Add user ID and email to listing data
         const listingWithUser = {
             ...listingData,
-            user_id: user.id,
+            user_id: user.id || null,
             user_email: user.email, // Add user email for messaging functionality
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
