@@ -15,7 +15,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/window.supabaseClient.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     
     <!-- Initialize AppConfig for auth.js -->
     <script>
@@ -66,8 +66,8 @@
                     });
                     window.supabaseReady = false;
                 } else if (!window.supabaseClient || !window.supabaseReady) {
-                    // Only create client if not already created (use supabaseClient to avoid conflict)
-                    window.supabaseClient = window.supabaseClient.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+                    // Only create client if not already created (use global supabase from CDN)
+                    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
                         auth: {
                             persistSession: true,
                             autoRefreshToken: true,
