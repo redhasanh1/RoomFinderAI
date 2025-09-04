@@ -824,6 +824,49 @@ async function checkFavoritesStatus(listingIds) {
 }
 
 /**
+ * Contact listing owner - wrapper for chat system
+ */
+window.contactListingOwner = async function(listingId, listingTitle) {
+    try {
+        // Get full listing details to ensure we have user_id and user_email
+        if (window.ListingsAPI && window.ListingsAPI.getListingById) {
+            const listing = await window.ListingsAPI.getListingById(listingId);
+            
+            if (!listing.user_id && !listing.user_email) {
+                console.error('❌ Listing has no owner information');
+                showErrorMessage('Unable to contact owner - owner information not available');
+                return;
+            }
+            
+            // Open chat modal with listing owner
+            if (window.openChatModal) {
+                const success = await window.openChatModal(listingId, listingTitle, listing.user_id);
+                
+                if (success) {
+                    console.log('✅ Chat opened with listing owner');
+                } else {
+                    console.warn('⚠️ Could not open chat with listing owner');
+                }
+            } else {
+                console.error('❌ Chat system not available');
+                showErrorMessage('Chat system is not available. Please refresh the page.');
+            }
+        } else {
+            // Fallback to basic openChatModal without user_id
+            if (window.openChatModal) {
+                await window.openChatModal(listingId, listingTitle);
+            } else {
+                console.error('❌ Chat system not available');
+                showErrorMessage('Chat system is not available. Please refresh the page.');
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error contacting listing owner:', error);
+        showErrorMessage('Failed to open chat. Please try again.');
+    }
+};
+
+/**
  * Setup lazy loading for images
  */
 function setupImageLazyLoading() {

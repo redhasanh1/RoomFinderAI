@@ -120,9 +120,9 @@ async function fetchListings(filters = {}, options = {}) {
     }
     
     try {
-        // Build query with only essential fields for list view
+        // Build query with essential fields including user_email for messaging
         let query = supabase.from('listings')
-            .select('id, title, description, city, country, room_type, price, bedrooms, bathrooms, wifi, parking, kitchen, laundry, furnished, pets_allowed, created_at, media', { count: 'exact' });
+            .select('id, title, description, city, country, room_type, price, bedrooms, bathrooms, wifi, parking, kitchen, laundry, furnished, pets_allowed, created_at, media, user_id, user_email', { count: 'exact' });
         
         // Apply filters
         if (filters.city) {
@@ -233,10 +233,11 @@ async function createListing(listingData) {
             throw new Error('User not authenticated');
         }
         
-        // Add user ID to listing data
+        // Add user ID and email to listing data
         const listingWithUser = {
             ...listingData,
             user_id: user.id,
+            user_email: user.email, // Add user email for messaging functionality
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
