@@ -49,7 +49,8 @@ class MobileAppConfig {
                     this.user.isLoggedIn = true;
                     this.user.name = user.user_metadata?.full_name || user.email;
                     this.user.email = user.email;
-                    this.user.avatar = user.user_metadata?.avatar_url ? '🔵' : '👤';
+                    this.user.avatar = '👤'; // Use default, let MobileAppProfile handle the actual avatar
+                    console.log('🔍 MobileAppConfig: Set user avatar to default for', user.email);
                 }
             }
         } catch (error) {
