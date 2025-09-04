@@ -431,17 +431,15 @@ window.editAvatar = () => {
         reader.onload = async (e) => {
             const imageData = e.target.result;
             
-            // Update the UI immediately
-            if (window.MobileAppProfile && window.MobileAppProfile.user) {
-                window.MobileAppProfile.user.avatar = imageData;
-                
-                // Re-render the profile dashboard
-                window.MobileAppProfile.renderProfileDashboard();
-                
-                // Save to backend
-                if (window.MobileAppProfile.user.email) {
-                    try {
-                        const response = await fetch('/api/update-profile-image', {
+            // Save to backend
+            if (window.MobileAppProfile && window.MobileAppProfile.user && window.MobileAppProfile.user.email) {
+                try {
+                    // Show loading toast
+                    if (window.MobileAppConfig) {
+                        window.MobileAppConfig.showToast('Uploading profile picture...', 'info');
+                    }
+                    
+                    const response = await fetch('/api/update-profile-image', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -453,11 +451,15 @@ window.editAvatar = () => {
                         });
                         
                         if (response.ok) {
-                            // Update localStorage
-                            const currentUser = JSON.parse(null) || {};
-                            currentUser.profileImage = imageData;
-                            currentUser.hasCustomProfileImage = true;
-                            // localStorage removed - using Supabase);
+                            const result = await response.json();
+                            
+                            // Update the user's avatar with the Supabase URL
+                            if (result.profileImage) {
+                                window.MobileAppProfile.user.avatar = result.profileImage;
+                                
+                                // Re-render the profile dashboard to show the new image
+                                window.MobileAppProfile.renderProfileDashboard();
+                            }
                             
                             if (window.MobileAppConfig) {
                                 window.MobileAppConfig.showToast('Profile picture updated successfully!', 'success');
