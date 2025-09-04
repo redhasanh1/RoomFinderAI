@@ -31,8 +31,7 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
         const descriptor = Object.getOwnPropertyDescriptor(window.location, 'href');
         if (descriptor && descriptor.set === window.ORIGINAL_LOCATION_HREF?.set) {
             console.log('✅ Auth protection already initialized, skipping...');
-            return;
-        }
+        } else {
         
         Object.defineProperty(window.location, 'href', {
             set: function(url) {
@@ -211,6 +210,10 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
     }
 
     console.log('✅ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM ACTIVE');
+        }
+    } catch (error) {
+        console.error('🚫 Error initializing auth protection:', error);
+    }
 } else {
     console.log('🛡️ Authentication protection already active, skipping re-initialization');
 }
