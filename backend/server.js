@@ -2564,8 +2564,8 @@ app.get('/api/user-profile/:email', async (req, res) => {
                                 email: data.email,
                                 firstName: memUser.firstName,
                                 lastName: memUser.lastName,
-                                profileImage: data.profile_image_url || data.profile_image || null,
-                                hasCustomProfileImage: data.profile_image_url ? true : (data.has_custom_profile_image || false),
+                                profileImage: data.profile_image_url || null,
+                                hasCustomProfileImage: data.profile_image_url ? true : false,
                                 emailVerified: data.email_verified || false,
                                 createdAt: data.created_at,
                                 plan: data.plan || 'free'
@@ -2578,8 +2578,8 @@ app.get('/api/user-profile/:email', async (req, res) => {
                         email: data.email,
                         firstName: firstName,
                         lastName: lastName,
-                        profileImage: data.profile_image_url || data.profile_image || null,
-                        hasCustomProfileImage: data.profile_image_url ? true : (data.has_custom_profile_image || false),
+                        profileImage: data.profile_image_url || null,
+                        hasCustomProfileImage: data.profile_image_url ? true : false,
                         emailVerified: data.email_verified || false,
                         createdAt: data.created_at,
                         plan: data.plan || 'free'
@@ -2684,8 +2684,6 @@ app.post('/api/update-profile-image', async (req, res) => {
                             .from('profiles')
                             .update({ 
                                 profile_image_url: publicUrl,
-                                profile_image: null, // Clear old base64 field
-                                has_custom_profile_image: true,
                                 updated_at: new Date().toISOString()
                             })
                             .eq('email', email)
@@ -2705,7 +2703,6 @@ app.post('/api/update-profile-image', async (req, res) => {
                             .insert([{ 
                                 email: email,
                                 profile_image_url: publicUrl,
-                                has_custom_profile_image: true,
                                 created_at: new Date().toISOString(),
                                 updated_at: new Date().toISOString()
                             }])
@@ -2747,7 +2744,6 @@ app.post('/api/update-profile-image', async (req, res) => {
                         .from('profiles')
                         .update({ 
                             profile_image_url: profileImage,
-                            profile_image: null,
                             updated_at: new Date().toISOString()
                         })
                         .eq('email', email);
