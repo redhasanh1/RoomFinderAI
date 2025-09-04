@@ -2662,28 +2662,37 @@ app.post('/api/update-profile-image', async (req, res) => {
                     if (existingFile && existingFile.length > 0) {
                         console.log(`📸 Found existing files:`, existingFile.map(f => f.name));
                         // Delete existing profile pictures
+                        const filesToDelete = [];
                         for (const file of existingFile) {
                             if (file.name.startsWith('profile.')) {
-                                const fileToDelete = `${email}/pictures/${file.name}`;
-                                console.log(`🗑️ Deleting old profile picture: ${fileToDelete}`);
-                                const { error: deleteError } = await supabase.storage
-                                    .from('profile-images')
-                                    .remove([fileToDelete]);
-                                if (deleteError) {
-                                    console.warn(`⚠️ Could not delete old file: ${deleteError.message}`);
-                                }
+                                filesToDelete.push(`${email}/pictures/${file.name}`);
+                            }
+                        }
+                        
+                        if (filesToDelete.length > 0) {
+                            console.log(`🗑️ Deleting old profile pictures:`, filesToDelete);
+                            const { data: deleteData, error: deleteError } = await supabase.storage
+                                .from('profile-images')
+                                .remove(filesToDelete);
+                            
+                            if (deleteError) {
+                                console.warn(`⚠️ Could not delete old files: ${deleteError.message}`);
+                            } else {
+                                console.log(`✅ Deleted ${filesToDelete.length} old profile picture(s)`);
+                                // Add a small delay to ensure deletion is processed
+                                await new Promise(resolve => setTimeout(resolve, 500));
                             }
                         }
                     }
                     
-                    // Upload new profile picture
+                    // Upload new profile picture - use upsert as fallback
                     console.log(`📸 Uploading new profile picture: ${fileName}`);
                     const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('profile-images')
                         .upload(fileName, buffer, {
                             contentType: mimeType,
                             cacheControl: '0', // No cache to ensure fresh image
-                            upsert: false // Don't use upsert since we manually deleted
+                            upsert: true // Use upsert in case file still exists
                         });
                     
                     if (uploadError) {
