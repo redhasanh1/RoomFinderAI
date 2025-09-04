@@ -1841,7 +1841,7 @@
                 // Try Supabase first
                 if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient) {
                     try {
-                        const { data, error } = await supabase
+                        const { data, error } = await window.supabaseClient
                             .from('listings')
                             .select('*')
                             .eq('id', listingId)
@@ -2211,7 +2211,7 @@
                 }
 
                 // Set current user email for RLS (only if Supabase is ready)
-                if (window.supabaseReady && window.supabase) {
+                if (window.supabaseReady && window.supabaseClient) {
                     try {
                         const { error } = await window.supabaseClient.rpc('set_current_user_email', { email: currentUser.email });
                         console.log('RPC set_current_user_email response:', { error });
@@ -2703,22 +2703,33 @@
             console.log('Fetching listings from all sources');
             let allListings = [];
             
+            // Initialize Supabase client if not already done
+            const supabase = window.supabaseClient;
+            
             // Try to fetch from Supabase first
-            if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient && window.SUPABASE_ANON_KEY) {
+            if (window.supabaseClient && window.SUPABASE_ANON_KEY) {
                 try {
                     console.log('Making Supabase request with API key:', !!window.SUPABASE_ANON_KEY);
-                    const { data, error } = await supabase
+                    const { data, error } = await window.supabaseClient
                         .from('listings')
                         .select('*')
                         .order('created_at', { ascending: false });
-                    console.log('Supabase fetch result:', { data, error });
+                    console.log('Supabase fetch result:', { dataLength: data?.length, error });
                     if (!error && data) {
                         allListings = data || [];
                         console.log('✅ Loaded', allListings.length, 'listings from Supabase');
+                    } else if (error) {
+                        console.error('❌ Supabase error:', error.message);
                     }
                 } catch (supabaseError) {
                     console.log('Supabase fetch failed:', supabaseError);
                 }
+            } else {
+                console.error('❌ Supabase client not initialized!', {
+                    supabaseClient: !!window.supabaseClient,
+                    supabase: !!window.supabaseClient,
+                    ANON_KEY: !!window.SUPABASE_ANON_KEY
+                });
             }
             
             // Also include localStorage listings from all users
@@ -3208,7 +3219,7 @@
                 // Try Supabase first
                 try {
                     if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient) {
-                        const { data, error } = await supabase
+                        const { data, error } = await window.supabaseClient
                             .from('listings')
                             .insert([listing])
                             .select();
@@ -3314,7 +3325,7 @@
             });
 
             // Check Supabase connection
-            if (!supabase) {
+            if (!window.supabaseClient) {
                 issues.push('Supabase client not initialized');
             } else {
                 chatSystemStatus.supabaseConnected = true;
@@ -3602,7 +3613,7 @@
                 smartScrollToBottom();
                 
                 // Send to database
-                const { error } = await supabase
+                const { error } = await window.supabaseClient
                     .from('messages')
                     .insert({
                         conversation_id: currentConversationId,
@@ -3665,7 +3676,7 @@
                         .getPublicUrl(filePath);
 
                     // Save message to database
-                    const { error: dbError } = await supabase
+                    const { error: dbError } = await window.supabaseClient
                         .from('messages')
                         .insert({
                             conversation_id: currentConversationId,
@@ -3876,7 +3887,7 @@
             console.log('Health Check Result:', healthCheck);
             
             // Test Supabase connection
-            if (supabase) {
+            if (window.supabaseClient) {
                 // Test basic connection
                 window.supabaseClient.from('conversations').select('count').limit(1)
                     .then(result => {
@@ -3954,10 +3965,10 @@
         }
 
         async function pingSupabase() {
-            if (!supabase) return;
+            if (!window.supabaseClient) return;
 
             try {
-                const { data, error } = await supabase
+                const { data, error } = await window.supabaseClient
                     .from('conversations')
                     .select('count')
                     .limit(1);
@@ -4099,7 +4110,7 @@
             console.log('👤 Authentication check:', { 
                 hasUser: !!currentUser, 
                 userEmail: currentUser?.email,
-                hasSupabase: !!supabase 
+                hasSupabase: !!window.supabaseClient 
             });
             
             if (!currentUser) {
@@ -4110,7 +4121,7 @@
             }
 
             // Verify Supabase connection
-            if (!supabase) {
+            if (!window.supabaseClient) {
                 console.error('❌ Supabase client not initialized');
                 alert('Connection error. Please refresh the page and try again.');
                 return;
@@ -4133,7 +4144,7 @@
             let currentUserProfile, listingOwnerProfile, currentUserError, listingOwnerError;
             
             try {
-                const currentUserResult = await supabase
+                const currentUserResult = await window.supabaseClient
                     .from('profiles')
                     .select('email')
                     .eq('email', currentUser.email)
@@ -4146,7 +4157,7 @@
                     error: currentUserError?.message 
                 });
                 
-                const ownerResult = await supabase
+                const ownerResult = await window.supabaseClient
                     .from('profiles')
                     .select('email')
                     .eq('email', listing.user_email)
@@ -4168,7 +4179,7 @@
             // Auto-create profile for current user if missing
             if (currentUserError || !currentUserProfile) {
                 console.log('Creating missing profile for current user...');
-                const { error: createCurrentUserError } = await supabase
+                const { error: createCurrentUserError } = await window.supabaseClient
                     .from('profiles')
                     .insert([{
                         email: currentUser.email,
@@ -4189,7 +4200,7 @@
             if (listingOwnerError || !listingOwnerProfile) {
                 console.log('Creating missing profile for listing owner...');
                 // Try to get the listing owner's info from local storage or use defaults
-                const { error: createOwnerError } = await supabase
+                const { error: createOwnerError } = await window.supabaseClient
                     .from('profiles')
                     .insert([{
                         email: listing.user_email,
@@ -4223,7 +4234,7 @@
             let conversations, error;
             
             try {
-                const result = await supabase
+                const result = await window.supabaseClient
                     .from('conversations')
                     .select('*')
                     .eq('listing_id', listing.id)
@@ -4255,7 +4266,7 @@
                 conversation = conversations[0];
                 console.log('Existing conversation found:', conversation.id);
             } else {
-                const { data, error: insertError } = await supabase
+                const { data, error: insertError } = await window.supabaseClient
                     .from('conversations')
                     .insert({
                         listing_id: listing.id,
@@ -4331,7 +4342,7 @@
             console.log('- Chat Close Button:', !!document.querySelector('.chat-close-button'));  
             console.log('- Chat Input:', !!document.getElementById('chatInput'));
             console.log('- Chat Send Button:', !!document.getElementById('chatSendBtn'));
-            console.log('- Supabase Client:', !!supabase);
+            console.log('- Supabase Client:', !!window.supabaseClient);
             console.log('- Current User:', !!localStorage.getItem('currentUser'));
             console.log('- Chat System Status:', chatSystemStatus);
             console.log('- Active Chat Buttons:', document.querySelectorAll('.chat-btn:not([disabled])').length);
@@ -4340,11 +4351,11 @@
 
         async function loadMessages(conversationId) {
             console.log('🔄 Loading messages for conversation:', conversationId);
-            console.log('📊 Supabase client status:', !!supabase);
+            console.log('📊 Supabase client status:', !!window.supabaseClient);
             console.log('👤 Current user status:', !!localStorage.getItem('currentUser'));
             
             try {
-                const { data: messages, error } = await supabase
+                const { data: messages, error } = await window.supabaseClient
                     .from('messages')
                     .select('*')
                     .eq('conversation_id', conversationId)
@@ -4482,7 +4493,7 @@
                 if (!currentUser) return;
 
                 // First verify current user is registered in profiles
-                const { data: currentProfile, error: profileError } = await supabase
+                const { data: currentProfile, error: profileError } = await window.supabaseClient
                     .from('profiles')
                     .select('email')
                     .eq('email', currentUser.email)
@@ -4495,7 +4506,7 @@
                     return;
                 }
 
-                const { data: conversations, error } = await supabase
+                const { data: conversations, error } = await window.supabaseClient
                     .from('conversations')
                     .select(`
                         *,
@@ -4513,7 +4524,7 @@
                 const conversationsWithUnread = [];
                 for (const conv of conversations || []) {
                     // Get last read time for this user
-                    const { data: readData } = await supabase
+                    const { data: readData } = await window.supabaseClient
                         .from('conversation_reads')
                         .select('last_read_at')
                         .eq('conversation_id', conv.id)
@@ -4523,7 +4534,7 @@
                     const lastReadAt = readData?.last_read_at || '1970-01-01T00:00:00Z';
 
                     // Count unread messages
-                    const { count: unreadCount } = await supabase
+                    const { count: unreadCount } = await window.supabaseClient
                         .from('messages')
                         .select('*', { count: 'exact', head: true })
                         .eq('conversation_id', conv.id)
@@ -4538,13 +4549,13 @@
                 const filteredConversations = [];
                 for (const conv of conversationsWithUnread) {
                     // Check if both sender and receiver are in profiles database
-                    const { data: senderProfile } = await supabase
+                    const { data: senderProfile } = await window.supabaseClient
                         .from('profiles')
                         .select('email')
                         .eq('email', conv.sender_email)
                         .single();
                     
-                    const { data: receiverProfile } = await supabase
+                    const { data: receiverProfile } = await window.supabaseClient
                         .from('profiles')
                         .select('email')
                         .eq('email', conv.receiver_email)
@@ -5338,7 +5349,7 @@
         
         // Real-time subscription to listings
         if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient) {
-            supabase
+            window.supabaseClient
                 .channel('public:listings')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'listings' }, (payload) => {
                     console.log('New listing added:', payload.new);
@@ -5678,7 +5689,7 @@
                 // Try Supabase delete first
                 if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient && !listingId.startsWith('local_')) {
                     try {
-                        const { data: existingListing, error: fetchError } = await supabase
+                        const { data: existingListing, error: fetchError } = await window.supabaseClient
                             .from('listings')
                             .select('user_email')
                             .eq('id', listingId)
@@ -5690,7 +5701,7 @@
                                 return;
                             }
                             
-                            const { error } = await supabase
+                            const { error } = await window.supabaseClient
                                 .from('listings')
                                 .delete()
                                 .eq('id', listingId)
@@ -5778,7 +5789,7 @@
                 // Try to fetch from Supabase first
                 if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient) {
                     try {
-                        const { data, error } = await supabase
+                        const { data, error } = await window.supabaseClient
                             .from('listings')
                             .select('*')
                             .eq('id', listingId)
@@ -5939,7 +5950,7 @@
                         // Try Supabase update first
                         if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient && !listingId.startsWith('local_')) {
                             try {
-                                const { data: existingListing, error: fetchError } = await supabase
+                                const { data: existingListing, error: fetchError } = await window.supabaseClient
                                     .from('listings')
                                     .select('*')
                                     .eq('id', listingId)
@@ -5951,7 +5962,7 @@
                                         return;
                                     }
                                     
-                                    const { data, error } = await supabase
+                                    const { data, error } = await window.supabaseClient
                                         .from('listings')
                                         .update(updatedListing)
                                         .eq('id', listingId)
@@ -6122,7 +6133,7 @@
         });
         
         // Add notification triggers for new listings
-        if (supabase) {
+        if (window.supabaseClient) {
             supabase
                 .channel('notification_listings')
                 .on('postgres_changes', { 
@@ -6487,7 +6498,7 @@
             if (event.persisted) {
                 console.log('📱 Page restored from cache - reinitializing');
                 // Page was restored from cache, ensure everything is working
-                if (window.supabase && window.supabaseReady) {
+                if (window.supabaseClient && window.supabaseReady) {
                     console.log('✅ Supabase still ready after page cache restore');
                 }
             }
