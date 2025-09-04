@@ -6,8 +6,10 @@
     <title>RoomFinderAI - Profile</title>
     
     <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
-    <script src="/supabase-auth-only.js"></script><!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
-    <!-- Auth handled by supabase-auth-only.js -->
+    <script src="universal-auth-protection.js"></script>
+    
+    <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
+    <script src="universal-auth-manager.js"></script>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -859,6 +861,12 @@
 
         // Try to initialize profile directly first (for local storage functionality)
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize UniversalAuth system for consistent profile picture loading
+            if (typeof window.UniversalAuth !== 'undefined') {
+                console.log('Initializing UniversalAuth on profile page...');
+                window.UniversalAuth.init({ allowAnonymous: false, requireSupabase: false });
+            }
+            
             // Initialize basic profile functionality without Supabase
             if (!profileInitialized) {
                 initializeProfile().catch(err => {
