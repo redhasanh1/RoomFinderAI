@@ -185,6 +185,11 @@ async function updateAuthSection() {
         let profileImage = null;
         
         try {
+            if (!currentUser.email) {
+                console.warn('⚠️ No email found for current user, skipping profile fetch');
+                return;
+            }
+            
             const response = await fetch(`/api/user-profile/${encodeURIComponent(currentUser.email)}`);
             if (response.ok) {
                 const profileData = await response.json();
@@ -231,24 +236,22 @@ async function updateAuthSection() {
             profileImage = currentUser.profileImage;
         }
         
+        // Force update to new default profile icon if user has old placeholder images
+        const oldPlaceholderPatterns = [
+            'https://via.placeholder.com/',
+            'https://ui-avatars.com/api/',
+            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA',
+            'PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA'
+        ];
+        
+        const needsUpdate = !profileImage || 
+            (typeof profileImage === 'string' && oldPlaceholderPatterns.some(pattern => profileImage.includes(pattern)));
+        
         // If user has uploaded a custom profile image, ALWAYS use it
         if (currentUser.hasCustomProfileImage && currentUser.profileImage && currentUser.profileImage.startsWith('data:image/')) {
             profileImage = currentUser.profileImage;
-        } else {
-            // Force update to new default profile icon if user has old placeholder images
-            const oldPlaceholderPatterns = [
-                'https://via.placeholder.com/',
-                'https://ui-avatars.com/api/',
-                'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA',
-                'PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDA'
-            ];
-            
-            const needsUpdate = !profileImage || 
-                (typeof profileImage === 'string' && oldPlaceholderPatterns.some(pattern => profileImage.includes(pattern)));
-            
-            if (needsUpdate && !currentUser.hasCustomProfileImage) {
-                profileImage = DEFAULT_PROFILE_IMAGE;
-            }
+        } else if (needsUpdate && !currentUser.hasCustomProfileImage) {
+            profileImage = DEFAULT_PROFILE_IMAGE;
         }
         
         // Update currentUser with the correct image
