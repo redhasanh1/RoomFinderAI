@@ -3063,6 +3063,9 @@
                 });
             });
 
+            // REMOVED: Duplicate event listener setup - individual buttons get their own listeners when created
+            // This was causing conflicts with the individual button event listeners
+            /*
             document.querySelectorAll('.chat-btn').forEach(button => {
                 if (!button.disabled) {
                     button.addEventListener('click', () => {
@@ -3080,6 +3083,7 @@
                     console.log('⚠️ Chat button is disabled (legacy handler) - no owner email specified');
                 }
             });
+            */
 
             // Update map with all listings (skip if opening modal for speed)
             if (shouldOpenModal) {
@@ -4347,6 +4351,36 @@
             console.log('- Chat System Status:', chatSystemStatus);
             console.log('- Active Chat Buttons:', document.querySelectorAll('.chat-btn:not([disabled])').length);
             console.log('- Disabled Chat Buttons:', document.querySelectorAll('.chat-btn[disabled]').length);
+        };
+
+        // Debug function to test chat button functionality
+        window.testChatButton = function() {
+            console.log('🧪 Testing Chat Button Functionality...');
+            const chatBtns = document.querySelectorAll('.chat-btn:not([disabled])');
+            console.log(`Found ${chatBtns.length} enabled chat buttons`);
+            
+            if (chatBtns.length > 0) {
+                const testBtn = chatBtns[0];
+                console.log('Testing first chat button:', testBtn);
+                console.log('Button dataset:', testBtn.dataset);
+                
+                try {
+                    const listing = JSON.parse(testBtn.dataset.listing);
+                    console.log('✅ Listing data parsed:', listing);
+                    
+                    // Test if startConversation function exists
+                    if (typeof startConversation === 'function') {
+                        console.log('✅ startConversation function exists, calling it...');
+                        startConversation(listing);
+                    } else {
+                        console.error('❌ startConversation function not found');
+                    }
+                } catch (error) {
+                    console.error('❌ Failed to parse listing data:', error);
+                }
+            } else {
+                console.warn('⚠️ No enabled chat buttons found');
+            }
         };
 
         async function loadMessages(conversationId) {
