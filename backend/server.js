@@ -365,6 +365,12 @@ const frontendPath = path.join(__dirname, '..', 'frontend');
 console.log('🌐 Serving frontend files from:', frontendPath);
 app.use(express.static(frontendPath, {
     setHeaders: (res, path) => {
+        // Disable caching for JavaScript files to ensure updates are loaded immediately
+        if (path.endsWith('.js')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+        }
         res.setHeader('Access-Control-Allow-Origin', '*');
         // Set proper MIME type for JS files
         if (path.endsWith('.js')) {
