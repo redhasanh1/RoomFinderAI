@@ -2650,14 +2650,40 @@ app.post('/api/update-profile-image', async (req, res) => {
                     const fileName = `${email}/pictures/profile.${fileExt}`;
                     console.log(`📸 Uploading to: profile-images/${fileName}`);
                     
-                    // Upload to existing profile-images bucket
-                    // Note: Using upsert to overwrite existing profile pictures
+                    // First, try to remove the existing file if it exists
+                    console.log(`📸 Checking for existing file: ${fileName}`);
+                    const { data: existingFile } = await supabase.storage
+                        .from('profile-images')
+                        .list(email + '/pictures', {
+                            limit: 100,
+                            search: 'profile'
+                        });
+                    
+                    if (existingFile && existingFile.length > 0) {
+                        console.log(`📸 Found existing files:`, existingFile.map(f => f.name));
+                        // Delete existing profile pictures
+                        for (const file of existingFile) {
+                            if (file.name.startsWith('profile.')) {
+                                const fileToDelete = `${email}/pictures/${file.name}`;
+                                console.log(`🗑️ Deleting old profile picture: ${fileToDelete}`);
+                                const { error: deleteError } = await supabase.storage
+                                    .from('profile-images')
+                                    .remove([fileToDelete]);
+                                if (deleteError) {
+                                    console.warn(`⚠️ Could not delete old file: ${deleteError.message}`);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Upload new profile picture
+                    console.log(`📸 Uploading new profile picture: ${fileName}`);
                     const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('profile-images')
                         .upload(fileName, buffer, {
                             contentType: mimeType,
-                            upsert: true, // Replace if exists
-                            cacheControl: '3600' // 1 hour cache
+                            cacheControl: '0', // No cache to ensure fresh image
+                            upsert: false // Don't use upsert since we manually deleted
                         });
                     
                     if (uploadError) {
