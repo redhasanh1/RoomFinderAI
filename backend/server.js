@@ -2646,32 +2646,11 @@ app.post('/api/update-profile-image', async (req, res) => {
             // Upload to Supabase Storage
             if (supabase) {
                 try {
-                    // Create unique filename using email
-                    const fileName = `${email.replace('@', '_').replace('.', '_')}/profile.${fileExt}`;
+                    // Create filename matching your bucket structure: email/pictures
+                    const fileName = `${email}/pictures/profile.${fileExt}`;
                     console.log(`📸 Uploading to: profile-images/${fileName}`);
                     
-                    // First, check if bucket exists
-                    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-                    console.log('📸 Available buckets:', buckets?.map(b => b.name).join(', '));
-                    
-                    // Create bucket if it doesn't exist
-                    const profileImagesBucketExists = buckets?.some(bucket => bucket.name === 'profile-images');
-                    if (!profileImagesBucketExists) {
-                        console.log('📦 Creating profile-images bucket...');
-                        const { data: newBucket, error: createError } = await supabase.storage.createBucket('profile-images', {
-                            public: true,
-                            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'],
-                            fileSizeLimit: 5242880 // 5MB
-                        });
-                        
-                        if (createError) {
-                            console.error('❌ Failed to create profile-images bucket:', createError);
-                        } else {
-                            console.log('✅ Created profile-images bucket successfully');
-                        }
-                    }
-                    
-                    // Upload to storage bucket
+                    // Upload to existing profile-images bucket
                     const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('profile-images')
                         .upload(fileName, buffer, {
@@ -6873,24 +6852,9 @@ async function initializeStorage() {
             }
         }
         
-        // Check for profile-images bucket
+        // Check for profile-images bucket (should already exist)
         const profileImagesBucketExists = buckets?.some(bucket => bucket.name === 'profile-images');
         console.log('🔍 profile-images bucket exists:', profileImagesBucketExists);
-        
-        if (!profileImagesBucketExists) {
-            console.log('📦 Creating profile-images bucket...');
-            const { data: newBucket, error: createError } = await supabase.storage.createBucket('profile-images', {
-                public: true,
-                allowedMimeTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'],
-                fileSizeLimit: 5242880 // 5MB
-            });
-            
-            if (createError) {
-                console.error('❌ Failed to create profile-images bucket:', createError);
-            } else {
-                console.log('✅ Created profile-images bucket successfully');
-            }
-        }
         
     } catch (error) {
         console.error('❌ Storage initialization failed:', error);
