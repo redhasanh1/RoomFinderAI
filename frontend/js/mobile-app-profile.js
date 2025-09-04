@@ -52,10 +52,11 @@ class MobileAppProfile {
                             // Use custom profile image if available
                             if (profileData.hasCustomProfileImage && profileData.profileImage) {
                                 this.user.avatar = profileData.profileImage;
-                                console.log('✅ Loaded custom profile image from backend');
+                                console.log('✅ Loaded custom profile image from backend:', profileData.profileImage);
                             } else {
-                                // Use default or metadata avatar
-                                this.user.avatar = user.user_metadata?.avatar_url || null;
+                                // Use default avatar (ignore user_metadata.avatar_url as it may contain stale data)
+                                this.user.avatar = null;
+                                console.log('ℹ️ No custom profile image found, using default avatar');
                             }
                             
                             // Update names if available
@@ -65,8 +66,9 @@ class MobileAppProfile {
                         }
                     } catch (fetchError) {
                         console.warn('⚠️ Could not fetch profile data:', fetchError);
-                        // Fallback to metadata avatar
-                        this.user.avatar = user.user_metadata?.avatar_url || null;
+                        // Use default avatar (ignore user_metadata.avatar_url as it may contain stale data)
+                        this.user.avatar = null;
+                        console.log('ℹ️ Profile fetch failed, using default avatar');
                     }
                     
                     // Load additional profile data
