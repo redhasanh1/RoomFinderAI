@@ -2608,7 +2608,7 @@ app.get('/api/user-profile/:email', async (req, res) => {
                         }
                     }
                     
-                    return res.json({
+                    const response = {
                         id: data.id,
                         email: data.email,
                         firstName: firstName,
@@ -2618,7 +2618,9 @@ app.get('/api/user-profile/:email', async (req, res) => {
                         emailVerified: data.email_verified || false,
                         createdAt: data.created_at,
                         plan: data.plan || 'free'
-                    });
+                    };
+                    console.log('📤 API Response for', data.email, ':', JSON.stringify(response, null, 2));
+                    return res.json(response);
                 }
             } catch (supabaseError) {
                 console.log('Supabase profile fetch failed:', supabaseError.message);
@@ -2643,7 +2645,7 @@ app.get('/api/user-profile/:email', async (req, res) => {
         
         // If no user data found anywhere, but we found a profile picture in storage
         if (profileImageUrl) {
-            return res.json({
+            const response = {
                 email: decodeURIComponent(email),
                 profileImage: profileImageUrl,
                 hasCustomProfileImage: hasCustomProfileImage,
@@ -2651,7 +2653,9 @@ app.get('/api/user-profile/:email', async (req, res) => {
                 lastName: '',
                 emailVerified: false,
                 plan: 'free'
-            });
+            };
+            console.log('📤 API Response (storage-only) for', decodeURIComponent(email), ':', JSON.stringify(response, null, 2));
+            return res.json(response);
         }
 
         // User not found
