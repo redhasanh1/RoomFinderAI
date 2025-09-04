@@ -59,9 +59,9 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
     window.location.assign = function(url) {
         if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
             // Check if this is a legitimate logout request
-            if (// sessionStorage removed === 'true') {
+            if (sessionStorage.getItem('legitimateLogout') === 'true') {
                 console.log('✅ Allowing legitimate logout redirect via assign');
-                // sessionStorage removed
+                sessionStorage.removeItem('legitimateLogout');
                 return window.ORIGINAL_LOCATION_ASSIGN.call(this, url);
             }
             console.error('🚫 BLOCKED location.assign to login:', url);
@@ -74,9 +74,9 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
     window.location.replace = function(url) {
         if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
             // Check if this is a legitimate logout request
-            if (// sessionStorage removed === 'true') {
+            if (sessionStorage.getItem('legitimateLogout') === 'true') {
                 console.log('✅ Allowing legitimate logout redirect via replace');
-                // sessionStorage removed
+                sessionStorage.removeItem('legitimateLogout');
                 return window.ORIGINAL_LOCATION_REPLACE.call(this, url);
             }
             console.error('🚫 BLOCKED location.replace to login:', url);
@@ -90,7 +90,7 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
     localStorage.removeItem = function(key) {
         if (key === 'currentUser' || key.startsWith('currentUser_')) {
             // Check if this is a legitimate logout request
-            if (// sessionStorage removed === 'true') {
+            if (sessionStorage.getItem('legitimateLogout') === 'true') {
                 console.log('✅ Allowing legitimate logout data removal');
                 return window.ORIGINAL_REMOVE_ITEM.call(this, key);
             }
