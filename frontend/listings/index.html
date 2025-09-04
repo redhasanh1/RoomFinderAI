@@ -152,22 +152,27 @@
                     await window.ListingsAPI.initializeAPI();
                 }
                 
-                // Fetch listings
-                const listings = await window.ListingsAPI.fetchListings();
+                // Fetch listings with pagination and caching
+                const result = await window.ListingsAPI.fetchListings({}, { 
+                    page: 1, 
+                    limit: 20,
+                    useCache: true 
+                });
                 
                 // Display listings
                 if (window.ListingsUI && window.ListingsUI.displayListings) {
-                    window.ListingsUI.displayListings(listings);
+                    window.ListingsUI.displayListings(result);
                 } else {
                     console.log('⏳ Waiting for UI module...');
                     setTimeout(() => {
                         if (window.ListingsUI && window.ListingsUI.displayListings) {
-                            window.ListingsUI.displayListings(listings);
+                            window.ListingsUI.displayListings(result);
                         }
                     }, 1000);
                 }
                 
-                console.log(`✅ Loaded ${listings.length} listings`);
+                const fromCache = result.fromCache ? ' (from cache)' : '';
+                console.log(`✅ Loaded ${result.data.length} of ${result.totalCount} listings${fromCache}`);
             } catch (error) {
                 console.error('❌ Error loading initial listings:', error);
                 // Show error message in listings container
