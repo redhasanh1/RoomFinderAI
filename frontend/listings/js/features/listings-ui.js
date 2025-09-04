@@ -81,7 +81,7 @@ function initializeComponents() {
 /**
  * Display listings in the grid
  */
-function displayListings(listings) {
+function displayListings(listingsData, append = false) {
     try {
         const listingsContainer = document.getElementById('listingsContainer');
         if (!listingsContainer) {
@@ -89,9 +89,20 @@ function displayListings(listings) {
             return;
         }
         
-        currentListings = listings;
+        // Handle both old format (array) and new format (object with data property)
+        const listings = Array.isArray(listingsData) ? listingsData : listingsData.data || [];
+        const totalCount = listingsData.totalCount || listings.length;
+        const fromCache = listingsData.fromCache || false;
         
-        if (!listings || listings.length === 0) {
+        if (append) {
+            // Append to existing listings
+            currentListings = [...currentListings, ...listings];
+        } else {
+            // Replace listings
+            currentListings = listings;
+        }
+        
+        if (!append && (!listings || listings.length === 0)) {
             listingsContainer.innerHTML = `
                 <div class="col-span-full text-center py-12">
                     <div class="text-gray-500 text-lg">No listings found</div>
@@ -104,14 +115,35 @@ function displayListings(listings) {
         // Generate listing cards
         const listingCards = listings.map(listing => createListingCard(listing)).join('');
         
-        listingsContainer.innerHTML = listingCards;
+        if (append) {
+            // Remove any existing "Load More" button before appending
+            const existingButton = document.getElementById('loadMoreButton');
+            if (existingButton) existingButton.remove();
+            
+            listingsContainer.insertAdjacentHTML('beforeend', listingCards);
+        } else {
+            listingsContainer.innerHTML = listingCards;
+        }
+        
+        // Set up lazy loading for images
+        setupImageLazyLoading();
+        
+        // Add "Load More" button if there are more listings
+        if (currentListings.length < totalCount) {
+            addLoadMoreButton(currentListings.length, totalCount);
+        }
         
         // Trigger custom event for other modules
         document.dispatchEvent(new CustomEvent('listingsDisplayed', { 
-            detail: { listings: listings } 
+            detail: { 
+                listings: currentListings,
+                totalCount: totalCount,
+                fromCache: fromCache
+            } 
         }));
         
-        console.log(`✅ Displayed ${listings.length} listings`);
+        const cacheIndicator = fromCache ? ' (from cache)' : '';
+        console.log(`✅ Displayed ${listings.length} of ${totalCount} listings${cacheIndicator}`);
         
     } catch (error) {
         console.error('❌ Error displaying listings:', error);
@@ -124,20 +156,22 @@ function displayListings(listings) {
  */
 function createListingCard(listing) {
     const imageUrl = getListingImageUrl(listing);
+    const placeholderUrl = generatePlaceholderImage(listing.title);
     const price = formatPrice(listing.price);
     const amenities = getAmenities(listing);
-    const truncatedDescription = truncateText(listing.description, 120);
+    const truncatedDescription = truncateText(listing.description, 80); // Reduced from 120
     const availability = getAvailabilityStatus(listing);
     
     return `
         <div class="listing-card-enhanced bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden" data-listing-id="${listing.id}">
             <!-- Image Section -->
-            <div class="relative h-64 overflow-hidden">
+            <div class="relative h-64 overflow-hidden bg-gray-100">
                 <img 
-                    src="${imageUrl}" 
+                    data-src="${imageUrl}"
+                    src="${placeholderUrl}"
                     alt="${sanitizeText(listing.title)}" 
-                    class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                    onerror="this.src='${generatePlaceholderImage(listing.title)}'"
+                    class="lazy-image w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                    loading="lazy"
                 />
                 
                 <!-- Price Badge -->
@@ -790,6 +824,114 @@ async function checkFavoritesStatus(listingIds) {
 }
 
 /**
+ * Setup lazy loading for images
+ */
+function setupImageLazyLoading() {
+    const lazyImages = document.querySelectorAll('img.lazy-image');
+    
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    const src = img.dataset.src;
+                    
+                    if (src) {
+                        // Create new image to preload
+                        const newImg = new Image();
+                        newImg.onload = function() {
+                            img.src = src;
+                            img.classList.add('loaded');
+                            img.classList.remove('lazy-image');
+                        };
+                        newImg.onerror = function() {
+                            // Keep placeholder on error
+                            img.classList.remove('lazy-image');
+                        };
+                        newImg.src = src;
+                        
+                        observer.unobserve(img);
+                    }
+                }
+            });
+        }, {
+            rootMargin: '50px 0px', // Start loading 50px before entering viewport
+            threshold: 0.01
+        });
+        
+        lazyImages.forEach(img => imageObserver.observe(img));
+    } else {
+        // Fallback for browsers without IntersectionObserver
+        lazyImages.forEach(img => {
+            if (img.dataset.src) {
+                img.src = img.dataset.src;
+            }
+        });
+    }
+}
+
+/**
+ * Add Load More button
+ */
+function addLoadMoreButton(currentCount, totalCount) {
+    const listingsContainer = document.getElementById('listingsContainer');
+    if (!listingsContainer) return;
+    
+    const remainingCount = totalCount - currentCount;
+    const buttonText = `Load More (${remainingCount} remaining)`;
+    
+    const loadMoreButton = document.createElement('div');
+    loadMoreButton.id = 'loadMoreButton';
+    loadMoreButton.className = 'col-span-full text-center py-8';
+    loadMoreButton.innerHTML = `
+        <button 
+            onclick="loadMoreListings()"
+            class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+        >
+            ${buttonText}
+        </button>
+    `;
+    
+    listingsContainer.appendChild(loadMoreButton);
+}
+
+/**
+ * Load more listings (called by button)
+ */
+window.loadMoreListings = async function() {
+    try {
+        const button = document.querySelector('#loadMoreButton button');
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Loading...';
+        }
+        
+        // Calculate next page
+        const currentPage = Math.ceil(currentListings.length / 20) + 1;
+        
+        // Fetch next page
+        const result = await window.ListingsAPI.fetchListings({}, { 
+            page: currentPage,
+            limit: 20
+        });
+        
+        // Display with append flag
+        window.ListingsUI.displayListings(result, true);
+        
+    } catch (error) {
+        console.error('❌ Error loading more listings:', error);
+        showErrorMessage('Failed to load more listings');
+        
+        // Re-enable button on error
+        const button = document.querySelector('#loadMoreButton button');
+        if (button) {
+            button.disabled = false;
+            button.textContent = 'Try Again';
+        }
+    }
+};
+
+/**
  * Show favorite status message
  */
 function showFavoriteMessage(message, type = 'info') {
@@ -893,5 +1035,7 @@ window.ListingsUI = {
     updateFavoriteIcon,
     updateAllFavoriteIcons,
     checkFavoritesStatus,
-    showFavoriteMessage
+    showFavoriteMessage,
+    setupImageLazyLoading,
+    addLoadMoreButton
 };

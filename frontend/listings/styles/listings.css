@@ -29,6 +29,37 @@
     background-color: #e5e7eb;
 }
 
+/* Lazy Loading Image Styles */
+img.lazy-image {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+img.lazy-image.loaded {
+    opacity: 1;
+}
+
+/* Placeholder shimmer effect */
+.listing-card .bg-gray-100 {
+    background: linear-gradient(
+        90deg,
+        #f0f0f0 0%,
+        #f8f8f8 50%,
+        #f0f0f0 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
 /* Listing Grid Layout */
 .listing-grid {
     display: grid;

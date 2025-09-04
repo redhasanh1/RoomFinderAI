@@ -6,6 +6,11 @@
 let supabase = null;
 let apiInitialized = false;
 
+// Cache configuration
+const CACHE_KEY = 'listings_cache';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+let listingsCache = null;
+
 /**
  * Initialize API with Supabase client
  */
@@ -14,6 +19,10 @@ function initializeAPI() {
         supabase = window.ClientConfig.getSupabaseClient();
         apiInitialized = true;
         console.log('📡 Listings API initialized');
+        
+        // Load cache from localStorage
+        loadCacheFromStorage();
+        
         return true;
     } catch (error) {
         console.error('❌ Failed to initialize Listings API:', error);
@@ -22,15 +31,98 @@ function initializeAPI() {
 }
 
 /**
- * Fetch listings with optional filtering
+ * Load cache from localStorage
  */
-async function fetchListings(filters = {}) {
+function loadCacheFromStorage() {
+    try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+            const parsedCache = JSON.parse(cached);
+            const age = Date.now() - parsedCache.timestamp;
+            
+            if (age < CACHE_DURATION) {
+                listingsCache = parsedCache;
+                console.log('📦 Loaded listings from cache');
+            } else {
+                localStorage.removeItem(CACHE_KEY);
+                console.log('🗑️ Cache expired, cleared');
+            }
+        }
+    } catch (error) {
+        console.error('Cache loading error:', error);
+        localStorage.removeItem(CACHE_KEY);
+    }
+}
+
+/**
+ * Save listings to cache
+ */
+function saveToCache(listings, filters = {}) {
+    try {
+        const cacheData = {
+            timestamp: Date.now(),
+            filters: filters,
+            listings: listings
+        };
+        
+        listingsCache = cacheData;
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        console.log('💾 Saved listings to cache');
+    } catch (error) {
+        console.error('Cache saving error:', error);
+    }
+}
+
+/**
+ * Check if cache matches current filters
+ */
+function isCacheValid(filters = {}) {
+    if (!listingsCache) return false;
+    
+    const age = Date.now() - listingsCache.timestamp;
+    if (age >= CACHE_DURATION) return false;
+    
+    // Check if filters match (simple comparison)
+    const cachedFilters = listingsCache.filters || {};
+    return JSON.stringify(cachedFilters) === JSON.stringify(filters);
+}
+
+/**
+ * Fetch listings with optional filtering and pagination
+ */
+async function fetchListings(filters = {}, options = {}) {
     if (!apiInitialized) {
         throw new Error('API not initialized');
     }
     
+    // Default options
+    const { 
+        page = 1, 
+        limit = 20,
+        useCache = true,
+        forceRefresh = false 
+    } = options;
+    
+    // Check cache first
+    if (useCache && !forceRefresh && isCacheValid(filters)) {
+        console.log('🚀 Returning cached listings');
+        
+        // Paginate cached results
+        const start = (page - 1) * limit;
+        const end = start + limit;
+        const paginatedListings = listingsCache.listings.slice(start, end);
+        
+        return {
+            data: paginatedListings,
+            totalCount: listingsCache.listings.length,
+            fromCache: true
+        };
+    }
+    
     try {
-        let query = supabase.from('listings').select('*');
+        // Build query with only essential fields for list view
+        let query = supabase.from('listings')
+            .select('id, title, description, city, country, room_type, price, bedrooms, bathrooms, wifi, parking, kitchen, laundry, furnished, pets_allowed, created_at, media', { count: 'exact' });
         
         // Apply filters
         if (filters.city) {
@@ -80,14 +172,37 @@ async function fetchListings(filters = {}) {
         // Order by created_at desc
         query = query.order('created_at', { ascending: false });
         
-        const { data, error } = await query;
+        // Apply pagination for initial load only (not when fetching all for cache)
+        const range_start = (page - 1) * limit;
+        const range_end = range_start + limit - 1;
+        
+        // Fetch all for caching, or paginated for display
+        if (useCache && !listingsCache) {
+            // Fetch all listings for cache (limited to 100 for performance)
+            query = query.range(0, 99);
+        } else {
+            // Fetch paginated
+            query = query.range(range_start, range_end);
+        }
+        
+        const { data, error, count } = await query;
         
         if (error) {
             throw error;
         }
         
-        console.log(`📊 Fetched ${data.length} listings`);
-        return data;
+        // Save to cache if we fetched all listings
+        if (useCache && !listingsCache && data.length > 0) {
+            saveToCache(data, filters);
+        }
+        
+        console.log(`📊 Fetched ${data.length} listings (Total: ${count})`);
+        
+        return {
+            data: data,
+            totalCount: count,
+            fromCache: false
+        };
         
     } catch (error) {
         console.error('❌ Error fetching listings:', error);
@@ -469,5 +584,10 @@ window.ListingsAPI = {
     getListingsByUser,
     subscribeToListings,
     unsubscribeFromListings,
-    getAPIStats
+    getAPIStats,
+    clearCache: () => {
+        listingsCache = null;
+        localStorage.removeItem(CACHE_KEY);
+        console.log('🗑️ Cache cleared');
+    }
 };
