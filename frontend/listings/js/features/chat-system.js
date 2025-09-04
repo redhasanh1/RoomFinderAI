@@ -322,6 +322,9 @@ class ChatSystem {
         // Update conversations list
         this.updateConversationsList();
         
+        // Update notification badge
+        this.updateNotificationBadge();
+        
         // Show notification
         if (this.config.enableNotifications) {
             this.showNotification(`New message from ${message.sender_email}`, message.content);
@@ -334,6 +337,17 @@ class ChatSystem {
     async startConversation(listingId, listingTitle, landlordId = null) {
         if (!this.currentUser) {
             this.showError('Please log in to start a conversation');
+            return false;
+        }
+        
+        // Verify user is authenticated in Supabase Auth
+        const { data: { user }, error: authError } = await this.supabase.auth.getUser();
+        if (authError || !user) {
+            this.showError('You must be logged in with a verified account to start conversations');
+            // Redirect to login if needed
+            if (window.location.pathname !== '/frontend/login.html') {
+                window.location.href = '/frontend/login.html?redirect=' + encodeURIComponent(window.location.href);
+            }
             return false;
         }
         
@@ -580,6 +594,13 @@ class ChatSystem {
             return;
         }
         
+        // Check if user is authenticated in Supabase Auth
+        const { data: { user }, error: authError } = await this.supabase.auth.getUser();
+        if (authError || !user) {
+            this.showError('You must be logged in with a verified account to send messages');
+            return;
+        }
+        
         const content = this.elements.chatInput?.value.trim();
         if (!content) {
             return;
@@ -591,10 +612,19 @@ class ChatSystem {
                 this.elements.chatSendBtn.disabled = true;
             }
             
+            // Determine if current user is landlord or tenant
+            const isLandlord = this.activeConversation.landlord_id === this.currentUser.id;
+            const recipientId = isLandlord ? 
+                this.activeConversation.tenant_id : 
+                this.activeConversation.landlord_id;
+            
             const messageData = {
                 conversation_id: this.activeConversation.id,
                 sender_id: this.currentUser.id,
                 sender_email: this.currentUser.email,
+                recipient_id: recipientId,  // Add recipient ID (landlord or tenant)
+                landlord_id: this.activeConversation.landlord_id,  // Always save landlord ID
+                tenant_id: this.activeConversation.tenant_id,  // Always save tenant ID
                 content: content,
                 created_at: new Date().toISOString()
             };
@@ -769,15 +799,25 @@ class ChatSystem {
             // Process conversations
             data?.forEach(conv => {
                 const lastMessage = conv.messages?.[conv.messages.length - 1];
+                
+                // Calculate unread count (messages not from current user that are recent)
+                const unreadCount = conv.messages?.filter(msg => 
+                    msg.sender_id !== this.currentUser.id &&
+                    new Date(msg.created_at) > new Date(conv.last_read_at || 0)
+                ).length || 0;
+                
                 this.conversations.set(conv.id, {
                     ...conv,
                     messages: conv.messages || [],
                     lastMessage,
-                    unreadCount: 0 // TODO: Calculate actual unread count
+                    unreadCount
                 });
             });
             
             console.log(`📂 Loaded ${data?.length || 0} conversations`);
+            
+            // Update notification badge
+            this.updateNotificationBadge();
             
         } catch (error) {
             console.error('❌ Error loading conversations:', error);
@@ -1001,6 +1041,41 @@ class ChatSystem {
                 body: message,
                 icon: '/favicon.ico'
             });
+        }
+    }
+    
+    /**
+     * Update notification badge in bottom right
+     */
+    updateNotificationBadge() {
+        // Calculate total unread count
+        let totalUnread = 0;
+        this.conversations.forEach(conv => {
+            totalUnread += conv.unreadCount || 0;
+        });
+        
+        // Update badge in messaging panel
+        const badge = document.getElementById('messageNotificationBadge');
+        if (badge) {
+            if (totalUnread > 0) {
+                badge.textContent = totalUnread > 99 ? '99+' : totalUnread.toString();
+                badge.classList.remove('hidden');
+                
+                // Add pulse animation for new messages
+                badge.classList.add('animate-pulse');
+                setTimeout(() => {
+                    badge.classList.remove('animate-pulse');
+                }, 3000);
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+        
+        // Update page title with unread count
+        if (totalUnread > 0) {
+            document.title = `(${totalUnread}) ${document.title.replace(/^\(\d+\) /, '')}`;
+        } else {
+            document.title = document.title.replace(/^\(\d+\) /, '');
         }
     }
     
