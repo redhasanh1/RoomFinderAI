@@ -124,7 +124,16 @@ class MobileAppConfig {
 
         if (profileName) profileName.textContent = this.user.name;
         if (profileEmail) profileEmail.textContent = this.user.email;
-        if (profileIcon) profileIcon.textContent = this.user.avatar;
+        if (profileIcon) {
+            // Check if avatar is a URL or an emoji/text
+            if (this.user.avatar && (this.user.avatar.startsWith('http') || this.user.avatar.startsWith('data:'))) {
+                // It's an image URL, create an img element
+                profileIcon.innerHTML = `<img src="${this.user.avatar}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            } else {
+                // It's text/emoji
+                profileIcon.textContent = this.user.avatar || '👤';
+            }
+        }
 
         // Show/hide sections based on auth status
         if (this.user.isLoggedIn) {
