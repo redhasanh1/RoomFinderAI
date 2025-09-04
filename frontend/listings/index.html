@@ -152,11 +152,20 @@
                     await window.ListingsAPI.initializeAPI();
                 }
                 
-                // Fetch listings with pagination and caching
+                // Fetch listings with pagination - disable cache temporarily for debugging
+                console.log('📋 Fetching listings from database...');
                 const result = await window.ListingsAPI.fetchListings({}, { 
                     page: 1, 
                     limit: 20,
-                    useCache: true 
+                    useCache: false,  // Temporarily disabled to debug
+                    forceRefresh: true 
+                });
+                
+                console.log('📊 Fetch result:', {
+                    dataLength: result.data?.length || 0,
+                    totalCount: result.totalCount,
+                    fromCache: result.fromCache,
+                    firstListing: result.data?.[0]?.title || 'No listings'
                 });
                 
                 // Display listings
@@ -171,8 +180,8 @@
                     }, 1000);
                 }
                 
-                const fromCache = result.fromCache ? ' (from cache)' : '';
-                console.log(`✅ Loaded ${result.data.length} of ${result.totalCount} listings${fromCache}`);
+                const fromCache = result.fromCache ? ' (from cache)' : ' (from database)';
+                console.log(`✅ Loaded ${result.data?.length || 0} of ${result.totalCount || 0} listings${fromCache}`);
             } catch (error) {
                 console.error('❌ Error loading initial listings:', error);
                 // Show error message in listings container
