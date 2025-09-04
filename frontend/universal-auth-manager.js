@@ -56,6 +56,7 @@ async function getCurrentUser() {
     try {
         // First check localStorage (primary auth method)
         const currentUser = localStorage.getItem('currentUser');
+        console.log('🔍 localStorage currentUser:', currentUser);
         if (currentUser && currentUser !== 'null' && currentUser !== 'undefined') {
             try {
                 const userData = JSON.parse(currentUser);
@@ -68,8 +69,10 @@ async function getCurrentUser() {
         }
         
         // Fallback to Supabase if available
+        console.log('🔍 Falling back to Supabase auth');
         if (window.supabase && window.supabase.auth) {
             const { data: { session } } = await window.supabase.auth.getSession();
+            console.log('🔍 Supabase session:', session?.user?.email || 'no session');
             if (!session?.user) return null;
             
             // Get profile data from profiles table
@@ -179,6 +182,7 @@ async function updateAuthSection() {
     }
 
     const currentUser = await getCurrentUser();
+    console.log('🔍 getCurrentUser() returned:', currentUser);
     
     if (await isUserAuthenticated() && currentUser) {
         // Try to fetch the latest profile image from backend first
