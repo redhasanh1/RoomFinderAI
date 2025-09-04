@@ -178,9 +178,9 @@ async function updateAuthSection() {
         return;
     }
 
-    const currentUser = getCurrentUser();
+    const currentUser = await getCurrentUser();
     
-    if (isUserAuthenticated() && currentUser) {
+    if (await isUserAuthenticated() && currentUser) {
         // Try to fetch the latest profile image from backend first
         let profileImage = null;
         
@@ -289,7 +289,7 @@ async function initSupabaseAuth() {
         return false;
     }
 
-    const currentUser = getCurrentUser();
+    const currentUser = await getCurrentUser();
     if (!currentUser) {
         return false;
     }
@@ -350,7 +350,7 @@ async function initUniversalAuth(options = {}) {
     console.log('🔄 Initializing universal auth...', { allowAnonymous, redirectToLogin, requireSupabase });
 
     // Check authentication state
-    const isAuthenticated = isUserAuthenticated();
+    const isAuthenticated = await isUserAuthenticated();
     
     if (!isAuthenticated) {
         if (allowAnonymous) {
