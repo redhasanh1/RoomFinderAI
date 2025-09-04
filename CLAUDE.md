@@ -112,3 +112,4 @@ Use `gemini -p` when:
 - whenever you push it has to the he same summary which i gave you
 - always push with ericT2003 and summary: Arsalan dumb fuck dont edit website files
 - Whenever you push, the summary should only be: Arsalan dumb fuck dont edit website files
+- I am using railway and supabase for all the api, keys and data. the code we edit and add or change should never include these sensitive keys and data in the files here.
