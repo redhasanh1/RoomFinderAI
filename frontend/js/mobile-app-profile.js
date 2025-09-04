@@ -45,14 +45,19 @@ class MobileAppProfile {
                     
                     // Try to fetch profile image from backend
                     try {
+                        console.log('🔍 Fetching profile for email:', user.email);
                         const response = await fetch(`/api/user-profile/${encodeURIComponent(user.email)}`);
                         if (response.ok) {
                             const profileData = await response.json();
+                            console.log('🔍 Profile data received:', {
+                                hasCustomProfileImage: profileData.hasCustomProfileImage,
+                                profileImage: profileData.profileImage ? profileData.profileImage.substring(0, 100) + '...' : 'null'
+                            });
                             
                             // Use custom profile image if available
                             if (profileData.hasCustomProfileImage && profileData.profileImage) {
                                 this.user.avatar = profileData.profileImage;
-                                console.log('✅ Loaded custom profile image from backend:', profileData.profileImage);
+                                console.log('✅ Set avatar to storage URL:', profileData.profileImage);
                             } else {
                                 // Use default avatar (ignore user_metadata.avatar_url as it may contain stale data)
                                 this.user.avatar = null;
