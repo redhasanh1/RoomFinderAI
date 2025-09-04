@@ -2651,16 +2651,33 @@ app.post('/api/update-profile-image', async (req, res) => {
                     console.log(`📸 Uploading to: profile-images/${fileName}`);
                     
                     // Upload to existing profile-images bucket
+                    // Note: Using upsert to overwrite existing profile pictures
                     const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('profile-images')
                         .upload(fileName, buffer, {
                             contentType: mimeType,
-                            upsert: true // Replace if exists
+                            upsert: true, // Replace if exists
+                            cacheControl: '3600' // 1 hour cache
                         });
                     
                     if (uploadError) {
                         console.error('❌ Storage upload error:', uploadError);
                         console.error('   Error details:', JSON.stringify(uploadError, null, 2));
+                        
+                        // Check if it's an RLS policy error
+                        if (uploadError.message && uploadError.message.includes('row-level security policy')) {
+                            console.error('📝 FIX REQUIRED: Disable RLS on profile-images bucket in Supabase dashboard:');
+                            console.error('   1. Go to Supabase Dashboard > Storage');
+                            console.error('   2. Click on profile-images bucket');
+                            console.error('   3. Go to Policies tab');
+                            console.error('   4. Either disable RLS or add INSERT policy for authenticated users');
+                            console.error('   OR run this SQL in Supabase SQL editor:');
+                            console.error("   ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;");
+                            console.error("   OR for just this bucket:");
+                            console.error("   CREATE POLICY \"Allow authenticated uploads\" ON storage.objects");
+                            console.error("   FOR INSERT TO authenticated WITH CHECK (bucket_id = 'profile-images');");
+                        }
+                        
                         throw uploadError;
                     }
                     
