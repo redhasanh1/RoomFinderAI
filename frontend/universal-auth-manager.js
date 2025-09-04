@@ -193,6 +193,7 @@ async function updateAuthSection() {
             const response = await fetch(`/api/user-profile/${encodeURIComponent(currentUser.email)}`);
             if (response.ok) {
                 const profileData = await response.json();
+                console.log('📥 Frontend received profile data:', JSON.stringify(profileData, null, 2));
                 
                 // Check if profile image exists in storage (backend checks storage directly)
                 if (profileData.profileImage && profileData.profileImage !== 'null') {
