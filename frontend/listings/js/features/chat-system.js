@@ -392,16 +392,32 @@ class ChatSystem {
         try {
             // Get listing details if landlordId not provided
             let actualLandlordId = landlordId;
+            let landlordEmail = null;
             
             if (!actualLandlordId) {
                 const { data: listing, error: listingError } = await this.supabase
                     .from('listings')
-                    .select('user_id')
+                    .select('user_id, user_email')
                     .eq('id', listingId)
                     .single();
                 
                 if (listingError) throw listingError;
+                
                 actualLandlordId = listing.user_id;
+                landlordEmail = listing.user_email;
+                
+                // If no user_id but have email, try to find user by email
+                if (!actualLandlordId && landlordEmail) {
+                    const { data: userProfile } = await this.supabase
+                        .from('profiles')
+                        .select('id')
+                        .eq('email', landlordEmail)
+                        .single();
+                    
+                    if (userProfile) {
+                        actualLandlordId = userProfile.id;
+                    }
+                }
             }
             
             // Don't allow self-conversation
