@@ -2687,6 +2687,9 @@ app.post('/api/update-profile-image', async (req, res) => {
                     
                     // Upload new profile picture - use upsert as fallback
                     console.log(`📸 Uploading new profile picture: ${fileName}`);
+                    console.log(`📸 Buffer size: ${buffer.length} bytes`);
+                    console.log(`📸 Content type: ${mimeType}`);
+                    
                     const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('profile-images')
                         .upload(fileName, buffer, {
@@ -2694,6 +2697,9 @@ app.post('/api/update-profile-image', async (req, res) => {
                             cacheControl: '0', // No cache to ensure fresh image
                             upsert: true // Use upsert in case file still exists
                         });
+                    
+                    console.log(`📸 Upload response data:`, uploadData);
+                    console.log(`📸 Upload response error:`, uploadError);
                     
                     if (uploadError) {
                         console.error('❌ Storage upload error:', uploadError);
@@ -2716,12 +2722,30 @@ app.post('/api/update-profile-image', async (req, res) => {
                         throw uploadError;
                     }
                     
-                    // Get public URL
+                    // Check if upload actually succeeded
+                    if (!uploadData) {
+                        console.error('❌ Upload failed - no data returned');
+                        throw new Error('Upload failed - no data returned from Supabase');
+                    }
+                    
+                    console.log('✅ Upload successful, file details:', uploadData);
+                    
+                    // Get public URL only if upload succeeded
                     const { data: { publicUrl } } = supabase.storage
                         .from('profile-images')
                         .getPublicUrl(fileName);
                     
                     console.log('✅ Image uploaded to Supabase Storage:', publicUrl);
+                    
+                    // Verify the file exists by trying to access it
+                    const { data: fileCheck, error: fileError } = await supabase.storage
+                        .from('profile-images')
+                        .list(email + '/pictures', {
+                            search: `profile.${fileExt}`
+                        });
+                    
+                    console.log('📸 File verification:', fileCheck ? `Found ${fileCheck.length} file(s)` : 'No files found');
+                    if (fileError) console.error('📸 File verification error:', fileError);
                     
                     // Update user with new URL
                     const { data: existingUser } = await supabase
