@@ -1888,6 +1888,31 @@ app.post('/api/login', async (req, res) => {
                             if (isMatch) {
                                 console.log('✅ Login successful using profiles table for:', email);
                                 
+                                // Check for uploaded profile image in storage
+                                let profileImageUrl = profile.profile_image_url;
+                                try {
+                                    const { data: profileFiles, error: listError } = await supabase.storage
+                                        .from('profile-images')
+                                        .list(`${email}/pictures`, {
+                                            limit: 10
+                                        });
+                                    
+                                    if (!listError && profileFiles && profileFiles.length > 0) {
+                                        // Find the most recent profile picture
+                                        const profilePicture = profileFiles.find(f => f.name.startsWith('profile.'));
+                                        if (profilePicture) {
+                                            const { data: { publicUrl } } = supabase.storage
+                                                .from('profile-images')
+                                                .getPublicUrl(`${email}/pictures/${profilePicture.name}`);
+                                            
+                                            profileImageUrl = publicUrl;
+                                            console.log('📸 Found profile image in storage:', publicUrl);
+                                        }
+                                    }
+                                } catch (storageError) {
+                                    console.log('⚠️ Could not check storage for profile image:', storageError.message);
+                                }
+                                
                                 // Generate a token for this user
                                 const token = `profile_token_${profile.id}_${Date.now()}`;
                                 
@@ -1899,7 +1924,7 @@ app.post('/api/login', async (req, res) => {
                                         firstName: profile.first_name || 'User',
                                         lastName: profile.last_name || 'Name',
                                         email: profile.email,
-                                        profileImage: profile.profile_image_url
+                                        profileImage: profileImageUrl
                                     }
                                 });
                             } else {
@@ -1920,11 +1945,36 @@ app.post('/api/login', async (req, res) => {
                         .eq('email', email)
                         .single();
 
+                    // Check for uploaded profile image in storage
+                    let profileImageUrl = profile?.profile_image_url;
+                    try {
+                        const { data: profileFiles, error: listError } = await supabase.storage
+                            .from('profile-images')
+                            .list(`${email}/pictures`, {
+                                limit: 10
+                            });
+                        
+                        if (!listError && profileFiles && profileFiles.length > 0) {
+                            // Find the most recent profile picture
+                            const profilePicture = profileFiles.find(f => f.name.startsWith('profile.'));
+                            if (profilePicture) {
+                                const { data: { publicUrl } } = supabase.storage
+                                    .from('profile-images')
+                                    .getPublicUrl(`${email}/pictures/${profilePicture.name}`);
+                                
+                                profileImageUrl = publicUrl;
+                                console.log('📸 Found profile image in storage for Supabase Auth user:', publicUrl);
+                            }
+                        }
+                    } catch (storageError) {
+                        console.log('⚠️ Could not check storage for profile image:', storageError.message);
+                    }
+
                     const userData = {
                         firstName: profile?.first_name || 'User',
                         lastName: profile?.last_name || 'Name', 
                         email: data.user.email,
-                        profileImage: profile?.profile_image_url
+                        profileImage: profileImageUrl
                     };
 
                     return res.json({
