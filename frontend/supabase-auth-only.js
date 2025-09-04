@@ -11,9 +11,13 @@ console.log('🔐 SUPABASE-ONLY AUTH SYSTEM LOADING...');
 const SUPABASE_URL = 'https://fkktwhjybuflxqzopaex.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs';
 
-if (!window.supabase && typeof supabase !== 'undefined') {
-    window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log('✅ Supabase client initialized');
+if (!window.supabase) {
+    if (typeof supabase !== 'undefined') {
+        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ Supabase client initialized');
+    } else {
+        console.warn('⚠️ Supabase library not loaded yet, client will be initialized later');
+    }
 }
 
 /**
@@ -156,7 +160,13 @@ async function initializeAuth() {
         
         if (!window.supabase) {
             console.error('❌ Supabase client not available');
-            return false;
+            // Try to initialize Supabase if library is now loaded
+            if (typeof supabase !== 'undefined') {
+                window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('✅ Supabase client initialized on retry');
+            } else {
+                return false;
+            }
         }
         
         // Listen for auth changes
