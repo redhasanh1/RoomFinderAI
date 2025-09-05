@@ -35,6 +35,15 @@
         window.initializationAttempts = window.initializationAttempts || 0;
         const MAX_INIT_ATTEMPTS = 3;
 
+        // Early debug function to test if JavaScript is working
+        window.testJavaScript = function() {
+            console.log('✅ JavaScript is working!');
+            console.log('- Supabase Client:', !!window.supabaseClient);
+            console.log('- Current User:', !!localStorage.getItem('currentUser'));
+            console.log('- Chat Buttons:', document.querySelectorAll('.chat-btn').length);
+            return 'JavaScript working correctly';
+        };
+
         // Load configuration from Railway API (only if not already loaded)
         if (!window.isConfigLoaded) {
             fetch('/api/config')
@@ -6506,6 +6515,36 @@
                 }
             }, 5000); // 5-second safety timeout
         });
+
+        // Final debug functions (defined at the end to ensure they're available)
+        window.quickChatTest = function() {
+            console.log('🔍 Quick Chat Test');
+            console.log('- Chat Modal:', !!document.getElementById('chatModal'));
+            console.log('- Supabase:', !!window.supabaseClient);
+            console.log('- User Logged In:', !!localStorage.getItem('currentUser'));
+            
+            const chatBtns = document.querySelectorAll('.chat-btn:not([disabled])');
+            console.log(`- Found ${chatBtns.length} enabled chat buttons`);
+            
+            if (chatBtns.length > 0) {
+                console.log('🧪 Testing first chat button click...');
+                chatBtns[0].click();
+            } else {
+                console.warn('❌ No enabled chat buttons found');
+            }
+        };
+
+        window.forceOpenChat = function() {
+            console.log('🔧 Force opening chat modal...');
+            const modal = document.getElementById('chatModal');
+            if (modal) {
+                modal.classList.add('active');
+                console.log('✅ Chat modal opened');
+            } else {
+                console.error('❌ Chat modal not found');
+            }
+        };
+
     </script>
     
     <!-- Page Navigation Cleanup -->
