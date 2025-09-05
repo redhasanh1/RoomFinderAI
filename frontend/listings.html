@@ -5125,7 +5125,7 @@
                     <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
                     <div class="flex space-x-2 mt-4">
                         <button class="view-details-btn w-1/2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                        <button class="chat-btn w-1/2 ${hasOwner ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? `onclick="window.handleChatClick(${JSON.stringify(listing).replace(/"/g, '&quot;')})"` : 'disabled title="No owner specified for this listing"'}>Chat</button>
+                        <button class="chat-btn w-1/2 ${hasOwner ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' data-listing-id="${listing.id}" ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
                     </div>
                 </div>
             `;
@@ -5152,28 +5152,42 @@
             if (!chatBtn) {
                 console.error('❌ Chat button not found in listing card');
             } else if (!chatBtn.disabled) {
-                console.log('✅ Adding click listener to chat button for:', listing.title);
-                chatBtn.addEventListener('click', (event) => {
+                console.log('✅ Adding click handler to chat button for:', listing.title);
+                
+                // Method 1: Direct onclick assignment
+                chatBtn.onclick = function(event) {
                     event.preventDefault();
                     event.stopPropagation();
+                    console.log('🎯 Chat button clicked (onclick) for listing');
                     try {
-                        console.log('🎯 Chat button clicked for listing:', chatBtn.dataset.listing);
-                        const listing = JSON.parse(chatBtn.dataset.listing);
-                        console.log('📋 Parsed listing data:', listing);
+                        const listingData = JSON.parse(chatBtn.dataset.listing);
+                        console.log('📋 Parsed listing data:', listingData);
+                        
                         if (window.startConversation) {
-                            window.startConversation(listing);
+                            window.startConversation(listingData);
                         } else if (window.fallbackStartChat) {
                             console.warn('⚠️ Using fallback chat system');
-                            window.fallbackStartChat(listing);
+                            window.fallbackStartChat(listingData);
                         } else {
                             console.error('❌ No chat function available');
-                            alert('Chat system is not ready. Please refresh the page and try again.');
+                            // Last resort - just open the modal
+                            const modal = document.getElementById('chatModal');
+                            if (modal) {
+                                modal.classList.add('active');
+                                const titleEl = document.getElementById('chatTitle');
+                                if (titleEl) titleEl.textContent = `Chat about: ${listingData.title || 'Listing'}`;
+                            }
                         }
                     } catch (error) {
-                        console.error('❌ Error parsing listing data or starting conversation:', error);
-                        alert('Error opening chat. Please refresh the page and try again.');
+                        console.error('❌ Error in chat button click:', error);
+                        // Try to open modal anyway
+                        const modal = document.getElementById('chatModal');
+                        if (modal) modal.classList.add('active');
                     }
-                });
+                };
+                
+                // Method 2: Also add event listener as backup
+                chatBtn.addEventListener('click', chatBtn.onclick);
             } else {
                 console.log('⚠️ Chat button is disabled for listing - no owner email specified');
             }
@@ -6622,6 +6636,39 @@
                 console.error('❌ Chat modal not found');
             }
         };
+
+        // Global delegated event listener for chat buttons
+        document.addEventListener('click', function(event) {
+            // Check if clicked element is a chat button or inside one
+            const chatBtn = event.target.closest('.chat-btn');
+            if (chatBtn && !chatBtn.disabled) {
+                event.preventDefault();
+                event.stopPropagation();
+                console.log('🎯 Global delegated chat button click detected');
+                
+                try {
+                    const listingData = JSON.parse(chatBtn.dataset.listing);
+                    console.log('📋 Listing from delegated handler:', listingData);
+                    
+                    if (window.startConversation) {
+                        window.startConversation(listingData);
+                    } else if (window.fallbackStartChat) {
+                        window.fallbackStartChat(listingData);
+                    } else {
+                        // Just open the modal
+                        const modal = document.getElementById('chatModal');
+                        if (modal) {
+                            modal.classList.add('active');
+                            console.log('✅ Modal opened via delegated handler');
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Error in delegated chat handler:', error);
+                }
+            }
+        });
+        
+        console.log('✅ Global chat button delegated listener attached');
 
         // Comprehensive chat test function
         window.testChat = function() {
