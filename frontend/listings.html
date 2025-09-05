@@ -3672,8 +3672,16 @@
                 // Instant UI update
                 const messageElement = document.createElement('div');
                 messageElement.className = 'message sent';
+                // Don't sanitize chat messages - only escape HTML for safety
+                const escapedContent = messageContent
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+                
                 messageElement.innerHTML = `
-                    <p>${sanitizeInput(messageContent)}</p>
+                    <p>${escapedContent}</p>
                     <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
                 `;
                 chatMessagesContainer.appendChild(messageElement);
@@ -3787,13 +3795,13 @@
             // Initialize file upload functionality
             initializeFileUpload();
 
-            // SIMPLIFIED Real-time subscription with better debugging
+            // SIMPLIFIED Real-time subscription - listen to ALL messages
             const messageChannel = supabase
-                .channel('messages_realtime_' + Math.random())
+                .channel('messages_realtime_all_' + Date.now())
                 .on('postgres_changes', { 
                     event: 'INSERT', 
                     schema: 'public', 
-                    table: 'messages' 
+                    table: 'messages'
                 }, (payload) => {
                     console.log('🔔 REALTIME EVENT RECEIVED:', payload);
                     console.log('Current conversation ID:', currentConversationId);
@@ -3813,9 +3821,17 @@
                             const messageElement = document.createElement('div');
                             messageElement.className = 'message-container received-container animate-slideIn';
                             
+                            // Escape HTML for safety but preserve special characters
+                            const escapedContent = (payload.new.content || '')
+                                .replace(/&/g, '&amp;')
+                                .replace(/</g, '&lt;')
+                                .replace(/>/g, '&gt;')
+                                .replace(/"/g, '&quot;')
+                                .replace(/'/g, '&#039;');
+                            
                             const messageContent = `
                                 <div class="message received">
-                                    <p class="message-content">${payload.new.content || ''}</p>
+                                    <p class="message-content">${escapedContent}</p>
                                     <span class="message-timestamp">${new Date(payload.new.created_at).toLocaleTimeString()}</span>
                                 </div>
                             `;
@@ -6662,7 +6678,7 @@
             }
         };
 
-        // Global delegated event listener for chat buttons AND message toggle
+        // Global delegated event listener for ALL buttons
         document.addEventListener('click', function(event) {
             // Check if clicked element is a chat button or inside one
             const chatBtn = event.target.closest('.chat-btn');
@@ -6692,42 +6708,102 @@
                 }
             }
             
-            // Check if clicked element is the message toggle button
-            const messageBtn = event.target.closest('#messageToggleBtn');
+            // Check if clicked element is the message toggle button or its children
+            const messageBtn = event.target.closest('#messageToggleBtn') || 
+                              (event.target.id === 'messageToggleBtn') ||
+                              (event.target.tagName === 'svg' && event.target.closest('#messageToggleBtn')) ||
+                              (event.target.tagName === 'path' && event.target.closest('#messageToggleBtn'));
+                              
             if (messageBtn) {
                 event.preventDefault();
                 event.stopPropagation();
-                console.log('📨 Global delegated message toggle click detected');
+                console.log('📨 Message toggle button clicked!');
                 
-                if (window.toggleMessagePanel) {
-                    window.toggleMessagePanel();
-                } else {
-                    // Fallback - just toggle visibility
-                    const panel = document.getElementById('messagePanel');
-                    if (panel) {
-                        panel.classList.toggle('hidden');
-                        console.log('✅ Message panel toggled via fallback');
+                const panel = document.getElementById('messagePanel');
+                const actualBtn = document.getElementById('messageToggleBtn');
+                
+                if (panel) {
+                    const isHidden = panel.classList.contains('hidden');
+                    if (isHidden) {
+                        panel.classList.remove('hidden');
+                        console.log('✅ Message panel opened');
+                        // Load conversations when opening
+                        if (window.loadUserConversations) {
+                            window.loadUserConversations();
+                        }
+                    } else {
+                        panel.classList.add('hidden');
+                        console.log('✅ Message panel closed');
                     }
+                } else {
+                    console.error('❌ Message panel not found');
                 }
             }
         });
         
         console.log('✅ Global chat button and message delegated listeners attached');
 
-        // PROTECTION: Prevent navigation menu from disappearing
+        // STRONG PROTECTION: Prevent navigation menu from disappearing
         setInterval(() => {
-            const navLinks = document.querySelectorAll('nav a, .nav-link, .dropdown, .mobile-menu-item');
-            navLinks.forEach(link => {
-                if (link.style.display === 'none' || link.style.visibility === 'hidden') {
-                    console.log('🛡️ Restoring hidden navigation element:', link);
-                    link.style.display = '';
-                    link.style.visibility = 'visible';
-                    link.style.opacity = '1';
+            // Check multiple selectors for navigation elements
+            const selectors = [
+                'nav', 'nav a', 'nav ul', 'nav li',
+                '.nav-link', '.dropdown', '.dropdown-menu',
+                '.mobile-menu-item', '.navbar', '.navbar-nav',
+                'header nav', '.navigation', '.nav-container',
+                '[class*="nav"]', '[id*="nav"]'
+            ];
+            
+            selectors.forEach(selector => {
+                try {
+                    const elements = document.querySelectorAll(selector);
+                    elements.forEach(element => {
+                        const computed = window.getComputedStyle(element);
+                        if (element.style.display === 'none' || 
+                            element.style.visibility === 'hidden' || 
+                            element.style.opacity === '0' ||
+                            computed.display === 'none' ||
+                            computed.visibility === 'hidden') {
+                            
+                            console.log('🛡️ Restoring hidden navigation element:', selector, element);
+                            element.style.display = '';
+                            element.style.visibility = 'visible';
+                            element.style.opacity = '1';
+                            
+                            // Also remove any classes that might hide it
+                            const hiddenClasses = ['hidden', 'd-none', 'invisible', 'opacity-0'];
+                            hiddenClasses.forEach(cls => element.classList.remove(cls));
+                        }
+                    });
+                } catch (e) {
+                    // Ignore selector errors
                 }
             });
-        }, 5000); // Check every 5 seconds
+        }, 3000); // Check every 3 seconds
         
         console.log('✅ Navigation protection enabled');
+
+        // Test message panel functionality
+        window.testMessagePanel = function() {
+            console.log('=== MESSAGE PANEL TEST ===');
+            
+            const btn = document.getElementById('messageToggleBtn');
+            const panel = document.getElementById('messagePanel');
+            
+            console.log('1. Elements:');
+            console.log('  - Message Button:', !!btn);
+            console.log('  - Message Panel:', !!panel);
+            console.log('  - Button onclick:', btn ? btn.onclick : 'N/A');
+            
+            console.log('2. Trying to toggle panel...');
+            if (btn) {
+                btn.click();
+                console.log('  - Clicked button');
+                console.log('  - Panel hidden?', panel ? panel.classList.contains('hidden') : 'N/A');
+            }
+            
+            return 'Message panel test complete';
+        };
 
         // Comprehensive chat test function
         window.testChat = function() {
