@@ -1323,8 +1323,10 @@
                 localStorage.removeItem('currentUser_emergency');
             }
             
-            // Go to home page instead of login page
-            window.location.href = 'index.html';
+            // Force a hard reload of the home page to ensure fresh state
+            window.location.href = 'index.html?t=' + Date.now();
+            // Adding timestamp forces browser to treat it as a new request
+            window.location.reload(true);
             
             // Clear the logout flag after a delay to allow normal backup functionality to resume
             setTimeout(() => {
