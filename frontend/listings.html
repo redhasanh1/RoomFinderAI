@@ -3563,10 +3563,12 @@
 
             // Enter key support for instant messaging
             chatInput.addEventListener('keydown', (e) => {
+                // Only prevent default for Enter key, not for special characters
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     sendMessage();
                 }
+                // Allow all other keys including ?, !, etc.
             });
 
             // File upload functionality - only for landlords
@@ -3800,15 +3802,31 @@
                     if (currentConversationId && currentConversationId === payload.new.conversation_id) {
                         console.log('✅ Message is for current conversation!');
                         
-                        // Reload messages to ensure we get the latest
-                        loadMessages(currentConversationId);
-                        
-                        // Also try instant append for better UX
                         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                         const chatMessagesContainer = document.getElementById('chatMessages');
                         
+                        // Only add message if it's from another user (not our own message)
                         if (chatMessagesContainer && payload.new.sender_email !== currentUser.email) {
                             console.log('🚀 Adding message instantly to UI');
+                            
+                            // Create message element immediately
+                            const messageElement = document.createElement('div');
+                            messageElement.className = 'message-container received-container animate-slideIn';
+                            
+                            const messageContent = `
+                                <div class="message received">
+                                    <p class="message-content">${payload.new.content || ''}</p>
+                                    <span class="message-timestamp">${new Date(payload.new.created_at).toLocaleTimeString()}</span>
+                                </div>
+                            `;
+                            
+                            messageElement.innerHTML = messageContent;
+                            chatMessagesContainer.appendChild(messageElement);
+                            
+                            // Scroll to bottom to show new message
+                            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                            
+                            console.log('✅ Message added to chat instantly!');
                         }
                     } else {
                         console.log('❌ Message not for current conversation');
@@ -4556,7 +4574,8 @@
             let isMessagingPanelOpen = false;
 
             // Toggle message panel
-            messageToggleBtn.addEventListener('click', async () => {
+            // Make the toggle function globally accessible
+            window.toggleMessagePanel = async function() {
                 isMessagingPanelOpen = !isMessagingPanelOpen;
                 if (isMessagingPanelOpen) {
                     messagePanel.classList.remove('hidden');
@@ -4564,7 +4583,13 @@
                 } else {
                     messagePanel.classList.add('hidden');
                 }
-            });
+            };
+            
+            // Method 1: Direct onclick assignment
+            messageToggleBtn.onclick = window.toggleMessagePanel;
+            
+            // Method 2: Event listener as backup
+            messageToggleBtn.addEventListener('click', window.toggleMessagePanel);
 
             // Force hide notifications button
             document.getElementById('forceHideNotifications').addEventListener('click', () => {
@@ -6637,7 +6662,7 @@
             }
         };
 
-        // Global delegated event listener for chat buttons
+        // Global delegated event listener for chat buttons AND message toggle
         document.addEventListener('click', function(event) {
             // Check if clicked element is a chat button or inside one
             const chatBtn = event.target.closest('.chat-btn');
@@ -6666,9 +6691,43 @@
                     console.error('❌ Error in delegated chat handler:', error);
                 }
             }
+            
+            // Check if clicked element is the message toggle button
+            const messageBtn = event.target.closest('#messageToggleBtn');
+            if (messageBtn) {
+                event.preventDefault();
+                event.stopPropagation();
+                console.log('📨 Global delegated message toggle click detected');
+                
+                if (window.toggleMessagePanel) {
+                    window.toggleMessagePanel();
+                } else {
+                    // Fallback - just toggle visibility
+                    const panel = document.getElementById('messagePanel');
+                    if (panel) {
+                        panel.classList.toggle('hidden');
+                        console.log('✅ Message panel toggled via fallback');
+                    }
+                }
+            }
         });
         
-        console.log('✅ Global chat button delegated listener attached');
+        console.log('✅ Global chat button and message delegated listeners attached');
+
+        // PROTECTION: Prevent navigation menu from disappearing
+        setInterval(() => {
+            const navLinks = document.querySelectorAll('nav a, .nav-link, .dropdown, .mobile-menu-item');
+            navLinks.forEach(link => {
+                if (link.style.display === 'none' || link.style.visibility === 'hidden') {
+                    console.log('🛡️ Restoring hidden navigation element:', link);
+                    link.style.display = '';
+                    link.style.visibility = 'visible';
+                    link.style.opacity = '1';
+                }
+            });
+        }, 5000); // Check every 5 seconds
+        
+        console.log('✅ Navigation protection enabled');
 
         // Comprehensive chat test function
         window.testChat = function() {
