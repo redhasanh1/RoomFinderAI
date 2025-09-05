@@ -109,7 +109,7 @@ window.AuthManager = (function() {
             `;
         } else {
             authSection.innerHTML = `
-                <a href="/login" class="text-gray-700 hover:text-blue-600 transition font-medium login-link">Login/Register</a>
+                <a href="login.html" class="auth-link login-register-btn px-4 py-2 rounded-lg transition-colors duration-200">Login/Register</a>
             `;
         }
     }
