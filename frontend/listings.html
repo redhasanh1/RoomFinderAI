@@ -65,6 +65,29 @@
             }
         };
 
+        // Direct onclick handler for chat buttons
+        window.handleChatClick = function(listing) {
+            console.log('🔘 Direct chat button click handler triggered');
+            console.log('Listing:', listing);
+            
+            // Try the main function first
+            if (window.startConversation) {
+                console.log('Using startConversation');
+                window.startConversation(listing);
+            } else if (window.fallbackStartChat) {
+                console.log('Using fallbackStartChat');
+                window.fallbackStartChat(listing);
+            } else {
+                console.error('No chat function available');
+                // Last resort - just open the modal
+                const modal = document.getElementById('chatModal');
+                if (modal) {
+                    modal.classList.add('active');
+                    console.log('Forced modal open');
+                }
+            }
+        };
+
         // Load configuration from Railway API (only if not already loaded)
         if (!window.isConfigLoaded) {
             fetch('/api/config')
@@ -5102,7 +5125,7 @@
                     <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
                     <div class="flex space-x-2 mt-4">
                         <button class="view-details-btn w-1/2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                        <button class="chat-btn w-1/2 ${hasOwner ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
+                        <button class="chat-btn w-1/2 ${hasOwner ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? `onclick="window.handleChatClick(${JSON.stringify(listing).replace(/"/g, '&quot;')})"` : 'disabled title="No owner specified for this listing"'}>Chat</button>
                     </div>
                 </div>
             `;
@@ -5117,13 +5140,22 @@
             const viewDetailsBtn = listingCard.querySelector('.view-details-btn');
             const chatBtn = listingCard.querySelector('.chat-btn');
             
-            viewDetailsBtn.addEventListener('click', () => {
-                const listing = JSON.parse(viewDetailsBtn.dataset.listing);
-                showListingModal(listing);
-            });
+            if (!viewDetailsBtn) {
+                console.error('❌ View Details button not found in listing card');
+            } else {
+                viewDetailsBtn.addEventListener('click', () => {
+                    const listing = JSON.parse(viewDetailsBtn.dataset.listing);
+                    showListingModal(listing);
+                });
+            }
 
-            if (!chatBtn.disabled) {
-                chatBtn.addEventListener('click', () => {
+            if (!chatBtn) {
+                console.error('❌ Chat button not found in listing card');
+            } else if (!chatBtn.disabled) {
+                console.log('✅ Adding click listener to chat button for:', listing.title);
+                chatBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
                     try {
                         console.log('🎯 Chat button clicked for listing:', chatBtn.dataset.listing);
                         const listing = JSON.parse(chatBtn.dataset.listing);
