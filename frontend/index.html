@@ -148,7 +148,28 @@
             background-color: rgba(102, 126, 234, 0.05);
         }
         
-        .auth-link {
+        /* Login/Register button - ALWAYS BLUE */
+        .auth-link.login-register-btn {
+            background-color: #2563eb !important;
+            color: white !important;
+            border: 2px solid #2563eb !important;
+            font-weight: 500;
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-block;
+        }
+        
+        .auth-link.login-register-btn:hover {
+            background-color: #1d4ed8 !important;
+            color: white !important;
+            border-color: #1d4ed8 !important;
+        }
+        
+        /* General auth-link for other uses */
+        .auth-link:not(.login-register-btn) {
             color: #374151;
             font-weight: 500;
             padding: 0.5rem 1.5rem;
@@ -159,23 +180,10 @@
             font-size: 0.9rem;
         }
         
-        .auth-link:hover {
+        .auth-link:not(.login-register-btn):hover {
             color: #667eea;
             border-color: #667eea;
             background-color: rgba(102, 126, 234, 0.05);
-        }
-        
-        /* Override styles for login/register button specifically */
-        .auth-link.login-register-btn {
-            background-color: #2563eb !important;
-            color: white !important;
-            border: 2px solid #2563eb !important;
-        }
-        
-        .auth-link.login-register-btn:hover {
-            background-color: #1d4ed8 !important;
-            color: white !important;
-            border-color: #1d4ed8 !important;
         }
         
         /* Dropdown Styles */
