@@ -165,6 +165,19 @@
             background-color: rgba(102, 126, 234, 0.05);
         }
         
+        /* Override styles for login/register button specifically */
+        .auth-link.login-register-btn {
+            background-color: #2563eb !important;
+            color: white !important;
+            border: 2px solid #2563eb !important;
+        }
+        
+        .auth-link.login-register-btn:hover {
+            background-color: #1d4ed8 !important;
+            color: white !important;
+            border-color: #1d4ed8 !important;
+        }
+        
         /* Dropdown Styles */
         .dropdown {
             position: relative;
@@ -1417,7 +1430,7 @@
             <div class="desktop-auth hidden md:block">
                 <div id="authSection">
                     <!-- Default content before JS loads -->
-                    <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                    <a href="login.html" class="auth-link login-register-btn px-4 py-2 rounded-lg transition-colors duration-200">
                         Login/Register
                     </a>
                 </div>
@@ -2568,7 +2581,7 @@
                     } catch (e) {
                         console.error('Error parsing user data:', e);
                         authSection.innerHTML = `
-                            <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                            <a href="login.html" class="auth-link login-register-btn px-4 py-2 rounded-lg transition-colors duration-200">
                                 Login/Register
                             </a>
                         `;
@@ -2576,7 +2589,7 @@
                     }
                 } else {
                     authSection.innerHTML = `
-                        <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                        <a href="login.html" class="auth-link login-register-btn px-4 py-2 rounded-lg transition-colors duration-200">
                             Login/Register
                         </a>
                     `;
