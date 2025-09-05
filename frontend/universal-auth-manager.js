@@ -272,7 +272,7 @@ async function updateAuthSection() {
     } else {
         // User is not logged in - show login/register
         authSection.innerHTML = `
-            <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+            <a href="login.html" class="auth-link login-register-btn px-4 py-2 rounded-lg transition-colors duration-200">
                 Login/Register
             </a>
         `;
