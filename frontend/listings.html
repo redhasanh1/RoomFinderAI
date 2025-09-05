@@ -44,6 +44,27 @@
             return 'JavaScript working correctly';
         };
 
+        // Fallback chat function - always available
+        window.fallbackStartChat = function(listing) {
+            console.log('🔧 Using fallback chat system');
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            
+            if (!currentUser.email) {
+                alert('Please log in to start a chat.');
+                window.location.href = '/frontend/login.html';
+                return;
+            }
+            
+            const chatModal = document.getElementById('chatModal');
+            if (chatModal) {
+                document.getElementById('chatTitle').textContent = `Chat about: ${listing.title || 'Listing'}`;
+                chatModal.classList.add('active');
+                console.log('✅ Fallback chat opened');
+            } else {
+                alert('Chat system is loading. Please try again in a moment.');
+            }
+        };
+
         // Load configuration from Railway API (only if not already loaded)
         if (!window.isConfigLoaded) {
             fetch('/api/config')
@@ -3082,7 +3103,15 @@
                             console.log('🎯 Chat button clicked (legacy handler):', button.dataset.listing);
                             const listing = JSON.parse(button.dataset.listing);
                             console.log('📋 Parsed listing data:', listing);
-                            startConversation(listing);
+                            if (window.startConversation) {
+                            window.startConversation(listing);
+                        } else if (window.fallbackStartChat) {
+                            console.warn('⚠️ Using fallback chat system');
+                            window.fallbackStartChat(listing);
+                        } else {
+                            console.error('❌ No chat function available');
+                            alert('Chat system is not ready. Please refresh the page and try again.');
+                        }
                         } catch (error) {
                             console.error('❌ Error parsing listing data or starting conversation:', error);
                             alert('Error opening chat. Please refresh the page and try again.');
@@ -4111,10 +4140,11 @@
                     return;
                 }
             }
-            startConversation(listing);
+            window.startConversation(listing);
         }
 
-        async function startConversation(listing) {
+        // Make startConversation globally accessible
+        window.startConversation = async function(listing) {
             try {
                 console.log('🚀 Starting conversation for listing:', listing?.title || 'Unknown listing');
             
@@ -4380,7 +4410,15 @@
                     // Test if startConversation function exists
                     if (typeof startConversation === 'function') {
                         console.log('✅ startConversation function exists, calling it...');
-                        startConversation(listing);
+                        if (window.startConversation) {
+                            window.startConversation(listing);
+                        } else if (window.fallbackStartChat) {
+                            console.warn('⚠️ Using fallback chat system');
+                            window.fallbackStartChat(listing);
+                        } else {
+                            console.error('❌ No chat function available');
+                            alert('Chat system is not ready. Please refresh the page and try again.');
+                        }
                     } else {
                         console.error('❌ startConversation function not found');
                     }
@@ -5090,7 +5128,15 @@
                         console.log('🎯 Chat button clicked for listing:', chatBtn.dataset.listing);
                         const listing = JSON.parse(chatBtn.dataset.listing);
                         console.log('📋 Parsed listing data:', listing);
-                        startConversation(listing);
+                        if (window.startConversation) {
+                            window.startConversation(listing);
+                        } else if (window.fallbackStartChat) {
+                            console.warn('⚠️ Using fallback chat system');
+                            window.fallbackStartChat(listing);
+                        } else {
+                            console.error('❌ No chat function available');
+                            alert('Chat system is not ready. Please refresh the page and try again.');
+                        }
                     } catch (error) {
                         console.error('❌ Error parsing listing data or starting conversation:', error);
                         alert('Error opening chat. Please refresh the page and try again.');
@@ -6543,6 +6589,56 @@
             } else {
                 console.error('❌ Chat modal not found');
             }
+        };
+
+        // Comprehensive chat test function
+        window.testChat = function() {
+            console.log('=== COMPREHENSIVE CHAT TEST ===');
+            
+            // Test 1: Check functions
+            console.log('1. Functions Available:');
+            console.log('  - window.startConversation:', typeof window.startConversation);
+            console.log('  - window.fallbackStartChat:', typeof window.fallbackStartChat);
+            console.log('  - window.testJavaScript:', typeof window.testJavaScript);
+            
+            // Test 2: Check DOM elements
+            console.log('2. DOM Elements:');
+            console.log('  - Chat Modal:', !!document.getElementById('chatModal'));
+            console.log('  - Chat Buttons:', document.querySelectorAll('.chat-btn').length);
+            console.log('  - Enabled Buttons:', document.querySelectorAll('.chat-btn:not([disabled])').length);
+            
+            // Test 3: Check user auth
+            console.log('3. Authentication:');
+            const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            console.log('  - User Email:', user.email || 'Not logged in');
+            console.log('  - Supabase Client:', !!window.supabaseClient);
+            
+            // Test 4: Try clicking a button
+            const firstBtn = document.querySelector('.chat-btn:not([disabled])');
+            if (firstBtn) {
+                console.log('4. Testing First Chat Button:');
+                try {
+                    const listing = JSON.parse(firstBtn.dataset.listing);
+                    console.log('  - Listing Title:', listing.title);
+                    console.log('  - Has Owner Email:', !!listing.user_email);
+                    console.log('  - Attempting to open chat...');
+                    
+                    if (window.startConversation) {
+                        window.startConversation(listing);
+                    } else if (window.fallbackStartChat) {
+                        window.fallbackStartChat(listing);
+                    } else {
+                        console.error('  ❌ No chat function available!');
+                    }
+                } catch (e) {
+                    console.error('  ❌ Error:', e.message);
+                }
+            } else {
+                console.log('4. No enabled chat buttons found');
+            }
+            
+            console.log('=== TEST COMPLETE ===');
+            return 'Test complete - check console for results';
         };
 
     </script>
