@@ -142,6 +142,12 @@ class RecommendationEngine {
         console.log('🔮 Generating personalized recommendations...');
         
         try {
+            // Check if Supabase client is available
+            if (!this.supabase || typeof this.supabase.from !== 'function') {
+                console.warn('Supabase client not available, skipping recommendations');
+                return [];
+            }
+            
             // Get all available properties
             const { data: allProperties, error } = await this.supabase
                 .from('listings')

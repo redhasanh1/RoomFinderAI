@@ -172,6 +172,63 @@
             attemptInitialization();
         }
 
+        // localStorage helper functions with quota management
+        function safeSetItem(key, value) {
+            try {
+                localStorage.setItem(key, value);
+                return true;
+            } catch (e) {
+                if (e.name === 'QuotaExceededError' || e.code === 22) {
+                    console.warn('localStorage quota exceeded, cleaning up old data');
+                    cleanupLocalStorage();
+                    try {
+                        localStorage.setItem(key, value);
+                        return true;
+                    } catch (e2) {
+                        console.error('Failed to set localStorage item even after cleanup:', e2);
+                        return false;
+                    }
+                } else {
+                    console.error('Failed to set localStorage item:', e);
+                    return false;
+                }
+            }
+        }
+        
+        function cleanupLocalStorage() {
+            try {
+                // Remove old cached data
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (
+                        key.startsWith('allListings_') ||
+                        key.startsWith('cachedListings_') ||
+                        key.startsWith('oldData_') ||
+                        key.includes('backup') ||
+                        key.includes('temp')
+                    )) {
+                        keysToRemove.push(key);
+                    }
+                }
+                
+                keysToRemove.forEach(key => {
+                    localStorage.removeItem(key);
+                    console.log('Removed old localStorage key:', key);
+                });
+                
+                // Limit users array size
+                const users = JSON.parse(localStorage.getItem('users') || '[]');
+                if (users.length > 100) {
+                    const limitedUsers = users.slice(-50); // Keep only last 50 users
+                    safeSetItem('users', JSON.stringify(limitedUsers));
+                    console.log('Limited users array to 50 entries');
+                }
+            } catch (e) {
+                console.error('Error during localStorage cleanup:', e);
+            }
+        }
+
         // Wait for DOM to be ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
@@ -2286,8 +2343,8 @@
                     currentUser.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
                     let users = JSON.parse(localStorage.getItem('users')) || [];
                     users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                    localStorage.setItem('users', JSON.stringify(users));
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    safeSetItem('users', JSON.stringify(users));
+                    safeSetItem('currentUser', JSON.stringify(currentUser));
                 }
                 authSection.innerHTML = `
                     <div class="flex items-center space-x-2">
@@ -2354,7 +2411,7 @@
                     });
                     
                     // Update users array
-                    localStorage.setItem('users', JSON.stringify(users));
+                    safeSetItem('users', JSON.stringify(users));
                     
                     // Also update currentUser if it exists
                     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -2362,7 +2419,7 @@
                         const originalLength = currentUser.listings.length;
                         currentUser.listings = currentUser.listings.filter(l => l.id !== listingId);
                         if (currentUser.listings.length < originalLength) {
-                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                            safeSetItem('currentUser', JSON.stringify(currentUser));
                             console.log('🧹 Cleaned currentUser.listings');
                         }
                     }
@@ -3319,8 +3376,8 @@
                 currentUser.listings.push(newListing);
                 let users = JSON.parse(localStorage.getItem('users')) || [];
                 users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                localStorage.setItem('users', JSON.stringify(users));
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                safeSetItem('users', JSON.stringify(users));
+                safeSetItem('currentUser', JSON.stringify(currentUser));
                 
                 // Also save to userListings key for profile page compatibility
                 const userListingsKey = `userListings_${currentUser.email}`;
@@ -4729,7 +4786,12 @@
                 
                 // Add null check for conversationTabs element
                 if (!conversationTabs) {
-                    console.error('conversationTabs element not found');
+                    console.warn('conversationTabs element not found, skipping conversation display');
+                    return;
+                }
+                
+                if (!currentUser) {
+                    console.warn('No current user found, skipping conversation display');
                     return;
                 }
                 
@@ -5897,8 +5959,8 @@
                                     currentUser.listings = currentUser.listings.filter(l => l.id !== listingId);
                                     let users = JSON.parse(localStorage.getItem('users')) || [];
                                     users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                                    localStorage.setItem('users', JSON.stringify(users));
-                                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                                    safeSetItem('users', JSON.stringify(users));
+                                    safeSetItem('currentUser', JSON.stringify(currentUser));
                                 }
                                 console.log('✅ Also cleaned up localStorage');
                             }
@@ -5929,8 +5991,8 @@
                         if (currentUser.listings.length < originalUserListingsLength) {
                             let users = JSON.parse(localStorage.getItem('users')) || [];
                             users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                            localStorage.setItem('users', JSON.stringify(users));
-                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                            safeSetItem('users', JSON.stringify(users));
+                            safeSetItem('currentUser', JSON.stringify(currentUser));
                             deleteSuccess = true;
                         }
                     }
@@ -6165,8 +6227,8 @@
                                                 currentUser.listings.splice(userListingIndex, 1);
                                                 let users = JSON.parse(localStorage.getItem('users')) || [];
                                                 users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                                                localStorage.setItem('users', JSON.stringify(users));
-                                                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                                                safeSetItem('users', JSON.stringify(users));
+                                                safeSetItem('currentUser', JSON.stringify(currentUser));
                                             }
                                         }
                                     }
@@ -6203,8 +6265,8 @@
                                     
                                     let users = JSON.parse(localStorage.getItem('users')) || [];
                                     users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                                    localStorage.setItem('users', JSON.stringify(users));
-                                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                                    safeSetItem('users', JSON.stringify(users));
+                                    safeSetItem('currentUser', JSON.stringify(currentUser));
                                     updateSuccess = true;
                                 }
                             }
@@ -6568,6 +6630,20 @@
             const countElement = document.getElementById('listingCount');
             const emptyState = document.getElementById('emptyState');
             const listingsContainer = document.getElementById('listingsContainer');
+            
+            // Add null checks for all elements
+            if (!countElement) {
+                console.warn('listingCount element not found');
+                return;
+            }
+            if (!emptyState) {
+                console.warn('emptyState element not found');
+                return;
+            }
+            if (!listingsContainer) {
+                console.warn('listingsContainer element not found');
+                return;
+            }
             
             if (isLoading) {
                 countElement.textContent = 'Loading properties...';
