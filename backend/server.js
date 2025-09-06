@@ -898,14 +898,14 @@ app.get('/api/listings/:id', (req, res) => {
 });
 
 // API: Update listing by ID
-app.put('/api/listings/:id', (req, res) => {
+app.put('/api/listings/:id', async (req, res) => {
     try {
-        const listingIndex = listings.findIndex(l => l.id === req.params.id);
-        if (listingIndex === -1) {
-            return res.status(404).json({ error: 'Listing not found' });
-        }
-
-        const { title, price, city, street, postalCode, houseType, bedrooms, utilities, description } = req.body;
+        const listingId = req.params.id;
+        const userEmail = req.headers['user-email'] || req.query.userEmail;
+        
+        console.log(`📝 Attempting to update listing ${listingId} for user ${userEmail}`);
+        
+        const { title, price, city, street, postalCode, houseType, bedrooms, bathrooms, utilities, description } = req.body;
         
         // Validate required fields
         const errors = [];
@@ -917,22 +917,118 @@ app.put('/api/listings/:id', (req, res) => {
             return res.status(400).json({ errors });
         }
 
-        // Update listing
-        listings[listingIndex] = {
-            ...listings[listingIndex],
+        // Prepare update data
+        const updateData = {
             title,
             price: parseFloat(price),
             city,
-            street: street || listings[listingIndex].street,
-            postalCode: postalCode || listings[listingIndex].postalCode,
-            houseType: houseType || listings[listingIndex].houseType,
-            bedrooms: bedrooms ? parseInt(bedrooms) : listings[listingIndex].bedrooms,
-            utilities: utilities || listings[listingIndex].utilities,
-            description: description || listings[listingIndex].description,
+            street: street || '',
+            postalCode: postalCode || '',
+            houseType: houseType || 'Apartment',
+            bedrooms: bedrooms ? parseInt(bedrooms) : 1,
+            bathrooms: bathrooms ? parseFloat(bathrooms) : 1,
+            utilities: utilities || 'None',
+            description: description || '',
             updatedAt: new Date().toISOString()
         };
 
-        res.json({ message: 'Listing updated successfully', listing: listings[listingIndex] });
+        // First try to update in Supabase if available
+        if (supabase) {
+            try {
+                // First verify the listing belongs to the user
+                const { data: listing, error: fetchError } = await supabase
+                    .from('listings')
+                    .select('*')
+                    .eq('id', listingId)
+                    .single();
+                
+                if (fetchError) {
+                    console.error('Error fetching listing:', fetchError);
+                    return res.status(404).json({ error: 'Listing not found' });
+                }
+                
+                // Check if user owns the listing
+                if (listing.user_email !== userEmail) {
+                    return res.status(403).json({ error: 'Unauthorized to edit this listing' });
+                }
+                
+                // Update in Supabase
+                const { data, error: updateError } = await supabase
+                    .from('listings')
+                    .update({
+                        title: updateData.title,
+                        price: updateData.price,
+                        city: updateData.city,
+                        street: updateData.street,
+                        postal_code: updateData.postalCode,
+                        house_type: updateData.houseType,
+                        bedrooms: updateData.bedrooms,
+                        bathrooms: updateData.bathrooms,
+                        utilities: updateData.utilities,
+                        description: updateData.description,
+                        updated_at: updateData.updatedAt
+                    })
+                    .eq('id', listingId)
+                    .select();
+                
+                if (updateError) {
+                    console.error('Error updating in Supabase:', updateError);
+                    throw updateError;
+                }
+                
+                console.log(`✅ Successfully updated listing ${listingId} in Supabase`);
+                
+                // Also update in-memory array if it exists
+                const listingIndex = listings.findIndex(l => l.id === listingId);
+                if (listingIndex !== -1) {
+                    listings[listingIndex] = {
+                        ...listings[listingIndex],
+                        ...updateData
+                    };
+                }
+                
+                res.json({ 
+                    message: 'Listing updated successfully', 
+                    listing: data[0],
+                    source: 'supabase'
+                });
+            } catch (supabaseError) {
+                console.error('Supabase update failed:', supabaseError);
+                // Fall back to in-memory update
+                const listingIndex = listings.findIndex(l => l.id === listingId);
+                if (listingIndex === -1) {
+                    return res.status(404).json({ error: 'Listing not found' });
+                }
+                
+                listings[listingIndex] = {
+                    ...listings[listingIndex],
+                    ...updateData
+                };
+                
+                res.json({ 
+                    message: 'Listing updated in local storage', 
+                    listing: listings[listingIndex],
+                    source: 'local'
+                });
+            }
+        } else {
+            // No Supabase, use in-memory storage
+            const listingIndex = listings.findIndex(l => l.id === listingId);
+            if (listingIndex === -1) {
+                return res.status(404).json({ error: 'Listing not found' });
+            }
+            
+            listings[listingIndex] = {
+                ...listings[listingIndex],
+                ...updateData
+            };
+            
+            res.json({ 
+                message: 'Listing updated in local storage', 
+                listing: listings[listingIndex],
+                source: 'local'
+            });
+        }
     } catch (error) {
         console.error('Error in PUT /api/listings/:id:', error.message);
         res.status(500).json({ error: 'Failed to update listing' });
