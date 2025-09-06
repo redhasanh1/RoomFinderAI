@@ -1126,6 +1126,7 @@
                                 <p class="text-xs text-gray-500">${bedrooms} bed ${houseType} • Created: ${createdDate}</p>
                             </div>
                             <div class="flex space-x-2">
+                                <button onclick="event.stopPropagation(); editListing('${listing.id}')" class="text-blue-600 hover:text-blue-700 font-medium text-base px-2 py-1">Edit</button>
                                 <button onclick="event.stopPropagation(); deleteListing('${listing.id}')" class="text-red-600 hover:text-red-700 font-medium text-base px-2 py-1">Delete</button>
                             </div>
                         </div>
@@ -1287,9 +1288,154 @@
 
         // Placeholder functions
 
-        function editListing(id) {
-            alert('Edit listing functionality coming soon!');
+        let currentEditingListing = null;
+
+        async function editListing(id) {
+            try {
+                const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                
+                // Find the listing data
+                const userListingsKey = `userListings_${currentUser.email}`;
+                let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                const listing = userListings.find(l => l.id === id);
+                
+                if (!listing) {
+                    alert('Listing not found!');
+                    return;
+                }
+                
+                currentEditingListing = listing;
+                
+                // Populate the form with current data
+                document.getElementById('editTitle').value = listing.title || '';
+                document.getElementById('editPrice').value = listing.price || '';
+                document.getElementById('editBedrooms').value = listing.bedrooms || '';
+                document.getElementById('editBathrooms').value = listing.bathrooms || '';
+                document.getElementById('editHouseType').value = listing.house_type || listing.houseType || 'Apartment';
+                document.getElementById('editStreet').value = listing.street || '';
+                document.getElementById('editCity').value = listing.city || '';
+                document.getElementById('editPostalCode').value = listing.postal_code || listing.postalCode || '';
+                document.getElementById('editUtilities').value = listing.utilities || 'None';
+                document.getElementById('editDescription').value = listing.description || '';
+                
+                // Show the modal
+                document.getElementById('editListingModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                
+            } catch (error) {
+                console.error('Error opening edit modal:', error);
+                alert('Failed to open edit form');
+            }
         }
+        
+        function closeEditModal() {
+            document.getElementById('editListingModal').classList.add('hidden');
+            document.body.style.overflow = 'auto'; // Restore scrolling
+            currentEditingListing = null;
+        }
+        
+        // Handle form submission
+        document.getElementById('editListingForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!currentEditingListing) {
+                alert('No listing selected for editing');
+                return;
+            }
+            
+            const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+            
+            try {
+                // Get form data
+                const formData = new FormData(this);
+                const updateData = {
+                    title: formData.get('title'),
+                    price: parseFloat(formData.get('price')),
+                    city: formData.get('city'),
+                    street: formData.get('street'),
+                    postalCode: formData.get('postalCode'),
+                    houseType: formData.get('houseType'),
+                    bedrooms: parseInt(formData.get('bedrooms')) || 0,
+                    bathrooms: parseFloat(formData.get('bathrooms')) || 0,
+                    utilities: formData.get('utilities'),
+                    description: formData.get('description')
+                };
+                
+                // Validate required fields
+                if (!updateData.title || !updateData.price || !updateData.city) {
+                    alert('Please fill in all required fields (Title, Price, City)');
+                    return;
+                }
+                
+                // Show loading state
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalText = submitButton.textContent;
+                submitButton.textContent = 'Saving...';
+                submitButton.disabled = true;
+                
+                // Call the API to update
+                const response = await fetch(`/api/listings/${currentEditingListing.id}?userEmail=${encodeURIComponent(currentUser.email)}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'user-email': currentUser.email
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    console.log('✅ Listing updated successfully:', result);
+                    
+                    // Update localStorage with new data
+                    const userListingsKey = `userListings_${currentUser.email}`;
+                    let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                    const listingIndex = userListings.findIndex(l => l.id === currentEditingListing.id);
+                    
+                    if (listingIndex !== -1) {
+                        userListings[listingIndex] = {
+                            ...userListings[listingIndex],
+                            ...updateData,
+                            // Handle different field naming conventions
+                            house_type: updateData.houseType,
+                            postal_code: updateData.postalCode
+                        };
+                        localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                    }
+                    
+                    // Also update allListings if it exists
+                    let allListings = JSON.parse(localStorage.getItem('allListings')) || [];
+                    const allListingIndex = allListings.findIndex(l => l.id === currentEditingListing.id);
+                    if (allListingIndex !== -1) {
+                        allListings[allListingIndex] = {
+                            ...allListings[allListingIndex],
+                            ...updateData,
+                            house_type: updateData.houseType,
+                            postal_code: updateData.postalCode
+                        };
+                        localStorage.setItem('allListings', JSON.stringify(allListings));
+                    }
+                    
+                    // Close modal and reload listings
+                    closeEditModal();
+                    loadUserListings(currentUser);
+                    alert('Listing updated successfully!');
+                    
+                } else {
+                    throw new Error(result.error || 'Failed to update listing');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error updating listing:', error);
+                alert(`Failed to update listing: ${error.message}`);
+            } finally {
+                // Restore button state
+                const submitButton = this.querySelector('button[type="submit"]');
+                submitButton.textContent = originalText;
+                submitButton.disabled = false;
+            }
+        });
 
         async function deleteListing(id) {
             if (confirm('Are you sure you want to delete this listing? This action cannot be undone.')) {
@@ -1598,5 +1744,119 @@
             }
         });
     </script>
+
+    <!-- Edit Listing Modal -->
+    <div id="editListingModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Edit Listing</h2>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            
+            <form id="editListingForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Title -->
+                    <div class="md:col-span-2">
+                        <label for="editTitle" class="block text-sm font-medium text-gray-700">Title</label>
+                        <input type="text" id="editTitle" name="title" required 
+                               class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
+                               placeholder="e.g., Cozy 2-Bedroom Apartment">
+                    </div>
+                    
+                    <!-- Price -->
+                    <div>
+                        <label for="editPrice" class="block text-sm font-medium text-gray-700">Price ($/month)</label>
+                        <input type="number" id="editPrice" name="price" required min="0" step="1" 
+                               class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
+                               placeholder="e.g., 1200">
+                    </div>
+                    
+                    <!-- Bedrooms -->
+                    <div>
+                        <label for="editBedrooms" class="block text-sm font-medium text-gray-700">Bedrooms</label>
+                        <input type="number" id="editBedrooms" name="bedrooms" min="0" max="10" 
+                               class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                    
+                    <!-- Bathrooms -->
+                    <div>
+                        <label for="editBathrooms" class="block text-sm font-medium text-gray-700">Bathrooms</label>
+                        <input type="number" id="editBathrooms" name="bathrooms" min="0" max="10" step="0.5" 
+                               class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                    
+                    <!-- House Type -->
+                    <div>
+                        <label for="editHouseType" class="block text-sm font-medium text-gray-700">Property Type</label>
+                        <select id="editHouseType" name="houseType" 
+                                class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                            <option value="Apartment">Apartment</option>
+                            <option value="House">House</option>
+                            <option value="Condo">Condo</option>
+                            <option value="Townhouse">Townhouse</option>
+                            <option value="Studio">Studio</option>
+                            <option value="Room">Room</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Location -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2">
+                        <label for="editStreet" class="block text-sm font-medium text-gray-700">Street Address</label>
+                        <input type="text" id="editStreet" name="street" 
+                               class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
+                               placeholder="e.g., 123 Main Street">
+                    </div>
+                    
+                    <div>
+                        <label for="editCity" class="block text-sm font-medium text-gray-700">City</label>
+                        <input type="text" id="editCity" name="city" required 
+                               class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
+                               placeholder="e.g., Toronto">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="editPostalCode" class="block text-sm font-medium text-gray-700">Postal Code</label>
+                        <input type="text" id="editPostalCode" name="postalCode" 
+                               class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
+                               placeholder="e.g., M5V 3A8">
+                    </div>
+                    
+                    <div>
+                        <label for="editUtilities" class="block text-sm font-medium text-gray-700">Utilities Included</label>
+                        <select id="editUtilities" name="utilities" 
+                                class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                            <option value="None">None</option>
+                            <option value="Partial">Partial</option>
+                            <option value="All">All Included</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Description -->
+                <div>
+                    <label for="editDescription" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="editDescription" name="description" rows="4" 
+                              class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
+                              placeholder="Describe your property..."></textarea>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex space-x-4 pt-6">
+                    <button type="button" onclick="closeEditModal()" 
+                            class="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>
