@@ -80,17 +80,24 @@
             border: 4px solid white;
         }
         
-        /* Stats cards */
-        .stat-card {
+        /* Compact Stats cards */
+        .stat-card-compact {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 1.5rem;
-            border-radius: 15px;
+            padding: 1rem;
+            border-radius: 12px;
             position: relative;
             overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
         
-        .stat-card::before {
+        .stat-card-compact:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .stat-card-compact::before {
             content: '';
             position: absolute;
             top: -50%;
@@ -99,6 +106,32 @@
             height: 200%;
             background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
             animation: shimmer 3s infinite;
+        }
+        
+        /* Logout button styling */
+        .logout-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.625rem 1.25rem;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+        
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        }
+        
+        .logout-btn:active {
+            transform: translateY(0);
         }
         
         @keyframes shimmer {
@@ -603,10 +636,7 @@
             
             <!-- Desktop Auth -->
             <div id="authSection" class="desktop-auth hidden md:block">
-                <!-- Profile content will be loaded here by JS -->
-                <button onclick="logout()" class="auth-link bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                    Logout
-                </button>
+                <!-- Profile icon will be loaded here by JS -->
             </div>
         </nav>
         
@@ -699,20 +729,26 @@
                         </span>
                     </div>
                     <p id="userEmail" class="text-gray-600 mb-4">john.doe@example.com</p>
-                    <div class="flex gap-4">
+                    <div class="flex gap-3">
                         <button onclick="openVerificationModal()" class="btn-secondary">Verify Account</button>
+                        <button onclick="logout()" class="logout-btn">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                            Logout
+                        </button>
                     </div>
                 </div>
 
                 <!-- Stats -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="stat-card">
-                        <h3 class="text-3xl font-bold" id="listingsCount">0</h3>
-                        <p class="text-sm opacity-90">Active Listings</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="stat-card-compact">
+                        <h3 class="text-2xl font-bold" id="listingsCount">0</h3>
+                        <p class="text-xs opacity-90">Active Listings</p>
                     </div>
-                    <div class="stat-card">
-                        <h3 class="text-3xl font-bold" id="savedCount">0</h3>
-                        <p class="text-sm opacity-90">Saved Properties</p>
+                    <div class="stat-card-compact">
+                        <h3 class="text-2xl font-bold" id="savedCount">0</h3>
+                        <p class="text-xs opacity-90">Saved Properties</p>
                     </div>
                 </div>
             </div>
