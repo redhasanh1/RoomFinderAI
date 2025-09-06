@@ -148,42 +148,26 @@
             background-color: rgba(102, 126, 234, 0.05);
         }
         
-        /* Login/Register button - ALWAYS BLUE */
+        /* Login/Register button - ALWAYS BLUE with maximum specificity */
+        a.auth-link.login-register-btn,
         .auth-link.login-register-btn {
             background-color: #2563eb !important;
             color: white !important;
             border: 2px solid #2563eb !important;
-            font-weight: 500;
-            padding: 0.5rem 1.5rem;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            font-size: 0.9rem;
-            display: inline-block;
+            font-weight: 500 !important;
+            padding: 0.5rem 1.5rem !important;
+            border-radius: 0.5rem !important;
+            transition: all 0.2s ease !important;
+            text-decoration: none !important;
+            font-size: 0.9rem !important;
+            display: inline-block !important;
         }
         
+        a.auth-link.login-register-btn:hover,
         .auth-link.login-register-btn:hover {
             background-color: #1d4ed8 !important;
             color: white !important;
             border-color: #1d4ed8 !important;
-        }
-        
-        /* General auth-link for other uses */
-        .auth-link:not(.login-register-btn) {
-            color: #374151;
-            font-weight: 500;
-            padding: 0.5rem 1.5rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
-        
-        .auth-link:not(.login-register-btn):hover {
-            color: #667eea;
-            border-color: #667eea;
-            background-color: rgba(102, 126, 234, 0.05);
         }
         
         /* Dropdown Styles */
@@ -2531,35 +2515,19 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOMContentLoaded - Initializing auth...');
             
-            // Initialize AuthManager if available
-            if (typeof window.AuthManager !== 'undefined') {
-                console.log('AuthManager found, initializing...');
-                window.AuthManager.initialize();
-                
-                // Force update the profile UI after a short delay to ensure everything is loaded
-                setTimeout(() => {
-                    console.log('Force updating profile UI...');
-                    window.AuthManager.updateProfileUI();
-                }, 100);
-            }
-            
-            // Also try UniversalAuth for backward compatibility
+            // Use UniversalAuth as primary auth manager
             if (typeof window.UniversalAuth !== 'undefined') {
                 console.log('UniversalAuth found, initializing...');
                 window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
-                
-                // Force a refresh after a short delay to ensure proper state
-                setTimeout(() => {
-                    console.log('Force refreshing auth state...');
-                    if (typeof window.UniversalAuth.refreshAuthState === 'function') {
-                        window.UniversalAuth.refreshAuthState();
-                    }
-                }, 100);
             }
-            
-            // If neither AuthManager nor UniversalAuth are available, fallback to manual update
-            if (typeof window.AuthManager === 'undefined' && typeof window.UniversalAuth === 'undefined') {
-                console.error('Neither AuthManager nor UniversalAuth found! Falling back to manual auth update.');
+            // Fallback to AuthManager
+            else if (typeof window.AuthManager !== 'undefined') {
+                console.log('AuthManager found, initializing...');
+                window.AuthManager.initialize();
+            }
+            // Last resort: manual update
+            else {
+                console.error('No auth manager found! Falling back to manual auth update.');
                 updateAuthSectionManual();
             }
             
