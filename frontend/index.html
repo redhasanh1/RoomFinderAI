@@ -148,27 +148,6 @@
             background-color: rgba(102, 126, 234, 0.05);
         }
         
-        /* Login/Register button - ALWAYS BLUE with maximum specificity */
-        a.auth-link.login-register-btn,
-        .auth-link.login-register-btn {
-            background-color: #2563eb !important;
-            color: white !important;
-            border: 2px solid #2563eb !important;
-            font-weight: 500 !important;
-            padding: 0.5rem 1.5rem !important;
-            border-radius: 0.5rem !important;
-            transition: all 0.2s ease !important;
-            text-decoration: none !important;
-            font-size: 0.9rem !important;
-            display: inline-block !important;
-        }
-        
-        a.auth-link.login-register-btn:hover,
-        .auth-link.login-register-btn:hover {
-            background-color: #1d4ed8 !important;
-            color: white !important;
-            border-color: #1d4ed8 !important;
-        }
         
         /* Dropdown Styles */
         .dropdown {
@@ -1357,6 +1336,32 @@
     <script src="/js/service-checker.js" defer></script>
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen">
+    <!-- CRITICAL: Blue button styles MUST load after Tailwind -->
+    <style>
+        /* Login/Register button - ALWAYS BLUE - Loaded AFTER Tailwind */
+        a.auth-link.login-register-btn,
+        .auth-link.login-register-btn,
+        #authSection a.login-register-btn {
+            background-color: #2563eb !important;
+            color: white !important;
+            border: 2px solid #2563eb !important;
+            font-weight: 500 !important;
+            padding: 0.5rem 1.5rem !important;
+            border-radius: 0.5rem !important;
+            transition: all 0.2s ease !important;
+            text-decoration: none !important;
+            font-size: 0.9rem !important;
+            display: inline-block !important;
+        }
+        
+        a.auth-link.login-register-btn:hover,
+        .auth-link.login-register-btn:hover,
+        #authSection a.login-register-btn:hover {
+            background-color: #1d4ed8 !important;
+            color: white !important;
+            border-color: #1d4ed8 !important;
+        }
+    </style>
     <!-- Premium Header -->
     <header id="header" class="fixed top-0 w-full premium-header z-50">
         <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
