@@ -1013,17 +1013,86 @@ app.post('/api/listings/search', async (req, res) => {
 });
 
 // API: Delete listing by ID
-app.delete('/api/listings/:id', (req, res) => {
+app.delete('/api/listings/:id', async (req, res) => {
     try {
-        const listingIndex = listings.findIndex(l => l.id === req.params.id);
-        if (listingIndex === -1) {
-            return res.status(404).json({ error: 'Listing not found' });
+        const listingId = req.params.id;
+        const userEmail = req.headers['user-email'] || req.query.userEmail;
+        
+        console.log(`🗑️ Attempting to delete listing ${listingId} for user ${userEmail}`);
+        
+        // First try to delete from Supabase if available
+        if (supabase) {
+            try {
+                // First verify the listing belongs to the user
+                const { data: listing, error: fetchError } = await supabase
+                    .from('listings')
+                    .select('*')
+                    .eq('id', listingId)
+                    .single();
+                
+                if (fetchError) {
+                    console.error('Error fetching listing:', fetchError);
+                    return res.status(404).json({ error: 'Listing not found' });
+                }
+                
+                // Check if user owns the listing
+                if (listing.user_email !== userEmail) {
+                    return res.status(403).json({ error: 'Unauthorized to delete this listing' });
+                }
+                
+                // Delete from Supabase
+                const { error: deleteError } = await supabase
+                    .from('listings')
+                    .delete()
+                    .eq('id', listingId);
+                
+                if (deleteError) {
+                    console.error('Error deleting from Supabase:', deleteError);
+                    throw deleteError;
+                }
+                
+                console.log(`✅ Successfully deleted listing ${listingId} from Supabase`);
+                
+                // Also remove from in-memory array if it exists
+                const listingIndex = listings.findIndex(l => l.id === listingId);
+                if (listingIndex !== -1) {
+                    listings.splice(listingIndex, 1);
+                }
+                
+                res.json({ 
+                    message: 'Listing deleted successfully', 
+                    listingId: listingId,
+                    source: 'supabase'
+                });
+            } catch (supabaseError) {
+                console.error('Supabase deletion failed:', supabaseError);
+                // Fall back to in-memory deletion
+                const listingIndex = listings.findIndex(l => l.id === listingId);
+                if (listingIndex === -1) {
+                    return res.status(404).json({ error: 'Listing not found' });
+                }
+                
+                const deletedListing = listings.splice(listingIndex, 1)[0];
+                res.json({ 
+                    message: 'Listing deleted from local storage', 
+                    listing: deletedListing,
+                    source: 'local'
+                });
+            }
+        } else {
+            // No Supabase, use in-memory storage
+            const listingIndex = listings.findIndex(l => l.id === listingId);
+            if (listingIndex === -1) {
+                return res.status(404).json({ error: 'Listing not found' });
+            }
+            
+            const deletedListing = listings.splice(listingIndex, 1)[0];
+            res.json({ 
+                message: 'Listing deleted from local storage', 
+                listing: deletedListing,
+                source: 'local'
+            });
         }
-
-        // Remove listing from array
-        const deletedListing = listings.splice(listingIndex, 1)[0];
-
-        res.json({ message: 'Listing deleted successfully', listing: deletedListing });
     } catch (error) {
         console.error('Error in DELETE /api/listings/:id:', error.message);
         res.status(500).json({ error: 'Failed to delete listing' });
