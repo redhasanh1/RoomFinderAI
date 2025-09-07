@@ -150,7 +150,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Powered by advanced AI"
+                                    android:text="Smart rental assistant"
                                     android:textColor="@color/white"
                                     android:textSize="12sp"
                                     android:alpha="0.8" />
