@@ -952,7 +952,7 @@ app.put('/api/listings/:id', async (req, res) => {
                     return res.status(403).json({ error: 'Unauthorized to edit this listing' });
                 }
                 
-                // Update in Supabase
+                // Update in Supabase with proper field names
                 const { data, error: updateError } = await supabase
                     .from('listings')
                     .update({
@@ -962,6 +962,7 @@ app.put('/api/listings/:id', async (req, res) => {
                         street: updateData.street,
                         postal_code: updateData.postalCode,
                         house_type: updateData.houseType,
+                        room_type: updateData.houseType, // For compatibility
                         bedrooms: updateData.bedrooms,
                         bathrooms: updateData.bathrooms,
                         utilities: updateData.utilities,
