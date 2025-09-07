@@ -100,10 +100,7 @@ Use `gemini -p` when:
 - No need for --yolo flag for read-only analysis
 - Gemini's context window can handle entire codebases that would overflow Claude's context
 - When checking implementations, be specific about what you're looking for to get accurate results
-- please always push with only a very short summary. no coauthor, no claude generated
-- before pushing please pull latest code if there is a new one and merge it successfully
-- please push every time you edit code with only a very short summary
-- im only editing the website, not the android app. just the website
-
-- I am using railway and supabase for all the api, keys and data. the code we edit and add or change should never include these sensitive keys and data in the files here.
-- always push with EricT2003 and a very short summary after we edited the code and you finfished with the edit
+- Before pushing, please pull latest code if there is a new one and merge it successfully
+- Push changes with descriptive commit messages that explain what was changed
+- I'm only editing the website, not the android app. Just the website
+- I am using Railway and Supabase for all the API, keys and data. The code we edit and add or change should never include these sensitive keys and data in the files here
