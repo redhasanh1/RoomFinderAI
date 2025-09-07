@@ -1412,7 +1412,10 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    console.log('✅ Listing updated successfully:', result);
+                    console.log('✅ Listing update response:', result);
+                    
+                    // Check if it was actually saved to database or just local
+                    const isDbUpdate = result.source === 'supabase';
                     
                     // Update localStorage with new data
                     const userListingsKey = `userListings_${currentUser.email}`;
@@ -1446,7 +1449,15 @@
                     // Close modal and reload listings
                     closeEditModal();
                     loadUserListings(currentUser);
-                    alert('Listing updated successfully!');
+                    
+                    // Show appropriate message based on update source
+                    if (isDbUpdate) {
+                        alert('✅ Listing updated successfully! Changes are saved to the database.');
+                        console.log('💾 Listing saved to Supabase database');
+                    } else {
+                        alert('⚠️ Listing updated locally only. Database update failed - changes may not persist after refresh.\n\nPlease check your internet connection or try again later.');
+                        console.warn('⚠️ Listing only saved locally, not in database');
+                    }
                     
                 } else {
                     throw new Error(result.error || 'Failed to update listing');
