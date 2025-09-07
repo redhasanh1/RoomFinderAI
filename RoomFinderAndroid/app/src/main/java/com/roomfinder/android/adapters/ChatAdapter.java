@@ -64,17 +64,19 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             return VIEW_TYPE_PROPERTY_CARD;
         } else if (message.isFileMessage()) {
             // Handle photo/file messages
-            if (message.isRealUserMessage()) {
+            if (message.isFromUser()) {
+                return VIEW_TYPE_USER_PHOTO;
+            } else if (message.isRealUserMessage()) {
                 if (currentUserEmail != null && message.isFromCurrentUser(currentUserEmail)) {
                     return VIEW_TYPE_USER_PHOTO;
                 } else {
                     return VIEW_TYPE_AI_PHOTO;
                 }
-            } else if (message.isFromUser()) {
-                return VIEW_TYPE_USER_PHOTO;
             } else {
                 return VIEW_TYPE_AI_PHOTO;
             }
+        } else if (message.isFromUser()) {
+            return VIEW_TYPE_USER;
         } else if (message.isRealUserMessage()) {
             // For real user messages, check if it's from current user
             if (currentUserEmail != null && message.isFromCurrentUser(currentUserEmail)) {
@@ -82,8 +84,6 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             } else {
                 return VIEW_TYPE_AI; // Use AI layout for other users' messages
             }
-        } else if (message.isFromUser()) {
-            return VIEW_TYPE_USER;
         } else if (message.isFromAi()) {
             return VIEW_TYPE_AI;
         } else {
