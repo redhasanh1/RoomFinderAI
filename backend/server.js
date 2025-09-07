@@ -904,6 +904,7 @@ app.put('/api/listings/:id', async (req, res) => {
         const userEmail = req.headers['user-email'] || req.query.userEmail;
         
         console.log(`📝 Attempting to update listing ${listingId} for user ${userEmail}`);
+        console.log('📥 Received update data:', req.body);
         
         const { title, price, city, street, postalCode, houseType, bedrooms, bathrooms, utilities, description } = req.body;
         
@@ -914,10 +915,11 @@ app.put('/api/listings/:id', async (req, res) => {
         if (!city) errors.push('City is required');
         
         if (errors.length > 0) {
+            console.error('❌ Validation errors:', errors);
             return res.status(400).json({ errors });
         }
 
-        // Prepare update data
+        // Prepare update data for local storage (camelCase)
         const updateData = {
             title,
             price: parseFloat(price),
@@ -931,6 +933,8 @@ app.put('/api/listings/:id', async (req, res) => {
             description: description || '',
             updatedAt: new Date().toISOString()
         };
+        
+        console.log('📋 Prepared update data:', updateData);
 
         // First try to update in Supabase if available
         if (supabase) {
@@ -952,32 +956,44 @@ app.put('/api/listings/:id', async (req, res) => {
                     return res.status(403).json({ error: 'Unauthorized to edit this listing' });
                 }
                 
-                // Update in Supabase with proper field names
+                // Prepare Supabase update data with snake_case field names
+                const supabaseUpdateData = {
+                    title: updateData.title,
+                    price: updateData.price,
+                    city: updateData.city,
+                    street: updateData.street,
+                    postal_code: updateData.postalCode,  // Convert camelCase to snake_case
+                    house_type: updateData.houseType,     // Convert camelCase to snake_case
+                    room_type: updateData.houseType,      // For compatibility
+                    bedrooms: updateData.bedrooms,
+                    bathrooms: updateData.bathrooms,      // Now supported with migration
+                    utilities: updateData.utilities,
+                    description: updateData.description,
+                    updated_at: updateData.updatedAt
+                };
+                
+                console.log('🔄 Updating in Supabase with data:', supabaseUpdateData);
+                
+                // Update in Supabase
                 const { data, error: updateError } = await supabase
                     .from('listings')
-                    .update({
-                        title: updateData.title,
-                        price: updateData.price,
-                        city: updateData.city,
-                        street: updateData.street,
-                        postal_code: updateData.postalCode,
-                        house_type: updateData.houseType,
-                        room_type: updateData.houseType, // For compatibility
-                        bedrooms: updateData.bedrooms,
-                        bathrooms: updateData.bathrooms,
-                        utilities: updateData.utilities,
-                        description: updateData.description,
-                        updated_at: updateData.updatedAt
-                    })
+                    .update(supabaseUpdateData)
                     .eq('id', listingId)
                     .select();
                 
                 if (updateError) {
-                    console.error('Error updating in Supabase:', updateError);
+                    console.error('❌ Supabase update error:', updateError);
+                    console.error('Error details:', {
+                        code: updateError.code,
+                        message: updateError.message,
+                        details: updateError.details,
+                        hint: updateError.hint
+                    });
                     throw updateError;
                 }
                 
                 console.log(`✅ Successfully updated listing ${listingId} in Supabase`);
+                console.log('📊 Updated listing data:', data[0]);
                 
                 // Also update in-memory array if it exists
                 const listingIndex = listings.findIndex(l => l.id === listingId);
@@ -989,16 +1005,17 @@ app.put('/api/listings/:id', async (req, res) => {
                 }
                 
                 res.json({ 
-                    message: 'Listing updated successfully', 
+                    message: 'Listing updated successfully in database', 
                     listing: data[0],
-                    source: 'supabase'
+                    source: 'supabase',
+                    success: true
                 });
             } catch (supabaseError) {
-                console.error('Supabase update failed:', supabaseError);
+                console.error('⚠️ Supabase update failed, using fallback:', supabaseError.message);
                 // Fall back to in-memory update
                 const listingIndex = listings.findIndex(l => l.id === listingId);
                 if (listingIndex === -1) {
-                    return res.status(404).json({ error: 'Listing not found' });
+                    return res.status(404).json({ error: 'Listing not found in local storage' });
                 }
                 
                 listings[listingIndex] = {
@@ -1006,10 +1023,14 @@ app.put('/api/listings/:id', async (req, res) => {
                     ...updateData
                 };
                 
+                console.log('💾 Updated in local storage only (Supabase unavailable)');
+                
                 res.json({ 
-                    message: 'Listing updated in local storage', 
+                    message: 'Listing updated in local storage only (database update failed)', 
                     listing: listings[listingIndex],
-                    source: 'local'
+                    source: 'local',
+                    warning: 'Changes may not persist after refresh',
+                    success: false
                 });
             }
         } else {
