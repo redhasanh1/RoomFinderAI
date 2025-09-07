@@ -1084,7 +1084,33 @@
         async function loadUserListings(user) {
             try {
                 const userListingsKey = `userListings_${user.email}`;
-                const userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                
+                // Also fetch from database if Supabase is available
+                if (supabase) {
+                    try {
+                        const { data: dbListings, error } = await supabase
+                            .from('listings')
+                            .select('*')
+                            .eq('user_email', user.email)
+                            .order('created_at', { ascending: false });
+                        
+                        if (!error && dbListings) {
+                            console.log('✅ Fetched listings from Supabase:', dbListings.length);
+                            // Update localStorage with fresh data from database
+                            userListings = dbListings.map(listing => ({
+                                ...listing,
+                                // Normalize field names for consistency
+                                houseType: listing.house_type || listing.houseType,
+                                postalCode: listing.postal_code || listing.postalCode,
+                                createdAt: listing.created_at || listing.createdAt
+                            }));
+                            localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                        }
+                    } catch (dbError) {
+                        console.error('Error fetching listings from database:', dbError);
+                    }
+                }
                 
                 console.log('🏠 Loading user listings:', {
                     key: userListingsKey,

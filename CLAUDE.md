@@ -106,3 +106,4 @@ Use `gemini -p` when:
 - im only editing the website, not the android app. just the website
 
 - I am using railway and supabase for all the api, keys and data. the code we edit and add or change should never include these sensitive keys and data in the files here.
+- always push with EricT2003 and a very short summary after we edited the code and you finfished with the edit
