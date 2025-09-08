@@ -297,6 +297,72 @@ function createListingCard(listing) {
 }
 
 /**
+ * Show notification message to user
+ */
+function showNotification(message, type = 'info') {
+    // Check if we can use an existing notification system
+    if (window.ClientConfig && window.ClientConfig.showNotification) {
+        window.ClientConfig.showNotification(message, type);
+    } else {
+        // Fallback to simple alert
+        console.log(`[${type.toUpperCase()}] ${message}`);
+        if (type === 'error') {
+            alert(`Error: ${message}`);
+        } else if (type === 'warning') {
+            alert(`Warning: ${message}`);
+        }
+    }
+}
+
+/**
+ * Contact owner - open chat modal
+ */
+function contactOwner(listingId) {
+    try {
+        console.log('📞 Contacting owner for listing:', listingId);
+        
+        // Try to use the chat system if available
+        if (typeof openChatModal === 'function') {
+            openChatModal(listingId, 'Property Inquiry');
+        } else if (window.globalChatSystem && window.globalChatSystem.startConversation) {
+            // Use the global chat system if available
+            window.globalChatSystem.startConversation(listingId, 'Property Inquiry');
+        } else {
+            console.warn('Chat system not available');
+            // Fallback: show a simple alert or implement basic contact functionality
+            showNotification('Chat feature is currently unavailable. Please try again later.', 'warning');
+        }
+    } catch (error) {
+        console.error('❌ Error contacting owner:', error);
+        showNotification('Failed to open chat. Please try again.', 'error');
+    }
+}
+
+/**
+ * Show quick view for a listing
+ */
+function showQuickView(listingId) {
+    try {
+        console.log('👁️ Quick view for listing:', listingId);
+        
+        // Find the listing data
+        const listings = window.currentListings || [];
+        const listing = listings.find(l => l.id === listingId);
+        
+        if (listing) {
+            // For now, just show the full modal (can be customized later for a quick view)
+            showListingModal(listing);
+        } else {
+            console.warn('Listing not found for quick view:', listingId);
+            showNotification('Unable to load listing details', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error showing quick view:', error);
+        showNotification('Failed to show quick view. Please try again.', 'error');
+    }
+}
+
+/**
  * Show listing modal
  */
 function showListingModal(listing) {
@@ -1032,6 +1098,9 @@ export {
     createListingCard,
     showListingModal,
     closeListingModal,
+    contactOwner,
+    showQuickView,
+    showNotification,
     filterDisplayedListings,
     updateListingCard,
     removeListingCard,
@@ -1060,6 +1129,9 @@ window.ListingsUI = {
     createListingCard,
     showListingModal,
     closeListingModal,
+    contactOwner,
+    showQuickView,
+    showNotification,
     filterDisplayedListings,
     updateListingCard,
     removeListingCard,
@@ -1082,3 +1154,8 @@ window.ListingsUI = {
     setupImageLazyLoading,
     addLoadMoreButton
 };
+
+// Expose critical functions to global window for inline onclick handlers
+window.showListingModal = showListingModal;
+window.showQuickView = showQuickView;
+window.contactOwner = contactOwner;
