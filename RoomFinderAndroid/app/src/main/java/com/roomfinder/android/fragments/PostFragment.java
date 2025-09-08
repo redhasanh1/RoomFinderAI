@@ -328,17 +328,9 @@ public class PostFragment extends Fragment {
             isValid = false;
         }
         
-        // Validate description
+        // Validate description (no minimum length required)
         String description = binding.descriptionInput.getText().toString().trim();
-        if (description.isEmpty()) {
-            binding.descriptionInputLayout.setError("Description is required");
-            isValid = false;
-        } else if (description.length() < 20) {
-            binding.descriptionInputLayout.setError("Please provide a more detailed description (at least 20 characters)");
-            isValid = false;
-        } else {
-            binding.descriptionInputLayout.setError(null);
-        }
+        binding.descriptionInputLayout.setError(null);
         
         return isValid;
     }
