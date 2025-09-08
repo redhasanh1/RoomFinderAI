@@ -3210,42 +3210,7 @@
                 loadFavoriteStates();
             }, 100);
 
-            document.querySelectorAll('.view-details-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const listing = JSON.parse(button.dataset.listing);
-                    window.showListingModal(listing);
-                });
-            });
-
-            // REMOVED: Duplicate event listener setup - individual buttons get their own listeners when created
-            // This was causing conflicts with the individual button event listeners
-            /*
-            document.querySelectorAll('.chat-btn').forEach(button => {
-                if (!button.disabled) {
-                    button.addEventListener('click', () => {
-                        try {
-                            console.log('🎯 Chat button clicked (legacy handler):', button.dataset.listing);
-                            const listing = JSON.parse(button.dataset.listing);
-                            console.log('📋 Parsed listing data:', listing);
-                            if (window.startConversation) {
-                            window.startConversation(listing);
-                        } else if (window.fallbackStartChat) {
-                            console.warn('⚠️ Using fallback chat system');
-                            window.fallbackStartChat(listing);
-                        } else {
-                            console.error('❌ No chat function available');
-                            alert('Chat system is not ready. Please refresh the page and try again.');
-                        }
-                        } catch (error) {
-                            console.error('❌ Error parsing listing data or starting conversation:', error);
-                            alert('Error opening chat. Please refresh the page and try again.');
-                        }
-                    });
-                } else {
-                    console.log('⚠️ Chat button is disabled (legacy handler) - no owner email specified');
-                }
-            });
-            */
+            // Event delegation setup moved outside this function to prevent duplicates
 
             // Update map with all listings (skip if opening modal for speed)
             if (shouldOpenModal) {
@@ -6419,6 +6384,56 @@
             }
             
             console.log('🎉 All systems initialized successfully');
+        });
+        
+        // Set up event delegation for dynamically added buttons
+        // This ensures buttons work even when added after page load
+        document.addEventListener('click', function(event) {
+            // Handle view details button clicks
+            if (event.target.closest('.view-details-btn')) {
+                event.preventDefault();
+                event.stopPropagation();
+                const button = event.target.closest('.view-details-btn');
+                try {
+                    const listing = JSON.parse(button.dataset.listing);
+                    console.log('View details clicked for:', listing.title);
+                    window.showListingModal(listing);
+                } catch (error) {
+                    console.error('Error showing listing modal:', error);
+                }
+            }
+            
+            // Handle chat button clicks
+            if (event.target.closest('.chat-btn')) {
+                event.preventDefault();
+                event.stopPropagation();
+                const button = event.target.closest('.chat-btn');
+                if (!button.disabled) {
+                    try {
+                        console.log('🎯 Chat button clicked:', button.dataset.listing);
+                        const listing = JSON.parse(button.dataset.listing);
+                        console.log('📋 Parsed listing data:', listing);
+                        
+                        // Try different chat systems in order of preference
+                        if (window.startConversation) {
+                            window.startConversation(listing);
+                        } else if (window.fallbackStartChat) {
+                            console.warn('⚠️ Using fallback chat system');
+                            window.fallbackStartChat(listing);
+                        } else if (window.openChatModal && typeof window.openChatModal === 'function') {
+                            window.openChatModal(listing.id, listing.title);
+                        } else {
+                            console.error('❌ No chat function available');
+                            alert('Chat system is not ready. Please refresh the page and try again.');
+                        }
+                    } catch (error) {
+                        console.error('❌ Error parsing listing data or starting conversation:', error);
+                        alert('Error opening chat. Please refresh the page and try again.');
+                    }
+                } else {
+                    console.log('⚠️ Chat button is disabled - no owner email specified');
+                }
+            }
         });
         
         // Add notification triggers for new listings
