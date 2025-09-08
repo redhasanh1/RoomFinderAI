@@ -104,3 +104,4 @@ Use `gemini -p` when:
 - Push changes with descriptive commit messages that explain what was changed
 - I'm only editing the website, not the android app. Just the website
 - I am using Railway and Supabase for all the API, keys and data. The code we edit and add or change should never include these sensitive keys and data in the files here
+- Pull code before pushing. Always!
