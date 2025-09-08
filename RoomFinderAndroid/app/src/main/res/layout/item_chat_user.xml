@@ -35,7 +35,7 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="18dp"
                 android:text="Hello, I'm looking for a 2 bedroom apartment"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/text_primary"
                 android:textSize="16sp"
                 android:lineSpacingExtra="2dp"
                 android:fontFamily="sans-serif"
