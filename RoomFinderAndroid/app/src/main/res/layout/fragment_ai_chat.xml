@@ -68,14 +68,16 @@
         <!-- Menu Button -->
         <ImageView
             android:id="@+id/menuButton"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:src="@drawable/ic_more_vert"
             android:tint="#FFFFFF"
             android:clickable="true"
             android:focusable="true"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="12dp" />
+            android:padding="8dp"
+            android:minWidth="48dp"
+            android:minHeight="48dp" />
 
     </LinearLayout>
 
