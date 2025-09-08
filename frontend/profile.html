@@ -894,6 +894,7 @@
         let configData;
         let supabase;
         let profileInitialized = false; // Flag to prevent double initialization
+        let currentUserListings = []; // Global variable to store user's listings from Supabase
 
         // Safe localStorage helper to handle quota exceeded errors
         function safeLocalStorageSetItem(key, value) {
@@ -1155,6 +1156,9 @@
                                 createdAt: listing.created_at || listing.createdAt
                             }));
                             
+                            // Store in global variable for edit/delete functions
+                            currentUserListings = [...userListings];
+                            
                             // Try to cache in localStorage but don't fail if storage is full
                             if (!safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings))) {
                                 console.warn('⚠️ Could not cache listings - using database-only mode');
@@ -1163,15 +1167,18 @@
                             console.error('❌ Supabase error:', error);
                             // Fall back to localStorage only if database fails
                             userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                            currentUserListings = [...userListings];
                         }
                     } catch (dbError) {
                         console.error('Error fetching listings from database:', dbError);
                         // Fall back to localStorage only if database fails
                         userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                        currentUserListings = [...userListings];
                     }
                 } else {
                     console.warn('⚠️ Supabase not initialized, using localStorage only');
                     userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                    currentUserListings = [...userListings];
                 }
                 
                 console.log('🏠 Loading user listings:', {
@@ -1382,13 +1389,43 @@
             try {
                 const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
                 
-                // Find the listing data
-                const userListingsKey = `userListings_${currentUser.email}`;
-                let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                const listing = userListings.find(l => l.id === id);
+                // First try to find the listing in our global variable (loaded from Supabase)
+                let listing = currentUserListings.find(l => l.id === id);
+                
+                // If not found in global variable, try to fetch directly from Supabase
+                if (!listing && supabase) {
+                    try {
+                        const { data: dbListing, error } = await supabase
+                            .from('listings')
+                            .select('*')
+                            .eq('id', id)
+                            .eq('user_email', currentUser.email)
+                            .single();
+                        
+                        if (!error && dbListing) {
+                            listing = {
+                                ...dbListing,
+                                // Normalize field names for consistency
+                                houseType: dbListing.house_type || dbListing.houseType,
+                                postalCode: dbListing.postal_code || dbListing.postalCode,
+                                createdAt: dbListing.created_at || dbListing.createdAt
+                            };
+                            console.log('✅ Fetched individual listing from Supabase for editing');
+                        }
+                    } catch (fetchError) {
+                        console.error('Error fetching listing from Supabase:', fetchError);
+                    }
+                }
+                
+                // Final fallback to localStorage (for backward compatibility)
+                if (!listing) {
+                    const userListingsKey = `userListings_${currentUser.email}`;
+                    let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                    listing = userListings.find(l => l.id === id);
+                }
                 
                 if (!listing) {
-                    alert('Listing not found!');
+                    alert('Listing not found! Please refresh the page and try again.');
                     return;
                 }
                 
@@ -1566,16 +1603,23 @@
                     if (response.ok) {
                         console.log('✅ Listing deleted successfully:', result);
                         
-                        // Remove from localStorage only after successful API deletion
-                        const userListingsKey = `userListings_${currentUser.email}`;
-                        let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                        userListings = userListings.filter(l => l.id !== id);
-                        safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
+                        // Remove from global variable immediately
+                        currentUserListings = currentUserListings.filter(l => l.id !== id);
                         
-                        // Also remove from allListings if it exists
-                        let allListings = JSON.parse(localStorage.getItem('allListings')) || [];
-                        allListings = allListings.filter(l => l.id !== id);
-                        safeLocalStorageSetItem('allListings', JSON.stringify(allListings));
+                        // Remove from localStorage cache (but don't fail if storage is full)
+                        try {
+                            const userListingsKey = `userListings_${currentUser.email}`;
+                            let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                            userListings = userListings.filter(l => l.id !== id);
+                            safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
+                            
+                            // Also remove from allListings if it exists
+                            let allListings = JSON.parse(localStorage.getItem('allListings')) || [];
+                            allListings = allListings.filter(l => l.id !== id);
+                            safeLocalStorageSetItem('allListings', JSON.stringify(allListings));
+                        } catch (storageError) {
+                            console.warn('⚠️ Could not update localStorage cache after delete');
+                        }
                         
                         // Reload the listings display
                         loadUserListings(currentUser);
