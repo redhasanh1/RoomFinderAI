@@ -1,19 +1,47 @@
 package com.roomfinder.android.fragments;
 
+import android.Manifest;
+import android.app.Activity;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.chip.Chip;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.roomfinder.android.databinding.FragmentPostBinding;
+import com.roomfinder.android.services.AttachmentUploadService;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 public class PostFragment extends Fragment {
+    
+    private static final String TAG = "PostFragment";
+    
+    // Request codes
+    private static final int REQUEST_CAMERA_PERMISSION = 1001;
+    private static final int REQUEST_STORAGE_PERMISSION = 1002;
+    private static final int REQUEST_IMAGE_CAPTURE = 2001;
+    private static final int REQUEST_IMAGE_PICK = 2002;
     
     private FragmentPostBinding binding;
     private int currentStep = 1;
@@ -25,6 +53,12 @@ public class PostFragment extends Fragment {
     private String selectedBathrooms = "";
     private int photoCount = 0;
     
+    // Photo upload functionality
+    private AttachmentUploadService attachmentService;
+    private List<String> uploadedPhotoUrls = new ArrayList<>();
+    private Uri currentPhotoUri;
+    private String currentPhotoPath;
+    
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentPostBinding.inflate(inflater, container, false);
@@ -34,6 +68,9 @@ public class PostFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        
+        // Initialize attachment service
+        attachmentService = new AttachmentUploadService(requireContext());
         
         setupStepNavigation();
         setupFormValidation();
@@ -219,14 +256,232 @@ public class PostFragment extends Fragment {
     }
     
     private void setupPhotoUpload() {
-        binding.photoUploadArea.setOnClickListener(v -> {
-            // TODO: Implement photo picker
-            Toast.makeText(getContext(), "Photo picker coming soon!", Toast.LENGTH_SHORT).show();
+        binding.photoUploadArea.setOnClickListener(v -> showPhotoOptions());
+    }
+    
+    /**
+     * Show photo selection options dialog
+     */
+    private void showPhotoOptions() {
+        if (uploadedPhotoUrls.size() >= 10) {
+            Toast.makeText(getContext(), "Maximum 10 photos allowed", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        String[] options = {"Camera", "Photo Gallery"};
+        
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Add Photo")
+                .setItems(options, (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            openCamera();
+                            break;
+                        case 1:
+                            openGallery();
+                            break;
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    
+    /**
+     * Open camera to take a photo
+     */
+    private void openCamera() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) 
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(requireActivity(), 
+                    new String[]{Manifest.permission.CAMERA}, 
+                    REQUEST_CAMERA_PERMISSION);
+            return;
+        }
+        
+        try {
+            Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             
-            // Simulate adding photos for demo
-            photoCount++;
-            binding.photoCounter.setText(photoCount + " / 10 photos added");
-            validateStep3();
+            // Create the File where the photo should go
+            File photoFile = createImageFile();
+            if (photoFile != null) {
+                currentPhotoUri = FileProvider.getUriForFile(requireContext(),
+                        requireContext().getPackageName() + ".fileprovider",
+                        photoFile);
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, currentPhotoUri);
+                
+                // Grant temporary permissions for the camera app
+                takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                takePictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                
+                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+            } else {
+                Toast.makeText(getContext(), "Error creating photo file", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception ex) {
+            Log.e(TAG, "Error opening camera", ex);
+            Toast.makeText(getContext(), "Error opening camera", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Open gallery to select a photo
+     */
+    private void openGallery() {
+        // Check permissions based on Android version
+        String permission;
+        if (Build.VERSION.SDK_INT >= 33) { // Android 13 (API 33)
+            permission = Manifest.permission.READ_MEDIA_IMAGES;
+        } else {
+            permission = Manifest.permission.READ_EXTERNAL_STORAGE;
+        }
+        
+        if (ContextCompat.checkSelfPermission(requireContext(), permission) 
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(requireActivity(), 
+                    new String[]{permission}, 
+                    REQUEST_STORAGE_PERMISSION);
+            return;
+        }
+        
+        try {
+            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            intent.setType("image/*");
+            
+            if (intent.resolveActivity(requireContext().getPackageManager()) != null) {
+                startActivityForResult(intent, REQUEST_IMAGE_PICK);
+            } else {
+                Toast.makeText(getContext(), "No photo app available", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error opening gallery", e);
+            Toast.makeText(getContext(), "Error opening photo gallery", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Create a temporary file for camera photo
+     */
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = requireContext().getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES);
+        
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+        
+        // Save a file: path for use with ACTION_VIEW intents
+        currentPhotoPath = image.getAbsolutePath();
+        return image;
+    }
+    
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        
+        switch (requestCode) {
+            case REQUEST_CAMERA_PERMISSION:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    openCamera();
+                } else {
+                    Toast.makeText(getContext(), "Camera permission required to take photos", Toast.LENGTH_SHORT).show();
+                }
+                break;
+            case REQUEST_STORAGE_PERMISSION:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    openGallery();
+                } else {
+                    String message = Build.VERSION.SDK_INT >= 33 ? 
+                        "Media access permission required to select photos" : 
+                        "Storage permission required to select photos";
+                    Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+                }
+                break;
+        }
+    }
+    
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (resultCode == Activity.RESULT_OK) {
+            switch (requestCode) {
+                case REQUEST_IMAGE_CAPTURE:
+                    if (currentPhotoUri != null) {
+                        handlePhotoSelected(currentPhotoUri);
+                    } else {
+                        Toast.makeText(getContext(), "Error capturing photo", Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+                case REQUEST_IMAGE_PICK:
+                    if (data != null && data.getData() != null) {
+                        handlePhotoSelected(data.getData());
+                    } else {
+                        Toast.makeText(getContext(), "No photo selected", Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+            }
+        }
+    }
+    
+    /**
+     * Handle selected photo and upload to Supabase
+     */
+    private void handlePhotoSelected(Uri photoUri) {
+        Log.d(TAG, "Photo selected: " + photoUri.toString());
+        
+        // Validate file
+        AttachmentUploadService.FileValidationResult validation = attachmentService.validateFile(photoUri);
+        if (!validation.isValid) {
+            Toast.makeText(getContext(), validation.error, Toast.LENGTH_LONG).show();
+            return;
+        }
+        
+        // Generate file name for listing photo
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String fileName = "listing_photo_" + timeStamp + "_" + (uploadedPhotoUrls.size() + 1) + ".jpg";
+        
+        // Show uploading progress
+        Toast.makeText(getContext(), "Uploading photo...", Toast.LENGTH_SHORT).show();
+        
+        // Upload to Supabase storage
+        String bucketPath = "listing-photos/" + fileName;
+        attachmentService.uploadFile(photoUri, bucketPath, null, new AttachmentUploadService.UploadCallback() {
+            @Override
+            public void onSuccess(String publicUrl, String fileName, String mimeType) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        uploadedPhotoUrls.add(publicUrl);
+                        photoCount = uploadedPhotoUrls.size();
+                        binding.photoCounter.setText(photoCount + " / 10 photos added");
+                        Toast.makeText(getContext(), "Photo uploaded successfully!", Toast.LENGTH_SHORT).show();
+                        
+                        // Revalidate step 3
+                        validateStep3();
+                        
+                        Log.d(TAG, "Photo uploaded: " + publicUrl);
+                    });
+                }
+            }
+            
+            @Override
+            public void onProgress(int percentage) {
+                // Could show progress indicator here
+                Log.d(TAG, "Upload progress: " + percentage + "%");
+            }
+            
+            @Override
+            public void onError(String error) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        Toast.makeText(getContext(), "Upload failed: " + error, Toast.LENGTH_LONG).show();
+                        Log.e(TAG, "Photo upload error: " + error);
+                    });
+                }
+            }
         });
     }
     
@@ -336,8 +591,8 @@ public class PostFragment extends Fragment {
     }
     
     private boolean validateStep3() {
-        // Require at least 1 photo (in real app, would be 3)
-        return photoCount >= 1;
+        // Require at least 1 photo
+        return uploadedPhotoUrls.size() >= 1;
     }
     
     private boolean validateStep4() {
@@ -378,6 +633,7 @@ public class PostFragment extends Fragment {
         selectedBedrooms = "";
         selectedBathrooms = "";
         photoCount = 0;
+        uploadedPhotoUrls.clear();
         
         // Clear all inputs
         binding.titleInput.setText("");
