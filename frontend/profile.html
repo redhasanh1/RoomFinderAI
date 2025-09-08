@@ -1132,11 +1132,12 @@
         async function loadUserListings(user) {
             try {
                 const userListingsKey = `userListings_${user.email}`;
-                let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                let userListings = [];
                 
-                // Also fetch from database if Supabase is available
+                // ALWAYS try to fetch from database FIRST (primary source of truth)
                 if (supabase) {
                     try {
+                        console.log('🔍 Fetching listings from Supabase for:', user.email);
                         const { data: dbListings, error } = await supabase
                             .from('listings')
                             .select('*')
@@ -1158,10 +1159,19 @@
                             if (!safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings))) {
                                 console.warn('⚠️ Could not cache listings - using database-only mode');
                             }
+                        } else if (error) {
+                            console.error('❌ Supabase error:', error);
+                            // Fall back to localStorage only if database fails
+                            userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                         }
                     } catch (dbError) {
                         console.error('Error fetching listings from database:', dbError);
+                        // Fall back to localStorage only if database fails
+                        userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                     }
+                } else {
+                    console.warn('⚠️ Supabase not initialized, using localStorage only');
+                    userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                 }
                 
                 console.log('🏠 Loading user listings:', {
