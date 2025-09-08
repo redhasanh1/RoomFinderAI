@@ -17,8 +17,14 @@ FROM information_schema.columns
 WHERE table_name = 'listings' 
 AND column_name = 'bathrooms';
 
--- 4. Show first few listings with all columns
-SELECT id, title, price, user_email, bathrooms, house_type, postal_code, created_at
+-- 4. Check actual column names in listings table
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'listings' 
+ORDER BY column_name;
+
+-- 5. Show first few listings with correct column names (using camelCase)
+SELECT id, title, price, user_email, bathrooms, "houseType", "postalCode", created_at
 FROM listings 
 ORDER BY created_at DESC 
 LIMIT 3;
