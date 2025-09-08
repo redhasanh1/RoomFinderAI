@@ -896,6 +896,21 @@
         let profileInitialized = false; // Flag to prevent double initialization
         let currentUserListings = []; // Global variable to store user's listings from Supabase
 
+        // Debug function to check listings
+        window.debugListings = function() {
+            console.log('🔍 Debug Listings:');
+            console.log('- Global variable listings:', currentUserListings.length);
+            console.log('- Listings data:', currentUserListings);
+            console.log('- Supabase client ready:', !!supabase);
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            console.log('- Current user email:', currentUser.email);
+            return { 
+                count: currentUserListings.length, 
+                listings: currentUserListings,
+                userEmail: currentUser.email 
+            };
+        };
+
         // Safe localStorage helper to handle quota exceeded errors
         function safeLocalStorageSetItem(key, value) {
             try {
@@ -934,7 +949,7 @@
                         localStorage.setItem(key, value);
                         return true;
                     } catch (retryError) {
-                        console.error('❌ Still can\'t save to localStorage after cleanup:', retryError);
+                        console.warn('⚠️ Storage still full after cleanup - operating without localStorage');
                         return false;
                     }
                 } else {
@@ -1156,12 +1171,15 @@
                                 createdAt: listing.created_at || listing.createdAt
                             }));
                             
-                            // Store in global variable for edit/delete functions
+                            // Store in global variable for edit/delete functions (this is the critical part)
                             currentUserListings = [...userListings];
+                            console.log('📦 Stored listings in global variable:', currentUserListings.length);
                             
-                            // Try to cache in localStorage but don't fail if storage is full
-                            if (!safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings))) {
-                                console.warn('⚠️ Could not cache listings - using database-only mode');
+                            // Try to cache in localStorage but IGNORE if storage is full
+                            try {
+                                safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
+                            } catch (storageError) {
+                                console.warn('⚠️ Storage full - operating in database-only mode');
                             }
                         } else if (error) {
                             console.error('❌ Supabase error:', error);
@@ -1417,15 +1435,24 @@
                     }
                 }
                 
-                // Final fallback to localStorage (for backward compatibility)
+                // Final fallback to localStorage (for backward compatibility) - but ignore if storage fails
                 if (!listing) {
-                    const userListingsKey = `userListings_${currentUser.email}`;
-                    let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                    listing = userListings.find(l => l.id === id);
+                    try {
+                        const userListingsKey = `userListings_${currentUser.email}`;
+                        let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                        listing = userListings.find(l => l.id === id);
+                    } catch (storageError) {
+                        console.warn('⚠️ Could not access localStorage for fallback');
+                    }
                 }
                 
                 if (!listing) {
-                    alert('Listing not found! Please refresh the page and try again.');
+                    alert('Listing not found! The page data may be out of sync. Please refresh the page and try again.');
+                    console.error('❌ Listing not found in any source:', {
+                        id,
+                        globalListings: currentUserListings.length,
+                        userEmail: currentUser.email
+                    });
                     return;
                 }
                 
