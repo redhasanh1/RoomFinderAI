@@ -622,15 +622,11 @@ public class PostFragment extends Fragment {
     }
     
     private boolean validateStep4() {
-        // Check terms agreement
-        return binding.termsCheckbox.isChecked();
+        // No validation needed for step 4
+        return true;
     }
     
     private boolean validateAllSteps() {
-        if (!validateStep4()) {
-            Toast.makeText(getContext(), "Please agree to the terms and conditions", Toast.LENGTH_SHORT).show();
-            return false;
-        }
         return validateStep1() && validateStep2() && validateStep3() && validateStep4();
     }
     
@@ -669,7 +665,6 @@ public class PostFragment extends Fragment {
         binding.propertyTypeChipGroup.clearCheck();
         binding.bedroomsChipGroup.clearCheck();
         binding.bathroomsChipGroup.clearCheck();
-        binding.termsCheckbox.setChecked(false);
         binding.photoCounter.setText("0 / 10 photos added");
         
         updateStepUI();
