@@ -2603,6 +2603,14 @@
             if (typeof input !== 'string') return '';
             return input.replace(/[^a-zA-Z0-9\s,.-]/g, '').trim();
         }
+        
+        // HTML escape function for chat messages - preserves all characters while preventing XSS
+        function escapeHtml(text) {
+            if (typeof text !== 'string') return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         // Load cities.json for autocomplete
         let cities = [];
@@ -3426,6 +3434,7 @@
         // Chat Functionality
         let currentConversationId = null;
         let currentListing = null;
+        let realTimeWorking = false; // Track real-time subscription status
 
         // Global chat system status tracking
         let chatSystemStatus = {
@@ -3892,21 +3901,12 @@
                             
                             // Create message element immediately
                             const messageElement = document.createElement('div');
-                            messageElement.className = 'message-container received-container animate-slideIn';
+                            messageElement.className = 'message received';
                             
-                            // Escape HTML for safety but preserve special characters
-                            const escapedContent = (payload.new.content || '')
-                                .replace(/&/g, '&amp;')
-                                .replace(/</g, '&lt;')
-                                .replace(/>/g, '&gt;')
-                                .replace(/"/g, '&quot;')
-                                .replace(/'/g, '&#039;');
-                            
+                            // Use the escapeHtml function for consistency
                             const messageContent = `
-                                <div class="message received">
-                                    <p class="message-content">${escapedContent}</p>
-                                    <span class="message-timestamp">${new Date(payload.new.created_at).toLocaleTimeString()}</span>
-                                </div>
+                                <p>${escapeHtml(payload.new.content)}</p>
+                                <div class="message-timestamp">${new Date(payload.new.created_at).toLocaleTimeString()}</div>
                             `;
                             
                             messageElement.innerHTML = messageContent;
@@ -3925,10 +3925,13 @@
                     console.log('💬 REALTIME SUBSCRIPTION STATUS:', status);
                     if (status === 'SUBSCRIBED') {
                         console.log('✅ Successfully subscribed to messages!');
+                        realTimeWorking = true; // Set flag to indicate real-time is working
                     } else if (status === 'CHANNEL_ERROR') {
                         console.error('❌ Channel error - real-time not working');
+                        realTimeWorking = false;
                     } else if (status === 'TIMED_OUT') {
                         console.error('⏰ Subscription timed out');
+                        realTimeWorking = false;
                     }
                 });
 
@@ -4612,7 +4615,7 @@
                                 <div class="flex items-center space-x-2">
                                     <span class="text-lg">📎</span>
                                     <div>
-                                        <p class="font-medium ${isOwner ? 'text-blue-900' : 'text-gray-900'}">${sanitizeInput(message.file_name || 'File')}</p>
+                                        <p class="font-medium ${isOwner ? 'text-blue-900' : 'text-gray-900'}">${escapeHtml(message.file_name || 'File')}</p>
                                         <p class="text-sm ${isOwner ? 'text-blue-600' : 'text-gray-600'}">${message.file_size ? formatFileSize(message.file_size) : ''}</p>
                                         <a href="${message.file_url}" target="_blank" class="${isOwner ? 'text-blue-800 hover:text-blue-900' : 'text-gray-800 hover:text-gray-900'} text-sm font-medium">📥 Download</a>
                                     </div>
@@ -4620,7 +4623,7 @@
                             </div>
                         `;
                     } else {
-                        messageContent = `<p>${sanitizeInput(message.content)}</p>`;
+                        messageContent = `<p>${escapeHtml(message.content)}</p>`;
                     }
                     
                     messageElement.innerHTML = `
@@ -4977,13 +4980,15 @@
             // FALLBACK: Polling for updates if real-time fails
             let pollingInterval;
             function startPolling() {
-                console.log('🔄 Starting polling fallback (every 3 seconds)');
+                console.log('🔄 Starting polling fallback (every 10 seconds)');
                 pollingInterval = setInterval(() => {
-                    if (currentConversationId) {
+                    // Only poll if real-time isn't working
+                    if (!realTimeWorking && currentConversationId) {
+                        console.log('📡 Using polling fallback for messages');
                         loadMessages(currentConversationId);
                     }
                     loadUserConversations();
-                }, 3000);
+                }, 10000); // Reduced frequency from 3s to 10s
             }
 
             // Start polling if real-time doesn't work after 10 seconds
