@@ -13,6 +13,9 @@
     <!-- Auth Manager -->
     <script src="/js/auth.js"></script>
     
+    <!-- localStorage cleanup script -->
+    <script src="cleanup-localstorage.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -43,6 +46,46 @@
             console.log('- Chat Buttons:', document.querySelectorAll('.chat-btn').length);
             return 'JavaScript working correctly';
         };
+
+        // Safe localStorage helper to handle quota exceeded errors
+        function safeLocalStorageSetItem(key, value) {
+            try {
+                localStorage.setItem(key, value);
+                return true;
+            } catch (error) {
+                if (error.name === 'QuotaExceededError') {
+                    console.warn('⚠️ localStorage quota exceeded! Cleaning up old data...');
+                    
+                    // Clean up old data to make space
+                    const keysToClean = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const storageKey = localStorage.key(i);
+                        // Remove old chat history, cached data, etc.
+                        if (storageKey.includes('chatHistory_') || 
+                            storageKey.includes('cache_') ||
+                            storageKey.includes('temp_')) {
+                            keysToClean.push(storageKey);
+                        }
+                    }
+                    
+                    // Remove old data
+                    keysToClean.forEach(k => localStorage.removeItem(k));
+                    console.log(`🧹 Cleaned up ${keysToClean.length} old localStorage keys`);
+                    
+                    // Try again
+                    try {
+                        localStorage.setItem(key, value);
+                        return true;
+                    } catch (retryError) {
+                        console.error('❌ Still can\'t save to localStorage after cleanup:', retryError);
+                        return false;
+                    }
+                } else {
+                    console.error('❌ localStorage error:', error);
+                    return false;
+                }
+            }
+        }
 
         // Fallback chat function - always available
         window.fallbackStartChat = function(listing) {
@@ -2844,20 +2887,21 @@
             
             // Also include localStorage listings from all users
             try {
-                const users = JSON.parse(localStorage.getItem('users')) || [];
+                // Skip the massive 'users' array to avoid quota issues
+                // Instead, just load current user's listings
+                const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
                 const localListings = [];
                 
-                users.forEach(user => {
-                    // Check userListings_${email} key
-                    const userListingsKey = `userListings_${user.email}`;
+                if (currentUser.email) {
+                    const userListingsKey = `userListings_${currentUser.email}`;
                     const userStoredListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                     localListings.push(...userStoredListings);
                     
-                    // Also check user.listings
-                    if (user.listings && Array.isArray(user.listings)) {
-                        localListings.push(...user.listings);
+                    // Also check user.listings for backward compatibility
+                    if (currentUser.listings && Array.isArray(currentUser.listings)) {
+                        localListings.push(...currentUser.listings);
                     }
-                });
+                }
                 
                 // Merge Supabase and localStorage listings, removing duplicates
                 const allListingsMap = new Map();
@@ -3374,16 +3418,23 @@
                 }
                 currentUser.listings = currentUser.listings || [];
                 currentUser.listings.push(newListing);
+                
+                // Use safe localStorage operations to avoid quota exceeded errors
                 let users = JSON.parse(localStorage.getItem('users')) || [];
                 users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                safeSetItem('users', JSON.stringify(users));
-                safeSetItem('currentUser', JSON.stringify(currentUser));
                 
-                // Also save to userListings key for profile page compatibility
+                // Try to save users array safely, if it fails, skip it (we have userListings as backup)
+                if (!safeLocalStorageSetItem('users', JSON.stringify(users))) {
+                    console.warn('⚠️ Could not update users array due to storage limits');
+                }
+                
+                safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
+                
+                // Also save to userListings key for profile page compatibility (this is the important one)
                 const userListingsKey = `userListings_${currentUser.email}`;
                 let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                 userListings.push(newListing);
-                localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
                 
                 console.log('Updated localStorage with new listing:', newListing);
                 console.log('Saved to userListings key:', userListingsKey);
