@@ -956,20 +956,19 @@ app.put('/api/listings/:id', async (req, res) => {
                     return res.status(403).json({ error: 'Unauthorized to edit this listing' });
                 }
                 
-                // Prepare Supabase update data with snake_case field names
+                // Prepare Supabase update data with camelCase field names (based on error message)
                 const supabaseUpdateData = {
                     title: updateData.title,
                     price: updateData.price,
                     city: updateData.city,
                     street: updateData.street,
-                    postal_code: updateData.postalCode,  // Convert camelCase to snake_case
-                    house_type: updateData.houseType,     // Convert camelCase to snake_case
-                    room_type: updateData.houseType,      // For compatibility
+                    postalCode: updateData.postalCode,    // Use camelCase as database expects
+                    houseType: updateData.houseType,      // Use camelCase as database expects
                     bedrooms: updateData.bedrooms,
                     bathrooms: updateData.bathrooms,      // Now supported with migration
                     utilities: updateData.utilities,
                     description: updateData.description,
-                    updated_at: updateData.updatedAt
+                    updated_at: updateData.updatedAt      // Keep this as snake_case (timestamp fields often are)
                 };
                 
                 console.log('🔄 Updating in Supabase with data:', supabaseUpdateData);
