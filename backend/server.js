@@ -987,8 +987,17 @@ app.put('/api/listings/:id', async (req, res) => {
                         code: updateError.code,
                         message: updateError.message,
                         details: updateError.details,
-                        hint: updateError.hint
+                        hint: updateError.hint,
+                        listingId: listingId,
+                        userEmail: userEmail,
+                        updateData: supabaseUpdateData
                     });
+                    
+                    // Check if it's an RLS policy error
+                    if (updateError.message && updateError.message.includes('policy')) {
+                        console.error('🚫 This looks like an RLS policy error. Make sure to run: ALTER TABLE listings DISABLE ROW LEVEL SECURITY;');
+                    }
+                    
                     throw updateError;
                 }
                 

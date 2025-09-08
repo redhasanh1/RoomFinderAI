@@ -895,6 +895,47 @@
         let supabase;
         let profileInitialized = false; // Flag to prevent double initialization
 
+        // Safe localStorage helper to handle quota exceeded errors
+        function safeLocalStorageSetItem(key, value) {
+            try {
+                localStorage.setItem(key, value);
+                return true;
+            } catch (error) {
+                if (error.name === 'QuotaExceededError') {
+                    console.warn('⚠️ localStorage quota exceeded! Cleaning up old data...');
+                    
+                    // Clean up old data to make space
+                    const keysToClean = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const storageKey = localStorage.key(i);
+                        // Remove old chat history, cached data, temp data
+                        if (storageKey && (storageKey.includes('chatHistory_') || 
+                            storageKey.includes('cache_') ||
+                            storageKey.includes('temp_') ||
+                            storageKey.includes('savedListings_'))) { // Also clean old saved listings
+                            keysToClean.push(storageKey);
+                        }
+                    }
+                    
+                    // Remove old data
+                    keysToClean.forEach(k => localStorage.removeItem(k));
+                    console.log(`🧹 Cleaned up ${keysToClean.length} old localStorage keys`);
+                    
+                    // Try again
+                    try {
+                        localStorage.setItem(key, value);
+                        return true;
+                    } catch (retryError) {
+                        console.error('❌ Still can\'t save to localStorage after cleanup:', retryError);
+                        return false;
+                    }
+                } else {
+                    console.error('❌ localStorage error:', error);
+                    return false;
+                }
+            }
+        }
+
         // Try to initialize profile directly first (for local storage functionality)
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize UniversalAuth system for consistent profile picture loading
@@ -1035,7 +1076,7 @@
                         const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
                         currentUser.firstName = displayFirstName;
                         currentUser.lastName = displayLastName;
-                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
                     } else if (displayFirstName && displayLastName && 
                                displayFirstName !== 'User' && displayLastName !== 'Name') {
                         // If localStorage has valid names but backend doesn't, update backend
@@ -1052,7 +1093,7 @@
                         currentUser.hasCustomProfileImage = profileData.hasCustomProfileImage;
                         document.getElementById('profileImage').src = profileData.profileImage;
                         console.log('✅ Loaded profile image from backend for:', user.email);
-                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
                     }
                 } else {
                     console.log('ℹ️ Could not fetch profile data, using localStorage names');
@@ -1105,7 +1146,9 @@
                                 postalCode: listing.postal_code || listing.postalCode,
                                 createdAt: listing.created_at || listing.createdAt
                             }));
-                            localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                            if (!safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings))) {
+                                console.warn('⚠️ Could not cache listings due to storage limits');
+                            }
                         }
                     } catch (dbError) {
                         console.error('Error fetching listings from database:', dbError);
@@ -1302,7 +1345,7 @@
                             // Update verification status
                             const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
                             currentUser.verified = true;
-                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                            safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
                             
                             // Update UI
                             updateProfileUI(currentUser);
@@ -1430,7 +1473,7 @@
                             house_type: updateData.houseType,
                             postal_code: updateData.postalCode
                         };
-                        localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                        safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
                     }
                     
                     // Also update allListings if it exists
@@ -1443,7 +1486,7 @@
                             house_type: updateData.houseType,
                             postal_code: updateData.postalCode
                         };
-                        localStorage.setItem('allListings', JSON.stringify(allListings));
+                        safeLocalStorageSetItem('allListings', JSON.stringify(allListings));
                     }
                     
                     // Close modal and reload listings
@@ -1504,12 +1547,12 @@
                         const userListingsKey = `userListings_${currentUser.email}`;
                         let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                         userListings = userListings.filter(l => l.id !== id);
-                        localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                        safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
                         
                         // Also remove from allListings if it exists
                         let allListings = JSON.parse(localStorage.getItem('allListings')) || [];
                         allListings = allListings.filter(l => l.id !== id);
-                        localStorage.setItem('allListings', JSON.stringify(allListings));
+                        safeLocalStorageSetItem('allListings', JSON.stringify(allListings));
                         
                         // Reload the listings display
                         loadUserListings(currentUser);
@@ -1557,7 +1600,7 @@
             
             // Remove the listing object from the array
             savedListings = savedListings.filter(listing => listing.id !== id);
-            localStorage.setItem(savedListingsKey, JSON.stringify(savedListings));
+            safeLocalStorageSetItem(savedListingsKey, JSON.stringify(savedListings));
             
             console.log('✅ Updated saved listings count:', savedListings.length);
             
@@ -1669,7 +1712,7 @@
                     const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
                     currentUser.profileImage = imageData;
                     currentUser.hasCustomProfileImage = true; // Flag to indicate custom upload
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
                     
                     // Also update in the users array if it exists
                     const users = JSON.parse(localStorage.getItem('users')) || [];
@@ -1677,7 +1720,7 @@
                     if (userIndex !== -1) {
                         users[userIndex].profileImage = imageData;
                         users[userIndex].hasCustomProfileImage = true;
-                        localStorage.setItem('users', JSON.stringify(users));
+                        safeLocalStorageSetItem('users', JSON.stringify(users));
                     }
                     
                     console.log('✅ Profile image saved locally for user:', currentUser.email);
