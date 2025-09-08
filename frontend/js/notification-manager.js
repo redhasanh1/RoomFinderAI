@@ -130,7 +130,7 @@ class NotificationManager {
     showPermissionDialog() {
         return new Promise((resolve) => {
             const dialog = document.createElement('div');
-            dialog.className = 'notification-permission-dialog fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+            dialog.className = 'notification-permission-dialog fixed inset-0 bg-black bg-opacity-50 z-[10000] flex items-center justify-center p-4';
             dialog.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-sm w-full">
                     <div class="text-center">
