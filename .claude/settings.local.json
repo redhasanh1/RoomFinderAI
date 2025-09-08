@@ -11,7 +11,8 @@
       "WebFetch(domain:www.roomfinderai.com)",
       "Bash(git checkout:*)",
       "Bash(curl:*)",
-      "Bash(od:*)"
+      "Bash(od:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": [],
