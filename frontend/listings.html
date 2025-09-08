@@ -2607,9 +2607,19 @@
         // HTML escape function for chat messages - preserves all characters while preventing XSS
         function escapeHtml(text) {
             if (typeof text !== 'string') return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+            
+            // Log special characters for debugging
+            if (/[?!öÖäÄüÜß]/.test(text)) {
+                console.log('🔤 Special characters detected in message:', text);
+            }
+            
+            // Use a more reliable method for escaping that preserves UTF-8 characters
+            return text
+                .replace(/&/g, '&amp;')   // Must be first
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#x27;');  // More compatible than &#39;
         }
 
         // Load cities.json for autocomplete
@@ -3435,6 +3445,11 @@
         let currentConversationId = null;
         let currentListing = null;
         let realTimeWorking = false; // Track real-time subscription status
+        
+        // Browser detection for Chrome-specific issues
+        const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+        const isBrave = navigator.brave !== undefined;
+        console.log('🌐 Browser Detection:', { isChrome, isBrave, userAgent: navigator.userAgent });
 
         // Global chat system status tracking
         let chatSystemStatus = {
@@ -3751,6 +3766,13 @@
             }
 
             async function sendTextMessage(messageContent, currentUser, timestamp) {
+                console.log('📤 Sending message:', {
+                    content: messageContent,
+                    hasSpecialChars: /[?!öÖäÄüÜß]/.test(messageContent),
+                    browser: isChrome ? 'Chrome' : isBrave ? 'Brave' : 'Other',
+                    conversationId: currentConversationId
+                });
+                
                 // Send to database first to get the ID
                 const { data, error } = await window.supabaseClient
                     .from('messages')
@@ -3765,17 +3787,34 @@
                     .single();
 
                 if (error) {
+                    console.error('💥 Message send failed:', {
+                        error: error.message,
+                        browser: isChrome ? 'Chrome' : isBrave ? 'Brave' : 'Other',
+                        messageContent: messageContent
+                    });
                     chatInput.value = messageContent; // Restore message
                     throw error;
                 }
+
+                console.log('✅ Message saved to database:', {
+                    id: data.id,
+                    content: data.content,
+                    hasSpecialCharsInDB: /[?!öÖäÄüÜß]/.test(data.content)
+                });
 
                 // Add UI update after successful database insert
                 const messageElement = document.createElement('div');
                 messageElement.className = 'message sent';
                 messageElement.setAttribute('data-message-id', data.id);
                 
+                const escapedContent = escapeHtml(messageContent);
+                console.log('🎨 Rendering message in UI:', {
+                    original: messageContent,
+                    escaped: escapedContent
+                });
+                
                 messageElement.innerHTML = `
-                    <p>${escapeHtml(messageContent)}</p>
+                    <p>${escapedContent}</p>
                     <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
                 `;
                 chatMessagesContainer.appendChild(messageElement);
@@ -3880,7 +3919,11 @@
                     schema: 'public', 
                     table: 'messages'
                 }, (payload) => {
-                    console.log('🔔 REALTIME EVENT RECEIVED:', payload);
+                    console.log('🔔 REALTIME EVENT RECEIVED:', payload, {
+                        browser: isChrome ? 'Chrome' : isBrave ? 'Brave' : 'Other',
+                        messageContent: payload.new?.content,
+                        hasSpecialChars: payload.new?.content && /[?!öÖäÄüÜß]/.test(payload.new.content)
+                    });
                     console.log('Current conversation ID:', currentConversationId);
                     console.log('Message conversation ID:', payload.new.conversation_id);
                     
@@ -3904,8 +3947,16 @@
                                 messageElement.setAttribute('data-message-id', payload.new.id);
                                 
                                 // Use the escapeHtml function for consistency
+                                const escapedContent = escapeHtml(payload.new.content);
+                                console.log('🎨 Real-time message rendering:', {
+                                    original: payload.new.content,
+                                    escaped: escapedContent,
+                                    isOwnMessage: isOwnMessage,
+                                    browser: isChrome ? 'Chrome' : isBrave ? 'Brave' : 'Other'
+                                });
+                                
                                 const messageContent = `
-                                    <p>${escapeHtml(payload.new.content)}</p>
+                                    <p>${escapedContent}</p>
                                     <div class="message-timestamp">${new Date(payload.new.created_at).toLocaleTimeString()}</div>
                                 `;
                                 
@@ -3929,16 +3980,42 @@
                     }
                 })
                 .subscribe((status) => {
-                    console.log('💬 REALTIME SUBSCRIPTION STATUS:', status);
+                    console.log('💬 REALTIME SUBSCRIPTION STATUS:', status, {
+                        isChrome,
+                        isBrave,
+                        timestamp: new Date().toISOString()
+                    });
+                    
                     if (status === 'SUBSCRIBED') {
                         console.log('✅ Successfully subscribed to messages!');
-                        realTimeWorking = true; // Set flag to indicate real-time is working
+                        realTimeWorking = true;
+                        
+                        // Chrome-specific success logging
+                        if (isChrome) {
+                            console.log('🟢 Chrome real-time subscription successful');
+                        }
                     } else if (status === 'CHANNEL_ERROR') {
                         console.error('❌ Channel error - real-time not working');
                         realTimeWorking = false;
+                        
+                        // Chrome-specific error handling
+                        if (isChrome) {
+                            console.error('🚫 Chrome blocking real-time connection - checking for extensions/blockers');
+                            // Force polling fallback for Chrome
+                            setTimeout(() => {
+                                if (!realTimeWorking) {
+                                    console.log('🔄 Chrome fallback: Starting polling immediately');
+                                    startPolling();
+                                }
+                            }, 2000);
+                        }
                     } else if (status === 'TIMED_OUT') {
                         console.error('⏰ Subscription timed out');
                         realTimeWorking = false;
+                        
+                        if (isChrome) {
+                            console.error('⏱️ Chrome real-time timeout - likely blocked by security features');
+                        }
                     }
                 });
 
