@@ -344,14 +344,40 @@ public class PostFragment extends Fragment {
         }
         
         try {
-            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            // Try multiple approaches to open gallery
+            Intent intent = null;
+            
+            // Method 1: Standard ACTION_PICK with MediaStore
+            intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             intent.setType("image/*");
             
             if (intent.resolveActivity(requireContext().getPackageManager()) != null) {
                 startActivityForResult(intent, REQUEST_IMAGE_PICK);
-            } else {
-                Toast.makeText(getContext(), "No photo app available", Toast.LENGTH_SHORT).show();
+                return;
             }
+            
+            // Method 2: ACTION_GET_CONTENT (works with more apps)
+            intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("image/*");
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            
+            if (intent.resolveActivity(requireContext().getPackageManager()) != null) {
+                startActivityForResult(Intent.createChooser(intent, "Select Photo"), REQUEST_IMAGE_PICK);
+                return;
+            }
+            
+            // Method 3: Open any file manager/gallery app
+            intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.setType("image/*");
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            
+            if (intent.resolveActivity(requireContext().getPackageManager()) != null) {
+                startActivityForResult(intent, REQUEST_IMAGE_PICK);
+                return;
+            }
+            
+            Toast.makeText(getContext(), "No photo app available", Toast.LENGTH_SHORT).show();
+            
         } catch (Exception e) {
             Log.e(TAG, "Error opening gallery", e);
             Toast.makeText(getContext(), "Error opening photo gallery", Toast.LENGTH_SHORT).show();
