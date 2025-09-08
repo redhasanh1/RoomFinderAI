@@ -904,16 +904,23 @@
                 if (error.name === 'QuotaExceededError') {
                     console.warn('⚠️ localStorage quota exceeded! Cleaning up old data...');
                     
-                    // Clean up old data to make space
+                    // Aggressive cleanup - remove everything non-essential
                     const keysToClean = [];
+                    const essentialKeys = ['currentUser', 'authToken'];
+                    
                     for (let i = 0; i < localStorage.length; i++) {
                         const storageKey = localStorage.key(i);
-                        // Remove old chat history, cached data, temp data
-                        if (storageKey && (storageKey.includes('chatHistory_') || 
-                            storageKey.includes('cache_') ||
-                            storageKey.includes('temp_') ||
-                            storageKey.includes('savedListings_'))) { // Also clean old saved listings
-                            keysToClean.push(storageKey);
+                        if (storageKey && !essentialKeys.includes(storageKey)) {
+                            // Remove all non-essential data
+                            if (storageKey.includes('chatHistory_') || 
+                                storageKey.includes('cache_') ||
+                                storageKey.includes('temp_') ||
+                                storageKey.includes('savedListings_') ||
+                                storageKey.includes('userListings_') ||
+                                storageKey === 'users' ||
+                                storageKey === 'allListings') {
+                                keysToClean.push(storageKey);
+                            }
                         }
                     }
                     
@@ -1138,7 +1145,7 @@
                         
                         if (!error && dbListings) {
                             console.log('✅ Fetched listings from Supabase:', dbListings.length);
-                            // Update localStorage with fresh data from database
+                            // Use fresh data from database (primary source)
                             userListings = dbListings.map(listing => ({
                                 ...listing,
                                 // Normalize field names for consistency
@@ -1146,8 +1153,10 @@
                                 postalCode: listing.postal_code || listing.postalCode,
                                 createdAt: listing.created_at || listing.createdAt
                             }));
+                            
+                            // Try to cache in localStorage but don't fail if storage is full
                             if (!safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings))) {
-                                console.warn('⚠️ Could not cache listings due to storage limits');
+                                console.warn('⚠️ Could not cache listings - using database-only mode');
                             }
                         }
                     } catch (dbError) {
@@ -1460,33 +1469,37 @@
                     // Check if it was actually saved to database or just local
                     const isDbUpdate = result.source === 'supabase';
                     
-                    // Update localStorage with new data
-                    const userListingsKey = `userListings_${currentUser.email}`;
-                    let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                    const listingIndex = userListings.findIndex(l => l.id === currentEditingListing.id);
-                    
-                    if (listingIndex !== -1) {
-                        userListings[listingIndex] = {
-                            ...userListings[listingIndex],
-                            ...updateData,
-                            // Handle different field naming conventions
-                            house_type: updateData.houseType,
-                            postal_code: updateData.postalCode
-                        };
-                        safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
-                    }
-                    
-                    // Also update allListings if it exists
-                    let allListings = JSON.parse(localStorage.getItem('allListings')) || [];
-                    const allListingIndex = allListings.findIndex(l => l.id === currentEditingListing.id);
-                    if (allListingIndex !== -1) {
-                        allListings[allListingIndex] = {
-                            ...allListings[allListingIndex],
-                            ...updateData,
-                            house_type: updateData.houseType,
-                            postal_code: updateData.postalCode
-                        };
-                        safeLocalStorageSetItem('allListings', JSON.stringify(allListings));
+                    // Try to update localStorage cache (but don't fail if storage is full)
+                    try {
+                        const userListingsKey = `userListings_${currentUser.email}`;
+                        let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                        const listingIndex = userListings.findIndex(l => l.id === currentEditingListing.id);
+                        
+                        if (listingIndex !== -1) {
+                            userListings[listingIndex] = {
+                                ...userListings[listingIndex],
+                                ...updateData,
+                                // Handle different field naming conventions
+                                house_type: updateData.houseType,
+                                postal_code: updateData.postalCode
+                            };
+                            safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
+                        }
+                        
+                        // Also update allListings if it exists
+                        let allListings = JSON.parse(localStorage.getItem('allListings')) || [];
+                        const allListingIndex = allListings.findIndex(l => l.id === currentEditingListing.id);
+                        if (allListingIndex !== -1) {
+                            allListings[allListingIndex] = {
+                                ...allListings[allListingIndex],
+                                ...updateData,
+                                house_type: updateData.houseType,
+                                postal_code: updateData.postalCode
+                            };
+                            safeLocalStorageSetItem('allListings', JSON.stringify(allListings));
+                        }
+                    } catch (storageError) {
+                        console.warn('⚠️ Could not update localStorage cache, continuing with database-only mode');
                     }
                     
                     // Close modal and reload listings
