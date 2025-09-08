@@ -904,11 +904,25 @@
             console.log('- Supabase client ready:', !!supabase);
             const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
             console.log('- Current user email:', currentUser.email);
+            console.log('- Currently editing:', currentEditingListing);
             return { 
                 count: currentUserListings.length, 
                 listings: currentUserListings,
-                userEmail: currentUser.email 
+                userEmail: currentUser.email,
+                editing: currentEditingListing
             };
+        };
+
+        // Debug function to test edit save
+        window.testEditSave = function(listingId) {
+            console.log('🧪 Testing edit save for listing:', listingId);
+            const listing = currentUserListings.find(l => l.id === listingId);
+            if (listing) {
+                console.log('Found listing:', listing);
+                editListing(listingId);
+            } else {
+                console.log('❌ Listing not found in global variable');
+            }
         };
 
         // Safe localStorage helper to handle quota exceeded errors
@@ -1497,6 +1511,17 @@
             
             const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
             
+            // Debug logging
+            console.log('🔧 Starting edit save process...');
+            console.log('- Current editing listing:', currentEditingListing);
+            console.log('- Current user:', currentUser);
+            console.log('- User email:', currentUser.email);
+            
+            if (!currentUser.email) {
+                alert('User email not found! Please refresh the page and log in again.');
+                return;
+            }
+            
             try {
                 // Get form data
                 const formData = new FormData(this);
@@ -1513,8 +1538,11 @@
                     description: formData.get('description')
                 };
                 
+                console.log('📝 Form data extracted:', updateData);
+                
                 // Validate required fields
                 if (!updateData.title || !updateData.price || !updateData.city) {
+                    console.error('❌ Validation failed:', { title: updateData.title, price: updateData.price, city: updateData.city });
                     alert('Please fill in all required fields (Title, Price, City)');
                     return;
                 }
@@ -1526,7 +1554,11 @@
                 submitButton.disabled = true;
                 
                 // Call the API to update
-                const response = await fetch(`/api/listings/${currentEditingListing.id}?userEmail=${encodeURIComponent(currentUser.email)}`, {
+                const apiUrl = `/api/listings/${currentEditingListing.id}?userEmail=${encodeURIComponent(currentUser.email)}`;
+                console.log('🌐 Making API call to:', apiUrl);
+                console.log('📤 Request payload:', updateData);
+                
+                const response = await fetch(apiUrl, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1535,13 +1567,34 @@
                     body: JSON.stringify(updateData)
                 });
                 
+                console.log('📥 Response status:', response.status, response.statusText);
+                
                 const result = await response.json();
+                console.log('📋 Full API response:', result);
                 
                 if (response.ok) {
                     console.log('✅ Listing update response:', result);
                     
                     // Check if it was actually saved to database or just local
-                    const isDbUpdate = result.source === 'supabase';
+                    const isDbUpdate = result.source === 'supabase' || result.success === true;
+                    console.log('💾 Database update status:', { source: result.source, success: result.success, isDbUpdate });
+                    
+                    // CRITICAL: Update the global variable immediately
+                    const listingIndexInGlobal = currentUserListings.findIndex(l => l.id === currentEditingListing.id);
+                    if (listingIndexInGlobal !== -1) {
+                        currentUserListings[listingIndexInGlobal] = {
+                            ...currentUserListings[listingIndexInGlobal],
+                            ...updateData,
+                            // Also preserve any database-specific fields
+                            houseType: updateData.houseType,
+                            postalCode: updateData.postalCode,
+                            house_type: updateData.houseType,
+                            postal_code: updateData.postalCode
+                        };
+                        console.log('🔄 Updated global variable listing at index:', listingIndexInGlobal);
+                    } else {
+                        console.warn('⚠️ Could not find listing in global variable to update');
+                    }
                     
                     // Try to update localStorage cache (but don't fail if storage is full)
                     try {
@@ -1590,7 +1643,9 @@
                     }
                     
                 } else {
-                    throw new Error(result.error || 'Failed to update listing');
+                    console.error('❌ API returned error status:', response.status);
+                    console.error('❌ Error response:', result);
+                    throw new Error(result.error || `Server error: ${response.status} ${response.statusText}`);
                 }
                 
             } catch (error) {
