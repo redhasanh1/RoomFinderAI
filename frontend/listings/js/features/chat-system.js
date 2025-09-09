@@ -996,10 +996,20 @@ class ChatSystem {
     }
     
     escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        if (!text || typeof text !== 'string') return '';
+        
+        // Log special characters for debugging
+        if (/[?!öÖäÄüÜß]/.test(text)) {
+            console.log('🔤 Special characters detected in message:', text);
+        }
+        
+        // Use a more reliable method for escaping that preserves UTF-8 characters
+        return text
+            .replace(/&/g, '&amp;')   // Must be first
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');  // More compatible than &#39;
     }
     
     formatMessageTime(timestamp) {
