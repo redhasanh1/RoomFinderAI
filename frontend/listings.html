@@ -3807,9 +3807,9 @@
                 messageElement.className = 'message sent';
                 messageElement.setAttribute('data-message-id', data.id);
                 
-                const escapedContent = escapeHtml(messageContent);
+                const escapedContent = escapeHtml(data.content);
                 console.log('🎨 Rendering message in UI:', {
-                    original: messageContent,
+                    original: data.content,
                     escaped: escapedContent
                 });
                 
