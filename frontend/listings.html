@@ -3807,16 +3807,24 @@
                 messageElement.className = 'message sent';
                 messageElement.setAttribute('data-message-id', data.id);
                 
-                const escapedContent = escapeHtml(data.content);
-                console.log('🎨 Rendering message in UI:', {
-                    original: data.content,
-                    escaped: escapedContent
+                // Debug: Check what we got back from Supabase
+                console.log('📥 Data from Supabase:', {
+                    content: data.content,
+                    hasSpecialChars: /[?!öÖäÄüÜß]/.test(data.content),
+                    contentLength: data.content?.length,
+                    rawData: JSON.stringify(data)
                 });
                 
-                messageElement.innerHTML = `
-                    <p>${escapedContent}</p>
-                    <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
-                `;
+                // Create message content using DOM methods to preserve special characters
+                const messageP = document.createElement('p');
+                messageP.textContent = data.content; // Use textContent to preserve special characters
+                
+                const timestampDiv = document.createElement('div');
+                timestampDiv.className = 'message-timestamp';
+                timestampDiv.textContent = new Date(timestamp).toLocaleTimeString();
+                
+                messageElement.appendChild(messageP);
+                messageElement.appendChild(timestampDiv);
                 chatMessagesContainer.appendChild(messageElement);
                 smartScrollToBottom();
             }
@@ -4692,10 +4700,9 @@
                     messageElement.setAttribute('data-message-id', message.id);
                     
                     // Handle different message types
-                    let messageContent;
                     if (message.message_type === 'file' && message.file_url) {
                         const isOwner = message.sender_email === currentUser.email;
-                        messageContent = `
+                        const messageContent = `
                             <div class="file-message ${isOwner ? 'bg-blue-50' : 'bg-gray-50'} p-3 rounded">
                                 <div class="flex items-center space-x-2">
                                     <span class="text-lg">📎</span>
@@ -4707,14 +4714,27 @@
                                 </div>
                             </div>
                         `;
+                        messageElement.innerHTML = `
+                            ${messageContent}
+                            <div class="message-timestamp">${new Date(message.created_at).toLocaleTimeString()}</div>
+                        `;
                     } else {
-                        messageContent = `<p>${escapeHtml(message.content)}</p>`;
+                        // Create message content using DOM methods to preserve special characters
+                        const messageP = document.createElement('p');
+                        messageP.textContent = message.content; // Use textContent to preserve special characters
+                        messageElement.appendChild(messageP);
+                        
+                        const timestampDiv = document.createElement('div');
+                        timestampDiv.className = 'message-timestamp';
+                        timestampDiv.textContent = new Date(message.created_at).toLocaleTimeString();
+                        messageElement.appendChild(timestampDiv);
+                        
+                        console.log('📄 Loaded message:', {
+                            content: message.content,
+                            hasSpecialChars: /[?!öÖäÄüÜß]/.test(message.content)
+                        });
                     }
                     
-                    messageElement.innerHTML = `
-                        ${messageContent}
-                        <div class="message-timestamp">${new Date(message.created_at).toLocaleTimeString()}</div>
-                    `;
                     chatMessagesContainer.appendChild(messageElement);
                 });
 
