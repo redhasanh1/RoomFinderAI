@@ -107,3 +107,4 @@ Use `gemini -p` when:
 - Pull code before pushing. Always!
 
 - please push with EricT2003 and a short summary. dont include claude or generated or anything. just a short summary of what you edited
+- afte rediting always push ith EricT2003 and only a short summary. no claude generated or anything. just EricT2003 and a short summary
