@@ -3954,21 +3954,24 @@
                                 messageElement.className = `message ${isOwnMessage ? 'sent' : 'received'}`;
                                 messageElement.setAttribute('data-message-id', payload.new.id);
                                 
-                                // Use the escapeHtml function for consistency
-                                const escapedContent = escapeHtml(payload.new.content);
+                                // Use DOM methods to preserve special characters
                                 console.log('🎨 Real-time message rendering:', {
                                     original: payload.new.content,
-                                    escaped: escapedContent,
+                                    hasSpecialChars: /[?!öÖäÄüÜß]/.test(payload.new.content),
                                     isOwnMessage: isOwnMessage,
                                     browser: isChrome ? 'Chrome' : isBrave ? 'Brave' : 'Other'
                                 });
                                 
-                                const messageContent = `
-                                    <p>${escapedContent}</p>
-                                    <div class="message-timestamp">${new Date(payload.new.created_at).toLocaleTimeString()}</div>
-                                `;
+                                // Create message content using DOM methods
+                                const messageP = document.createElement('p');
+                                messageP.textContent = payload.new.content; // Preserves special characters
                                 
-                                messageElement.innerHTML = messageContent;
+                                const timestampDiv = document.createElement('div');
+                                timestampDiv.className = 'message-timestamp';
+                                timestampDiv.textContent = new Date(payload.new.created_at).toLocaleTimeString();
+                                
+                                messageElement.appendChild(messageP);
+                                messageElement.appendChild(timestampDiv);
                                 chatMessagesContainer.appendChild(messageElement);
                                 
                                 // Scroll to bottom to show new message
