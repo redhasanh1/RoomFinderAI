@@ -536,8 +536,7 @@ struct EnhancedListingCardView: View {
                                 .foregroundColor(.secondary)
                         )
                 }
-                .frame(height: 120)
-                .aspectRatio(4/3, contentMode: .fill)
+                .frame(height: 180)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 
                 // Price Badge
@@ -592,26 +591,6 @@ struct EnhancedListingCardView: View {
                     Spacer()
                 }
                 
-                // Action Button
-                NavigationLink(destination: SimpleAINegotiatorView(listing: listing)) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "brain")
-                        Text("Negotiate")
-                    }
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
-                    .background(
-                        LinearGradient(
-                            colors: [.blue, .purple],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .cornerRadius(16)
-                }
             }
             .padding(8)
         }
@@ -660,23 +639,6 @@ struct ListingCardView: View {
         .font(.subheadline)
         .foregroundStyle(.secondary)
 
-        // Negotiate button
-        HStack {
-          Spacer()
-          NavigationLink(destination: SimpleAINegotiatorView(listing: listing)) {
-            HStack(spacing: 4) {
-              Image(systemName: "brain")
-              Text("Negotiate")
-            }
-            .font(.caption)
-            .fontWeight(.medium)
-            .foregroundColor(.white)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 6)
-            .background(Color.blue)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-          }
-        }
       }
     }
     .padding(12)
@@ -718,388 +680,481 @@ struct ChatView: View {
 // MARK: - Enhanced Search View
 struct SearchView: View {
     @State private var searchText = ""
-    @State private var selectedLocation = ""
-    @State private var minPrice: Double = 500
-    @State private var maxPrice: Double = 3000
-    @State private var bedrooms: Int = 0
-    @State private var bathrooms: Double = 1.0
-    @State private var propertyType: Set<String> = []
-    @State private var amenities: Set<String> = []
-    @State private var moveInDate = Date()
-    @State private var maxCommute: Double = 30
-    @State private var searchRadius: Double = 10
-    @State private var showingResults = false
-    @State private var showingAdvanced = false
     @State private var searchResults: [HomePageListing] = []
-    @State private var savedSearches: [String] = ["Downtown Studio under $1500", "2BR near Campus"]
-    @State private var searchHistory: [String] = []
+    @State private var isLoading = false
+    @State private var showingAdvanced = false
+    @State private var searchWorkItem: DispatchWorkItem?
+    
+    // Essential Filter State
+    @State private var selectedPriceRanges: Set<String> = []
+    @State private var selectedBedroomTypes: Set<String> = []
+    @State private var selectedPropertyTypes: Set<String> = []
+    @State private var selectedSort = "Recent"
+    @State private var showingPriceFilter = false
+    @State private var showingBedroomFilter = false
+    
+    // Advanced Filter State (hidden by default)
+    @State private var minPrice: Double = 0
+    @State private var maxPrice: Double = 10000
+    @State private var specificBedrooms: Int? = nil
+    
     @Environment(\.supabase) private var supabase
     
     let propertyTypes = ["Studio", "Apartment", "House", "Condo", "Townhouse", "Loft"]
-    let amenitiesList = ["WiFi", "Parking", "Laundry", "Gym", "Pool", "Balcony", "Air Conditioning", "Dishwasher", "Pet-Friendly", "Furnished", "Washer/Dryer", "Elevator", "Doorman", "Rooftop"]
-    let bedroomOptions = [0, 1, 2, 3, 4, 5]
-    let bathroomOptions = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+    let priceRanges = ["Under $1,000", "$1,000 - $1,500", "$1,500 - $2,000", "$2,000 - $3,000", "Over $3,000"]
+    let bedroomTypes = ["Studio", "1 Bedroom", "2 Bedrooms", "3 Bedrooms", "4+ Bedrooms"]
+    let sortOptions = ["Recent", "Price: Low to High", "Price: High to Low", "Distance"]
     
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: 24) {
-                    // Hero Header
-                    VStack(spacing: 16) {
+                VStack(spacing: 16) {
+                    // Clean Header
+                    VStack(spacing: 8) {
                         HStack {
-                            Image(systemName: "location.magnifyingglass")
-                                .font(.system(size: 40))
-                                .foregroundStyle(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
-                            
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Find Your Perfect Room")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                Text("Advanced search with smart filters")
+                                Text("Search Properties")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                Text("Find your perfect home")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
                             Spacer()
                         }
-                        .padding(.horizontal)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
                     }
                     
-                    // Main Search Bar
-                    VStack(spacing: 16) {
+                    // Clean Search Bar
+                    HStack(spacing: 12) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.gray)
+                        TextField("Search properties...", text: $searchText)
+                            .onChange(of: searchText) { _ in
+                                // Cancel previous search
+                                searchWorkItem?.cancel()
+                                
+                                // Create new debounced search
+                                let workItem = DispatchWorkItem {
+                                    performSearch()
+                                }
+                                searchWorkItem = workItem
+                                
+                                // Execute after 300ms delay
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
+                            }
+                    }
+                    .padding(16)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+                    .padding(.horizontal, 16)
+                    
+                    // Main Filter Chips
+                    ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundColor(.gray)
-                            TextField("Search by location, neighborhood, or property name", text: $searchText)
-                                .onChange(of: searchText) { _ in
-                                    if !searchText.isEmpty && !searchHistory.contains(searchText) {
-                                        searchHistory.append(searchText)
-                                    }
-                                }
-                        }
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.blue.opacity(0.3), lineWidth: 1)
-                        )
-                        
-                        // Location Radius
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Search within \(Int(searchRadius)) miles")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            HStack {
-                                Text("1mi")
-                                    .font(.caption)
-                                Slider(value: $searchRadius, in: 1...50, step: 1)
-                                    .accentColor(.blue)
-                                Text("50mi")
-                                    .font(.caption)
+                            FilterChipView(
+                                title: selectedPriceRanges.isEmpty ? "Price" : "\(selectedPriceRanges.count) Price Range\(selectedPriceRanges.count > 1 ? "s" : "")",
+                                isSelected: !selectedPriceRanges.isEmpty
+                            ) {
+                                showingPriceFilter.toggle()
                             }
-                        }
-                    }
-                    .padding(.horizontal)
-                    
-                    // Quick Search Suggestions
-                    if !searchHistory.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Recent Searches")
-                                .font(.headline)
-                                .padding(.horizontal)
                             
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 12) {
-                                    ForEach(searchHistory.suffix(5).reversed(), id: \.self) { search in
-                                        Button(action: { searchText = search }) {
-                                            HStack(spacing: 6) {
-                                                Image(systemName: "clock")
-                                                    .font(.caption)
-                                                Text(search)
-                                                    .font(.caption)
-                                            }
-                                            .padding(.horizontal, 20)
-                                            .padding(.vertical, 6)
-                                            .background(Color(.systemGray5))
-                                            .foregroundColor(.blue)
-                                            .cornerRadius(16)
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal)
+                            FilterChipView(
+                                title: selectedBedroomTypes.isEmpty ? "Bedrooms" : "\(selectedBedroomTypes.count) Bedroom Type\(selectedBedroomTypes.count > 1 ? "s" : "")",
+                                isSelected: !selectedBedroomTypes.isEmpty
+                            ) {
+                                showingBedroomFilter.toggle()
+                            }
+                            
+                            FilterChipView(
+                                title: selectedPropertyTypes.isEmpty ? "Type" : "\(selectedPropertyTypes.count) Type\(selectedPropertyTypes.count > 1 ? "s" : "")",
+                                isSelected: !selectedPropertyTypes.isEmpty
+                            ) {
+                                showingAdvanced.toggle()
+                            }
+                            
+                            FilterChipView(
+                                title: selectedSort,
+                                isSelected: selectedSort != "Recent"
+                            ) {
+                                showSortOptions()
                             }
                         }
+                        .padding(.horizontal, 16)
                     }
                     
-                    // Price Range
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Price Range")
-                            .font(.headline)
-                            .padding(.horizontal)
-                        
-                        VStack(spacing: 12) {
+                    // Price Range Filter
+                    if showingPriceFilter {
+                        VStack(alignment: .leading, spacing: 12) {
                             HStack {
-                                Text("$\(Int(minPrice))")
+                                Text("Price Range")
                                     .font(.subheadline)
                                     .fontWeight(.medium)
                                 Spacer()
-                                Text("$\(Int(maxPrice))")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
+                                Button("Clear") {
+                                    selectedPriceRanges.removeAll()
+                                    performSearch()
+                                }
+                                .font(.caption)
+                                .foregroundColor(.red)
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, 16)
                             
-                            // Custom dual slider implementation
-                            VStack(spacing: 8) {
-                                Text("Min: $\(Int(minPrice))")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Slider(value: $minPrice, in: 300...5000, step: 50)
-                                    .accentColor(.green)
-                                
-                                Text("Max: $\(Int(maxPrice))")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Slider(value: $maxPrice, in: 500...8000, step: 50)
-                                    .accentColor(.red)
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 1), spacing: 8) {
+                                ForEach(priceRanges, id: \.self) { range in
+                                    Button(action: {
+                                        if selectedPriceRanges.contains(range) {
+                                            selectedPriceRanges.remove(range)
+                                        } else {
+                                            selectedPriceRanges.insert(range)
+                                        }
+                                        performSearch()
+                                    }) {
+                                        HStack(spacing: 8) {
+                                            if selectedPriceRanges.contains(range) {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundColor(.blue)
+                                            } else {
+                                                Image(systemName: "circle")
+                                                    .foregroundColor(.gray)
+                                            }
+                                            Text(range)
+                                                .font(.subheadline)
+                                            Spacer()
+                                        }
+                                        .foregroundColor(selectedPriceRanges.contains(range) ? .blue : .primary)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 12)
+                                        .background(selectedPriceRanges.contains(range) ? Color.blue.opacity(0.1) : Color(.systemGray6))
+                                        .cornerRadius(8)
+                                    }
+                                }
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, 16)
                         }
+                        .padding(.vertical, 12)
+                        .background(Color(.systemGray6).opacity(0.5))
+                        .cornerRadius(12)
+                        .padding(.horizontal, 16)
                     }
                     
-                    // Property Details
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Property Details")
-                            .font(.headline)
-                            .padding(.horizontal)
-                        
-                        VStack(spacing: 16) {
-                            // Bedrooms
-                            VStack(alignment: .leading, spacing: 8) {
+                    // Bedroom Type Filter
+                    if showingBedroomFilter {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
                                 Text("Bedrooms")
                                     .font(.subheadline)
                                     .fontWeight(.medium)
-                                    .padding(.horizontal)
-                                
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 12) {
-                                        ForEach(bedroomOptions, id: \.self) { count in
-                                            Button(action: { bedrooms = count }) {
-                                                Text(count == 0 ? "Studio" : "\(count)")
-                                                    .font(.subheadline)
-                                                    .fontWeight(.medium)
-                                                    .foregroundColor(bedrooms == count ? .white : .blue)
-                                                    .frame(width: 50, height: 40)
-                                                    .background(bedrooms == count ? Color.blue : Color(.systemGray6))
-                                                    .cornerRadius(16)
-                                            }
+                                Spacer()
+                                Button("Clear") {
+                                    selectedBedroomTypes.removeAll()
+                                    performSearch()
+                                }
+                                .font(.caption)
+                                .foregroundColor(.red)
+                            }
+                            .padding(.horizontal, 16)
+                            
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 1), spacing: 8) {
+                                ForEach(bedroomTypes, id: \.self) { bedroom in
+                                    Button(action: {
+                                        if selectedBedroomTypes.contains(bedroom) {
+                                            selectedBedroomTypes.remove(bedroom)
+                                        } else {
+                                            selectedBedroomTypes.insert(bedroom)
                                         }
+                                        performSearch()
+                                    }) {
+                                        HStack(spacing: 8) {
+                                            if selectedBedroomTypes.contains(bedroom) {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundColor(.blue)
+                                            } else {
+                                                Image(systemName: "circle")
+                                                    .foregroundColor(.gray)
+                                            }
+                                            Text(bedroom)
+                                                .font(.subheadline)
+                                            Spacer()
+                                        }
+                                        .foregroundColor(selectedBedroomTypes.contains(bedroom) ? .blue : .primary)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 12)
+                                        .background(selectedBedroomTypes.contains(bedroom) ? Color.blue.opacity(0.1) : Color(.systemGray6))
+                                        .cornerRadius(8)
                                     }
-                                    .padding(.horizontal)
                                 }
                             }
-                            
-                            // Bathrooms
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Bathrooms")
+                            .padding(.horizontal, 16)
+                        }
+                        .padding(.vertical, 12)
+                        .background(Color(.systemGray6).opacity(0.5))
+                        .cornerRadius(12)
+                        .padding(.horizontal, 16)
+                    }
+                    
+                    // Property Type Filter (Advanced)
+                    if showingAdvanced {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text("Property Types")
                                     .font(.subheadline)
                                     .fontWeight(.medium)
-                                    .padding(.horizontal)
-                                
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 12) {
-                                        ForEach(bathroomOptions, id: \.self) { count in
-                                            Button(action: { bathrooms = count }) {
-                                                Text(count == floor(count) ? "\(Int(count))" : "\(count, specifier: "%.1f")")
-                                                    .font(.subheadline)
-                                                    .fontWeight(.medium)
-                                                    .foregroundColor(bathrooms == count ? .white : .orange)
-                                                    .frame(width: 50, height: 40)
-                                                    .background(bathrooms == count ? Color.orange : Color(.systemGray6))
-                                                    .cornerRadius(16)
+                                Spacer()
+                                Button("Clear All") {
+                                    clearAllFilters()
+                                }
+                                .font(.caption)
+                                .foregroundColor(.red)
+                            }
+                            .padding(.horizontal, 16)
+                            
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 8) {
+                                ForEach(propertyTypes, id: \.self) { type in
+                                    Button(action: {
+                                        if selectedPropertyTypes.contains(type) {
+                                            selectedPropertyTypes.remove(type)
+                                        } else {
+                                            selectedPropertyTypes.insert(type)
+                                        }
+                                        performSearch()
+                                    }) {
+                                        HStack(spacing: 6) {
+                                            if selectedPropertyTypes.contains(type) {
+                                                Image(systemName: "checkmark")
+                                                    .font(.caption)
+                                                    .foregroundColor(.white)
                                             }
-                                        }
-                                    }
-                                    .padding(.horizontal)
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Property Types
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Property Type")
-                            .font(.headline)
-                            .padding(.horizontal)
-                        
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
-                            ForEach(propertyTypes, id: \.self) { type in
-                                Button(action: {
-                                    if propertyType.contains(type) {
-                                        propertyType.remove(type)
-                                    } else {
-                                        propertyType.insert(type)
-                                    }
-                                }) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: propertyType.contains(type) ? "checkmark.circle.fill" : "circle")
-                                            .foregroundColor(propertyType.contains(type) ? .green : .gray)
-                                        Text(type)
-                                            .fontWeight(.medium)
-                                        Spacer()
-                                    }
-                                    .padding()
-                                    .background(propertyType.contains(type) ? Color.green.opacity(0.3) : Color(.systemGray6))
-                                    .cornerRadius(12)
-                                }
-                                .foregroundColor(.primary)
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
-                    
-                    // Amenities
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Amenities")
-                            .font(.headline)
-                            .padding(.horizontal)
-                        
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 8) {
-                            ForEach(amenitiesList, id: \.self) { amenity in
-                                Button(action: {
-                                    if amenities.contains(amenity) {
-                                        amenities.remove(amenity)
-                                    } else {
-                                        amenities.insert(amenity)
-                                    }
-                                }) {
-                                    HStack(spacing: 6) {
-                                        if amenities.contains(amenity) {
-                                            Image(systemName: "checkmark")
+                                            Text(type)
                                                 .font(.caption)
-                                                .foregroundColor(.white)
+                                                .fontWeight(.medium)
                                         }
-                                        Text(amenity)
-                                            .font(.caption)
-                                            .fontWeight(.medium)
+                                        .foregroundColor(selectedPropertyTypes.contains(type) ? .white : .blue)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .background(selectedPropertyTypes.contains(type) ? Color.blue : Color(.systemGray6))
+                                        .cornerRadius(16)
                                     }
-                                    .foregroundColor(amenities.contains(amenity) ? .white : .purple)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(amenities.contains(amenity) ? Color.purple : Color(.systemGray6))
-                                    .cornerRadius(16)
                                 }
                             }
+                            .padding(.horizontal, 16)
                         }
-                        .padding(.horizontal)
+                        .padding(.vertical, 12)
+                        .background(Color(.systemGray6).opacity(0.5))
+                        .cornerRadius(12)
+                        .padding(.horizontal, 16)
                     }
                     
-                    // Move-in Date
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Preferred Move-in Date")
-                            .font(.headline)
-                            .padding(.horizontal)
-                        
-                        DatePicker("Move-in Date", selection: $moveInDate, in: Date()..., displayedComponents: .date)
-                            .datePickerStyle(.compact)
-                            .padding(.horizontal)
-                    }
-                    
-                    // Saved Searches
-                    if !savedSearches.isEmpty {
+                    // Results Area
+                    if isLoading {
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.2)
+                            Text("Searching properties...")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.top, 40)
+                    } else if !searchResults.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Saved Searches")
-                                .font(.headline)
-                                .padding(.horizontal)
-                            
-                            ForEach(savedSearches, id: \.self) { search in
-                                Button(action: { loadSavedSearch(search) }) {
-                                    HStack {
-                                        Image(systemName: "bookmark.fill")
-                                            .foregroundColor(.yellow)
-                                        Text(search)
-                                            .font(.subheadline)
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
+                            HStack {
+                                Text("\(searchResults.count) properties found")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                if hasActiveFilters() {
+                                    Button("Clear Filters") {
+                                        clearAllFilters()
                                     }
-                                    .padding()
-                                    .background(Color(.systemGray6))
-                                    .cornerRadius(12)
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
                                 }
-                                .foregroundColor(.primary)
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, 16)
+                            
+                            // Single Column Results (like Android)
+                            LazyVStack(spacing: 16) {
+                                ForEach(searchResults) { listing in
+                                    EnhancedListingCardView(listing: listing)
+                                        .padding(.horizontal, 20)
+                                }
+                            }
                         }
+                    } else if !searchText.isEmpty || hasActiveFilters() {
+                        VStack(spacing: 16) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 40))
+                                .foregroundColor(.gray)
+                            Text("No results found")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                            Text("Try adjusting your search or filters")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            if hasActiveFilters() {
+                                Button("Clear All Filters") {
+                                    clearAllFilters()
+                                }
+                                .font(.subheadline)
+                                .foregroundColor(.blue)
+                                .padding(.top, 8)
+                            }
+                        }
+                        .padding(.top, 60)
                     }
                     
-                    // Search Actions
-                    VStack(spacing: 12) {
-                        Button(action: performSearch) {
-                            HStack {
-                                Image(systemName: "magnifyingglass")
-                                Text("Search Properties")
-                                    .fontWeight(.semibold)
-                                if !searchResults.isEmpty {
-                                    Text("(\(searchResults.count))")
-                                }
-                            }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                LinearGradient(
-                                    colors: [.blue, .purple],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .cornerRadius(12)
-                        }
-                        
-                        HStack(spacing: 12) {
-                            Button("Save Search") {
-                                saveCurrentSearch()
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(.blue)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                            
-                            Button("Clear All") {
-                                clearAllFilters()
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(.red)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(.systemGray5))
-                            .cornerRadius(12)
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom, 30)
+                    Spacer(minLength: 100)
                 }
             }
             .navigationBarHidden(true)
-            .sheet(isPresented: $showingResults) {
-                SearchResultsView(results: searchResults)
+            .onAppear {
+                // Load initial results on appear
+                if searchResults.isEmpty {
+                    performSearch()
+                }
             }
+    }
+    }
+    
+    // MARK: - Helper Functions
+    private func hasActiveFilters() -> Bool {
+        return !selectedPriceRanges.isEmpty || 
+               !selectedBedroomTypes.isEmpty || 
+               !selectedPropertyTypes.isEmpty ||
+               selectedSort != "Recent"
+    }
+    
+    private func clearAllFilters() {
+        selectedPriceRanges.removeAll()
+        selectedBedroomTypes.removeAll()
+        selectedPropertyTypes.removeAll()
+        selectedSort = "Recent"
+        searchText = ""
+        showingAdvanced = false
+        showingPriceFilter = false
+        showingBedroomFilter = false
+        performSearch()
+    }
+    
+    // MARK: - Filter Functions
+    private func showSortOptions() {
+        let alert = UIAlertController(title: "Sort Properties", message: nil, preferredStyle: .actionSheet)
+        
+        for option in sortOptions {
+            alert.addAction(UIAlertAction(title: option, style: .default) { _ in
+                self.selectedSort = option
+                self.performSearch()
+            })
+        }
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        // Present the alert
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootViewController = windowScene.windows.first?.rootViewController {
+            rootViewController.present(alert, animated: true)
         }
     }
     
-    private func performSearch() {
-        // Add search term to history
-        if !searchText.isEmpty && !searchHistory.contains(searchText) {
-            searchHistory.append(searchText)
-            if searchHistory.count > 20 {
-                searchHistory.removeFirst()
+    private func matchesPriceFilter(_ listing: HomePageListing) -> Bool {
+        if selectedPriceRanges.isEmpty { return true }
+        
+        guard let price = listing.price else { return false }
+        let priceValue = Double(price)
+        
+        for range in selectedPriceRanges {
+            switch range {
+            case "Under $1,000":
+                if priceValue < 1000 { return true }
+            case "$1,000 - $1,500":
+                if priceValue >= 1000 && priceValue <= 1500 { return true }
+            case "$1,500 - $2,000":
+                if priceValue >= 1500 && priceValue <= 2000 { return true }
+            case "$2,000 - $3,000":
+                if priceValue >= 2000 && priceValue <= 3000 { return true }
+            case "Over $3,000":
+                if priceValue > 3000 { return true }
+            default:
+                break
+            }
+        }
+        return false
+    }
+    
+    private func matchesBedroomFilter(_ listing: HomePageListing) -> Bool {
+        if selectedBedroomTypes.isEmpty { return true }
+        
+        for bedroomType in selectedBedroomTypes {
+            switch bedroomType {
+            case "Studio":
+                if listing.bedrooms == 0 { return true }
+            case "1 Bedroom":
+                if listing.bedrooms == 1 { return true }
+            case "2 Bedrooms":
+                if listing.bedrooms == 2 { return true }
+            case "3 Bedrooms":
+                if listing.bedrooms == 3 { return true }
+            case "4+ Bedrooms":
+                if listing.bedrooms ?? 0 >= 4 { return true }
+            default:
+                break
+            }
+        }
+        return false
+    }
+    
+    // MARK: - Smart Search
+    private func matchesSmartSearch(_ listing: HomePageListing, _ query: String) -> Bool {
+        let lowerQuery = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Basic text search
+        let titleMatch = listing.title?.lowercased().contains(lowerQuery) ?? false
+        let cityMatch = listing.city?.lowercased().contains(lowerQuery) ?? false
+        let descriptionMatch = listing.description?.lowercased().contains(lowerQuery) ?? false
+        let basicMatch = titleMatch || cityMatch || descriptionMatch
+        
+        // Smart price search patterns
+        if lowerQuery.contains("under") && lowerQuery.contains("$") {
+            let priceStr = lowerQuery.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+            if let maxPrice = Double(priceStr), let listingPrice = listing.price {
+                return Double(listingPrice) <= maxPrice
             }
         }
         
+        if lowerQuery.contains("over") && lowerQuery.contains("$") {
+            let priceStr = lowerQuery.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+            if let minPrice = Double(priceStr), let listingPrice = listing.price {
+                return Double(listingPrice) >= minPrice
+            }
+        }
+        
+        // Price range search (e.g., "1000-1500")
+        if lowerQuery.range(of: #"\d+-\d+"#, options: .regularExpression) != nil {
+            let parts = lowerQuery.replacingOccurrences(of: "[^0-9-]", with: "", options: .regularExpression).split(separator: "-")
+            if parts.count == 2, let minPrice = Double(parts[0]), let maxPrice = Double(parts[1]), let listingPrice = listing.price {
+                return Double(listingPrice) >= minPrice && Double(listingPrice) <= maxPrice
+            }
+        }
+        
+        // Bedroom search
+        if lowerQuery.contains("bedroom") || lowerQuery.contains("bed") {
+            let bedStr = lowerQuery.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+            if let bedrooms = Int(bedStr) {
+                return listing.bedrooms == bedrooms
+            }
+        }
+        
+        // Studio search
+        if lowerQuery.contains("studio") {
+            return (listing.house_type?.lowercased().contains("studio") == true) || listing.bedrooms == 0
+        }
+        
+        return basicMatch
+    }
+    
+    private func performSearch() {
+        isLoading = true
         Task {
             await searchListings()
         }
@@ -1107,125 +1162,67 @@ struct SearchView: View {
     
     private func searchListings() async {
         do {
-            // Fetch all listings first (in a real app, you'd want server-side filtering)
+            // Fetch all listings from database
             let allListings: [HomePageListing] = try await supabase
                 .from("listings")
                 .select("*")
                 .execute()
                 .value
             
-            // Apply client-side filtering
-            let filtered = allListings.filter { listing in
-                // Location/text search
+            // Apply filtering and smart search
+            var filtered = allListings.filter { listing in
+                // Smart search patterns (if search text exists)
                 if !searchText.isEmpty {
-                    let titleMatch = listing.title?.lowercased().contains(searchText.lowercased()) ?? false
-                    let cityMatch = listing.city?.lowercased().contains(searchText.lowercased()) ?? false
-                    let descriptionMatch = listing.description?.lowercased().contains(searchText.lowercased()) ?? false
-                    
-                    if !titleMatch && !cityMatch && !descriptionMatch {
-                        return false
-                    }
+                    return matchesSmartSearch(listing, searchText)
                 }
-                
-                // Price range filter
-                if let price = listing.price {
-                    if Double(price) < minPrice || Double(price) > maxPrice {
-                        return false
-                    }
-                }
-                
-                // Bedroom filter
-                if bedrooms > 0 {
-                    if listing.bedrooms != bedrooms {
-                        return false
-                    }
-                } else if bedrooms == 0 { // Studio
-                    if listing.bedrooms != 0 {
-                        return false
-                    }
-                }
-                
-                // Property type filter
-                if !propertyType.isEmpty {
-                    let hasMatchingType = propertyType.contains { type in
+                return true
+            }
+            
+            // Apply price filter
+            filtered = filtered.filter { listing in
+                return matchesPriceFilter(listing)
+            }
+            
+            // Apply bedroom filter
+            filtered = filtered.filter { listing in
+                return matchesBedroomFilter(listing)
+            }
+            
+            // Apply property type filter
+            if !selectedPropertyTypes.isEmpty {
+                filtered = filtered.filter { listing in
+                    selectedPropertyTypes.contains { type in
                         listing.house_type?.lowercased().contains(type.lowercased()) ?? false
                     }
-                    if !hasMatchingType {
-                        return false
-                    }
                 }
-                
-                // Amenities filter
-                if !amenities.isEmpty {
-                    let description = listing.description?.lowercased() ?? ""
-                    let hasAllAmenities = amenities.allSatisfy { amenity in
-                        description.contains(amenity.lowercased())
-                    }
-                    if !hasAllAmenities {
-                        return false
-                    }
-                }
-                
-                return true
+            }
+            
+            // Apply sorting
+            switch selectedSort {
+            case "Recent":
+                filtered.sort { ($0.created_at ?? "") > ($1.created_at ?? "") }
+            case "Price: Low":
+                filtered.sort { ($0.price ?? 0) < ($1.price ?? 0) }
+            case "Price: High":
+                filtered.sort { ($0.price ?? 0) > ($1.price ?? 0) }
+            case "Alphabetical":
+                filtered.sort { ($0.title ?? "") < ($1.title ?? "") }
+            default:
+                break
             }
             
             await MainActor.run {
                 self.searchResults = filtered
-                self.showingResults = true
+                self.isLoading = false
             }
             
         } catch {
             print("Search error: \(error)")
             await MainActor.run {
                 self.searchResults = []
-                self.showingResults = true
+                self.isLoading = false
             }
         }
-    }
-    
-    private func saveCurrentSearch() {
-        let searchName = searchText.isEmpty ? "Custom Search \(savedSearches.count + 1)" : searchText
-        if !savedSearches.contains(searchName) {
-            savedSearches.append(searchName)
-        }
-        
-        // In a real app, you'd persist these search parameters to UserDefaults or Core Data
-        // For now, we'll just store the name in the array
-    }
-    
-    private func loadSavedSearch(_ search: String) {
-        searchText = search
-        
-        // Set some smart defaults based on saved search names
-        if search.lowercased().contains("studio") {
-            bedrooms = 0
-            propertyType.insert("Studio")
-        } else if search.lowercased().contains("1br") || search.lowercased().contains("1 bed") {
-            bedrooms = 1
-        } else if search.lowercased().contains("2br") || search.lowercased().contains("2 bed") {
-            bedrooms = 2
-        }
-        
-        if search.lowercased().contains("downtown") {
-            maxPrice = 2500 // Downtown typically more expensive
-        }
-        
-        if search.lowercased().contains("campus") {
-            maxPrice = 1800 // Student housing typically cheaper
-            amenities.insert("WiFi")
-        }
-    }
-    
-    private func clearAllFilters() {
-        searchText = ""
-        minPrice = 500
-        maxPrice = 3000
-        bedrooms = 0
-        bathrooms = 1.0
-        propertyType.removeAll()
-        amenities.removeAll()
-        moveInDate = Date()
-        searchRadius = 10
     }
 }
 

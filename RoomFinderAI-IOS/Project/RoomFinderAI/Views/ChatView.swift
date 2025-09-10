@@ -17,7 +17,8 @@ struct ChatView: View {
                 .multilineTextAlignment(.center)
         }
         .padding()
-        .navigationTitle("Chat")
+        .padding(.top)
+        .navigationBarHidden(true)
     }
 }
 
