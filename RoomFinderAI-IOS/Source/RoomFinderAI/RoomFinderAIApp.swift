@@ -95,7 +95,7 @@ struct SimpleAINegotiatorView: View {
             Text(messages[index])
               .padding()
               .background(Color(.systemGray6))
-              .cornerRadius(8)
+              .cornerRadius(16)
           }
         }
         .padding()
@@ -225,7 +225,7 @@ struct HomeScreen: View {
               }
               .font(.caption)
               .foregroundColor(.blue)
-              .padding(.horizontal, 12)
+              .padding(.horizontal, 20)
               .padding(.vertical, 6)
               .background(Color(.systemGray6))
               .cornerRadius(20)
@@ -389,7 +389,6 @@ struct HomeScreen: View {
           }
         }
         .padding(.horizontal, 20)
-        .padding(.top, 8)
       }
       .navigationBarHidden(true)
       .onAppear {
@@ -509,7 +508,7 @@ struct FilterChipView: View {
                     .fontWeight(.medium)
             }
             .foregroundColor(isSelected ? .white : .blue)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 20)
             .padding(.vertical, 8)
             .background(isSelected ? Color.blue : Color(.systemGray6))
             .cornerRadius(20)
@@ -612,7 +611,7 @@ struct EnhancedListingCardView: View {
                             endPoint: .trailing
                         )
                     )
-                    .cornerRadius(8)
+                    .cornerRadius(16)
                 }
             }
             .padding(10)
@@ -672,7 +671,7 @@ struct ListingCardView: View {
             .font(.caption)
             .fontWeight(.medium)
             .foregroundColor(.white)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 20)
             .padding(.vertical, 6)
             .background(Color.blue)
             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -711,7 +710,8 @@ struct ChatView: View {
                 .multilineTextAlignment(.center)
         }
         .padding()
-        .navigationTitle("Chat")
+        .padding(.top)
+        .navigationBarHidden(true)
     }
 }
 
@@ -818,7 +818,7 @@ struct SearchView: View {
                                                 Text(search)
                                                     .font(.caption)
                                             }
-                                            .padding(.horizontal, 12)
+                                            .padding(.horizontal, 20)
                                             .padding(.vertical, 6)
                                             .background(Color(.systemGray5))
                                             .foregroundColor(.blue)
@@ -891,7 +891,7 @@ struct SearchView: View {
                                                     .foregroundColor(bedrooms == count ? .white : .blue)
                                                     .frame(width: 50, height: 40)
                                                     .background(bedrooms == count ? Color.blue : Color(.systemGray6))
-                                                    .cornerRadius(8)
+                                                    .cornerRadius(16)
                                             }
                                         }
                                     }
@@ -916,7 +916,7 @@ struct SearchView: View {
                                                     .foregroundColor(bathrooms == count ? .white : .orange)
                                                     .frame(width: 50, height: 40)
                                                     .background(bathrooms == count ? Color.orange : Color(.systemGray6))
-                                                    .cornerRadius(8)
+                                                    .cornerRadius(16)
                                             }
                                         }
                                     }
@@ -1084,8 +1084,7 @@ struct SearchView: View {
                     .padding(.bottom, 30)
                 }
             }
-            .navigationTitle("Advanced Search")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarHidden(true)
             .sheet(isPresented: $showingResults) {
                 SearchResultsView(results: searchResults)
             }
@@ -1279,7 +1278,7 @@ struct SearchFilterChip: View {
                 .font(.caption)
                 .fontWeight(.medium)
                 .foregroundColor(isSelected ? .white : .blue)
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 20)
                 .padding(.vertical, 8)
                 .background(isSelected ? Color.blue : Color(.systemGray6))
                 .cornerRadius(20)
@@ -1360,7 +1359,7 @@ struct PostView: View {
                                 .frame(width: 40, height: 40)
                                 .background(Color(.systemGray6))
                                 .foregroundColor(.blue)
-                                .cornerRadius(8)
+                                .cornerRadius(16)
                                 
                                 Text("\(bedrooms)")
                                     .font(.title2)
@@ -1373,7 +1372,7 @@ struct PostView: View {
                                 .frame(width: 40, height: 40)
                                 .background(Color(.systemGray6))
                                 .foregroundColor(.blue)
-                                .cornerRadius(8)
+                                .cornerRadius(16)
                                 
                                 Spacer()
                             }
@@ -1416,8 +1415,7 @@ struct PostView: View {
                 .padding(.horizontal)
             }
         }
-        .navigationTitle("Post Property")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(true)
         .alert("Success!", isPresented: $showingSuccessAlert) {
             Button("OK") {
                 // Clear form
