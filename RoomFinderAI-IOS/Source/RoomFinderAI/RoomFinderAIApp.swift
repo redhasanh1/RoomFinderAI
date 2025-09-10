@@ -1658,23 +1658,38 @@ struct SearchListingCardView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Image - clean without overlays
-            AsyncImage(url: imageURL) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } placeholder: {
-                Rectangle()
-                    .fill(Color(.systemGray5))
-                    .overlay(
-                        Image(systemName: "photo")
-                            .font(.title)
-                            .foregroundColor(.secondary)
-                    )
+            // Image with price overlay
+            ZStack(alignment: .topTrailing) {
+                AsyncImage(url: imageURL) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Rectangle()
+                        .fill(Color(.systemGray5))
+                        .overlay(
+                            Image(systemName: "photo")
+                                .font(.title)
+                                .foregroundColor(.secondary)
+                        )
+                }
+                .frame(height: 180)
+                .aspectRatio(16/9, contentMode: .fill)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                
+                // Price Badge
+                if let price = listing.price {
+                    Text("$\(price)")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.black.opacity(0.7))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .padding(12)
+                }
             }
-            .frame(height: 180)
-            .aspectRatio(16/9, contentMode: .fill)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
             
             // Content section - optimized spacing for search
             VStack(alignment: .leading, spacing: 8) {
@@ -1719,21 +1734,6 @@ struct SearchListingCardView: View {
                     }
                     
                     Spacer()
-                }
-                
-                // Price in bottom-right with enhanced integration
-                if let price = listing.price {
-                    HStack {
-                        Spacer()
-                        Text("$\(price)")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(.blue)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.blue.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
                 }
             }
             .padding(12)
