@@ -106,5 +106,5 @@ Use `gemini -p` when:
 - I am using Railway and Supabase for all the API, keys and data. The code we edit and add or change should never include these sensitive keys and data in the files here
 - Pull code before pushing. Always!
 
-- please push with EricT2003 and a short summary. dont include claude or generated or anything. just a short summary of what you edited
-- afte rediting always push ith EricT2003 and only a short summary. no claude generated or anything. just EricT2003 and a short summary
+- Push changes with descriptive commit messages
+- Don't include "claude" or "generated" in commit messages
