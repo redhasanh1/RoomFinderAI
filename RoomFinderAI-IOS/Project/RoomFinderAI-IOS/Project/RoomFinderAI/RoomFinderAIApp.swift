@@ -28,45 +28,44 @@ struct ContentView: View {
     @State private var searchText = ""
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Top Search Bar (similar to Android)
-            if selectedTab == 0 { // Only show on Home tab for now
-                HStack {
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.secondary)
-                        TextField("Search properties...", text: $searchText)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(10)
-                    
-                    Button(action: {
-                        // Filter action - will implement later
-                    }) {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
-                            .font(.title2)
-                            .foregroundColor(.primary)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.top, 8)
-                .background(Color(.systemBackground))
-            }
-            
-            // Main Tab Content
-            TabView(selection: $selectedTab) {
+        TabView(selection: $selectedTab) {
                 // Tab 1: Home (Listings)
                 NavigationView {
-                    RoomListView(searchText: $searchText)
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                Button("ⓘ") {
-                                    showingDebug = true
-                                }
+                    VStack(spacing: 0) {
+                        // Search Bar
+                        HStack {
+                            HStack {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundColor(.secondary)
+                                TextField("Search properties...", text: $searchText)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(10)
+                            
+                            Button(action: {
+                                // Filter action - will implement later
+                            }) {
+                                Image(systemName: "line.3.horizontal.decrease.circle")
+                                    .font(.title2)
+                                    .foregroundColor(.primary)
                             }
                         }
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                        .background(Color(.systemBackground))
+                        
+                        // Listings
+                        RoomListView(searchText: $searchText)
+                    }
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("ⓘ") {
+                                showingDebug = true
+                            }
+                        }
+                    }
                 }
                 .tabItem {
                     Image(systemName: "house.fill")
@@ -134,7 +133,6 @@ struct ContentView: View {
                     Text("Settings")
                 }
                 .tag(4)
-            }
         }
         .sheet(isPresented: $showingDebug) {
             DebugInfoView()
