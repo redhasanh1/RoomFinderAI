@@ -655,28 +655,6 @@ struct ListingCardView: View {
   }
 }
 
-// MARK: - Chat View
-struct ChatView: View {
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 60))
-                .foregroundColor(.blue)
-            
-            Text("Chat")
-                .font(.title)
-                .fontWeight(.bold)
-            
-            Text("Chat functionality coming soon")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding()
-        .padding(.top)
-        .navigationBarHidden(true)
-    }
-}
 
 // MARK: - Enhanced Search View
 struct SearchView: View {
@@ -1910,4 +1888,1181 @@ struct RoomFinderAIApp: App {
       .environment(\.supabase, supabase)
     }
   }
+}
+
+// MARK: - Chat System Implementation
+
+// MARK: - Chat Data Models
+
+struct ChatConversation: Identifiable, Codable {
+    let id: String
+    let participantIds: [String]
+    let lastMessage: ChatMessage?
+    let lastActivity: Date
+    let isRead: Bool
+    let conversationType: ConversationType
+    let title: String?
+    let groupImage: String?
+    
+    enum ConversationType: String, Codable {
+        case direct = "direct"
+        case group = "group"
+        case landlord = "landlord"
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case participantIds = "participant_ids"
+        case lastMessage = "last_message"
+        case lastActivity = "last_activity"
+        case isRead = "is_read"
+        case conversationType = "conversation_type"
+        case title
+        case groupImage = "group_image"
+    }
+}
+
+struct ChatMessage: Identifiable, Codable {
+    let id: String
+    let conversationId: String
+    let senderId: String
+    let content: String
+    let messageType: MessageType
+    let timestamp: Date
+    let isRead: Bool
+    let replyToId: String?
+    let attachments: [ChatAttachment]?
+    
+    enum MessageType: String, Codable {
+        case text = "text"
+        case image = "image"
+        case file = "file"
+        case system = "system"
+        case propertyCard = "property_card"
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case conversationId = "conversation_id"
+        case senderId = "sender_id"
+        case content
+        case messageType = "message_type"
+        case timestamp
+        case isRead = "is_read"
+        case replyToId = "reply_to_id"
+        case attachments
+    }
+}
+
+struct ChatAttachment: Identifiable, Codable {
+    let id: String
+    let messageId: String
+    let fileName: String
+    let fileSize: Int
+    let mimeType: String
+    let url: String
+    let thumbnailUrl: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case messageId = "message_id"
+        case fileName = "file_name"
+        case fileSize = "file_size"
+        case mimeType = "mime_type"
+        case url
+        case thumbnailUrl = "thumbnail_url"
+    }
+}
+
+struct ChatUser: Identifiable, Codable {
+    let id: String
+    let email: String
+    let displayName: String?
+    let avatarUrl: String?
+    let isOnline: Bool
+    let lastSeen: Date?
+    let userType: UserType
+    
+    enum UserType: String, Codable {
+        case tenant = "tenant"
+        case landlord = "landlord"
+        case agent = "agent"
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case email
+        case displayName = "display_name"
+        case avatarUrl = "avatar_url"
+        case isOnline = "is_online"
+        case lastSeen = "last_seen"
+        case userType = "user_type"
+    }
+    
+    var displayNameOrEmail: String {
+        return displayName ?? email
+    }
+}
+
+// MARK: - Chat Service Request/Response Models
+
+struct CreateConversationRequest: Codable {
+    let participantIds: [String]
+    let conversationType: ChatConversation.ConversationType
+    let title: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case participantIds = "participant_ids"
+        case conversationType = "conversation_type"
+        case title
+    }
+}
+
+struct SendMessageRequest: Codable {
+    let conversationId: String
+    let content: String
+    let messageType: ChatMessage.MessageType
+    let replyToId: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case conversationId = "conversation_id"
+        case content
+        case messageType = "message_type"
+        case replyToId = "reply_to_id"
+    }
+}
+
+// MARK: - Chat Extensions
+
+extension ChatMessage {
+    var isFromCurrentUser: Bool {
+        return senderId == "current_user_id"
+    }
+    
+    var timeAgo: String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: timestamp, relativeTo: Date())
+    }
+}
+
+extension ChatConversation {
+    var displayTitle: String {
+        return title ?? "Chat"
+    }
+    
+    var lastMessagePreview: String {
+        guard let lastMessage = lastMessage else {
+            return "No messages yet"
+        }
+        
+        switch lastMessage.messageType {
+        case .text:
+            return lastMessage.content
+        case .image:
+            return "📷 Image"
+        case .file:
+            return "📎 File"
+        case .system:
+            return lastMessage.content
+        case .propertyCard:
+            return "🏠 Property"
+        }
+    }
+    
+    var timeAgo: String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: lastActivity, relativeTo: Date())
+    }
+}
+
+// MARK: - Chat Service
+
+class ChatService: ObservableObject {
+    var supabase: SupabaseClient
+    
+    init(supabase: SupabaseClient) {
+        self.supabase = supabase
+    }
+    
+    // MARK: - Conversation Management
+    
+    func fetchConversations() async throws -> [ChatConversation] {
+        return mockConversations()
+    }
+    
+    func createConversation(request: CreateConversationRequest) async throws -> ChatConversation {
+        let conversation = ChatConversation(
+            id: UUID().uuidString,
+            participantIds: request.participantIds,
+            lastMessage: nil,
+            lastActivity: Date(),
+            isRead: true,
+            conversationType: request.conversationType,
+            title: request.title,
+            groupImage: nil
+        )
+        return conversation
+    }
+    
+    // MARK: - Message Management
+    
+    func fetchMessages(for conversationId: String) async throws -> [ChatMessage] {
+        return mockMessages(for: conversationId)
+    }
+    
+    func sendMessage(request: SendMessageRequest) async throws -> ChatMessage {
+        let message = ChatMessage(
+            id: UUID().uuidString,
+            conversationId: request.conversationId,
+            senderId: "current_user_id",
+            content: request.content,
+            messageType: request.messageType,
+            timestamp: Date(),
+            isRead: false,
+            replyToId: request.replyToId,
+            attachments: nil
+        )
+        return message
+    }
+    
+    func markMessageAsRead(messageId: String) async throws {
+        // Would update message status in Supabase
+    }
+    
+    // MARK: - User Management
+    
+    func fetchUsers() async throws -> [ChatUser] {
+        return mockUsers()
+    }
+    
+    func searchUsers(query: String) async throws -> [ChatUser] {
+        let allUsers = try await fetchUsers()
+        return allUsers.filter { user in
+            user.displayNameOrEmail.localizedCaseInsensitiveContains(query)
+        }
+    }
+    
+    // MARK: - Mock Data (for development)
+    
+    private func mockConversations() -> [ChatConversation] {
+        return [
+            ChatConversation(
+                id: "conv1",
+                participantIds: ["user1", "current_user"],
+                lastMessage: ChatMessage(
+                    id: "msg1",
+                    conversationId: "conv1",
+                    senderId: "user1",
+                    content: "Hi! Is the apartment still available?",
+                    messageType: .text,
+                    timestamp: Date().addingTimeInterval(-3600),
+                    isRead: false,
+                    replyToId: nil,
+                    attachments: nil
+                ),
+                lastActivity: Date().addingTimeInterval(-3600),
+                isRead: false,
+                conversationType: .landlord,
+                title: "John Smith (Landlord)",
+                groupImage: nil
+            ),
+            ChatConversation(
+                id: "conv2",
+                participantIds: ["user2", "current_user"],
+                lastMessage: ChatMessage(
+                    id: "msg2",
+                    conversationId: "conv2",
+                    senderId: "current_user",
+                    content: "Thanks for the info!",
+                    messageType: .text,
+                    timestamp: Date().addingTimeInterval(-7200),
+                    isRead: true,
+                    replyToId: nil,
+                    attachments: nil
+                ),
+                lastActivity: Date().addingTimeInterval(-7200),
+                isRead: true,
+                conversationType: .direct,
+                title: "Sarah Wilson",
+                groupImage: nil
+            )
+        ]
+    }
+    
+    private func mockMessages(for conversationId: String) -> [ChatMessage] {
+        switch conversationId {
+        case "conv1":
+            return [
+                ChatMessage(
+                    id: "msg1_1",
+                    conversationId: conversationId,
+                    senderId: "current_user",
+                    content: "Hello! I'm interested in your 2BR apartment listing.",
+                    messageType: .text,
+                    timestamp: Date().addingTimeInterval(-7200),
+                    isRead: true,
+                    replyToId: nil,
+                    attachments: nil
+                ),
+                ChatMessage(
+                    id: "msg1_2",
+                    conversationId: conversationId,
+                    senderId: "user1",
+                    content: "Hi! Yes, it's still available. When would you like to schedule a viewing?",
+                    messageType: .text,
+                    timestamp: Date().addingTimeInterval(-5400),
+                    isRead: true,
+                    replyToId: nil,
+                    attachments: nil
+                )
+            ]
+        default:
+            return []
+        }
+    }
+    
+    private func mockUsers() -> [ChatUser] {
+        return [
+            ChatUser(
+                id: "user1",
+                email: "john.smith@email.com",
+                displayName: "John Smith",
+                avatarUrl: nil,
+                isOnline: true,
+                lastSeen: Date(),
+                userType: .landlord
+            ),
+            ChatUser(
+                id: "user2",
+                email: "sarah.wilson@email.com",
+                displayName: "Sarah Wilson",
+                avatarUrl: nil,
+                isOnline: false,
+                lastSeen: Date().addingTimeInterval(-3600),
+                userType: .tenant
+            )
+        ]
+    }
+}
+
+// MARK: - ChatView Implementation
+
+struct ChatView: View {
+    @Environment(\.supabase) private var supabase
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Header
+                    VStack(spacing: 8) {
+                        Text("Chat Hub")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                        
+                        Text("Choose how you want to communicate")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 20)
+                    
+                    // Chat Options
+                    VStack(spacing: 16) {
+                        // AI Negotiator Card
+                        NavigationLink(destination: AINegotiatorView(supabase: supabase)) {
+                            ChatOptionCard(
+                                title: "AI Negotiator",
+                                subtitle: "Smart property search & negotiation assistance",
+                                description: "Let our AI help you find properties, negotiate prices, and contact landlords automatically",
+                                icon: "brain.head.profile",
+                                iconColor: .blue,
+                                backgroundColor: Color.blue.opacity(0.1),
+                                features: ["Property Search", "Price Negotiation", "Automated Contact"]
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Normal Chat Card
+                        NavigationLink(destination: NormalChatView()) {
+                            ChatOptionCard(
+                                title: "Direct Messages",
+                                subtitle: "Chat directly with landlords & other users",
+                                description: "Send messages, share photos, and communicate directly with property owners and other users",
+                                icon: "message.fill",
+                                iconColor: .green,
+                                backgroundColor: Color.green.opacity(0.1),
+                                features: ["Direct Messaging", "Photo Sharing", "Real-time Chat"]
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    Spacer(minLength: 40)
+                    
+                    // Quick Stats or Recent Activity
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Recent Activity")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        
+                        HStack(spacing: 20) {
+                            ChatStatCard(title: "AI Conversations", value: "0", icon: "brain")
+                            ChatStatCard(title: "Messages", value: "0", icon: "message")
+                            ChatStatCard(title: "Active Chats", value: "0", icon: "person.2")
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+            }
+        }
+        .navigationBarHidden(true)
+    }
+}
+
+// MARK: - Chat Option Card
+struct ChatOptionCard: View {
+    let title: String
+    let subtitle: String
+    let description: String
+    let icon: String
+    let iconColor: Color
+    let backgroundColor: Color
+    let features: [String]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header with icon and title
+            HStack(spacing: 16) {
+                Image(systemName: icon)
+                    .font(.system(size: 28, weight: .medium))
+                    .foregroundColor(iconColor)
+                    .frame(width: 50, height: 50)
+                    .background(backgroundColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                    
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+            }
+            
+            // Description
+            Text(description)
+                .font(.body)
+                .foregroundColor(.secondary)
+                .lineLimit(nil)
+                .multilineTextAlignment(.leading)
+            
+            // Features
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(features, id: \.self) { feature in
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(iconColor)
+                        
+                        Text(feature)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color(.systemGray4), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+    }
+}
+
+// MARK: - Chat Stat Card
+struct ChatStatCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(.blue)
+            
+            Text(value)
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
+            
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+// MARK: - AI Negotiator View
+struct AINegotiatorView: View {
+    let supabase: SupabaseClient
+    @State private var messageText = ""
+    @State private var isLoading = false
+    @State private var conversationHistory: [String] = []
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 16) {
+                // Header
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("AI Property Negotiator")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    
+                    Text("Get help finding properties, negotiating prices, and contacting landlords automatically")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color.blue.opacity(0.1))
+                .cornerRadius(12)
+                
+                // Conversation Area
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 12) {
+                        if conversationHistory.isEmpty {
+                            VStack(spacing: 16) {
+                                Image(systemName: "brain.head.profile")
+                                    .font(.system(size: 48))
+                                    .foregroundColor(.blue)
+                                
+                                Text("Start a conversation")
+                                    .font(.headline)
+                                
+                                Text("Ask me to help you find properties, negotiate prices, or contact landlords.")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                                
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Try asking:")
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.secondary)
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("• \"Find me a 2BR apartment under $2000\"")
+                                        Text("• \"Negotiate the price for this listing\"")
+                                        Text("• \"Contact the landlord about availability\"")
+                                    }
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(Color(.systemGray6))
+                                .cornerRadius(8)
+                            }
+                            .padding()
+                        } else {
+                            ForEach(Array(conversationHistory.enumerated()), id: \.offset) { index, message in
+                                Text(message)
+                                    .padding()
+                                    .background(index % 2 == 0 ? Color.blue.opacity(0.1) : Color(.systemGray6))
+                                    .cornerRadius(12)
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                
+                // Input Area
+                HStack(spacing: 12) {
+                    TextField("Ask the AI negotiator...", text: $messageText, axis: .vertical)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .lineLimit(1...4)
+                    
+                    Button(action: sendMessage) {
+                        Image(systemName: "paperplane.fill")
+                            .foregroundColor(.white)
+                            .padding(8)
+                            .background(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray : Color.blue)
+                            .cornerRadius(8)
+                    }
+                    .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
+                }
+                .padding()
+            }
+            .navigationTitle("AI Negotiator")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+    
+    private func sendMessage() {
+        guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        
+        let userMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+        conversationHistory.append("You: \(userMessage)")
+        
+        isLoading = true
+        messageText = ""
+        
+        // Simulate AI response after a delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            let responses = [
+                "I'd be happy to help you find properties! Based on your criteria, I'll search for available listings and negotiate the best prices for you.",
+                "I can contact the landlord on your behalf and negotiate favorable terms. Let me gather the property details first.",
+                "I've found several properties that match your criteria. Would you like me to reach out to the landlords and start negotiations?",
+                "I'll help you with price negotiations. Based on market data, I can suggest a competitive offer strategy."
+            ]
+            
+            let randomResponse = responses.randomElement() ?? "I'm here to help with your property search and negotiations!"
+            conversationHistory.append("AI: \(randomResponse)")
+            isLoading = false
+        }
+    }
+}
+
+// MARK: - Normal Chat View
+struct NormalChatView: View {
+    @StateObject private var chatService: ChatService
+    @State private var conversations: [ChatConversation] = []
+    @State private var isLoading = true
+    @State private var showingNewChatSheet = false
+    @Environment(\.supabase) private var supabase
+    
+    init() {
+        // Initialize with a placeholder - will be updated with environment supabase
+        let mockSupabase = SupabaseClient(
+            supabaseURL: URL(string: "https://placeholder.supabase.co")!,
+            supabaseKey: "placeholder-key"
+        )
+        self._chatService = StateObject(wrappedValue: ChatService(supabase: mockSupabase))
+    }
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                if isLoading {
+                    ProgressView("Loading conversations...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if conversations.isEmpty {
+                    emptyStateView
+                } else {
+                    conversationListView
+                }
+            }
+        }
+        .navigationTitle("Direct Messages")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showingNewChatSheet = true
+                } label: {
+                    Image(systemName: "square.and.pencil")
+                }
+            }
+        }
+        .sheet(isPresented: $showingNewChatSheet) {
+            NewChatView(chatService: chatService)
+        }
+        .onAppear {
+            chatService.supabase = supabase
+            loadConversations()
+        }
+    }
+    
+    private var emptyStateView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "message")
+                .font(.system(size: 60))
+                .foregroundColor(.secondary)
+            
+            Text("No Messages Yet")
+                .font(.title2)
+                .fontWeight(.semibold)
+            
+            Text("Start a conversation with landlords or other users")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            
+            Button("Start New Chat") {
+                showingNewChatSheet = true
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
+            .background(Color.blue)
+            .foregroundColor(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var conversationListView: some View {
+        List {
+            ForEach(conversations) { conversation in
+                NavigationLink(destination: IndividualChatView(conversation: conversation, chatService: chatService)) {
+                    ConversationRowView(conversation: conversation)
+                }
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+            }
+        }
+        .listStyle(PlainListStyle())
+        .refreshable {
+            loadConversations()
+        }
+    }
+    
+    private func loadConversations() {
+        Task {
+            isLoading = true
+            do {
+                conversations = try await chatService.fetchConversations()
+            } catch {
+                print("Error loading conversations: \(error)")
+                conversations = []
+            }
+            isLoading = false
+        }
+    }
+}
+
+// MARK: - Conversation Row View
+struct ConversationRowView: View {
+    let conversation: ChatConversation
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Avatar
+            ZStack {
+                Circle()
+                    .fill(Color(.systemGray5))
+                    .frame(width: 50, height: 50)
+                
+                Image(systemName: avatarIcon)
+                    .font(.title2)
+                    .foregroundColor(.secondary)
+            }
+            
+            // Content
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(conversation.displayTitle)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .lineLimit(1)
+                    
+                    Spacer()
+                    
+                    Text(conversation.timeAgo)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                HStack {
+                    Text(conversation.lastMessagePreview)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                    
+                    Spacer()
+                    
+                    if !conversation.isRead {
+                        Circle()
+                            .fill(Color.blue)
+                            .frame(width: 8, height: 8)
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+    
+    private var avatarIcon: String {
+        switch conversation.conversationType {
+        case .landlord:
+            return "house.fill"
+        case .direct, .group:
+            return "person.fill"
+        }
+    }
+}
+
+// MARK: - Individual Chat View
+struct IndividualChatView: View {
+    let conversation: ChatConversation
+    let chatService: ChatService
+    
+    @State private var messages: [ChatMessage] = []
+    @State private var messageText = ""
+    @State private var isLoading = true
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Messages List
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        if isLoading {
+                            ProgressView("Loading messages...")
+                                .padding()
+                        } else {
+                            ForEach(messages) { message in
+                                ChatBubbleView(message: message)
+                                    .id(message.id)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                }
+                .onChange(of: messages.count) { _ in
+                    if let lastMessage = messages.last {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
+                    }
+                }
+            }
+            
+            Divider()
+            
+            // Message Input
+            HStack(spacing: 12) {
+                TextField("Type a message...", text: $messageText, axis: .vertical)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .lineLimit(1...4)
+                
+                Button {
+                    sendMessage()
+                } label: {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray : Color.blue,
+                            in: RoundedRectangle(cornerRadius: 8)
+                        )
+                }
+                .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Color(.systemGray6))
+        }
+        .navigationTitle(conversation.displayTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            loadMessages()
+        }
+    }
+    
+    private func loadMessages() {
+        Task {
+            isLoading = true
+            do {
+                messages = try await chatService.fetchMessages(for: conversation.id)
+            } catch {
+                print("Error loading messages: \(error)")
+                messages = []
+            }
+            isLoading = false
+        }
+    }
+    
+    private func sendMessage() {
+        let content = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !content.isEmpty else { return }
+        
+        let request = SendMessageRequest(
+            conversationId: conversation.id,
+            content: content,
+            messageType: .text,
+            replyToId: nil
+        )
+        
+        messageText = ""
+        
+        Task {
+            do {
+                let newMessage = try await chatService.sendMessage(request: request)
+                messages.append(newMessage)
+            } catch {
+                print("Error sending message: \(error)")
+            }
+        }
+    }
+}
+
+// MARK: - Chat Bubble View
+struct ChatBubbleView: View {
+    let message: ChatMessage
+    
+    var body: some View {
+        HStack {
+            if message.isFromCurrentUser {
+                Spacer()
+                currentUserBubble
+            } else {
+                otherUserBubble
+                Spacer()
+            }
+        }
+    }
+    
+    private var currentUserBubble: some View {
+        VStack(alignment: .trailing, spacing: 4) {
+            Text(message.content)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+            
+            Text(message.timestamp, style: .time)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: UIScreen.main.bounds.width * 0.7, alignment: .trailing)
+    }
+    
+    private var otherUserBubble: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(message.content)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(.systemGray5))
+                .foregroundColor(.primary)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+            
+            Text(message.timestamp, style: .time)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: UIScreen.main.bounds.width * 0.7, alignment: .leading)
+    }
+}
+
+// MARK: - New Chat View
+struct NewChatView: View {
+    let chatService: ChatService
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+    @State private var users: [ChatUser] = []
+    @State private var isLoading = false
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                SearchBar(text: $searchText)
+                    .onChange(of: searchText) { newValue in
+                        searchUsers(query: newValue)
+                    }
+                
+                if isLoading {
+                    ProgressView("Searching users...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if users.isEmpty {
+                    VStack(spacing: 16) {
+                        Image(systemName: "person.2")
+                            .font(.system(size: 50))
+                            .foregroundColor(.secondary)
+                        
+                        Text("No users found")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        
+                        if searchText.isEmpty {
+                            Text("Start typing to search for users")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List(users) { user in
+                        UserRowView(user: user) {
+                            startConversation(with: user)
+                        }
+                    }
+                    .listStyle(PlainListStyle())
+                }
+            }
+            .navigationTitle("New Chat")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .onAppear {
+            searchUsers(query: "")
+        }
+    }
+    
+    private func searchUsers(query: String) {
+        Task {
+            isLoading = true
+            do {
+                if query.isEmpty {
+                    users = try await chatService.fetchUsers()
+                } else {
+                    users = try await chatService.searchUsers(query: query)
+                }
+            } catch {
+                print("Error searching users: \(error)")
+                users = []
+            }
+            isLoading = false
+        }
+    }
+    
+    private func startConversation(with user: ChatUser) {
+        Task {
+            do {
+                let request = CreateConversationRequest(
+                    participantIds: [user.id, "current_user_id"],
+                    conversationType: .direct,
+                    title: user.displayNameOrEmail
+                )
+                _ = try await chatService.createConversation(request: request)
+                dismiss()
+            } catch {
+                print("Error creating conversation: \(error)")
+            }
+        }
+    }
+}
+
+// MARK: - User Row View
+struct UserRowView: View {
+    let user: ChatUser
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                // Avatar
+                ZStack {
+                    Circle()
+                        .fill(Color(.systemGray5))
+                        .frame(width: 45, height: 45)
+                    
+                    Image(systemName: userTypeIcon)
+                        .font(.title3)
+                        .foregroundColor(.secondary)
+                }
+                
+                // User Info
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(user.displayNameOrEmail)
+                        .font(.headline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                    
+                    HStack(spacing: 8) {
+                        Text(user.userType.rawValue.capitalized)
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(userTypeColor.opacity(0.2))
+                            .foregroundColor(userTypeColor)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                        
+                        if user.isOnline {
+                            HStack(spacing: 4) {
+                                Circle()
+                                    .fill(Color.green)
+                                    .frame(width: 6, height: 6)
+                                Text("Online")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
+                            }
+                        }
+                    }
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private var userTypeIcon: String {
+        switch user.userType {
+        case .landlord:
+            return "house.fill"
+        case .agent:
+            return "person.badge.key.fill"
+        case .tenant:
+            return "person.fill"
+        }
+    }
+    
+    private var userTypeColor: Color {
+        switch user.userType {
+        case .landlord:
+            return .blue
+        case .agent:
+            return .purple
+        case .tenant:
+            return .green
+        }
+    }
+}
+
+// MARK: - Search Bar
+struct SearchBar: View {
+    @Binding var text: String
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(.secondary)
+            
+            TextField("Search users...", text: $text)
+                .textFieldStyle(PlainTextFieldStyle())
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal, 16)
+    }
 }
