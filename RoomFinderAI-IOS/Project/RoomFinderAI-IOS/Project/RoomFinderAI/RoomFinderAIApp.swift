@@ -24,115 +24,49 @@ struct RoomFinderAIApp: App {
 
 struct ContentView: View {
     @State private var showingDebug = false
-    @State private var selectedTab = 0
     @State private var searchText = ""
     
     var body: some View {
-        TabView(selection: $selectedTab) {
-                // Tab 1: Home (Listings)
-                NavigationView {
-                    VStack(spacing: 0) {
-                        // Search Bar
-                        HStack {
-                            HStack {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundColor(.secondary)
-                                TextField("Search properties...", text: $searchText)
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(10)
-                            
-                            Button(action: {
-                                // Filter action - will implement later
-                            }) {
-                                Image(systemName: "line.3.horizontal.decrease.circle")
-                                    .font(.title2)
-                                    .foregroundColor(.primary)
-                            }
-                        }
-                        .padding(.horizontal)
-                        .padding(.top, 8)
-                        .background(Color(.systemBackground))
-                        
-                        // Listings
-                        RoomListView(searchText: $searchText)
-                    }
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("ⓘ") {
-                                showingDebug = true
-                            }
-                        }
-                    }
-                }
+        TabView {
+            // Test Tab 1
+            Text("HOME TAB - You should see 5 tabs at bottom!")
+                .font(.title)
                 .tabItem {
                     Image(systemName: "house.fill")
                     Text("Home")
                 }
-                .tag(0)
-                
-                // Tab 2: AI Chats
-                NavigationView {
-                    AIChatsView()
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                Button("ⓘ") {
-                                    showingDebug = true
-                                }
-                            }
-                        }
-                }
+            
+            // Test Tab 2
+            Text("AI CHATS TAB")
+                .font(.title)
                 .tabItem {
                     Image(systemName: "brain.head.profile")
                     Text("AI Chats")
                 }
-                .tag(1)
-                
-                // Tab 3: Add/Post
-                NavigationView {
-                    PostView()
-                }
+            
+            // Test Tab 3
+            Text("ADD TAB")
+                .font(.title)
                 .tabItem {
                     Image(systemName: "plus.circle.fill")
-                    Text("")
+                    Text("Add")
                 }
-                .tag(2)
-                
-                // Tab 4: Dashboard
-                NavigationView {
-                    DashboardView()
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                Button("ⓘ") {
-                                    showingDebug = true
-                                }
-                            }
-                        }
-                }
+            
+            // Test Tab 4
+            Text("DASHBOARD TAB")
+                .font(.title)
                 .tabItem {
                     Image(systemName: "square.grid.2x2")
                     Text("Dashboard")
                 }
-                .tag(3)
-                
-                // Tab 5: Settings
-                NavigationView {
-                    SettingsView()
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                Button("ⓘ") {
-                                    showingDebug = true
-                                }
-                            }
-                        }
-                }
+            
+            // Test Tab 5
+            Text("SETTINGS TAB")
+                .font(.title)
                 .tabItem {
                     Image(systemName: "gearshape.fill")
                     Text("Settings")
                 }
-                .tag(4)
         }
         .sheet(isPresented: $showingDebug) {
             DebugInfoView()
