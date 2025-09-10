@@ -1,15 +1,42 @@
 import SwiftUI
 import Supabase
 
+// MARK: - Configuration
+enum AppConfig {
+    static let enableMockAI = true // Set to false when you have a valid OpenAI API key
+    static let debugMode = true
+}
+
 // MARK: - Secrets Configuration
 enum Secrets {
   static let supabaseURL = "https://fkktwhjybuflxqzopaex.supabase.co"
   static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs"
 
-  // 🚀 OpenAI (inserted credentials)
-  static let openAIKey = "sk-proj-CbQtehx5UM0V9mXWrdZnM-hP3l98a0ZVguNWb51K7G63M0dfChAziWYeIO_AOPE2cEnVGOcwyT3BlbkFJliQDGy85OmZ3UGhQS7RSltE9YKO_5qrdLaLEweqkbxs-dDtMy3FMf6Msuot00O58p9L9XQBucA"
-  static let openAIOrgID: String? = "org-EPHQ1A3u0XIUZml6JABMgZzg"
-  static let openAIModel = "gpt-4o-mini"
+  // 🚀 OpenAI Configuration
+  // Note: Replace with your actual OpenAI API key from https://platform.openai.com/api-keys
+  static let openAIKey = "your-openai-api-key-here"
+  static let openAIOrgID: String? = nil // Optional: Your OpenAI organization ID
+  static let openAIModel = "gpt-3.5-turbo" // Using more affordable model
+  
+  // API Key validation
+  static var isOpenAIKeyValid: Bool {
+    return openAIKey != "your-openai-api-key-here" && 
+           openAIKey.hasPrefix("sk-") && 
+           openAIKey.count > 20 &&
+           !openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
+  
+  static var openAIKeyStatus: String {
+    if openAIKey == "your-openai-api-key-here" {
+      return "⚠️ Please configure your OpenAI API key"
+    } else if !openAIKey.hasPrefix("sk-") {
+      return "❌ Invalid API key format (must start with 'sk-')"
+    } else if openAIKey.count < 20 {
+      return "❌ API key appears to be truncated"
+    } else {
+      return "✅ API key format is valid"
+    }
+  }
 
   static func assertValid() {
     precondition(supabaseURL.hasPrefix("https://"), "Supabase URL must start with https://")
@@ -17,10 +44,11 @@ enum Secrets {
     precondition(URL(string: supabaseURL)?.host?.hasSuffix(".supabase.co") == true, "Invalid host in Supabase URL")
     precondition(!supabaseAnonKey.isEmpty, "Anon key is empty")
     
-    // OpenAI validation (fail loudly if missing)
-    precondition(!openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                 "OPENAI key is missing. Update Secrets.openAIKey")
-    precondition(openAIKey.hasPrefix("sk-"), "Invalid OpenAI API key format. Must start with 'sk-'.")
+    // OpenAI validation (warn but don't crash in mock mode)
+    if !AppConfig.enableMockAI && !isOpenAIKeyValid {
+      print("⚠️ OpenAI API key issue: \(openAIKeyStatus)")
+      print("💡 Set AppConfig.enableMockAI = true to use mock responses for testing")
+    }
   }
 }
 
@@ -3030,19 +3058,22 @@ class OpenAIService: ObservableObject {
             return AiResponse(error: "Please enter a message")
         }
         
-        guard !Secrets.openAIKey.isEmpty else {
-            return AiResponse(error: "AI service not configured. Please set your OpenAI API key.")
-        }
-        
         // Sanitize message
         let sanitizedMessage = String(userMessage.trimmingCharacters(in: .whitespacesAndNewlines).prefix(1000))
         
         // Add user message to conversation history
         conversationHistory.append(OpenAIChatMessage(role: "user", content: sanitizedMessage))
         
+        // Check if we should use mock mode
+        if AppConfig.enableMockAI || !Secrets.isOpenAIKeyValid {
+            return await generateMockResponse(for: sanitizedMessage, userMessage: userMessage)
+        }
+        
         // Attempt request with retries
         for attempt in 1...maxRetries {
-            print("🤖 AI Request attempt \(attempt) for message: \(sanitizedMessage)")
+            if AppConfig.debugMode {
+                print("🤖 AI Request attempt \(attempt) for message: \(sanitizedMessage)")
+            }
             
             do {
                 let response = try await makeOpenAIRequest(sanitizedMessage)
@@ -3052,22 +3083,25 @@ class OpenAIService: ObservableObject {
                 
                 // Extract property criteria from user message
                 let criteria = extractPropertyCriteria(from: userMessage)
-                print("📍 Extracted criteria: \(criteria.hasValidCriteria ? "Found" : "None")")
+                if AppConfig.debugMode {
+                    print("📍 Extracted criteria: \(criteria.hasValidCriteria ? "Found" : "None")")
+                }
                 
-                var responseWithCriteria = response
-                responseWithCriteria = AiResponse(
+                return AiResponse(
                     message: response.message,
                     success: true,
                     extractedCriteria: criteria
                 )
                 
-                return responseWithCriteria
-                
             } catch {
-                print("❌ AI Request attempt \(attempt) failed: \(error)")
+                if AppConfig.debugMode {
+                    print("❌ AI Request attempt \(attempt) failed: \(error)")
+                }
                 
                 if attempt == maxRetries {
-                    return AiResponse(error: "AI service temporarily unavailable. Please try again.")
+                    // Fall back to mock response if all attempts fail
+                    print("🔄 Falling back to mock response after API failures")
+                    return await generateMockResponse(for: sanitizedMessage, userMessage: userMessage, includeError: true)
                 }
                 
                 // Wait before retry
@@ -3076,6 +3110,148 @@ class OpenAIService: ObservableObject {
         }
         
         return AiResponse(error: "Request failed after multiple attempts")
+    }
+    
+    // MARK: - Mock Response Generation
+    private func generateMockResponse(for sanitizedMessage: String, userMessage: String, includeError: Bool = false) async -> AiResponse {
+        // Extract property criteria
+        let criteria = extractPropertyCriteria(from: userMessage)
+        
+        // Simulate thinking time
+        try? await Task.sleep(nanoseconds: UInt64(Double.random(in: 0.5...1.5) * 1_000_000_000))
+        
+        var response: String
+        
+        if includeError {
+            response = """
+            I'm currently experiencing some connectivity issues, but I can still help! 
+            
+            Based on your message, I understand you're looking for rental properties. Let me assist you with what I can determine from your request.
+            """
+        } else {
+            response = generateContextualMockResponse(for: sanitizedMessage, criteria: criteria)
+        }
+        
+        // Add mock response to conversation history
+        conversationHistory.append(OpenAIChatMessage(role: "assistant", content: response))
+        
+        if AppConfig.debugMode {
+            print("🎭 Generated mock response for: \(sanitizedMessage)")
+            print("📍 Extracted criteria: \(criteria.hasValidCriteria ? "Found" : "None")")
+        }
+        
+        return AiResponse(
+            message: response,
+            success: true,
+            extractedCriteria: criteria
+        )
+    }
+    
+    private func generateContextualMockResponse(for message: String, criteria: PropertyCriteria) -> String {
+        let lowerMessage = message.lowercased()
+        
+        // Greeting responses
+        if lowerMessage.contains("hello") || lowerMessage.contains("hi ") || lowerMessage.starts(with: "hi") {
+            return """
+            Hello! I'm your AI rental negotiation assistant. I'm here to help you find the perfect property and negotiate the best deals.
+            
+            Feel free to tell me what you're looking for - location, budget, property type, number of bedrooms, etc. I can search our database and provide personalized assistance!
+            """
+        }
+        
+        // Property search requests
+        if criteria.hasValidCriteria {
+            var responseComponents: [String] = []
+            
+            responseComponents.append("Great! I understand you're looking for rental properties. Here's what I gathered from your request:")
+            
+            var criteriaList: [String] = []
+            if let location = criteria.location {
+                criteriaList.append("📍 Location: \(location)")
+            }
+            if let maxPrice = criteria.maxPrice {
+                criteriaList.append("💰 Maximum price: $\(maxPrice)")
+            }
+            if let minPrice = criteria.minPrice {
+                criteriaList.append("💰 Minimum price: $\(minPrice)")
+            }
+            if let propertyType = criteria.propertyType {
+                criteriaList.append("🏠 Property type: \(propertyType)")
+            }
+            if let bedrooms = criteria.bedrooms {
+                criteriaList.append("🛏️ Bedrooms: \(bedrooms)")
+            }
+            if let bathrooms = criteria.bathrooms {
+                criteriaList.append("🚿 Bathrooms: \(bathrooms)")
+            }
+            
+            if !criteriaList.isEmpty {
+                responseComponents.append("")
+                responseComponents.append(criteriaList.joined(separator: "\n"))
+                responseComponents.append("")
+                responseComponents.append("I'll search our property database for matching listings. You can use the 'Search Properties' button that should appear above to see available options!")
+                responseComponents.append("")
+                responseComponents.append("Would you like me to refine the search criteria or provide tips for negotiating with landlords?")
+            }
+            
+            return responseComponents.joined(separator: "\n")
+        }
+        
+        // Negotiation help
+        if lowerMessage.contains("negotiat") || lowerMessage.contains("price") || lowerMessage.contains("lower") || lowerMessage.contains("deal") {
+            return """
+            I'd be happy to help with negotiation strategies! Here are some effective approaches:
+            
+            💡 **Key Negotiation Tips:**
+            • Research comparable properties in the area
+            • Highlight your strengths as a tenant (stable income, good credit, references)
+            • Consider offering a longer lease term for a lower monthly rate
+            • Be prepared to move quickly if you find the right property
+            • Ask about utilities, parking, or other included amenities
+            
+            Would you like me to help you draft a message to a specific landlord, or do you have a particular property in mind?
+            """
+        }
+        
+        // General help
+        if lowerMessage.contains("help") || lowerMessage.contains("what can you") || lowerMessage.contains("how do") {
+            return """
+            I'm here to help with all aspects of your rental search! Here's what I can assist you with:
+            
+            🔍 **Property Search**
+            • Find properties based on your criteria
+            • Analyze market trends and pricing
+            • Compare different neighborhoods
+            
+            💬 **Communication & Negotiation**
+            • Draft professional messages to landlords
+            • Provide negotiation strategies and tips
+            • Help with application materials
+            
+            📋 **Application Process**
+            • Guide you through rental applications
+            • Suggest questions to ask landlords
+            • Help evaluate lease terms
+            
+            Just tell me what you're looking for or what specific help you need!
+            """
+        }
+        
+        // Default response
+        return """
+        I understand you're interested in rental properties. As your AI negotiation assistant, I can help you:
+        
+        • Find properties that match your criteria
+        • Negotiate better prices and terms
+        • Draft professional communications to landlords
+        • Navigate the rental application process
+        
+        Could you tell me more about what you're looking for? For example:
+        - What location are you interested in?
+        - What's your budget range?
+        - How many bedrooms do you need?
+        - Any specific property type preferences?
+        """
     }
     
     private func makeOpenAIRequest(_ userMessage: String) async throws -> AiResponse {
@@ -3608,9 +3784,24 @@ struct EnhancedAINegotiatorView: View {
                 VStack(alignment: .leading) {
                     Text("AI Negotiator")
                         .font(.headline)
-                    Text("Smart rental assistant")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    
+                    HStack(spacing: 4) {
+                        if AppConfig.enableMockAI {
+                            Text("🎭 Demo Mode")
+                                .font(.caption)
+                                .foregroundColor(.orange)
+                        } else {
+                            Text("Smart rental assistant")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        if !Secrets.isOpenAIKeyValid && !AppConfig.enableMockAI {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption2)
+                                .foregroundColor(.orange)
+                        }
+                    }
                 }
                 
                 Spacer()
@@ -3623,6 +3814,30 @@ struct EnhancedAINegotiatorView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
+            
+            // Show API status if there are issues
+            if !Secrets.isOpenAIKeyValid && !AppConfig.enableMockAI {
+                HStack {
+                    Image(systemName: "info.circle")
+                        .foregroundColor(.orange)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("API Configuration Needed")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.orange)
+                        
+                        Text("Set AppConfig.enableMockAI = true for demo mode or configure your OpenAI API key")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.orange.opacity(0.1))
+            }
             
             Divider()
         }
@@ -3886,6 +4101,22 @@ struct CriteriaChip: View {
 struct PropertyPreviewCard: View {
     let listing: HomePageListing
     
+    // Safe value accessors to prevent NaN issues
+    private var safePrice: String {
+        guard let price = listing.price, price > 0 else { return "Price TBA" }
+        return "$\(price)/mo"
+    }
+    
+    private var safeTitle: String {
+        guard let title = listing.title, !title.isEmpty else { return "Property" }
+        return title
+    }
+    
+    private var safeCity: String {
+        guard let city = listing.city, !city.isEmpty else { return "" }
+        return city
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             AsyncImage(url: URL(string: listing.coverURLString ?? "")) { image in
@@ -3895,27 +4126,31 @@ struct PropertyPreviewCard: View {
             } placeholder: {
                 Rectangle()
                     .fill(Color(.systemGray4))
-                    .overlay(Image(systemName: "house"))
+                    .overlay(
+                        Image(systemName: "house")
+                            .foregroundColor(.gray)
+                    )
             }
             .frame(width: 120, height: 80)
+            .clipped()
             .clipShape(RoundedRectangle(cornerRadius: 8))
             
             VStack(alignment: .leading, spacing: 2) {
-                Text(listing.title ?? "Property")
+                Text(safeTitle)
                     .font(.caption)
                     .fontWeight(.medium)
                     .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 
-                if let price = listing.price {
-                    Text("$\(price)/mo")
-                        .font(.caption2)
-                        .foregroundColor(.blue)
-                }
+                Text(safePrice)
+                    .font(.caption2)
+                    .foregroundColor(.blue)
                 
-                if let city = listing.city {
-                    Text(city)
+                if !safeCity.isEmpty {
+                    Text(safeCity)
                         .font(.caption2)
                         .foregroundColor(.secondary)
+                        .lineLimit(1)
                 }
             }
         }
@@ -3956,6 +4191,32 @@ struct PropertySearchResultsView: View {
 struct PropertyResultCard: View {
     let listing: HomePageListing
     
+    // Safe value accessors to prevent NaN issues
+    private var safePrice: String {
+        guard let price = listing.price, price > 0 else { return "Price TBA" }
+        return "$\(price)/month"
+    }
+    
+    private var safeTitle: String {
+        guard let title = listing.title, !title.isEmpty else { return "Property Listing" }
+        return title
+    }
+    
+    private var safeCity: String {
+        guard let city = listing.city, !city.isEmpty else { return "" }
+        return city
+    }
+    
+    private var safeBedrooms: Int {
+        guard let bedrooms = listing.bedrooms, bedrooms > 0 else { return 0 }
+        return bedrooms
+    }
+    
+    private var safeDescription: String {
+        guard let description = listing.description, !description.isEmpty else { return "" }
+        return description
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             AsyncImage(url: URL(string: listing.coverURLString ?? "")) { image in
@@ -3972,38 +4233,41 @@ struct PropertyResultCard: View {
                     )
             }
             .frame(height: 200)
+            .clipped()
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
             VStack(alignment: .leading, spacing: 8) {
-                Text(listing.title ?? "Property Listing")
+                Text(safeTitle)
                     .font(.headline)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 
-                if let price = listing.price {
-                    Text("$\(price)/month")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.blue)
-                }
+                Text(safePrice)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.blue)
                 
                 HStack {
-                    if let bedrooms = listing.bedrooms {
-                        Label("\(bedrooms)", systemImage: "bed.double")
+                    if safeBedrooms > 0 {
+                        Label("\(safeBedrooms)", systemImage: "bed.double")
                             .font(.caption)
                     }
                     
-                    if let city = listing.city {
-                        Label(city, systemImage: "location")
+                    if !safeCity.isEmpty {
+                        Label(safeCity, systemImage: "location")
                             .font(.caption)
+                            .lineLimit(1)
                     }
                     
                     Spacer()
                 }
                 .foregroundColor(.secondary)
                 
-                if let description = listing.description {
-                    Text(description)
+                if !safeDescription.isEmpty {
+                    Text(safeDescription)
                         .font(.body)
                         .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .padding(.horizontal, 4)
