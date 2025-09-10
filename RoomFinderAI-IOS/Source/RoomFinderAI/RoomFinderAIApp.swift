@@ -536,7 +536,8 @@ struct EnhancedListingCardView: View {
                                 .foregroundColor(.secondary)
                         )
                 }
-                .frame(height: 180)
+                .frame(height: 120)
+                .aspectRatio(4/3, contentMode: .fill)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 
                 // Price Badge
@@ -976,7 +977,7 @@ struct SearchView: View {
                             // Single Column Results (like Android)
                             LazyVStack(spacing: 16) {
                                 ForEach(searchResults) { listing in
-                                    EnhancedListingCardView(listing: listing)
+                                    SearchListingCardView(listing: listing)
                                         .padding(.horizontal, 20)
                                 }
                             }
@@ -1250,7 +1251,7 @@ struct SearchResultsView: View {
                     ScrollView {
                         LazyVStack(spacing: 16) {
                             ForEach(results) { listing in
-                                EnhancedListingCardView(listing: listing)
+                                SearchListingCardView(listing: listing)
                             }
                         }
                         .padding()
@@ -1290,7 +1291,21 @@ struct PostView: View {
     @State private var price = ""
     @State private var location = ""
     @State private var bedrooms = 1
+    @State private var bathrooms = 1
+    @State private var selectedPropertyType = "Apartment"
+    @State private var isSubmitting = false
     @State private var showingSuccessAlert = false
+    @State private var showingErrorAlert = false
+    @State private var errorMessage = ""
+    
+    // Form validation
+    @State private var titleError = ""
+    @State private var priceError = ""
+    @State private var locationError = ""
+    
+    @Environment(\.supabase) private var supabase
+    
+    let propertyTypes = ["Studio", "Apartment", "House", "Condo", "Townhouse", "Loft"]
     
     var body: some View {
         ScrollView {
@@ -1312,28 +1327,46 @@ struct PostView: View {
                 }
                 .padding(.top)
                 
-                VStack(spacing: 16) {
-                    // Basic Information
-                    Group {
+                VStack(spacing: 20) {
+                    // Basic Information Card
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "house.fill")
+                                .foregroundColor(.blue)
+                            Text("Basic Information")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                        }
+                        
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Property Title *")
-                                .font(.headline)
+                                .font(.subheadline)
                                 .fontWeight(.medium)
                             TextField("e.g., Spacious 1BR near campus", text: $title)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                            if !titleError.isEmpty {
+                                Text(titleError)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
                         }
                         
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Location *")
-                                .font(.headline)
+                                .font(.subheadline)
                                 .fontWeight(.medium)
                             TextField("City, neighborhood, or address", text: $location)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                            if !locationError.isEmpty {
+                                Text(locationError)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
                         }
                         
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Monthly Rent *")
-                                .font(.headline)
+                                .font(.subheadline)
                                 .fontWeight(.medium)
                             HStack {
                                 Text("$")
@@ -1342,56 +1375,155 @@ struct PostView: View {
                                     .keyboardType(.numberPad)
                             }
                             .textFieldStyle(RoundedBorderTextFieldStyle())
+                            if !priceError.isEmpty {
+                                Text(priceError)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color(.systemGray6).opacity(0.3))
+                    .cornerRadius(12)
+                    
+                    // Property Details Card
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "building.2.fill")
+                                .foregroundColor(.green)
+                            Text("Property Details")
+                                .font(.headline)
+                                .fontWeight(.semibold)
                         }
                         
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Bedrooms")
-                                .font(.headline)
+                            Text("Property Type")
+                                .font(.subheadline)
                                 .fontWeight(.medium)
                             
-                            HStack {
-                                Button("-") {
-                                    if bedrooms > 0 { bedrooms -= 1 }
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 12) {
+                                    ForEach(propertyTypes, id: \.self) { type in
+                                        Button(action: {
+                                            selectedPropertyType = type
+                                        }) {
+                                            Text(type)
+                                                .font(.subheadline)
+                                                .fontWeight(.medium)
+                                                .foregroundColor(selectedPropertyType == type ? .white : .primary)
+                                                .padding(.horizontal, 16)
+                                                .padding(.vertical, 8)
+                                                .background(selectedPropertyType == type ? Color.blue : Color(.systemGray6))
+                                                .cornerRadius(20)
+                                        }
+                                    }
                                 }
-                                .frame(width: 40, height: 40)
-                                .background(Color(.systemGray6))
-                                .foregroundColor(.blue)
-                                .cornerRadius(16)
-                                
-                                Text("\(bedrooms)")
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                    .frame(minWidth: 50)
-                                
-                                Button("+") {
-                                    if bedrooms < 10 { bedrooms += 1 }
-                                }
-                                .frame(width: 40, height: 40)
-                                .background(Color(.systemGray6))
-                                .foregroundColor(.blue)
-                                .cornerRadius(16)
-                                
-                                Spacer()
+                                .padding(.horizontal, 4)
                             }
                         }
                         
-                        VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 30) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Bedrooms")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                
+                                HStack(spacing: 12) {
+                                    Button("-") {
+                                        if bedrooms > 0 { bedrooms -= 1 }
+                                    }
+                                    .frame(width: 36, height: 36)
+                                    .background(Color(.systemGray6))
+                                    .foregroundColor(.blue)
+                                    .cornerRadius(18)
+                                    
+                                    Text("\(bedrooms)")
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                        .frame(minWidth: 30)
+                                    
+                                    Button("+") {
+                                        if bedrooms < 10 { bedrooms += 1 }
+                                    }
+                                    .frame(width: 36, height: 36)
+                                    .background(Color(.systemGray6))
+                                    .foregroundColor(.blue)
+                                    .cornerRadius(18)
+                                }
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Bathrooms")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                
+                                HStack(spacing: 12) {
+                                    Button("-") {
+                                        if bathrooms > 0 { bathrooms -= 1 }
+                                    }
+                                    .frame(width: 36, height: 36)
+                                    .background(Color(.systemGray6))
+                                    .foregroundColor(.blue)
+                                    .cornerRadius(18)
+                                    
+                                    Text("\(bathrooms)")
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                        .frame(minWidth: 30)
+                                    
+                                    Button("+") {
+                                        if bathrooms < 10 { bathrooms += 1 }
+                                    }
+                                    .frame(width: 36, height: 36)
+                                    .background(Color(.systemGray6))
+                                    .foregroundColor(.blue)
+                                    .cornerRadius(18)
+                                }
+                            }
+                            
+                            Spacer()
+                        }
+                    }
+                    .padding()
+                    .background(Color(.systemGray6).opacity(0.3))
+                    .cornerRadius(12)
+                    
+                    // Description Card
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "text.alignleft")
+                                .foregroundColor(.orange)
                             Text("Description")
                                 .font(.headline)
-                                .fontWeight(.medium)
-                            TextField("Describe your property...", text: $description, axis: .vertical)
+                                .fontWeight(.semibold)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Tell potential renters about your property")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            TextField("Describe your property, amenities, nearby attractions...", text: $description, axis: .vertical)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .lineLimit(4...8)
                         }
                     }
+                    .padding()
+                    .background(Color(.systemGray6).opacity(0.3))
+                    .cornerRadius(12)
                     
                     // Submit Button
                     Button(action: {
-                        showingSuccessAlert = true
+                        submitListing()
                     }) {
                         HStack {
-                            Image(systemName: "paperplane.fill")
-                            Text("Post Property")
+                            if isSubmitting {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .foregroundColor(.white)
+                            } else {
+                                Image(systemName: "paperplane.fill")
+                            }
+                            Text(isSubmitting ? "Posting..." : "Post Property")
                                 .fontWeight(.semibold)
                         }
                         .foregroundColor(.white)
@@ -1399,15 +1531,14 @@ struct PostView: View {
                         .padding()
                         .background(
                             LinearGradient(
-                                colors: [.green, .blue],
+                                colors: isFormValid() ? [.green, .blue] : [.gray, .gray],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
                         .cornerRadius(12)
                     }
-                    .disabled(title.isEmpty || location.isEmpty || price.isEmpty)
-                    .opacity(title.isEmpty || location.isEmpty || price.isEmpty ? 0.6 : 1.0)
+                    .disabled(!isFormValid() || isSubmitting)
                 }
                 .padding(.horizontal)
             }
@@ -1415,15 +1546,211 @@ struct PostView: View {
         .navigationBarHidden(true)
         .alert("Success!", isPresented: $showingSuccessAlert) {
             Button("OK") {
-                // Clear form
-                title = ""
-                description = ""
-                price = ""
-                location = ""
-                bedrooms = 1
+                clearForm()
             }
         } message: {
             Text("Your property has been posted successfully!")
+        }
+        .alert("Error", isPresented: $showingErrorAlert) {
+            Button("OK") { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func isFormValid() -> Bool {
+        return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+               !location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+               !price.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+               Int(price) != nil &&
+               Int(price) ?? 0 > 0
+    }
+    
+    private func validateForm() {
+        titleError = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Title is required" : ""
+        locationError = location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Location is required" : ""
+        
+        if price.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            priceError = "Price is required"
+        } else if Int(price) == nil {
+            priceError = "Please enter a valid price"
+        } else if Int(price) ?? 0 <= 0 {
+            priceError = "Price must be greater than 0"
+        } else {
+            priceError = ""
+        }
+    }
+    
+    private func clearForm() {
+        title = ""
+        description = ""
+        price = ""
+        location = ""
+        bedrooms = 1
+        bathrooms = 1
+        selectedPropertyType = "Apartment"
+        titleError = ""
+        priceError = ""
+        locationError = ""
+    }
+    
+    private func submitListing() {
+        validateForm()
+        
+        guard isFormValid() else {
+            return
+        }
+        
+        isSubmitting = true
+        
+        Task {
+            do {
+                // Create a new listing struct that can be encoded
+                struct NewListing: Codable {
+                    let title: String
+                    let price: Int
+                    let city: String
+                    let house_type: String
+                    let bedrooms: Int
+                    let bathrooms: Int
+                    let description: String?
+                }
+                
+                let newListing = NewListing(
+                    title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                    price: Int(price) ?? 0,
+                    city: location.trimmingCharacters(in: .whitespacesAndNewlines),
+                    house_type: selectedPropertyType,
+                    bedrooms: bedrooms,
+                    bathrooms: bathrooms,
+                    description: description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : description.trimmingCharacters(in: .whitespacesAndNewlines)
+                )
+                
+                // Submit to Supabase
+                try await supabase
+                    .from("listings")
+                    .insert(newListing)
+                    .execute()
+                
+                await MainActor.run {
+                    isSubmitting = false
+                    showingSuccessAlert = true
+                }
+                
+            } catch {
+                await MainActor.run {
+                    isSubmitting = false
+                    errorMessage = "Failed to post listing: \(error.localizedDescription)"
+                    showingErrorAlert = true
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Search-Optimized Listing Card
+struct SearchListingCardView: View {
+    let listing: HomePageListing
+    @State private var imageURL: URL?
+    @Environment(\.supabase) private var supabase
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Image - clean without overlays
+            AsyncImage(url: imageURL) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
+                Rectangle()
+                    .fill(Color(.systemGray5))
+                    .overlay(
+                        Image(systemName: "photo")
+                            .font(.title)
+                            .foregroundColor(.secondary)
+                    )
+            }
+            .frame(height: 180)
+            .aspectRatio(16/9, contentMode: .fill)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            
+            // Content section - optimized spacing for search
+            VStack(alignment: .leading, spacing: 8) {
+                Text(listing.title ?? "Untitled")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                
+                if let city = listing.city {
+                    HStack(spacing: 4) {
+                        Image(systemName: "location.fill")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(city)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                HStack(spacing: 16) {
+                    if let bedrooms = listing.bedrooms {
+                        HStack(spacing: 4) {
+                            Image(systemName: "bed.double.fill")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text("\(bedrooms) bed\(bedrooms == 1 ? "" : "s")")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    if let houseType = listing.house_type {
+                        HStack(spacing: 4) {
+                            Image(systemName: "house.fill")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(houseType)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Spacer()
+                }
+                
+                // Price in bottom-right with enhanced integration
+                if let price = listing.price {
+                    HStack {
+                        Spacer()
+                        Text("$\(price)")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(.blue)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.blue.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                }
+            }
+            .padding(12)
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .onAppear {
+            loadImage()
+        }
+    }
+    
+    private func loadImage() {
+        guard let mediaItems = listing.media, !mediaItems.isEmpty else { return }
+        if let urlString = mediaItems.first?.url, let url = URL(string: urlString) {
+            imageURL = url
         }
     }
 }
