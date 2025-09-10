@@ -373,14 +373,13 @@ struct HomeScreen: View {
               
               // Enhanced Grid Layout
               LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: 8),
-                GridItem(.flexible(), spacing: 8)
+                GridItem(.flexible(), spacing: 16),
+                GridItem(.flexible(), spacing: 16)
               ], spacing: 16) {
                 ForEach(filteredListings) { listing in
                   EnhancedListingCardView(listing: listing)
                 }
               }
-              .padding(.horizontal, 20)
               .padding(.bottom, 100) // Extra bottom padding to prevent tab bar overlap
             }
             .background(Color(.systemBackground))
@@ -388,7 +387,7 @@ struct HomeScreen: View {
             .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
           }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 8)
       }
       .navigationBarHidden(true)
       .onAppear {
@@ -524,11 +523,10 @@ struct EnhancedListingCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Image with overlay elements
-            ZStack(alignment: .topLeading) {
+            ZStack(alignment: .topTrailing) {
                 AsyncImage(url: imageURL) { image in
                     image
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
                 } placeholder: {
                     Rectangle()
                         .fill(Color(.systemGray5))
@@ -538,7 +536,8 @@ struct EnhancedListingCardView: View {
                                 .foregroundColor(.secondary)
                         )
                 }
-                .frame(height: 140)
+                .frame(height: 120)
+                .aspectRatio(4/3, contentMode: .fill)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 
                 // Price Badge
@@ -554,7 +553,7 @@ struct EnhancedListingCardView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                         )
                         .padding(.top, 8)
-                        .padding(.leading, 8)
+                        .padding(.trailing, 8)
                 }
             }
             
@@ -614,8 +613,9 @@ struct EnhancedListingCardView: View {
                     .cornerRadius(16)
                 }
             }
-            .padding(10)
+            .padding(8)
         }
+        .frame(maxWidth: .infinity)
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
