@@ -24,37 +24,116 @@ struct RoomFinderAIApp: App {
 
 struct ContentView: View {
     @State private var showingDebug = false
+    @State private var selectedTab = 0
+    @State private var searchText = ""
     
     var body: some View {
-        TabView {
-            NavigationView {
-                RoomListView()
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("ⓘ") {
-                                showingDebug = true
-                            }
-                        }
+        VStack(spacing: 0) {
+            // Top Search Bar (similar to Android)
+            if selectedTab == 0 { // Only show on Home tab for now
+                HStack {
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.secondary)
+                        TextField("Search properties...", text: $searchText)
                     }
-            }
-            .tabItem {
-                Image(systemName: "house")
-                Text("Rooms")
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    
+                    Button(action: {
+                        // Filter action - will implement later
+                    }) {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                            .font(.title2)
+                            .foregroundColor(.primary)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+                .background(Color(.systemBackground))
             }
             
-            NavigationView {
-                AINegotiatorHub()
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("ⓘ") {
-                                showingDebug = true
+            // Main Tab Content
+            TabView(selection: $selectedTab) {
+                // Tab 1: Home (Listings)
+                NavigationView {
+                    RoomListView(searchText: $searchText)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("ⓘ") {
+                                    showingDebug = true
+                                }
                             }
                         }
-                    }
-            }
-            .tabItem {
-                Image(systemName: "brain.head.profile")
-                Text("AI")
+                }
+                .tabItem {
+                    Image(systemName: "house.fill")
+                    Text("Home")
+                }
+                .tag(0)
+                
+                // Tab 2: AI Chats
+                NavigationView {
+                    AIChatsView()
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("ⓘ") {
+                                    showingDebug = true
+                                }
+                            }
+                        }
+                }
+                .tabItem {
+                    Image(systemName: "brain.head.profile")
+                    Text("AI Chats")
+                }
+                .tag(1)
+                
+                // Tab 3: Add/Post
+                NavigationView {
+                    PostView()
+                }
+                .tabItem {
+                    Image(systemName: "plus.circle.fill")
+                    Text("")
+                }
+                .tag(2)
+                
+                // Tab 4: Dashboard
+                NavigationView {
+                    DashboardView()
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("ⓘ") {
+                                    showingDebug = true
+                                }
+                            }
+                        }
+                }
+                .tabItem {
+                    Image(systemName: "square.grid.2x2")
+                    Text("Dashboard")
+                }
+                .tag(3)
+                
+                // Tab 5: Settings
+                NavigationView {
+                    SettingsView()
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("ⓘ") {
+                                    showingDebug = true
+                                }
+                            }
+                        }
+                }
+                .tabItem {
+                    Image(systemName: "gearshape.fill")
+                    Text("Settings")
+                }
+                .tag(4)
             }
         }
         .sheet(isPresented: $showingDebug) {
@@ -69,7 +148,7 @@ struct RoomListView: View {
     @State private var isLoading = false
     @State private var error: String?
     @State private var showingAddRoom = false
-    @State private var searchText = ""
+    @Binding var searchText: String
     
     var filteredRooms: [Room] {
         if searchText.isEmpty {
@@ -84,55 +163,53 @@ struct RoomListView: View {
     }
     
     var body: some View {
-        NavigationView {
-            VStack {
-                if isLoading {
-                    ProgressView("Loading rooms...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if filteredRooms.isEmpty && !searchText.isEmpty {
-                    VStack {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 50))
-                            .foregroundColor(.secondary)
-                        Text("No rooms found")
-                            .font(.title2)
-                            .foregroundColor(.secondary)
-                        Text("Try adjusting your search terms")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                    }
+        VStack {
+            if isLoading {
+                ProgressView("Loading rooms...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if filteredRooms.isEmpty {
-                    VStack {
-                        Image(systemName: "house.slash")
-                            .font(.system(size: 50))
-                            .foregroundColor(.secondary)
-                        Text("No rooms available")
-                            .font(.title2)
-                            .foregroundColor(.secondary)
-                        Text("Be the first to add a room")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List {
-                        ForEach(filteredRooms) { room in
-                            NavigationLink(destination: RoomDetailView(room: room)) {
-                                RoomRowView(room: room)
-                            }
+            } else if filteredRooms.isEmpty && !searchText.isEmpty {
+                VStack {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 50))
+                        .foregroundColor(.secondary)
+                    Text("No rooms found")
+                        .font(.title2)
+                        .foregroundColor(.secondary)
+                    Text("Try adjusting your search terms")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if filteredRooms.isEmpty {
+                VStack {
+                    Image(systemName: "house.slash")
+                        .font(.system(size: 50))
+                        .foregroundColor(.secondary)
+                    Text("No rooms available")
+                        .font(.title2)
+                        .foregroundColor(.secondary)
+                    Text("Be the first to add a room")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List {
+                    ForEach(filteredRooms) { room in
+                        NavigationLink(destination: RoomDetailView(room: room)) {
+                            RoomRowView(room: room)
                         }
                     }
-                    .searchable(text: $searchText, prompt: "Search rooms...")
-                }
-                
-                if let error = error {
-                    Text("Error: \(error)")
-                        .foregroundColor(.red)
-                        .padding()
                 }
             }
-            .navigationTitle("Room Finder")
+            
+            if let error = error {
+                Text("Error: \(error)")
+                    .foregroundColor(.red)
+                    .padding()
+            }
+        }
+        .navigationTitle("Home")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
@@ -1050,5 +1127,101 @@ struct DebugInfoView: View {
                 status = await OpenAIClient.shared.health()
             }
         }
+    }
+}
+
+// MARK: - New Tab Views
+
+struct AIChatsView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "brain.head.profile")
+                .font(.system(size: 60))
+                .foregroundColor(.blue)
+            
+            Text("AI Chats")
+                .font(.title)
+                .fontWeight(.bold)
+            
+            Text("Chat history and AI conversations will appear here")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            
+            Button("Start New Chat") {
+                // Will implement later
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+        .navigationTitle("AI Chats")
+    }
+}
+
+struct PostView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "plus.circle")
+                .font(.system(size: 60))
+                .foregroundColor(.green)
+            
+            Text("Post a Room")
+                .font(.title)
+                .fontWeight(.bold)
+            
+            Text("Create a new room listing")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            
+            Button("Create Listing") {
+                // Will implement later - should show AddRoomView
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+        .navigationTitle("Post")
+    }
+}
+
+struct DashboardView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "square.grid.2x2")
+                .font(.system(size: 60))
+                .foregroundColor(.purple)
+            
+            Text("Dashboard")
+                .font(.title)
+                .fontWeight(.bold)
+            
+            Text("Your activity, stats, and recent listings will appear here")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+        .navigationTitle("Dashboard")
+    }
+}
+
+struct SettingsView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "gearshape")
+                .font(.system(size: 60))
+                .foregroundColor(.gray)
+            
+            Text("Settings")
+                .font(.title)
+                .fontWeight(.bold)
+            
+            Text("App preferences and account settings will appear here")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+        .navigationTitle("Settings")
     }
 }
