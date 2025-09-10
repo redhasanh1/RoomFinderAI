@@ -9,13 +9,9 @@ struct RoomFinderAIApp: App {
     WindowGroup {
       TabView {
         NavigationView { ListingsView() }
-          .tabItem { Label("Search", systemImage: "magnifyingglass") }
-        NavigationView { AINegotiatorViewPreview() }
-          .tabItem { Label("AI", systemImage: "brain.head.profile") }
-        NavigationView { Text("Messages") }
-          .tabItem { Label("Messages", systemImage: "bubble.left.and.bubble.right") }
-        NavigationView { Text("Profile") }
-          .tabItem { Label("Profile", systemImage: "person") }
+          .tabItem { Label("Home", systemImage: "house") }
+        NavigationView { ChatView() }
+          .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
       }
       .environment(\.supabase, supabase)
     }
