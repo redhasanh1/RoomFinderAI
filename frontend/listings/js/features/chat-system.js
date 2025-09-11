@@ -128,7 +128,7 @@ class ChatSystem {
             chatSendBtn: document.getElementById('chatSendBtn'),
             chatClose: document.getElementById('chatClose'),
             chatTitle: document.getElementById('chatTitle'),
-            fileUpload: document.getElementById('fileUpload'),
+            fileUpload: document.getElementById('fileInput'),
             healthStatus: document.getElementById('healthStatus'),
             messagingPanel: document.getElementById('messagingPanel'),
             conversationsList: document.getElementById('conversationTabs'),
@@ -708,10 +708,8 @@ class ChatSystem {
                 conversation_id: this.activeConversation.id,
                 sender_id: this.currentUser.id,
                 sender_email: this.currentUser.email,
-                recipient_id: recipientId,  // Add recipient ID (landlord or tenant)
-                landlord_id: this.activeConversation.landlord_id,  // Always save landlord ID
-                tenant_id: this.activeConversation.tenant_id,  // Always save tenant ID
                 content: content,
+                message_type: 'text',
                 created_at: new Date().toISOString()
             };
             
