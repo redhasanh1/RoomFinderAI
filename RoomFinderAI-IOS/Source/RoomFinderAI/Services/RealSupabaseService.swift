@@ -1509,4 +1509,24 @@ class RealSupabaseService: ObservableObject {
         
         return iso8601Formatter.date(from: dateString)
     }
+    
+    // MARK: - Create Listing Method
+    
+    func createListing(_ listingData: [String: Any]) async throws {
+        print("🏠 DEBUG: Creating new listing...")
+        
+        do {
+            let response = try await client
+                .from("listings")
+                .insert(listingData)
+                .execute()
+            
+            print("✅ DEBUG: Successfully created listing")
+            print("📊 Response size: \(response.data.count) bytes")
+            
+        } catch {
+            print("❌ DEBUG: Failed to create listing: \(error)")
+            throw error
+        }
+    }
 }
