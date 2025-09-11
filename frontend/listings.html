@@ -3551,6 +3551,30 @@
                     };
                     console.log('💾 Saving to localStorage only');
                 }
+
+                // SUCCESS - Show success message and refresh
+                e.target.reset();
+                mediaPreview.innerHTML = '';
+                uploadedFiles = [];
+
+                alert('Listing added successfully!');
+                
+                // Trigger storage event to notify other pages
+                window.dispatchEvent(new CustomEvent('listingUpdated', { 
+                    detail: { listingId: newListing.id, action: 'create' } 
+                }));
+                
+                console.log('🔄 Refreshing listings and map after new listing added');
+                await displayListings();
+                
+            } catch (err) {
+                console.error('Submission failed:', err);
+                alert('Failed to add listing: ' + (err.message || err));
+                return; // Exit early on error
+            }
+
+            // OPTIONAL LOCALSTORAGE OPERATIONS (outside try-catch to not interfere with success)
+            try {
                 currentUser.listings = currentUser.listings || [];
                 // Create clean listing for currentUser (without base64 data)
                 const cleanListingForUser = { ...newListing };
@@ -3572,7 +3596,9 @@
                     console.warn('⚠️ Could not update users array due to storage limits');
                 }
                 
-                safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
+                if (!safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser))) {
+                    console.warn('⚠️ Could not update currentUser due to storage limits');
+                }
                 
                 // Also save to userListings key for profile page compatibility (this is the important one)
                 const userListingsKey = `userListings_${currentUser.email}`;
@@ -3590,27 +3616,15 @@
                 }
                 
                 userListings.push(cleanListing);
-                safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
+                if (!safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings))) {
+                    console.warn('⚠️ Could not update user listings due to storage limits');
+                }
                 
                 console.log('Updated localStorage with new listing:', newListing);
                 console.log('Saved to userListings key:', userListingsKey);
-
-                e.target.reset();
-                mediaPreview.innerHTML = '';
-                uploadedFiles = [];
-
-                alert('Listing added successfully!');
                 
-                // Trigger storage event to notify other pages
-                window.dispatchEvent(new CustomEvent('listingUpdated', { 
-                    detail: { listingId: newListing.id, action: 'create' } 
-                }));
-                
-                console.log('🔄 Refreshing listings and map after new listing added');
-                await displayListings();
-            } catch (err) {
-                console.error('Submission failed:', err);
-                alert('Failed to add listing: ' + (err.message || err));
+            } catch (localStorageError) {
+                console.warn('⚠️ localStorage operations failed but listing was saved successfully:', localStorageError);
             }
         });
 
