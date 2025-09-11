@@ -1910,7 +1910,7 @@ struct RoomFinderAIApp: App {
           .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right.fill") }
         
         // 5. Profile Tab - User profile (like Android ProfileFragment)
-        NavigationView { SimpleProfileView() }
+        NavigationView { ProfileView() }
           .tabItem { Label("Profile", systemImage: "person.fill") }
       }
       .environment(\.supabase, supabase)
