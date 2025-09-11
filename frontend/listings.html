@@ -2985,8 +2985,8 @@
                     uploadedMedia.push({
                         name: file.name,
                         type: contentType,
-                        url: publicUrl,
-                        data: fileObj.data
+                        url: publicUrl
+                        // Removed data property to avoid localStorage quota issues
                     });
                     
                     // Update progress
@@ -3552,7 +3552,16 @@
                     console.log('💾 Saving to localStorage only');
                 }
                 currentUser.listings = currentUser.listings || [];
-                currentUser.listings.push(newListing);
+                // Create clean listing for currentUser (without base64 data)
+                const cleanListingForUser = { ...newListing };
+                if (cleanListingForUser.media && Array.isArray(cleanListingForUser.media)) {
+                    cleanListingForUser.media = cleanListingForUser.media.map(mediaItem => ({
+                        name: mediaItem.name,
+                        type: mediaItem.type,
+                        url: mediaItem.url
+                    }));
+                }
+                currentUser.listings.push(cleanListingForUser);
                 
                 // Use safe localStorage operations to avoid quota exceeded errors
                 let users = JSON.parse(localStorage.getItem('users')) || [];
@@ -3568,7 +3577,19 @@
                 // Also save to userListings key for profile page compatibility (this is the important one)
                 const userListingsKey = `userListings_${currentUser.email}`;
                 let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                userListings.push(newListing);
+                
+                // Create a clean version for localStorage (without base64 data)
+                const cleanListing = { ...newListing };
+                if (cleanListing.media && Array.isArray(cleanListing.media)) {
+                    cleanListing.media = cleanListing.media.map(mediaItem => ({
+                        name: mediaItem.name,
+                        type: mediaItem.type,
+                        url: mediaItem.url
+                        // Remove any data property to save space
+                    }));
+                }
+                
+                userListings.push(cleanListing);
                 safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
                 
                 console.log('Updated localStorage with new listing:', newListing);
