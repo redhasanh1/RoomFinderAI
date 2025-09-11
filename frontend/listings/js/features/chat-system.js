@@ -131,7 +131,7 @@ class ChatSystem {
             fileUpload: document.getElementById('fileUpload'),
             healthStatus: document.getElementById('healthStatus'),
             messagingPanel: document.getElementById('messagingPanel'),
-            conversationsList: document.getElementById('conversationsList'),
+            conversationsList: document.getElementById('conversationTabs'),
             messagesContainer: document.getElementById('messagesContainer')
         };
         
@@ -956,13 +956,23 @@ class ChatSystem {
         const conversations = Array.from(this.conversations.values())
             .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
         
+        if (conversations.length === 0) {
+            // Show "no conversations" message
+            this.elements.conversationsList.innerHTML = `
+                <div id="noConversations" class="p-4 text-gray-500 text-center">
+                    No conversations yet
+                </div>
+            `;
+            return;
+        }
+        
         this.elements.conversationsList.innerHTML = conversations.map(conv => {
             const unreadBadge = conv.unreadCount > 0 ? 
                 `<span class="unread-badge">${conv.unreadCount}</span>` : '';
             
             return `
                 <div class="conversation-item" data-id="${conv.id}">
-                    <div class="conversation-title">${this.escapeHtml(conv.listing_title)}</div>
+                    <div class="conversation-title">${this.escapeHtml(conv.listing_title || 'Chat')}</div>
                     <div class="conversation-preview">
                         ${conv.lastMessage ? this.escapeHtml(conv.lastMessage.content.substring(0, 50)) : 'No messages yet'}
                     </div>

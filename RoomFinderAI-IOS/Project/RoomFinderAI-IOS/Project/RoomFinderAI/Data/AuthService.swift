@@ -20,7 +20,15 @@ final class AuthService: ObservableObject {
     
     init(supabaseClient: SupabaseClient) {
         self.client = supabaseClient
+        clearLegacyAuthData()
         checkAuthStatus()
+    }
+    
+    func clearLegacyAuthData() {
+        UserDefaults.standard.removeObject(forKey: "isAuthenticated")
+        UserDefaults.standard.removeObject(forKey: "userEmail")
+        UserDefaults.standard.removeObject(forKey: "userName")
+        UserDefaults.standard.removeObject(forKey: "userAvatar")
     }
     
     func signIn(email: String, password: String) async throws {
@@ -73,6 +81,30 @@ final class AuthService: ObservableObject {
         await setCurrentUserEmail(email)
             
         try await createUserProfile(email: email, firstName: firstName, lastName: lastName)
+    }
+    
+    func signInWithGoogle() async throws {
+        let response = try await client.auth.signInWithOAuth(provider: .google)
+        
+        await MainActor.run {
+            self.currentUser = AppUser(
+                id: response.user.id.uuidString,
+                email: response.user.email ?? "",
+                firstName: response.user.userMetadata["first_name"]?.stringValue,
+                lastName: response.user.userMetadata["last_name"]?.stringValue,
+                profileImage: response.user.userMetadata["profile_image"]?.stringValue ?? response.user.userMetadata["avatar_url"]?.stringValue,
+                createdAt: response.user.createdAt,
+                updatedAt: response.user.updatedAt
+            )
+            self.isAuthenticated = true
+        }
+        
+        await saveSessionToKeychain(response)
+        await setCurrentUserEmail(response.user.email ?? "")
+    }
+    
+    func resetPassword(email: String) async throws {
+        try await client.auth.resetPasswordForEmail(email)
     }
     
     func signOut() async throws {
