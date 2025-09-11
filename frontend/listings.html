@@ -3279,72 +3279,14 @@
             const chatInput = document.getElementById('chatInput');
             const chatSendBtn = document.getElementById('chatSendBtn');
             
-            // Smart scroll variables
-            let unreadMessagesCount = 0;
-            let userScrolledUp = false;
-            
-            // Smart scroll function - only scrolls if user is at bottom
-            function smartScrollToBottom() {
-                if (!chatMessagesContainer) return;
-                
-                const scrollTop = chatMessagesContainer.scrollTop;
-                const scrollHeight = chatMessagesContainer.scrollHeight;
-                const clientHeight = chatMessagesContainer.clientHeight;
-                const scrollThreshold = 100; // pixels from bottom
-                
-                const isNearBottom = (scrollHeight - scrollTop - clientHeight) <= scrollThreshold;
-                
-                if (isNearBottom && !userScrolledUp) {
-                    chatMessagesContainer.scrollTop = scrollHeight;
-                    unreadMessagesCount = 0;
-                    updateScrollButton();
-                } else {
-                    unreadMessagesCount++;
-                    updateScrollButton();
-                }
-            }
-            
-            // Check if user is at bottom
-            function isUserAtBottom() {
-                if (!chatMessagesContainer) return true;
-                const scrollTop = chatMessagesContainer.scrollTop;
-                const scrollHeight = chatMessagesContainer.scrollHeight;
-                const clientHeight = chatMessagesContainer.clientHeight;
-                return (scrollHeight - scrollTop - clientHeight) <= 50;
-            }
-            
-            // Update scroll button visibility and unread count
-            function updateScrollButton() {
-                const scrollBtn = document.getElementById('scrollToBottomBtn');
-                const unreadCountEl = document.getElementById('unreadCount');
-                
-                if (!scrollBtn || !unreadCountEl) return;
-                
-                const atBottom = isUserAtBottom();
-                
-                if (atBottom) {
-                    scrollBtn.classList.add('hidden');
-                    unreadMessagesCount = 0;
-                    userScrolledUp = false;
-                } else {
-                    scrollBtn.classList.remove('hidden');
-                    userScrolledUp = true;
-                }
-                
-                if (unreadMessagesCount > 0) {
-                    unreadCountEl.textContent = unreadMessagesCount;
-                    unreadCountEl.classList.remove('hidden');
-                } else {
-                    unreadCountEl.classList.add('hidden');
-                }
-            }
+            // Use global scroll helper functions (moved to global scope for access from loadMessages)
             
             // Scroll to bottom function
             function scrollToBottom() {
                 if (!chatMessagesContainer) return;
                 chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-                unreadMessagesCount = 0;
-                userScrolledUp = false;
+                globalUnreadMessagesCount = 0;
+                globalUserScrolledUp = false;
                 updateScrollButton();
             }
 
@@ -4240,6 +4182,68 @@
             console.log('- Active Chat Buttons:', document.querySelectorAll('.chat-btn:not([disabled])').length);
             console.log('- Disabled Chat Buttons:', document.querySelectorAll('.chat-btn[disabled]').length);
         };
+
+        // Global chat scroll helper variables
+        let globalUnreadMessagesCount = 0;
+        let globalUserScrolledUp = false;
+
+        // Check if user is at bottom - Global function
+        function isUserAtBottom() {
+            const chatMessagesContainer = document.getElementById('chatMessages');
+            if (!chatMessagesContainer) return true;
+            const scrollTop = chatMessagesContainer.scrollTop;
+            const scrollHeight = chatMessagesContainer.scrollHeight;
+            const clientHeight = chatMessagesContainer.clientHeight;
+            return (scrollHeight - scrollTop - clientHeight) <= 50;
+        }
+
+        // Update scroll button visibility and unread count - Global function
+        function updateScrollButton() {
+            const scrollBtn = document.getElementById('scrollToBottomBtn');
+            const unreadCountEl = document.getElementById('unreadCount');
+            
+            if (!scrollBtn || !unreadCountEl) return;
+            
+            const atBottom = isUserAtBottom();
+            
+            if (atBottom) {
+                scrollBtn.classList.add('hidden');
+                globalUnreadMessagesCount = 0;
+                globalUserScrolledUp = false;
+            } else {
+                scrollBtn.classList.remove('hidden');
+                globalUserScrolledUp = true;
+            }
+            
+            if (globalUnreadMessagesCount > 0) {
+                unreadCountEl.textContent = globalUnreadMessagesCount;
+                unreadCountEl.classList.remove('hidden');
+            } else {
+                unreadCountEl.classList.add('hidden');
+            }
+        }
+
+        // Smart scroll function - Global scope for access from multiple functions
+        function smartScrollToBottom() {
+            const chatMessagesContainer = document.getElementById('chatMessages');
+            if (!chatMessagesContainer) return;
+            
+            const scrollTop = chatMessagesContainer.scrollTop;
+            const scrollHeight = chatMessagesContainer.scrollHeight;
+            const clientHeight = chatMessagesContainer.clientHeight;
+            const scrollThreshold = 100; // pixels from bottom
+            
+            const isNearBottom = (scrollHeight - scrollTop - clientHeight) <= scrollThreshold;
+            
+            if (isNearBottom && !globalUserScrolledUp) {
+                chatMessagesContainer.scrollTop = scrollHeight;
+                globalUnreadMessagesCount = 0;
+                updateScrollButton();
+            } else {
+                globalUnreadMessagesCount++;
+                updateScrollButton();
+            }
+        }
 
         async function loadMessages(conversationId) {
             console.log('🔄 Loading messages for conversation:', conversationId);
