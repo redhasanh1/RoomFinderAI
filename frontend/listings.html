@@ -1594,8 +1594,19 @@
                     <textarea id="description" name="description" rows="4" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="Describe the property..."></textarea>
                 </div>
                 <div>
-                    <label for="media" class="block text-sm font-medium text-gray-700">Attach Pictures or Videos (max 10MB, JPEG/PNG/MP4)</label>
+                    <label for="media" class="block text-sm font-medium text-gray-700">Attach Pictures or Videos (max 50 images, 50MB total, JPEG/PNG/MP4)</label>
                     <input type="file" id="media" name="media" accept="image/jpeg,image/png,video/mp4" multiple class="mt-1 w-full p-3 border border-gray-200 rounded-lg">
+                    <div id="mediaCount" class="text-sm text-gray-500 mt-1">
+                        <span id="fileCount">0</span>/50 images selected
+                    </div>
+                    <div id="uploadProgress" class="hidden mt-2">
+                        <div class="text-sm text-gray-600 mb-1">
+                            Uploading: <span id="uploadStatus">0/0</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="uploadProgressBar" class="bg-purple-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
                     <div id="mediaPreview" class="media-preview flex flex-wrap mt-2"></div>
                 </div>
                 <div>
@@ -2721,39 +2732,155 @@
             const files = Array.from(mediaInput.files);
             let totalSize = 0;
 
-            files.forEach(file => {
+            // Check file count limit
+            if (files.length > 50) {
+                alert('You can upload a maximum of 50 images. Please select fewer files.');
+                mediaInput.value = '';
+                document.getElementById('fileCount').textContent = '0';
+                return;
+            }
+
+            // Update file count display
+            document.getElementById('fileCount').textContent = files.length;
+
+            files.forEach((file, index) => {
                 totalSize += file.size;
-                if (totalSize > 10 * 1024 * 1024) {
-                    alert('Total file size exceeds 10MB limit.');
+                if (totalSize > 50 * 1024 * 1024) {
+                    alert('Total file size exceeds 50MB limit. Please select smaller files or fewer files.');
                     mediaInput.value = '';
                     mediaPreview.innerHTML = '';
                     uploadedFiles = [];
+                    document.getElementById('fileCount').textContent = '0';
                     return;
                 }
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const dataUrl = e.target.result;
-                    uploadedFiles.push({ name: file.name, type: file.type, data: dataUrl, file: file });
-                    const previewElement = file.type.startsWith('image/')
-                        ? `<img src="${dataUrl}" alt="${file.name}">`
-                        : `<video src="${dataUrl}" controls></video>`;
+                    uploadedFiles.push({ name: file.name, type: file.type, data: dataUrl, file: file, index: index });
+                    
+                    // Create enhanced preview container
                     const previewContainer = document.createElement('div');
-                    previewContainer.innerHTML = previewElement;
-                    mediaPreview.appendChild(previewContainer.firstChild);
-                    console.log('Preview added for file:', file.name);
+                    previewContainer.className = 'relative inline-block m-2 border-2 border-gray-200 rounded-lg overflow-hidden';
+                    previewContainer.style.width = '120px';
+                    previewContainer.style.height = '120px';
+                    previewContainer.dataset.index = index;
+                    
+                    // Add primary image badge for first image
+                    const isPrimary = index === 0;
+                    const primaryBadge = isPrimary ? 
+                        `<div class="absolute top-1 left-1 bg-purple-600 text-white text-xs px-2 py-1 rounded-full font-semibold z-10">PRIMARY</div>` : '';
+                    
+                    // Create media element
+                    const mediaElement = file.type.startsWith('image/')
+                        ? `<img src="${dataUrl}" alt="${file.name}" class="w-full h-full object-cover">`
+                        : `<video src="${dataUrl}" class="w-full h-full object-cover" muted></video>`;
+                    
+                    // Add move buttons for reordering
+                    const moveButtons = index > 0 ? 
+                        `<button type="button" onclick="moveImageUp(${index})" class="absolute top-1 right-1 bg-gray-800 bg-opacity-70 text-white w-6 h-6 rounded-full text-xs hover:bg-opacity-90 transition" title="Move up">▲</button>` : '';
+                    const moveDownBtn = index < files.length - 1 ? 
+                        `<button type="button" onclick="moveImageDown(${index})" class="absolute top-7 right-1 bg-gray-800 bg-opacity-70 text-white w-6 h-6 rounded-full text-xs hover:bg-opacity-90 transition" title="Move down">▼</button>` : '';
+                    
+                    // File name overlay
+                    const nameOverlay = `<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 truncate" title="${file.name}">${file.name}</div>`;
+                    
+                    previewContainer.innerHTML = `
+                        ${mediaElement}
+                        ${primaryBadge}
+                        ${moveButtons}
+                        ${moveDownBtn}
+                        ${nameOverlay}
+                    `;
+                    
+                    mediaPreview.appendChild(previewContainer);
+                    console.log('Enhanced preview added for file:', file.name, 'Primary:', isPrimary);
                 };
                 reader.readAsDataURL(file);
             });
             console.log('Files selected:', files.map(f => f.name));
         });
 
+        // Image reordering functions
+        window.moveImageUp = function(index) {
+            if (index > 0 && index < uploadedFiles.length) {
+                // Swap with previous element
+                [uploadedFiles[index - 1], uploadedFiles[index]] = [uploadedFiles[index], uploadedFiles[index - 1]];
+                refreshPreview();
+            }
+        };
+
+        window.moveImageDown = function(index) {
+            if (index >= 0 && index < uploadedFiles.length - 1) {
+                // Swap with next element
+                [uploadedFiles[index], uploadedFiles[index + 1]] = [uploadedFiles[index + 1], uploadedFiles[index]];
+                refreshPreview();
+            }
+        };
+
+        function refreshPreview() {
+            mediaPreview.innerHTML = '';
+            uploadedFiles.forEach((fileObj, index) => {
+                // Update the index in the file object
+                fileObj.index = index;
+                
+                // Create enhanced preview container
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'relative inline-block m-2 border-2 border-gray-200 rounded-lg overflow-hidden';
+                previewContainer.style.width = '120px';
+                previewContainer.style.height = '120px';
+                previewContainer.dataset.index = index;
+                
+                // Add primary image badge for first image
+                const isPrimary = index === 0;
+                const primaryBadge = isPrimary ? 
+                    `<div class="absolute top-1 left-1 bg-purple-600 text-white text-xs px-2 py-1 rounded-full font-semibold z-10">PRIMARY</div>` : '';
+                
+                // Create media element
+                const mediaElement = fileObj.type.startsWith('image/')
+                    ? `<img src="${fileObj.data}" alt="${fileObj.name}" class="w-full h-full object-cover">`
+                    : `<video src="${fileObj.data}" class="w-full h-full object-cover" muted></video>`;
+                
+                // Add move buttons for reordering
+                const moveButtons = index > 0 ? 
+                    `<button type="button" onclick="moveImageUp(${index})" class="absolute top-1 right-1 bg-gray-800 bg-opacity-70 text-white w-6 h-6 rounded-full text-xs hover:bg-opacity-90 transition" title="Move up">▲</button>` : '';
+                const moveDownBtn = index < uploadedFiles.length - 1 ? 
+                    `<button type="button" onclick="moveImageDown(${index})" class="absolute top-7 right-1 bg-gray-800 bg-opacity-70 text-white w-6 h-6 rounded-full text-xs hover:bg-opacity-90 transition" title="Move down">▼</button>` : '';
+                
+                // File name overlay
+                const nameOverlay = `<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 truncate" title="${fileObj.name}">${fileObj.name}</div>`;
+                
+                previewContainer.innerHTML = `
+                    ${mediaElement}
+                    ${primaryBadge}
+                    ${moveButtons}
+                    ${moveDownBtn}
+                    ${nameOverlay}
+                `;
+                
+                mediaPreview.appendChild(previewContainer);
+            });
+            console.log('Preview refreshed, new order:', uploadedFiles.map(f => f.name));
+        }
+
         // Upload media to Supabase
         async function uploadMedia(files) {
             const uploadedMedia = [];
             const storageApiUrl = `${window.SUPABASE_URL}/storage/v1/object/listing-media/Photos`;
+            
+            // Show progress indicator
+            const progressDiv = document.getElementById('uploadProgress');
+            const statusSpan = document.getElementById('uploadStatus');
+            const progressBar = document.getElementById('uploadProgressBar');
+            
+            if (files.length > 0) {
+                progressDiv.classList.remove('hidden');
+                statusSpan.textContent = `0/${files.length}`;
+                progressBar.style.width = '0%';
+            }
 
-            for (const fileObj of files) {
+            for (let i = 0; i < files.length; i++) {
+                const fileObj = files[i];
                 const file = fileObj.file;
                 const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
                 const filePath = fileName;
@@ -2858,14 +2985,28 @@
                     uploadedMedia.push({
                         name: file.name,
                         type: contentType,
-                        url: publicUrl,
-                        data: fileObj.data
+                        url: publicUrl
+                        // Removed data property to avoid localStorage quota issues
                     });
+                    
+                    // Update progress
+                    statusSpan.textContent = `${i + 1}/${files.length}`;
+                    const progressPercent = ((i + 1) / files.length) * 100;
+                    progressBar.style.width = `${progressPercent}%`;
+                    
                 } catch (err) {
                     console.error('Upload failed for', file.name, err);
+                    // Hide progress on error
+                    progressDiv.classList.add('hidden');
                     throw err;
                 }
             }
+            
+            // Hide progress when complete
+            setTimeout(() => {
+                progressDiv.classList.add('hidden');
+            }, 1000);
+            
             return uploadedMedia;
         }
 
@@ -3122,9 +3263,20 @@
                 const currentUser = await getCurrentUserSafe();
                 const isOwner = currentUser && currentUser.email && listing.user_email === currentUser.email;
                 
+                // Calculate image count for display
+                const imageCount = media.filter(file => file.type && file.type.startsWith('image/')).length;
+                const imageCountBadge = imageCount > 1 ? 
+                    `<div class="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
+                        </svg>
+                        ${imageCount}
+                    </div>` : '';
+                
                 listingCard.innerHTML = `
                     <div class="relative">
                         <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+">
+                        ${imageCountBadge}
                         <button class="favorite-btn absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 z-10" 
                                 data-listing-id="${listing.id}" 
                                 data-favorited="false" 
@@ -3399,29 +3551,8 @@
                     };
                     console.log('💾 Saving to localStorage only');
                 }
-                currentUser.listings = currentUser.listings || [];
-                currentUser.listings.push(newListing);
-                
-                // Use safe localStorage operations to avoid quota exceeded errors
-                let users = JSON.parse(localStorage.getItem('users')) || [];
-                users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                
-                // Try to save users array safely, if it fails, skip it (we have userListings as backup)
-                if (!safeLocalStorageSetItem('users', JSON.stringify(users))) {
-                    console.warn('⚠️ Could not update users array due to storage limits');
-                }
-                
-                safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
-                
-                // Also save to userListings key for profile page compatibility (this is the important one)
-                const userListingsKey = `userListings_${currentUser.email}`;
-                let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                userListings.push(newListing);
-                safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
-                
-                console.log('Updated localStorage with new listing:', newListing);
-                console.log('Saved to userListings key:', userListingsKey);
 
+                // SUCCESS - Show success message and refresh
                 e.target.reset();
                 mediaPreview.innerHTML = '';
                 uploadedFiles = [];
@@ -3435,9 +3566,65 @@
                 
                 console.log('🔄 Refreshing listings and map after new listing added');
                 await displayListings();
+                
             } catch (err) {
                 console.error('Submission failed:', err);
                 alert('Failed to add listing: ' + (err.message || err));
+                return; // Exit early on error
+            }
+
+            // OPTIONAL LOCALSTORAGE OPERATIONS (outside try-catch to not interfere with success)
+            try {
+                currentUser.listings = currentUser.listings || [];
+                // Create clean listing for currentUser (without base64 data)
+                const cleanListingForUser = { ...newListing };
+                if (cleanListingForUser.media && Array.isArray(cleanListingForUser.media)) {
+                    cleanListingForUser.media = cleanListingForUser.media.map(mediaItem => ({
+                        name: mediaItem.name,
+                        type: mediaItem.type,
+                        url: mediaItem.url
+                    }));
+                }
+                currentUser.listings.push(cleanListingForUser);
+                
+                // Use safe localStorage operations to avoid quota exceeded errors
+                let users = JSON.parse(localStorage.getItem('users')) || [];
+                users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                
+                // Try to save users array safely, if it fails, skip it (we have userListings as backup)
+                if (!safeLocalStorageSetItem('users', JSON.stringify(users))) {
+                    console.warn('⚠️ Could not update users array due to storage limits');
+                }
+                
+                if (!safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser))) {
+                    console.warn('⚠️ Could not update currentUser due to storage limits');
+                }
+                
+                // Also save to userListings key for profile page compatibility (this is the important one)
+                const userListingsKey = `userListings_${currentUser.email}`;
+                let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                
+                // Create a clean version for localStorage (without base64 data)
+                const cleanListing = { ...newListing };
+                if (cleanListing.media && Array.isArray(cleanListing.media)) {
+                    cleanListing.media = cleanListing.media.map(mediaItem => ({
+                        name: mediaItem.name,
+                        type: mediaItem.type,
+                        url: mediaItem.url
+                        // Remove any data property to save space
+                    }));
+                }
+                
+                userListings.push(cleanListing);
+                if (!safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings))) {
+                    console.warn('⚠️ Could not update user listings due to storage limits');
+                }
+                
+                console.log('Updated localStorage with new listing:', newListing);
+                console.log('Saved to userListings key:', userListingsKey);
+                
+            } catch (localStorageError) {
+                console.warn('⚠️ localStorage operations failed but listing was saved successfully:', localStorageError);
             }
         });
 
@@ -5341,8 +5528,21 @@
             listingCard.className = 'listing-card'; // Custom class for JS targeting and 3D effects
 
             const hasOwner = !!listing.user_email;
+            // Calculate image count for display
+            const imageCount = media.filter(file => file.type && file.type.startsWith('image/')).length;
+            const imageCountBadge = imageCount > 1 ? 
+                `<div class="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
+                    </svg>
+                    ${imageCount}
+                </div>` : '';
+
             listingCard.innerHTML = `
-                <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'">
+                <div class="relative">
+                    <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'">
+                    ${imageCountBadge}
+                </div>
                 <div class="p-4">
                     <h3 class="text-lg font-semibold text-gray-800 truncate">${listing.title}</h3>
                     <p class="text-xl font-bold text-blue-600">$${listing.price.toLocaleString()}/mo</p>
