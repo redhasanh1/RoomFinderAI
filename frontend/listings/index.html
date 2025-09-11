@@ -864,6 +864,16 @@
                 });
             }
             
+            // Simple chat panel toggle - minimal fix
+            const messageToggleBtn = document.getElementById('messageToggleBtn');
+            const messagePanel = document.getElementById('messagePanel');
+            if (messageToggleBtn && messagePanel) {
+                messageToggleBtn.addEventListener('click', function() {
+                    messagePanel.classList.toggle('hidden');
+                    console.log('Chat panel toggled');
+                });
+            }
+            
             // Update results count on page load
             setTimeout(updateResultsCount, 1000);
         });
