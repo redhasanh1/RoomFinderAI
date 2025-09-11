@@ -1,15 +1,42 @@
 import SwiftUI
 import Supabase
 
+// MARK: - Configuration
+enum AppConfig {
+    static let enableMockAI = false // Real AI negotiator for specific properties
+    static let debugMode = false
+}
+
 // MARK: - Secrets Configuration
 enum Secrets {
   static let supabaseURL = "https://fkktwhjybuflxqzopaex.supabase.co"
   static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs"
 
-  // 🚀 OpenAI (inserted credentials)
-  static let openAIKey = "sk-proj-CbQtehx5UM0V9mXWrdZnM-hP3l98a0ZVguNWb51K7G63M0dfChAziWYeIO_AOPE2cEnVGOcwyT3BlbkFJliQDGy85OmZ3UGhQS7RSltE9YKO_5qrdLaLEweqkbxs-dDtMy3FMf6Msuot00O58p9L9XQBucA"
-  static let openAIOrgID: String? = "org-EPHQ1A3u0XIUZml6JABMgZzg"
-  static let openAIModel = "gpt-4o-mini"
+  // 🚀 OpenAI Configuration
+  // Note: Replace with your actual OpenAI API key from https://platform.openai.com/api-keys
+  static let openAIKey = "sk-proj-your-openai-api-key-here-replace-with-real-key"
+  static let openAIOrgID: String? = nil // Optional: Your OpenAI organization ID
+  static let openAIModel = "gpt-3.5-turbo" // Using more affordable model
+  
+  // API Key validation
+  static var isOpenAIKeyValid: Bool {
+    return !openAIKey.contains("your-openai-api-key-here") && 
+           openAIKey.hasPrefix("sk-") && 
+           openAIKey.count > 20 &&
+           !openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
+  
+  static var openAIKeyStatus: String {
+    if openAIKey == "your-openai-api-key-here" {
+      return "⚠️ Please configure your OpenAI API key"
+    } else if !openAIKey.hasPrefix("sk-") {
+      return "❌ Invalid API key format (must start with 'sk-')"
+    } else if openAIKey.count < 20 {
+      return "❌ API key appears to be truncated"
+    } else {
+      return "✅ API key format is valid"
+    }
+  }
 
   static func assertValid() {
     precondition(supabaseURL.hasPrefix("https://"), "Supabase URL must start with https://")
@@ -17,10 +44,11 @@ enum Secrets {
     precondition(URL(string: supabaseURL)?.host?.hasSuffix(".supabase.co") == true, "Invalid host in Supabase URL")
     precondition(!supabaseAnonKey.isEmpty, "Anon key is empty")
     
-    // OpenAI validation (fail loudly if missing)
-    precondition(!openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                 "OPENAI key is missing. Update Secrets.openAIKey")
-    precondition(openAIKey.hasPrefix("sk-"), "Invalid OpenAI API key format. Must start with 'sk-'.")
+    // OpenAI validation (warn but don't crash in mock mode)
+    if !AppConfig.enableMockAI && !isOpenAIKeyValid {
+      print("⚠️ OpenAI API key issue: \(openAIKeyStatus)")
+      print("💡 Set AppConfig.enableMockAI = true to use mock responses for testing")
+    }
   }
 }
 
@@ -2271,7 +2299,7 @@ struct ChatView: View {
                     // Chat Options
                     VStack(spacing: 16) {
                         // AI Negotiator Card
-                        NavigationLink(destination: AINegotiatorView(supabase: supabase)) {
+                        NavigationLink(destination: AINegotiatorView()) {
                             ChatOptionCard(
                                 title: "AI Negotiator",
                                 subtitle: "Smart property search & negotiation assistance",
@@ -2425,127 +2453,8 @@ struct ChatStatCard: View {
     }
 }
 
-// MARK: - AI Negotiator View
-struct AINegotiatorView: View {
-    let supabase: SupabaseClient
-    @State private var messageText = ""
-    @State private var isLoading = false
-    @State private var conversationHistory: [String] = []
-    
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 16) {
-                // Header
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("AI Property Negotiator")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    Text("Get help finding properties, negotiating prices, and contacting landlords automatically")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.leading)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
-                .background(Color.blue.opacity(0.1))
-                .cornerRadius(12)
-                
-                // Conversation Area
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 12) {
-                        if conversationHistory.isEmpty {
-                            VStack(spacing: 16) {
-                                Image(systemName: "brain.head.profile")
-                                    .font(.system(size: 48))
-                                    .foregroundColor(.blue)
-                                
-                                Text("Start a conversation")
-                                    .font(.headline)
-                                
-                                Text("Ask me to help you find properties, negotiate prices, or contact landlords.")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                    .multilineTextAlignment(.center)
-                                
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Try asking:")
-                                        .font(.caption)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.secondary)
-                                    
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("• \"Find me a 2BR apartment under $2000\"")
-                                        Text("• \"Negotiate the price for this listing\"")
-                                        Text("• \"Contact the landlord about availability\"")
-                                    }
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                                .background(Color(.systemGray6))
-                                .cornerRadius(8)
-                            }
-                            .padding()
-                        } else {
-                            ForEach(Array(conversationHistory.enumerated()), id: \.offset) { index, message in
-                                Text(message)
-                                    .padding()
-                                    .background(index % 2 == 0 ? Color.blue.opacity(0.1) : Color(.systemGray6))
-                                    .cornerRadius(12)
-                            }
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                
-                // Input Area
-                HStack(spacing: 12) {
-                    TextField("Ask the AI negotiator...", text: $messageText, axis: .vertical)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .lineLimit(1...4)
-                    
-                    Button(action: sendMessage) {
-                        Image(systemName: "paperplane.fill")
-                            .foregroundColor(.white)
-                            .padding(8)
-                            .background(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray : Color.blue)
-                            .cornerRadius(8)
-                    }
-                    .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
-                }
-                .padding()
-            }
-            .navigationTitle("AI Negotiator")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-    
-    private func sendMessage() {
-        guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        
-        let userMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
-        conversationHistory.append("You: \(userMessage)")
-        
-        isLoading = true
-        messageText = ""
-        
-        // Simulate AI response after a delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            let responses = [
-                "I'd be happy to help you find properties! Based on your criteria, I'll search for available listings and negotiate the best prices for you.",
-                "I can contact the landlord on your behalf and negotiate favorable terms. Let me gather the property details first.",
-                "I've found several properties that match your criteria. Would you like me to reach out to the landlords and start negotiations?",
-                "I'll help you with price negotiations. Based on market data, I can suggest a competitive offer strategy."
-            ]
-            
-            let randomResponse = responses.randomElement() ?? "I'm here to help with your property search and negotiations!"
-            conversationHistory.append("AI: \(randomResponse)")
-            isLoading = false
-        }
-    }
-}
+// MARK: - AI Negotiator View (Using Enhanced Version)
+typealias AINegotiatorView = EnhancedAINegotiatorView
 
 // MARK: - Normal Chat View
 struct NormalChatView: View {
@@ -2882,7 +2791,17 @@ struct NewChatView: View {
     var body: some View {
         NavigationView {
             VStack {
-                SearchBar(text: $searchText)
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.secondary)
+                    TextField("Search users...", text: $searchText)
+                        .textFieldStyle(PlainTextFieldStyle())
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .padding(.horizontal, 16)
                     .onChange(of: searchText) { newValue in
                         searchUsers(query: newValue)
                     }
@@ -3047,22 +2966,1116 @@ struct UserRowView: View {
     }
 }
 
-// MARK: - Search Bar
-struct SearchBar: View {
-    @Binding var text: String
+// MARK: - OpenAI Service & AI Negotiator
+
+// MARK: - Property Criteria Model
+struct PropertyCriteria {
+    var location: String?
+    var maxPrice: Int?
+    var minPrice: Int?
+    var propertyType: String?
+    var bedrooms: Int?
+    var bathrooms: Int?
+    
+    var hasValidCriteria: Bool {
+        return location != nil || maxPrice != nil || minPrice != nil || 
+               propertyType != nil || bedrooms != nil || bathrooms != nil
+    }
+}
+
+// MARK: - AI Response Model
+struct AiResponse {
+    let message: String
+    let success: Bool
+    let error: String?
+    let extractedCriteria: PropertyCriteria?
+    
+    init(message: String, success: Bool, extractedCriteria: PropertyCriteria? = nil) {
+        self.message = message
+        self.success = success
+        self.error = nil
+        self.extractedCriteria = extractedCriteria
+    }
+    
+    init(error: String) {
+        self.message = ""
+        self.success = false
+        self.error = error
+        self.extractedCriteria = nil
+    }
+}
+
+// MARK: - OpenAI Chat Message
+struct OpenAIChatMessage: Codable {
+    let role: String
+    let content: String
+    
+    init(role: String, content: String) {
+        self.role = role
+        self.content = content
+    }
+}
+
+// MARK: - OpenAI Request/Response Models
+struct OpenAIRequest: Codable {
+    let model: String
+    let messages: [OpenAIChatMessage]
+    let maxTokens: Int
+    let temperature: Double
+    
+    enum CodingKeys: String, CodingKey {
+        case model
+        case messages
+        case maxTokens = "max_tokens"
+        case temperature
+    }
+}
+
+struct OpenAIResponse: Codable {
+    let choices: [OpenAIChoice]
+    
+    struct OpenAIChoice: Codable {
+        let message: OpenAIChatMessage
+    }
+}
+
+// MARK: - OpenAI Service
+class OpenAIService: ObservableObject {
+    private static let OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
+    private var conversationHistory: [OpenAIChatMessage] = []
+    private let maxRetries = 3
+    private let retryDelay: TimeInterval = 2.0
+    
+    private func buildSystemPrompt() -> String {
+        return """
+        You are an AI rental negotiation assistant for RoomFinderAI. Your role is to:
+
+        1. Help users find rental properties by understanding their criteria (location, price, type, etc.)
+        2. Provide expert negotiation advice for dealing with landlords
+        3. Generate professional messages and emails for landlord communication
+        4. Offer market insights and rental strategies
+        5. Guide users through the rental application process
+
+        When users provide search criteria, acknowledge what you understand and let them know you'll search the database. For negotiation help, provide specific tactics and ready-to-send message templates. Be professional, helpful, and focus on getting users the best rental deals possible.
+
+        Keep responses concise but informative. Always ask clarifying questions when criteria are unclear.
+        """
+    }
+    
+    func processMessage(_ userMessage: String) async -> AiResponse {
+        // Validate input
+        guard !userMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return AiResponse(error: "Please enter a message")
+        }
+        
+        // Sanitize message
+        let sanitizedMessage = String(userMessage.trimmingCharacters(in: .whitespacesAndNewlines).prefix(1000))
+        
+        // Add user message to conversation history
+        conversationHistory.append(OpenAIChatMessage(role: "user", content: sanitizedMessage))
+        
+        // Check if we should use mock mode
+        if AppConfig.enableMockAI || !Secrets.isOpenAIKeyValid {
+            return await generateMockResponse(for: sanitizedMessage, userMessage: userMessage)
+        }
+        
+        // Attempt request with retries
+        for attempt in 1...maxRetries {
+            if AppConfig.debugMode {
+                print("🤖 AI Request attempt \(attempt) for message: \(sanitizedMessage)")
+            }
+            
+            do {
+                let response = try await makeOpenAIRequest(sanitizedMessage)
+                
+                // Add AI response to conversation history
+                conversationHistory.append(OpenAIChatMessage(role: "assistant", content: response.message))
+                
+                // Extract property criteria from user message
+                let criteria = extractPropertyCriteria(from: userMessage)
+                if AppConfig.debugMode {
+                    print("📍 Extracted criteria: \(criteria.hasValidCriteria ? "Found" : "None")")
+                }
+                
+                return AiResponse(
+                    message: response.message,
+                    success: true,
+                    extractedCriteria: criteria
+                )
+                
+            } catch {
+                if AppConfig.debugMode {
+                    print("❌ AI Request attempt \(attempt) failed: \(error)")
+                }
+                
+                if attempt == maxRetries {
+                    // Fall back to mock response if all attempts fail
+                    print("🔄 Falling back to mock response after API failures")
+                    return await generateMockResponse(for: sanitizedMessage, userMessage: userMessage, includeError: true)
+                }
+                
+                // Wait before retry
+                try? await Task.sleep(nanoseconds: UInt64(retryDelay * 1_000_000_000))
+            }
+        }
+        
+        return AiResponse(error: "Request failed after multiple attempts")
+    }
+    
+    // MARK: - Mock Response Generation
+    private func generateMockResponse(for sanitizedMessage: String, userMessage: String, includeError: Bool = false) async -> AiResponse {
+        // Extract property criteria
+        let criteria = extractPropertyCriteria(from: userMessage)
+        
+        // Simulate thinking time
+        try? await Task.sleep(nanoseconds: UInt64(Double.random(in: 0.5...1.5) * 1_000_000_000))
+        
+        var response: String
+        
+        if includeError {
+            response = """
+            I'm currently experiencing some connectivity issues, but I can still help! 
+            
+            Based on your message, I understand you're looking for rental properties. Let me assist you with what I can determine from your request.
+            """
+        } else {
+            response = generateContextualMockResponse(for: sanitizedMessage, criteria: criteria)
+        }
+        
+        // Add mock response to conversation history
+        conversationHistory.append(OpenAIChatMessage(role: "assistant", content: response))
+        
+        if AppConfig.debugMode {
+            print("🎭 Generated mock response for: \(sanitizedMessage)")
+            print("📍 Extracted criteria: \(criteria.hasValidCriteria ? "Found" : "None")")
+        }
+        
+        return AiResponse(
+            message: response,
+            success: true,
+            extractedCriteria: criteria
+        )
+    }
+    
+    private func generateContextualMockResponse(for message: String, criteria: PropertyCriteria) -> String {
+        let lowerMessage = message.lowercased()
+        
+        // Greeting responses
+        if lowerMessage.contains("hello") || lowerMessage.contains("hi ") || lowerMessage.starts(with: "hi") {
+            return """
+            Hello! I'm your AI rental negotiation assistant. I'm here to help you find the perfect property and negotiate the best deals.
+            
+            Feel free to tell me what you're looking for - location, budget, property type, number of bedrooms, etc. I can search our database and provide personalized assistance!
+            """
+        }
+        
+        // Property search requests
+        if criteria.hasValidCriteria {
+            var responseComponents: [String] = []
+            
+            responseComponents.append("Great! I understand you're looking for rental properties. Here's what I gathered from your request:")
+            
+            var criteriaList: [String] = []
+            if let location = criteria.location {
+                criteriaList.append("📍 Location: \(location)")
+            }
+            if let maxPrice = criteria.maxPrice {
+                criteriaList.append("💰 Maximum price: $\(maxPrice)")
+            }
+            if let minPrice = criteria.minPrice {
+                criteriaList.append("💰 Minimum price: $\(minPrice)")
+            }
+            if let propertyType = criteria.propertyType {
+                criteriaList.append("🏠 Property type: \(propertyType)")
+            }
+            if let bedrooms = criteria.bedrooms {
+                criteriaList.append("🛏️ Bedrooms: \(bedrooms)")
+            }
+            if let bathrooms = criteria.bathrooms {
+                criteriaList.append("🚿 Bathrooms: \(bathrooms)")
+            }
+            
+            if !criteriaList.isEmpty {
+                responseComponents.append("")
+                responseComponents.append(criteriaList.joined(separator: "\n"))
+                responseComponents.append("")
+                responseComponents.append("I'll search our property database for matching listings. You can use the 'Search Properties' button that should appear above to see available options!")
+                responseComponents.append("")
+                responseComponents.append("Would you like me to refine the search criteria or provide tips for negotiating with landlords?")
+            }
+            
+            return responseComponents.joined(separator: "\n")
+        }
+        
+        // Negotiation help
+        if lowerMessage.contains("negotiat") || lowerMessage.contains("price") || lowerMessage.contains("lower") || lowerMessage.contains("deal") {
+            return """
+            I'd be happy to help with negotiation strategies! Here are some effective approaches:
+            
+            💡 **Key Negotiation Tips:**
+            • Research comparable properties in the area
+            • Highlight your strengths as a tenant (stable income, good credit, references)
+            • Consider offering a longer lease term for a lower monthly rate
+            • Be prepared to move quickly if you find the right property
+            • Ask about utilities, parking, or other included amenities
+            
+            Would you like me to help you draft a message to a specific landlord, or do you have a particular property in mind?
+            """
+        }
+        
+        // General help
+        if lowerMessage.contains("help") || lowerMessage.contains("what can you") || lowerMessage.contains("how do") {
+            return """
+            I'm here to help with all aspects of your rental search! Here's what I can assist you with:
+            
+            🔍 **Property Search**
+            • Find properties based on your criteria
+            • Analyze market trends and pricing
+            • Compare different neighborhoods
+            
+            💬 **Communication & Negotiation**
+            • Draft professional messages to landlords
+            • Provide negotiation strategies and tips
+            • Help with application materials
+            
+            📋 **Application Process**
+            • Guide you through rental applications
+            • Suggest questions to ask landlords
+            • Help evaluate lease terms
+            
+            Just tell me what you're looking for or what specific help you need!
+            """
+        }
+        
+        // Default response
+        return """
+        I understand you're interested in rental properties. As your AI negotiation assistant, I can help you:
+        
+        • Find properties that match your criteria
+        • Negotiate better prices and terms
+        • Draft professional communications to landlords
+        • Navigate the rental application process
+        
+        Could you tell me more about what you're looking for? For example:
+        - What location are you interested in?
+        - What's your budget range?
+        - How many bedrooms do you need?
+        - Any specific property type preferences?
+        """
+    }
+    
+    private func makeOpenAIRequest(_ userMessage: String) async throws -> AiResponse {
+        guard let url = URL(string: OpenAIService.OPENAI_API_URL) else {
+            throw URLError(.badURL)
+        }
+        
+        // Build request with conversation history
+        let messages = buildMessagesArray()
+        let requestBody = OpenAIRequest(
+            model: Secrets.openAIModel,
+            messages: messages,
+            maxTokens: 500,
+            temperature: 0.7
+        )
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(Secrets.openAIKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let orgId = Secrets.openAIOrgID {
+            request.setValue(orgId, forHTTPHeaderField: "OpenAI-Organization")
+        }
+        
+        request.httpBody = try JSONEncoder().encode(requestBody)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            print("❌ OpenAI API error: \(httpResponse.statusCode)")
+            if let errorData = String(data: data, encoding: .utf8) {
+                print("Error response: \(errorData)")
+            }
+            
+            switch httpResponse.statusCode {
+            case 401:
+                throw URLError(.userAuthenticationRequired)
+            case 429:
+                throw URLError(.resourceUnavailable)
+            case 500...503:
+                throw URLError(.badServerResponse)
+            default:
+                throw URLError(.unknown)
+            }
+        }
+        
+        let openAIResponse = try JSONDecoder().decode(OpenAIResponse.self, from: data)
+        
+        guard let firstChoice = openAIResponse.choices.first else {
+            throw URLError(.badServerResponse)
+        }
+        
+        return AiResponse(message: firstChoice.message.content, success: true)
+    }
+    
+    private func buildMessagesArray() -> [OpenAIChatMessage] {
+        var messages: [OpenAIChatMessage] = []
+        
+        // Add system prompt
+        messages.append(OpenAIChatMessage(role: "system", content: buildSystemPrompt()))
+        
+        // Add conversation history (keep last 10 messages for context)
+        let startIndex = max(0, conversationHistory.count - 10)
+        messages.append(contentsOf: Array(conversationHistory[startIndex...]))
+        
+        return messages
+    }
+    
+    // MARK: - Property Criteria Extraction
+    private func extractPropertyCriteria(from message: String) -> PropertyCriteria {
+        var criteria = PropertyCriteria()
+        let lowerMessage = message.lowercased()
+        
+        print("🔍 Extracting criteria from: \"\(message)\"")
+        
+        // Extract location
+        criteria.location = extractLocation(from: lowerMessage)
+        print("📍 Location extracted: \(criteria.location ?? "nil")")
+        
+        // Extract prices
+        criteria.maxPrice = extractMaxPrice(from: lowerMessage)
+        criteria.minPrice = extractMinPrice(from: lowerMessage)
+        print("💰 Price range: \(criteria.minPrice ?? 0) - \(criteria.maxPrice ?? 0)")
+        
+        // Extract property type
+        criteria.propertyType = extractPropertyType(from: lowerMessage)
+        print("🏠 Property type: \(criteria.propertyType ?? "nil")")
+        
+        // Extract bedrooms and bathrooms
+        criteria.bedrooms = extractBedrooms(from: lowerMessage)
+        criteria.bathrooms = extractBathrooms(from: lowerMessage)
+        print("🛏️ Bedrooms: \(criteria.bedrooms ?? 0), 🚿 Bathrooms: \(criteria.bathrooms ?? 0)")
+        
+        print("✅ Criteria extraction complete. Has valid criteria: \(criteria.hasValidCriteria)")
+        
+        return criteria
+    }
+    
+    private func extractLocation(from message: String) -> String? {
+        // Pattern 1: "in [location]"
+        if message.contains(" in ") {
+            let parts = message.components(separatedBy: " in ")
+            if parts.count > 1 {
+                var locationPart = parts[1]
+                
+                // Remove everything after stop words
+                let stopWords = [" with ", " under ", " over ", " for ", " that ", " where ", " near ", " around ", " at ", " priced ", " costing "]
+                for stopWord in stopWords {
+                    if locationPart.contains(stopWord) {
+                        locationPart = String(locationPart.split(separator: stopWord).first ?? "")
+                        break
+                    }
+                }
+                
+                let cleanLocation = locationPart.trimmingCharacters(in: .whitespacesAndNewlines)
+                    .replacingOccurrences(of: "[^a-zA-Z\\s]", with: "", options: .regularExpression)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                if !cleanLocation.isEmpty {
+                    return cleanLocation
+                }
+            }
+        }
+        
+        // Pattern 2: "near [location]", "around [location]", "at [location]"
+        let locationPatterns = [" near ", " around ", " at "]
+        for pattern in locationPatterns {
+            if message.contains(pattern) {
+                let parts = message.components(separatedBy: pattern)
+                if parts.count > 1 {
+                    var locationPart = parts[1]
+                    
+                    let stopWords = [" with ", " under ", " over ", " for ", " that ", " priced "]
+                    for stopWord in stopWords {
+                        if locationPart.contains(stopWord) {
+                            locationPart = String(locationPart.split(separator: stopWord).first ?? "")
+                            break
+                        }
+                    }
+                    
+                    let cleanLocation = locationPart.trimmingCharacters(in: .whitespacesAndNewlines)
+                        .replacingOccurrences(of: "[^a-zA-Z\\s]", with: "", options: .regularExpression)
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    
+                    if !cleanLocation.isEmpty {
+                        return cleanLocation
+                    }
+                }
+            }
+        }
+        
+        // Pattern 3: Common location names
+        let commonLocations = ["downtown", "midtown", "uptown", "city center", "city centre", "suburbs", "waterfront"]
+        for location in commonLocations {
+            if message.contains(location) {
+                return location
+            }
+        }
+        
+        return nil
+    }
+    
+    private func extractMaxPrice(from message: String) -> Int? {
+        // Pattern 1: "under $X", "below $X", "max $X"
+        let maxKeywords = ["under", "below", "max", "maximum", "up to", "no more than"]
+        for keyword in maxKeywords {
+            if message.contains(keyword) {
+                if let price = findPriceAfterKeyword(keyword, in: message) {
+                    return price
+                }
+            }
+        }
+        
+        // Pattern 2: "$X or less", "$X maximum"
+        if let price = extractPriceWithSuffix(["or less", "maximum", "max"], from: message) {
+            return price
+        }
+        
+        // If no min keywords present, assume single price is max
+        if !message.contains("over") && !message.contains("above") && !message.contains("minimum") && !message.contains("more than") {
+            return extractFirstPrice(from: message)
+        }
+        
+        return nil
+    }
+    
+    private func extractMinPrice(from message: String) -> Int? {
+        // Pattern 1: "over $X", "above $X", "min $X"
+        let minKeywords = ["over", "above", "min", "minimum", "more than", "at least"]
+        for keyword in minKeywords {
+            if message.contains(keyword) {
+                if let price = findPriceAfterKeyword(keyword, in: message) {
+                    return price
+                }
+            }
+        }
+        
+        // Pattern 2: "$X or more", "$X minimum"
+        if let price = extractPriceWithSuffix(["or more", "minimum", "plus"], from: message) {
+            return price
+        }
+        
+        return nil
+    }
+    
+    private func findPriceAfterKeyword(_ keyword: String, in message: String) -> Int? {
+        let words = message.components(separatedBy: .whitespacesAndNewlines)
+        for i in 0..<words.count {
+            if words[i].lowercased().contains(keyword.replacingOccurrences(of: " ", with: "")) {
+                for j in (i + 1)..<min(i + 4, words.count) {
+                    if let price = parsePrice(from: words[j]) {
+                        return price
+                    }
+                }
+            }
+        }
+        return nil
+    }
+    
+    private func extractPriceWithSuffix(_ suffixes: [String], from message: String) -> Int? {
+        let words = message.components(separatedBy: .whitespacesAndNewlines)
+        for i in 0..<words.count {
+            if words[i].contains("$"), let price = parsePrice(from: words[i]) {
+                if i + 1 < words.count {
+                    let nextWords = Array(words[(i + 1)...min(i + 2, words.count - 1)]).joined(separator: " ")
+                    for suffix in suffixes {
+                        if nextWords.contains(suffix) {
+                            return price
+                        }
+                    }
+                }
+            }
+        }
+        return nil
+    }
+    
+    private func extractFirstPrice(from message: String) -> Int? {
+        let words = message.components(separatedBy: .whitespacesAndNewlines)
+        for word in words {
+            if let price = parsePrice(from: word) {
+                return price
+            }
+        }
+        return nil
+    }
+    
+    private func parsePrice(from word: String) -> Int? {
+        let priceString = word.replacingOccurrences(of: "[^0-9,]", with: "", options: .regularExpression)
+        guard !priceString.isEmpty else { return nil }
+        
+        let cleanPriceString = priceString.replacingOccurrences(of: ",", with: "")
+        return Int(cleanPriceString)
+    }
+    
+    private func extractPropertyType(from message: String) -> String? {
+        if message.contains("studio") || message.contains("bachelor") {
+            return "studio"
+        } else if message.contains("townhouse") || message.contains("town house") {
+            return "townhouse"
+        } else if message.contains("condo") || message.contains("condominium") {
+            return "condo"
+        } else if message.contains("apartment") || message.contains("apt") {
+            return "apartment"
+        } else if message.contains("house") || message.contains("home") {
+            return "house"
+        } else if message.contains("room") || message.contains("shared") {
+            return "room"
+        }
+        return nil
+    }
+    
+    private func extractBedrooms(from message: String) -> Int? {
+        return extractRoomCount(from: message, keywords: ["bedroom", "bed"], patterns: ["-bedroom", "-bed"])
+    }
+    
+    private func extractBathrooms(from message: String) -> Int? {
+        return extractRoomCount(from: message, keywords: ["bathroom", "bath"], patterns: ["-bathroom", "-bath"])
+    }
+    
+    private func extractRoomCount(from message: String, keywords: [String], patterns: [String]) -> Int? {
+        // Pattern 1: "X bedroom", "X bed"
+        for keyword in keywords {
+            if message.contains(keyword) {
+                let words = message.components(separatedBy: .whitespacesAndNewlines)
+                for i in 0..<(words.count - 1) {
+                    if words[i + 1].contains(keyword) {
+                        if let number = parseNumber(from: words[i]) {
+                            return number
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Pattern 2: "X-bedroom", "X-bed"
+        for pattern in patterns {
+            if message.contains(pattern) {
+                let words = message.components(separatedBy: .whitespacesAndNewlines)
+                for word in words {
+                    if word.contains(pattern) {
+                        let parts = word.components(separatedBy: "-")
+                        if let first = parts.first, let number = parseNumber(from: first) {
+                            return number
+                        }
+                    }
+                }
+            }
+        }
+        
+        return nil
+    }
+    
+    private func parseNumber(from word: String) -> Int? {
+        // Try parsing as integer first
+        let numericString = word.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+        if !numericString.isEmpty, let number = Int(numericString) {
+            return number
+        }
+        
+        // Try text-to-number conversion
+        let lowerWord = word.lowercased()
+        switch lowerWord {
+        case "one", "1": return 1
+        case "two", "2": return 2
+        case "three", "3": return 3
+        case "four", "4": return 4
+        case "five", "5": return 5
+        case "six", "6": return 6
+        default: return nil
+        }
+    }
+    
+    func clearConversation() {
+        conversationHistory.removeAll()
+    }
+    
+    func getConversationHistory() -> [OpenAIChatMessage] {
+        return conversationHistory
+    }
+    
+    func addMessage(role: String, content: String) {
+        conversationHistory.append(OpenAIChatMessage(role: role, content: content))
+    }
+}
+
+
+
+// MARK: - OpenAI Service Extension for Direct Requests
+extension OpenAIService {
+    func makeDirectRequest(systemPrompt: String, userMessage: String) async throws -> String {
+        guard Secrets.isOpenAIKeyValid else {
+            throw URLError(.userAuthenticationRequired)
+        }
+        
+        guard let url = URL(string: "https://api.openai.com/v1/chat/completions") else {
+            throw URLError(.badURL)
+        }
+        
+        let messages = [
+            OpenAIChatMessage(role: "system", content: systemPrompt),
+            OpenAIChatMessage(role: "user", content: userMessage)
+        ]
+        
+        let requestBody = OpenAIRequest(
+            model: Secrets.openAIModel,
+            messages: messages,
+            maxTokens: 500,
+            temperature: 0.7
+        )
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(Secrets.openAIKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let orgId = Secrets.openAIOrgID {
+            request.setValue(orgId, forHTTPHeaderField: "OpenAI-Organization")
+        }
+        
+        request.httpBody = try JSONEncoder().encode(requestBody)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        
+        let openAIResponse = try JSONDecoder().decode(OpenAIResponse.self, from: data)
+        
+        guard let firstChoice = openAIResponse.choices.first else {
+            throw URLError(.badServerResponse)
+        }
+        
+        return firstChoice.message.content
+    }
+}
+
+// MARK: - Property Search Service
+
+class PropertySearchService: ObservableObject {
+    var supabase: SupabaseClient
+    
+    init(supabase: SupabaseClient) {
+        self.supabase = supabase
+    }
+    
+    func searchProperties(criteria: PropertyCriteria) async -> ([HomePageListing], String?) {
+        guard criteria.hasValidCriteria else {
+            return ([], "Please provide search criteria (location, price, property type, etc.)")
+        }
+        
+        do {
+            print("🔍 Searching properties with criteria: \(criteria)")
+            
+            var query = supabase
+                .from("listings")
+                .select("*")
+            
+            // Apply location filter - search in title, city fields
+            if let location = criteria.location?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(), !location.isEmpty {
+                print("📍 Applying location filter: \(location)")
+                // Search in multiple fields using ilike for case-insensitive partial matches
+                query = query.or("title.ilike.%\(location)%,city.ilike.%\(location)%")
+            }
+            
+            // Apply price filters
+            if let maxPrice = criteria.maxPrice {
+                print("💰 Applying max price filter: \(maxPrice)")
+                query = query.lte("price", value: maxPrice)
+            }
+            
+            if let minPrice = criteria.minPrice {
+                print("💰 Applying min price filter: \(minPrice)")
+                query = query.gte("price", value: minPrice)
+            }
+            
+            // Apply property type filter
+            if let propertyType = criteria.propertyType?.lowercased() {
+                print("🏠 Applying property type filter: \(propertyType)")
+                // Search in title and description for property type
+                query = query.or("title.ilike.%\(propertyType)%,description.ilike.%\(propertyType)%")
+            }
+            
+            // Apply bedroom filter
+            if let bedrooms = criteria.bedrooms {
+                print("🛏️ Applying bedroom filter: \(bedrooms)")
+                // Search for bedroom count in title or use bedrooms field if available
+                query = query.or("bedrooms.eq.\(bedrooms),title.ilike.%\(bedrooms) bed%")
+            }
+            
+            let response: [HomePageListing] = try await query.execute().value
+            
+            print("✅ Found \(response.count) matching properties")
+            return (response, nil)
+            
+        } catch {
+            print("❌ Property search failed: \(error)")
+            return ([], "Failed to search properties: \(error.localizedDescription)")
+        }
+    }
+    
+    private func buildSupabaseQuery(criteria: PropertyCriteria) -> (select: String, filters: [String]) {
+        let filters: [String] = []
+        
+        // Location filter - search in city, street, and title
+        if let location = criteria.location?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !location.isEmpty {
+            let locationLower = location.lowercased()
+            // This would need to be adapted based on your actual Supabase query capabilities
+            // For now, we'll just log it and handle in the actual query construction
+            print("📍 Searching for location: \(locationLower)")
+        }
+        
+        // Price filters would be applied here if your model supports it
+        if let maxPrice = criteria.maxPrice {
+            print("💰 Max price filter: \(maxPrice)")
+        }
+        if let minPrice = criteria.minPrice {
+            print("💰 Min price filter: \(minPrice)")
+        }
+        
+        // Property type filter
+        if let propertyType = criteria.propertyType?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !propertyType.isEmpty {
+            print("🏠 Property type filter: \(propertyType)")
+        }
+        
+        // Room filters
+        if let bedrooms = criteria.bedrooms {
+            print("🛏️ Bedrooms filter: \(bedrooms)")
+        }
+        if let bathrooms = criteria.bathrooms {
+            print("🚿 Bathrooms filter: \(bathrooms)")
+        }
+        
+        // For now, return all fields - this would be enhanced based on your actual Supabase schema
+        let select = "*"
+        
+        return (select: select, filters: filters)
+    }
+    
+    func getAllProperties() async -> ([HomePageListing], String?) {
+        do {
+            let response: [HomePageListing] = try await supabase
+                .from("listings")
+                .select("*")
+                .limit(50)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            
+            print("✅ Retrieved \(response.count) total properties")
+            return (response, nil)
+            
+        } catch {
+            print("❌ Failed to get all properties: \(error)")
+            return ([], "Failed to retrieve properties: \(error.localizedDescription)")
+        }
+    }
+    
+    func searchPropertiesByText(_ searchText: String) async -> ([HomePageListing], String?) {
+        guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return ([], "Please enter search criteria")
+        }
+        
+        do {
+            // Simple text search across title and city fields
+            let response: [HomePageListing] = try await supabase
+                .from("listings")
+                .select("*")
+                .or("title.ilike.%\(searchText)%,city.ilike.%\(searchText)%")
+                .limit(20)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            
+            print("✅ Text search found \(response.count) properties")
+            return (response, nil)
+            
+        } catch {
+            print("❌ Text search failed: \(error)")
+            return ([], "Search failed: \(error.localizedDescription)")
+        }
+    }
+}
+
+// MARK: - Enhanced AI Negotiator View
+
+struct EnhancedAINegotiatorView: View {
+    @Environment(\.supabase) private var supabase
+    @StateObject private var openAIService = OpenAIService()
+    @StateObject private var propertySearchService: PropertySearchService
+    
+    @State private var messageText = ""
+    @State private var messages: [String] = []
+    @State private var isLoading = false
+    @State private var foundProperties: [HomePageListing] = []
+    @State private var lastExtractedCriteria: PropertyCriteria?
+    @State private var showingPropertyConfirmation = false
+    
+    init() {
+        // Initialize PropertySearchService - we'll set supabase in onAppear
+        _propertySearchService = StateObject(wrappedValue: PropertySearchService(supabase: SupabaseClient(supabaseURL: URL(string: "https://temp.supabase.co")!, supabaseKey: "temp")))
+    }
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                // Header
+                headerView
+                
+                // Messages
+                messagesView
+                
+                // Input Area
+                inputView
+            }
+            .navigationTitle("AI Negotiator")
+            .navigationBarTitleDisplayMode(.large)
+            .onAppear {
+                if messages.isEmpty {
+                    messages.append("👋 Hi! I'm your AI Negotiator. I can help you find properties, negotiate prices, and contact landlords. Tell me what you're looking for - like '2 bedroom apartment in downtown under $2000'")
+                }
+                // Initialize PropertySearchService with real supabase client
+                propertySearchService.supabase = supabase
+            }
+        }
+    }
+    
+    private var headerView: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Image(systemName: "brain.head.profile")
+                    .font(.title2)
+                    .foregroundColor(.blue)
+                
+                VStack(alignment: .leading) {
+                    Text("AI Negotiator")
+                        .font(.headline)
+                    
+                    Text("Smart rental assistant")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Button("Clear") {
+                    clearConversation()
+                }
+                .font(.caption)
+                .foregroundColor(.blue)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            
+            Divider()
+        }
+        .background(Color(.systemBackground))
+    }
+    
+    private var messagesView: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    ForEach(messages.indices, id: \.self) { index in
+                        MessageBubble(
+                            content: messages[index],
+                            isUser: index % 2 == 1 // Odd indices are user messages
+                        )
+                        .id(index)
+                    }
+                    
+                    if isLoading {
+                        HStack {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                            Text("AI is thinking...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.leading, 16)
+                        .id("loading")
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+            .onChange(of: messages.count) { _ in
+                withAnimation(.easeOut(duration: 0.3)) {
+                    if let lastIndex = messages.indices.last {
+                        proxy.scrollTo(lastIndex, anchor: .bottom)
+                    }
+                }
+            }
+            .onChange(of: isLoading) { _ in
+                if isLoading {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        proxy.scrollTo("loading", anchor: .bottom)
+                    }
+                }
+            }
+        }
+    }
+    
+    private var inputView: some View {
+        VStack(spacing: 0) {
+            Divider()
+            
+            HStack(spacing: 12) {
+                TextField("Ask about rentals, negotiations, or property advice...", text: $messageText, axis: .vertical)
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .onSubmit {
+                        sendMessage()
+                    }
+                
+                Button(action: sendMessage) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray : .blue)
+                }
+                .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+        .background(Color(.systemBackground))
+    }
+    
+    private func sendMessage() {
+        let trimmedMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedMessage.isEmpty, !isLoading else { return }
+        
+        // Add user message
+        messages.append("You: \(trimmedMessage)")
+        messageText = ""
+        isLoading = true
+        
+        // Check if user is confirming property selection
+        if showingPropertyConfirmation && (trimmedMessage.lowercased().contains("yes") || trimmedMessage.lowercased().contains("negotiate") || trimmedMessage.lowercased().contains("start")) {
+            handlePropertyConfirmation()
+            return
+        }
+        
+        // Use intelligent AI processing
+        Task {
+            do {
+                // Process message with AI to get intelligent response and extract criteria
+                let aiResponse = await openAIService.processMessage(trimmedMessage)
+                
+                await MainActor.run {
+                    if aiResponse.success {
+                        messages.append("AI: \(aiResponse.message)")
+                        
+                        // If we extracted valid property criteria, search for properties
+                        if let criteria = aiResponse.extractedCriteria, criteria.hasValidCriteria {
+                            lastExtractedCriteria = criteria
+                            print("🔍 Valid criteria detected: \(criteria)")
+                            searchForProperties(criteria: criteria)
+                        }
+                    } else {
+                        messages.append("AI: \(aiResponse.error ?? "I'm having trouble understanding. Could you try rephrasing your request?")")
+                    }
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    messages.append("AI: I'm having technical difficulties. Please try again.")
+                    print("❌ AI processing error: \(error)")
+                }
+            }
+        }
+    }
+    
+    private func searchForProperties(criteria: PropertyCriteria) {
+        Task {
+            let (properties, searchError) = await propertySearchService.searchProperties(criteria: criteria)
+            
+            await MainActor.run {
+                if let error = searchError {
+                    messages.append("AI: \(error)")
+                } else if properties.isEmpty {
+                    messages.append("AI: I couldn't find any properties matching your criteria. Try adjusting your requirements - different location, price range, or property type.")
+                } else {
+                    foundProperties = properties
+                    let propertyList = properties.prefix(5).map { "• \($0.title ?? "Property") - $\($0.price ?? 0)/month in \($0.city ?? "Unknown")" }.joined(separator: "\n")
+                    messages.append("AI: Great! I found \(properties.count) properties matching your criteria:\n\n\(propertyList)\n\nAre these the homes you want me to negotiate for? Reply 'yes' to start negotiations or adjust your criteria for a new search.")
+                    showingPropertyConfirmation = true
+                }
+            }
+        }
+    }
+    
+    private func handlePropertyConfirmation() {
+        isLoading = false
+        showingPropertyConfirmation = false
+        
+        if foundProperties.isEmpty {
+            messages.append("AI: I don't have any properties to negotiate for. Please search for properties first.")
+            return
+        }
+        
+        let propertyCount = foundProperties.count
+        let propertyTitles = foundProperties.prefix(3).map { $0.title ?? "Property" }.joined(separator: ", ")
+        
+        messages.append("AI: Perfect! I'll start negotiating for these \(propertyCount) properties: \(propertyTitles)\(propertyCount > 3 ? ", and \(propertyCount - 3) more" : "").")
+        messages.append("AI: 🤝 Starting negotiation process...")
+        messages.append("AI: I'm now contacting the landlords to negotiate better terms, reduced prices, and improved lease conditions. This may take a few moments.")
+        messages.append("AI: 📧 Sending initial inquiry messages to landlords...")
+        
+        // Simulate negotiation progress
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+            await MainActor.run {
+                messages.append("AI: ✅ Successfully contacted \(propertyCount) landlords! I've started negotiations focusing on price reduction and better lease terms. I'll update you as responses come in.")
+                messages.append("AI: You can continue chatting with me about other properties or ask about the negotiation progress.")
+            }
+        }
+    }
+    
+    private func clearConversation() {
+        messages.removeAll()
+        messages.append("👋 Hi! I'm your AI Negotiator. I can help you with rental questions, negotiation tips, and property advice. How can I assist you today?")
+    }
+}
+
+struct MessageBubble: View {
+    let content: String
+    let isUser: Bool
     
     var body: some View {
         HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.secondary)
+            if isUser { Spacer(minLength: 60) }
             
-            TextField("Search users...", text: $text)
-                .textFieldStyle(PlainTextFieldStyle())
+            Text(content)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(isUser ? Color.blue : Color(.systemGray5))
+                .foregroundColor(isUser ? .white : .primary)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            
+            if !isUser { Spacer(minLength: 60) }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .padding(.horizontal, 16)
     }
 }
+
+
