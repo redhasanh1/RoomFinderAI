@@ -3959,22 +3959,6 @@
                     conversationId: currentConversationId
                 });
                 
-                // Get conversation details to determine recipient
-                const { data: conversation, error: convError } = await window.supabaseClient
-                    .from('conversations')
-                    .select('*')
-                    .eq('id', currentConversationId)
-                    .single();
-                    
-                if (convError) {
-                    console.error('Failed to get conversation details:', convError);
-                    throw convError;
-                }
-                
-                // Determine if current user is landlord or tenant, and set recipient accordingly
-                const isLandlord = currentUser.id === conversation.landlord_id;
-                const recipientId = isLandlord ? conversation.tenant_id : conversation.landlord_id;
-                
                 // Send to database first to get the ID
                 const { data, error } = await window.supabaseClient
                     .from('messages')
@@ -3982,9 +3966,6 @@
                         conversation_id: currentConversationId,
                         sender_id: currentUser.id,
                         sender_email: currentUser.email,
-                        recipient_id: recipientId,
-                        landlord_id: conversation.landlord_id,
-                        tenant_id: conversation.tenant_id,
                         content: messageContent,
                         message_type: 'text',
                         created_at: timestamp
@@ -4080,22 +4061,6 @@
                         .from('chat-documents')
                         .getPublicUrl(filePath);
 
-                    // Get conversation details to determine recipient
-                    const { data: conversation, error: convError } = await window.supabaseClient
-                        .from('conversations')
-                        .select('*')
-                        .eq('id', currentConversationId)
-                        .single();
-                        
-                    if (convError) {
-                        console.error('Failed to get conversation details:', convError);
-                        throw convError;
-                    }
-                    
-                    // Determine if current user is landlord or tenant, and set recipient accordingly
-                    const isLandlord = currentUser.id === conversation.landlord_id;
-                    const recipientId = isLandlord ? conversation.tenant_id : conversation.landlord_id;
-
                     // Save message to database
                     const { error: dbError } = await window.supabaseClient
                         .from('messages')
@@ -4103,9 +4068,6 @@
                             conversation_id: currentConversationId,
                             sender_id: currentUser.id,
                             sender_email: currentUser.email,
-                            recipient_id: recipientId,
-                            landlord_id: conversation.landlord_id,
-                            tenant_id: conversation.tenant_id,
                             content: `Shared file: ${file.name}`,
                             message_type: 'file',
                             file_url: urlData.publicUrl,
