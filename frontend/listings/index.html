@@ -864,12 +864,26 @@
                 });
             }
             
-            // Simple chat panel toggle - minimal fix
+            // Enhanced chat panel toggle with conversation loading
             const messageToggleBtn = document.getElementById('messageToggleBtn');
             const messagePanel = document.getElementById('messagePanel');
             if (messageToggleBtn && messagePanel) {
-                messageToggleBtn.addEventListener('click', function() {
+                messageToggleBtn.addEventListener('click', async function() {
+                    const wasHidden = messagePanel.classList.contains('hidden');
                     messagePanel.classList.toggle('hidden');
+                    
+                    // If opening panel and chat system is available, load conversations
+                    if (wasHidden && window.globalChatSystem) {
+                        console.log('🔄 Loading conversations...');
+                        try {
+                            await window.globalChatSystem.loadConversations();
+                            window.globalChatSystem.updateConversationsList();
+                            console.log('✅ Conversations loaded');
+                        } catch (error) {
+                            console.error('❌ Error loading conversations:', error);
+                        }
+                    }
+                    
                     console.log('Chat panel toggled');
                 });
             }
