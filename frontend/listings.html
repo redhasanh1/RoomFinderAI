@@ -2923,16 +2923,16 @@
                             <span>${listing.utilities}</span>
                         </div>
                         <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
-                        <div class="flex space-x-2 mt-4">
-                            ${isOwner ? `
-                                <button class="view-details-btn w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                            ` : `
-                                <button class="view-details-btn w-1/2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                                <button class="chat-btn w-1/2 ${hasOwner ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
-                            `}
-                        </div>
                     </div>
                 `;
+                
+                // Make entire card clickable
+                listingCard.style.cursor = 'pointer';
+                listingCard.addEventListener('click', () => {
+                    console.log('🎯 Listing card clicked:', listing.title);
+                    window.showListingModal(listing);
+                });
+                
                 container.appendChild(listingCard);
                 
                 // If this is the highlighted listing, scroll to it and add a badge
@@ -2958,30 +2958,7 @@
                 }
             });
 
-            document.querySelectorAll('.view-details-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const listing = JSON.parse(button.dataset.listing);
-                    window.showListingModal(listing);
-                });
-            });
-
-            document.querySelectorAll('.chat-btn').forEach(button => {
-                if (!button.disabled) {
-                    button.addEventListener('click', () => {
-                        try {
-                            console.log('🎯 Chat button clicked (legacy handler):', button.dataset.listing);
-                            const listing = JSON.parse(button.dataset.listing);
-                            console.log('📋 Parsed listing data:', listing);
-                            startConversation(listing);
-                        } catch (error) {
-                            console.error('❌ Error parsing listing data or starting conversation:', error);
-                            alert('Error opening chat. Please refresh the page and try again.');
-                        }
-                    });
-                } else {
-                    console.log('⚠️ Chat button is disabled (legacy handler) - no owner email specified');
-                }
-            });
+            // Button event listeners removed - cards are now clickable
 
             // Update map with all listings (skip if opening modal for speed)
             if (shouldOpenModal) {
