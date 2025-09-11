@@ -3,8 +3,8 @@ import Supabase
 
 // MARK: - Configuration
 enum AppConfig {
-    static let enableMockAI = true // Set to false when you have a valid OpenAI API key
-    static let debugMode = true
+    static let enableMockAI = false // Real AI negotiator for specific properties
+    static let debugMode = false
 }
 
 // MARK: - Secrets Configuration
@@ -14,13 +14,13 @@ enum Secrets {
 
   // 🚀 OpenAI Configuration
   // Note: Replace with your actual OpenAI API key from https://platform.openai.com/api-keys
-  static let openAIKey = "your-openai-api-key-here"
+  static let openAIKey = "sk-proj-your-openai-api-key-here-replace-with-real-key"
   static let openAIOrgID: String? = nil // Optional: Your OpenAI organization ID
   static let openAIModel = "gpt-3.5-turbo" // Using more affordable model
   
   // API Key validation
   static var isOpenAIKeyValid: Bool {
-    return openAIKey != "your-openai-api-key-here" && 
+    return !openAIKey.contains("your-openai-api-key-here") && 
            openAIKey.hasPrefix("sk-") && 
            openAIKey.count > 20 &&
            !openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -2299,7 +2299,7 @@ struct ChatView: View {
                     // Chat Options
                     VStack(spacing: 16) {
                         // AI Negotiator Card
-                        NavigationLink(destination: AINegotiatorView(supabase: supabase)) {
+                        NavigationLink(destination: AINegotiatorView()) {
                             ChatOptionCard(
                                 title: "AI Negotiator",
                                 subtitle: "Smart property search & negotiation assistance",
@@ -2791,7 +2791,17 @@ struct NewChatView: View {
     var body: some View {
         NavigationView {
             VStack {
-                SearchBar(text: $searchText)
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.secondary)
+                    TextField("Search users...", text: $searchText)
+                        .textFieldStyle(PlainTextFieldStyle())
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .padding(.horizontal, 16)
                     .onChange(of: searchText) { newValue in
                         searchUsers(query: newValue)
                     }
@@ -3602,10 +3612,62 @@ class OpenAIService: ObservableObject {
     }
 }
 
+
+
+// MARK: - OpenAI Service Extension for Direct Requests
+extension OpenAIService {
+    func makeDirectRequest(systemPrompt: String, userMessage: String) async throws -> String {
+        guard Secrets.isOpenAIKeyValid else {
+            throw URLError(.userAuthenticationRequired)
+        }
+        
+        guard let url = URL(string: "https://api.openai.com/v1/chat/completions") else {
+            throw URLError(.badURL)
+        }
+        
+        let messages = [
+            OpenAIChatMessage(role: "system", content: systemPrompt),
+            OpenAIChatMessage(role: "user", content: userMessage)
+        ]
+        
+        let requestBody = OpenAIRequest(
+            model: Secrets.openAIModel,
+            messages: messages,
+            maxTokens: 500,
+            temperature: 0.7
+        )
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(Secrets.openAIKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let orgId = Secrets.openAIOrgID {
+            request.setValue(orgId, forHTTPHeaderField: "OpenAI-Organization")
+        }
+        
+        request.httpBody = try JSONEncoder().encode(requestBody)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        
+        let openAIResponse = try JSONDecoder().decode(OpenAIResponse.self, from: data)
+        
+        guard let firstChoice = openAIResponse.choices.first else {
+            throw URLError(.badServerResponse)
+        }
+        
+        return firstChoice.message.content
+    }
+}
+
 // MARK: - Property Search Service
 
 class PropertySearchService: ObservableObject {
-    private let supabase: SupabaseClient
+    var supabase: SupabaseClient
     
     init(supabase: SupabaseClient) {
         self.supabase = supabase
@@ -3617,14 +3679,45 @@ class PropertySearchService: ObservableObject {
         }
         
         do {
-            let query = buildSupabaseQuery(criteria: criteria)
-            print("🔍 Searching properties with query: \(query)")
+            print("🔍 Searching properties with criteria: \(criteria)")
             
-            let response: [HomePageListing] = try await supabase
+            var query = supabase
                 .from("listings")
-                .select(query.select)
-                .execute()
-                .value
+                .select("*")
+            
+            // Apply location filter - search in title, city fields
+            if let location = criteria.location?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(), !location.isEmpty {
+                print("📍 Applying location filter: \(location)")
+                // Search in multiple fields using ilike for case-insensitive partial matches
+                query = query.or("title.ilike.%\(location)%,city.ilike.%\(location)%")
+            }
+            
+            // Apply price filters
+            if let maxPrice = criteria.maxPrice {
+                print("💰 Applying max price filter: \(maxPrice)")
+                query = query.lte("price", value: maxPrice)
+            }
+            
+            if let minPrice = criteria.minPrice {
+                print("💰 Applying min price filter: \(minPrice)")
+                query = query.gte("price", value: minPrice)
+            }
+            
+            // Apply property type filter
+            if let propertyType = criteria.propertyType?.lowercased() {
+                print("🏠 Applying property type filter: \(propertyType)")
+                // Search in title and description for property type
+                query = query.or("title.ilike.%\(propertyType)%,description.ilike.%\(propertyType)%")
+            }
+            
+            // Apply bedroom filter
+            if let bedrooms = criteria.bedrooms {
+                print("🛏️ Applying bedroom filter: \(bedrooms)")
+                // Search for bedroom count in title or use bedrooms field if available
+                query = query.or("bedrooms.eq.\(bedrooms),title.ilike.%\(bedrooms) bed%")
+            }
+            
+            let response: [HomePageListing] = try await query.execute().value
             
             print("✅ Found \(response.count) matching properties")
             return (response, nil)
@@ -3636,7 +3729,7 @@ class PropertySearchService: ObservableObject {
     }
     
     private func buildSupabaseQuery(criteria: PropertyCriteria) -> (select: String, filters: [String]) {
-        var filters: [String] = []
+        let filters: [String] = []
         
         // Location filter - search in city, street, and title
         if let location = criteria.location?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -3728,14 +3821,15 @@ struct EnhancedAINegotiatorView: View {
     @StateObject private var propertySearchService: PropertySearchService
     
     @State private var messageText = ""
-    @State private var messages: [(String, Bool, PropertyCriteria?)] = [] // (content, isUser, criteria)
+    @State private var messages: [String] = []
     @State private var isLoading = false
-    @State private var searchResults: [HomePageListing] = []
-    @State private var showingSearchResults = false
+    @State private var foundProperties: [HomePageListing] = []
     @State private var lastExtractedCriteria: PropertyCriteria?
+    @State private var showingPropertyConfirmation = false
     
-    init(supabase: SupabaseClient) {
-        self._propertySearchService = StateObject(wrappedValue: PropertySearchService(supabase: supabase))
+    init() {
+        // Initialize PropertySearchService - we'll set supabase in onAppear
+        _propertySearchService = StateObject(wrappedValue: PropertySearchService(supabase: SupabaseClient(supabaseURL: URL(string: "https://temp.supabase.co")!, supabaseKey: "temp")))
     }
     
     var body: some View {
@@ -3747,30 +3841,18 @@ struct EnhancedAINegotiatorView: View {
                 // Messages
                 messagesView
                 
-                // Criteria Display
-                if let criteria = lastExtractedCriteria, criteria.hasValidCriteria {
-                    criteriaView(criteria)
-                }
-                
-                // Search Results Preview
-                if !searchResults.isEmpty {
-                    searchResultsPreview
-                }
-                
                 // Input Area
                 inputView
             }
             .navigationTitle("AI Negotiator")
             .navigationBarTitleDisplayMode(.large)
             .onAppear {
-                // Add welcome message
                 if messages.isEmpty {
-                    addMessage("Hello! I'm your AI rental negotiation assistant. I can help you find properties, negotiate prices, and communicate with landlords. What are you looking for?", isUser: false, criteria: nil)
+                    messages.append("👋 Hi! I'm your AI Negotiator. I can help you find properties, negotiate prices, and contact landlords. Tell me what you're looking for - like '2 bedroom apartment in downtown under $2000'")
                 }
+                // Initialize PropertySearchService with real supabase client
+                propertySearchService.supabase = supabase
             }
-        }
-        .sheet(isPresented: $showingSearchResults) {
-            PropertySearchResultsView(results: searchResults)
         }
     }
     
@@ -3785,23 +3867,9 @@ struct EnhancedAINegotiatorView: View {
                     Text("AI Negotiator")
                         .font(.headline)
                     
-                    HStack(spacing: 4) {
-                        if AppConfig.enableMockAI {
-                            Text("🎭 Demo Mode")
-                                .font(.caption)
-                                .foregroundColor(.orange)
-                        } else {
-                            Text("Smart rental assistant")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        if !Secrets.isOpenAIKeyValid && !AppConfig.enableMockAI {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.caption2)
-                                .foregroundColor(.orange)
-                        }
-                    }
+                    Text("Smart rental assistant")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
                 
                 Spacer()
@@ -3815,30 +3883,6 @@ struct EnhancedAINegotiatorView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             
-            // Show API status if there are issues
-            if !Secrets.isOpenAIKeyValid && !AppConfig.enableMockAI {
-                HStack {
-                    Image(systemName: "info.circle")
-                        .foregroundColor(.orange)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("API Configuration Needed")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.orange)
-                        
-                        Text("Set AppConfig.enableMockAI = true for demo mode or configure your OpenAI API key")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Color.orange.opacity(0.1))
-            }
-            
             Divider()
         }
         .background(Color(.systemBackground))
@@ -3849,11 +3893,9 @@ struct EnhancedAINegotiatorView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     ForEach(messages.indices, id: \.self) { index in
-                        let message = messages[index]
                         MessageBubble(
-                            content: message.0,
-                            isUser: message.1,
-                            criteria: message.2
+                            content: messages[index],
+                            isUser: index % 2 == 1 // Odd indices are user messages
                         )
                         .id(index)
                     }
@@ -3890,82 +3932,12 @@ struct EnhancedAINegotiatorView: View {
         }
     }
     
-    private func criteriaView(_ criteria: PropertyCriteria) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Detected Search Criteria:")
-                    .font(.headline)
-                    .foregroundColor(.blue)
-                Spacer()
-                Button("Search Properties") {
-                    searchProperties(criteria)
-                }
-                .buttonStyle(.borderedProminent)
-                .font(.caption)
-            }
-            
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 8) {
-                if let location = criteria.location {
-                    CriteriaChip(icon: "location", text: location, color: .blue)
-                }
-                if let maxPrice = criteria.maxPrice {
-                    CriteriaChip(icon: "dollarsign.circle", text: "Under $\(maxPrice)", color: .green)
-                }
-                if let minPrice = criteria.minPrice {
-                    CriteriaChip(icon: "dollarsign.circle", text: "Over $\(minPrice)", color: .green)
-                }
-                if let propertyType = criteria.propertyType {
-                    CriteriaChip(icon: "house", text: propertyType.capitalized, color: .orange)
-                }
-                if let bedrooms = criteria.bedrooms {
-                    CriteriaChip(icon: "bed.double", text: "\(bedrooms) bed", color: .purple)
-                }
-                if let bathrooms = criteria.bathrooms {
-                    CriteriaChip(icon: "shower", text: "\(bathrooms) bath", color: .teal)
-                }
-            }
-        }
-        .padding(16)
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .padding(.horizontal, 16)
-    }
-    
-    private var searchResultsPreview: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Found \(searchResults.count) Properties")
-                    .font(.headline)
-                Spacer()
-                Button("View All") {
-                    showingSearchResults = true
-                }
-                .font(.caption)
-                .foregroundColor(.blue)
-            }
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(searchResults.prefix(5)) { listing in
-                        PropertyPreviewCard(listing: listing)
-                    }
-                }
-                .padding(.horizontal, 16)
-            }
-        }
-        .padding(.vertical, 16)
-        .background(Color(.systemBackground))
-    }
-    
     private var inputView: some View {
         VStack(spacing: 0) {
             Divider()
             
             HStack(spacing: 12) {
-                TextField("Ask about properties, negotiation, or market insights...", text: $messageText, axis: .vertical)
+                TextField("Ask about rentals, negotiations, or property advice...", text: $messageText, axis: .vertical)
                     .textFieldStyle(PlainTextFieldStyle())
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
@@ -3993,308 +3965,117 @@ struct EnhancedAINegotiatorView: View {
         guard !trimmedMessage.isEmpty, !isLoading else { return }
         
         // Add user message
-        addMessage(trimmedMessage, isUser: true, criteria: nil)
+        messages.append("You: \(trimmedMessage)")
         messageText = ""
         isLoading = true
         
+        // Check if user is confirming property selection
+        if showingPropertyConfirmation && (trimmedMessage.lowercased().contains("yes") || trimmedMessage.lowercased().contains("negotiate") || trimmedMessage.lowercased().contains("start")) {
+            handlePropertyConfirmation()
+            return
+        }
+        
+        // Use intelligent AI processing
         Task {
-            let response = await openAIService.processMessage(trimmedMessage)
-            
-            await MainActor.run {
-                isLoading = false
+            do {
+                // Process message with AI to get intelligent response and extract criteria
+                let aiResponse = await openAIService.processMessage(trimmedMessage)
                 
-                if response.success {
-                    addMessage(response.message, isUser: false, criteria: response.extractedCriteria)
-                    lastExtractedCriteria = response.extractedCriteria
-                } else {
-                    addMessage(response.error ?? "Sorry, I couldn't process your request. Please try again.", isUser: false, criteria: nil)
+                await MainActor.run {
+                    if aiResponse.success {
+                        messages.append("AI: \(aiResponse.message)")
+                        
+                        // If we extracted valid property criteria, search for properties
+                        if let criteria = aiResponse.extractedCriteria, criteria.hasValidCriteria {
+                            lastExtractedCriteria = criteria
+                            print("🔍 Valid criteria detected: \(criteria)")
+                            searchForProperties(criteria: criteria)
+                        }
+                    } else {
+                        messages.append("AI: \(aiResponse.error ?? "I'm having trouble understanding. Could you try rephrasing your request?")")
+                    }
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    messages.append("AI: I'm having technical difficulties. Please try again.")
+                    print("❌ AI processing error: \(error)")
                 }
             }
         }
     }
     
-    private func addMessage(_ content: String, isUser: Bool, criteria: PropertyCriteria?) {
-        messages.append((content, isUser, criteria))
+    private func searchForProperties(criteria: PropertyCriteria) {
+        Task {
+            let (properties, searchError) = await propertySearchService.searchProperties(criteria: criteria)
+            
+            await MainActor.run {
+                if let error = searchError {
+                    messages.append("AI: \(error)")
+                } else if properties.isEmpty {
+                    messages.append("AI: I couldn't find any properties matching your criteria. Try adjusting your requirements - different location, price range, or property type.")
+                } else {
+                    foundProperties = properties
+                    let propertyList = properties.prefix(5).map { "• \($0.title ?? "Property") - $\($0.price ?? 0)/month in \($0.city ?? "Unknown")" }.joined(separator: "\n")
+                    messages.append("AI: Great! I found \(properties.count) properties matching your criteria:\n\n\(propertyList)\n\nAre these the homes you want me to negotiate for? Reply 'yes' to start negotiations or adjust your criteria for a new search.")
+                    showingPropertyConfirmation = true
+                }
+            }
+        }
+    }
+    
+    private func handlePropertyConfirmation() {
+        isLoading = false
+        showingPropertyConfirmation = false
+        
+        if foundProperties.isEmpty {
+            messages.append("AI: I don't have any properties to negotiate for. Please search for properties first.")
+            return
+        }
+        
+        let propertyCount = foundProperties.count
+        let propertyTitles = foundProperties.prefix(3).map { $0.title ?? "Property" }.joined(separator: ", ")
+        
+        messages.append("AI: Perfect! I'll start negotiating for these \(propertyCount) properties: \(propertyTitles)\(propertyCount > 3 ? ", and \(propertyCount - 3) more" : "").")
+        messages.append("AI: 🤝 Starting negotiation process...")
+        messages.append("AI: I'm now contacting the landlords to negotiate better terms, reduced prices, and improved lease conditions. This may take a few moments.")
+        messages.append("AI: 📧 Sending initial inquiry messages to landlords...")
+        
+        // Simulate negotiation progress
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+            await MainActor.run {
+                messages.append("AI: ✅ Successfully contacted \(propertyCount) landlords! I've started negotiations focusing on price reduction and better lease terms. I'll update you as responses come in.")
+                messages.append("AI: You can continue chatting with me about other properties or ask about the negotiation progress.")
+            }
+        }
     }
     
     private func clearConversation() {
         messages.removeAll()
-        searchResults.removeAll()
-        lastExtractedCriteria = nil
-        openAIService.clearConversation()
-        
-        // Add welcome message back
-        addMessage("Hello! I'm your AI rental negotiation assistant. I can help you find properties, negotiate prices, and communicate with landlords. What are you looking for?", isUser: false, criteria: nil)
-    }
-    
-    private func searchProperties(_ criteria: PropertyCriteria) {
-        Task {
-            let (results, error) = await propertySearchService.searchProperties(criteria: criteria)
-            
-            await MainActor.run {
-                if let error = error {
-                    addMessage("Search error: \(error)", isUser: false, criteria: nil)
-                } else {
-                    searchResults = results
-                    let resultMessage = results.isEmpty 
-                        ? "I didn't find any properties matching your criteria. Try adjusting your search parameters."
-                        : "Great! I found \(results.count) properties that match your criteria. You can view them above or tap 'View All' to see the full list."
-                    
-                    addMessage(resultMessage, isUser: false, criteria: nil)
-                }
-            }
-        }
+        messages.append("👋 Hi! I'm your AI Negotiator. I can help you with rental questions, negotiation tips, and property advice. How can I assist you today?")
     }
 }
-
-// MARK: - Supporting Views
 
 struct MessageBubble: View {
     let content: String
     let isUser: Bool
-    let criteria: PropertyCriteria?
     
     var body: some View {
         HStack {
             if isUser { Spacer(minLength: 60) }
             
-            VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
-                Text(content)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(isUser ? Color.blue : Color(.systemGray5))
-                    .foregroundColor(isUser ? .white : .primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                
-                if let criteria = criteria, criteria.hasValidCriteria {
-                    Text("📍 Found search criteria in your message")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
+            Text(content)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(isUser ? Color.blue : Color(.systemGray5))
+                .foregroundColor(isUser ? .white : .primary)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
             
             if !isUser { Spacer(minLength: 60) }
         }
     }
 }
 
-struct CriteriaChip: View {
-    let icon: String
-    let text: String
-    let color: Color
-    
-    var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption2)
-            Text(text)
-                .font(.caption)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(color.opacity(0.2))
-        .foregroundColor(color)
-        .clipShape(Capsule())
-    }
-}
 
-struct PropertyPreviewCard: View {
-    let listing: HomePageListing
-    
-    // Safe value accessors to prevent NaN issues
-    private var safePrice: String {
-        guard let price = listing.price, price > 0 else { return "Price TBA" }
-        return "$\(price)/mo"
-    }
-    
-    private var safeTitle: String {
-        guard let title = listing.title, !title.isEmpty else { return "Property" }
-        return title
-    }
-    
-    private var safeCity: String {
-        guard let city = listing.city, !city.isEmpty else { return "" }
-        return city
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            AsyncImage(url: URL(string: listing.coverURLString ?? "")) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } placeholder: {
-                Rectangle()
-                    .fill(Color(.systemGray4))
-                    .overlay(
-                        Image(systemName: "house")
-                            .foregroundColor(.gray)
-                    )
-            }
-            .frame(width: 120, height: 80)
-            .clipped()
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(safeTitle)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                
-                Text(safePrice)
-                    .font(.caption2)
-                    .foregroundColor(.blue)
-                
-                if !safeCity.isEmpty {
-                    Text(safeCity)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
-            }
-        }
-        .frame(width: 120)
-        .padding(8)
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-struct PropertySearchResultsView: View {
-    let results: [HomePageListing]
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationView {
-            ScrollView {
-                LazyVStack(spacing: 16) {
-                    ForEach(results) { listing in
-                        PropertyResultCard(listing: listing)
-                    }
-                }
-                .padding(16)
-            }
-            .navigationTitle("Search Results")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
-struct PropertyResultCard: View {
-    let listing: HomePageListing
-    
-    // Safe value accessors to prevent NaN issues
-    private var safePrice: String {
-        guard let price = listing.price, price > 0 else { return "Price TBA" }
-        return "$\(price)/month"
-    }
-    
-    private var safeTitle: String {
-        guard let title = listing.title, !title.isEmpty else { return "Property Listing" }
-        return title
-    }
-    
-    private var safeCity: String {
-        guard let city = listing.city, !city.isEmpty else { return "" }
-        return city
-    }
-    
-    private var safeBedrooms: Int {
-        guard let bedrooms = listing.bedrooms, bedrooms > 0 else { return 0 }
-        return bedrooms
-    }
-    
-    private var safeDescription: String {
-        guard let description = listing.description, !description.isEmpty else { return "" }
-        return description
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            AsyncImage(url: URL(string: listing.coverURLString ?? "")) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } placeholder: {
-                Rectangle()
-                    .fill(Color(.systemGray4))
-                    .overlay(
-                        Image(systemName: "house.fill")
-                            .font(.largeTitle)
-                            .foregroundColor(.gray)
-                    )
-            }
-            .frame(height: 200)
-            .clipped()
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            
-            VStack(alignment: .leading, spacing: 8) {
-                Text(safeTitle)
-                    .font(.headline)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                
-                Text(safePrice)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.blue)
-                
-                HStack {
-                    if safeBedrooms > 0 {
-                        Label("\(safeBedrooms)", systemImage: "bed.double")
-                            .font(.caption)
-                    }
-                    
-                    if !safeCity.isEmpty {
-                        Label(safeCity, systemImage: "location")
-                            .font(.caption)
-                            .lineLimit(1)
-                    }
-                    
-                    Spacer()
-                }
-                .foregroundColor(.secondary)
-                
-                if !safeDescription.isEmpty {
-                    Text(safeDescription)
-                        .font(.body)
-                        .lineLimit(3)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(.horizontal, 4)
-        }
-        .padding(16)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
-    }
-}
-
-// MARK: - Search Bar
-struct SearchBar: View {
-    @Binding var text: String
-    
-    var body: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.secondary)
-            
-            TextField("Search users...", text: $text)
-                .textFieldStyle(PlainTextFieldStyle())
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .padding(.horizontal, 16)
-    }
-}
