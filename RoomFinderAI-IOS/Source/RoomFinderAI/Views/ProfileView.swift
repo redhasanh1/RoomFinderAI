@@ -1,218 +1,383 @@
 import SwiftUI
+import Supabase
 
 struct ProfileView: View {
-    @EnvironmentObject var authViewModel: SimpleAuthViewModel
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.supabase) private var supabase
+    @StateObject private var authService: AuthService
+    @State private var showingLogin = false
+    @State private var showingSignUp = false
     @State private var showingEditProfile = false
-    @State private var showingSettings = false
-    @State private var showingSignIn = false
+    
+    init() {
+        // We'll get the supabase client from environment in the body
+        self._authService = StateObject(wrappedValue: AuthService(supabaseClient: SupabaseClient(supabaseURL: URL(string: "https://fkktwhjybuflxqzopaex.supabase.co")!, supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs")))
+    }
     
     var body: some View {
-        NavigationView {
+        ZStack {
+            // Animated gradient background
+            AnimatedGradientBackground()
+                .ignoresSafeArea()
+            
             ScrollView {
                 VStack(spacing: 24) {
-                    if authViewModel.isAuthenticated {
-                        // Authenticated User Profile
-                        VStack(spacing: 16) {
-                            AsyncImage(url: URL(string: authViewModel.currentUser?.avatar ?? "")) { image in
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            } placeholder: {
-                                Image(systemName: "person.circle.fill")
-                                    .font(.system(size: 80))
-                                    .foregroundColor(.secondary)
-                            }
-                            .frame(width: 100, height: 100)
-                            .clipShape(Circle())
-                            
-                            VStack(spacing: 4) {
-                                Text(authViewModel.currentUser?.name ?? "User")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                            
-                                Text(authViewModel.currentUser?.email ?? "")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            
-                                HStack {
-                                    Image(systemName: "checkmark.seal.fill")
-                                        .foregroundColor(.green)
-                                        .font(.caption)
-                                    
-                                    Text(authViewModel.currentUser?.verificationStatus.displayName ?? "")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                        }
-                        
-                        Button("Edit Profile") {
-                            showingEditProfile = true
-                        }
-                        .font(.subheadline)
-                        .foregroundColor(.primaryBlue)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 8)
-                        .background(Color.primaryBlue.opacity(0.1))
-                        .cornerRadius(20)
+                    if authService.isAuthenticated {
+                        AuthenticatedProfileView(authService: authService, showingEditProfile: $showingEditProfile)
                     } else {
-                        // Guest User Profile
-                        VStack(spacing: 16) {
-                            Image(systemName: "person.circle.fill")
-                                .font(.system(size: 80))
-                                .foregroundColor(.secondary)
-                            
-                            VStack(spacing: 4) {
-                                Text("Guest User")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                
-                                Text("Sign in to access all features")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        
-                        Button("Sign In") {
-                            showingSignIn = true
-                        }
-                        .font(.subheadline)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 8)
-                        .background(Color.primaryBlue)
-                        .cornerRadius(20)
-                    }
-                    
-                    // Stats
-                    HStack(spacing: 40) {
-                        ProfileStat(title: "Searches", value: authViewModel.isAuthenticated ? "24" : "0")
-                        ProfileStat(title: "Favorites", value: authViewModel.isAuthenticated ? "12" : "0")
-                        ProfileStat(title: "Messages", value: authViewModel.isAuthenticated ? "8" : "0")
-                    }
-                    .padding(.horizontal)
-                    
-                    // Menu Items
-                    VStack(spacing: 0) {
-                        ProfileMenuItem(
-                            icon: "heart.fill",
-                            title: "Favorite Listings",
-                            subtitle: "View your saved properties",
-                            action: { /* Navigate to favorites */ }
-                        )
-                        
-                        ProfileMenuItem(
-                            icon: "clock.fill",
-                            title: "Search History",
-                            subtitle: "View recent searches",
-                            action: { /* Navigate to search history */ }
-                        )
-                        
-                        ProfileMenuItem(
-                            icon: "bell.fill",
-                            title: "Notifications",
-                            subtitle: "Manage your alerts",
-                            action: { /* Navigate to notifications */ }
-                        )
-                        
-                        ProfileMenuItem(
-                            icon: "creditcard.fill",
-                            title: "Subscription",
-                            subtitle: "\(authViewModel.currentUser?.subscriptionStatus.displayName ?? "Free")",
-                            action: { /* Navigate to subscription */ }
-                        )
-                        
-                        ProfileMenuItem(
-                            icon: "gear",
-                            title: "Settings",
-                            subtitle: "App preferences",
-                            action: { showingSettings = true }
-                        )
-                        
-                        ProfileMenuItem(
-                            icon: "questionmark.circle.fill",
-                            title: "Help & Support",
-                            subtitle: "Get help or contact us",
-                            action: { /* Navigate to help */ }
-                        )
-                        
-                        ProfileMenuItem(
-                            icon: "doc.text.fill",
-                            title: "Terms & Privacy",
-                            subtitle: "Legal information",
-                            action: { /* Navigate to terms */ }
+                        UnauthenticatedProfileView(
+                            showingLogin: $showingLogin,
+                            showingSignUp: $showingSignUp
                         )
                     }
-                    
-                    // Sign Out Button (only for authenticated users)
-                    if authViewModel.isAuthenticated {
-                        Button(action: {
-                            authViewModel.signOut()
-                        }) {
-                            HStack {
-                                if authViewModel.isLoading {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .red))
-                                        .scaleEffect(0.8)
-                                }
-                                
-                                Text("Sign Out")
-                                    .font(.headline)
-                                    .fontWeight(.semibold)
-                            }
-                            .foregroundColor(.red)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.red.opacity(0.1))
-                            .cornerRadius(12)
-                        }
-                        .disabled(authViewModel.isLoading)
-                        .padding(.horizontal)
-                    }
-                    
-                    // App Version
-                    Text("Version 1.0.0")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.bottom, 40)
                 }
-                .padding(.top)
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
             }
-            .navigationTitle("Profile")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(
-                trailing: Button("Done") {
-                    dismiss()
-                }
-            )
+        }
+        .sheet(isPresented: $showingLogin) {
+            LoginView(authService: authService)
+        }
+        .sheet(isPresented: $showingSignUp) {
+            SignUpView(authService: authService)
         }
         .sheet(isPresented: $showingEditProfile) {
-            EditProfileView()
+            EditProfileView(authService: authService)
         }
-        .sheet(isPresented: $showingSettings) {
-            SettingsView()
-        }
-        .sheet(isPresented: $showingSignIn) {
-            LoginView()
+        .onAppear {
+            // Update auth service with the environment supabase client
+            authService.updateClient(supabase)
         }
     }
 }
 
-struct ProfileStat: View {
-    let title: String
-    let value: String
+// MARK: - Animated Background
+struct AnimatedGradientBackground: View {
+    @State private var animateGradient = false
     
     var body: some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
+        LinearGradient(
+            colors: [
+                Color(red: 0.4, green: 0.5, blue: 0.92),  // #667eea
+                Color(red: 0.46, green: 0.29, blue: 0.64), // #764ba2
+                Color(red: 0.56, green: 0.27, blue: 0.68), // #8e44ad
+                Color(red: 0.23, green: 0.65, blue: 0.84)  // #3498db
+            ],
+            startPoint: animateGradient ? .topLeading : .bottomTrailing,
+            endPoint: animateGradient ? .bottomTrailing : .topLeading
+        )
+        .onAppear {
+            withAnimation(
+                Animation.easeInOut(duration: 8)
+                    .repeatForever(autoreverses: true)
+            ) {
+                animateGradient.toggle()
+            }
+        }
+    }
+}
+
+// MARK: - Authenticated Profile View
+struct AuthenticatedProfileView: View {
+    @ObservedObject var authService: AuthService
+    @Binding var showingEditProfile: Bool
+    @State private var isRotating = false
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            // Profile Header Card
+            GlassmorphismCard {
+                VStack(spacing: 20) {
+                    // Profile Image with Rotating Border
+                    ZStack {
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [.purple, .pink, .blue, .cyan],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 4
+                            )
+                            .frame(width: 154, height: 154)
+                            .rotationEffect(.degrees(isRotating ? 360 : 0))
+                            .animation(
+                                Animation.linear(duration: 3)
+                                    .repeatForever(autoreverses: false),
+                                value: isRotating
+                            )
+                        
+                        AsyncImage(url: URL(string: authService.currentUser?.profileImage ?? "")) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        } placeholder: {
+                            Image(systemName: "person.circle.fill")
+                                .font(.system(size: 60))
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(width: 140, height: 140)
+                        .clipShape(Circle())
+                    }
+                    .onAppear {
+                        isRotating = true
+                    }
+                    
+                    // User Info
+                    VStack(spacing: 8) {
+                        Text(authService.currentUser?.fullName ?? "User")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
+                        
+                        Text(authService.currentUser?.email ?? "")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .foregroundColor(.green)
+                                .font(.caption)
+                            Text("Verified Account")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    // Edit Profile Button
+                    Button(action: {
+                        showingEditProfile = true
+                    }) {
+                        HStack {
+                            Image(systemName: "pencil")
+                            Text("Edit Profile")
+                        }
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            LinearGradient(
+                                colors: [.blue, .purple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(25)
+                    }
+                }
+                .padding(24)
+            }
             
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
+            // Stats Cards
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: 16) {
+                ProfileStatCard(title: "Listings", value: "12", icon: "house.fill", color: .blue)
+                ProfileStatCard(title: "Favorites", value: "24", icon: "heart.fill", color: .red)
+                ProfileStatCard(title: "Messages", value: "8", icon: "message.fill", color: .green)
+                ProfileStatCard(title: "Reviews", value: "45", icon: "star.fill", color: .orange)
+            }
+            
+            // Menu Items
+            GlassmorphismCard {
+                VStack(spacing: 0) {
+                    ProfileMenuItem(
+                        icon: "heart.fill",
+                        title: "Saved Listings",
+                        subtitle: "Your favorite properties",
+                        action: { /* Navigate to favorites */ }
+                    )
+                    
+                    Divider().padding(.horizontal, 20)
+                    
+                    ProfileMenuItem(
+                        icon: "clock.fill",
+                        title: "Search History",
+                        subtitle: "Recent searches",
+                        action: { /* Navigate to history */ }
+                    )
+                    
+                    Divider().padding(.horizontal, 20)
+                    
+                    ProfileMenuItem(
+                        icon: "bell.fill",
+                        title: "Notifications",
+                        subtitle: "Manage alerts",
+                        action: { /* Navigate to notifications */ }
+                    )
+                    
+                    Divider().padding(.horizontal, 20)
+                    
+                    ProfileMenuItem(
+                        icon: "gearshape.fill",
+                        title: "Settings",
+                        subtitle: "App preferences",
+                        action: { /* Navigate to settings */ }
+                    )
+                }
+                .padding(.vertical, 12)
+            }
+            
+            // Sign Out Button
+            Button(action: {
+                Task {
+                    try? await authService.signOut()
+                }
+            }) {
+                HStack {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                    Text("Sign Out")
+                        .fontWeight(.semibold)
+                }
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.red.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                        )
+                )
+            }
+            
+            Spacer(minLength: 40)
+        }
+    }
+}
+
+// MARK: - Unauthenticated Profile View
+struct UnauthenticatedProfileView: View {
+    @Binding var showingLogin: Bool
+    @Binding var showingSignUp: Bool
+    
+    var body: some View {
+        VStack(spacing: 30) {
+            Spacer()
+            
+            // Welcome Card
+            GlassmorphismCard {
+                VStack(spacing: 24) {
+                    Image(systemName: "person.circle")
+                        .font(.system(size: 80))
+                        .foregroundColor(.secondary)
+                    
+                    VStack(spacing: 12) {
+                        Text("Welcome to RoomFinder AI")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .multilineTextAlignment(.center)
+                        
+                        Text("Sign in to access your profile, save favorites, and get personalized recommendations")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    
+                    VStack(spacing: 16) {
+                        // Sign In Button
+                        Button(action: {
+                            showingLogin = true
+                        }) {
+                            HStack {
+                                Image(systemName: "person.fill")
+                                Text("Sign In")
+                                    .fontWeight(.semibold)
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(12)
+                        }
+                        
+                        // Sign Up Button
+                        Button(action: {
+                            showingSignUp = true
+                        }) {
+                            HStack {
+                                Image(systemName: "person.badge.plus")
+                                Text("Create Account")
+                                    .fontWeight(.medium)
+                            }
+                            .foregroundColor(.blue)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.blue, lineWidth: 2)
+                                    .background(Color.clear)
+                            )
+                        }
+                    }
+                }
+                .padding(24)
+            }
+            
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Supporting Views
+struct GlassmorphismCard<Content: View>: View {
+    let content: Content
+    
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+    
+    var body: some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                    )
+            )
+    }
+}
+
+struct ProfileStatCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        GlassmorphismCard {
+            VStack(spacing: 12) {
+                HStack {
+                    Image(systemName: icon)
+                        .font(.title2)
+                        .foregroundColor(color)
+                    Spacer()
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(value)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                    
+                    Text(title)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(16)
         }
     }
 }
@@ -227,9 +392,9 @@ struct ProfileMenuItem: View {
         Button(action: action) {
             HStack(spacing: 16) {
                 Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundColor(.primaryBlue)
-                    .frame(width: 24, height: 24)
+                    .font(.title3)
+                    .foregroundColor(.blue)
+                    .frame(width: 24)
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
@@ -248,138 +413,32 @@ struct ProfileMenuItem: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 20)
             .padding(.vertical, 16)
-            .background(Color(.systemBackground))
         }
         .buttonStyle(PlainButtonStyle())
     }
 }
 
-struct EditProfileView: View {
-    @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var authViewModel: SimpleAuthViewModel
-    @State private var name = ""
-    @State private var phone = ""
-    @State private var location = ""
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section("Personal Information") {
-                    HStack {
-                        Text("Name")
-                        Spacer()
-                        TextField("Full Name", text: $name)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    
-                    HStack {
-                        Text("Phone")
-                        Spacer()
-                        TextField("Phone Number", text: $phone)
-                            .keyboardType(.phonePad)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    
-                    HStack {
-                        Text("Location")
-                        Spacer()
-                        TextField("City, State", text: $location)
-                            .multilineTextAlignment(.trailing)
-                    }
-                }
-                
-                Section("Account") {
-                    HStack {
-                        Text("Email")
-                        Spacer()
-                        Text(authViewModel.currentUser?.email ?? "")
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    HStack {
-                        Text("Verification Status")
-                        Spacer()
-                        Text(authViewModel.currentUser?.verificationStatus.displayName ?? "")
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            .navigationTitle("Edit Profile")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(
-                leading: Button("Cancel") {
-                    dismiss()
-                },
-                trailing: Button("Save") {
-                    Task {
-                        await authViewModel.updateProfile(
-                            name: name.isEmpty ? nil : name,
-                            phone: phone.isEmpty ? nil : phone,
-                            location: location.isEmpty ? nil : location
-                        )
-                        dismiss()
-                    }
-                }
-                .disabled(authViewModel.isLoading)
-            )
-        }
-        .onAppear {
-            name = authViewModel.currentUser?.name ?? ""
-            phone = ""
-            location = ""
-        }
+// MARK: - Extensions
+extension AuthService {
+    func updateClient(_ newClient: SupabaseClient) {
+        // This would need to be implemented in AuthService to update the client
+        // For now, we'll work with the initialization approach
     }
 }
 
-struct SettingsView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var notificationsEnabled = true
-    @State private var darkModeEnabled = false
-    @State private var locationEnabled = true
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section("Notifications") {
-                    Toggle("Push Notifications", isOn: $notificationsEnabled)
-                    Toggle("Email Notifications", isOn: $notificationsEnabled)
-                    Toggle("SMS Notifications", isOn: $notificationsEnabled)
-                }
-                
-                Section("Appearance") {
-                    Toggle("Dark Mode", isOn: $darkModeEnabled)
-                }
-                
-                Section("Privacy") {
-                    Toggle("Location Services", isOn: $locationEnabled)
-                }
-                
-                Section("Data") {
-                    Button("Clear Search History") {
-                        // Clear search history
-                    }
-                    .foregroundColor(.red)
-                    
-                    Button("Clear Cache") {
-                        // Clear cache
-                    }
-                    .foregroundColor(.red)
-                }
-            }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(
-                trailing: Button("Done") {
-                    dismiss()
-                }
-            )
+extension User {
+    var fullName: String {
+        let first = firstName ?? ""
+        let last = lastName ?? ""
+        if first.isEmpty && last.isEmpty {
+            return "User"
         }
+        return "\(first) \(last)".trimmingCharacters(in: .whitespaces)
     }
 }
 
 #Preview {
     ProfileView()
-        .environmentObject(SimpleAuthViewModel())
 }
