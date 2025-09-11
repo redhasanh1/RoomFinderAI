@@ -108,3 +108,4 @@ Use `gemini -p` when:
 
 - Push changes with descriptive commit messages
 - Don't include "claude" or "generated" in commit messages
+- pull latest code from the hasan branch before pushing. Also push only with EricT2003 and a short summary only which doesnt have claude generate or anything, just a very short summary of what was edited/changed/fixed
