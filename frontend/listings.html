@@ -2620,17 +2620,15 @@
             if (typeof text !== 'string') return '';
             
             // Log special characters for debugging
-            if (/[?!öÖäÄüÜß]/.test(text)) {
-                console.log('🔤 Special characters detected in message:', text);
+            if (/[?!öÖäÄüÜßáéíóúàèìòùâêîôûãñç]/.test(text)) {
+                console.log('🔤 Special characters detected in message (will be preserved):', text);
             }
             
-            // Use a more reliable method for escaping that preserves UTF-8 characters
-            return text
-                .replace(/&/g, '&amp;')   // Must be first
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#x27;');  // More compatible than &#39;
+            // Create a DOM element and use textContent to safely escape only dangerous HTML characters
+            // This preserves UTF-8 characters, punctuation, and international characters
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // Load cities.json for autocomplete
@@ -3961,12 +3959,32 @@
                     conversationId: currentConversationId
                 });
                 
+                // Get conversation details to determine recipient
+                const { data: conversation, error: convError } = await window.supabaseClient
+                    .from('conversations')
+                    .select('*')
+                    .eq('id', currentConversationId)
+                    .single();
+                    
+                if (convError) {
+                    console.error('Failed to get conversation details:', convError);
+                    throw convError;
+                }
+                
+                // Determine if current user is landlord or tenant, and set recipient accordingly
+                const isLandlord = currentUser.id === conversation.landlord_id;
+                const recipientId = isLandlord ? conversation.tenant_id : conversation.landlord_id;
+                
                 // Send to database first to get the ID
                 const { data, error } = await window.supabaseClient
                     .from('messages')
                     .insert({
                         conversation_id: currentConversationId,
+                        sender_id: currentUser.id,
                         sender_email: currentUser.email,
+                        recipient_id: recipientId,
+                        landlord_id: conversation.landlord_id,
+                        tenant_id: conversation.tenant_id,
                         content: messageContent,
                         message_type: 'text',
                         created_at: timestamp
@@ -4062,12 +4080,32 @@
                         .from('chat-documents')
                         .getPublicUrl(filePath);
 
+                    // Get conversation details to determine recipient
+                    const { data: conversation, error: convError } = await window.supabaseClient
+                        .from('conversations')
+                        .select('*')
+                        .eq('id', currentConversationId)
+                        .single();
+                        
+                    if (convError) {
+                        console.error('Failed to get conversation details:', convError);
+                        throw convError;
+                    }
+                    
+                    // Determine if current user is landlord or tenant, and set recipient accordingly
+                    const isLandlord = currentUser.id === conversation.landlord_id;
+                    const recipientId = isLandlord ? conversation.tenant_id : conversation.landlord_id;
+
                     // Save message to database
                     const { error: dbError } = await window.supabaseClient
                         .from('messages')
                         .insert({
                             conversation_id: currentConversationId,
+                            sender_id: currentUser.id,
                             sender_email: currentUser.email,
+                            recipient_id: recipientId,
+                            landlord_id: conversation.landlord_id,
+                            tenant_id: conversation.tenant_id,
                             content: `Shared file: ${file.name}`,
                             message_type: 'file',
                             file_url: urlData.publicUrl,
