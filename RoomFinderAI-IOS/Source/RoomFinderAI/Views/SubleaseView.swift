@@ -120,7 +120,7 @@ struct SubleaseView: View {
     
     private var averageSubleasePrice: Int {
         guard !subleaseListings.isEmpty else { return 0 }
-        return subleaseListings.map { Int($0.price ?? 0) }.reduce(0, +) / subleaseListings.count
+        return subleaseListings.map { Int($0.price) }.reduce(0, +) / subleaseListings.count
     }
 }
 
@@ -164,7 +164,7 @@ struct SubleaseCard: View {
                 VStack(alignment: .leading, spacing: 8) {
                     // Title and price
                     HStack {
-                        Text(listing.title ?? "Unknown")
+                        Text(listing.title)
                             .font(.headline)
                             .fontWeight(.semibold)
                             .foregroundColor(.primary)
@@ -173,7 +173,7 @@ struct SubleaseCard: View {
                         Spacer()
                         
                         VStack(alignment: .trailing) {
-                            Text("$\(listing.price ?? 0)")
+                            Text("$\(Int(listing.price))")
                                 .font(.headline)
                                 .fontWeight(.bold)
                                 .foregroundColor(.primaryBlue)
@@ -198,7 +198,7 @@ struct SubleaseCard: View {
                         // Bedrooms
                         HStack {
                             Image(systemName: "bed.double")
-                            Text("\(listing.bedrooms ?? 0)")
+                            Text("\(listing.bedrooms)")
                         }
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -209,7 +209,7 @@ struct SubleaseCard: View {
                         Image(systemName: "location")
                             .foregroundColor(.secondary)
                         
-                        Text(listing.city ?? "Unknown")
+                        Text(listing.city)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         
@@ -227,7 +227,7 @@ struct SubleaseCard: View {
                     
                     // Key features
                     HStack {
-                        Text("• \(listing.utilities ?? "Unknown")")
+                        Text("• \(listing.utilities)")
                             .font(.caption)
                             .foregroundColor(.secondary)
                         
@@ -302,9 +302,13 @@ struct EmptySubleaseView: View {
 
 struct CreateSubleaseView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var listingsViewModel: SimpleListingsViewModel
     @State private var title = ""
     @State private var description = ""
     @State private var price = ""
+    @State private var city = ""
+    @State private var street = ""
+    @State private var postalCode = ""
     @State private var startDate = Date()
     @State private var endDate = Date()
     @State private var bedrooms = 1
@@ -312,6 +316,9 @@ struct CreateSubleaseView: View {
     @State private var utilities = ""
     @State private var contactInfo = ""
     @State private var images: [String] = []
+    @State private var isPosting = false
+    @State private var postError: String?
+    @State private var showingSuccess = false
     
     var body: some View {
         NavigationView {
@@ -329,6 +336,12 @@ struct CreateSubleaseView: View {
                             .multilineTextAlignment(.trailing)
                         Text("$/month")
                     }
+                }
+                
+                Section("Location") {
+                    TextField("City", text: $city)
+                    TextField("Street Address", text: $street)
+                    TextField("Postal Code", text: $postalCode)
                 }
                 
                 Section("Sublease Period") {
@@ -357,6 +370,26 @@ struct CreateSubleaseView: View {
                     }
                     
                     TextField("Utilities Included", text: $utilities)
+                        .onAppear {
+                            if utilities.isEmpty {
+                                utilities = "Not specified"
+                            }
+                        }
+                        .onChange(of: utilities) { newValue in
+                            NSLog("🔍 UTILITIES CHANGED: '%@'", newValue)
+                            print("🔍 DEBUG: Utilities field changed to: '\(newValue)'")
+                        }
+                    
+                    // DEBUG: Show utilities value in UI
+                    HStack {
+                        Text("DEBUG - Utilities:")
+                            .font(.caption)
+                            .foregroundColor(.red)
+                        Text("'\(utilities)'")
+                            .font(.caption)
+                            .foregroundColor(.red)
+                            .background(Color.yellow.opacity(0.3))
+                    }
                 }
                 
                 Section("Contact Information") {
@@ -380,13 +413,40 @@ struct CreateSubleaseView: View {
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Post") {
-                        createSublease()
+                    Button(isPosting ? "Posting..." : "Post") {
+                        NSLog("🚨 POST BUTTON TAPPED!")
+                        print("🚨 POST BUTTON TAPPED!")
+                        Task {
+                            await createSublease()
+                        }
                     }
-                    .disabled(title.isEmpty || price.isEmpty)
+                    .disabled(isPosting || !isFormValid)
                 }
             }
         }
+        .alert("Error", isPresented: .constant(postError != nil)) {
+            Button("OK") {
+                postError = nil
+            }
+        } message: {
+            Text(postError ?? "")
+        }
+        .alert("Success!", isPresented: $showingSuccess) {
+            Button("OK") {
+                dismiss()
+            }
+        } message: {
+            Text("Your sublease has been posted successfully!")
+        }
+    }
+    
+    private var isFormValid: Bool {
+        !title.isEmpty && 
+        !price.isEmpty && 
+        !city.isEmpty && 
+        !street.isEmpty && 
+        !postalCode.isEmpty &&
+        Double(price) != nil
     }
     
     private func calculateDuration() -> String {
@@ -401,10 +461,56 @@ struct CreateSubleaseView: View {
         }
     }
     
-    private func createSublease() {
-        // Implementation for creating sublease
-        print("Creating sublease: \(title)")
-        dismiss()
+    private func createSublease() async {
+        NSLog("🚨 ENTERED createSublease() function")
+        isPosting = true
+        postError = nil
+        
+        // Validate utilities field - ensure it's never empty or null
+        let finalUtilities = utilities.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Not specified" : utilities.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        NSLog("🔍 UTILITIES DEBUG - Original: '%@', Final: '%@'", utilities, finalUtilities)
+        
+        // Get user email for authentication (this should come from your auth system)
+        let userEmail = "user@example.com" // TODO: Replace with actual user email from auth
+        
+        // Create the listing data using SampleListingData structure
+        let listingData = SampleListingData(
+            title: title,
+            price: Int(Double(price) ?? 0),
+            city: city,
+            street: street,
+            postalCode: postalCode,
+            houseType: "sublease",
+            bedrooms: bedrooms,
+            utilities: finalUtilities,
+            description: description.isEmpty ? nil : description,
+            userEmail: userEmail
+        )
+        
+        // Debug: Print the utilities value being sent
+        NSLog("🔍 FINAL LISTING DATA - utilities: '%@'", finalUtilities)
+        print("🔍 DEBUG: Creating listing with utilities: '\(finalUtilities)'")
+        print("🔍 DEBUG: Utilities isEmpty: \(utilities.isEmpty)")
+        print("🔍 DEBUG: Full listing data: \(listingData)")
+        
+        do {
+            NSLog("🚨 CALLING createListing on supabase service...")
+            // Use the RealSupabaseService from the view model
+            let _ = try await listingsViewModel.supabaseService.createListing(listingData)
+            
+            NSLog("✅ CREATE LISTING SUCCESS!")
+            // Success - refresh the listings  
+            listingsViewModel.refreshListings()
+            showingSuccess = true
+        } catch {
+            NSLog("❌ CREATE LISTING FAILED: %@", error.localizedDescription)
+            // Handle error
+            postError = "Failed to post listing: \(error.localizedDescription)"
+        }
+        
+        NSLog("🚨 FINISHED createSublease() function")
+        isPosting = false
     }
 }
 
@@ -437,14 +543,14 @@ struct SubleaseDetailView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         // Title and price
                         HStack {
-                            Text(listing.title ?? "Unknown")
+                            Text(listing.title)
                                 .font(.title2)
                                 .fontWeight(.bold)
                             
                             Spacer()
                             
                             VStack(alignment: .trailing) {
-                                Text("$\(listing.price ?? 0)")
+                                Text("$\(Int(listing.price))")
                                     .font(.title2)
                                     .fontWeight(.bold)
                                     .foregroundColor(.primaryBlue)
@@ -474,9 +580,9 @@ struct SubleaseDetailView: View {
                                 .font(.headline)
                                 .fontWeight(.semibold)
                             
-                            DetailRow(icon: "bed.double", title: "Bedrooms", value: "\(listing.bedrooms ?? 0)")
-                            DetailRow(icon: "location", title: "Location", value: listing.city ?? "Unknown")
-                            DetailRow(icon: "bolt", title: "Utilities", value: listing.utilities ?? "Unknown")
+                            DetailRow(icon: "bed.double", title: "Bedrooms", value: "\(listing.bedrooms)")
+                            DetailRow(icon: "location", title: "Location", value: listing.city)
+                            DetailRow(icon: "bolt", title: "Utilities", value: listing.utilities)
                             DetailRow(icon: "clock", title: "Duration", value: "4 months")
                         }
                         
