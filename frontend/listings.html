@@ -5,204 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RoomFinderAI - Listings</title>
     <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
-    <script src="universal-auth-protection.js?v=3.0.1"></script>
+    <script src="universal-auth-protection.js"></script>
     
     <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
-    <script src="universal-auth-manager.js?v=2.0.1"></script>
-    
-    <!-- Auth Manager -->
-    <script src="/js/auth.js"></script>
-    
-    <!-- localStorage cleanup script -->
-    <script src="cleanup-localstorage.js"></script>
+    <script src="universal-auth-manager.js"></script>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    
-    <!-- Initialize AppConfig for auth.js -->
     <script>
-        window.AppConfig = window.AppConfig || { supabase: null };
-    </script>
-    <script>
-        // Use window scope to prevent re-declaration errors on page navigation
-        window.SUPABASE_URL = window.SUPABASE_URL || null;
-        window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || null;
-        window.GOOGLE_API_KEY = window.GOOGLE_API_KEY || null;
-        window.supabaseClient = window.supabaseClient || null;
-        window.supabaseReady = window.supabaseReady || false;
+        // Initialize configuration variables
+        let SUPABASE_URL;
+        let SUPABASE_ANON_KEY;
+        let GOOGLE_API_KEY;
+        let supabase;
 
         // Global initialization state tracking
-        window.isConfigLoaded = window.isConfigLoaded || false;
-        window.isDOMReady = window.isDOMReady || false;
-        window.initializationAttempts = window.initializationAttempts || 0;
+        let isConfigLoaded = false;
+        let isDOMReady = false;
+        let initializationAttempts = 0;
         const MAX_INIT_ATTEMPTS = 3;
 
-        // Early debug function to test if JavaScript is working
-        window.testJavaScript = function() {
-            console.log('✅ JavaScript is working!');
-            console.log('- Supabase Client:', !!window.supabaseClient);
-            console.log('- Current User:', !!localStorage.getItem('currentUser'));
-            console.log('- Chat Buttons:', document.querySelectorAll('.chat-btn').length);
-            return 'JavaScript working correctly';
-        };
-
-        // Safe localStorage helper to handle quota exceeded errors
-        function safeLocalStorageSetItem(key, value) {
-            try {
-                localStorage.setItem(key, value);
-                return true;
-            } catch (error) {
-                if (error.name === 'QuotaExceededError') {
-                    console.warn('⚠️ localStorage quota exceeded! Cleaning up old data...');
-                    
-                    // Clean up old data to make space
-                    const keysToClean = [];
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const storageKey = localStorage.key(i);
-                        // Remove old chat history, cached data, etc.
-                        if (storageKey.includes('chatHistory_') || 
-                            storageKey.includes('cache_') ||
-                            storageKey.includes('temp_')) {
-                            keysToClean.push(storageKey);
-                        }
-                    }
-                    
-                    // Remove old data
-                    keysToClean.forEach(k => localStorage.removeItem(k));
-                    console.log(`🧹 Cleaned up ${keysToClean.length} old localStorage keys`);
-                    
-                    // Try again
-                    try {
-                        localStorage.setItem(key, value);
-                        return true;
-                    } catch (retryError) {
-                        console.error('❌ Still can\'t save to localStorage after cleanup:', retryError);
-                        return false;
-                    }
-                } else {
-                    console.error('❌ localStorage error:', error);
-                    return false;
-                }
-            }
-        }
-
-        // Fallback chat function - always available
-        window.fallbackStartChat = function(listing) {
-            console.log('🔧 Using fallback chat system');
-            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            
-            if (!currentUser.email) {
-                alert('Please log in to start a chat.');
-                window.location.href = '/frontend/login.html';
-                return;
-            }
-            
-            const chatModal = document.getElementById('chatModal');
-            if (chatModal) {
-                document.getElementById('chatTitle').textContent = `Chat about: ${listing.title || 'Listing'}`;
-                chatModal.classList.add('active');
-                console.log('✅ Fallback chat opened');
-            } else {
-                alert('Chat system is loading. Please try again in a moment.');
-            }
-        };
-
-        // Direct onclick handler for chat buttons
-        window.handleChatClick = function(listing) {
-            console.log('🔘 Direct chat button click handler triggered');
-            console.log('Listing:', listing);
-            
-            // Try the main function first
-            if (window.startConversation) {
-                console.log('Using startConversation');
-                window.startConversation(listing);
-            } else if (window.fallbackStartChat) {
-                console.log('Using fallbackStartChat');
-                window.fallbackStartChat(listing);
-            } else {
-                console.error('No chat function available');
-                // Last resort - just open the modal
-                const modal = document.getElementById('chatModal');
-                if (modal) {
-                    modal.classList.add('active');
-                    console.log('Forced modal open');
-                }
-            }
-        };
-
-        // Load configuration from Railway API (only if not already loaded)
-        if (!window.isConfigLoaded) {
-            fetch('/api/config')
+        // Load configuration from Railway API
+        fetch('/api/config')
             .then(response => response.json())
             .then(config => {
-                window.SUPABASE_URL = config.SUPABASE_URL;
-                window.SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
-                window.GOOGLE_API_KEY = config.GOOGLE_API_KEY;
+                SUPABASE_URL = config.SUPABASE_URL;
+                SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
+                GOOGLE_API_KEY = config.GOOGLE_API_KEY;
                 
                 // Debug config loading
                 console.log('🔧 Listings config loaded:', {
-                    hasSupabaseURL: !!window.SUPABASE_URL,
-                    hasSupabaseKey: !!window.SUPABASE_ANON_KEY,
-                    hasGoogleKey: !!window.GOOGLE_API_KEY
+                    hasSupabaseURL: !!SUPABASE_URL,
+                    hasSupabaseKey: !!SUPABASE_ANON_KEY,
+                    hasGoogleKey: !!GOOGLE_API_KEY
                 });
 
-                // Initialize Supabase client with proper headers
-                console.log('🔑 Initializing Supabase with:', {
-                    url: window.SUPABASE_URL,
-                    hasKey: !!window.SUPABASE_ANON_KEY,
-                    keyLength: window.SUPABASE_ANON_KEY ? window.SUPABASE_ANON_KEY.length : 0,
-                    keyPreview: window.SUPABASE_ANON_KEY ? window.SUPABASE_ANON_KEY.substring(0, 20) + '...' : 'null'
-                });
+                // Initialize Supabase client
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('📡 Supabase client initialized');
                 
-                if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-                    console.error('❌ Supabase configuration missing:', {
-                        url: window.SUPABASE_URL,
-                        key: window.SUPABASE_ANON_KEY
-                    });
-                    window.supabaseReady = false;
-                } else if (!window.supabaseClient || !window.supabaseReady) {
-                    // Only create client if not already created (use global supabase from CDN)
-                    window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
-                        auth: {
-                            persistSession: true,
-                            autoRefreshToken: true,
-                            detectSessionInUrl: true
-                        },
-                        global: {
-                            headers: {
-                                'apikey': window.SUPABASE_ANON_KEY,
-                                'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`
-                            }
-                        },
-                        db: {
-                            schema: 'public'
-                        }
-                    });
-                    window.supabaseReady = true;
-                    // Also set AppConfig.supabase for AuthManager
-                    if (window.AppConfig) {
-                        window.AppConfig.supabase = window.supabaseClient;
-                        console.log('📡 Supabase client initialized and set in AppConfig');
-                    } else {
-                        console.log('📡 Supabase client initialized with API key');
-                    }
-                } else {
-                    console.log('📡 Supabase client already initialized, skipping');
-                    // Ensure AppConfig.supabase is set
-                    if (window.AppConfig && window.supabaseClient) {
-                        window.AppConfig.supabase = window.supabaseClient;
-                    }
-                }
-                
-                window.isConfigLoaded = true;
-                
-                // Initialize AuthManager early if available
-                if (window.AuthManager && typeof window.AuthManager.initialize === 'function') {
-                    console.log('Early initialization of AuthManager...');
-                    window.AuthManager.initialize();
-                }
-                
+                isConfigLoaded = true;
                 // Only initialize if DOM is also ready
                 attemptInitialization();
             })
@@ -210,105 +53,44 @@
                 console.error('❌ Failed to load configuration:', error);
                 showError('Failed to load configuration. Please refresh the page.');
             });
-        } else {
-            console.log('🔧 Configuration already loaded, skipping fetch');
-            attemptInitialization();
-        }
-
-        // localStorage helper functions with quota management
-        function safeSetItem(key, value) {
-            try {
-                localStorage.setItem(key, value);
-                return true;
-            } catch (e) {
-                if (e.name === 'QuotaExceededError' || e.code === 22) {
-                    console.warn('localStorage quota exceeded, cleaning up old data');
-                    cleanupLocalStorage();
-                    try {
-                        localStorage.setItem(key, value);
-                        return true;
-                    } catch (e2) {
-                        console.error('Failed to set localStorage item even after cleanup:', e2);
-                        return false;
-                    }
-                } else {
-                    console.error('Failed to set localStorage item:', e);
-                    return false;
-                }
-            }
-        }
-        
-        function cleanupLocalStorage() {
-            try {
-                // Remove old cached data
-                const keysToRemove = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && (
-                        key.startsWith('allListings_') ||
-                        key.startsWith('cachedListings_') ||
-                        key.startsWith('oldData_') ||
-                        key.includes('backup') ||
-                        key.includes('temp')
-                    )) {
-                        keysToRemove.push(key);
-                    }
-                }
-                
-                keysToRemove.forEach(key => {
-                    localStorage.removeItem(key);
-                    console.log('Removed old localStorage key:', key);
-                });
-                
-                // Limit users array size
-                const users = JSON.parse(localStorage.getItem('users') || '[]');
-                if (users.length > 100) {
-                    const limitedUsers = users.slice(-50); // Keep only last 50 users
-                    safeSetItem('users', JSON.stringify(limitedUsers));
-                    console.log('Limited users array to 50 entries');
-                }
-            } catch (e) {
-                console.error('Error during localStorage cleanup:', e);
-            }
-        }
 
         // Wait for DOM to be ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 console.log('📄 DOM Content Loaded');
-                window.isDOMReady = true;
+                isDOMReady = true;
                 attemptInitialization();
             });
         } else {
             console.log('📄 DOM already ready');
-            window.isDOMReady = true;
+            isDOMReady = true;
             attemptInitialization();
         }
 
         // Safe initialization function with retry mechanism
         function attemptInitialization() {
             console.log('🚀 Attempting initialization...', {
-                configLoaded: window.isConfigLoaded,
-                domReady: window.isDOMReady,
-                attempt: window.initializationAttempts + 1
+                configLoaded: isConfigLoaded,
+                domReady: isDOMReady,
+                attempt: initializationAttempts + 1
             });
 
-            if (!window.isConfigLoaded || !window.isDOMReady) {
+            if (!isConfigLoaded || !isDOMReady) {
                 console.log('⏳ Waiting for prerequisites...');
                 return;
             }
 
-            window.initializationAttempts++;
+            initializationAttempts++;
             
             try {
-                console.log(`🔄 Starting initialization attempt ${window.initializationAttempts}/${MAX_INIT_ATTEMPTS}`);
+                console.log(`🔄 Starting initialization attempt ${initializationAttempts}/${MAX_INIT_ATTEMPTS}`);
                 initializeListingsPage();
                 console.log('✅ Initialization completed successfully');
             } catch (error) {
-                console.error(`❌ Initialization attempt ${window.initializationAttempts} failed:`, error);
+                console.error(`❌ Initialization attempt ${initializationAttempts} failed:`, error);
                 
-                if (window.initializationAttempts < MAX_INIT_ATTEMPTS) {
-                    console.log(`🔄 Retrying in 1 second... (${MAX_INIT_ATTEMPTS - window.initializationAttempts} attempts remaining)`);
+                if (initializationAttempts < MAX_INIT_ATTEMPTS) {
+                    console.log(`🔄 Retrying in 1 second... (${MAX_INIT_ATTEMPTS - initializationAttempts} attempts remaining)`);
                     setTimeout(() => {
                         attemptInitialization();
                     }, 1000);
@@ -320,7 +102,96 @@
         }
     </script>
     
-    <!-- Authentication protection handled by universal-auth-protection.js -->
+    <!-- 🛡️ EMERGENCY AUTHENTICATION PROTECTION SYSTEM -->
+    <script>
+        console.log('🛡️ Initializing Emergency Authentication Protection System for Listings Page...');
+        
+        // Store original functions to prevent blocking
+        const ORIGINAL_LOCATION_HREF = Object.getOwnPropertyDescriptor(window.location, 'href');
+        const ORIGINAL_LOCATION_ASSIGN = window.location.assign;
+        const ORIGINAL_LOCATION_REPLACE = window.location.replace;
+        const ORIGINAL_LOCATION_RELOAD = window.location.reload;
+        
+        // Emergency protection: Block ALL redirects to login pages
+        Object.defineProperty(window.location, 'href', {
+            set: function(url) {
+                if (typeof url === 'string' && url.includes('/login')) {
+                    console.error('🚫 BLOCKED location.href redirect to login:', url);
+                    console.trace('Stack trace for blocked redirect:');
+                    return; // Block the redirect
+                }
+                return ORIGINAL_LOCATION_HREF.set.call(this, url);
+            },
+            get: function() {
+                return ORIGINAL_LOCATION_HREF.get.call(this);
+            }
+        });
+        
+        window.location.assign = function(url) {
+            if (typeof url === 'string' && url.includes('/login')) {
+                console.error('🚫 BLOCKED location.assign to login:', url);
+                console.trace('Stack trace for blocked redirect:');
+                return; // Block the redirect
+            }
+            return ORIGINAL_LOCATION_ASSIGN.call(this, url);
+        };
+        
+        window.location.replace = function(url) {
+            if (typeof url === 'string' && url.includes('/login')) {
+                console.error('🚫 BLOCKED location.replace to login:', url);
+                console.trace('Stack trace for blocked redirect:');
+                return; // Block the redirect
+            }
+            return ORIGINAL_LOCATION_REPLACE.call(this, url);
+        };
+        
+        // Block localStorage.removeItem for currentUser
+        const ORIGINAL_REMOVE_ITEM = localStorage.removeItem;
+        localStorage.removeItem = function(key) {
+            if (key === 'currentUser') {
+                console.error('⚠️ BLOCKING currentUser removal for debugging');
+                console.trace('Stack trace for blocked currentUser removal:');
+                return; // Block the removal
+            }
+            return ORIGINAL_REMOVE_ITEM.call(this, key);
+        };
+        
+        // Backup system for user data
+        function createUserBackup() {
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                localStorage.setItem('currentUser_backup', currentUser);
+                localStorage.setItem('currentUser_backup_timestamp', Date.now().toString());
+                console.log('💾 User backup created');
+            }
+        }
+        
+        // Restore system for user data
+        function restoreUserIfNeeded() {
+            const currentUser = localStorage.getItem('currentUser');
+            const backup = localStorage.getItem('currentUser_backup');
+            
+            if (!currentUser && backup) {
+                console.log('🔄 Restoring user from backup');
+                localStorage.setItem('currentUser', backup);
+                return true;
+            }
+            return false;
+        }
+        
+        // Create initial backup
+        createUserBackup();
+        
+        // Continuous monitoring and restoration
+        setInterval(() => {
+            if (restoreUserIfNeeded()) {
+                console.log('🔄 User data restored automatically');
+            }
+            createUserBackup(); // Refresh backup
+        }, 5000);
+        
+        console.log('✅ Emergency Authentication Protection System Active');
+    </script>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -1594,19 +1465,8 @@
                     <textarea id="description" name="description" rows="4" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="Describe the property..."></textarea>
                 </div>
                 <div>
-                    <label for="media" class="block text-sm font-medium text-gray-700">Attach Pictures or Videos (max 50 images, 50MB total, JPEG/PNG/MP4)</label>
+                    <label for="media" class="block text-sm font-medium text-gray-700">Attach Pictures or Videos (max 10MB, JPEG/PNG/MP4)</label>
                     <input type="file" id="media" name="media" accept="image/jpeg,image/png,video/mp4" multiple class="mt-1 w-full p-3 border border-gray-200 rounded-lg">
-                    <div id="mediaCount" class="text-sm text-gray-500 mt-1">
-                        <span id="fileCount">0</span>/50 images selected
-                    </div>
-                    <div id="uploadProgress" class="hidden mt-2">
-                        <div class="text-sm text-gray-600 mb-1">
-                            Uploading: <span id="uploadStatus">0/0</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div id="uploadProgressBar" class="bg-purple-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-                        </div>
-                    </div>
                     <div id="mediaPreview" class="media-preview flex flex-wrap mt-2"></div>
                 </div>
                 <div>
@@ -1796,7 +1656,7 @@
             <div class="chat-modal-content">
                 <div class="chat-header">
                     <h2 id="chatTitle" class="text-xl font-bold text-gray-800">Chat</h2>
-                    <span id="chatClose" class="close-button chat-close-button">×</span>
+                    <span class="close-button chat-close-button">×</span>
                 </div>
                 <div id="chatMessages" class="chat-messages">
                     <!-- Scroll to bottom button -->
@@ -1823,18 +1683,6 @@
             </div>
         </div>
     </main>
-
-    <!-- Loading Popup Modal -->
-    <div id="loadingModal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
-        <div class="absolute inset-0 flex items-center justify-center">
-            <div class="bg-white rounded-xl p-8 mx-4 text-center shadow-2xl max-w-sm w-full">
-                <div class="animate-spin w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">Loading Listings</h3>
-                <p class="text-gray-600 text-sm">Finding your saved listing...</p>
-            </div>
-        </div>
-    </div>
 
     <!-- Footer -->
     <footer class="bg-gray-800 text-white py-8">
@@ -2003,9 +1851,9 @@
                 let listing = null;
                 
                 // Try Supabase first
-                if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient) {
+                if (typeof supabase !== 'undefined' && supabase) {
                     try {
-                        const { data, error } = await window.supabaseClient
+                        const { data, error } = await supabase
                             .from('listings')
                             .select('*')
                             .eq('id', listingId)
@@ -2269,78 +2117,6 @@
             console.log('- Valid coordinates:', validCoordinates.length);
         }
 
-        // Global smart scroll variables and functions
-        let unreadMessagesCount = 0;
-        let userScrolledUp = false;
-        
-        // Smart scroll function - only scrolls if user is at bottom
-        function smartScrollToBottom() {
-            const chatMessagesContainer = document.getElementById('chatMessages');
-            if (!chatMessagesContainer) return;
-            
-            const scrollTop = chatMessagesContainer.scrollTop;
-            const scrollHeight = chatMessagesContainer.scrollHeight;
-            const clientHeight = chatMessagesContainer.clientHeight;
-            const scrollThreshold = 100; // pixels from bottom
-            
-            const isNearBottom = (scrollHeight - scrollTop - clientHeight) <= scrollThreshold;
-            
-            if (isNearBottom && !userScrolledUp) {
-                chatMessagesContainer.scrollTop = scrollHeight;
-                unreadMessagesCount = 0;
-                updateScrollButton();
-            } else {
-                unreadMessagesCount++;
-                updateScrollButton();
-            }
-        }
-        
-        // Check if user is at bottom
-        function isUserAtBottom() {
-            const chatMessagesContainer = document.getElementById('chatMessages');
-            if (!chatMessagesContainer) return true;
-            const scrollTop = chatMessagesContainer.scrollTop;
-            const scrollHeight = chatMessagesContainer.scrollHeight;
-            const clientHeight = chatMessagesContainer.clientHeight;
-            return (scrollHeight - scrollTop - clientHeight) <= 50;
-        }
-        
-        // Update scroll button visibility and unread count
-        function updateScrollButton() {
-            const scrollBtn = document.getElementById('scrollToBottomBtn');
-            const unreadCountEl = document.getElementById('unreadCount');
-            
-            if (!scrollBtn || !unreadCountEl) return;
-            
-            const atBottom = isUserAtBottom();
-            
-            if (atBottom) {
-                scrollBtn.classList.add('hidden');
-                unreadMessagesCount = 0;
-                userScrolledUp = false;
-            } else {
-                scrollBtn.classList.remove('hidden');
-                userScrolledUp = true;
-            }
-            
-            if (unreadMessagesCount > 0) {
-                unreadCountEl.textContent = unreadMessagesCount;
-                unreadCountEl.classList.remove('hidden');
-            } else {
-                unreadCountEl.classList.add('hidden');
-            }
-        }
-        
-        // Scroll to bottom function
-        function scrollToBottom() {
-            const chatMessagesContainer = document.getElementById('chatMessages');
-            if (!chatMessagesContainer) return;
-            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-            unreadMessagesCount = 0;
-            userScrolledUp = false;
-            updateScrollButton();
-        }
-
         // Authentication check and header update
         async function initializeListingsPage() {
             console.log('DOMContentLoaded event fired');
@@ -2351,66 +2127,56 @@
                 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzZCNzI4MCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4=',
                 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0ZGOUYxQyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4='
             ];
-            // Use AuthManager to update profile UI if available
-            if (window.AuthManager && typeof window.AuthManager.updateProfileUI === 'function') {
-                console.log('Using AuthManager to update profile UI');
-                window.AuthManager.updateProfileUI();
-            } else {
-                // Fallback to manual update
-                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                console.log('Current user:', currentUser);
-                const authSection = document.getElementById('authSection');
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            console.log('Current user:', currentUser);
+            const authSection = document.getElementById('authSection');
 
-                if (!currentUser) {
-                    console.log('No current user, showing anonymous interface');
-                    // Show login/register interface for anonymous users
-                    authSection.innerHTML = `
-                        <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                            Login/Register
-                        </a>
-                    `;
-                    // Continue loading page without authentication
-                    loadListings();
+            if (!currentUser) {
+                console.log('No current user, showing anonymous interface');
+                // Show login/register interface for anonymous users
+                authSection.innerHTML = `
+                    <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                        Login/Register
+                    </a>
+                `;
+                // Continue loading page without authentication
+                loadListings();
+                return;
+            }
+
+            // Set current user email for RLS
+            try {
+                const { error } = await supabase.rpc('set_current_user_email', { email: currentUser.email });
+                console.log('RPC set_current_user_email response:', { error });
+                if (error) {
+                    console.error('Error setting current user email:', error);
+                    alert('Failed to initialize session: ' + error.message);
                     return;
                 }
-
-                // Set current user email for RLS (only if Supabase is ready)
-                if (window.supabaseReady && window.supabaseClient) {
-                    try {
-                        const { error } = await window.supabaseClient.rpc('set_current_user_email', { email: currentUser.email });
-                        console.log('RPC set_current_user_email response:', { error });
-                        if (error) {
-                            console.error('Error setting current user email:', error);
-                            // Don't alert for RPC errors - continue without RLS
-                        } else {
-                            console.log('Current user email set for RLS:', currentUser.email);
-                        }
-                    } catch (err) {
-                        console.error('RPC call failed:', err);
-                        // Don't alert for RPC errors - continue without RLS
-                    }
-                } else {
-                    console.log('Supabase not ready yet, skipping RLS setup');
-                }
-
-                if (!currentUser.profileImage) {
-                    currentUser.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
-                    let users = JSON.parse(localStorage.getItem('users')) || [];
-                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                    safeSetItem('users', JSON.stringify(users));
-                    safeSetItem('currentUser', JSON.stringify(currentUser));
-                }
-                authSection.innerHTML = `
-                    <div class="flex items-center space-x-2">
-                        <div class="relative">
-                            <span id="profileNotificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hidden z-10">0</span>
-                            <a href="/profile">
-                                <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
-                            </a>
-                        </div>
-                    </div>
-                `;
+                console.log('Current user email set for RLS:', currentUser.email);
+            } catch (err) {
+                console.error('RPC call failed:', err);
+                alert('Failed to initialize session. Please check your connection.');
+                return;
             }
+
+            if (!currentUser.profileImage) {
+                currentUser.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
+                let users = JSON.parse(localStorage.getItem('users')) || [];
+                users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                localStorage.setItem('users', JSON.stringify(users));
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+            authSection.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <div class="relative">
+                        <span id="profileNotificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hidden z-10">0</span>
+                        <a href="/profile">
+                            <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
+                        </a>
+                    </div>
+                </div>
+            `;
 
             // Initialize map
             initMap();
@@ -2450,7 +2216,7 @@
                         const originalLength = userListings.length;
                         userListings = userListings.filter(l => l.id !== listingId);
                         if (userListings.length < originalLength) {
-                            safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
+                            localStorage.setItem(userListingsKey, JSON.stringify(userListings));
                             console.log(`🧹 Cleaned ${userListingsKey}`);
                         }
                         
@@ -2465,7 +2231,7 @@
                     });
                     
                     // Update users array
-                    safeSetItem('users', JSON.stringify(users));
+                    localStorage.setItem('users', JSON.stringify(users));
                     
                     // Also update currentUser if it exists
                     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -2473,7 +2239,7 @@
                         const originalLength = currentUser.listings.length;
                         currentUser.listings = currentUser.listings.filter(l => l.id !== listingId);
                         if (currentUser.listings.length < originalLength) {
-                            safeSetItem('currentUser', JSON.stringify(currentUser));
+                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
                             console.log('🧹 Cleaned currentUser.listings');
                         }
                     }
@@ -2484,10 +2250,10 @@
                     console.log('🔄 Refreshing listings display...');
                     await displayListings(); // Refresh listings display
                     
-                    // Also reload favorite states immediately 
+                    // Also reload favorite states after a short delay
                     setTimeout(() => {
                         loadFavoriteStates();
-                    }, 50);
+                    }, 200);
                 }, 100);
             });
             
@@ -2502,10 +2268,10 @@
                         console.log('🔄 Refreshing listings due to storage event...');
                         await displayListings();
                         
-                        // Also reload favorite states immediately
+                        // Also reload favorite states
                         setTimeout(() => {
                             loadFavoriteStates();
-                        }, 50);
+                        }, 200);
                     }, 100);
                 }
             });
@@ -2614,22 +2380,6 @@
             if (typeof input !== 'string') return '';
             return input.replace(/[^a-zA-Z0-9\s,.-]/g, '').trim();
         }
-        
-        // HTML escape function for chat messages - preserves all characters while preventing XSS
-        function escapeHtml(text) {
-            if (typeof text !== 'string') return '';
-            
-            // Log special characters for debugging
-            if (/[?!öÖäÄüÜßáéíóúàèìòùâêîôûãñç]/.test(text)) {
-                console.log('🔤 Special characters detected in message (will be preserved):', text);
-            }
-            
-            // Create a DOM element and use textContent to safely escape only dangerous HTML characters
-            // This preserves UTF-8 characters, punctuation, and international characters
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
 
         // Load cities.json for autocomplete
         let cities = [];
@@ -2730,155 +2480,39 @@
             const files = Array.from(mediaInput.files);
             let totalSize = 0;
 
-            // Check file count limit
-            if (files.length > 50) {
-                alert('You can upload a maximum of 50 images. Please select fewer files.');
-                mediaInput.value = '';
-                document.getElementById('fileCount').textContent = '0';
-                return;
-            }
-
-            // Update file count display
-            document.getElementById('fileCount').textContent = files.length;
-
-            files.forEach((file, index) => {
+            files.forEach(file => {
                 totalSize += file.size;
-                if (totalSize > 50 * 1024 * 1024) {
-                    alert('Total file size exceeds 50MB limit. Please select smaller files or fewer files.');
+                if (totalSize > 10 * 1024 * 1024) {
+                    alert('Total file size exceeds 10MB limit.');
                     mediaInput.value = '';
                     mediaPreview.innerHTML = '';
                     uploadedFiles = [];
-                    document.getElementById('fileCount').textContent = '0';
                     return;
                 }
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const dataUrl = e.target.result;
-                    uploadedFiles.push({ name: file.name, type: file.type, data: dataUrl, file: file, index: index });
-                    
-                    // Create enhanced preview container
+                    uploadedFiles.push({ name: file.name, type: file.type, data: dataUrl, file: file });
+                    const previewElement = file.type.startsWith('image/')
+                        ? `<img src="${dataUrl}" alt="${file.name}">`
+                        : `<video src="${dataUrl}" controls></video>`;
                     const previewContainer = document.createElement('div');
-                    previewContainer.className = 'relative inline-block m-2 border-2 border-gray-200 rounded-lg overflow-hidden';
-                    previewContainer.style.width = '120px';
-                    previewContainer.style.height = '120px';
-                    previewContainer.dataset.index = index;
-                    
-                    // Add primary image badge for first image
-                    const isPrimary = index === 0;
-                    const primaryBadge = isPrimary ? 
-                        `<div class="absolute top-1 left-1 bg-purple-600 text-white text-xs px-2 py-1 rounded-full font-semibold z-10">PRIMARY</div>` : '';
-                    
-                    // Create media element
-                    const mediaElement = file.type.startsWith('image/')
-                        ? `<img src="${dataUrl}" alt="${file.name}" class="w-full h-full object-cover">`
-                        : `<video src="${dataUrl}" class="w-full h-full object-cover" muted></video>`;
-                    
-                    // Add move buttons for reordering
-                    const moveButtons = index > 0 ? 
-                        `<button type="button" onclick="moveImageUp(${index})" class="absolute top-1 right-1 bg-gray-800 bg-opacity-70 text-white w-6 h-6 rounded-full text-xs hover:bg-opacity-90 transition" title="Move up">▲</button>` : '';
-                    const moveDownBtn = index < files.length - 1 ? 
-                        `<button type="button" onclick="moveImageDown(${index})" class="absolute top-7 right-1 bg-gray-800 bg-opacity-70 text-white w-6 h-6 rounded-full text-xs hover:bg-opacity-90 transition" title="Move down">▼</button>` : '';
-                    
-                    // File name overlay
-                    const nameOverlay = `<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 truncate" title="${file.name}">${file.name}</div>`;
-                    
-                    previewContainer.innerHTML = `
-                        ${mediaElement}
-                        ${primaryBadge}
-                        ${moveButtons}
-                        ${moveDownBtn}
-                        ${nameOverlay}
-                    `;
-                    
-                    mediaPreview.appendChild(previewContainer);
-                    console.log('Enhanced preview added for file:', file.name, 'Primary:', isPrimary);
+                    previewContainer.innerHTML = previewElement;
+                    mediaPreview.appendChild(previewContainer.firstChild);
+                    console.log('Preview added for file:', file.name);
                 };
                 reader.readAsDataURL(file);
             });
             console.log('Files selected:', files.map(f => f.name));
         });
 
-        // Image reordering functions
-        window.moveImageUp = function(index) {
-            if (index > 0 && index < uploadedFiles.length) {
-                // Swap with previous element
-                [uploadedFiles[index - 1], uploadedFiles[index]] = [uploadedFiles[index], uploadedFiles[index - 1]];
-                refreshPreview();
-            }
-        };
-
-        window.moveImageDown = function(index) {
-            if (index >= 0 && index < uploadedFiles.length - 1) {
-                // Swap with next element
-                [uploadedFiles[index], uploadedFiles[index + 1]] = [uploadedFiles[index + 1], uploadedFiles[index]];
-                refreshPreview();
-            }
-        };
-
-        function refreshPreview() {
-            mediaPreview.innerHTML = '';
-            uploadedFiles.forEach((fileObj, index) => {
-                // Update the index in the file object
-                fileObj.index = index;
-                
-                // Create enhanced preview container
-                const previewContainer = document.createElement('div');
-                previewContainer.className = 'relative inline-block m-2 border-2 border-gray-200 rounded-lg overflow-hidden';
-                previewContainer.style.width = '120px';
-                previewContainer.style.height = '120px';
-                previewContainer.dataset.index = index;
-                
-                // Add primary image badge for first image
-                const isPrimary = index === 0;
-                const primaryBadge = isPrimary ? 
-                    `<div class="absolute top-1 left-1 bg-purple-600 text-white text-xs px-2 py-1 rounded-full font-semibold z-10">PRIMARY</div>` : '';
-                
-                // Create media element
-                const mediaElement = fileObj.type.startsWith('image/')
-                    ? `<img src="${fileObj.data}" alt="${fileObj.name}" class="w-full h-full object-cover">`
-                    : `<video src="${fileObj.data}" class="w-full h-full object-cover" muted></video>`;
-                
-                // Add move buttons for reordering
-                const moveButtons = index > 0 ? 
-                    `<button type="button" onclick="moveImageUp(${index})" class="absolute top-1 right-1 bg-gray-800 bg-opacity-70 text-white w-6 h-6 rounded-full text-xs hover:bg-opacity-90 transition" title="Move up">▲</button>` : '';
-                const moveDownBtn = index < uploadedFiles.length - 1 ? 
-                    `<button type="button" onclick="moveImageDown(${index})" class="absolute top-7 right-1 bg-gray-800 bg-opacity-70 text-white w-6 h-6 rounded-full text-xs hover:bg-opacity-90 transition" title="Move down">▼</button>` : '';
-                
-                // File name overlay
-                const nameOverlay = `<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 truncate" title="${fileObj.name}">${fileObj.name}</div>`;
-                
-                previewContainer.innerHTML = `
-                    ${mediaElement}
-                    ${primaryBadge}
-                    ${moveButtons}
-                    ${moveDownBtn}
-                    ${nameOverlay}
-                `;
-                
-                mediaPreview.appendChild(previewContainer);
-            });
-            console.log('Preview refreshed, new order:', uploadedFiles.map(f => f.name));
-        }
-
         // Upload media to Supabase
         async function uploadMedia(files) {
             const uploadedMedia = [];
-            const storageApiUrl = `${window.SUPABASE_URL}/storage/v1/object/listing-media/Photos`;
-            
-            // Show progress indicator
-            const progressDiv = document.getElementById('uploadProgress');
-            const statusSpan = document.getElementById('uploadStatus');
-            const progressBar = document.getElementById('uploadProgressBar');
-            
-            if (files.length > 0) {
-                progressDiv.classList.remove('hidden');
-                statusSpan.textContent = `0/${files.length}`;
-                progressBar.style.width = '0%';
-            }
+            const storageApiUrl = `${SUPABASE_URL}/storage/v1/object/listing-media/Photos`;
 
-            for (let i = 0; i < files.length; i++) {
-                const fileObj = files[i];
+            for (const fileObj of files) {
                 const file = fileObj.file;
                 const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
                 const filePath = fileName;
@@ -2924,8 +2558,8 @@
                     const response = await fetch(`${storageApiUrl}/${filePath}`, {
                         method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`,
-                            'apikey': window.SUPABASE_ANON_KEY
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'apikey': SUPABASE_ANON_KEY
                         },
                         body: formData
                     });
@@ -2935,7 +2569,7 @@
                         throw new Error(`Upload failed: ${response.status} - ${errorText}`);
                     }
 
-                    const publicUrl = `${window.SUPABASE_URL}/storage/v1/object/public/listing-media/Photos/${filePath}`;
+                    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/listing-media/Photos/${filePath}`;
                     let verifyResponse = await fetch(publicUrl, { method: 'HEAD' });
                     let serverContentType = verifyResponse.headers.get('Content-Type');
                     console.log('Server-reported content type:', { name: file.name, serverContentType });
@@ -2945,8 +2579,8 @@
                         await fetch(`${storageApiUrl}/${filePath}`, {
                             method: 'DELETE',
                             headers: {
-                            'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`,
-                            'apikey': window.SUPABASE_ANON_KEY
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'apikey': SUPABASE_ANON_KEY
                             }
                         });
 
@@ -2959,8 +2593,8 @@
                         const reUploadResponse = await fetch(`${storageApiUrl}/${filePath}`, {
                             method: 'POST',
                             headers: {
-                                'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}`,
-                                'apikey': window.SUPABASE_ANON_KEY
+                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                                'apikey': SUPABASE_ANON_KEY
                             },
                             body: reUploadFormData
                         });
@@ -2983,28 +2617,14 @@
                     uploadedMedia.push({
                         name: file.name,
                         type: contentType,
-                        url: publicUrl
-                        // Removed data property to avoid localStorage quota issues
+                        url: publicUrl,
+                        data: fileObj.data
                     });
-                    
-                    // Update progress
-                    statusSpan.textContent = `${i + 1}/${files.length}`;
-                    const progressPercent = ((i + 1) / files.length) * 100;
-                    progressBar.style.width = `${progressPercent}%`;
-                    
                 } catch (err) {
                     console.error('Upload failed for', file.name, err);
-                    // Hide progress on error
-                    progressDiv.classList.add('hidden');
                     throw err;
                 }
             }
-            
-            // Hide progress when complete
-            setTimeout(() => {
-                progressDiv.classList.add('hidden');
-            }, 1000);
-            
             return uploadedMedia;
         }
 
@@ -3013,52 +2633,39 @@
             console.log('Fetching listings from all sources');
             let allListings = [];
             
-            // Initialize Supabase client if not already done
-            const supabase = window.supabaseClient;
-            
             // Try to fetch from Supabase first
-            if (window.supabaseClient && window.SUPABASE_ANON_KEY) {
+            if (typeof supabase !== 'undefined' && supabase) {
                 try {
-                    console.log('Making Supabase request with API key:', !!window.SUPABASE_ANON_KEY);
-                    const { data, error } = await window.supabaseClient
+                    const { data, error } = await supabase
                         .from('listings')
                         .select('*')
                         .order('created_at', { ascending: false });
-                    console.log('Supabase fetch result:', { dataLength: data?.length, error });
+                    console.log('Supabase fetch result:', { data, error });
                     if (!error && data) {
                         allListings = data || [];
                         console.log('✅ Loaded', allListings.length, 'listings from Supabase');
-                    } else if (error) {
-                        console.error('❌ Supabase error:', error.message);
                     }
                 } catch (supabaseError) {
                     console.log('Supabase fetch failed:', supabaseError);
                 }
-            } else {
-                console.error('❌ Supabase client not initialized!', {
-                    supabaseClient: !!window.supabaseClient,
-                    supabase: !!window.supabaseClient,
-                    ANON_KEY: !!window.SUPABASE_ANON_KEY
-                });
             }
             
             // Also include localStorage listings from all users
             try {
-                // Skip the massive 'users' array to avoid quota issues
-                // Instead, just load current user's listings
-                const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                const users = JSON.parse(localStorage.getItem('users')) || [];
                 const localListings = [];
                 
-                if (currentUser.email) {
-                    const userListingsKey = `userListings_${currentUser.email}`;
+                users.forEach(user => {
+                    // Check userListings_${email} key
+                    const userListingsKey = `userListings_${user.email}`;
                     const userStoredListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                     localListings.push(...userStoredListings);
                     
-                    // Also check user.listings for backward compatibility
-                    if (currentUser.listings && Array.isArray(currentUser.listings)) {
-                        localListings.push(...currentUser.listings);
+                    // Also check user.listings
+                    if (user.listings && Array.isArray(user.listings)) {
+                        localListings.push(...user.listings);
                     }
-                }
+                });
                 
                 // Merge Supabase and localStorage listings, removing duplicates
                 const allListingsMap = new Map();
@@ -3095,40 +2702,9 @@
             }
         }
 
-        // Check and show loading modal on page load if needed
-        function checkForAutoOpenListing() {
-            const autoOpenListingId = sessionStorage.getItem('autoOpenListingId');
-            if (autoOpenListingId) {
-                console.log('🎯 Auto-open listing detected, showing loading modal');
-                showLoadingModal();
-                return true;
-            }
-            return false;
-        }
-
         // Display listings
         async function displayListings() {
             console.log('🔄 Starting displayListings function');
-            
-            // Wait for Supabase to be initialized if not ready
-            if (!window.supabaseReady) {
-                console.log('⏳ Waiting for Supabase initialization...');
-                await new Promise(resolve => {
-                    const checkInterval = setInterval(() => {
-                        if (window.supabaseReady) {
-                            clearInterval(checkInterval);
-                            console.log('✅ Supabase is now ready');
-                            resolve();
-                        }
-                    }, 50);
-                    // Timeout after 1.5 seconds for faster loading
-                    setTimeout(() => {
-                        clearInterval(checkInterval);
-                        console.warn('⚠️ Supabase initialization timeout - proceeding without it');
-                        resolve();
-                    }, 1500);
-                });
-            }
             
             // Show loading state
             updateListingCount(0, false, true);
@@ -3138,16 +2714,7 @@
             const viewListingId = urlParams.get('viewListing');
             const shouldOpenModal = !!viewListingId;
             
-            // Fetch listings with optimized loading
-            let listings;
-            try {
-                listings = await fetchListings();
-            } catch (error) {
-                console.error('❌ Error fetching listings:', error);
-                hideLoadingModal();
-                updateListingCount(0, false, false);
-                return;
-            }
+            let listings = await fetchListings();
             console.log('📋 Fetched listings:', listings);
             
             // Check for highlight parameter in URL
@@ -3161,35 +2728,7 @@
 
             if (listings.length === 0) {
                 console.log('📝 No listings found in database');
-                hideLoadingModal(); // Hide loading modal if no listings
                 return; // updateListingCount already handles empty state
-            }
-            
-            // Check for auto-open listing from saved listings
-            const autoOpenListingId = sessionStorage.getItem('autoOpenListingId');
-            let foundAutoOpenListing = false;
-            
-            if (autoOpenListingId) {
-                console.log('🎯 Auto-opening saved listing:', autoOpenListingId);
-                
-                // Find the listing to highlight
-                const targetListing = listings.find(l => l.id === autoOpenListingId);
-                if (targetListing) {
-                    foundAutoOpenListing = true;
-                    // Move to top for easier scrolling
-                    const targetIndex = listings.findIndex(l => l.id === autoOpenListingId);
-                    if (targetIndex !== -1) {
-                        listings.splice(targetIndex, 1);
-                        listings.unshift(targetListing);
-                    }
-                    // Store for use in the forEach loop
-                    sessionStorage.setItem('autoOpenListingId_temp', autoOpenListingId);
-                } else {
-                    console.warn('⚠️ Auto-open listing not found:', autoOpenListingId);
-                    hideLoadingModal(); // Hide if listing not found
-                }
-                
-                sessionStorage.removeItem('autoOpenListingId'); // Clear original after processing
             }
             
             // If highlighting a specific listing, move it to the top
@@ -3202,7 +2741,7 @@
                 }
             }
 
-            listings.forEach(async listing => {
+            listings.forEach(listing => {
                 console.log('Processing listing:', listing.id, listing.title);
                 let media = listing.media || [];
                 if (!Array.isArray(media)) {
@@ -3258,23 +2797,12 @@
                     : 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
 
                 const hasOwner = !!listing.user_email;
-                const currentUser = await getCurrentUserSafe();
+                const currentUser = window.UniversalAuth.getCurrentUser();
                 const isOwner = currentUser && currentUser.email && listing.user_email === currentUser.email;
-                
-                // Calculate image count for display
-                const imageCount = media.filter(file => file.type && file.type.startsWith('image/')).length;
-                const imageCountBadge = imageCount > 1 ? 
-                    `<div class="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
-                        </svg>
-                        ${imageCount}
-                    </div>` : '';
                 
                 listingCard.innerHTML = `
                     <div class="relative">
                         <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+">
-                        ${imageCountBadge}
                         <button class="favorite-btn absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 z-10" 
                                 data-listing-id="${listing.id}" 
                                 data-favorited="false" 
@@ -3329,17 +2857,15 @@
                 `;
                 container.appendChild(listingCard);
                 
-                // If this is the highlighted listing or auto-open listing, scroll to it and add a badge
-                const tempAutoOpenId = sessionStorage.getItem('autoOpenListingId_temp');
-                const isAutoOpen = foundAutoOpenListing && listing.id === tempAutoOpenId;
-                if (isHighlighted || isAutoOpen) {
+                // If this is the highlighted listing, scroll to it and add a badge
+                if (isHighlighted) {
                     setTimeout(() => {
                         listingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         
                         // Add a highlighted badge
                         const badge = document.createElement('div');
                         badge.className = 'absolute top-2 left-2 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-semibold z-20';
-                        badge.textContent = isAutoOpen ? 'SAVED LISTING' : 'FROM FAVORITES';
+                        badge.textContent = 'FROM FAVORITES';
                         listingCard.querySelector('.relative').appendChild(badge);
                         
                         // Stop the pulse animation after 3 seconds
@@ -3347,38 +2873,37 @@
                             listingCard.classList.remove('animate-pulse');
                         }, 3000);
                         
-                        // Auto-open the listing modal if it's from saved listings
-                        if (isAutoOpen) {
-                            setTimeout(() => {
-                                hideLoadingModal();
-                                sessionStorage.removeItem('autoOpenListingId_temp'); // Clean up
-                                window.showListingModal(listing);
-                            }, 800); // Small delay for smooth scroll
-                        }
-                        
                         // Clear the URL parameter after highlighting
                         const newUrl = window.location.pathname;
                         window.history.replaceState({}, '', newUrl);
-                    }, 300); // Reduced delay for faster response
+                    }, 500);
                 }
             });
-            
-            // Hide loading modal if no auto-open occurred
-            if (!foundAutoOpenListing) {
-                hideLoadingModal();
-            }
-            
-            // Clean up temp storage
-            setTimeout(() => {
-                sessionStorage.removeItem('autoOpenListingId_temp');
-            }, 5000);
-            
-            // Load favorite states immediately after listings are rendered
-            setTimeout(() => {
-                loadFavoriteStates();
-            }, 100);
 
-            // Event delegation setup moved outside this function to prevent duplicates
+            document.querySelectorAll('.view-details-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const listing = JSON.parse(button.dataset.listing);
+                    window.showListingModal(listing);
+                });
+            });
+
+            document.querySelectorAll('.chat-btn').forEach(button => {
+                if (!button.disabled) {
+                    button.addEventListener('click', () => {
+                        try {
+                            console.log('🎯 Chat button clicked (legacy handler):', button.dataset.listing);
+                            const listing = JSON.parse(button.dataset.listing);
+                            console.log('📋 Parsed listing data:', listing);
+                            startConversation(listing);
+                        } catch (error) {
+                            console.error('❌ Error parsing listing data or starting conversation:', error);
+                            alert('Error opening chat. Please refresh the page and try again.');
+                        }
+                    });
+                } else {
+                    console.log('⚠️ Chat button is disabled (legacy handler) - no owner email specified');
+                }
+            });
 
             // Update map with all listings (skip if opening modal for speed)
             if (shouldOpenModal) {
@@ -3517,8 +3042,8 @@
                 
                 // Try Supabase first
                 try {
-                    if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient) {
-                        const { data, error } = await window.supabaseClient
+                    if (typeof supabase !== 'undefined' && supabase) {
+                        const { data, error } = await supabase
                             .from('listings')
                             .insert([listing])
                             .select();
@@ -3549,8 +3074,22 @@
                     };
                     console.log('💾 Saving to localStorage only');
                 }
+                currentUser.listings = currentUser.listings || [];
+                currentUser.listings.push(newListing);
+                let users = JSON.parse(localStorage.getItem('users')) || [];
+                users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                localStorage.setItem('users', JSON.stringify(users));
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                // Also save to userListings key for profile page compatibility
+                const userListingsKey = `userListings_${currentUser.email}`;
+                let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                userListings.push(newListing);
+                localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                
+                console.log('Updated localStorage with new listing:', newListing);
+                console.log('Saved to userListings key:', userListingsKey);
 
-                // SUCCESS - Show success message and refresh
                 e.target.reset();
                 mediaPreview.innerHTML = '';
                 uploadedFiles = [];
@@ -3564,78 +3103,15 @@
                 
                 console.log('🔄 Refreshing listings and map after new listing added');
                 await displayListings();
-                
             } catch (err) {
                 console.error('Submission failed:', err);
                 alert('Failed to add listing: ' + (err.message || err));
-                return; // Exit early on error
             }
-
-            // OPTIONAL LOCALSTORAGE OPERATIONS (run asynchronously to not interfere with success)
-            setTimeout(() => {
-                try {
-                    currentUser.listings = currentUser.listings || [];
-                    // Create clean listing for currentUser (without base64 data)
-                    const cleanListingForUser = { ...newListing };
-                    if (cleanListingForUser.media && Array.isArray(cleanListingForUser.media)) {
-                        cleanListingForUser.media = cleanListingForUser.media.map(mediaItem => ({
-                            name: mediaItem.name,
-                            type: mediaItem.type,
-                            url: mediaItem.url
-                        }));
-                    }
-                    currentUser.listings.push(cleanListingForUser);
-                    
-                    // Use safe localStorage operations to avoid quota exceeded errors
-                    let users = JSON.parse(localStorage.getItem('users')) || [];
-                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                    
-                    // Try to save users array safely, if it fails, skip it (we have userListings as backup)
-                    if (!safeLocalStorageSetItem('users', JSON.stringify(users))) {
-                        console.warn('⚠️ Could not update users array due to storage limits');
-                    }
-                    
-                    if (!safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser))) {
-                        console.warn('⚠️ Could not update currentUser due to storage limits');
-                    }
-                    
-                    // Also save to userListings key for profile page compatibility (this is the important one)
-                    const userListingsKey = `userListings_${currentUser.email}`;
-                    let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                    
-                    // Create a clean version for localStorage (without base64 data)
-                    const cleanListing = { ...newListing };
-                    if (cleanListing.media && Array.isArray(cleanListing.media)) {
-                        cleanListing.media = cleanListing.media.map(mediaItem => ({
-                            name: mediaItem.name,
-                            type: mediaItem.type,
-                            url: mediaItem.url
-                            // Remove any data property to save space
-                        }));
-                    }
-                    
-                    userListings.push(cleanListing);
-                    if (!safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings))) {
-                        console.warn('⚠️ Could not update user listings due to storage limits');
-                    }
-                    
-                    console.log('📱 Background localStorage operations completed');
-                    
-                } catch (localStorageError) {
-                    console.warn('⚠️ Background localStorage operations failed but listing was saved successfully:', localStorageError);
-                }
-            }, 100); // Small delay to ensure it runs after the main success flow
         });
 
         // Chat Functionality
         let currentConversationId = null;
         let currentListing = null;
-        let realTimeWorking = false; // Track real-time subscription status
-        
-        // Browser detection for Chrome-specific issues
-        const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-        const isBrave = navigator.brave !== undefined;
-        console.log('🌐 Browser Detection:', { isChrome, isBrave, userAgent: navigator.userAgent });
 
         // Global chat system status tracking
         let chatSystemStatus = {
@@ -3673,7 +3149,7 @@
             });
 
             // Check Supabase connection
-            if (!window.supabaseClient) {
+            if (!supabase) {
                 issues.push('Supabase client not initialized');
             } else {
                 chatSystemStatus.supabaseConnected = true;
@@ -3803,6 +3279,74 @@
             const chatInput = document.getElementById('chatInput');
             const chatSendBtn = document.getElementById('chatSendBtn');
             
+            // Smart scroll variables
+            let unreadMessagesCount = 0;
+            let userScrolledUp = false;
+            
+            // Smart scroll function - only scrolls if user is at bottom
+            function smartScrollToBottom() {
+                if (!chatMessagesContainer) return;
+                
+                const scrollTop = chatMessagesContainer.scrollTop;
+                const scrollHeight = chatMessagesContainer.scrollHeight;
+                const clientHeight = chatMessagesContainer.clientHeight;
+                const scrollThreshold = 100; // pixels from bottom
+                
+                const isNearBottom = (scrollHeight - scrollTop - clientHeight) <= scrollThreshold;
+                
+                if (isNearBottom && !userScrolledUp) {
+                    chatMessagesContainer.scrollTop = scrollHeight;
+                    unreadMessagesCount = 0;
+                    updateScrollButton();
+                } else {
+                    unreadMessagesCount++;
+                    updateScrollButton();
+                }
+            }
+            
+            // Check if user is at bottom
+            function isUserAtBottom() {
+                if (!chatMessagesContainer) return true;
+                const scrollTop = chatMessagesContainer.scrollTop;
+                const scrollHeight = chatMessagesContainer.scrollHeight;
+                const clientHeight = chatMessagesContainer.clientHeight;
+                return (scrollHeight - scrollTop - clientHeight) <= 50;
+            }
+            
+            // Update scroll button visibility and unread count
+            function updateScrollButton() {
+                const scrollBtn = document.getElementById('scrollToBottomBtn');
+                const unreadCountEl = document.getElementById('unreadCount');
+                
+                if (!scrollBtn || !unreadCountEl) return;
+                
+                const atBottom = isUserAtBottom();
+                
+                if (atBottom) {
+                    scrollBtn.classList.add('hidden');
+                    unreadMessagesCount = 0;
+                    userScrolledUp = false;
+                } else {
+                    scrollBtn.classList.remove('hidden');
+                    userScrolledUp = true;
+                }
+                
+                if (unreadMessagesCount > 0) {
+                    unreadCountEl.textContent = unreadMessagesCount;
+                    unreadCountEl.classList.remove('hidden');
+                } else {
+                    unreadCountEl.classList.add('hidden');
+                }
+            }
+            
+            // Scroll to bottom function
+            function scrollToBottom() {
+                if (!chatMessagesContainer) return;
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                unreadMessagesCount = 0;
+                userScrolledUp = false;
+                updateScrollButton();
+            }
 
             console.log('✅ All chat elements found:', {
                 chatModal: !!chatModal,
@@ -3839,7 +3383,18 @@
                 }
             });
 
-            // Message sending event listeners now handled by chat-system.js
+            // Function to send message will be defined later with file support
+
+            // Send button click
+            chatSendBtn.addEventListener('click', sendMessage);
+
+            // Enter key support for instant messaging
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
 
             // File upload functionality - only for landlords
             let selectedFiles = [];
@@ -3893,16 +3448,209 @@
                 };
             }
 
-            // Message sending now handled by chat-system.js
+            // Enhanced send message function to handle both text and files
+            async function sendMessage() {
+                const messageContent = chatInput.value.trim();
+                
+                // Check if we have content or files to send
+                if (!messageContent && (!selectedFiles || selectedFiles.length === 0)) {
+                    console.warn('No message content or files to send');
+                    return;
+                }
 
-            // Text message sending now handled by chat-system.js
+                if (!currentConversationId) {
+                    console.warn('No conversation ID');
+                    return;
+                }
 
-            // File message sending now handled by chat-system.js
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const timestamp = new Date().toISOString();
+
+                try {
+                    // Send text message if there's content
+                    if (messageContent) {
+                        await sendTextMessage(messageContent, currentUser, timestamp);
+                        chatInput.value = '';
+                    }
+
+                    // Send files if any are selected and user is landlord
+                    if (selectedFiles && selectedFiles.length > 0 && isCurrentUserLandlord) {
+                        for (const file of selectedFiles) {
+                            await sendFileMessage(file, currentUser, timestamp);
+                        }
+                        
+                        // Clear selected files
+                        selectedFiles = [];
+                        const fileInput = document.getElementById('fileInput');
+                        if (fileInput) fileInput.value = '';
+                        const selectedFilesContainer = document.getElementById('selectedFiles');
+                        if (selectedFilesContainer) selectedFilesContainer.classList.add('hidden');
+                    }
+
+                } catch (error) {
+                    console.error('❌ Error sending message/files:', error);
+                    alert('Failed to send message: ' + error.message);
+                }
+            }
+
+            async function sendTextMessage(messageContent, currentUser, timestamp) {
+                // Instant UI update
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message sent';
+                messageElement.innerHTML = `
+                    <p>${sanitizeInput(messageContent)}</p>
+                    <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
+                `;
+                chatMessagesContainer.appendChild(messageElement);
+                smartScrollToBottom();
+                
+                // Send to database
+                const { error } = await supabase
+                    .from('messages')
+                    .insert({
+                        conversation_id: currentConversationId,
+                        sender_email: currentUser.email,
+                        content: messageContent,
+                        message_type: 'text',
+                        created_at: timestamp
+                    });
+
+                if (error) {
+                    messageElement.remove();
+                    chatInput.value = messageContent; // Restore message
+                    throw error;
+                }
+            }
+
+            async function sendFileMessage(file, currentUser, timestamp) {
+                // Validate file size (5MB limit)
+                if (file.size > 5 * 1024 * 1024) {
+                    throw new Error(`File ${file.name} is too large. Maximum size is 5MB.`);
+                }
+
+                // Show uploading status
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message sent';
+                messageElement.innerHTML = `
+                    <div class="file-message bg-blue-50 p-3 rounded">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">📎</span>
+                            <div>
+                                <p class="font-medium text-blue-900">${file.name}</p>
+                                <p class="text-sm text-blue-600">Uploading... (${formatFileSize(file.size)})</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
+                `;
+                chatMessagesContainer.appendChild(messageElement);
+                smartScrollToBottom();
+
+                try {
+                    // Upload file to Supabase storage
+                    const fileName = `chat-${currentConversationId}-${Date.now()}-${file.name}`;
+                    const filePath = `chat-files/${fileName}`;
+
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('chat-documents')
+                        .upload(filePath, file, {
+                            contentType: file.type,
+                            upsert: false
+                        });
+
+                    if (uploadError) {
+                        throw new Error('Failed to upload file: ' + uploadError.message);
+                    }
+
+                    // Get public URL
+                    const { data: urlData } = supabase.storage
+                        .from('chat-documents')
+                        .getPublicUrl(filePath);
+
+                    // Save message to database
+                    const { error: dbError } = await supabase
+                        .from('messages')
+                        .insert({
+                            conversation_id: currentConversationId,
+                            sender_email: currentUser.email,
+                            content: `Shared file: ${file.name}`,
+                            message_type: 'file',
+                            file_url: urlData.publicUrl,
+                            file_name: file.name,
+                            file_size: file.size,
+                            file_type: file.type,
+                            created_at: timestamp
+                        });
+
+                    if (dbError) {
+                        throw new Error('Failed to save message: ' + dbError.message);
+                    }
+
+                    // Update UI with download link
+                    messageElement.innerHTML = `
+                        <div class="file-message bg-blue-50 p-3 rounded">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-lg">📎</span>
+                                <div>
+                                    <p class="font-medium text-blue-900">${file.name}</p>
+                                    <p class="text-sm text-blue-600">${formatFileSize(file.size)}</p>
+                                    <a href="${urlData.publicUrl}" target="_blank" class="text-blue-800 hover:text-blue-900 text-sm font-medium">📥 Download</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
+                    `;
+
+                    console.log('✅ File sent successfully:', file.name);
+
+                } catch (error) {
+                    messageElement.remove();
+                    throw error;
+                }
+            }
 
             // Initialize file upload functionality
             initializeFileUpload();
 
-            // Real-time subscriptions now handled by chat-system.js
+            // SIMPLIFIED Real-time subscription with better debugging
+            const messageChannel = supabase
+                .channel('messages_realtime_' + Math.random())
+                .on('postgres_changes', { 
+                    event: 'INSERT', 
+                    schema: 'public', 
+                    table: 'messages' 
+                }, (payload) => {
+                    console.log('🔔 REALTIME EVENT RECEIVED:', payload);
+                    console.log('Current conversation ID:', currentConversationId);
+                    console.log('Message conversation ID:', payload.new.conversation_id);
+                    
+                    if (currentConversationId && currentConversationId === payload.new.conversation_id) {
+                        console.log('✅ Message is for current conversation!');
+                        
+                        // Reload messages to ensure we get the latest
+                        loadMessages(currentConversationId);
+                        
+                        // Also try instant append for better UX
+                        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                        const chatMessagesContainer = document.getElementById('chatMessages');
+                        
+                        if (chatMessagesContainer && payload.new.sender_email !== currentUser.email) {
+                            console.log('🚀 Adding message instantly to UI');
+                        }
+                    } else {
+                        console.log('❌ Message not for current conversation');
+                    }
+                })
+                .subscribe((status) => {
+                    console.log('💬 REALTIME SUBSCRIPTION STATUS:', status);
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ Successfully subscribed to messages!');
+                    } else if (status === 'CHANNEL_ERROR') {
+                        console.error('❌ Channel error - real-time not working');
+                    } else if (status === 'TIMED_OUT') {
+                        console.error('⏰ Subscription timed out');
+                    }
+                });
 
             // Mark chat system as successfully initialized
             chatSystemStatus.isInitialized = true;
@@ -4031,9 +3779,9 @@
             console.log('Health Check Result:', healthCheck);
             
             // Test Supabase connection
-            if (window.supabaseClient) {
+            if (supabase) {
                 // Test basic connection
-                window.supabaseClient.from('conversations').select('count').limit(1)
+                supabase.from('conversations').select('count').limit(1)
                     .then(result => {
                         console.log('✅ Supabase connection test successful:', result);
                     })
@@ -4045,7 +3793,7 @@
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 if (currentUser) {
                     console.log('🔍 Testing conversation_reads table access...');
-                    window.supabaseClient.from('conversation_reads')
+                    supabase.from('conversation_reads')
                         .select('*')
                         .eq('user_email', currentUser.email)
                         .limit(1)
@@ -4109,10 +3857,10 @@
         }
 
         async function pingSupabase() {
-            if (!window.supabaseClient) return;
+            if (!supabase) return;
 
             try {
-                const { data, error } = await window.supabaseClient
+                const { data, error } = await supabase
                     .from('conversations')
                     .select('count')
                     .limit(1);
@@ -4242,11 +3990,10 @@
                     return;
                 }
             }
-            window.startConversation(listing);
+            startConversation(listing);
         }
 
-        // Make startConversation globally accessible
-        window.startConversation = async function(listing) {
+        async function startConversation(listing) {
             try {
                 console.log('🚀 Starting conversation for listing:', listing?.title || 'Unknown listing');
             
@@ -4255,7 +4002,7 @@
             console.log('👤 Authentication check:', { 
                 hasUser: !!currentUser, 
                 userEmail: currentUser?.email,
-                hasSupabase: !!window.supabaseClient 
+                hasSupabase: !!supabase 
             });
             
             if (!currentUser) {
@@ -4266,7 +4013,7 @@
             }
 
             // Verify Supabase connection
-            if (!window.supabaseClient) {
+            if (!supabase) {
                 console.error('❌ Supabase client not initialized');
                 alert('Connection error. Please refresh the page and try again.');
                 return;
@@ -4289,7 +4036,7 @@
             let currentUserProfile, listingOwnerProfile, currentUserError, listingOwnerError;
             
             try {
-                const currentUserResult = await window.supabaseClient
+                const currentUserResult = await supabase
                     .from('profiles')
                     .select('email')
                     .eq('email', currentUser.email)
@@ -4302,7 +4049,7 @@
                     error: currentUserError?.message 
                 });
                 
-                const ownerResult = await window.supabaseClient
+                const ownerResult = await supabase
                     .from('profiles')
                     .select('email')
                     .eq('email', listing.user_email)
@@ -4324,7 +4071,7 @@
             // Auto-create profile for current user if missing
             if (currentUserError || !currentUserProfile) {
                 console.log('Creating missing profile for current user...');
-                const { error: createCurrentUserError } = await window.supabaseClient
+                const { error: createCurrentUserError } = await supabase
                     .from('profiles')
                     .insert([{
                         email: currentUser.email,
@@ -4345,7 +4092,7 @@
             if (listingOwnerError || !listingOwnerProfile) {
                 console.log('Creating missing profile for listing owner...');
                 // Try to get the listing owner's info from local storage or use defaults
-                const { error: createOwnerError } = await window.supabaseClient
+                const { error: createOwnerError } = await supabase
                     .from('profiles')
                     .insert([{
                         email: listing.user_email,
@@ -4379,7 +4126,7 @@
             let conversations, error;
             
             try {
-                const result = await window.supabaseClient
+                const result = await supabase
                     .from('conversations')
                     .select('*')
                     .eq('listing_id', listing.id)
@@ -4411,7 +4158,7 @@
                 conversation = conversations[0];
                 console.log('Existing conversation found:', conversation.id);
             } else {
-                const { data, error: insertError } = await window.supabaseClient
+                const { data, error: insertError } = await supabase
                     .from('conversations')
                     .insert({
                         listing_id: listing.id,
@@ -4487,58 +4234,20 @@
             console.log('- Chat Close Button:', !!document.querySelector('.chat-close-button'));  
             console.log('- Chat Input:', !!document.getElementById('chatInput'));
             console.log('- Chat Send Button:', !!document.getElementById('chatSendBtn'));
-            console.log('- Supabase Client:', !!window.supabaseClient);
+            console.log('- Supabase Client:', !!supabase);
             console.log('- Current User:', !!localStorage.getItem('currentUser'));
             console.log('- Chat System Status:', chatSystemStatus);
             console.log('- Active Chat Buttons:', document.querySelectorAll('.chat-btn:not([disabled])').length);
             console.log('- Disabled Chat Buttons:', document.querySelectorAll('.chat-btn[disabled]').length);
         };
 
-        // Debug function to test chat button functionality
-        window.testChatButton = function() {
-            console.log('🧪 Testing Chat Button Functionality...');
-            const chatBtns = document.querySelectorAll('.chat-btn:not([disabled])');
-            console.log(`Found ${chatBtns.length} enabled chat buttons`);
-            
-            if (chatBtns.length > 0) {
-                const testBtn = chatBtns[0];
-                console.log('Testing first chat button:', testBtn);
-                console.log('Button dataset:', testBtn.dataset);
-                
-                try {
-                    const listing = JSON.parse(testBtn.dataset.listing);
-                    console.log('✅ Listing data parsed:', listing);
-                    
-                    // Test if startConversation function exists
-                    if (typeof startConversation === 'function') {
-                        console.log('✅ startConversation function exists, calling it...');
-                        if (window.startConversation) {
-                            window.startConversation(listing);
-                        } else if (window.fallbackStartChat) {
-                            console.warn('⚠️ Using fallback chat system');
-                            window.fallbackStartChat(listing);
-                        } else {
-                            console.error('❌ No chat function available');
-                            alert('Chat system is not ready. Please refresh the page and try again.');
-                        }
-                    } else {
-                        console.error('❌ startConversation function not found');
-                    }
-                } catch (error) {
-                    console.error('❌ Failed to parse listing data:', error);
-                }
-            } else {
-                console.warn('⚠️ No enabled chat buttons found');
-            }
-        };
-
         async function loadMessages(conversationId) {
             console.log('🔄 Loading messages for conversation:', conversationId);
-            console.log('📊 Supabase client status:', !!window.supabaseClient);
+            console.log('📊 Supabase client status:', !!supabase);
             console.log('👤 Current user status:', !!localStorage.getItem('currentUser'));
             
             try {
-                const { data: messages, error } = await window.supabaseClient
+                const { data: messages, error } = await supabase
                     .from('messages')
                     .select('*')
                     .eq('conversation_id', conversationId)
@@ -4574,44 +4283,31 @@
                     
                     const messageElement = document.createElement('div');
                     messageElement.className = `message ${message.sender_email === currentUser.email ? 'sent' : 'received'}`;
-                    messageElement.setAttribute('data-message-id', message.id);
                     
                     // Handle different message types
+                    let messageContent;
                     if (message.message_type === 'file' && message.file_url) {
                         const isOwner = message.sender_email === currentUser.email;
-                        const messageContent = `
+                        messageContent = `
                             <div class="file-message ${isOwner ? 'bg-blue-50' : 'bg-gray-50'} p-3 rounded">
                                 <div class="flex items-center space-x-2">
                                     <span class="text-lg">📎</span>
                                     <div>
-                                        <p class="font-medium ${isOwner ? 'text-blue-900' : 'text-gray-900'}">${message.file_name || 'File'}</p>
+                                        <p class="font-medium ${isOwner ? 'text-blue-900' : 'text-gray-900'}">${sanitizeInput(message.file_name || 'File')}</p>
                                         <p class="text-sm ${isOwner ? 'text-blue-600' : 'text-gray-600'}">${message.file_size ? formatFileSize(message.file_size) : ''}</p>
                                         <a href="${message.file_url}" target="_blank" class="${isOwner ? 'text-blue-800 hover:text-blue-900' : 'text-gray-800 hover:text-gray-900'} text-sm font-medium">📥 Download</a>
                                     </div>
                                 </div>
                             </div>
                         `;
-                        messageElement.innerHTML = `
-                            ${messageContent}
-                            <div class="message-timestamp">${new Date(message.created_at).toLocaleTimeString()}</div>
-                        `;
                     } else {
-                        // Create message content using DOM methods to preserve special characters
-                        const messageP = document.createElement('p');
-                        messageP.textContent = message.content; // Use textContent to preserve special characters
-                        messageElement.appendChild(messageP);
-                        
-                        const timestampDiv = document.createElement('div');
-                        timestampDiv.className = 'message-timestamp';
-                        timestampDiv.textContent = new Date(message.created_at).toLocaleTimeString();
-                        messageElement.appendChild(timestampDiv);
-                        
-                        console.log('📄 Loaded message:', {
-                            content: message.content,
-                            hasSpecialChars: /[?!öÖäÄüÜß]/.test(message.content)
-                        });
+                        messageContent = `<p>${sanitizeInput(message.content)}</p>`;
                     }
                     
+                    messageElement.innerHTML = `
+                        ${messageContent}
+                        <div class="message-timestamp">${new Date(message.created_at).toLocaleTimeString()}</div>
+                    `;
                     chatMessagesContainer.appendChild(messageElement);
                 });
 
@@ -4648,8 +4344,7 @@
             let isMessagingPanelOpen = false;
 
             // Toggle message panel
-            // Make the toggle function globally accessible
-            window.toggleMessagePanel = async function() {
+            messageToggleBtn.addEventListener('click', async () => {
                 isMessagingPanelOpen = !isMessagingPanelOpen;
                 if (isMessagingPanelOpen) {
                     messagePanel.classList.remove('hidden');
@@ -4657,13 +4352,7 @@
                 } else {
                     messagePanel.classList.add('hidden');
                 }
-            };
-            
-            // Method 1: Direct onclick assignment
-            messageToggleBtn.onclick = window.toggleMessagePanel;
-            
-            // Method 2: Event listener as backup
-            messageToggleBtn.addEventListener('click', window.toggleMessagePanel);
+            });
 
             // Force hide notifications button
             document.getElementById('forceHideNotifications').addEventListener('click', () => {
@@ -4696,7 +4385,7 @@
                 if (!currentUser) return;
 
                 // First verify current user is registered in profiles
-                const { data: currentProfile, error: profileError } = await window.supabaseClient
+                const { data: currentProfile, error: profileError } = await supabase
                     .from('profiles')
                     .select('email')
                     .eq('email', currentUser.email)
@@ -4709,7 +4398,7 @@
                     return;
                 }
 
-                const { data: conversations, error } = await window.supabaseClient
+                const { data: conversations, error } = await supabase
                     .from('conversations')
                     .select(`
                         *,
@@ -4727,7 +4416,7 @@
                 const conversationsWithUnread = [];
                 for (const conv of conversations || []) {
                     // Get last read time for this user
-                    const { data: readData } = await window.supabaseClient
+                    const { data: readData } = await supabase
                         .from('conversation_reads')
                         .select('last_read_at')
                         .eq('conversation_id', conv.id)
@@ -4737,7 +4426,7 @@
                     const lastReadAt = readData?.last_read_at || '1970-01-01T00:00:00Z';
 
                     // Count unread messages
-                    const { count: unreadCount } = await window.supabaseClient
+                    const { count: unreadCount } = await supabase
                         .from('messages')
                         .select('*', { count: 'exact', head: true })
                         .eq('conversation_id', conv.id)
@@ -4752,13 +4441,13 @@
                 const filteredConversations = [];
                 for (const conv of conversationsWithUnread) {
                     // Check if both sender and receiver are in profiles database
-                    const { data: senderProfile } = await window.supabaseClient
+                    const { data: senderProfile } = await supabase
                         .from('profiles')
                         .select('email')
                         .eq('email', conv.sender_email)
                         .single();
                     
-                    const { data: receiverProfile } = await window.supabaseClient
+                    const { data: receiverProfile } = await supabase
                         .from('profiles')
                         .select('email')
                         .eq('email', conv.receiver_email)
@@ -4784,17 +4473,6 @@
             function displayConversations() {
                 const conversationTabs = document.getElementById('conversationTabs');
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                
-                // Add null check for conversationTabs element
-                if (!conversationTabs) {
-                    console.warn('conversationTabs element not found, skipping conversation display');
-                    return;
-                }
-                
-                if (!currentUser) {
-                    console.warn('No current user found, skipping conversation display');
-                    return;
-                }
                 
                 if (globalUserConversations.length === 0) {
                     conversationTabs.innerHTML = '<div id="noConversations" class="p-4 text-gray-500 text-center">No conversations yet</div>';
@@ -4962,15 +4640,13 @@
             // FALLBACK: Polling for updates if real-time fails
             let pollingInterval;
             function startPolling() {
-                console.log('🔄 Starting polling fallback (every 10 seconds)');
+                console.log('🔄 Starting polling fallback (every 3 seconds)');
                 pollingInterval = setInterval(() => {
-                    // Only poll if real-time isn't working
-                    if (!realTimeWorking && currentConversationId) {
-                        console.log('📡 Using polling fallback for messages');
+                    if (currentConversationId) {
                         loadMessages(currentConversationId);
                     }
                     loadUserConversations();
-                }, 10000); // Reduced frequency from 3s to 10s
+                }, 3000);
             }
 
             // Start polling if real-time doesn't work after 10 seconds
@@ -5215,21 +4891,8 @@
             listingCard.className = 'listing-card'; // Custom class for JS targeting and 3D effects
 
             const hasOwner = !!listing.user_email;
-            // Calculate image count for display
-            const imageCount = media.filter(file => file.type && file.type.startsWith('image/')).length;
-            const imageCountBadge = imageCount > 1 ? 
-                `<div class="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
-                    </svg>
-                    ${imageCount}
-                </div>` : '';
-
             listingCard.innerHTML = `
-                <div class="relative">
-                    <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'">
-                    ${imageCountBadge}
-                </div>
+                <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'">
                 <div class="p-4">
                     <h3 class="text-lg font-semibold text-gray-800 truncate">${listing.title}</h3>
                     <p class="text-xl font-bold text-blue-600">$${listing.price.toLocaleString()}/mo</p>
@@ -5244,7 +4907,7 @@
                     <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
                     <div class="flex space-x-2 mt-4">
                         <button class="view-details-btn w-1/2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                        <button class="chat-btn w-1/2 ${hasOwner ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' data-listing-id="${listing.id}" ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
+                        <button class="chat-btn w-1/2 ${hasOwner ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
                     </div>
                 </div>
             `;
@@ -5259,54 +4922,23 @@
             const viewDetailsBtn = listingCard.querySelector('.view-details-btn');
             const chatBtn = listingCard.querySelector('.chat-btn');
             
-            if (!viewDetailsBtn) {
-                console.error('❌ View Details button not found in listing card');
-            } else {
-                viewDetailsBtn.addEventListener('click', () => {
-                    const listing = JSON.parse(viewDetailsBtn.dataset.listing);
-                    showListingModal(listing);
-                });
-            }
+            viewDetailsBtn.addEventListener('click', () => {
+                const listing = JSON.parse(viewDetailsBtn.dataset.listing);
+                showListingModal(listing);
+            });
 
-            if (!chatBtn) {
-                console.error('❌ Chat button not found in listing card');
-            } else if (!chatBtn.disabled) {
-                console.log('✅ Adding click handler to chat button for:', listing.title);
-                
-                // Method 1: Direct onclick assignment
-                chatBtn.onclick = function(event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    console.log('🎯 Chat button clicked (onclick) for listing');
+            if (!chatBtn.disabled) {
+                chatBtn.addEventListener('click', () => {
                     try {
-                        const listingData = JSON.parse(chatBtn.dataset.listing);
-                        console.log('📋 Parsed listing data:', listingData);
-                        
-                        if (window.startConversation) {
-                            window.startConversation(listingData);
-                        } else if (window.fallbackStartChat) {
-                            console.warn('⚠️ Using fallback chat system');
-                            window.fallbackStartChat(listingData);
-                        } else {
-                            console.error('❌ No chat function available');
-                            // Last resort - just open the modal
-                            const modal = document.getElementById('chatModal');
-                            if (modal) {
-                                modal.classList.add('active');
-                                const titleEl = document.getElementById('chatTitle');
-                                if (titleEl) titleEl.textContent = `Chat about: ${listingData.title || 'Listing'}`;
-                            }
-                        }
+                        console.log('🎯 Chat button clicked for listing:', chatBtn.dataset.listing);
+                        const listing = JSON.parse(chatBtn.dataset.listing);
+                        console.log('📋 Parsed listing data:', listing);
+                        startConversation(listing);
                     } catch (error) {
-                        console.error('❌ Error in chat button click:', error);
-                        // Try to open modal anyway
-                        const modal = document.getElementById('chatModal');
-                        if (modal) modal.classList.add('active');
+                        console.error('❌ Error parsing listing data or starting conversation:', error);
+                        alert('Error opening chat. Please refresh the page and try again.');
                     }
-                };
-                
-                // Method 2: Also add event listener as backup
-                chatBtn.addEventListener('click', chatBtn.onclick);
+                });
             } else {
                 console.log('⚠️ Chat button is disabled for listing - no owner email specified');
             }
@@ -5602,8 +5234,8 @@
         });
         
         // Real-time subscription to listings
-        if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient) {
-            window.supabaseClient
+        if (typeof supabase !== 'undefined' && supabase) {
+            supabase
                 .channel('public:listings')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'listings' }, (payload) => {
                     console.log('New listing added:', payload.new);
@@ -5618,12 +5250,6 @@
         
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {
-            // AuthManager should already be initialized earlier
-            if (window.AuthManager && typeof window.AuthManager.updateProfileUI === 'function') {
-                console.log('Updating profile UI with AuthManager...');
-                window.AuthManager.updateProfileUI();
-            }
-            
             window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: true })
                 .then(result => {
                     if (result.authenticated) {
@@ -5632,78 +5258,26 @@
                         console.log('ℹ️ Anonymous user, loading listings...');
                     }
                     loadListings().then(() => {
-                        // Load favorite states immediately after listings are loaded
+                        // Load favorite states after listings are loaded, with a small delay to ensure DOM is ready
                         setTimeout(() => {
                             loadFavoriteStates();
-                        }, 50);
+                        }, 100);
                     });
                 })
                 .catch(error => {
                     console.error('Auth initialization error:', error);
                     loadListings().then(() => {
-                        // Load favorite states immediately after listings are loaded
+                        // Load favorite states after listings are loaded, with a small delay to ensure DOM is ready
                         setTimeout(() => {
                             loadFavoriteStates();
-                        }, 50);
+                        }, 100);
                     });
                 });
         }
 
-        // Loading modal functions
-        function showLoadingModal() {
-            const modal = document.getElementById('loadingModal');
-            if (modal) {
-                modal.classList.remove('hidden');
-                console.log('🔄 Loading modal shown');
-            }
-        }
-        
-        function hideLoadingModal() {
-            const modal = document.getElementById('loadingModal');
-            if (modal) {
-                modal.classList.add('hidden');
-                console.log('✅ Loading modal hidden');
-            }
-        }
-
-        // Helper function to get current user from either AuthManager or UniversalAuth
-        async function getCurrentUserSafe() {
-            try {
-                // Use AuthManager if available (synchronous)
-                if (window.AuthManager && typeof window.AuthManager.getCurrentUser === 'function') {
-                    const user = window.AuthManager.getCurrentUser();
-                    console.log('AuthManager.getCurrentUser returned:', user);
-                    return user;
-                }
-                // Fallback to UniversalAuth (async)
-                if (window.UniversalAuth && typeof window.UniversalAuth.getCurrentUser === 'function') {
-                    const user = await window.UniversalAuth.getCurrentUser();
-                    console.log('UniversalAuth.getCurrentUser returned:', user);
-                    return user;
-                }
-                // Last fallback to localStorage
-                const currentUserStr = localStorage.getItem('currentUser');
-                console.log('localStorage currentUser:', currentUserStr);
-                if (currentUserStr && currentUserStr !== 'null' && currentUserStr !== 'undefined') {
-                    try {
-                        const user = JSON.parse(currentUserStr);
-                        console.log('Parsed user from localStorage:', user);
-                        return user;
-                    } catch (e) {
-                        console.error('Error parsing currentUser:', e);
-                    }
-                }
-                console.log('No user found in any source');
-                return null;
-            } catch (error) {
-                console.error('Error getting current user:', error);
-                return null;
-            }
-        }
-
         // Favorites functionality with localStorage fallback
         async function toggleFavorite(listingId, buttonElement) {
-            const currentUser = await getCurrentUserSafe();
+            const currentUser = window.UniversalAuth.getCurrentUser();
             
             console.log('🔍 toggleFavorite called:', { listingId, currentUser });
             
@@ -5781,7 +5355,7 @@
                             const itemId = typeof item === 'string' ? item : item.id;
                             return itemId !== listingId;
                         });
-                        safeLocalStorageSetItem(storageKey, JSON.stringify(savedListings));
+                        localStorage.setItem(storageKey, JSON.stringify(savedListings));
                         console.log('✅ Removed from favorites via localStorage:', listingId);
                     } else {
                         // Add to localStorage - save complete listing object
@@ -5818,7 +5392,7 @@
                                 // Add the complete listing object with a favorited timestamp
                                 listingToSave.favorited_at = new Date().toISOString();
                                 savedListings.push(listingToSave);
-                                safeLocalStorageSetItem(storageKey, JSON.stringify(savedListings));
+                                localStorage.setItem(storageKey, JSON.stringify(savedListings));
                                 console.log('✅ Added complete listing to favorites:', listingToSave);
                             }
                         } else {
@@ -5847,7 +5421,7 @@
         }
 
         async function loadFavoriteStates() {
-            const currentUser = await getCurrentUserSafe();
+            const currentUser = window.UniversalAuth.getCurrentUser();
             
             if (!currentUser || !currentUser.email) {
                 console.log('No authenticated user, skipping favorite states');
@@ -5931,7 +5505,7 @@
             }
 
             try {
-                const currentUser = await getCurrentUserSafe();
+                const currentUser = window.UniversalAuth.getCurrentUser();
                 if (!currentUser || !currentUser.email) {
                     alert('Please log in to delete listings.');
                     return;
@@ -5941,9 +5515,9 @@
                 let deleteSuccess = false;
                 
                 // Try Supabase delete first
-                if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient && !listingId.startsWith('local_')) {
+                if (typeof supabase !== 'undefined' && supabase && !listingId.startsWith('local_')) {
                     try {
-                        const { data: existingListing, error: fetchError } = await window.supabaseClient
+                        const { data: existingListing, error: fetchError } = await supabase
                             .from('listings')
                             .select('user_email')
                             .eq('id', listingId)
@@ -5955,7 +5529,7 @@
                                 return;
                             }
                             
-                            const { error } = await window.supabaseClient
+                            const { error } = await supabase
                                 .from('listings')
                                 .delete()
                                 .eq('id', listingId)
@@ -5969,14 +5543,14 @@
                                 const userListingsKey = `userListings_${currentUser.email}`;
                                 let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                                 userListings = userListings.filter(l => l.id !== listingId);
-                                safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
+                                localStorage.setItem(userListingsKey, JSON.stringify(userListings));
                                 
                                 if (currentUser.listings) {
                                     currentUser.listings = currentUser.listings.filter(l => l.id !== listingId);
                                     let users = JSON.parse(localStorage.getItem('users')) || [];
                                     users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                                    safeSetItem('users', JSON.stringify(users));
-                                    safeSetItem('currentUser', JSON.stringify(currentUser));
+                                    localStorage.setItem('users', JSON.stringify(users));
+                                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
                                 }
                                 console.log('✅ Also cleaned up localStorage');
                             }
@@ -5996,7 +5570,7 @@
                     userListings = userListings.filter(l => l.id !== listingId);
                     
                     if (userListings.length < originalLength) {
-                        safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
+                        localStorage.setItem(userListingsKey, JSON.stringify(userListings));
                         deleteSuccess = true;
                     }
                     
@@ -6007,8 +5581,8 @@
                         if (currentUser.listings.length < originalUserListingsLength) {
                             let users = JSON.parse(localStorage.getItem('users')) || [];
                             users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                            safeSetItem('users', JSON.stringify(users));
-                            safeSetItem('currentUser', JSON.stringify(currentUser));
+                            localStorage.setItem('users', JSON.stringify(users));
+                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
                             deleteSuccess = true;
                         }
                     }
@@ -6041,9 +5615,9 @@
                 let listing = null;
                 
                 // Try to fetch from Supabase first
-                if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient) {
+                if (typeof supabase !== 'undefined' && supabase) {
                     try {
-                        const { data, error } = await window.supabaseClient
+                        const { data, error } = await supabase
                             .from('listings')
                             .select('*')
                             .eq('id', listingId)
@@ -6060,7 +5634,7 @@
                 
                 // If not found in Supabase, check localStorage
                 if (!listing) {
-                    const currentUser = await getCurrentUserSafe();
+                    const currentUser = window.UniversalAuth.getCurrentUser();
                     const userListingsKey = `userListings_${currentUser.email}`;
                     const userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                     
@@ -6193,7 +5767,7 @@
                     };
 
                     try {
-                        const currentUser = await getCurrentUserSafe();
+                        const currentUser = window.UniversalAuth.getCurrentUser();
                         if (!currentUser || !currentUser.email) {
                             alert('Please log in to edit listings.');
                             return;
@@ -6202,9 +5776,9 @@
                         let updateSuccess = false;
                         
                         // Try Supabase update first
-                        if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient && !listingId.startsWith('local_')) {
+                        if (typeof supabase !== 'undefined' && supabase && !listingId.startsWith('local_')) {
                             try {
-                                const { data: existingListing, error: fetchError } = await window.supabaseClient
+                                const { data: existingListing, error: fetchError } = await supabase
                                     .from('listings')
                                     .select('*')
                                     .eq('id', listingId)
@@ -6216,7 +5790,7 @@
                                         return;
                                     }
                                     
-                                    const { data, error } = await window.supabaseClient
+                                    const { data, error } = await supabase
                                         .from('listings')
                                         .update(updatedListing)
                                         .eq('id', listingId)
@@ -6234,7 +5808,7 @@
                                         
                                         if (listingIndex !== -1) {
                                             userListings.splice(listingIndex, 1);
-                                            safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
+                                            localStorage.setItem(userListingsKey, JSON.stringify(userListings));
                                         }
                                         
                                         if (currentUser.listings) {
@@ -6243,8 +5817,8 @@
                                                 currentUser.listings.splice(userListingIndex, 1);
                                                 let users = JSON.parse(localStorage.getItem('users')) || [];
                                                 users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                                                safeSetItem('users', JSON.stringify(users));
-                                                safeSetItem('currentUser', JSON.stringify(currentUser));
+                                                localStorage.setItem('users', JSON.stringify(users));
+                                                localStorage.setItem('currentUser', JSON.stringify(currentUser));
                                             }
                                         }
                                     }
@@ -6267,7 +5841,7 @@
                                     ...userListings[listingIndex],
                                     ...updatedListing
                                 };
-                                safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
+                                localStorage.setItem(userListingsKey, JSON.stringify(userListings));
                                 updateSuccess = true;
                             }
                             
@@ -6281,8 +5855,8 @@
                                     
                                     let users = JSON.parse(localStorage.getItem('users')) || [];
                                     users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                                    safeSetItem('users', JSON.stringify(users));
-                                    safeSetItem('currentUser', JSON.stringify(currentUser));
+                                    localStorage.setItem('users', JSON.stringify(users));
+                                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
                                     updateSuccess = true;
                                 }
                             }
@@ -6341,9 +5915,6 @@
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🚀 Initializing RoomFinderAI systems...');
             
-            // Check for auto-open listing and show loading modal immediately
-            checkForAutoOpenListing();
-            
             // Initialize offline cache
             if (window.offlineCacheManager) {
                 await window.offlineCacheManager.init();
@@ -6386,58 +5957,8 @@
             console.log('🎉 All systems initialized successfully');
         });
         
-        // Set up event delegation for dynamically added buttons
-        // This ensures buttons work even when added after page load
-        document.addEventListener('click', function(event) {
-            // Handle view details button clicks
-            if (event.target.closest('.view-details-btn')) {
-                event.preventDefault();
-                event.stopPropagation();
-                const button = event.target.closest('.view-details-btn');
-                try {
-                    const listing = JSON.parse(button.dataset.listing);
-                    console.log('View details clicked for:', listing.title);
-                    window.showListingModal(listing);
-                } catch (error) {
-                    console.error('Error showing listing modal:', error);
-                }
-            }
-            
-            // Handle chat button clicks
-            if (event.target.closest('.chat-btn')) {
-                event.preventDefault();
-                event.stopPropagation();
-                const button = event.target.closest('.chat-btn');
-                if (!button.disabled) {
-                    try {
-                        console.log('🎯 Chat button clicked:', button.dataset.listing);
-                        const listing = JSON.parse(button.dataset.listing);
-                        console.log('📋 Parsed listing data:', listing);
-                        
-                        // Try different chat systems in order of preference
-                        if (window.startConversation) {
-                            window.startConversation(listing);
-                        } else if (window.fallbackStartChat) {
-                            console.warn('⚠️ Using fallback chat system');
-                            window.fallbackStartChat(listing);
-                        } else if (window.openChatModal && typeof window.openChatModal === 'function') {
-                            window.openChatModal(listing.id, listing.title);
-                        } else {
-                            console.error('❌ No chat function available');
-                            alert('Chat system is not ready. Please refresh the page and try again.');
-                        }
-                    } catch (error) {
-                        console.error('❌ Error parsing listing data or starting conversation:', error);
-                        alert('Error opening chat. Please refresh the page and try again.');
-                    }
-                } else {
-                    console.log('⚠️ Chat button is disabled - no owner email specified');
-                }
-            }
-        });
-        
         // Add notification triggers for new listings
-        if (window.supabaseClient) {
+        if (supabase) {
             supabase
                 .channel('notification_listings')
                 .on('postgres_changes', { 
@@ -6632,16 +6153,13 @@
             // Apply the filter based on type
             switch(type) {
                 case 'price':
-                    const maxPriceEl = document.getElementById('searchMaxPrice');
-                    if (maxPriceEl) maxPriceEl.value = value;
+                    document.getElementById('searchMaxPrice').value = value;
                     break;
                 case 'bedrooms':
-                    const bedroomsEl = document.getElementById('searchBedrooms');
-                    if (bedroomsEl) bedroomsEl.value = value + '+';
+                    document.getElementById('searchBedrooms').value = value + '+';
                     break;
                 case 'type':
-                    const roomTypeEl = document.getElementById('searchRoomType');
-                    if (roomTypeEl) roomTypeEl.value = value;
+                    document.getElementById('searchRoomType').value = value;
                     break;
                 case 'utilities':
                     // This would need custom logic based on your data structure
@@ -6696,20 +6214,6 @@
             const countElement = document.getElementById('listingCount');
             const emptyState = document.getElementById('emptyState');
             const listingsContainer = document.getElementById('listingsContainer');
-            
-            // Add null checks for all elements
-            if (!countElement) {
-                console.warn('listingCount element not found');
-                return;
-            }
-            if (!emptyState) {
-                console.warn('emptyState element not found');
-                return;
-            }
-            if (!listingsContainer) {
-                console.warn('listingsContainer element not found');
-                return;
-            }
             
             if (isLoading) {
                 countElement.textContent = 'Loading properties...';
@@ -6789,244 +6293,6 @@
                     console.error('❌ Safety timeout listings loading failed:', error);
                 }
             }, 5000); // 5-second safety timeout
-        });
-
-        // Final debug functions (defined at the end to ensure they're available)
-        window.quickChatTest = function() {
-            console.log('🔍 Quick Chat Test');
-            console.log('- Chat Modal:', !!document.getElementById('chatModal'));
-            console.log('- Supabase:', !!window.supabaseClient);
-            console.log('- User Logged In:', !!localStorage.getItem('currentUser'));
-            
-            const chatBtns = document.querySelectorAll('.chat-btn:not([disabled])');
-            console.log(`- Found ${chatBtns.length} enabled chat buttons`);
-            
-            if (chatBtns.length > 0) {
-                console.log('🧪 Testing first chat button click...');
-                chatBtns[0].click();
-            } else {
-                console.warn('❌ No enabled chat buttons found');
-            }
-        };
-
-        window.forceOpenChat = function() {
-            console.log('🔧 Force opening chat modal...');
-            const modal = document.getElementById('chatModal');
-            if (modal) {
-                modal.classList.add('active');
-                console.log('✅ Chat modal opened');
-            } else {
-                console.error('❌ Chat modal not found');
-            }
-        };
-
-        // Global delegated event listener for ALL buttons
-        document.addEventListener('click', function(event) {
-            // Check if clicked element is a chat button or inside one
-            const chatBtn = event.target.closest('.chat-btn');
-            if (chatBtn && !chatBtn.disabled) {
-                event.preventDefault();
-                event.stopPropagation();
-                console.log('🎯 Global delegated chat button click detected');
-                
-                try {
-                    const listingData = JSON.parse(chatBtn.dataset.listing);
-                    console.log('📋 Listing from delegated handler:', listingData);
-                    
-                    if (window.startConversation) {
-                        window.startConversation(listingData);
-                    } else if (window.fallbackStartChat) {
-                        window.fallbackStartChat(listingData);
-                    } else {
-                        // Just open the modal
-                        const modal = document.getElementById('chatModal');
-                        if (modal) {
-                            modal.classList.add('active');
-                            console.log('✅ Modal opened via delegated handler');
-                        }
-                    }
-                } catch (error) {
-                    console.error('❌ Error in delegated chat handler:', error);
-                }
-            }
-            
-            // Check if clicked element is the message toggle button or its children
-            const messageBtn = event.target.closest('#messageToggleBtn') || 
-                              (event.target.id === 'messageToggleBtn') ||
-                              (event.target.tagName === 'svg' && event.target.closest('#messageToggleBtn')) ||
-                              (event.target.tagName === 'path' && event.target.closest('#messageToggleBtn'));
-                              
-            if (messageBtn) {
-                event.preventDefault();
-                event.stopPropagation();
-                console.log('📨 Message toggle button clicked!');
-                
-                const panel = document.getElementById('messagePanel');
-                const actualBtn = document.getElementById('messageToggleBtn');
-                
-                if (panel) {
-                    const isHidden = panel.classList.contains('hidden');
-                    if (isHidden) {
-                        panel.classList.remove('hidden');
-                        console.log('✅ Message panel opened');
-                        // Load conversations when opening
-                        if (window.loadUserConversations) {
-                            window.loadUserConversations();
-                        }
-                    } else {
-                        panel.classList.add('hidden');
-                        console.log('✅ Message panel closed');
-                    }
-                } else {
-                    console.error('❌ Message panel not found');
-                }
-            }
-        });
-        
-        console.log('✅ Global chat button and message delegated listeners attached');
-
-        // STRONG PROTECTION: Prevent navigation menu from disappearing
-        setInterval(() => {
-            // Check multiple selectors for navigation elements
-            const selectors = [
-                'nav', 'nav a', 'nav ul', 'nav li',
-                '.nav-link', '.dropdown', '.dropdown-menu',
-                '.mobile-menu-item', '.navbar', '.navbar-nav',
-                'header nav', '.navigation', '.nav-container',
-                '[class*="nav"]', '[id*="nav"]'
-            ];
-            
-            selectors.forEach(selector => {
-                try {
-                    const elements = document.querySelectorAll(selector);
-                    elements.forEach(element => {
-                        const computed = window.getComputedStyle(element);
-                        if (element.style.display === 'none' || 
-                            element.style.visibility === 'hidden' || 
-                            element.style.opacity === '0' ||
-                            computed.display === 'none' ||
-                            computed.visibility === 'hidden') {
-                            
-                            console.log('🛡️ Restoring hidden navigation element:', selector, element);
-                            element.style.display = '';
-                            element.style.visibility = 'visible';
-                            element.style.opacity = '1';
-                            
-                            // Also remove any classes that might hide it
-                            const hiddenClasses = ['hidden', 'd-none', 'invisible', 'opacity-0'];
-                            hiddenClasses.forEach(cls => element.classList.remove(cls));
-                        }
-                    });
-                } catch (e) {
-                    // Ignore selector errors
-                }
-            });
-        }, 3000); // Check every 3 seconds
-        
-        console.log('✅ Navigation protection enabled');
-
-        // Test message panel functionality
-        window.testMessagePanel = function() {
-            console.log('=== MESSAGE PANEL TEST ===');
-            
-            const btn = document.getElementById('messageToggleBtn');
-            const panel = document.getElementById('messagePanel');
-            
-            console.log('1. Elements:');
-            console.log('  - Message Button:', !!btn);
-            console.log('  - Message Panel:', !!panel);
-            console.log('  - Button onclick:', btn ? btn.onclick : 'N/A');
-            
-            console.log('2. Trying to toggle panel...');
-            if (btn) {
-                btn.click();
-                console.log('  - Clicked button');
-                console.log('  - Panel hidden?', panel ? panel.classList.contains('hidden') : 'N/A');
-            }
-            
-            return 'Message panel test complete';
-        };
-
-        // Comprehensive chat test function
-        window.testChat = function() {
-            console.log('=== COMPREHENSIVE CHAT TEST ===');
-            
-            // Test 1: Check functions
-            console.log('1. Functions Available:');
-            console.log('  - window.startConversation:', typeof window.startConversation);
-            console.log('  - window.fallbackStartChat:', typeof window.fallbackStartChat);
-            console.log('  - window.testJavaScript:', typeof window.testJavaScript);
-            
-            // Test 2: Check DOM elements
-            console.log('2. DOM Elements:');
-            console.log('  - Chat Modal:', !!document.getElementById('chatModal'));
-            console.log('  - Chat Buttons:', document.querySelectorAll('.chat-btn').length);
-            console.log('  - Enabled Buttons:', document.querySelectorAll('.chat-btn:not([disabled])').length);
-            
-            // Test 3: Check user auth
-            console.log('3. Authentication:');
-            const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            console.log('  - User Email:', user.email || 'Not logged in');
-            console.log('  - Supabase Client:', !!window.supabaseClient);
-            
-            // Test 4: Try clicking a button
-            const firstBtn = document.querySelector('.chat-btn:not([disabled])');
-            if (firstBtn) {
-                console.log('4. Testing First Chat Button:');
-                try {
-                    const listing = JSON.parse(firstBtn.dataset.listing);
-                    console.log('  - Listing Title:', listing.title);
-                    console.log('  - Has Owner Email:', !!listing.user_email);
-                    console.log('  - Attempting to open chat...');
-                    
-                    if (window.startConversation) {
-                        window.startConversation(listing);
-                    } else if (window.fallbackStartChat) {
-                        window.fallbackStartChat(listing);
-                    } else {
-                        console.error('  ❌ No chat function available!');
-                    }
-                } catch (e) {
-                    console.error('  ❌ Error:', e.message);
-                }
-            } else {
-                console.log('4. No enabled chat buttons found');
-            }
-            
-            console.log('=== TEST COMPLETE ===');
-            return 'Test complete - check console for results';
-        };
-
-    </script>
-    
-    <!-- Page Navigation Cleanup -->
-    <script>
-        // Add cleanup handlers for page navigation
-        window.addEventListener('beforeunload', function() {
-            console.log('🔄 Page unloading - preserving global state');
-            // Don't reset global flags, just cleanup listeners
-            if (window.AUTH_PROTECTION_INTERVAL) {
-                // Keep the interval running for session protection
-            }
-        });
-        
-        // Reset some page-specific flags when navigating away
-        window.addEventListener('pagehide', function() {
-            console.log('📱 Page hidden - cleaning up page-specific state');
-            // Reset only page-specific flags, keep auth and Supabase
-            window.isDOMReady = false;
-            window.initializationAttempts = 0;
-        });
-        
-        // Restore state when page shows again
-        window.addEventListener('pageshow', function(event) {
-            if (event.persisted) {
-                console.log('📱 Page restored from cache - reinitializing');
-                // Page was restored from cache, ensure everything is working
-                if (window.supabaseClient && window.supabaseReady) {
-                    console.log('✅ Supabase still ready after page cache restore');
-                }
-            }
         });
     </script>
     
