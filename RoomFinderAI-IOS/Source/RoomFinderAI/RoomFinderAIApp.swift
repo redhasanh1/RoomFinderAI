@@ -3430,26 +3430,49 @@ class OpenAIService: ObservableObject {
     }
     
     private func extractMaxPrice(from message: String) -> Int? {
+        print("🔍 DEBUG extractMaxPrice from: '\(message)'")
+        
         // Pattern 1: "under $X", "below $X", "max $X"
         let maxKeywords = ["under", "below", "max", "maximum", "up to", "no more than"]
         for keyword in maxKeywords {
             if message.contains(keyword) {
                 if let price = findPriceAfterKeyword(keyword, in: message) {
-                    return price
+                    print("   Found max price \(price) with keyword '\(keyword)'")
+                    // Only accept reasonable prices (over $100)
+                    if price >= 100 {
+                        return price
+                    } else {
+                        print("   Rejected unrealistic max price: \(price)")
+                    }
                 }
             }
         }
         
         // Pattern 2: "$X or less", "$X maximum"
         if let price = extractPriceWithSuffix(["or less", "maximum", "max"], from: message) {
-            return price
+            print("   Found max price \(price) with suffix pattern")
+            // Only accept reasonable prices (over $100)
+            if price >= 100 {
+                return price
+            } else {
+                print("   Rejected unrealistic max price: \(price)")
+            }
         }
         
         // If no min keywords present, assume single price is max
         if !message.contains("over") && !message.contains("above") && !message.contains("minimum") && !message.contains("more than") {
-            return extractFirstPrice(from: message)
+            if let price = extractFirstPrice(from: message) {
+                print("   Found first price \(price) as potential max")
+                // Only accept reasonable prices (over $100)
+                if price >= 100 {
+                    return price
+                } else {
+                    print("   Rejected unrealistic first price as max: \(price)")
+                }
+            }
         }
         
+        print("   No max price found")
         return nil
     }
     
@@ -3504,12 +3527,33 @@ class OpenAIService: ObservableObject {
     }
     
     private func extractFirstPrice(from message: String) -> Int? {
+        print("🔍 DEBUG extractFirstPrice from: '\(message)'")
         let words = message.components(separatedBy: .whitespacesAndNewlines)
-        for word in words {
+        for (index, word) in words.enumerated() {
             if let price = parsePrice(from: word) {
-                return price
+                print("   Found potential price \(price) in word '\(word)'")
+                
+                // Skip if this looks like bedroom/bathroom count
+                let context = index > 0 ? words[index-1] : ""
+                let nextContext = index < words.count-1 ? words[index+1] : ""
+                
+                if context.contains("bed") || nextContext.contains("bed") || 
+                   context.contains("bath") || nextContext.contains("bath") ||
+                   nextContext.contains("bedroom") || nextContext.contains("bathroom") {
+                    print("   Skipping \(price) - appears to be bedroom/bathroom count")
+                    continue
+                }
+                
+                // Only return prices that look reasonable for rent (over $100)
+                if price >= 100 {
+                    return price
+                } else {
+                    print("   Skipping \(price) - too low to be rent price")
+                    continue
+                }
             }
         }
+        print("   No valid price found")
         return nil
     }
     
