@@ -215,15 +215,16 @@ class ChatSystem {
         }
         
         try {
-            // Subscribe to messages for conversations user is part of
+            // Subscribe to all messages where user is either sender or recipient
+            // This ensures both users in a conversation receive real-time updates
             const messageSubscription = this.supabase
                 .channel('messages-changes')
                 .on('postgres_changes', 
                     { 
                         event: '*', 
                         schema: 'public', 
-                        table: 'messages',
-                        filter: `conversation_id=in.(${await this.getUserConversationIds()})`
+                        table: 'messages'
+                        // Remove the filter to catch all messages, we'll filter in the handler
                     }, 
                     (payload) => this.handleMessageUpdate(payload)
                 )
@@ -231,7 +232,7 @@ class ChatSystem {
             
             this.subscriptions.push(messageSubscription);
             
-            // Subscribe to conversations
+            // Subscribe to conversations where user is tenant or landlord
             const conversationSubscription = this.supabase
                 .channel('conversations-changes')
                 .on('postgres_changes', 
@@ -246,7 +247,7 @@ class ChatSystem {
             
             this.subscriptions.push(conversationSubscription);
             
-            console.log('📡 Real-time subscriptions established');
+            console.log('📡 Real-time subscriptions established for all messages and conversations');
             
         } catch (error) {
             console.error('❌ Failed to setup real-time subscriptions:', error);
@@ -283,6 +284,12 @@ class ChatSystem {
         
         const { eventType, new: newRecord, old: oldRecord } = payload;
         
+        // Filter out messages that don't involve the current user
+        const messageRecord = newRecord || oldRecord;
+        if (!this.isMessageRelevantToUser(messageRecord)) {
+            return; // Skip messages not involving this user
+        }
+        
         switch (eventType) {
             case 'INSERT':
                 this.handleNewMessage(newRecord);
@@ -294,6 +301,19 @@ class ChatSystem {
                 this.handleMessageDelete(oldRecord);
                 break;
         }
+    }
+    
+    /**
+     * Check if a message is relevant to the current user
+     */
+    isMessageRelevantToUser(message) {
+        if (!message || !this.currentUser) return false;
+        
+        // Check if user is sender, recipient, tenant, or landlord in this message
+        return message.sender_id === this.currentUser.id ||
+               message.recipient_id === this.currentUser.id ||
+               message.tenant_id === this.currentUser.id ||
+               message.landlord_id === this.currentUser.id;
     }
     
     /**
@@ -329,6 +349,56 @@ class ChatSystem {
         if (this.config.enableNotifications) {
             this.showNotification(`New message from ${message.sender_email}`, message.content);
         }
+    }
+    
+    /**
+     * Handle conversation updates from real-time subscription
+     */
+    handleConversationUpdate(payload) {
+        console.log('💬 Conversation update:', payload);
+        
+        const { eventType, new: newRecord, old: oldRecord } = payload;
+        
+        // Filter out conversations that don't involve the current user
+        const conversationRecord = newRecord || oldRecord;
+        if (!this.isConversationRelevantToUser(conversationRecord)) {
+            return; // Skip conversations not involving this user
+        }
+        
+        switch (eventType) {
+            case 'INSERT':
+                // New conversation created
+                this.conversations.set(newRecord.id, {
+                    ...newRecord,
+                    messages: [],
+                    unreadCount: 0
+                });
+                this.updateConversationsList();
+                break;
+            case 'UPDATE':
+                // Conversation updated
+                const existingConv = this.conversations.get(newRecord.id);
+                if (existingConv) {
+                    Object.assign(existingConv, newRecord);
+                    this.updateConversationsList();
+                }
+                break;
+            case 'DELETE':
+                // Conversation deleted
+                this.conversations.delete(oldRecord.id);
+                this.updateConversationsList();
+                break;
+        }
+    }
+    
+    /**
+     * Check if a conversation is relevant to the current user
+     */
+    isConversationRelevantToUser(conversation) {
+        if (!conversation || !this.currentUser) return false;
+        
+        return conversation.tenant_id === this.currentUser.id ||
+               conversation.landlord_id === this.currentUser.id;
     }
     
     /**
@@ -1009,17 +1079,15 @@ class ChatSystem {
         if (!text || typeof text !== 'string') return '';
         
         // Log special characters for debugging
-        if (/[?!öÖäÄüÜß]/.test(text)) {
-            console.log('🔤 Special characters detected in message:', text);
+        if (/[?!öÖäÄüÜßáéíóúàèìòùâêîôûãñç]/.test(text)) {
+            console.log('🔤 Special characters detected in message (will be preserved):', text);
         }
         
-        // Use a more reliable method for escaping that preserves UTF-8 characters
-        return text
-            .replace(/&/g, '&amp;')   // Must be first
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#x27;');  // More compatible than &#39;
+        // Create a DOM element and use textContent to safely escape only dangerous HTML characters
+        // This preserves UTF-8 characters, punctuation, and international characters
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     formatMessageTime(timestamp) {

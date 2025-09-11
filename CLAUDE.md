@@ -100,12 +100,20 @@ Use `gemini -p` when:
 - No need for --yolo flag for read-only analysis
 - Gemini's context window can handle entire codebases that would overflow Claude's context
 - When checking implementations, be specific about what you're looking for to get accurate results
+## Git and Deployment Guidelines
+
 - Before pushing, please pull latest code if there is a new one and merge it successfully
+- Pull code before pushing. Always!
+- Pull latest code from the hasan branch before pushing
+
+## Commit Message Format
+
 - Push changes with descriptive commit messages that explain what was changed
+- Don't include "claude" or "generated" in commit messages
+- **When Claude commits**: use only a short summary of what was edited/changed/fixed (no "EricT2003" in message content)
+- **When user pushes from their laptop**: EricT2003 appears as git author only
+
+## Project Scope
+
 - I'm only editing the website, not the android app. Just the website
 - I am using Railway and Supabase for all the API, keys and data. The code we edit and add or change should never include these sensitive keys and data in the files here
-- Pull code before pushing. Always!
-
-- Push changes with descriptive commit messages
-- Don't include "claude" or "generated" in commit messages
-- pull latest code from the hasan branch before pushing. Also push only with EricT2003 and a short summary only which doesnt have claude generate or anything, just a very short summary of what was edited/changed/fixed
