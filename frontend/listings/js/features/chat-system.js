@@ -309,11 +309,27 @@ class ChatSystem {
     isMessageRelevantToUser(message) {
         if (!message || !this.currentUser) return false;
         
-        // Check if user is sender, recipient, tenant, or landlord in this message
-        return message.sender_id === this.currentUser.id ||
-               message.recipient_id === this.currentUser.id ||
-               message.tenant_id === this.currentUser.id ||
-               message.landlord_id === this.currentUser.id;
+        // Check if user is the sender
+        if (message.sender_id === this.currentUser.id) {
+            return true;
+        }
+        
+        // Check if this message belongs to a conversation the user is part of
+        const conversation = this.conversations.get(message.conversation_id);
+        if (conversation) {
+            return conversation.tenant_id === this.currentUser.id ||
+                   conversation.landlord_id === this.currentUser.id;
+        }
+        
+        // Fallback: check if the message is in any of the user's conversations
+        for (const [convId, conv] of this.conversations) {
+            if (convId === message.conversation_id) {
+                return conv.tenant_id === this.currentUser.id ||
+                       conv.landlord_id === this.currentUser.id;
+            }
+        }
+        
+        return false;
     }
     
     /**
