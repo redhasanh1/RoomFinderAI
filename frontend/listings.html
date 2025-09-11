@@ -2450,7 +2450,7 @@
                         const originalLength = userListings.length;
                         userListings = userListings.filter(l => l.id !== listingId);
                         if (userListings.length < originalLength) {
-                            localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                            safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
                             console.log(`🧹 Cleaned ${userListingsKey}`);
                         }
                         
@@ -3573,59 +3573,60 @@
                 return; // Exit early on error
             }
 
-            // OPTIONAL LOCALSTORAGE OPERATIONS (outside try-catch to not interfere with success)
-            try {
-                currentUser.listings = currentUser.listings || [];
-                // Create clean listing for currentUser (without base64 data)
-                const cleanListingForUser = { ...newListing };
-                if (cleanListingForUser.media && Array.isArray(cleanListingForUser.media)) {
-                    cleanListingForUser.media = cleanListingForUser.media.map(mediaItem => ({
-                        name: mediaItem.name,
-                        type: mediaItem.type,
-                        url: mediaItem.url
-                    }));
+            // OPTIONAL LOCALSTORAGE OPERATIONS (run asynchronously to not interfere with success)
+            setTimeout(() => {
+                try {
+                    currentUser.listings = currentUser.listings || [];
+                    // Create clean listing for currentUser (without base64 data)
+                    const cleanListingForUser = { ...newListing };
+                    if (cleanListingForUser.media && Array.isArray(cleanListingForUser.media)) {
+                        cleanListingForUser.media = cleanListingForUser.media.map(mediaItem => ({
+                            name: mediaItem.name,
+                            type: mediaItem.type,
+                            url: mediaItem.url
+                        }));
+                    }
+                    currentUser.listings.push(cleanListingForUser);
+                    
+                    // Use safe localStorage operations to avoid quota exceeded errors
+                    let users = JSON.parse(localStorage.getItem('users')) || [];
+                    users = users.map(u => u.email === currentUser.email ? currentUser : u);
+                    
+                    // Try to save users array safely, if it fails, skip it (we have userListings as backup)
+                    if (!safeLocalStorageSetItem('users', JSON.stringify(users))) {
+                        console.warn('⚠️ Could not update users array due to storage limits');
+                    }
+                    
+                    if (!safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser))) {
+                        console.warn('⚠️ Could not update currentUser due to storage limits');
+                    }
+                    
+                    // Also save to userListings key for profile page compatibility (this is the important one)
+                    const userListingsKey = `userListings_${currentUser.email}`;
+                    let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                    
+                    // Create a clean version for localStorage (without base64 data)
+                    const cleanListing = { ...newListing };
+                    if (cleanListing.media && Array.isArray(cleanListing.media)) {
+                        cleanListing.media = cleanListing.media.map(mediaItem => ({
+                            name: mediaItem.name,
+                            type: mediaItem.type,
+                            url: mediaItem.url
+                            // Remove any data property to save space
+                        }));
+                    }
+                    
+                    userListings.push(cleanListing);
+                    if (!safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings))) {
+                        console.warn('⚠️ Could not update user listings due to storage limits');
+                    }
+                    
+                    console.log('📱 Background localStorage operations completed');
+                    
+                } catch (localStorageError) {
+                    console.warn('⚠️ Background localStorage operations failed but listing was saved successfully:', localStorageError);
                 }
-                currentUser.listings.push(cleanListingForUser);
-                
-                // Use safe localStorage operations to avoid quota exceeded errors
-                let users = JSON.parse(localStorage.getItem('users')) || [];
-                users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                
-                // Try to save users array safely, if it fails, skip it (we have userListings as backup)
-                if (!safeLocalStorageSetItem('users', JSON.stringify(users))) {
-                    console.warn('⚠️ Could not update users array due to storage limits');
-                }
-                
-                if (!safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser))) {
-                    console.warn('⚠️ Could not update currentUser due to storage limits');
-                }
-                
-                // Also save to userListings key for profile page compatibility (this is the important one)
-                const userListingsKey = `userListings_${currentUser.email}`;
-                let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                
-                // Create a clean version for localStorage (without base64 data)
-                const cleanListing = { ...newListing };
-                if (cleanListing.media && Array.isArray(cleanListing.media)) {
-                    cleanListing.media = cleanListing.media.map(mediaItem => ({
-                        name: mediaItem.name,
-                        type: mediaItem.type,
-                        url: mediaItem.url
-                        // Remove any data property to save space
-                    }));
-                }
-                
-                userListings.push(cleanListing);
-                if (!safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings))) {
-                    console.warn('⚠️ Could not update user listings due to storage limits');
-                }
-                
-                console.log('Updated localStorage with new listing:', newListing);
-                console.log('Saved to userListings key:', userListingsKey);
-                
-            } catch (localStorageError) {
-                console.warn('⚠️ localStorage operations failed but listing was saved successfully:', localStorageError);
-            }
+            }, 100); // Small delay to ensure it runs after the main success flow
         });
 
         // Chat Functionality
@@ -6094,7 +6095,7 @@
                             const itemId = typeof item === 'string' ? item : item.id;
                             return itemId !== listingId;
                         });
-                        localStorage.setItem(storageKey, JSON.stringify(savedListings));
+                        safeLocalStorageSetItem(storageKey, JSON.stringify(savedListings));
                         console.log('✅ Removed from favorites via localStorage:', listingId);
                     } else {
                         // Add to localStorage - save complete listing object
@@ -6131,7 +6132,7 @@
                                 // Add the complete listing object with a favorited timestamp
                                 listingToSave.favorited_at = new Date().toISOString();
                                 savedListings.push(listingToSave);
-                                localStorage.setItem(storageKey, JSON.stringify(savedListings));
+                                safeLocalStorageSetItem(storageKey, JSON.stringify(savedListings));
                                 console.log('✅ Added complete listing to favorites:', listingToSave);
                             }
                         } else {
@@ -6282,7 +6283,7 @@
                                 const userListingsKey = `userListings_${currentUser.email}`;
                                 let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                                 userListings = userListings.filter(l => l.id !== listingId);
-                                localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                                safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
                                 
                                 if (currentUser.listings) {
                                     currentUser.listings = currentUser.listings.filter(l => l.id !== listingId);
@@ -6309,7 +6310,7 @@
                     userListings = userListings.filter(l => l.id !== listingId);
                     
                     if (userListings.length < originalLength) {
-                        localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                        safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
                         deleteSuccess = true;
                     }
                     
@@ -6547,7 +6548,7 @@
                                         
                                         if (listingIndex !== -1) {
                                             userListings.splice(listingIndex, 1);
-                                            localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                                            safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
                                         }
                                         
                                         if (currentUser.listings) {
@@ -6580,7 +6581,7 @@
                                     ...userListings[listingIndex],
                                     ...updatedListing
                                 };
-                                localStorage.setItem(userListingsKey, JSON.stringify(userListings));
+                                safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
                                 updateSuccess = true;
                             }
                             
