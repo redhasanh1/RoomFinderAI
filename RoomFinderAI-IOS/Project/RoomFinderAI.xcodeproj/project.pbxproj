@@ -35,6 +35,7 @@
 		F1234567890123456789005 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789105 /* AuthService.swift */; };
 		F1234567890123456789006 /* ListingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789106 /* ListingsViewModel.swift */; };
 		F1234567890123456789007 /* NewListingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1234567890123456789107 /* NewListingsView.swift */; };
+		E1234567890123456789008 /* EditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1234567890123456789108 /* EditProfileView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -68,6 +69,7 @@
 		F1234567890123456789105 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AuthService.swift; path = ../Source/RoomFinderAI/Data/AuthService.swift; sourceTree = "<group>"; };
 		F1234567890123456789106 /* ListingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListingsViewModel.swift; path = ../Source/RoomFinderAI/Presentation/ListingsViewModel.swift; sourceTree = "<group>"; };
 		F1234567890123456789107 /* NewListingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NewListingsView.swift; path = ../Source/RoomFinderAI/Presentation/NewListingsView.swift; sourceTree = "<group>"; };
+		E1234567890123456789108 /* EditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EditProfileView.swift; path = ../Source/RoomFinderAI/Views/EditProfileView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,6 +165,7 @@
 				A01234567890123456789035 /* PropertyDetailView.swift */,
 				A01234567890123456789039 /* ProfileView.swift */,
 				6C1F874F608B396521435D67 /* SubleaseView.swift */,
+				E1234567890123456789108 /* EditProfileView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -347,6 +350,7 @@
 				4A38D1827D90B5A91AA60B83 /* DebugEnv.swift in Sources */,
 				BE0E697CCF9C78A9ED9337AB /* ParityProbe.swift in Sources */,
 				86FF148C3C1BB48BA69C220B /* PreviewHelpers.swift in Sources */,
+				E1234567890123456789008 /* EditProfileView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
