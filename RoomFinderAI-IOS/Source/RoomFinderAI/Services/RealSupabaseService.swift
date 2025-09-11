@@ -718,7 +718,15 @@ class RealSupabaseService: ObservableObject {
         }
         
         Task {
-            await channel.subscribe()
+            do {
+                try await channel.subscribeWithError()
+            } catch {
+                print("❌ Real-time subscription error: \(error)")
+                await MainActor.run {
+                    self.connectionError = error.localizedDescription
+                    self.connectionStatus = "Failed"
+                }
+            }
         }
     }
     
@@ -1512,7 +1520,7 @@ class RealSupabaseService: ObservableObject {
     
     // MARK: - Create Listing Method
     
-    func createListing(_ listingData: [String: Any]) async throws {
+    func createListing(_ listingData: SampleListingData) async throws {
         print("🏠 DEBUG: Creating new listing...")
         
         do {
