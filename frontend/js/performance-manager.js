@@ -11,7 +11,10 @@ class PerformanceManager {
         
         this.observers = [];
         this.resourceTimings = [];
+        this.analyzedSlowResources = new Set(); // Track already analyzed slow resources
+        this.lastAnalysisTime = 0; // Rate limiting for analysis
         this.isMonitoring = false;
+        this.enableConsoleLogging = true; // Option to disable console noise
         
         console.log('⚡ Performance Manager initialized');
     }
@@ -94,16 +97,24 @@ class PerformanceManager {
         // Monitor resource timings
         this.observePerformanceEntry('resource', (entries) => {
             entries.forEach(entry => {
-                this.resourceTimings.push({
+                const resourceInfo = {
                     name: entry.name,
                     duration: entry.duration,
                     size: entry.transferSize || 0,
-                    type: this.getResourceType(entry.name)
-                });
+                    type: this.getResourceType(entry.name),
+                    timestamp: Date.now()
+                };
+                
+                this.resourceTimings.push(resourceInfo);
             });
             
-            // Analyze slow resources
-            this.analyzeSlowResources();
+            // Limit array size to prevent memory issues (keep only last 100 resources)
+            if (this.resourceTimings.length > 100) {
+                this.resourceTimings = this.resourceTimings.slice(-100);
+            }
+            
+            // Analyze slow resources with rate limiting
+            this.analyzeSlowResourcesThrottled();
         });
     }
 
@@ -161,28 +172,81 @@ class PerformanceManager {
         console.table(timings);
     }
 
+    // Throttled version of analyze slow resources
+    analyzeSlowResourcesThrottled() {
+        const now = Date.now();
+        const timeSinceLastAnalysis = now - this.lastAnalysisTime;
+        
+        // Rate limit: Only analyze once every 5 seconds
+        if (timeSinceLastAnalysis < 5000) {
+            return;
+        }
+        
+        this.lastAnalysisTime = now;
+        this.analyzeSlowResources();
+    }
+
     // Analyze slow resources
     analyzeSlowResources() {
-        // Adjusted threshold for better performance perception
-        // 2 seconds for initial load, 1 second for subsequent resources
-        const isInitialLoad = performance.timing && 
-            (Date.now() - performance.timing.navigationStart < 10000);
-        const threshold = isInitialLoad ? 2000 : 1500;
+        if (!this.enableConsoleLogging) return;
         
-        const slowResources = this.resourceTimings
-            .filter(resource => resource.duration > threshold)
-            .sort((a, b) => b.duration - a.duration)
-            .slice(0, 5);
-
-        if (slowResources.length > 0) {
-            // Only log as warning if resources are extremely slow (> 3 seconds)
-            const extremelySlow = slowResources.filter(r => r.duration > 3000);
-            if (extremelySlow.length > 0) {
-                console.warn('🐌 Extremely slow resources detected:', extremelySlow);
-            } else {
-                console.log('⏱️ Slower resources detected (but within acceptable range):', slowResources);
+        // More realistic thresholds based on resource type and network conditions
+        const getThresholdForResource = (resource) => {
+            switch (resource.type) {
+                case 'image':
+                    return 4000; // Images can take longer, especially large ones
+                case 'video':
+                    return 8000; // Videos are expected to take even longer
+                case 'font':
+                    return 3000; // Fonts are important but can be slower
+                case 'script':
+                    return 2500; // Scripts should be reasonably fast
+                case 'stylesheet':
+                    return 2000; // CSS should load quickly
+                default:
+                    return 3000; // Default threshold
             }
-            this.optimizeSlowResources(slowResources);
+        };
+        
+        // Find new slow resources that haven't been analyzed yet
+        const newSlowResources = this.resourceTimings
+            .filter(resource => {
+                const threshold = getThresholdForResource(resource);
+                const resourceKey = `${resource.name}-${Math.floor(resource.duration)}`;
+                
+                if (resource.duration > threshold && !this.analyzedSlowResources.has(resourceKey)) {
+                    this.analyzedSlowResources.add(resourceKey);
+                    return true;
+                }
+                return false;
+            })
+            .sort((a, b) => b.duration - a.duration)
+            .slice(0, 3); // Limit to top 3 to reduce noise
+
+        if (newSlowResources.length > 0) {
+            // Only log as warning if resources are extremely slow (> 6 seconds)
+            const extremelySlow = newSlowResources.filter(r => r.duration > 6000);
+            if (extremelySlow.length > 0) {
+                console.warn('🐌 Extremely slow resources detected:', extremelySlow.map(r => ({
+                    name: r.name.split('/').pop() || r.name, // Show only filename to reduce noise
+                    duration: Math.round(r.duration) + 'ms',
+                    type: r.type,
+                    size: r.size ? Math.round(r.size / 1024) + 'KB' : 'unknown'
+                })));
+            } else {
+                // Only log slower resources if user explicitly wants detailed monitoring
+                if (window.location.search.includes('debug=performance')) {
+                    console.log('⏱️ Slower resources detected (but within acceptable range):', 
+                        newSlowResources.map(r => r.name.split('/').pop() + ' - ' + Math.round(r.duration) + 'ms'));
+                }
+            }
+            
+            this.optimizeSlowResources(newSlowResources);
+        }
+        
+        // Clean up old analyzed resources to prevent memory leaks
+        if (this.analyzedSlowResources.size > 200) {
+            this.analyzedSlowResources.clear();
         }
     }
 
@@ -465,6 +529,28 @@ class PerformanceManager {
         }
     }
 
+    // Control performance logging
+    setConsoleLogging(enabled) {
+        this.enableConsoleLogging = enabled;
+        console.log(enabled ? 
+            '📢 Performance console logging enabled' : 
+            '🔇 Performance console logging disabled');
+    }
+
+    // Enable detailed performance debugging
+    enableDebugMode() {
+        this.enableConsoleLogging = true;
+        console.log('🐛 Performance debug mode enabled - all warnings will be shown');
+    }
+
+    // Disable performance monitoring entirely
+    disableMonitoring() {
+        this.isMonitoring = false;
+        this.enableConsoleLogging = false;
+        this.observers.forEach(observer => observer.disconnect());
+        console.log('⏸️ Performance monitoring completely disabled');
+    }
+
     // Get performance report
     getPerformanceReport() {
         return {
@@ -523,10 +609,28 @@ document.addEventListener('DOMContentLoaded', () => {
     window.performanceManager.init();
     window.performanceManager.enableAllOptimizations();
     
-    // Log performance summary after page load
+    // Disable console logging by default to reduce noise
+    // Enable only if explicitly requested or in debug mode
+    const shouldEnableLogging = window.location.search.includes('debug=performance') || 
+                               window.location.hostname === 'localhost' ||
+                               window.location.hostname === '127.0.0.1';
+    
+    if (!shouldEnableLogging) {
+        window.performanceManager.setConsoleLogging(false);
+    }
+    
+    // Log performance summary after page load (only if logging enabled)
     window.addEventListener('load', () => {
         setTimeout(() => {
-            window.performanceManager.logPerformanceSummary();
+            if (window.performanceManager.enableConsoleLogging) {
+                window.performanceManager.logPerformanceSummary();
+            }
         }, 2000);
     });
 });
+
+// Global helper functions for manual control
+window.enablePerformanceLogging = () => window.performanceManager.setConsoleLogging(true);
+window.disablePerformanceLogging = () => window.performanceManager.setConsoleLogging(false);
+window.enablePerformanceDebug = () => window.performanceManager.enableDebugMode();
+window.disablePerformanceMonitoring = () => window.performanceManager.disableMonitoring();
