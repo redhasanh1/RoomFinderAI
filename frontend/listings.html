@@ -191,6 +191,79 @@
         }, 5000);
         
         console.log('✅ Emergency Authentication Protection System Active');
+        
+        // ✅ GLOBAL CHAT SCROLL FUNCTIONS - Defined early to prevent scope issues
+        console.log('🔧 Defining global chat scroll functions...');
+        
+        // Global chat scroll helper variables
+        window.globalUnreadMessagesCount = 0;
+        window.globalUserScrolledUp = false;
+
+        // Check if user is at bottom - Global window function
+        window.isUserAtBottom = function() {
+            const chatMessagesContainer = document.getElementById('chatMessages');
+            if (!chatMessagesContainer) return true;
+            const scrollTop = chatMessagesContainer.scrollTop;
+            const scrollHeight = chatMessagesContainer.scrollHeight;
+            const clientHeight = chatMessagesContainer.clientHeight;
+            return (scrollHeight - scrollTop - clientHeight) <= 50;
+        };
+
+        // Update scroll button visibility and unread count - Global window function
+        window.updateScrollButton = function() {
+            const scrollBtn = document.getElementById('scrollToBottomBtn');
+            const unreadCountEl = document.getElementById('unreadCount');
+            
+            if (!scrollBtn || !unreadCountEl) return;
+            
+            const atBottom = window.isUserAtBottom();
+            
+            if (atBottom) {
+                scrollBtn.classList.add('hidden');
+                window.globalUnreadMessagesCount = 0;
+                window.globalUserScrolledUp = false;
+            } else {
+                scrollBtn.classList.remove('hidden');
+                window.globalUserScrolledUp = true;
+            }
+            
+            if (window.globalUnreadMessagesCount > 0) {
+                unreadCountEl.textContent = window.globalUnreadMessagesCount;
+                unreadCountEl.classList.remove('hidden');
+            } else {
+                unreadCountEl.classList.add('hidden');
+            }
+        };
+
+        // Smart scroll function - Global window function for access from multiple locations
+        window.smartScrollToBottom = function() {
+            console.log('🔄 smartScrollToBottom called');
+            const chatMessagesContainer = document.getElementById('chatMessages');
+            if (!chatMessagesContainer) {
+                console.log('⚠️ chatMessagesContainer not found');
+                return;
+            }
+            
+            const scrollTop = chatMessagesContainer.scrollTop;
+            const scrollHeight = chatMessagesContainer.scrollHeight;
+            const clientHeight = chatMessagesContainer.clientHeight;
+            const scrollThreshold = 100; // pixels from bottom
+            
+            const isNearBottom = (scrollHeight - scrollTop - clientHeight) <= scrollThreshold;
+            
+            if (isNearBottom && !window.globalUserScrolledUp) {
+                chatMessagesContainer.scrollTop = scrollHeight;
+                window.globalUnreadMessagesCount = 0;
+                window.updateScrollButton();
+                console.log('✅ Scrolled to bottom');
+            } else {
+                window.globalUnreadMessagesCount++;
+                window.updateScrollButton();
+                console.log('📊 Added to unread count:', window.globalUnreadMessagesCount);
+            }
+        };
+        
+        console.log('✅ Global chat scroll functions defined');
     </script>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -3281,13 +3354,15 @@
             
             // Use global scroll helper functions (moved to global scope for access from loadMessages)
             
-            // Scroll to bottom function
+            // Scroll to bottom function - uses window global variables
             function scrollToBottom() {
                 if (!chatMessagesContainer) return;
                 chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-                globalUnreadMessagesCount = 0;
-                globalUserScrolledUp = false;
-                updateScrollButton();
+                window.globalUnreadMessagesCount = 0;
+                window.globalUserScrolledUp = false;
+                if (typeof window.updateScrollButton === 'function') {
+                    window.updateScrollButton();
+                }
             }
 
             console.log('✅ All chat elements found:', {
@@ -3308,7 +3383,9 @@
             
             // Add scroll event listener for smart scroll behavior
             chatMessagesContainer.addEventListener('scroll', () => {
-                updateScrollButton();
+                if (typeof window.updateScrollButton === 'function') {
+                    window.updateScrollButton();
+                }
             });
             
             // Add click handler for scroll to bottom button
@@ -3444,7 +3521,9 @@
                     <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
                 `;
                 chatMessagesContainer.appendChild(messageElement);
-                smartScrollToBottom();
+                if (typeof window.smartScrollToBottom === 'function') {
+                    window.smartScrollToBottom();
+                }
                 
                 // Send to database
                 const { error } = await supabase
@@ -3486,7 +3565,9 @@
                     <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
                 `;
                 chatMessagesContainer.appendChild(messageElement);
-                smartScrollToBottom();
+                if (typeof window.smartScrollToBottom === 'function') {
+                    window.smartScrollToBottom();
+                }
 
                 try {
                     // Upload file to Supabase storage
@@ -4183,67 +4264,7 @@
             console.log('- Disabled Chat Buttons:', document.querySelectorAll('.chat-btn[disabled]').length);
         };
 
-        // Global chat scroll helper variables
-        let globalUnreadMessagesCount = 0;
-        let globalUserScrolledUp = false;
-
-        // Check if user is at bottom - Global function
-        function isUserAtBottom() {
-            const chatMessagesContainer = document.getElementById('chatMessages');
-            if (!chatMessagesContainer) return true;
-            const scrollTop = chatMessagesContainer.scrollTop;
-            const scrollHeight = chatMessagesContainer.scrollHeight;
-            const clientHeight = chatMessagesContainer.clientHeight;
-            return (scrollHeight - scrollTop - clientHeight) <= 50;
-        }
-
-        // Update scroll button visibility and unread count - Global function
-        function updateScrollButton() {
-            const scrollBtn = document.getElementById('scrollToBottomBtn');
-            const unreadCountEl = document.getElementById('unreadCount');
-            
-            if (!scrollBtn || !unreadCountEl) return;
-            
-            const atBottom = isUserAtBottom();
-            
-            if (atBottom) {
-                scrollBtn.classList.add('hidden');
-                globalUnreadMessagesCount = 0;
-                globalUserScrolledUp = false;
-            } else {
-                scrollBtn.classList.remove('hidden');
-                globalUserScrolledUp = true;
-            }
-            
-            if (globalUnreadMessagesCount > 0) {
-                unreadCountEl.textContent = globalUnreadMessagesCount;
-                unreadCountEl.classList.remove('hidden');
-            } else {
-                unreadCountEl.classList.add('hidden');
-            }
-        }
-
-        // Smart scroll function - Global scope for access from multiple functions
-        function smartScrollToBottom() {
-            const chatMessagesContainer = document.getElementById('chatMessages');
-            if (!chatMessagesContainer) return;
-            
-            const scrollTop = chatMessagesContainer.scrollTop;
-            const scrollHeight = chatMessagesContainer.scrollHeight;
-            const clientHeight = chatMessagesContainer.clientHeight;
-            const scrollThreshold = 100; // pixels from bottom
-            
-            const isNearBottom = (scrollHeight - scrollTop - clientHeight) <= scrollThreshold;
-            
-            if (isNearBottom && !globalUserScrolledUp) {
-                chatMessagesContainer.scrollTop = scrollHeight;
-                globalUnreadMessagesCount = 0;
-                updateScrollButton();
-            } else {
-                globalUnreadMessagesCount++;
-                updateScrollButton();
-            }
-        }
+        // Removed duplicate scroll functions - now using window.* versions defined at top
 
         async function loadMessages(conversationId) {
             console.log('🔄 Loading messages for conversation:', conversationId);
@@ -4315,7 +4336,17 @@
                     chatMessagesContainer.appendChild(messageElement);
                 });
 
-                smartScrollToBottom();
+                // Safe call to scroll function with defensive check
+                if (typeof window.smartScrollToBottom === 'function') {
+                    window.smartScrollToBottom();
+                } else {
+                    console.error('❌ smartScrollToBottom function not available');
+                    // Fallback: simple scroll to bottom
+                    const chatContainer = document.getElementById('chatMessages');
+                    if (chatContainer) {
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }
+                }
                 console.log('✅ Messages loaded successfully:', messages.length, 'messages displayed');
                 
             } catch (error) {
