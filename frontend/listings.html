@@ -1720,7 +1720,12 @@
                 <div id="modalDetails" class="text-gray-600 mb-4"></div>
                 <p id="modalDescription" class="text-gray-600 mb-4"></p>
                 <div id="modalMedia" class="modal-media flex flex-wrap mb-4"></div>
-                <a id="modalViewDetails" href="#" class="inline-block btn-primary px-8 py-3 rounded-lg font-semibold text-center w-full">View Details</a>
+                <div class="flex space-x-3">
+                    <a id="modalViewDetails" href="#" class="flex-1 btn-primary px-8 py-3 rounded-lg font-semibold text-center">View Details</a>
+                    <button id="modalChatButton" class="flex-1 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg">
+                        Chat with Landlord
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -4940,10 +4945,6 @@
                         <span>${listing.utilities}</span>
                     </div>
                     <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
-                    <div class="flex space-x-2 mt-4">
-                        <button class="view-details-btn w-1/2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}'>View Details</button>
-                        <button class="chat-btn w-1/2 ${hasOwner ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>Chat</button>
-                    </div>
                 </div>
             `;
             // Apply Tailwind classes directly here for simplicity, as .listing-card CSS focuses on 3D aspects
@@ -4953,30 +4954,12 @@
             perspectiveContainer.appendChild(listingCard); // Append card to perspective container
             container.appendChild(perspectiveContainer); // Append perspective container to main listings container
 
-            // Add event listeners for this card
-            const viewDetailsBtn = listingCard.querySelector('.view-details-btn');
-            const chatBtn = listingCard.querySelector('.chat-btn');
-            
-            viewDetailsBtn.addEventListener('click', () => {
-                const listing = JSON.parse(viewDetailsBtn.dataset.listing);
+            // Make entire card clickable to view details
+            listingCard.style.cursor = 'pointer';
+            listingCard.addEventListener('click', () => {
+                console.log('🎯 Listing card clicked:', listing.title);
                 showListingModal(listing);
             });
-
-            if (!chatBtn.disabled) {
-                chatBtn.addEventListener('click', () => {
-                    try {
-                        console.log('🎯 Chat button clicked for listing:', chatBtn.dataset.listing);
-                        const listing = JSON.parse(chatBtn.dataset.listing);
-                        console.log('📋 Parsed listing data:', listing);
-                        startConversation(listing);
-                    } catch (error) {
-                        console.error('❌ Error parsing listing data or starting conversation:', error);
-                        alert('Error opening chat. Please refresh the page and try again.');
-                    }
-                });
-            } else {
-                console.log('⚠️ Chat button is disabled for listing - no owner email specified');
-            }
         }
 
         // Set up search filters and URL parameter handling
@@ -6328,6 +6311,13 @@
                     console.error('❌ Safety timeout listings loading failed:', error);
                 }
             }, 5000); // 5-second safety timeout
+        });
+        
+        // Simple chat button handler
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'modalChatButton') {
+                alert('Chat functionality available - modern chat interface will be implemented');
+            }
         });
     </script>
     
