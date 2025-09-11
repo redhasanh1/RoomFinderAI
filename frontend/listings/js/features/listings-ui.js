@@ -163,7 +163,7 @@ function createListingCard(listing) {
     const availability = getAvailabilityStatus(listing);
     
     return `
-        <div class="listing-card-enhanced bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden" data-listing-id="${listing.id}">
+        <div class="listing-card-enhanced bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden cursor-pointer" data-listing-id="${listing.id}" onclick="showListingModal(${JSON.stringify(listing).replace(/"/g, '&quot;')})">
             <!-- Image Section -->
             <div class="relative h-64 overflow-hidden bg-gray-100">
                 <img 
@@ -271,21 +271,7 @@ function createListingCard(listing) {
                     </div>
                 ` : ''}
                 
-                <!-- Action Buttons -->
-                <div class="flex gap-3 pt-4 border-t border-gray-100">
-                    <button 
-                        onclick="event.stopPropagation(); showListingModal(${JSON.stringify(listing).replace(/"/g, '&quot;')})"
-                        class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
-                    >
-                        View Details
-                    </button>
-                    <button 
-                        onclick="event.stopPropagation(); contactOwner('${listing.id}')"
-                        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
-                    >
-                        💬 Contact
-                    </button>
-                </div>
+                <!-- Removed action buttons - entire card is now clickable -->
                 
                 <!-- Listed Date -->
                 <div class="text-xs text-gray-500 mt-3 text-center">
