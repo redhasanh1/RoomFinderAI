@@ -3,8 +3,8 @@ import Supabase
 
 // MARK: - Configuration
 enum AppConfig {
-    static let enableMockAI = false // Real AI negotiator for specific properties
-    static let debugMode = false
+    static let enableMockAI = false // Use real OpenAI API for intelligent responses
+    static let debugMode = true // Enable debug logs to see what's happening
 }
 
 // MARK: - Secrets Configuration
@@ -3681,15 +3681,27 @@ class PropertySearchService: ObservableObject {
         do {
             print("🔍 Searching properties with criteria: \(criteria)")
             
+            // First, let's get a sample of ALL properties to debug
+            let allPropertiesQuery = supabase.from("listings").select("*").limit(5)
+            do {
+                let allProperties: [HomePageListing] = try await allPropertiesQuery.execute().value
+                print("🔍 DEBUG: Found \(allProperties.count) total properties in database")
+                for (index, property) in allProperties.enumerated() {
+                    print("   Property \(index + 1): title='\(property.title ?? "nil")', city='\(property.city ?? "nil")', house_type='\(property.house_type ?? "nil")', price=\(property.price ?? 0)")
+                }
+            } catch {
+                print("❌ DEBUG: Failed to fetch sample properties: \(error)")
+            }
+            
             var query = supabase
                 .from("listings")
                 .select("*")
             
             // Apply location filter - search in title, city fields
-            if let location = criteria.location?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(), !location.isEmpty {
+            if let location = criteria.location?.trimmingCharacters(in: .whitespacesAndNewlines), !location.isEmpty {
                 print("📍 Applying location filter: \(location)")
-                // Search in multiple fields using ilike for case-insensitive partial matches
-                query = query.or("title.ilike.%\(location)%,city.ilike.%\(location)%")
+                // Try case-insensitive search in city field first (most likely match)
+                query = query.ilike("city", pattern: "%\(location)%")
             }
             
             // Apply price filters
@@ -3704,17 +3716,17 @@ class PropertySearchService: ObservableObject {
             }
             
             // Apply property type filter
-            if let propertyType = criteria.propertyType?.lowercased() {
+            if let propertyType = criteria.propertyType {
                 print("🏠 Applying property type filter: \(propertyType)")
-                // Search in title and description for property type
-                query = query.or("title.ilike.%\(propertyType)%,description.ilike.%\(propertyType)%")
+                // Search in house_type field
+                query = query.ilike("house_type", pattern: "%\(propertyType)%")
             }
             
             // Apply bedroom filter
             if let bedrooms = criteria.bedrooms {
                 print("🛏️ Applying bedroom filter: \(bedrooms)")
-                // Search for bedroom count in title or use bedrooms field if available
-                query = query.or("bedrooms.eq.\(bedrooms),title.ilike.%\(bedrooms) bed%")
+                // Search for exact bedroom count
+                query = query.eq("bedrooms", value: bedrooms)
             }
             
             let response: [HomePageListing] = try await query.execute().value
