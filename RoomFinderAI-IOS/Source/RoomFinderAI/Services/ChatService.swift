@@ -1,6 +1,32 @@
 import Foundation
 import Supabase
 
+// MARK: - Database Models
+struct DatabaseConversation: Codable {
+    let id: String
+    let listing_id: String
+    let sender_email: String
+    let receiver_email: String
+    let created_at: Date
+}
+
+struct DatabaseMessage: Codable {
+    let id: String
+    let sender_email: String
+    let content: String
+    let message_type: String
+    let created_at: Date
+}
+
+struct DatabaseMessageInsert: Codable {
+    let id: String
+    let conversation_id: String
+    let sender_email: String
+    let content: String
+    let message_type: String
+    let created_at: String
+}
+
 class ChatService: ObservableObject {
     var supabase: SupabaseClient
     
@@ -11,8 +37,73 @@ class ChatService: ObservableObject {
     // MARK: - Conversation Management
     
     func fetchConversations() async throws -> [ChatConversation] {
-        // For now, return mock data until Supabase tables are set up
-        return mockConversations()
+        // Get current user email from auth or settings
+        let currentUserEmail = "zcod1@hotmail.com" // You can make this dynamic later
+        
+        // Set user context for RLS (Row Level Security)
+        _ = try await supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
+        
+        // Query conversations where user is either sender or receiver
+        let conversationsResponse: [DatabaseConversation] = try await supabase
+            .from("conversations")
+            .select("id, listing_id, sender_email, receiver_email, created_at")
+            .or("sender_email.eq.\(currentUserEmail),receiver_email.eq.\(currentUserEmail)")
+            .order("created_at", ascending: false)
+            .execute()
+            .value
+        
+        var chatConversations: [ChatConversation] = []
+        
+        // For each conversation, get the latest message and other participant info
+        for conversation in conversationsResponse {
+            let otherUserEmail = conversation.sender_email == currentUserEmail 
+                ? conversation.receiver_email 
+                : conversation.sender_email
+            
+            // Get the latest message for this conversation
+            let latestMessages: [DatabaseMessage] = try await supabase
+                .from("messages")
+                .select("id, sender_email, content, message_type, created_at")
+                .eq("conversation_id", value: conversation.id)
+                .order("created_at", ascending: false)
+                .limit(1)
+                .execute()
+                .value
+            
+            let latestMessage = latestMessages.first
+            
+            let chatMessage: ChatMessage? = latestMessage.map { msg in
+                ChatMessage(
+                    id: msg.id,
+                    conversationId: conversation.id,
+                    senderId: msg.sender_email,
+                    content: msg.content,
+                    messageType: ChatMessage.MessageType(rawValue: msg.message_type) ?? .text,
+                    timestamp: msg.created_at,
+                    isRead: msg.sender_email == currentUserEmail, // Assume own messages are read
+                    replyToId: nil,
+                    attachments: nil
+                )
+            }
+            
+            let chatConversation = ChatConversation(
+                id: conversation.id,
+                participantIds: [conversation.sender_email, conversation.receiver_email],
+                lastMessage: chatMessage,
+                lastActivity: latestMessage?.created_at ?? conversation.created_at,
+                isRead: latestMessage?.sender_email == currentUserEmail ? true : false,
+                conversationType: .direct,
+                title: otherUserEmail, // Use the other user's email as title
+                groupImage: nil
+            )
+            
+            chatConversations.append(chatConversation)
+        }
+        
+        // Sort by most recent activity
+        chatConversations.sort { $0.lastActivity > $1.lastActivity }
+        
+        return chatConversations
     }
     
     func createConversation(request: CreateConversationRequest) async throws -> ChatConversation {
@@ -33,16 +124,65 @@ class ChatService: ObservableObject {
     // MARK: - Message Management
     
     func fetchMessages(for conversationId: String) async throws -> [ChatMessage] {
-        // For now, return mock data
-        return mockMessages(for: conversationId)
+        let currentUserEmail = "zcod1@hotmail.com"
+        
+        // Set user context for RLS (Row Level Security)
+        _ = try await supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
+        
+        // Query all messages for this conversation
+        let messagesResponse: [DatabaseMessage] = try await supabase
+            .from("messages")
+            .select("id, sender_email, content, message_type, created_at")
+            .eq("conversation_id", value: conversationId)
+            .order("created_at", ascending: true) // Oldest first for chat display
+            .execute()
+            .value
+        
+        // Convert to ChatMessage objects
+        let chatMessages = messagesResponse.map { msg in
+            ChatMessage(
+                id: msg.id,
+                conversationId: conversationId,
+                senderId: msg.sender_email,
+                content: msg.content,
+                messageType: ChatMessage.MessageType(rawValue: msg.message_type) ?? .text,
+                timestamp: msg.created_at,
+                isRead: true, // Assume messages are read when viewing conversation
+                replyToId: nil,
+                attachments: nil
+            )
+        }
+        
+        return chatMessages
     }
     
     func sendMessage(request: SendMessageRequest) async throws -> ChatMessage {
-        // Mock implementation - would use Supabase in production
+        let currentUserEmail = "zcod1@hotmail.com" // Make this dynamic later
+        let messageId = UUID().uuidString
+        
+        // Set user context for RLS (Row Level Security)
+        _ = try await supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
+        
+        // Insert message into database
+        let messageData = DatabaseMessageInsert(
+            id: messageId,
+            conversation_id: request.conversationId,
+            sender_email: currentUserEmail,
+            content: request.content,
+            message_type: request.messageType.rawValue,
+            created_at: ISO8601DateFormatter().string(from: Date())
+        )
+        
+        try await supabase
+            .from("messages")
+            .insert(messageData)
+            .execute()
+        
+        // Return the created message
         let message = ChatMessage(
-            id: UUID().uuidString,
+            id: messageId,
             conversationId: request.conversationId,
-            senderId: "current_user_id", // Would get from auth
+            senderId: currentUserEmail,
             content: request.content,
             messageType: request.messageType,
             timestamp: Date(),
@@ -130,7 +270,7 @@ class ChatService: ObservableObject {
                 ),
                 lastActivity: Date().addingTimeInterval(-86400),
                 isRead: true,
-                conversationType: .agent,
+                conversationType: .landlord,
                 title: "Mike Johnson (Agent)",
                 groupImage: nil
             )

@@ -54,22 +54,11 @@ struct AINegotiatorView: View {
     
     var body: some View {
         NavigationView {
-            HStack(spacing: 0) {
-                // Left Sidebar - Found Listings
-                sidebarView
-                    .frame(width: 280)
-                
-                Divider()
-                
-                // Main Chat Interface
-                chatView
-            }
+            // Clean Chat Interface Only
+            cleanChatView
         }
-        .navigationTitle("AI Negotiation Assistant")
-        .navigationBarTitleDisplayMode(.large)
-        .sheet(isPresented: $showingExportSheet) {
-            exportView
-        }
+        .navigationTitle("AI Assistant")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             // Use the environment supabase client
             viewModel.updateSupabaseClient(supabase)
@@ -135,14 +124,9 @@ struct AINegotiatorView: View {
         .background(Color(.systemGray6))
     }
     
-    // MARK: - Chat View
-    private var chatView: some View {
+    // MARK: - Clean Chat View  
+    private var cleanChatView: some View {
         VStack(spacing: 0) {
-            // Chat Header
-            chatHeader
-            
-            Divider()
-            
             // Chat Messages
             ScrollViewReader { proxy in
                 ScrollView {
@@ -219,47 +203,40 @@ struct AINegotiatorView: View {
         .background(Color(.systemBackground))
     }
     
-    // MARK: - Message Input
+    // MARK: - Clean Message Input
     private var messageInputView: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 12) {
-                TextField("Type your message here...", text: $viewModel.messageText, axis: .vertical)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .lineLimit(1...4)
-                    .disabled(viewModel.isLoading)
-                
-                Button {
-                    Task {
-                        await viewModel.sendUserMessage(viewModel.messageText)
-                    }
-                } label: {
-                    Image(systemName: "paperplane.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            viewModel.canSendMessage ? Color.blue : Color.gray,
-                            in: RoundedRectangle(cornerRadius: 8)
-                        )
-                }
-                .disabled(!viewModel.canSendMessage || viewModel.isLoading)
-            }
+        HStack(spacing: 12) {
+            TextField("Ask me anything about properties...", text: $viewModel.messageText, axis: .vertical)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .lineLimit(1...3)
+                .disabled(viewModel.isLoading)
             
-            HStack {
-                Text("Press Enter to send • Max \(NegotiatorConfig.maxMessageLength) characters")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                
-                Spacer()
-                
-                Text(viewModel.characterCount)
-                    .font(.caption)
-                    .foregroundColor(viewModel.isCharacterLimitExceeded ? .red : .secondary)
+            Button {
+                Task {
+                    await viewModel.sendUserMessage(viewModel.messageText)
+                }
+            } label: {
+                Image(systemName: "paperplane.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        LinearGradient(
+                            colors: viewModel.canSendMessage ? [
+                                Color(red: 0.4, green: 0.2, blue: 0.8),
+                                Color(red: 0.6, green: 0.4, blue: 0.9)
+                            ] : [Color.gray, Color.gray],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        in: RoundedRectangle(cornerRadius: 12)
+                    )
             }
+            .disabled(!viewModel.canSendMessage || viewModel.isLoading)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Color(.systemGray6))
+        .padding(.vertical, 16)
+        .background(Color(.systemBackground))
     }
     
     // MARK: - Market Stats View

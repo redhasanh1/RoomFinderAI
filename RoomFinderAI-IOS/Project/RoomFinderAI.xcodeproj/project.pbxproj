@@ -48,9 +48,13 @@
 		A7930A1694F44AD1AF58C2EA /* HomeListingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B85FEC6937F41309B8972D2 /* HomeListingsService.swift */; };
 		37E98F5BB6044B1982E52CFA /* OptimizedHomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FCDEAA7C6D5416BAC782B64 /* OptimizedHomeScreen.swift */; };
 		BC4959A26CA94E34B83E08AF /* OptimizedListingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 462AEB2AEEA0458CBBE0B387 /* OptimizedListingCard.swift */; };
+		74E5C412A3014F83827E3F05 /* ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03ECE5D086764185B7A96555 /* ChatService.swift */; };
+		85F6D523B4125F94D38F4G16 /* ChatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FCE6E187875296B8A7E4F06 /* ChatModels.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		03ECE5D086764185B7A96555 /* ChatService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChatService.swift; path = ../Source/RoomFinderAI/Services/ChatService.swift; sourceTree = "<group>"; };
+		04FCE6E187875296B8A7E4F06 /* ChatModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChatModels.swift; path = RoomFinderAI/Models/ChatModels.swift; sourceTree = "<group>"; };
 		1194E0404AC0884FC2B02CFC /* DebugEnv.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DebugEnv.swift; path = RoomFinderAI/Source/RoomFinderAI/Debug/DebugEnv.swift; sourceTree = "<group>"; };
 		1574BBFE50B4AAE210BE0EA3 /* SimpleAuthViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SimpleAuthViewModel.swift; path = ../Source/RoomFinderAI/Services/SimpleAuthViewModel.swift; sourceTree = "<group>"; };
 		4B380553FF890F153784B453 /* PreviewHelpers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PreviewHelpers.swift; path = Source/RoomFinderAI/Config/PreviewHelpers.swift; sourceTree = "<group>"; };
@@ -387,6 +391,8 @@
 				A7930A1694F44AD1AF58C2EA /* HomeListingsService.swift in Sources */,
 				37E98F5BB6044B1982E52CFA /* OptimizedHomeScreen.swift in Sources */,
 				BC4959A26CA94E34B83E08AF /* OptimizedListingCard.swift in Sources */,
+				74E5C412A3014F83827E3F05 /* ChatService.swift in Sources */,
+				85F6D523B4125F94D38F4G16 /* ChatModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
