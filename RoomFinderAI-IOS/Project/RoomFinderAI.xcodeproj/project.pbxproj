@@ -45,6 +45,9 @@
 		A7B8C9DAEBFC2456A7B8C9DA /* SearchHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C8D9DAFBGC2456A7B8C9DA /* SearchHistoryView.swift */; };
 		A8B9CADBECFD3567A8B9CADB /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C9DAEBFCGD3567A8B9CADB /* NotificationsView.swift */; };
 		A9BACBEDCDFE4678A9BACBED /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9CABECDDGE4678A9BACBED /* SettingsView.swift */; };
+		A7930A1694F44AD1AF58C2EA /* HomeListingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B85FEC6937F41309B8972D2 /* HomeListingsService.swift */; };
+		37E98F5BB6044B1982E52CFA /* OptimizedHomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FCDEAA7C6D5416BAC782B64 /* OptimizedHomeScreen.swift */; };
+		BC4959A26CA94E34B83E08AF /* OptimizedListingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 462AEB2AEEA0458CBBE0B387 /* OptimizedListingCard.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -88,6 +91,9 @@
 		B7C8D9DAFBGC2456A7B8C9DA /* SearchHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SearchHistoryView.swift; path = RoomFinderAI/Source/RoomFinderAI/Views/SearchHistoryView.swift; sourceTree = "<group>"; };
 		B8C9DAEBFCGD3567A8B9CADB /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NotificationsView.swift; path = RoomFinderAI/Source/RoomFinderAI/Views/NotificationsView.swift; sourceTree = "<group>"; };
 		B9CABECDDGE4678A9BACBED /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsView.swift; path = RoomFinderAI/Source/RoomFinderAI/Views/SettingsView.swift; sourceTree = "<group>"; };
+		3B85FEC6937F41309B8972D2 /* HomeListingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HomeListingsService.swift; path = ../Source/RoomFinderAI/Services/HomeListingsService.swift; sourceTree = "<group>"; };
+		2FCDEAA7C6D5416BAC782B64 /* OptimizedHomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OptimizedHomeScreen.swift; path = ../Source/RoomFinderAI/Views/OptimizedHomeScreen.swift; sourceTree = "<group>"; };
+		462AEB2AEEA0458CBBE0B387 /* OptimizedListingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OptimizedListingCard.swift; path = ../Source/RoomFinderAI/Components/OptimizedListingCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -378,6 +384,9 @@
 				A7B8C9DAEBFC2456A7B8C9DA /* SearchHistoryView.swift in Sources */,
 				A8B9CADBECFD3567A8B9CADB /* NotificationsView.swift in Sources */,
 				A9BACBEDCDFE4678A9BACBED /* SettingsView.swift in Sources */,
+				A7930A1694F44AD1AF58C2EA /* HomeListingsService.swift in Sources */,
+				37E98F5BB6044B1982E52CFA /* OptimizedHomeScreen.swift in Sources */,
+				BC4959A26CA94E34B83E08AF /* OptimizedListingCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
